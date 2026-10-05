@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.vibenav.routing.NavigationTrackerTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-05T20:19:46.870Z" hostname="fedora" time="0.003">
+  <properties/>
+  <testcase name="after the turn the next maneuver is arrival" classname="com.vibenav.routing.NavigationTrackerTest" time="0.002"/>
+  <testcase name="tracks distance to the next turn" classname="com.vibenav.routing.NavigationTrackerTest" time="0.001"/>
+  <testcase name="detects arrival" classname="com.vibenav.routing.NavigationTrackerTest" time="0.0"/>
+  <testcase name="needs several fixes away from the route before declaring off-route" classname="com.vibenav.routing.NavigationTrackerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

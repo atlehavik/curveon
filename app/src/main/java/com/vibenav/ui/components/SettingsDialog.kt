@@ -29,6 +29,11 @@ fun SettingsDialog(
     onToggleObd: () -> Unit,
     offlineMapStatus: String,
     onImportMap: () -> Unit,
+    routingDataStatus: String,
+    onDownloadRoutingData: () -> Unit,
+    isNavigating: Boolean,
+    isDemoRiding: Boolean,
+    onToggleDemoRide: () -> Unit,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -213,6 +218,58 @@ fun SettingsDialog(
                                     Text("Import .pmtiles map file…", color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
+                        }
+                    }
+
+                    item {
+                        Text(
+                            text = "OFFLINE ROUTING DATA",
+                            color = ElectricCyan,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        )
+                    }
+
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(CockpitSurfaceVariant)
+                                .padding(14.dp)
+                        ) {
+                            Text(text = routingDataStatus, color = TextPrimary, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Button(
+                                onClick = onDownloadRoutingData,
+                                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan.copy(alpha = 0.2f)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Download Norway routing data (~200 MB, needs internet)", color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    item {
+                        Button(
+                            onClick = onToggleDemoRide,
+                            enabled = isNavigating || isDemoRiding,
+                            colors = ButtonDefaults.buttonColors(containerColor = NeonAmber.copy(alpha = 0.2f)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, NeonAmber),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth().testTag("demo_ride_btn")
+                        ) {
+                            Text(
+                                when {
+                                    isDemoRiding -> "Stop demo ride (back to GPS)"
+                                    isNavigating -> "Demo ride along the current route"
+                                    else -> "Demo ride (start a route first)"
+                                },
+                                color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

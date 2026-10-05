@@ -76,7 +76,8 @@ fun VibeMapView(
     isFullScreen: Boolean,
     onToggleFullScreen: () -> Unit,
     onLongPress: (GeoPoint) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -174,6 +175,10 @@ fun VibeMapView(
         }
     }
 
+    // Starting a route always brings the camera back to the rider.
+    val hasRoute = routePoints.isNotEmpty()
+    LaunchedEffect(hasRoute) { if (hasRoute) following = true }
+
     // Rider position + camera follow
     LaunchedEffect(map, style, location, headingDeg, following, hasGpsFix) {
         val m = map ?: return@LaunchedEffect
@@ -192,6 +197,7 @@ fun VibeMapView(
                 CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
                         .target(LatLng(location.latitude, location.longitude))
+                        .zoom(if (hasRoute) navigationZoom(speedKmh) else m.cameraPosition.zoom)
                         .bearing(if (moving) headingDeg.toDouble() else m.cameraPosition.bearing)
                         .tilt(if (moving && routePoints.isNotEmpty()) NAV_TILT else 0.0)
                         .padding(0.0, if (moving) 250.0 else 0.0, 0.0, 0.0) // rider sits low on screen
@@ -265,6 +271,8 @@ fun VibeMapView(
             }
         }
 
+        overlays()
+
         if (styleJson == null) {
             Text(
                 text = "No offline map installed – showing online map. Import one in Settings.",
@@ -272,14 +280,22 @@ fun VibeMapView(
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(14.dp)
+                    .align(Alignment.TopEnd)
+                    .padding(top = 80.dp, end = 14.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(CockpitBackground.copy(alpha = 0.9f))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             )
         }
     }
+}
+
+/** Zoom in for slow, twisty riding and out on fast roads so the next turn stays in view. */
+private fun navigationZoom(speedKmh: Float): Double = when {
+    speedKmh < 30f -> 16.5
+    speedKmh < 60f -> 16.0
+    speedKmh < 85f -> 15.3
+    else -> 14.6
 }
 
 @SuppressLint("MissingPermission") // we only push locations manually, the component never reads GPS itself

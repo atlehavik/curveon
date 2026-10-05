@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.vibenav.data.model.GeoPoint
 import com.vibenav.data.model.RoundtripConfig
 import com.vibenav.ui.components.*
 import com.vibenav.ui.theme.*
@@ -50,6 +51,23 @@ fun DashboardScreen(
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
 
     val offlineMapStatus by viewModel.offlineMapStatus.collectAsStateWithLifecycle()
+    val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
+    val navigationSummary by viewModel.navigationSummary.collectAsStateWithLifecycle()
+    val routingStatus by viewModel.routingStatus.collectAsStateWithLifecycle()
+    val isDemoRiding by viewModel.isDemoRiding.collectAsStateWithLifecycle()
+    var longPressTarget by remember { mutableStateOf<GeoPoint?>(null) }
+    var lastRouteChoice by remember { mutableStateOf(RouteChoice()) }
+
+    val mapOverlays: @Composable BoxScope.() -> Unit = {
+        Column(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            RoutingStatusCard(routingStatus, onDismiss = { viewModel.dismissRoutingError() })
+            navigationSummary?.let { NavigationSummaryBar(it, onStop = { viewModel.stopNavigation() }) }
+        }
+    }
     val importMapLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.importOfflineMap(uri)
     }
@@ -236,7 +254,9 @@ fun DashboardScreen(
                         groundPreference = groundPreference,
                         currentTurnInstruction = currentTurnInstruction,
                         isFullScreen = true,
-                        onToggleFullScreen = { viewModel.toggleFullScreenMap() }
+                        onToggleFullScreen = { viewModel.toggleFullScreenMap() },
+                        onLongPress = { longPressTarget = it },
+                        overlays = mapOverlays
                     )
                 } else if (isLandscape) {
                     // TABLET LANDSCAPE: 2/3 Map on Left + 1/3 Side Dashboard on Right
@@ -260,7 +280,9 @@ fun DashboardScreen(
                                 groundPreference = groundPreference,
                                 currentTurnInstruction = currentTurnInstruction,
                                 isFullScreen = false,
-                                onToggleFullScreen = { viewModel.toggleFullScreenMap() }
+                                onToggleFullScreen = { viewModel.toggleFullScreenMap() },
+                                onLongPress = { longPressTarget = it },
+                                overlays = mapOverlays
                             )
                         }
 
@@ -328,7 +350,9 @@ fun DashboardScreen(
                                 groundPreference = groundPreference,
                                 currentTurnInstruction = currentTurnInstruction,
                                 isFullScreen = false,
-                                onToggleFullScreen = { viewModel.toggleFullScreenMap() }
+                                onToggleFullScreen = { viewModel.toggleFullScreenMap() },
+                                onLongPress = { longPressTarget = it },
+                                overlays = mapOverlays
                             )
                         }
 
@@ -383,6 +407,21 @@ fun DashboardScreen(
             )
         }
 
+        longPressTarget?.let { target ->
+            NavigateHereDialog(
+                target = target,
+                initial = lastRouteChoice,
+                onDismiss = { longPressTarget = null },
+                onGo = { choice ->
+                    lastRouteChoice = choice
+                    longPressTarget = null
+                    viewModel.navigateToDestination(
+                        target, "map point", choice.roadType, choice.ground, choice.avoidFerries, choice.avoidMotorways
+                    )
+                }
+            )
+        }
+
         if (showRoundtripDialog) {
             RoundtripDialog(
                 initialConfig = RoundtripConfig(groundPreference = groundPreference),
@@ -423,6 +462,11 @@ fun DashboardScreen(
                 onToggleObd = { viewModel.toggleObd() },
                 offlineMapStatus = offlineMapStatus,
                 onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
+                routingDataStatus = routingDataStatus,
+                onDownloadRoutingData = { viewModel.downloadRoutingData() },
+                isNavigating = navigationSummary != null,
+                isDemoRiding = isDemoRiding,
+                onToggleDemoRide = { viewModel.toggleDemoRide(); showSettingsDialog = false },
                 onDismiss = { showSettingsDialog = false }
             )
         }

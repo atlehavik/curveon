@@ -1,23 +1,43 @@
 package com.vibenav.ui.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.vibenav.data.bluetooth.CompanionConnectionState
 import com.vibenav.data.bluetooth.PhoneCompanionManager
 import com.vibenav.data.db.AppDatabase
+import com.vibenav.data.location.DemoRide
 import com.vibenav.data.location.GpsFix
 import com.vibenav.data.location.LocationSource
 import com.vibenav.data.location.TripTracker
-import com.vibenav.data.model.*
-import com.vibenav.data.osm.CurvyRouteEngine
-import com.vibenav.data.osm.GpxParser
 import com.vibenav.data.map.OfflineMaps
-import android.net.Uri
+import com.vibenav.data.model.*
 import com.vibenav.data.repository.VibeNavRepository
-import kotlinx.coroutines.*
+import com.vibenav.data.routing.NavigationState
+import com.vibenav.data.routing.Navigator
+import com.vibenav.data.routing.RoutingStatus
+import com.vibenav.routing.LatLon
+import com.vibenav.routing.Maneuver
+import com.vibenav.routing.ManeuverType
+import com.vibenav.routing.RoadStyle
+import com.vibenav.routing.RouteOptions
+import com.vibenav.routing.SurfacePreference
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
-import kotlin.math.*
+import kotlinx.coroutines.launch
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
+
+/** Remaining trip info shown while navigating. */
+data class NavigationSummary(
+    val remainingKm: Double,
+    val remainingMinutes: Int,
+    val arrivalTimeMillis: Long,
+    val title: String,
+    val curviness: Int
+)
 
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -25,21 +45,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val repository = VibeNavRepository(db.routeDao(), db.gpxDao())
     val phoneCompanion = PhoneCompanionManager(viewModelScope)
     private val offlineMaps = OfflineMaps(application)
+    private val navigator = Navigator(application, viewModelScope)
 
     private val _offlineMapStatus = MutableStateFlow(describeOfflineMaps())
     val offlineMapStatus: StateFlow<String> = _offlineMapStatus.asStateFlow()
 
-    val savedRoutes = repository.allRoutes.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    private val _routingDataStatus = MutableStateFlow(navigator.routingData.describe())
+    val routingDataStatus: StateFlow<String> = _routingDataStatus.asStateFlow()
 
-    val savedGpxTracks = repository.allGpxTracks.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    val savedRoutes = repository.allRoutes.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val locationSource = LocationSource(application)
     private val tripTracker = TripTracker()
@@ -52,33 +67,72 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _telemetry = MutableStateFlow(TelemetryData())
     val telemetry: StateFlow<TelemetryData> = _telemetry.asStateFlow()
 
-    // Navigation & Route State
-    private val _activeRoutePoints = MutableStateFlow<List<GeoPoint>>(emptyList())
-    val activeRoutePoints: StateFlow<List<GeoPoint>> = _activeRoutePoints.asStateFlow()
-
-    private val _activeTurnInstructions = MutableStateFlow<List<TurnInstruction>>(emptyList())
-    val activeTurnInstructions: StateFlow<List<TurnInstruction>> = _activeTurnInstructions.asStateFlow()
-
-    private val _currentTurnIndex = MutableStateFlow(0)
-    val currentTurnIndex: StateFlow<Int> = _currentTurnIndex.asStateFlow()
-
-    val currentTurnInstruction: StateFlow<TurnInstruction?> = combine(
-        _activeTurnInstructions,
-        _currentTurnIndex
-    ) { instructions, index ->
-        if (instructions.isNotEmpty() && index in instructions.indices) {
-            instructions[index]
-        } else null
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
     private val _isFullScreenMap = MutableStateFlow(false)
     val isFullScreenMap: StateFlow<Boolean> = _isFullScreenMap.asStateFlow()
 
-    private val _groundPreference = MutableStateFlow(GroundPreference.PAVED)
-    val groundPreference: StateFlow<GroundPreference> = _groundPreference.asStateFlow()
+    val navigation: StateFlow<NavigationState> = navigator.state
 
-    private val _isNavigating = MutableStateFlow(false)
-    val isNavigating: StateFlow<Boolean> = _isNavigating.asStateFlow()
+    val isNavigating: StateFlow<Boolean> =
+        navigator.state.map { it.isNavigating }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val routingStatus: StateFlow<RoutingStatus> =
+        navigator.state.map { it.status }.stateIn(viewModelScope, SharingStarted.Eagerly, RoutingStatus.Idle)
+
+    val activeRoutePoints: StateFlow<List<GeoPoint>> = navigator.state
+        .map { it.route }
+        .distinctUntilChanged()
+        .map { r -> r?.points?.map { GeoPoint(it.lat, it.lon, it.elevation) }.orEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val groundPreference: StateFlow<GroundPreference> = navigator.state
+        .map { s -> s.goal?.options?.surface?.let { GroundPreference.entries[it.ordinal] } ?: GroundPreference.PAVED }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, GroundPreference.PAVED)
+
+    val currentTurnInstruction: StateFlow<TurnInstruction?> = navigator.state
+        .map { s ->
+            val p = s.progress ?: return@map null
+            val m = p.nextManeuver
+            val then = p.followingManeuver?.takeIf {
+                it.type != ManeuverType.ARRIVE && it.distanceFromStart - m.distanceFromStart < 300
+            }
+            TurnInstruction(
+                index = s.route?.maneuvers?.indexOf(m) ?: 0,
+                type = m.toTurnType(),
+                text = m.describe() + (then?.let { " · then " + it.describe().lowercase() } ?: ""),
+                distanceMeters = roundDistance(p.distanceToNextManeuver),
+                streetName = "",
+                speedLimitKmh = p.speedLimitKmh ?: 0,
+                location = s.route!!.points[m.pointIndex].let { GeoPoint(it.lat, it.lon) }
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val navigationSummary: StateFlow<NavigationSummary?> = navigator.state
+        .map { s ->
+            val p = s.progress ?: return@map null
+            val route = s.route ?: return@map null
+            NavigationSummary(
+                remainingKm = p.remainingDistance / 1000.0,
+                remainingMinutes = (p.remainingSeconds / 60).roundToInt(),
+                arrivalTimeMillis = System.currentTimeMillis() + (p.remainingSeconds * 1000).toLong(),
+                title = when (val g = s.goal) {
+                    is com.vibenav.data.routing.NavigationGoal.Destination -> g.name
+                    is com.vibenav.data.routing.NavigationGoal.Roundtrip -> "Roundtrip %.0f km".format(route.distanceMeters / 1000)
+                    null -> ""
+                },
+                curviness = route.curviness
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    init {
+        // Speed limit comes from the route while navigating; unknown otherwise.
+        viewModelScope.launch {
+            navigator.state.map { it.progress?.speedLimitKmh ?: 0 }.distinctUntilChanged().collect { limit ->
+                _telemetry.value = _telemetry.value.copy(speedLimitKmh = limit)
+            }
+        }
+    }
 
     /** Called by the activity once location permission is granted. Safe to call repeatedly. */
     fun startGps() {
@@ -102,18 +156,29 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             tripDistanceKm = (stats.distanceMeters / 1000.0).toFloat(),
             tripDurationMinutes = (stats.movingTimeMillis / 60_000L).toInt()
         )
-        advanceTurnInstruction()
+        navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble())
     }
 
-    /** Placeholder until real route following lands: advance to the nearest upcoming instruction. */
-    private fun advanceTurnInstruction() {
-        val instructions = _activeTurnInstructions.value
-        if (instructions.isEmpty()) return
-        val here = _currentLocation.value
-        val nearest = instructions.indices.minByOrNull { i ->
-            TripTracker.distanceMeters(here.latitude, here.longitude, instructions[i].location.latitude, instructions[i].location.longitude)
-        } ?: return
-        if (nearest > _currentTurnIndex.value) _currentTurnIndex.value = nearest
+    private var demoJob: Job? = null
+    private val _isDemoRiding = MutableStateFlow(false)
+    val isDemoRiding: StateFlow<Boolean> = _isDemoRiding.asStateFlow()
+
+    /** Replaces real GPS with a simulated ride along the active route (or back to GPS). */
+    fun toggleDemoRide(speedFactor: Double = 1.0) {
+        if (demoJob?.isActive == true) {
+            demoJob?.cancel()
+            _isDemoRiding.value = false
+            startGps()
+            return
+        }
+        val route = navigator.state.value.route ?: return
+        gpsJob?.cancel()
+        _isDemoRiding.value = true
+        demoJob = viewModelScope.launch {
+            DemoRide.fixes(route, speedFactor).collect(::onGpsFix)
+            _isDemoRiding.value = false
+            startGps()
+        }
     }
 
     fun resetTrip() {
@@ -133,68 +198,52 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _telemetry.value = _telemetry.value.copy(isObdEnabled = !_telemetry.value.isObdEnabled)
     }
 
-    fun generateCustomRoundtrip(config: RoundtripConfig) {
-        val start = _currentLocation.value
-        val generated = CurvyRouteEngine.generateRoundtrip(start, config)
-        _activeRoutePoints.value = generated.points
-        _activeTurnInstructions.value = generated.instructions
-        _groundPreference.value = config.groundPreference
-        _currentTurnIndex.value = 0
-        _isNavigating.value = true
-    }
-
-    fun selectSavedRoute(route: RouteItem) {
-        val start = _currentLocation.value
-        val config = RoundtripConfig(
-            radiusKm = route.totalDistanceKm.toInt(),
-            selectedDirections = setOf(CompassDirection.NORTH, CompassDirection.NORTH_EAST),
-            roadType = RoadTypePreference.valueOf(route.roadType),
-            groundPreference = GroundPreference.valueOf(route.groundType)
-        )
-        val generated = CurvyRouteEngine.generateRoundtrip(start, config)
-        _activeRoutePoints.value = generated.points
-        _activeTurnInstructions.value = generated.instructions
-        _groundPreference.value = config.groundPreference
-        _currentTurnIndex.value = 0
-        _isNavigating.value = true
-    }
-
-    fun loadSampleGpx(filename: String) {
-        val start = _currentLocation.value
-        val config = RoundtripConfig(
-            radiusKm = 95,
-            selectedDirections = setOf(CompassDirection.NORTH, CompassDirection.WEST),
-            roadType = RoadTypePreference.VERY_CURVY,
-            groundPreference = if (filename.contains("TET")) GroundPreference.GRAVEL else GroundPreference.PAVED
-        )
-        val generated = CurvyRouteEngine.generateRoundtrip(start, config)
-        _activeRoutePoints.value = generated.points
-        _activeTurnInstructions.value = generated.instructions
-        _groundPreference.value = config.groundPreference
-        _currentTurnIndex.value = 0
-        _isNavigating.value = true
-    }
+    // --- Navigation ---------------------------------------------------------------------------
 
     fun navigateToDestination(
         destination: GeoPoint,
         destinationName: String,
         roadType: RoadTypePreference = RoadTypePreference.CURVY,
-        groundPreference: GroundPreference = GroundPreference.PAVED
+        groundPreference: GroundPreference = GroundPreference.PAVED,
+        avoidFerries: Boolean = false,
+        avoidMotorways: Boolean = false
     ) {
-        val start = _currentLocation.value
-        val generated = CurvyRouteEngine.generateRouteToDestination(
-            start = start,
-            destination = destination,
-            destinationName = destinationName,
-            roadType = roadType,
-            groundPreference = groundPreference
+        navigator.navigateTo(
+            destinationName,
+            LatLon(destination.latitude, destination.longitude),
+            routeOptions(roadType, groundPreference, avoidFerries, avoidMotorways, avoidToll = false)
         )
-        _activeRoutePoints.value = generated.points
-        _activeTurnInstructions.value = generated.instructions
-        _groundPreference.value = groundPreference
-        _currentTurnIndex.value = 0
-        _isNavigating.value = true
     }
+
+    fun generateCustomRoundtrip(config: RoundtripConfig) {
+        navigator.roundtrip(
+            distanceKm = config.radiusKm.toDouble(),
+            directionDeg = meanDirection(config.selectedDirections),
+            options = routeOptions(config.roadType, config.groundPreference, config.avoidFerries, config.avoidHighways, config.avoidTolls)
+        )
+    }
+
+    fun stopNavigation() = navigator.stop()
+
+    fun dismissRoutingError() = navigator.dismissError()
+
+    /** Saved routes and sample GPX files are replaced by real GPX import in the next step. */
+    fun selectSavedRoute(route: RouteItem) {}
+
+    fun loadSampleGpx(filename: String) {}
+
+    fun downloadRoutingData() {
+        viewModelScope.launch {
+            runCatching {
+                navigator.routingData.downloadNorway { done, total, file ->
+                    _routingDataStatus.value = if (done < total) "Downloading routing data $file (${done + 1}/$total)…" else "Download complete"
+                }
+            }.onFailure { _routingDataStatus.value = "Download failed: ${it.message}. Connect to the phone's hotspot and retry." }
+                .onSuccess { _routingDataStatus.value = navigator.routingData.describe() }
+        }
+    }
+
+    // --- Offline map --------------------------------------------------------------------------
 
     private fun describeOfflineMaps(): String {
         val maps = offlineMaps.installedMaps()
@@ -213,5 +262,63 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     companion object {
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
+
+        fun routeOptions(
+            roadType: RoadTypePreference,
+            ground: GroundPreference,
+            avoidFerries: Boolean,
+            avoidMotorways: Boolean,
+            avoidToll: Boolean
+        ) = RouteOptions(
+            roadStyle = RoadStyle.valueOf(roadType.name),
+            surface = SurfacePreference.entries[ground.ordinal],
+            avoidFerries = avoidFerries,
+            avoidMotorways = avoidMotorways,
+            avoidToll = avoidToll
+        )
+
+        /** Circular mean of the selected compass directions (N + E = NE), north if none. */
+        fun meanDirection(directions: Set<CompassDirection>): Double {
+            if (directions.isEmpty()) return 0.0
+            val x = directions.sumOf { cos(Math.toRadians(it.angleDegrees.toDouble())) }
+            val y = directions.sumOf { sin(Math.toRadians(it.angleDegrees.toDouble())) }
+            if (x * x + y * y < 1e-6) return directions.first().angleDegrees.toDouble() // opposite picks cancel out
+            return (Math.toDegrees(atan2(y, x)) + 360.0) % 360.0
+        }
+
+        /** Rounded like a nav unit: 10 m steps below 1 km, 100 m above. */
+        fun roundDistance(m: Double): Int = if (m < 1000) ((m / 10).roundToInt() * 10) else ((m / 100).roundToInt() * 100)
+
+        fun Maneuver.toTurnType(): TurnType = when (type) {
+            ManeuverType.DEPART -> TurnType.START
+            ManeuverType.STRAIGHT -> TurnType.STRAIGHT
+            ManeuverType.SLIGHT_LEFT, ManeuverType.KEEP_LEFT, ManeuverType.EXIT_LEFT -> TurnType.SLIGHT_LEFT
+            ManeuverType.LEFT -> TurnType.LEFT
+            ManeuverType.SHARP_LEFT -> TurnType.SHARP_LEFT
+            ManeuverType.SLIGHT_RIGHT, ManeuverType.KEEP_RIGHT, ManeuverType.EXIT_RIGHT -> TurnType.SLIGHT_RIGHT
+            ManeuverType.RIGHT -> TurnType.RIGHT
+            ManeuverType.SHARP_RIGHT -> TurnType.SHARP_RIGHT
+            ManeuverType.U_TURN -> TurnType.U_TURN
+            ManeuverType.ROUNDABOUT -> TurnType.ROUNDABOUT
+            ManeuverType.ARRIVE -> TurnType.DESTINATION
+        }
+
+        fun Maneuver.describe(): String = when (type) {
+            ManeuverType.DEPART -> "Start"
+            ManeuverType.STRAIGHT -> "Continue straight"
+            ManeuverType.SLIGHT_LEFT -> "Bear left"
+            ManeuverType.LEFT -> "Turn left"
+            ManeuverType.SHARP_LEFT -> "Sharp left"
+            ManeuverType.SLIGHT_RIGHT -> "Bear right"
+            ManeuverType.RIGHT -> "Turn right"
+            ManeuverType.SHARP_RIGHT -> "Sharp right"
+            ManeuverType.KEEP_LEFT -> "Keep left"
+            ManeuverType.KEEP_RIGHT -> "Keep right"
+            ManeuverType.EXIT_LEFT -> "Take the exit on the left"
+            ManeuverType.EXIT_RIGHT -> "Take the exit on the right"
+            ManeuverType.U_TURN -> "Make a U-turn"
+            ManeuverType.ROUNDABOUT -> if (exitNumber > 0) "Roundabout, take exit $exitNumber" else "Enter the roundabout"
+            ManeuverType.ARRIVE -> "Arrive at destination"
+        }
     }
 }
