@@ -2,21 +2,24 @@ package com.vibenav.data.model
 
 data class TelemetryData(
     val speedKmh: Float = 0f,
-    val speedLimitKmh: Int = 80,
-    val rpm: Int = 1200,
+    /** 0 = unknown, the sign is hidden. */
+    val speedLimitKmh: Int = 0,
+    val rpm: Int = 0,
     val maxRpm: Int = 12000,
     val redlineRpm: Int = 10000,
     val gear: String = "N",
-    val coolantTempC: Int = 88,
-    val batteryVoltage: Float = 14.1f,
-    val fuelPercent: Int = 78,
+    val coolantTempC: Int = 0,
+    val batteryVoltage: Float = 0f,
+    val fuelPercent: Int = 0,
     val leanAngleDeg: Float = 0f,
-    val headingDeg: Float = 45f,
-    val tripDistanceKm: Float = 14.2f,
-    val tripDurationMinutes: Int = 22,
-    val altitudeMeters: Int = 340,
-    val isObdEnabled: Boolean = true,
-    val isObdConnected: Boolean = true,
+    val headingDeg: Float = 0f,
+    val tripDistanceKm: Float = 0f,
+    val tripDurationMinutes: Int = 0,
+    val altitudeMeters: Int = 0,
+    val hasGpsFix: Boolean = false,
+    val gpsAccuracyMeters: Int = 0,
+    val isObdEnabled: Boolean = false,
+    val isObdConnected: Boolean = false,
     val useMph: Boolean = false
 ) {
     val displaySpeed: Int

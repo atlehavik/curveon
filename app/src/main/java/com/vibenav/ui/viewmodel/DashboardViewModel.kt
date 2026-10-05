@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.vibenav.data.bluetooth.CompanionConnectionState
 import com.vibenav.data.bluetooth.PhoneCompanionManager
 import com.vibenav.data.db.AppDatabase
+import com.vibenav.data.location.GpsFix
+import com.vibenav.data.location.LocationSource
+import com.vibenav.data.location.TripTracker
 import com.vibenav.data.model.*
 import com.vibenav.data.osm.CurvyRouteEngine
 import com.vibenav.data.osm.GpxParser
@@ -34,24 +37,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         initialValue = emptyList()
     )
 
-    // Current motorcycle coordinate (default centered on scenic alpine pass: Passo dello Stelvio / 46.5286, 10.4532)
-    private val _currentLocation = MutableStateFlow(GeoPoint(46.5286, 10.4532, 2150.0))
+    private val locationSource = LocationSource(application)
+    private val tripTracker = TripTracker()
+    private var gpsJob: Job? = null
+
+    // Until the first fix arrives we show Oslo rather than a random spot in the sea.
+    private val _currentLocation = MutableStateFlow(DEFAULT_LOCATION)
     val currentLocation: StateFlow<GeoPoint> = _currentLocation.asStateFlow()
 
-    private val _telemetry = MutableStateFlow(
-        TelemetryData(
-            speedKmh = 72f,
-            speedLimitKmh = 80,
-            rpm = 5800,
-            gear = "3",
-            leanAngleDeg = -14f,
-            headingDeg = 52f,
-            tripDistanceKm = 34.6f,
-            tripDurationMinutes = 42,
-            altitudeMeters = 2150,
-            isObdEnabled = true
-        )
-    )
+    private val _telemetry = MutableStateFlow(TelemetryData())
     val telemetry: StateFlow<TelemetryData> = _telemetry.asStateFlow()
 
     // Navigation & Route State
@@ -79,99 +73,48 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _groundPreference = MutableStateFlow(GroundPreference.PAVED)
     val groundPreference: StateFlow<GroundPreference> = _groundPreference.asStateFlow()
 
-    private val _isNavigating = MutableStateFlow(true)
+    private val _isNavigating = MutableStateFlow(false)
     val isNavigating: StateFlow<Boolean> = _isNavigating.asStateFlow()
 
-    private var rideSimulationJob: Job? = null
-
-    init {
-        viewModelScope.launch {
-            // Generate initial scenic curvy roundtrip so user has immediate rich map & turn-by-turn navigation
-            generateDefaultScenicRoundtrip()
-            startRideSimulation()
+    /** Called by the activity once location permission is granted. Safe to call repeatedly. */
+    fun startGps() {
+        if (gpsJob?.isActive == true) return
+        locationSource.lastKnown()?.let { _currentLocation.value = GeoPoint(it.latitude, it.longitude, it.altitudeMeters ?: 0.0) }
+        gpsJob = viewModelScope.launch {
+            locationSource.fixes().collect(::onGpsFix)
         }
     }
 
-    private fun generateDefaultScenicRoundtrip() {
-        val start = _currentLocation.value
-        val config = RoundtripConfig(
-            radiusKm = 65,
-            selectedDirections = setOf(CompassDirection.NORTH, CompassDirection.EAST),
-            roadType = RoadTypePreference.CURVY,
-            groundPreference = GroundPreference.PAVED
+    private fun onGpsFix(fix: GpsFix) {
+        tripTracker.onFix(fix)
+        _currentLocation.value = GeoPoint(fix.latitude, fix.longitude, fix.altitudeMeters ?: _currentLocation.value.altitudeMeters)
+        val stats = tripTracker.stats
+        _telemetry.value = _telemetry.value.copy(
+            speedKmh = tripTracker.speedKmh,
+            headingDeg = tripTracker.headingDeg,
+            altitudeMeters = (fix.altitudeMeters ?: 0.0).roundToInt(),
+            hasGpsFix = true,
+            gpsAccuracyMeters = (fix.accuracyMeters ?: 0f).roundToInt(),
+            tripDistanceKm = (stats.distanceMeters / 1000.0).toFloat(),
+            tripDurationMinutes = (stats.movingTimeMillis / 60_000L).toInt()
         )
-        val generated = CurvyRouteEngine.generateRoundtrip(start, config)
-        _activeRoutePoints.value = generated.points
-        _activeTurnInstructions.value = generated.instructions
-        _currentTurnIndex.value = 0
+        advanceTurnInstruction()
     }
 
-    /**
-     * Simulates motorcycle ride progression: moving along points, banking/leaning into turns,
-     * updating RPM, speed, gear, and advancing turn-by-turn instructions.
-     */
-    private fun startRideSimulation() {
-        rideSimulationJob?.cancel()
-        rideSimulationJob = viewModelScope.launch {
-            var step = 0
-            while (isActive) {
-                delay(1200)
-                val points = _activeRoutePoints.value
-                if (points.isNotEmpty()) {
-                    val pIndex = step % points.size
-                    val currentPt = points[pIndex]
-                    val nextPt = points[(pIndex + 1) % points.size]
+    /** Placeholder until real route following lands: advance to the nearest upcoming instruction. */
+    private fun advanceTurnInstruction() {
+        val instructions = _activeTurnInstructions.value
+        if (instructions.isEmpty()) return
+        val here = _currentLocation.value
+        val nearest = instructions.indices.minByOrNull { i ->
+            TripTracker.distanceMeters(here.latitude, here.longitude, instructions[i].location.latitude, instructions[i].location.longitude)
+        } ?: return
+        if (nearest > _currentTurnIndex.value) _currentTurnIndex.value = nearest
+    }
 
-                    _currentLocation.value = currentPt
-
-                    // Calculate bearing & lean angle
-                    val dLat = nextPt.latitude - currentPt.latitude
-                    val dLon = nextPt.longitude - currentPt.longitude
-                    val heading = (Math.toDegrees(atan2(dLon, dLat)) + 360.0) % 360.0
-
-                    // Sim lean angle into turn
-                    val prevBearing = _telemetry.value.headingDeg
-                    var diff = (heading - prevBearing).toFloat()
-                    while (diff < -180f) diff += 360f
-                    while (diff > 180f) diff -= 360f
-                    val targetLean = (diff * 2.2f).coerceIn(-48f, 48f)
-
-                    val baseSpeed = when (_groundPreference.value) {
-                        GroundPreference.GRAVEL -> 45f + (sin(step * 0.3) * 8).toFloat()
-                        GroundPreference.MIXED -> 58f + (sin(step * 0.3) * 12).toFloat()
-                        GroundPreference.PAVED -> 72f + (sin(step * 0.2) * 18).toFloat()
-                    }
-
-                    val rpm = (4200 + (baseSpeed * 45) + (sin(step * 0.5) * 400)).toInt().coerceIn(2000, 10500)
-                    val gear = when {
-                        baseSpeed < 25 -> "1"
-                        baseSpeed < 45 -> "2"
-                        baseSpeed < 65 -> "3"
-                        baseSpeed < 85 -> "4"
-                        baseSpeed < 105 -> "5"
-                        else -> "6"
-                    }
-
-                    val instructions = _activeTurnInstructions.value
-                    if (instructions.isNotEmpty()) {
-                        val turnProgress = ((step % points.size).toFloat() / points.size * instructions.size).toInt()
-                        _currentTurnIndex.value = turnProgress.coerceIn(0, instructions.size - 1)
-                    }
-
-                    _telemetry.value = _telemetry.value.copy(
-                        speedKmh = baseSpeed,
-                        rpm = rpm,
-                        gear = gear,
-                        headingDeg = heading.toFloat(),
-                        leanAngleDeg = targetLean,
-                        altitudeMeters = currentPt.altitudeMeters.toInt(),
-                        tripDistanceKm = _telemetry.value.tripDistanceKm + 0.025f
-                    )
-
-                    step++
-                }
-            }
-        }
+    fun resetTrip() {
+        tripTracker.reset()
+        _telemetry.value = _telemetry.value.copy(tripDistanceKm = 0f, tripDurationMinutes = 0)
     }
 
     fun toggleFullScreenMap() {
@@ -193,8 +136,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _activeTurnInstructions.value = generated.instructions
         _groundPreference.value = config.groundPreference
         _currentTurnIndex.value = 0
-        _telemetry.value = _telemetry.value.copy(speedLimitKmh = if (config.groundPreference == GroundPreference.GRAVEL) 50 else 80)
-        startRideSimulation()
+        _isNavigating.value = true
     }
 
     fun selectSavedRoute(route: RouteItem) {
@@ -210,7 +152,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _activeTurnInstructions.value = generated.instructions
         _groundPreference.value = config.groundPreference
         _currentTurnIndex.value = 0
-        startRideSimulation()
+        _isNavigating.value = true
     }
 
     fun loadSampleGpx(filename: String) {
@@ -226,7 +168,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _activeTurnInstructions.value = generated.instructions
         _groundPreference.value = config.groundPreference
         _currentTurnIndex.value = 0
-        startRideSimulation()
+        _isNavigating.value = true
     }
 
     fun navigateToDestination(
@@ -247,10 +189,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _activeTurnInstructions.value = generated.instructions
         _groundPreference.value = groundPreference
         _currentTurnIndex.value = 0
-        _telemetry.value = _telemetry.value.copy(
-            speedLimitKmh = if (groundPreference == GroundPreference.GRAVEL) 50 else 80
-        )
-        startRideSimulation()
+        _isNavigating.value = true
     }
 
     fun clearOfflineCache() {
@@ -259,4 +198,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun getOfflineCacheCount(): Int = tileManager.getOfflineCacheCount()
     fun getOfflineCacheSizeMb(): Float = tileManager.getOfflineCacheSizeMb()
+
+    companion object {
+        val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
+    }
 }

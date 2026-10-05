@@ -2,6 +2,7 @@ package com.vibenav
 
 import android.Manifest
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -17,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import com.vibenav.ui.screens.DashboardScreen
 import com.vibenav.ui.theme.CockpitBackground
 import com.vibenav.ui.theme.VibeNavTheme
@@ -54,10 +56,13 @@ class MainActivity : ComponentActivity() {
             // Location permissions launcher for real GPS telemetry
             val permissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestMultiplePermissions()
-            ) { /* Permissions result handled gracefully */ }
+            ) { granted ->
+                if (granted[Manifest.permission.ACCESS_FINE_LOCATION] == true) dashboardViewModel.startGps()
+            }
 
             LaunchedEffect(Unit) {
-                permissionLauncher.launch(
+                if (hasLocationPermission()) dashboardViewModel.startGps()
+                else permissionLauncher.launch(
                     arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
                         Manifest.permission.ACCESS_COARSE_LOCATION
@@ -75,4 +80,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun hasLocationPermission() =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
 }

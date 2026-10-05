@@ -65,8 +65,8 @@ fun SpeedometerTachometer(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // 1. Sleek Tachometer Horizontal Indicator Line (No top text header)
-            Canvas(
+            // 1. Sleek Tachometer Horizontal Indicator Line (only with a live OBD2 RPM feed)
+            if (telemetry.isObdConnected) Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(5.dp)
@@ -158,19 +158,30 @@ fun SpeedometerTachometer(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    // RPM Number only (no "RPM" label)
-                    Text(
-                        text = telemetry.rpm.toString(),
-                        color = if (telemetry.rpm > telemetry.redlineRpm) WarningRed else ElectricCyan,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        lineHeight = 16.sp
-                    )
+                    // RPM from OBD2 when connected, otherwise GPS status
+                    if (telemetry.isObdConnected) {
+                        Text(
+                            text = telemetry.rpm.toString(),
+                            color = if (telemetry.rpm > telemetry.redlineRpm) WarningRed else ElectricCyan,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            lineHeight = 16.sp
+                        )
+                    } else {
+                        Text(
+                            text = if (telemetry.hasGpsFix) "GPS ±%d m • %d m.o.h.".format(telemetry.gpsAccuracyMeters, telemetry.altitudeMeters)
+                            else "Searching GPS…",
+                            color = if (telemetry.hasGpsFix) ElectricCyan else NeonAmber,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 14.sp
+                        )
+                    }
 
                     // Trip Odometer
                     Text(
-                        text = "TRIP %.1f km • %dm".format(telemetry.tripDistanceKm, telemetry.tripDurationMinutes),
+                        text = "TRIP %.1f km • %d:%02d".format(telemetry.tripDistanceKm, telemetry.tripDurationMinutes / 60, telemetry.tripDurationMinutes % 60),
                         color = TextMuted,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
