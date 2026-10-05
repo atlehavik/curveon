@@ -1,0 +1,6 @@
+{
+  "name": "VibeNav",
+  "description": "Motorcycle dashboard with offline OpenStreetMap navigation, curvy routes, music control, and notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
