@@ -1,12 +1,12 @@
 package com.vibenav.data.osm
 
-import android.util.Xml
 import com.vibenav.data.model.GeoPoint
-import com.vibenav.data.model.GpxTrack
 import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserFactory
 import java.io.InputStream
 import kotlin.math.*
 
+/** Reads GPX 1.0/1.1 tracks (trk/trkseg/trkpt), routes (rte/rtept) and waypoints (wpt). */
 object GpxParser {
 
     data class ParsedGpxResult(
@@ -25,98 +25,78 @@ object GpxParser {
     )
 
     fun parse(inputStream: InputStream, defaultName: String = "Imported GPX Track"): ParsedGpxResult {
-        val parser = Xml.newPullParser()
+        val parser = XmlPullParserFactory.newInstance().newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
         parser.setInput(inputStream, null)
 
-        var eventType = parser.eventType
-        var trackName = defaultName
-        val points = mutableListOf<GeoPoint>()
+        var docName: String? = null
+        val trackPoints = mutableListOf<GeoPoint>()
+        val routePoints = mutableListOf<GeoPoint>()
         val waypoints = mutableListOf<GpxWaypoint>()
 
-        var currentTag = ""
-        var currentWptName = ""
-        var currentWptLat = 0.0
-        var currentWptLon = 0.0
+        val stack = ArrayDeque<String>()
+        var lat = 0.0
+        var lon = 0.0
+        var ele = 0.0
+        var ptName = ""
 
-        while (eventType != XmlPullParser.END_DOCUMENT) {
-            when (eventType) {
+        while (parser.eventType != XmlPullParser.END_DOCUMENT) {
+            when (parser.eventType) {
                 XmlPullParser.START_TAG -> {
-                    currentTag = parser.name
-                    when (currentTag) {
-                        "trkpt" -> {
-                            val latStr = parser.getAttributeValue(null, "lat")
-                            val lonStr = parser.getAttributeValue(null, "lon")
-                            if (latStr != null && lonStr != null) {
-                                val lat = latStr.toDoubleOrNull() ?: 0.0
-                                val lon = lonStr.toDoubleOrNull() ?: 0.0
-                                points.add(GeoPoint(lat, lon, 0.0))
-                            }
-                        }
-                        "wpt" -> {
-                            val latStr = parser.getAttributeValue(null, "lat")
-                            val lonStr = parser.getAttributeValue(null, "lon")
-                            currentWptLat = latStr?.toDoubleOrNull() ?: 0.0
-                            currentWptLon = lonStr?.toDoubleOrNull() ?: 0.0
-                            currentWptName = ""
-                        }
+                    val tag = parser.name.substringAfter(':')
+                    stack.addLast(tag)
+                    if (tag == "trkpt" || tag == "rtept" || tag == "wpt") {
+                        lat = parser.getAttributeValue(null, "lat")?.toDoubleOrNull() ?: Double.NaN
+                        lon = parser.getAttributeValue(null, "lon")?.toDoubleOrNull() ?: Double.NaN
+                        ele = 0.0
+                        ptName = ""
                     }
                 }
                 XmlPullParser.TEXT -> {
                     val text = parser.text?.trim().orEmpty()
-                    if (text.isNotEmpty()) {
-                        when (currentTag) {
-                            "name" -> {
-                                if (trackName == defaultName) {
-                                    trackName = text
-                                }
-                                if (currentWptName.isEmpty()) {
-                                    currentWptName = text
-                                }
-                            }
-                            "ele" -> {
-                                val ele = text.toDoubleOrNull() ?: 0.0
-                                if (points.isNotEmpty()) {
-                                    val last = points.last()
-                                    points[points.size - 1] = last.copy(altitudeMeters = ele)
-                                }
+                    if (text.isNotEmpty() && stack.isNotEmpty()) {
+                        val parent = stack.getOrNull(stack.size - 2)
+                        when (stack.last()) {
+                            "ele" -> ele = text.toDoubleOrNull() ?: 0.0
+                            "name" -> when (parent) {
+                                "trkpt", "rtept", "wpt" -> ptName = text
+                                "trk", "rte", "metadata" -> if (docName == null) docName = text
                             }
                         }
                     }
                 }
                 XmlPullParser.END_TAG -> {
-                    if (parser.name == "wpt" && (currentWptLat != 0.0 || currentWptLon != 0.0)) {
-                        waypoints.add(
-                            GpxWaypoint(
-                                name = if (currentWptName.isNotEmpty()) currentWptName else "Waypoint ${waypoints.size + 1}",
-                                point = GeoPoint(currentWptLat, currentWptLon)
-                            )
-                        )
+                    val tag = stack.removeLastOrNull()
+                    if (!lat.isNaN() && !lon.isNaN()) when (tag) {
+                        "trkpt" -> trackPoints += GeoPoint(lat, lon, ele)
+                        "rtept" -> routePoints += GeoPoint(lat, lon, ele)
+                        "wpt" -> waypoints += GpxWaypoint(ptName.ifEmpty { "Waypoint ${waypoints.size + 1}" }, GeoPoint(lat, lon, ele))
                     }
-                    currentTag = ""
                 }
             }
-            eventType = parser.next()
+            parser.next()
+        }
+
+        // Prefer the recorded/planned track; fall back to a route, then to bare waypoints.
+        val points = when {
+            trackPoints.size >= 2 -> trackPoints
+            routePoints.size >= 2 -> routePoints
+            else -> waypoints.map { it.point }
         }
 
         var totalDist = 0.0
         var eleGain = 0.0
-        var maxEle = 0.0
-
+        var maxEle = points.firstOrNull()?.altitudeMeters ?: 0.0
         for (i in 0 until points.size - 1) {
             val p1 = points[i]
             val p2 = points[i + 1]
             totalDist += haversineDistanceKm(p1.latitude, p1.longitude, p2.latitude, p2.longitude)
-            if (p2.altitudeMeters > p1.altitudeMeters) {
-                eleGain += (p2.altitudeMeters - p1.altitudeMeters)
-            }
-            if (p2.altitudeMeters > maxEle) {
-                maxEle = p2.altitudeMeters
-            }
+            if (p2.altitudeMeters > p1.altitudeMeters) eleGain += p2.altitudeMeters - p1.altitudeMeters
+            maxEle = max(maxEle, p2.altitudeMeters)
         }
 
         return ParsedGpxResult(
-            name = trackName,
+            name = docName ?: defaultName,
             points = points,
             totalDistanceKm = totalDist.toFloat(),
             elevationGainMeters = eleGain.toInt(),
@@ -124,6 +104,18 @@ object GpxParser {
             waypoints = waypoints
         )
     }
+
+    /** Compact "lat,lon,ele;lat,lon,ele" encoding used to store tracks in Room. */
+    fun encodePoints(points: List<GeoPoint>): String =
+        points.joinToString(";") { "%.6f,%.6f,%.0f".format(java.util.Locale.ROOT, it.latitude, it.longitude, it.altitudeMeters) }
+
+    fun decodePoints(s: String): List<GeoPoint> =
+        if (s.isBlank() || s == "[]") emptyList()
+        else s.split(';').mapNotNull { p ->
+            val parts = p.split(',')
+            if (parts.size < 2) null
+            else GeoPoint(parts[0].toDouble(), parts[1].toDouble(), parts.getOrNull(2)?.toDoubleOrNull() ?: 0.0)
+        }
 
     fun haversineDistanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6371.0 // Earth radius in km

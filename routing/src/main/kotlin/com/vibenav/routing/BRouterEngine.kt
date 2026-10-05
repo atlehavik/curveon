@@ -37,7 +37,7 @@ class BRouterEngine(
         val rc = RoutingContext().apply {
             localFunction = File(profileDir, PROFILE_FILE).absolutePath
             keyValues = profileParams(options)
-            if (viaCatchingRangeMeters != null) waypointCatchingRange = viaCatchingRangeMeters
+            waypointCatchingRange = viaCatchingRangeMeters ?: DEFAULT_CATCHING_RANGE_M
         }
         val engine = RoutingEngine(null, null, segmentDir, nodes, rc, RoutingEngine.BROUTER_ENGINEMODE_ROUTING)
         engine.quite = true
@@ -126,6 +126,9 @@ class BRouterEngine(
 
     companion object {
         const val PROFILE_FILE = "vibenav-moto.brf"
+
+        /** Start/destination may be a tap in the forest; snap to a road up to this far away. */
+        const val DEFAULT_CATCHING_RANGE_M = 1_500.0
     }
 }
 

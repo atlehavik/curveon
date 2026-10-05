@@ -1,23 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.vibenav.routing.BRouterEngineTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-05T20:19:07.709Z" hostname="fedora" time="39.152">
+<testsuite name="com.vibenav.routing.BRouterEngineTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-05T20:54:46.397Z" hostname="fedora" time="39.458">
   <properties/>
-  <testcase name="paved only avoids gravel and gravel lover finds it" classname="com.vibenav.routing.BRouterEngineTest" time="1.952"/>
-  <testcase name="roundtrip from oslo heading north is about the requested length" classname="com.vibenav.routing.BRouterEngineTest" time="9.732"/>
-  <testcase name="oslo to bergen in every style" classname="com.vibenav.routing.BRouterEngineTest" time="27.462"/>
+  <testcase name="paved only avoids gravel and gravel lover finds it" classname="com.vibenav.routing.BRouterEngineTest" time="1.3"/>
+  <testcase name="follows a gpx-like track from a nearby start" classname="com.vibenav.routing.BRouterEngineTest" time="1.176"/>
+  <testcase name="roundtrip from oslo heading north is about the requested length" classname="com.vibenav.routing.BRouterEngineTest" time="18.015"/>
+  <testcase name="oslo to bergen in every style" classname="com.vibenav.routing.BRouterEngineTest" time="18.962"/>
   <system-out><![CDATA[paved         63.8 km   1.0 h  curvy= 43  unpaved=  0.0 km  ferries=0  maneuvers=52
 gravel        64.3 km   1.1 h  curvy= 51  unpaved= 19.2 km  ferries=0  maneuvers=32
 ******** invalidating profile-cache after lookup-file update ******** 
-RT FASTEST   171.2 km   2.3 h  curvy= 30  unpaved=  3.6 km  ferries=0  maneuvers=73
-            overlap=2%  computed in 4309 ms
-RT VERY_CURVY  182.7 km   2.9 h  curvy= 65  unpaved=  0.0 km  ferries=0  maneuvers=161
-            overlap=3%  computed in 5415 ms
+track         91.0 km   1.4 h  curvy= 48  unpaved=  0.7 km  ferries=0  maneuvers=63
 ******** invalidating profile-cache after lookup-file update ******** 
-FASTEST      459.4 km   5.7 h  curvy= 24  unpaved=  0.0 km  ferries=0  maneuvers=51
-            computed in 6262 ms
-CURVY        494.8 km   7.2 h  curvy= 53  unpaved=  0.0 km  ferries=0  maneuvers=205
-            computed in 10079 ms
-VERY_CURVY   505.2 km   7.5 h  curvy= 56  unpaved=  0.0 km  ferries=0  maneuvers=240
-            computed in 11114 ms
+RT FASTEST   160.2 km   2.2 h  curvy= 39  unpaved=  3.9 km  ferries=0  maneuvers=80
+            overlap=5%  computed in 9502 ms
+RT VERY_CURVY  105.9 km   1.9 h  curvy= 74  unpaved= 10.9 km  ferries=0  maneuvers=121
+            overlap=7%  computed in 8510 ms
+******** invalidating profile-cache after lookup-file update ******** 
+FASTEST      459.2 km   5.7 h  curvy= 24  unpaved=  0.0 km  ferries=0  maneuvers=45
+            computed in 4113 ms
+CURVY        493.6 km   7.2 h  curvy= 54  unpaved=  0.0 km  ferries=0  maneuvers=207
+            computed in 6177 ms
+VERY_CURVY   507.6 km   7.6 h  curvy= 58  unpaved=  0.0 km  ferries=0  maneuvers=246
+            computed in 8669 ms
 ]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

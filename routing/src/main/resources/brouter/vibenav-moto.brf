@@ -150,7 +150,7 @@ assign class_cost =
 assign surface_factor =
   if is_unpaved then
   (
-    if paved_only then 4.0
+    if paved_only then 8.0
     else if mixed then 1.4
     else 0.85
   )
@@ -171,8 +171,12 @@ assign avoid_factor =
   multiply ( if and avoid_motorways highway=motorway|motorway_link then 8.0 else 1.0 )
            ( if and avoid_toll toll=yes then 5.0 else 1.0 )
 
+# Roads a motorcycle physically can use but may not be allowed on (private farm/cabin roads):
+# very expensive instead of forbidden, so a ride can start or end on one.
+assign is_motor_road = highway=motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service|track|road
+
 assign costfactor =
-  if not motoraccess then 10000
+  if not motoraccess then ( if and is_motor_road not and is_track paved_only then 8 else 10000 )
   else if isbadoneway then 10000
   else min 9999 multiply class_cost multiply surface_factor multiply track_factor avoid_factor
 
@@ -215,12 +219,13 @@ assign motoraccess
               switch motor_vehicle=
                      switch vehicle=
                             switch access=
-                                   not barrier=gate|bollard|lift_gate|cycle_barrier|block
+                                   not barrier=bollard|cycle_barrier|block
                                    access=yes|permissive|designated|destination
                             vehicle=yes|permissive|designated|destination
                      motor_vehicle=yes|permissive|designated|destination
               motorcycle=yes|permissive|designated|destination
 
+# Gates ("bom") on Norwegian forest roads are usually passable; just avoid them when there is a choice.
 assign initialcost =
        switch and avoid_toll barrier=toll_booth 1000000
-       switch motoraccess 0 1000000
+       switch motoraccess ( switch barrier=gate|lift_gate 300 0 ) 1000000
