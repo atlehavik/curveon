@@ -107,8 +107,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             RoutingStatusCard(routingStatus, onDismiss = { viewModel.dismissRoutingError() })
-            toast?.let { Text(it, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(CockpitSurface).padding(horizontal = 14.dp, vertical = 8.dp)) }
             if (preview == null) navigationSummary?.let {
                 NavigationSummaryBar(
                     it, onStop = { viewModel.stopNavigation() },
@@ -116,6 +114,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } }
                 )
             }
+        }
+        toast?.let {
+            Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp).clip(RoundedCornerShape(12.dp))
+                    .background(CockpitSurface).border(1.dp, ElectricCyan, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 10.dp))
         }
         preview?.let { p ->
             RoutePreviewSheet(

@@ -24,10 +24,14 @@ class RouteHazards(private val search: PlaceSearch) {
     var cameras: List<AlongPoi> = emptyList()
         private set
 
+    /** False while a new route's fuel/cameras are loading, so we don't claim "no fuel ahead". */
+    @Volatile private var ready = false
+
     private var nearbyCameras: List<PlaceSearch.Poi> = emptyList()
     private var nearbyCenter: LatLon? = null
 
     suspend fun load(route: Route?) = withContext(Dispatchers.Default) {
+        ready = false
         if (route == null) {
             fuel = emptyList(); cameras = emptyList(); return@withContext
         }
@@ -40,10 +44,12 @@ class RouteHazards(private val search: PlaceSearch) {
         cameras = search.camerasInBox(box[0], box[1], box[2], box[3])
             .mapNotNull { p -> corridor.alongDistance(p.lat, p.lon, CAMERA_MAX_OFFSET_M)?.let { AlongPoi(p, it) } }
             .sortedBy { it.along }
+        ready = true
     }
 
     /** Next fuel on the route; flagged when the gap after it (or to it) is long for a motorcycle tank. */
     fun nextFuel(along: Double, remaining: Double): FuelHint? {
+        if (!ready) return null
         val next = fuel.firstOrNull { it.along > along + 50 }
         val distance = next?.let { it.along - along } ?: return if (remaining > LONG_GAP_M) {
             FuelHint("No fuel on the rest of the route", LatLon(0.0, 0.0), remaining, isLongGap = true)

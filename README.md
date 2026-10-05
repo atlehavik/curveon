@@ -22,6 +22,17 @@ and [dashboard.md](dashboard.md) for the goals.
 - **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first.
 - **Destination search**, offline (towns, addresses with house numbers, fuel, cafés,
   viewpoints, campsites, ferries, passes…), plus online results when the tablet has a connection.
+- **Route preview**: Fastest / Curvy / Super curvy side by side (time, km, curviness, gravel and
+  ferries) before you ride; surface and avoid options adjust them in place.
+- **Stops**: pick a place while riding → *Add stop* (inserted where it adds least detour) or *Go here*.
+- **Saved routes and recents** show up in the empty search, with a *Nearest fuel* shortcut.
+- **Fuel along the route** in the trip bar (tap to add it as a stop), amber when the gap is long.
+- **Speed camera warnings** (OSM fixed cameras), navigating or free riding.
+- **Road numbers/names** in the turn banner ("Turn right · Fv33 Storgata").
+- **Day/night map** that follows the sun at your position (or fixed in Settings).
+- **Tunnels**: position keeps moving along the route at your speed when GPS drops out.
+- **Ride log**: rides record automatically (distance, time, speeds, climb, gyro lean angle);
+  tap the speed card to see them, export GPX or ride one again.
 - **Speed limit sign** from OSM data, while navigating and while free riding.
 - **Dashboard** (Android Auto-like): speed + limit, newest message with Reply/Dismiss, calls
   with Answer/Decline, music with full cover art when nothing else needs the space.
