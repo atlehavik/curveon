@@ -49,15 +49,23 @@ class MainActivity : ComponentActivity() {
             val permissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestMultiplePermissions()
             ) { granted ->
-                if (granted[Manifest.permission.ACCESS_FINE_LOCATION] == true) dashboardViewModel.startGps()
+                dashboardViewModel.phoneCompanion.restart() // Bluetooth permission may just have been granted
+                if (granted[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+                    dashboardViewModel.startGps()
+                    RideService.start(this@MainActivity)
+                }
             }
 
             LaunchedEffect(Unit) {
-                if (hasLocationPermission()) dashboardViewModel.startGps()
-                else permissionLauncher.launch(
+                if (hasLocationPermission()) {
+                    dashboardViewModel.startGps()
+                    RideService.start(this@MainActivity)
+                } else permissionLauncher.launch(
                     arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        *(if (android.os.Build.VERSION.SDK_INT >= 33) arrayOf(Manifest.permission.POST_NOTIFICATIONS) else emptyArray()),
+                        *(if (android.os.Build.VERSION.SDK_INT >= 31) arrayOf(Manifest.permission.BLUETOOTH_CONNECT) else emptyArray())
                     )
                 )
             }

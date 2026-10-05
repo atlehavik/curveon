@@ -65,7 +65,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _currentLocation = MutableStateFlow(DEFAULT_LOCATION)
     val currentLocation: StateFlow<GeoPoint> = _currentLocation.asStateFlow()
 
-    private val _telemetry = MutableStateFlow(TelemetryData())
+    private val settings = application.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+
+    private val _telemetry = MutableStateFlow(
+        TelemetryData(useMph = settings.getBoolean("mph", false), isObdEnabled = settings.getBoolean("obd", false))
+    )
     val telemetry: StateFlow<TelemetryData> = _telemetry.asStateFlow()
 
     private val _isFullScreenMap = MutableStateFlow(false)
@@ -205,10 +209,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun toggleSpeedUnits() {
         _telemetry.value = _telemetry.value.copy(useMph = !_telemetry.value.useMph)
+        settings.edit().putBoolean("mph", _telemetry.value.useMph).apply()
     }
 
     fun toggleObd() {
         _telemetry.value = _telemetry.value.copy(isObdEnabled = !_telemetry.value.isObdEnabled)
+        settings.edit().putBoolean("obd", _telemetry.value.isObdEnabled).apply()
     }
 
     // --- Navigation ---------------------------------------------------------------------------
