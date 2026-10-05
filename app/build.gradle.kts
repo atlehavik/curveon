@@ -52,6 +52,7 @@ android {
 }
 
 dependencies {
+  implementation(project(":routing"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.material.icons.core)

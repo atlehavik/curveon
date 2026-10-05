@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 rootProject.name = "VibeNav"
 
 include(":app")
+include(":routing")
