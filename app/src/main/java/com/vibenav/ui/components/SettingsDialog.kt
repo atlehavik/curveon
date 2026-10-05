@@ -27,9 +27,8 @@ fun SettingsDialog(
     onToggleUnits: () -> Unit,
     isObdEnabled: Boolean,
     onToggleObd: () -> Unit,
-    offlineCacheCount: Int,
-    offlineCacheSizeMb: Float,
-    onClearCache: () -> Unit,
+    offlineMapStatus: String,
+    onImportMap: () -> Unit,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -185,7 +184,7 @@ fun SettingsDialog(
 
                     item {
                         Text(
-                            text = "OFFLINE OPENSTREETMAP TILES",
+                            text = "OFFLINE MAP",
                             color = ElectricCyan,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -202,27 +201,16 @@ fun SettingsDialog(
                                 .padding(14.dp)
                         ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(text = "Cached Offline Tiles", color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                    Text(
-                                        text = "$offlineCacheCount tiles (%.1f MB)".format(offlineCacheSizeMb),
-                                        color = EcoGreen,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                                Text(text = offlineMapStatus, color = TextPrimary, fontSize = 13.sp)
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Button(
-                                    onClick = onClearCache,
-                                    colors = ButtonDefaults.buttonColors(containerColor = WarningRed.copy(alpha = 0.2f)),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, WarningRed),
+                                    onClick = onImportMap,
+                                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan.copy(alpha = 0.2f)),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Clear Offline Map Cache", color = WarningRed, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Import .pmtiles map file…", color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

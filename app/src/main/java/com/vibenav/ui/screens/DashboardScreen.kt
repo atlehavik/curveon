@@ -1,5 +1,7 @@
 package com.vibenav.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,6 +48,11 @@ fun DashboardScreen(
 
     val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
+
+    val offlineMapStatus by viewModel.offlineMapStatus.collectAsStateWithLifecycle()
+    val importMapLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) viewModel.importOfflineMap(uri)
+    }
 
     // Dialogs state
     var showNavigationMenuDialog by remember { mutableStateOf(false) }
@@ -219,10 +226,11 @@ fun DashboardScreen(
 
                 if (isFullScreenMap) {
                     // FULL SCREEN MAP MODE
-                    OsmdroidMapView(
-                        centerPoint = currentLocation,
-                        currentHeadingDeg = telemetry.headingDeg,
-                        currentSpeedKmh = telemetry.speedKmh,
+                    VibeMapView(
+                        location = currentLocation,
+                        headingDeg = telemetry.headingDeg,
+                        speedKmh = telemetry.speedKmh,
+                        hasGpsFix = telemetry.hasGpsFix,
                         speedLimitKmh = telemetry.speedLimitKmh,
                         routePoints = routePoints,
                         groundPreference = groundPreference,
@@ -242,10 +250,11 @@ fun DashboardScreen(
                                 .weight(2f)
                                 .fillMaxHeight()
                         ) {
-                            OsmdroidMapView(
-                                centerPoint = currentLocation,
-                                currentHeadingDeg = telemetry.headingDeg,
-                                currentSpeedKmh = telemetry.speedKmh,
+                            VibeMapView(
+                                location = currentLocation,
+                                headingDeg = telemetry.headingDeg,
+                                speedKmh = telemetry.speedKmh,
+                                hasGpsFix = telemetry.hasGpsFix,
                                 speedLimitKmh = telemetry.speedLimitKmh,
                                 routePoints = routePoints,
                                 groundPreference = groundPreference,
@@ -309,10 +318,11 @@ fun DashboardScreen(
                                 .weight(1.8f)
                                 .fillMaxWidth()
                         ) {
-                            OsmdroidMapView(
-                                centerPoint = currentLocation,
-                                currentHeadingDeg = telemetry.headingDeg,
-                                currentSpeedKmh = telemetry.speedKmh,
+                            VibeMapView(
+                                location = currentLocation,
+                                headingDeg = telemetry.headingDeg,
+                                speedKmh = telemetry.speedKmh,
+                                hasGpsFix = telemetry.hasGpsFix,
                                 speedLimitKmh = telemetry.speedLimitKmh,
                                 routePoints = routePoints,
                                 groundPreference = groundPreference,
@@ -411,9 +421,8 @@ fun DashboardScreen(
                 onToggleUnits = { viewModel.toggleSpeedUnits() },
                 isObdEnabled = telemetry.isObdEnabled,
                 onToggleObd = { viewModel.toggleObd() },
-                offlineCacheCount = viewModel.getOfflineCacheCount(),
-                offlineCacheSizeMb = viewModel.getOfflineCacheSizeMb(),
-                onClearCache = { viewModel.clearOfflineCache() },
+                offlineMapStatus = offlineMapStatus,
+                onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
                 onDismiss = { showSettingsDialog = false }
             )
         }

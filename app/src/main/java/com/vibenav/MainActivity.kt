@@ -23,8 +23,6 @@ import com.vibenav.ui.screens.DashboardScreen
 import com.vibenav.ui.theme.CockpitBackground
 import com.vibenav.ui.theme.VibeNavTheme
 import com.vibenav.ui.viewmodel.DashboardViewModel
-import org.osmdroid.config.Configuration
-import java.io.File
 
 class MainActivity : ComponentActivity() {
 
@@ -32,12 +30,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize OsmDroid user agent & cache paths before any MapView is created
-        val osmConfig = Configuration.getInstance()
-        osmConfig.userAgentValue = packageName
-        osmConfig.osmdroidBasePath = File(filesDir, "osmdroid")
-        osmConfig.osmdroidTileCache = File(cacheDir, "osm_tiles")
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         enableEdgeToEdge()

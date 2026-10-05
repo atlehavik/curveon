@@ -12,7 +12,8 @@ import com.vibenav.data.location.TripTracker
 import com.vibenav.data.model.*
 import com.vibenav.data.osm.CurvyRouteEngine
 import com.vibenav.data.osm.GpxParser
-import com.vibenav.data.osm.OsmTileManager
+import com.vibenav.data.map.OfflineMaps
+import android.net.Uri
 import com.vibenav.data.repository.VibeNavRepository
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -23,7 +24,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val db = AppDatabase.getDatabase(application)
     private val repository = VibeNavRepository(db.routeDao(), db.gpxDao())
     val phoneCompanion = PhoneCompanionManager(viewModelScope)
-    val tileManager = OsmTileManager(application)
+    private val offlineMaps = OfflineMaps(application)
+
+    private val _offlineMapStatus = MutableStateFlow(describeOfflineMaps())
+    val offlineMapStatus: StateFlow<String> = _offlineMapStatus.asStateFlow()
 
     val savedRoutes = repository.allRoutes.stateIn(
         scope = viewModelScope,
@@ -192,12 +196,20 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _isNavigating.value = true
     }
 
-    fun clearOfflineCache() {
-        tileManager.clearCache()
+    private fun describeOfflineMaps(): String {
+        val maps = offlineMaps.installedMaps()
+        return if (maps.isEmpty()) "No offline map installed. Copy a .pmtiles file to ${offlineMaps.mapsDir} or import one."
+        else maps.joinToString("\n") { "%s – %.0f MB".format(it.name, it.length() / 1e6) } + "\n(restart the app after changing maps)"
     }
 
-    fun getOfflineCacheCount(): Int = tileManager.getOfflineCacheCount()
-    fun getOfflineCacheSizeMb(): Float = tileManager.getOfflineCacheSizeMb()
+    fun importOfflineMap(uri: Uri) {
+        viewModelScope.launch {
+            runCatching {
+                offlineMaps.import(uri) { p -> _offlineMapStatus.value = "Importing… %.0f%%".format(p * 100) }
+            }.onFailure { _offlineMapStatus.value = "Import failed: ${it.message}" }
+                .onSuccess { _offlineMapStatus.value = describeOfflineMaps() }
+        }
+    }
 
     companion object {
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
