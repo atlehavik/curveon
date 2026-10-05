@@ -85,20 +85,39 @@ class PlaceSearch(private val context: Context) {
                 var lon = c.getDouble(6)
                 if (kind == "street" && parsed.houseNumber != null) {
                     val hit = houseNumber(database, id, parsed.houseNumber) ?: continue
-                    name = "$name ${parsed.houseNumber}"
-                    lat = hit.first; lon = hit.second
+                    name = "$name ${hit.first}"
+                    lat = hit.second; lon = hit.third
                 }
                 val d = Geo.distance(nearLat, nearLon, lat, lon) / 1000.0
                 val result = SearchResult(name, c.getString(3) ?: "", kind, lat, lon, d)
-                rows += result to score(result, c.getInt(4), parsed)
+                // A typed house number means the rider wants that address, not shops on the street.
+                val addressBonus = if (kind == "street" && parsed.houseNumber != null) 80 else 0
+                rows += result to score(result, c.getInt(4) + addressBonus, parsed)
             }
         }
         return rows.sortedByDescending { it.second }.map { it.first }.distinctBy { "${it.name}|${it.area}" }.take(limit)
     }
 
-    private fun houseNumber(db: SQLiteDatabase, entryId: Long, number: String): Pair<Double, Double>? =
-        db.rawQuery("SELECT lat, lon FROM housenumbers WHERE entry_id = ? AND lower(number) = lower(?) LIMIT 1", arrayOf(entryId.toString(), number))
-            .use { c -> if (c.moveToFirst()) c.getDouble(0) to c.getDouble(1) else null }
+    /** The requested house number, or the numerically closest one on that street. */
+    private fun houseNumber(db: SQLiteDatabase, entryId: Long, number: String): Triple<String, Double, Double>? {
+        val wanted = number.takeWhile { it.isDigit() }.toIntOrNull() ?: return null
+        var best: Triple<String, Double, Double>? = null
+        var bestScore = Int.MAX_VALUE
+        db.rawQuery("SELECT number, lat, lon FROM housenumbers WHERE entry_id = ?", arrayOf(entryId.toString())).use { c ->
+            while (c.moveToNext()) {
+                val n = c.getString(0)
+                val score = if (n.equals(number, ignoreCase = true)) -1
+                else n.takeWhile { it.isDigit() }.toIntOrNull()?.let { kotlin.math.abs(it - wanted) * 2 + (if (n.length > it.toString().length) 1 else 0) }
+                    ?: continue
+                if (score < bestScore) {
+                    bestScore = score
+                    best = Triple(n, c.getDouble(1), c.getDouble(2))
+                }
+            }
+        }
+        // Don't send the rider to the far end of a long street for a number that doesn't exist.
+        return best?.takeIf { bestScore <= 20 }
+    }
 
     private fun score(r: SearchResult, rank: Int, q: ParsedQuery): Double {
         val n = normalise(r.name)
