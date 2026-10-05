@@ -83,8 +83,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
         Column(
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            // In full-screen the media pill takes the bottom-right corner, so keep trip info left.
+            modifier = if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 14.dp)
+            else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
+            horizontalAlignment = if (isFullScreenMap) Alignment.Start else Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             RoutingStatusCard(routingStatus, onDismiss = { viewModel.dismissRoutingError() })
