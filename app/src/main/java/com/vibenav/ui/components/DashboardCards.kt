@@ -55,14 +55,28 @@ private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorde
 
 // ---------------------------------------------------------------------------------- speed
 
-/** Big speed, the signed limit when known, and trip/GPS (or RPM with OBD2) underneath. */
+/**
+ * Big speed, the signed limit when known, and trip/GPS (or RPM with OBD2) underneath. A speed
+ * camera ahead takes over the bottom line. Tap for the ride log.
+ */
 @Composable
-fun SpeedCard(telemetry: TelemetryData, onToggleUnit: () -> Unit, modifier: Modifier = Modifier) {
-    val over = telemetry.isOverSpeedLimit
+fun SpeedCard(
+    telemetry: TelemetryData,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    camera: com.vibenav.data.routing.CameraAlert? = null
+) {
+    val limit = camera?.maxSpeedKmh ?: telemetry.speedLimitKmh
+    val over = limit > 0 && telemetry.speedKmh > limit + 3
     val speedColor by animateColorAsState(if (over) WarningRed else TextPrimary, label = "speed")
-    DashCard(modifier.fillMaxWidth().testTag("speed_card"), border = if (over) WarningRed else CockpitBorder) {
+    val border = when {
+        over -> WarningRed
+        camera != null -> NeonAmber
+        else -> CockpitBorder
+    }
+    DashCard(modifier.fillMaxWidth().testTag("speed_card"), border = border) {
         Row(
-            Modifier.fillMaxWidth().clickable(onClick = onToggleUnit).padding(horizontal = 16.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
@@ -75,8 +89,14 @@ fun SpeedCard(telemetry: TelemetryData, onToggleUnit: () -> Unit, modifier: Modi
                     Text(telemetry.speedUnit.lowercase(), color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 8.dp))
                 }
-                Text(
+                if (camera != null) Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.PhotoCamera, "Speed camera", tint = NeonAmber, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Speed camera %d m".format((camera.distanceMeters / 10).toInt() * 10),
+                        color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                } else Text(
                     when {
+                        telemetry.isDeadReckoning -> "No GPS – estimating position"
                         telemetry.isObdConnected -> "%d rpm · %s".format(telemetry.rpm, tripText(telemetry))
                         telemetry.hasGpsFix -> tripText(telemetry)
                         else -> "Searching for GPS…"
@@ -85,7 +105,7 @@ fun SpeedCard(telemetry: TelemetryData, onToggleUnit: () -> Unit, modifier: Modi
                     fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1
                 )
             }
-            if (telemetry.speedLimitKmh > 0) SpeedLimitSign(telemetry.displaySpeedLimit, 64.dp)
+            if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, 64.dp)
         }
     }
 }

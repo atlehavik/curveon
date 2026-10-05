@@ -26,7 +26,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vibenav.data.bluetooth.CompanionConnectionState
 import com.vibenav.data.model.GeoPoint
 import com.vibenav.data.model.RoundtripConfig
-import com.vibenav.data.search.SearchResult
 import com.vibenav.ui.components.*
 import com.vibenav.ui.theme.*
 import com.vibenav.ui.viewmodel.DashboardViewModel
@@ -64,6 +63,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val isDemoRiding by viewModel.isDemoRiding.collectAsStateWithLifecycle()
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
+    val preview by viewModel.preview.collectAsStateWithLifecycle()
+    val isNavigating by viewModel.isNavigating.collectAsStateWithLifecycle()
+    val markers by viewModel.routeMarkers.collectAsStateWithLifecycle()
+    val roadNameProbe by viewModel.roadNameProbe.collectAsStateWithLifecycle()
+    val mapDark by viewModel.mapDark.collectAsStateWithLifecycle()
+    val mapTheme by viewModel.mapTheme.collectAsStateWithLifecycle()
+    val fuelHint by viewModel.fuelHint.collectAsStateWithLifecycle()
+    val cameraAlert by viewModel.cameraAlert.collectAsStateWithLifecycle()
+    val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
+    val rides by viewModel.rides.collectAsStateWithLifecycle()
+    val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
 
     val importMapLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.importOfflineMap(uri)
@@ -77,9 +87,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var showGpx by remember { mutableStateOf(false) }
     var showPhoneLink by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
-    var longPressTarget by remember { mutableStateOf<GeoPoint?>(null) }
-    var pickedResult by remember { mutableStateOf<SearchResult?>(null) }
-    var lastRouteChoice by remember { mutableStateOf(RouteChoice()) }
+    var showRides by remember { mutableStateOf(false) }
+    /** A place picked while riding: add it as a stop or make it the destination? */
+    var pendingPlace by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
+    var toast by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
+
+    // Picking a place: while riding, ask stop-or-destination; otherwise go straight to the preview.
+    val pickPlace: (GeoPoint, String) -> Unit = { point, name ->
+        if (isNavigating) pendingPlace = point to name else viewModel.previewDestination(point, name)
+    }
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
         Column(
@@ -90,7 +107,30 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             RoutingStatusCard(routingStatus, onDismiss = { viewModel.dismissRoutingError() })
-            navigationSummary?.let { NavigationSummaryBar(it, onStop = { viewModel.stopNavigation() }) }
+            toast?.let { Text(it, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(CockpitSurface).padding(horizontal = 14.dp, vertical = 8.dp)) }
+            if (preview == null) navigationSummary?.let {
+                NavigationSummaryBar(
+                    it, onStop = { viewModel.stopNavigation() },
+                    fuel = fuelHint,
+                    onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } }
+                )
+            }
+        }
+        preview?.let { p ->
+            RoutePreviewSheet(
+                preview = p,
+                onSelect = viewModel::selectCandidate,
+                onSurface = viewModel::setPreviewSurface,
+                onToggleFerries = viewModel::togglePreviewAvoidFerries,
+                onToggleMotorways = viewModel::togglePreviewAvoidMotorways,
+                onRemoveStop = viewModel::removePreviewStop,
+                onShuffle = viewModel::shuffleRoundtrip,
+                onSave = { viewModel.saveRoute(p.goal.title); toast = "Saved to Where to?" },
+                onGo = viewModel::startPreview,
+                onClose = viewModel::cancelPreview,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).widthIn(max = 640.dp).fillMaxWidth()
+            )
         }
         // In full-screen map keep music reachable, like Android Auto's media pill.
         if (isFullScreenMap) track?.let { t ->
@@ -131,7 +171,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     currentTurnInstruction = currentTurnInstruction,
                     isFullScreen = isFullScreenMap,
                     onToggleFullScreen = { viewModel.toggleFullScreenMap() },
-                    onLongPress = { longPressTarget = it },
+                    dark = mapDark,
+                    previewRoutes = preview?.candidates?.mapIndexedNotNull { i, c ->
+                        c.route?.let { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, i == preview!!.selected) }
+                    }.orEmpty(),
+                    markers = markers,
+                    roadNameProbe = roadNameProbe,
+                    onRoadName = viewModel::onRoadName,
+                    onLongPress = { pickPlace(it, "Map point") },
                     overlays = mapOverlays
                 )
             }
@@ -141,7 +188,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    SpeedCard(telemetry, onToggleUnit = { viewModel.toggleSpeedUnits() })
+                    SpeedCard(telemetry, onClick = { showRides = true }, camera = cameraAlert)
 
                     val attention = voiceReply != null || notifications.isNotEmpty()
                     when {
@@ -183,36 +230,35 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         DestinationSearchDialog(
             searchStatus = remember { viewModel.searchStatus() },
             onSearch = { viewModel.searchPlaces(it) },
-            onPick = { pickedResult = it; showSearch = false },
+            onPick = { r -> showSearch = false; pickPlace(GeoPoint(r.lat, r.lon), r.name) },
             onRoundtrip = { showSearch = false; showRoundtrip = true },
             onGpx = { showSearch = false; showGpx = true },
-            onDismiss = { showSearch = false }
+            onDismiss = { showSearch = false },
+            savedRoutes = savedRoutes,
+            recents = remember(showSearch) { viewModel.recents() },
+            onPickSaved = { showSearch = false; viewModel.previewSaved(it) },
+            onDeleteSaved = { viewModel.deleteSavedRoute(it) },
+            onNearestFuel = { viewModel.nearestFuel() }
         )
     }
 
-    pickedResult?.let { r ->
-        SearchResultRouteDialog(
-            result = r,
-            initial = lastRouteChoice,
-            onDismiss = { pickedResult = null },
-            onGo = { choice ->
-                lastRouteChoice = choice
-                pickedResult = null
-                viewModel.navigateToDestination(GeoPoint(r.lat, r.lon), r.name, choice.roadType, choice.ground, choice.avoidFerries, choice.avoidMotorways)
-            }
+    pendingPlace?.let { (point, name) ->
+        StopOrDestinationDialog(
+            name = name,
+            onAddStop = { viewModel.addStop(point, name); pendingPlace = null },
+            onNewDestination = { viewModel.previewDestination(point, name); pendingPlace = null },
+            onDismiss = { pendingPlace = null }
         )
     }
 
-    longPressTarget?.let { target ->
-        NavigateHereDialog(
-            target = target,
-            initial = lastRouteChoice,
-            onDismiss = { longPressTarget = null },
-            onGo = { choice ->
-                lastRouteChoice = choice
-                longPressTarget = null
-                viewModel.navigateToDestination(target, "map point", choice.roadType, choice.ground, choice.avoidFerries, choice.avoidMotorways)
-            }
+    if (showRides) {
+        RideLogDialog(
+            current = currentRide,
+            rides = rides,
+            onRideAgain = { showRides = false; viewModel.rideAgain(it) },
+            onExport = { r, uri -> viewModel.exportRide(r, uri); toast = "GPX saved" },
+            onDelete = { viewModel.deleteRide(it) },
+            onDismiss = { showRides = false }
         )
     }
 
@@ -221,7 +267,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             initialConfig = RoundtripConfig(groundPreference = groundPreference),
             onDismiss = { showRoundtrip = false },
             onGenerate = { config ->
-                viewModel.generateCustomRoundtrip(config)
+                viewModel.previewRoundtrip(config)
                 showRoundtrip = false
             }
         )
@@ -233,7 +279,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             message = gpxMessage,
             onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
             onFollow = { track, reverse, ground ->
-                viewModel.followGpx(track, reverse, ground)
+                viewModel.previewGpx(track, reverse, ground)
                 showGpx = false
             },
             onDelete = { viewModel.deleteGpx(it) },
@@ -258,6 +304,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             isNavigating = navigationSummary != null,
             isDemoRiding = isDemoRiding,
             onToggleDemoRide = { viewModel.toggleDemoRide(); showSettings = false },
+            mapTheme = mapTheme,
+            onMapTheme = viewModel::setMapTheme,
             onDismiss = { showSettings = false }
         )
     }

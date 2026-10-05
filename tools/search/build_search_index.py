@@ -9,6 +9,7 @@ Contents
                ferry terminals, mountain passes, …) and streets (one row per street and town)
   entries_fts  FTS4 index over a normalised "name + area" string
   housenumbers house numbers per street row, so "Storgata 12 Lillehammer" resolves to a door
+  cameras      fixed speed cameras (highway=speed_camera) for warnings while riding
 
 Text is normalised (lowercase, æ→ae, ø→o, å→a, accents stripped) so the app can use the plain
 FTS4 tokenizer, which every Android SQLite has. The app applies the same normalisation to queries.
@@ -79,6 +80,7 @@ class Collector(osmium.SimpleHandler):
         self.places = []          # (name, kind, rank, lat, lon)
         self.pois = []            # (name, kind, rank, lat, lon, ele)
         self.addresses = defaultdict(list)  # (street, city/postcode area) -> [(number, lat, lon)]
+        self.cameras = []         # (lat, lon, maxspeed or None)
         self.count = 0
 
     def tick(self):
@@ -88,6 +90,9 @@ class Collector(osmium.SimpleHandler):
                   f"{len(self.pois)} pois, {len(self.addresses)} streets", flush=True)
 
     def handle(self, tags, lat, lon):
+        if tags.get("highway") == "speed_camera":
+            ms = tags.get("maxspeed")
+            self.cameras.append((lat, lon, int(ms) if ms and ms.isdigit() else None))
         name = tags.get("name")
         place = tags.get("place")
         if name and place in PLACE_RANK:
@@ -153,7 +158,7 @@ def main(pbf, out):
     c = Collector()
     c.apply_file(pbf, locations=True, idx="flex_mem")
     print(f"Read in {time.time() - t0:.0f}s: {len(c.places)} places, {len(c.pois)} pois, "
-          f"{len(c.addresses)} streets", flush=True)
+          f"{len(c.addresses)} streets, {len(c.cameras)} speed cameras", flush=True)
 
     near = NearestPlace(c.places)
     db = sqlite3.connect(out)
@@ -166,6 +171,8 @@ def main(pbf, out):
         CREATE VIRTUAL TABLE entries_fts USING fts4(search);
         CREATE TABLE housenumbers(entry_id INTEGER NOT NULL, number TEXT NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL);
         CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);
+        DROP TABLE IF EXISTS cameras;
+        CREATE TABLE cameras(lat REAL NOT NULL, lon REAL NOT NULL, maxspeed INTEGER);
     """)
     rows = []
     for name, kind, rank, lat, lon in c.places:
@@ -187,12 +194,16 @@ def main(pbf, out):
         if numbers:
             cur.executemany("INSERT INTO housenumbers VALUES (?,?,?,?)",
                             [(i, num, round(la, 6), round(lo, 6)) for num, la, lo in numbers])
+    cur.executemany("INSERT INTO cameras VALUES (?,?,?)", [(round(a, 6), round(b, 6), m) for a, b, m in c.cameras])
     cur.execute("INSERT INTO meta VALUES ('built', ?)", (time.strftime("%Y-%m-%d"),))
+    cur.execute("INSERT INTO meta VALUES ('schema', '2')")
     cur.execute("INSERT INTO meta VALUES ('source', ?)", (pbf.split("/")[-1],))
     db.commit()
     print("Indexing …", flush=True)
     db.executescript("""
         CREATE INDEX housenumbers_entry ON housenumbers(entry_id);
+        CREATE INDEX entries_kind_lat ON entries(kind, lat);
+        CREATE INDEX cameras_lat ON cameras(lat);
         INSERT INTO entries_fts(entries_fts) VALUES('optimize');
         VACUUM;
     """)

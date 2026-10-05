@@ -1,6 +1,7 @@
 package com.vibenav.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,6 +35,8 @@ fun SettingsDialog(
     isNavigating: Boolean,
     isDemoRiding: Boolean,
     onToggleDemoRide: () -> Unit,
+    mapTheme: com.vibenav.ui.viewmodel.MapTheme,
+    onMapTheme: (com.vibenav.ui.viewmodel.MapTheme) -> Unit,
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -106,6 +109,33 @@ fun SettingsDialog(
                         .fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(CockpitSurfaceVariant)
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(text = "Map", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "Auto follows the sun at your position", color = TextSecondary, fontSize = 12.sp)
+                            }
+                            com.vibenav.ui.viewmodel.MapTheme.entries.forEach { t ->
+                                val on = t == mapTheme
+                                Box(
+                                    Modifier.padding(start = 6.dp).clip(RoundedCornerShape(10.dp))
+                                        .background(if (on) ElectricCyan else CockpitSurface)
+                                        .clickable { onMapTheme(t) }.padding(horizontal = 12.dp, vertical = 8.dp)
+                                ) {
+                                    Text(t.name.lowercase().replaceFirstChar { it.uppercase() },
+                                        color = if (on) Color(0xFF00363D) else TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
                     item {
                         Text(
                             text = "DISPLAY & SPEEDOMETER",

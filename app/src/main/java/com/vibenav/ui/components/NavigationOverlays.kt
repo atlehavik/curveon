@@ -7,8 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,9 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.vibenav.data.model.GeoPoint
-import com.vibenav.data.model.GroundPreference
-import com.vibenav.data.model.RoadTypePreference
 import com.vibenav.data.routing.RoutingStatus
 import com.vibenav.ui.theme.*
 import com.vibenav.ui.viewmodel.NavigationSummary
@@ -30,9 +26,18 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Remaining distance / arrival time with a stop button, shown at the bottom of the map. */
+/**
+ * Remaining distance / arrival time with a stop button, shown at the bottom of the map. Next stop
+ * and fuel appear only when there is something worth knowing; tapping fuel adds it as a stop.
+ */
 @Composable
-fun NavigationSummaryBar(summary: NavigationSummary, onStop: () -> Unit, modifier: Modifier = Modifier) {
+fun NavigationSummaryBar(
+    summary: NavigationSummary,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+    fuel: com.vibenav.data.routing.FuelHint? = null,
+    onFuel: () -> Unit = {}
+) {
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
     }
@@ -51,6 +56,23 @@ fun NavigationSummaryBar(summary: NavigationSummary, onStop: () -> Unit, modifie
             "%.0f km · %d:%02d".format(summary.remainingKm, summary.remainingMinutes / 60, summary.remainingMinutes % 60),
             color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold
         )
+        summary.nextStop?.let { (name, km) ->
+            Text("${name.take(14)} %.0f km".format(km), color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+        if (fuel != null && (fuel.isLongGap || fuel.distanceMeters < 60_000)) {
+            val color = if (fuel.isLongGap) NeonAmber else EcoGreen
+            Row(
+                Modifier.clip(RoundedCornerShape(14.dp)).background(color.copy(alpha = 0.15f))
+                    .clickable(enabled = fuel.point.lat != 0.0, onClick = onFuel).padding(horizontal = 8.dp, vertical = 4.dp)
+                    .testTag("fuel_chip"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.LocalGasStation, fuel.name, tint = color, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(if (fuel.point.lat == 0.0) "none ahead" else "%.0f km".format(fuel.distanceMeters / 1000),
+                    color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+        }
         IconButton(
             onClick = onStop,
             modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
@@ -95,25 +117,12 @@ fun RoutingStatusCard(status: RoutingStatus, onDismiss: () -> Unit, modifier: Mo
     }
 }
 
-/** Route options chosen before starting navigation to a point. */
-data class RouteChoice(
-    val roadType: RoadTypePreference = RoadTypePreference.CURVY,
-    val ground: GroundPreference = GroundPreference.PAVED,
-    val avoidFerries: Boolean = false,
-    val avoidMotorways: Boolean = false
-)
-
-/** Shown after a long-press on the map: ride there with the chosen style. */
+/**
+ * While riding, a picked place can be a stop on the way or a new destination. Two big buttons,
+ * nothing else.
+ */
 @Composable
-fun NavigateHereDialog(
-    target: GeoPoint,
-    initial: RouteChoice,
-    onDismiss: () -> Unit,
-    onGo: (RouteChoice) -> Unit,
-    title: String = "Navigate here",
-    subtitle: String = "%.5f, %.5f".format(target.latitude, target.longitude)
-) {
-    var choice by remember { mutableStateOf(initial) }
+fun StopOrDestinationDialog(name: String, onAddStop: () -> Unit, onNewDestination: () -> Unit, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -121,64 +130,16 @@ fun NavigateHereDialog(
                 .background(CockpitSurface)
                 .border(1.dp, CockpitBorder, RoundedCornerShape(20.dp))
                 .padding(20.dp)
-                .widthIn(max = 520.dp),
+                .widthIn(max = 480.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text(title, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
-            Text(subtitle, color = TextMuted, fontSize = 12.sp)
-
-            ChoiceRow("Roads", RoadTypePreference.entries, choice.roadType, { it.label }) { choice = choice.copy(roadType = it) }
-            ChoiceRow("Surface", GroundPreference.entries, choice.ground, { it.label }) { choice = choice.copy(ground = it) }
-
+            Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ToggleChip("Avoid ferries", choice.avoidFerries) { choice = choice.copy(avoidFerries = it) }
-                ToggleChip("Avoid motorways", choice.avoidMotorways) { choice = choice.copy(avoidMotorways = it) }
-            }
-
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDismiss) { Text("Cancel", color = TextSecondary) }
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = { onGo(choice) },
-                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
-                    modifier = Modifier.height(48.dp).testTag("navigate_here_go")
-                ) { Text("GO", color = Color(0xFF00363D), fontWeight = FontWeight.Black, fontSize = 16.sp) }
+                PillButton(Icons.Default.AddLocationAlt, "Add stop", NeonAmber, androidx.compose.ui.graphics.Color.Black,
+                    Modifier.weight(1f).testTag("add_stop_btn"), onAddStop)
+                PillButton(Icons.Default.Flag, "Go here", ElectricCyan, androidx.compose.ui.graphics.Color(0xFF00363D),
+                    Modifier.weight(1f), onNewDestination)
             }
         }
-    }
-}
-
-@Composable
-private fun <T> ChoiceRow(label: String, values: List<T>, selected: T, text: (T) -> String, onSelect: (T) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(label.uppercase(), color = ElectricCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            values.forEach { v ->
-                val on = v == selected
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (on) ElectricCyan else CockpitSurfaceVariant)
-                        .clickable { onSelect(v) }
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                ) {
-                    Text(text(v), color = if (on) Color(0xFF00363D) else TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ToggleChip(label: String, on: Boolean, onChange: (Boolean) -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(if (on) NeonAmber.copy(alpha = 0.25f) else CockpitSurfaceVariant)
-            .border(1.dp, if (on) NeonAmber else CockpitBorder, RoundedCornerShape(10.dp))
-            .clickable { onChange(!on) }
-            .padding(horizontal = 14.dp, vertical = 10.dp)
-    ) {
-        Text(label, color = if (on) NeonAmber else TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }

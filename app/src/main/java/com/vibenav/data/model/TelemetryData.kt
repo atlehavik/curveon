@@ -17,6 +17,8 @@ data class TelemetryData(
     val tripDurationMinutes: Int = 0,
     val altitudeMeters: Int = 0,
     val hasGpsFix: Boolean = false,
+    /** Position is estimated along the route because GPS is lost (tunnel). */
+    val isDeadReckoning: Boolean = false,
     val gpsAccuracyMeters: Int = 0,
     val isObdEnabled: Boolean = false,
     val isObdConnected: Boolean = false,

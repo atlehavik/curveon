@@ -162,6 +162,57 @@ class PlaceSearch(private val context: Context) {
         }
     }
 
+    /** A point of interest or camera near the route; [along] is filled in by the caller. */
+    data class Poi(val name: String, val lat: Double, val lon: Double, val maxSpeed: Int? = null)
+
+    /** Fuel stations inside a bounding box (for "next fuel along the route"). */
+    suspend fun fuelInBox(minLat: Double, maxLat: Double, minLon: Double, maxLon: Double): List<Poi> = withContext(Dispatchers.IO) {
+        val db = openDb() ?: return@withContext emptyList()
+        runCatching {
+            db.rawQuery(
+                "SELECT name, lat, lon FROM entries WHERE kind = 'fuel' AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
+                arrayOf(minLat.toString(), maxLat.toString(), minLon.toString(), maxLon.toString())
+            ).use { c -> buildList { while (c.moveToNext()) add(Poi(c.getString(0), c.getDouble(1), c.getDouble(2))) } }
+        }.getOrDefault(emptyList())
+    }
+
+    /** Fixed speed cameras inside a bounding box. Empty with an index built before cameras were added. */
+    suspend fun camerasInBox(minLat: Double, maxLat: Double, minLon: Double, maxLon: Double): List<Poi> = withContext(Dispatchers.IO) {
+        val db = openDb() ?: return@withContext emptyList()
+        runCatching {
+            db.rawQuery(
+                "SELECT lat, lon, maxspeed FROM cameras WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
+                arrayOf(minLat.toString(), maxLat.toString(), minLon.toString(), maxLon.toString())
+            ).use { c ->
+                buildList { while (c.moveToNext()) add(Poi("Speed camera", c.getDouble(0), c.getDouble(1), if (c.isNull(2)) null else c.getInt(2))) }
+            }
+        }.getOrDefault(emptyList())
+    }
+
+    /** Closest places of one kind, e.g. the nearest fuel stations. */
+    suspend fun nearest(kind: String, lat: Double, lon: Double, limit: Int = 10): List<SearchResult> = withContext(Dispatchers.IO) {
+        val db = openDb() ?: return@withContext emptyList()
+        var radius = 0.1
+        var rows: List<SearchResult> = emptyList()
+        while (radius <= 1.6 && rows.size < limit) { // widen the box until we have enough
+            rows = runCatching {
+                db.rawQuery(
+                    "SELECT name, area, lat, lon FROM entries WHERE kind = ? AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
+                    arrayOf(kind, (lat - radius).toString(), (lat + radius).toString(), (lon - radius * 2).toString(), (lon + radius * 2).toString())
+                ).use { c ->
+                    buildList {
+                        while (c.moveToNext()) add(
+                            SearchResult(c.getString(0), c.getString(1) ?: "", kind, c.getDouble(2), c.getDouble(3),
+                                Geo.distance(lat, lon, c.getDouble(2), c.getDouble(3)) / 1000)
+                        )
+                    }
+                }
+            }.getOrDefault(emptyList())
+            radius *= 2
+        }
+        rows.sortedBy { it.distanceKm }.take(limit)
+    }
+
     internal data class ParsedQuery(val text: String, val terms: List<String>, val houseNumber: String?)
 
     companion object {

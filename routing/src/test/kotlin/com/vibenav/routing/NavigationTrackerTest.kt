@@ -72,4 +72,24 @@ class NavigationTrackerTest {
         tracker.update(Geo.destination(corner, 90.0, 500.0))
         assertTrue(tracker.update(Geo.destination(corner, 90.0, 990.0)).arrived)
     }
+
+    @Test
+    fun `corridor finds points next to the route and how far along they are`() {
+        val route = lRoute()
+        val c = RouteCorridor(route)
+        val corner = Geo.destination(LatLon(60.0, 10.0), 0.0, 1000.0)
+        val nearSecondLeg = Geo.destination(Geo.destination(corner, 90.0, 400.0), 0.0, 40.0)
+        assertEquals(1400.0, c.alongDistance(nearSecondLeg.lat, nearSecondLeg.lon, 100.0)!!, 30.0)
+        val farAway = Geo.destination(corner, 270.0, 800.0)
+        assertEquals(null, c.alongDistance(farAway.lat, farAway.lon, 100.0))
+    }
+
+    @Test
+    fun `point at distance interpolates along the route`() {
+        val route = lRoute()
+        val (p, bearing) = Routes.pointAt(route, 1500.0)
+        val expected = Geo.destination(Geo.destination(LatLon(60.0, 10.0), 0.0, 1000.0), 90.0, 500.0)
+        assertTrue(Geo.distance(p, expected) < 3.0)
+        assertEquals(90.0, bearing, 1.0)
+    }
 }

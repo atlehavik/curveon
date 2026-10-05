@@ -31,6 +31,8 @@ import com.vibenav.data.model.GeoPoint
 import com.vibenav.data.search.SearchResult
 import com.vibenav.ui.theme.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.combinedClickable
 
 /** "Where to?": offline place/address/POI search, with shortcuts to roundtrips and GPX tracks. */
 @Composable
@@ -40,15 +42,24 @@ fun DestinationSearchDialog(
     onPick: (SearchResult) -> Unit,
     onRoundtrip: () -> Unit,
     onGpx: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    savedRoutes: List<com.vibenav.data.model.RouteItem> = emptyList(),
+    recents: List<com.vibenav.data.routing.Stop> = emptyList(),
+    onPickSaved: (com.vibenav.data.model.RouteItem) -> Unit = {},
+    onDeleteSaved: (com.vibenav.data.model.RouteItem) -> Unit = {},
+    onNearestFuel: (suspend () -> List<SearchResult>)? = null
 ) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
+    var showingFuel by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf<com.vibenav.data.model.RouteItem?>(null) }
     val focus = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(query) {
-        if (query.trim().length < 2) { results = emptyList(); return@LaunchedEffect }
+        if (query.isNotEmpty()) showingFuel = false
+        if (query.trim().length < 2) { if (!showingFuel) results = emptyList(); return@LaunchedEffect }
         delay(250) // debounce typing
         searching = true
         results = onSearch(query)
@@ -92,11 +103,37 @@ fun DestinationSearchDialog(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Shortcut(Icons.Default.Explore, "Roundtrip", NeonAmber, onRoundtrip)
                 Shortcut(Icons.Default.Route, "GPX tracks", ElectricCyan, onGpx)
+                if (onNearestFuel != null) Shortcut(Icons.Default.LocalGasStation, "Nearest fuel", EcoGreen) {
+                    query = ""
+                    showingFuel = true
+                    scope.launch { searching = true; results = onNearestFuel(); searching = false }
+                }
                 Spacer(Modifier.weight(1f))
                 Text(searchStatus, color = TextMuted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterVertically).widthIn(max = 420.dp))
             }
 
             LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                // Nothing typed: what you are most likely to want, without typing on the bike.
+                if (query.isEmpty() && !showingFuel) {
+                    if (savedRoutes.isNotEmpty()) item { SectionLabel("Saved routes") }
+                    items(savedRoutes, key = { "saved${it.id}" }) { item ->
+                        ListRow(
+                            icon = if (item.isRoundtrip) Icons.Default.Loop else Icons.Default.Bookmark,
+                            title = item.title,
+                            subtitle = listOf(item.subtitle, "%.0f km".format(item.totalDistanceKm), "%d:%02d".format(item.estimatedMinutes / 60, item.estimatedMinutes % 60))
+                                .filter { it.isNotEmpty() }.joinToString(" · "),
+                            trailing = null,
+                            onClick = { onPickSaved(item) },
+                            onLongClick = { confirmDelete = item }
+                        )
+                    }
+                    if (recents.isNotEmpty()) item { SectionLabel("Recent") }
+                    items(recents, key = { "recent${it.name}${it.point.lat}" }) { stop ->
+                        ListRow(Icons.Default.History, stop.name, "", null, onClick = {
+                            onPick(SearchResult(stop.name, "", "recent", stop.point.lat, stop.point.lon, 0.0))
+                        })
+                    }
+                }
                 items(results) { r ->
                     Row(
                         modifier = Modifier
@@ -125,6 +162,15 @@ fun DestinationSearchDialog(
             }
         }
     }
+
+    confirmDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Delete ${item.title}?") },
+            confirmButton = { TextButton(onClick = { onDeleteSaved(item); confirmDelete = null }) { Text("Delete", color = WarningRed) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel") } }
+        )
+    }
 }
 
 @Composable
@@ -141,6 +187,33 @@ private fun Shortcut(icon: ImageVector, label: String, tint: Color, onClick: () 
         Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
         Text(label, color = tint, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(text.uppercase(), color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp, start = 4.dp))
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun ListRow(icon: ImageVector, title: String, subtitle: String, trailing: String?, onClick: () -> Unit, onLongClick: (() -> Unit)? = null) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(CockpitSurfaceVariant)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, null, tint = ElectricCyan, modifier = Modifier.size(26.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (subtitle.isNotEmpty()) Text(subtitle, color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (trailing != null) Text(trailing, color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -178,15 +251,3 @@ private fun kindLabel(kind: String): String = when (kind) {
     "fast_food" -> "Fast food"
     else -> kind.replace('_', ' ').replaceFirstChar { it.uppercase() }
 }
-
-/** Route choice sheet for a picked search result, reusing the long-press dialog. */
-@Composable
-fun SearchResultRouteDialog(result: SearchResult, initial: RouteChoice, onDismiss: () -> Unit, onGo: (RouteChoice) -> Unit) =
-    NavigateHereDialog(
-        target = GeoPoint(result.lat, result.lon),
-        initial = initial,
-        title = result.name,
-        subtitle = listOf(result.area, formatKm(result.distanceKm)).filter { it.isNotEmpty() }.joinToString(" · "),
-        onDismiss = onDismiss,
-        onGo = onGo
-    )
