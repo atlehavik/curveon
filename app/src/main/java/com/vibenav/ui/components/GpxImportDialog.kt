@@ -18,249 +18,123 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.vibenav.data.model.GpxTrack
-import com.vibenav.data.model.RouteItem
+import com.vibenav.data.model.GroundPreference
 import com.vibenav.ui.theme.*
 
+/** Saved GPX tracks: import a file, follow a track (optionally reversed) or delete it. */
 @Composable
 fun GpxImportDialog(
-    savedRoutes: List<RouteItem>,
-    savedGpxTracks: List<GpxTrack>,
-    onSelectRoute: (RouteItem) -> Unit,
-    onLoadSampleGpx: (String) -> Unit,
+    tracks: List<GpxTrack>,
+    message: String?,
+    onImport: () -> Unit,
+    onFollow: (GpxTrack, reverse: Boolean, ground: GroundPreference) -> Unit,
+    onDelete: (GpxTrack) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
+    var reverse by remember { mutableStateOf(false) }
+    var ground by remember { mutableStateOf(GroundPreference.MIXED) }
+    var confirmDelete by remember { mutableStateOf<GpxTrack?>(null) }
+
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.85f)
-                .clip(RoundedCornerShape(28.dp))
+                .fillMaxWidth(0.8f)
+                .fillMaxHeight(0.9f)
+                .clip(RoundedCornerShape(24.dp))
                 .background(CockpitSurface)
-                .border(1.5.dp, CockpitBorder, RoundedCornerShape(28.dp))
+                .border(1.dp, CockpitBorder, RoundedCornerShape(24.dp))
                 .padding(20.dp)
-                .testTag("gpx_dialog")
+                .testTag("gpx_dialog"),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("GPX TRACKS", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                    Text("Ride a track you planned or downloaded", color = TextSecondary, fontSize = 12.sp)
+                }
+                Button(
+                    onClick = onImport,
+                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+                    modifier = Modifier.height(48.dp).testTag("gpx_import_btn")
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
+                    Icon(Icons.Default.FileOpen, null, tint = Color(0xFF00363D))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Import .gpx", color = Color(0xFF00363D), fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.width(8.dp))
+                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "Close", tint = TextSecondary) }
+            }
+
+            if (message != null) Text(message, color = NeonAmber, fontSize = 13.sp)
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                GroundPreference.entries.forEach { g ->
+                    val on = g == ground
+                    Box(
+                        Modifier.clip(RoundedCornerShape(10.dp))
+                            .background(if (on) ElectricCyan else CockpitSurfaceVariant)
+                            .clickable { ground = g }
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) { Text(g.label, color = if (on) Color(0xFF00363D) else TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                }
+                Spacer(Modifier.weight(1f))
+                Text("Reverse", color = TextSecondary, fontSize = 13.sp)
+                Spacer(Modifier.width(6.dp))
+                Switch(checked = reverse, onCheckedChange = { reverse = it }, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
+            }
+
+            if (tracks.isEmpty()) {
+                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        "No tracks yet. Import a .gpx file from the tablet's storage\n(e.g. Downloads, or copied over USB).",
+                        color = TextMuted, fontSize = 14.sp
+                    )
+                }
+            } else {
+                LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(tracks, key = { it.id }) { t ->
+                        Row(
                             modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(ElectricCyan.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(CockpitSurfaceVariant)
+                                .clickable { onFollow(t, reverse, ground) }
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Route,
-                                contentDescription = "GPX Routes",
-                                tint = ElectricCyan,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            Icon(Icons.Default.Route, null, tint = ElectricCyan, modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(t.name, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    "%.1f km · ↑ %d m · %s".format(t.totalDistanceKm, t.elevationGainMeters, t.filename),
+                                    color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            IconButton(onClick = { confirmDelete = t }) { Icon(Icons.Default.DeleteOutline, "Delete", tint = TextMuted) }
+                            Box(
+                                Modifier.size(44.dp).clip(CircleShape).background(ElectricCyan),
+                                contentAlignment = Alignment.Center
+                            ) { Icon(Icons.Default.Navigation, "Ride", tint = Color(0xFF00363D)) }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "GPX & SAVED ROUTES",
-                                color = TextPrimary,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp
-                            )
-                            Text(
-                                text = "Curated scenic passes & offline tracks",
-                                color = TextSecondary,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.testTag("gpx_dialog_close_btn")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = TextMuted
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Route List
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    item {
-                        Text(
-                            text = "PRE-LOADED SCENIC MOTORCYCLE PASSES",
-                            color = ElectricCyan,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
-
-                    items(savedRoutes) { route ->
-                        RouteCardItem(
-                            route = route,
-                            onSelect = {
-                                onSelectRoute(route)
-                                onDismiss()
-                            }
-                        )
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "GPX FILE IMPORT SAMPLES",
-                            color = NeonAmber,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
-
-                    item {
-                        SampleGpxItem(
-                            title = "Trans Euro Trail (TET) - Norway Section 03",
-                            distance = "142 km",
-                            type = "ADV Gravel & Forest Pass",
-                            onClick = {
-                                onLoadSampleGpx("TET_Norway_03.gpx")
-                                onDismiss()
-                            }
-                        )
-                    }
-
-                    item {
-                        SampleGpxItem(
-                            title = "Grossglockner High Alpine Pass (Austria)",
-                            distance = "48 km",
-                            type = "36 Hairpins • 2,571m Peak",
-                            onClick = {
-                                onLoadSampleGpx("Grossglockner_Pass.gpx")
-                                onDismiss()
-                            }
-                        )
                     }
                 }
             }
         }
     }
-}
 
-@Composable
-private fun RouteCardItem(
-    route: RouteItem,
-    onSelect: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(CockpitSurfaceVariant)
-            .border(1.dp, CockpitBorder, RoundedCornerShape(16.dp))
-            .clickable { onSelect() }
-            .padding(14.dp)
-            .testTag("route_item_${route.id}")
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = route.title,
-                    color = TextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                if (route.subtitle.isNotEmpty()) {
-                    Text(
-                        text = route.subtitle,
-                        color = TextSecondary,
-                        fontSize = 11.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "%.1f km".format(route.totalDistanceKm),
-                        color = ElectricCyan,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "• ${route.estimatedMinutes} min",
-                        color = TextMuted,
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        text = "• Curviness ${route.curvinessScore}%",
-                        color = NeonAmber,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Select",
-                tint = ElectricCyan,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SampleGpxItem(
-    title: String,
-    distance: String,
-    type: String,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(CockpitBackground)
-            .border(1.dp, NeonAmber.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-            .clickable { onClick() }
-            .padding(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(text = title, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Text(text = "$distance • $type", color = TextSecondary, fontSize = 11.sp)
-            }
-            Icon(
-                imageVector = Icons.Default.Download,
-                contentDescription = "Load GPX",
-                tint = NeonAmber,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+    confirmDelete?.let { t ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Delete ${t.name}?") },
+            confirmButton = { TextButton(onClick = { onDelete(t); confirmDelete = null }) { Text("Delete", color = WarningRed) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel") } }
+        )
     }
 }

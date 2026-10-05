@@ -9,6 +9,7 @@ import com.vibenav.routing.ProfileInstaller
 import com.vibenav.routing.RoundtripPlanner
 import com.vibenav.routing.Route
 import com.vibenav.routing.RouteOptions
+import com.vibenav.routing.TrackFollower
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,6 +33,8 @@ sealed interface NavigationGoal {
     data class Destination(val name: String, val destination: LatLon, override val options: RouteOptions) : NavigationGoal
 
     data class Roundtrip(val distanceKm: Double, val directionDeg: Double, override val options: RouteOptions) : NavigationGoal
+
+    data class Track(val name: String, val points: List<LatLon>, override val options: RouteOptions) : NavigationGoal
 }
 
 data class NavigationState(
@@ -66,6 +69,9 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
     fun roundtrip(distanceKm: Double, directionDeg: Double, options: RouteOptions) =
         start(NavigationGoal.Roundtrip(distanceKm, directionDeg, options), "Planning a %.0f km roundtrip…".format(distanceKm))
 
+    fun followTrack(name: String, points: List<LatLon>, options: RouteOptions) =
+        start(NavigationGoal.Track(name, points, options), "Preparing $name…")
+
     fun stop() {
         calcJob?.cancel()
         arrivalJob?.cancel()
@@ -83,7 +89,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
         val t = tracker ?: return
         val progress = t.update(position, accuracyMeters)
         _state.value = _state.value.copy(progress = progress)
-        if (progress.arrived && _state.value.goal is NavigationGoal.Destination) {
+        if (progress.arrived && _state.value.goal !is NavigationGoal.Roundtrip) {
             // Keep the arrival banner briefly, then clear.
             if (arrivalJob == null) arrivalJob = scope.launch { kotlinx.coroutines.delay(15_000); if (tracker === t) stop() }
         } else if (progress.offRoute) {
@@ -121,6 +127,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
         when (goal) {
             is NavigationGoal.Destination -> engine.route(listOf(from, goal.destination), goal.options)
             is NavigationGoal.Roundtrip -> RoundtripPlanner(engine).plan(from, goal.distanceKm, goal.directionDeg, goal.options)
+            is NavigationGoal.Track -> TrackFollower(engine).route(from, goal.points, goal.options)
         }
     }
 
@@ -138,7 +145,8 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
                     when (goal) {
                         is NavigationGoal.Destination -> engine.route(listOf(position, goal.destination), goal.options)
                         // For a loop, ride back onto the planned loop a little further ahead instead of re-planning it.
-                        is NavigationGoal.Roundtrip -> rejoin(position, route, current.progress?.distanceAlongRoute ?: 0.0, goal.options)
+                        is NavigationGoal.Roundtrip, is NavigationGoal.Track ->
+                            rejoin(position, route, current.progress?.distanceAlongRoute ?: 0.0, goal.options)
                     }
                 }
                 tracker = NavigationTracker(newRoute)

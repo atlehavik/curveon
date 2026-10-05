@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.vibenav.companion-mergeDebugResources-40:/values-v30/values-v30.xml",
+            "map": [
+                {
+                    "source": "/home/ahavik/.gradle/caches/9.3.1/transforms/23d7ae82796b7925f3cf5799814388d7/transformed/material3-release/res/values-v30/values-v30.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "72",
+                        "endOffsets": "123"
+                    }
+                }
+            ]
+        }
+    ]
+}

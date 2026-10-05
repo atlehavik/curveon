@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.vibenav.protocol.ProtocolTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-05T21:01:45.881Z" hostname="fedora" time="0.046">
+  <properties/>
+  <testcase name="unknown message types are skipped" classname="com.vibenav.protocol.ProtocolTest" time="0.028"/>
+  <testcase name="every message survives a round trip through the framing" classname="com.vibenav.protocol.ProtocolTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

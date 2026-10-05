@@ -26,3 +26,6 @@ rootProject.name = "VibeNav"
 
 include(":app")
 include(":routing")
+include(":protocol")
+include(":companion")
+

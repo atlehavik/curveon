@@ -109,7 +109,9 @@ fun NavigateHereDialog(
     target: GeoPoint,
     initial: RouteChoice,
     onDismiss: () -> Unit,
-    onGo: (RouteChoice) -> Unit
+    onGo: (RouteChoice) -> Unit,
+    title: String = "Navigate here",
+    subtitle: String = "%.5f, %.5f".format(target.latitude, target.longitude)
 ) {
     var choice by remember { mutableStateOf(initial) }
     Dialog(onDismissRequest = onDismiss) {
@@ -122,8 +124,8 @@ fun NavigateHereDialog(
                 .widthIn(max = 520.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text("Navigate here", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
-            Text("%.5f, %.5f".format(target.latitude, target.longitude), color = TextMuted, fontSize = 12.sp)
+            Text(title, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
+            Text(subtitle, color = TextMuted, fontSize = 12.sp)
 
             ChoiceRow("Roads", RoadTypePreference.entries, choice.roadType, { it.label }) { choice = choice.copy(roadType = it) }
             ChoiceRow("Surface", GroundPreference.entries, choice.ground, { it.label }) { choice = choice.copy(ground = it) }

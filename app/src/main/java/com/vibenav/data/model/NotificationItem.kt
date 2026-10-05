@@ -1,16 +1,20 @@
 package com.vibenav.data.model
 
+import android.graphics.Bitmap
+
 data class NotificationItem(
+    /** The phone's notification key. */
     val id: String,
-    val appName: String, // "WhatsApp", "SMS", "Phone", "Telegram"
+    val appName: String,
     val senderName: String,
-    val senderAvatarUrl: String? = null,
-    val senderInitials: String = "",
     val message: String,
     val timestampMs: Long = System.currentTimeMillis(),
+    val avatar: Bitmap? = null,
+    val canReply: Boolean = false,
     val isIncomingCall: Boolean = false,
-    val isDismissed: Boolean = false
+    /** The notification's own buttons, e.g. "Answer"/"Decline" for calls. */
+    val actions: List<String> = emptyList()
 ) {
     val initials: String
-        get() = if (senderInitials.isNotEmpty()) senderInitials else senderName.take(2).uppercase()
+        get() = senderName.split(' ', '(').filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1) }.uppercase()
 }

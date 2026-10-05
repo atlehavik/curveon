@@ -43,9 +43,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val db = AppDatabase.getDatabase(application)
     private val repository = VibeNavRepository(db.routeDao(), db.gpxDao())
-    val phoneCompanion = PhoneCompanionManager(viewModelScope)
+    val phoneCompanion = PhoneCompanionManager(application, viewModelScope)
     private val offlineMaps = OfflineMaps(application)
     private val navigator = Navigator(application, viewModelScope)
+    private val placeSearch = com.vibenav.data.search.PlaceSearch(application)
 
     private val _offlineMapStatus = MutableStateFlow(describeOfflineMaps())
     val offlineMapStatus: StateFlow<String> = _offlineMapStatus.asStateFlow()
@@ -118,6 +119,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 title = when (val g = s.goal) {
                     is com.vibenav.data.routing.NavigationGoal.Destination -> g.name
                     is com.vibenav.data.routing.NavigationGoal.Roundtrip -> "Roundtrip %.0f km".format(route.distanceMeters / 1000)
+                    is com.vibenav.data.routing.NavigationGoal.Track -> g.name
                     null -> ""
                 },
                 curviness = route.curviness
@@ -227,10 +229,60 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun dismissRoutingError() = navigator.dismissError()
 
-    /** Saved routes and sample GPX files are replaced by real GPX import in the next step. */
-    fun selectSavedRoute(route: RouteItem) {}
+    // --- Search -------------------------------------------------------------------------------
 
-    fun loadSampleGpx(filename: String) {}
+    fun searchStatus(): String = placeSearch.describe()
+
+    suspend fun searchPlaces(query: String) =
+        placeSearch.search(query, _currentLocation.value.latitude, _currentLocation.value.longitude)
+
+    // --- GPX --------------------------------------------------------------------------------
+
+    private val _gpxMessage = MutableStateFlow<String?>(null)
+    val gpxMessage: StateFlow<String?> = _gpxMessage.asStateFlow()
+
+    fun importGpx(uri: Uri) {
+        viewModelScope.launch {
+            runCatching {
+                val app = getApplication<Application>()
+                val fileName = app.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                    ?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: "track.gpx"
+                val parsed = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    app.contentResolver.openInputStream(uri)!!.use {
+                        com.vibenav.data.osm.GpxParser.parse(it, fileName.removeSuffix(".gpx"))
+                    }
+                }
+                require(parsed.points.size >= 2) { "No track or route in $fileName" }
+                repository.saveGpxTrack(
+                    GpxTrack(
+                        name = parsed.name,
+                        filename = fileName,
+                        totalDistanceKm = parsed.totalDistanceKm,
+                        elevationGainMeters = parsed.elevationGainMeters,
+                        maxElevationMeters = parsed.maxElevationMeters,
+                        pointCount = parsed.points.size,
+                        trackPointsJson = com.vibenav.data.osm.GpxParser.encodePoints(parsed.points),
+                        category = if (parsed.points.size > 2) "Track" else "Route"
+                    )
+                )
+                parsed.name
+            }.onSuccess { _gpxMessage.value = "Imported $it" }
+                .onFailure { _gpxMessage.value = "Import failed: ${it.message}" }
+        }
+    }
+
+    fun followGpx(track: GpxTrack, reverse: Boolean, ground: GroundPreference) {
+        val pts = com.vibenav.data.osm.GpxParser.decodePoints(track.trackPointsJson).map { LatLon(it.latitude, it.longitude) }
+        navigator.followTrack(
+            track.name,
+            if (reverse) pts.reversed() else pts,
+            routeOptions(RoadTypePreference.FASTEST, ground, avoidFerries = false, avoidMotorways = false, avoidToll = false)
+        )
+    }
+
+    fun deleteGpx(track: GpxTrack) {
+        viewModelScope.launch { repository.deleteGpxTrack(track.id) }
+    }
 
     fun downloadRoutingData() {
         viewModelScope.launch {
