@@ -131,6 +131,19 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
         }
     }
 
+    /**
+     * Speed limit of the road the rider is on when not navigating: route a few metres ahead along
+     * the current heading and read the first segment's maxspeed. Null when unknown/unsigned.
+     */
+    suspend fun probeSpeedLimit(position: LatLon, headingDeg: Double): Int? = withContext(Dispatchers.Default) {
+        if (!routingData.isReady()) return@withContext null
+        val ahead = com.vibenav.routing.Geo.destination(position, headingDeg, 60.0)
+        runCatching {
+            engine.route(listOf(position, ahead), RouteOptions(com.vibenav.routing.RoadStyle.FASTEST), viaCatchingRangeMeters = 25.0)
+                .points.drop(1).firstNotNullOfOrNull { it.maxSpeedKmh }
+        }.getOrNull()
+    }
+
     private fun maybeReroute(position: LatLon) {
         val now = System.currentTimeMillis()
         val current = _state.value

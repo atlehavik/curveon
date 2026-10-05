@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.vibenav.routing.SpeedProbeTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-05T21:17:14.676Z" hostname="fedora" time="1.091">
+  <properties/>
+  <testcase name="short route ahead on a motorway reports its limit" classname="com.vibenav.routing.SpeedProbeTest" time="1.091"/>
+  <system-out><![CDATA[******** invalidating profile-cache after lookup-file update ******** 
+  trunk route=50 probe=50
+  trunk route=70 probe=70
+  motorway route=80 probe=80
+  motorway route=90 probe=100
+  motorway route=100 probe=100
+  motorway route=110 probe=110
+  motorway route=110 probe=110
+  motorway route=110 probe=110
+  motorway route=110 probe=110
+  motorway route=110 probe=110
+  motorway route=110 probe=110
+  motorway_link route=110 probe=110
+  secondary route=30 probe=30
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

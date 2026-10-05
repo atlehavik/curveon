@@ -27,7 +27,7 @@ assign turnInstructionMode          = 3     # osmand-style hints, mapped to our 
 assign turnInstructionCatchingRange = 40
 assign turnInstructionRoundabouts   = true
 assign considerTurnRestrictions     = true
-assign processUnusedTags            = false
+assign processUnusedTags            = true   # export maxspeed etc. for the speed-limit sign
 
 assign pass1coefficient = 1.5
 

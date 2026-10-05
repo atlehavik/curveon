@@ -128,9 +128,20 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
-        // Speed limit comes from the route while navigating; unknown otherwise.
+        // Speed limit: from the route while navigating, otherwise probed from the routing data
+        // for the road we are on.
         viewModelScope.launch {
             navigator.state.map { it.progress?.speedLimitKmh ?: 0 }.distinctUntilChanged().collect { limit ->
+                if (navigator.state.value.isNavigating) _telemetry.value = _telemetry.value.copy(speedLimitKmh = limit)
+            }
+        }
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(4_000)
+                val t = _telemetry.value
+                if (navigator.state.value.isNavigating || !t.hasGpsFix) continue
+                val limit = if (t.speedKmh < 8f) t.speedLimitKmh // standing still: heading is unreliable, keep last
+                else navigator.probeSpeedLimit(LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude), t.headingDeg.toDouble()) ?: 0
                 _telemetry.value = _telemetry.value.copy(speedLimitKmh = limit)
             }
         }
