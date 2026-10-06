@@ -232,6 +232,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val currentRide: StateFlow<Ride?> = _currentRide.asStateFlow()
 
     init {
+        // Create the data folders up front so they exist (and are owned by the app) when the
+        // rider connects the tablet over USB to copy maps, routing data and the search index.
+        offlineMaps.mapsDir; navigator.routingData.segmentsDir; placeSearch.indexDir
         updateMapDark()
         startDeadReckoning()
         leanSensor.start()
