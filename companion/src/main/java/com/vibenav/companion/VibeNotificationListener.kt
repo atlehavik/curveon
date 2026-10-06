@@ -88,9 +88,13 @@ class VibeNotificationListener : NotificationListenerService() {
             ?: extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
             ?: return null
 
-        val avatar = last?.senderPerson?.icon?.loadDrawable(this)?.let { CompanionHub.encodeJpeg(it, AVATAR_PX) }
-            ?: n.getLargeIcon()?.loadDrawable(this)?.let { CompanionHub.encodeJpeg(it, AVATAR_PX) }
-            ?: contactPhoto(sender)
+        // Calls get a big photo (the tablet shows it full-card), preferably the phone-book original,
+        // since dialer notifications often carry only a small thumbnail.
+        val px = if (isCall) CALL_PX else AVATAR_PX
+        val avatar = (if (isCall) contactPhoto(sender, px) else null)
+            ?: last?.senderPerson?.icon?.loadDrawable(this)?.let { CompanionHub.encodeJpeg(it, px) }
+            ?: n.getLargeIcon()?.loadDrawable(this)?.let { CompanionHub.encodeJpeg(it, px) }
+            ?: contactPhoto(sender, px)
 
         return Message.NotificationPosted(
             key = sbn.key,
@@ -113,7 +117,7 @@ class VibeNotificationListener : NotificationListenerService() {
     }.getOrDefault(pkg)
 
     /** Falls back to the phone book so the tablet shows real faces, like Android Auto does. */
-    private fun contactPhoto(name: String): String? {
+    private fun contactPhoto(name: String, px: Int = AVATAR_PX): String? {
         if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return null
         val uri: Uri = contentResolver.query(
             ContactsContract.Contacts.CONTENT_URI,
@@ -122,7 +126,7 @@ class VibeNotificationListener : NotificationListenerService() {
         )?.use { c -> if (c.moveToFirst()) (c.getString(0) ?: c.getString(1))?.let(Uri::parse) else null } ?: return null
         return runCatching {
             contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) }
-        }.getOrNull()?.let { CompanionHub.encodeJpeg(it, AVATAR_PX) }
+        }.getOrNull()?.let { CompanionHub.encodeJpeg(it, px, if (px > AVATAR_PX) 85 else 80) }
     }
 
     fun dismiss(key: String) = main.post { runCatching { cancelNotification(key) } }
@@ -228,6 +232,7 @@ class VibeNotificationListener : NotificationListenerService() {
     companion object {
         private const val TAG = "VibeListener"
         private const val AVATAR_PX = 128
+        private const val CALL_PX = 512
         private const val ART_PX = 360
     }
 }
