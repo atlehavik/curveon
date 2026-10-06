@@ -21,7 +21,9 @@ object GpxParser {
     data class GpxWaypoint(
         val name: String,
         val point: GeoPoint,
-        val description: String = ""
+        val description: String = "",
+        /** GPX <sym>, e.g. "Campground", "Gas Station". */
+        val symbol: String = ""
     )
 
     /** First track of the file, or all tracks joined when [parseAll] finds just one. */
@@ -48,6 +50,8 @@ object GpxParser {
         var lon = 0.0
         var ele = 0.0
         var ptName = ""
+        var ptDesc = ""
+        var ptSym = ""
 
         while (parser.eventType != XmlPullParser.END_DOCUMENT) {
             when (parser.eventType) {
@@ -61,6 +65,8 @@ object GpxParser {
                             lon = parser.getAttributeValue(null, "lon")?.toDoubleOrNull() ?: Double.NaN
                             ele = 0.0
                             ptName = ""
+                            ptDesc = ""
+                            ptSym = ""
                         }
                     }
                 }
@@ -70,6 +76,8 @@ object GpxParser {
                         val parent = stack.getOrNull(stack.size - 2)
                         when (stack.last()) {
                             "ele" -> ele = text.toDoubleOrNull() ?: 0.0
+                            "sym" -> if (parent == "wpt") ptSym = text
+                            "desc", "cmt" -> if (parent == "wpt" && ptDesc.isEmpty()) ptDesc = text
                             "name" -> when (parent) {
                                 "trkpt", "rtept", "wpt" -> ptName = text
                                 "trk", "rte" -> if (currentName == null) currentName = text
@@ -83,7 +91,7 @@ object GpxParser {
                     when (tag) {
                         "trk", "rte" -> current?.let { if (it.size >= 2) tracks += currentName to it }.also { current = null }
                         "trkpt", "rtept" -> if (!lat.isNaN() && !lon.isNaN()) current?.add(GeoPoint(lat, lon, ele))
-                        "wpt" -> if (!lat.isNaN() && !lon.isNaN()) waypoints += GpxWaypoint(ptName.ifEmpty { "Waypoint ${waypoints.size + 1}" }, GeoPoint(lat, lon, ele))
+                        "wpt" -> if (!lat.isNaN() && !lon.isNaN()) waypoints += GpxWaypoint(ptName.ifEmpty { "Waypoint ${waypoints.size + 1}" }, GeoPoint(lat, lon, ele), ptDesc, ptSym)
                     }
                 }
             }

@@ -80,7 +80,40 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val routingDataStatus: StateFlow<String> = _routingDataStatus.asStateFlow()
 
     val savedRoutes = repository.allRoutes.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-    val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    // ---------------------------------------------------------------- GPX overlays
+
+    private val trackWatcher = com.vibenav.data.gpx.TrackWatcher()
+
+    /** Tracks switched on in the GPX manager, decoded for the map. */
+    val overlayTracks: StateFlow<List<com.vibenav.data.gpx.OverlayTrack>> = repository.allGpxTracks
+        .map { list -> list.filter { it.showOnMap } }
+        .distinctUntilChanged()
+        .map { list -> withContext(Dispatchers.Default) { list.map(com.vibenav.data.gpx.GpxOverlay::overlay) } }
+        .onEach { trackWatcher.setTracks(it) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _poiCategories = MutableStateFlow(
+        settings.getStringSet("poiCategories", null)?.mapNotNull { runCatching { com.vibenav.data.gpx.PoiCategory.valueOf(it) }.getOrNull() }?.toSet()
+            ?: com.vibenav.data.gpx.PoiCategory.entries.toSet()
+    )
+    val poiCategories: StateFlow<Set<com.vibenav.data.gpx.PoiCategory>> = _poiCategories.asStateFlow()
+
+    /** POIs of visible tracks, filtered by the categories the rider wants to see. */
+    val overlayPois: StateFlow<List<com.vibenav.data.gpx.GpxPoi>> = combine(overlayTracks, _poiCategories) { tracks, cats ->
+        tracks.flatMap { it.pois }.filter { it.category in cats }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _trackHint = MutableStateFlow<com.vibenav.data.gpx.TrackHint?>(null)
+    /** Nearest visible track (line from the rider to it); null while navigating. */
+    val trackHint: StateFlow<com.vibenav.data.gpx.TrackHint?> = _trackHint.asStateFlow()
+
+    private val _autoFollow = MutableStateFlow(settings.getBoolean("autoFollowTracks", false))
+    val autoFollowTracks: StateFlow<Boolean> = _autoFollow.asStateFlow()
+
+    /** Tracks the rider stopped following on purpose: don't start them again right away. */
+    private val followSuppressedUntil = HashMap<Long, Long>()
     val rides = rideDao.all().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val locationSource = LocationSource(application)
@@ -348,6 +381,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         )
         navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble())
         recordRide(fix)
+        watchTracks(fix)
     }
 
     private fun recordRide(fix: GpsFix) {
@@ -492,6 +526,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun shuffleRoundtrip() = navigator.shuffleRoundtrip()
 
+    fun reversePreviewTrack() = navigator.reversePreviewTrack()
+
     fun cancelPreview() = navigator.cancelPreview()
 
     fun startPreview() {
@@ -562,6 +598,49 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun importGpxInbox() = viewModelScope.launch {
         val names = runCatching { gpxImporter.importInbox() }.getOrDefault(emptyList())
         if (names.isNotEmpty()) _gpxMessage.value = "Imported ${names.size} tracks from the gpx folder"
+    }
+
+    private fun watchTracks(fix: GpsFix) {
+        val nav = navigator.state.value
+        if (nav.isNavigating || nav.preview != null) {
+            _trackHint.value = null
+            trackWatcher.reset()
+            return
+        }
+        _trackHint.value = trackWatcher.onFix(LatLon(fix.latitude, fix.longitude), tripTracker.headingDeg.toDouble(), tripTracker.speedKmh)
+        val (track, reverse) = trackWatcher.ridingAlong() ?: return
+        if (_autoFollow.value && System.currentTimeMillis() > (followSuppressedUntil[track.id] ?: 0L)) {
+            followOverlayTrack(track.id, reverse)
+        }
+    }
+
+    /** Navigate along a visible track from where the rider is (from the Follow chip or auto-follow). */
+    fun followOverlayTrack(trackId: Long, reverse: Boolean) {
+        val t = overlayTracks.value.firstOrNull { it.id == trackId } ?: return
+        val pts = t.points.map { LatLon(it.latitude, it.longitude) }
+        followSuppressedUntil[trackId] = System.currentTimeMillis() + 10 * 60_000L
+        trackWatcher.reset()
+        _trackHint.value = null
+        navigator.followTrackNow(t.name, if (reverse) pts.reversed() else pts, RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED))
+    }
+
+    fun setTrackOnMap(track: GpxTrack, show: Boolean) = viewModelScope.launch {
+        repository.updateGpxTrack(track.copy(showOnMap = show, color = com.vibenav.data.gpx.GpxOverlay.colorOf(track)))
+    }
+
+    fun setTrackColor(track: GpxTrack, color: Int) = viewModelScope.launch { repository.updateGpxTrack(track.copy(color = color)) }
+
+    fun setTrackPois(track: GpxTrack, show: Boolean) = viewModelScope.launch { repository.updateGpxTrack(track.copy(showPois = show)) }
+
+    fun togglePoiCategory(c: com.vibenav.data.gpx.PoiCategory) {
+        val next = if (c in _poiCategories.value) _poiCategories.value - c else _poiCategories.value + c
+        _poiCategories.value = next
+        settings.edit().putStringSet("poiCategories", next.map { it.name }.toSet()).apply()
+    }
+
+    fun setAutoFollow(on: Boolean) {
+        _autoFollow.value = on
+        settings.edit().putBoolean("autoFollowTracks", on).apply()
     }
 
     fun deleteGpx(track: GpxTrack) {

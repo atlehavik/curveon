@@ -19,4 +19,8 @@ class VibeNavRepository(
     suspend fun saveGpxTrack(track: GpxTrack): Long = gpxDao.insertTrack(track)
 
     suspend fun deleteGpxTrack(id: Long) = gpxDao.deleteTrackById(id)
+
+    suspend fun updateGpxTrack(track: GpxTrack) = gpxDao.updateTrack(track)
+
+    suspend fun findGpxTrack(name: String): GpxTrack? = gpxDao.getTrackByName(name)
 }

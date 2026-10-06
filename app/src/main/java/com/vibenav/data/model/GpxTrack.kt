@@ -1,5 +1,6 @@
 package com.vibenav.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -17,5 +18,11 @@ data class GpxTrack(
     val waypointsJson: String = "",
     val isFavorite: Boolean = false,
     val category: String = "Curvy Pass", // e.g. "Alpine Pass", "TET Section", "Coastline"
-    val importedAtMs: Long = System.currentTimeMillis()
+    val importedAtMs: Long = System.currentTimeMillis(),
+    /** Drawn as an overlay on the map. */
+    @ColumnInfo(defaultValue = "0") val showOnMap: Boolean = false,
+    /** Overlay colour, ARGB. 0 = not chosen yet (a palette colour is used). */
+    @ColumnInfo(defaultValue = "0") val color: Int = 0,
+    /** Show the file's waypoints (campsites, fuel, …) along this track. */
+    @ColumnInfo(defaultValue = "1") val showPois: Boolean = true
 )

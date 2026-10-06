@@ -92,4 +92,17 @@ class NavigationTrackerTest {
         assertTrue(Geo.distance(p, expected) < 3.0)
         assertEquals(90.0, bearing, 1.0)
     }
+
+    @Test
+    fun `track index finds the nearest point and the track direction`() {
+        val start = LatLon(60.0, 10.0)
+        val track = (0..20).map { Geo.destination(start, 90.0, it * 100.0) } // 2 km heading east
+        val idx = TrackIndex(track)
+        val p = Geo.destination(Geo.destination(start, 90.0, 750.0), 0.0, 60.0) // 60 m north of the 750 m mark
+        val hit = idx.nearest(p, 500.0)!!
+        assertEquals(60.0, hit.distanceMeters, 1.0)
+        assertEquals(90.0, hit.trackBearing, 1.0)
+        assertTrue(Geo.distance(hit.point, Geo.destination(start, 90.0, 750.0)) < 2)
+        assertEquals(null, idx.nearest(Geo.destination(start, 0.0, 3000.0), 500.0))
+    }
 }

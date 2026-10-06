@@ -10,11 +10,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GpxDao {
-    @Query("SELECT * FROM gpx_tracks ORDER BY importedAtMs DESC")
+    @Query("SELECT * FROM gpx_tracks ORDER BY name COLLATE NOCASE")
     fun getAllTracks(): Flow<List<GpxTrack>>
 
     @Query("SELECT * FROM gpx_tracks WHERE id = :id")
     suspend fun getTrackById(id: Long): GpxTrack?
+
+    @Query("SELECT * FROM gpx_tracks WHERE name = :name LIMIT 1")
+    suspend fun getTrackByName(name: String): GpxTrack?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTrack(track: GpxTrack): Long

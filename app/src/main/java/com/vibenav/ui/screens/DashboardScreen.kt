@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vibenav.data.bluetooth.CompanionConnectionState
 import com.vibenav.data.model.GeoPoint
+import com.vibenav.data.model.GroundPreference
 import com.vibenav.data.model.RoundtripConfig
 import com.vibenav.ui.components.*
 import com.vibenav.ui.theme.*
@@ -62,6 +63,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
     val isDemoRiding by viewModel.isDemoRiding.collectAsStateWithLifecycle()
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
+    val overlayTracks by viewModel.overlayTracks.collectAsStateWithLifecycle()
+    val overlayPois by viewModel.overlayPois.collectAsStateWithLifecycle()
+    val trackHint by viewModel.trackHint.collectAsStateWithLifecycle()
+    val poiCategories by viewModel.poiCategories.collectAsStateWithLifecycle()
+    val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
+    var shownPoi by remember { mutableStateOf<com.vibenav.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
     val preview by viewModel.preview.collectAsStateWithLifecycle()
     val isNavigating by viewModel.isNavigating.collectAsStateWithLifecycle()
@@ -107,6 +114,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             RoutingStatusCard(routingStatus, onDismiss = { viewModel.dismissRoutingError() })
+            if (preview == null && !isNavigating) trackHint?.let { h ->
+                TrackChip(h, onClick = { viewModel.followOverlayTrack(h.trackId, h.onTrack && h.reverse) })
+            }
             if (preview == null) navigationSummary?.let {
                 NavigationSummaryBar(
                     it, onStop = { viewModel.stopNavigation() },
@@ -130,6 +140,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onToggleMotorways = viewModel::togglePreviewAvoidMotorways,
                 onRemoveStop = viewModel::removePreviewStop,
                 onShuffle = viewModel::shuffleRoundtrip,
+                onReverse = viewModel::reversePreviewTrack,
                 onSave = { viewModel.saveRoute(p.goal.title); toast = "Saved to Where to?" },
                 onGo = viewModel::startPreview,
                 onClose = viewModel::cancelPreview,
@@ -158,6 +169,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onSearch = { showSearch = true },
             onRoundtrip = { showRoundtrip = true },
             onPhone = { showPhoneLink = true },
+            onGpx = { showGpx = true },
             onSettings = { showSettings = true },
             onToggleMap = { viewModel.toggleFullScreenMap() }
         )
@@ -183,6 +195,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,
                     onLongPress = { pickPlace(it, "Map point") },
+                    gpxTracks = overlayTracks,
+                    gpxPois = overlayPois,
+                    trackHint = trackHint.takeIf { preview == null && !isNavigating },
+                    onPoiClick = { shownPoi = it },
                     overlays = mapOverlays
                 )
             }
@@ -278,18 +294,27 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
 
     if (showGpx) {
-        GpxImportDialog(
+        GpxManagerDialog(
             tracks = savedGpxTracks,
             message = gpxMessage,
+            poiCategories = poiCategories,
+            autoFollow = autoFollow,
             onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
-            onFollow = { track, reverse, ground ->
-                viewModel.previewGpx(track, reverse, ground)
-                showGpx = false
-            },
+            onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
+            onColor = { t, c -> viewModel.setTrackColor(t, c) },
+            onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
+            onTogglePoiCategory = viewModel::togglePoiCategory,
+            onAutoFollow = viewModel::setAutoFollow,
+            onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
             onDelete = { viewModel.deleteGpx(it) },
             onDismiss = { showGpx = false }
         )
     }
+
+    shownPoi?.let { poi ->
+        PoiDialog(poi, onGo = { shownPoi = null; pickPlace(GeoPoint(poi.lat, poi.lon), poi.name) }, onDismiss = { shownPoi = null })
+    }
+
 
     if (showPhoneLink) {
         PhoneLinkDialog(manager = phone, onDismiss = { showPhoneLink = false })
@@ -329,6 +354,7 @@ private fun Rail(
     onSearch: () -> Unit,
     onRoundtrip: () -> Unit,
     onPhone: () -> Unit,
+    onGpx: () -> Unit,
     onSettings: () -> Unit,
     onToggleMap: () -> Unit
 ) {
@@ -339,7 +365,10 @@ private fun Rail(
     ) {
         RailButton(Icons.Default.Search, "Where to?", ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
         RailButton(Icons.Default.Explore, "Roundtrip", NeonAmber, NeonAmber, tag = "rail_roundtrip", onClick = onRoundtrip)
-        Box {
+        // Full-screen map is for riding tracks: GPX manager instead of the phone link there.
+        if (isFullScreenMap) {
+            RailButton(Icons.Default.Route, "GPX manager", ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
+        } else Box {
             RailButton(Icons.Default.PhoneAndroid, "Phone link", TextSecondary, TextPrimary, tag = "rail_phone", onClick = onPhone)
             val dot = when (phoneState) {
                 CompanionConnectionState.CONNECTED -> EcoGreen
@@ -403,4 +432,29 @@ private fun Clock() {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(now),
         color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold
     )
+}
+
+/**
+ * The nearest track shown on the map. On it: "Follow" to navigate along it. Off it: how far away;
+ * tap to ride there and then along it.
+ */
+@Composable
+private fun TrackChip(h: com.vibenav.data.gpx.TrackHint, onClick: () -> Unit) {
+    val color = androidx.compose.ui.graphics.Color(h.color)
+    Row(
+        Modifier.clip(RoundedCornerShape(22.dp)).background(CockpitSurface.copy(alpha = 0.95f))
+            .border(2.dp, color, RoundedCornerShape(22.dp)).clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp).testTag("track_chip"),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.Route, null, tint = color, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(h.name, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+            modifier = Modifier.widthIn(max = 260.dp), overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        Spacer(Modifier.width(10.dp))
+        Text(
+            if (h.onTrack) "Follow" else if (h.distanceMeters < 1000) "%.0f m".format(h.distanceMeters) else "%.1f km".format(h.distanceMeters / 1000),
+            color = color, fontSize = 14.sp, fontWeight = FontWeight.Black
+        )
+    }
 }

@@ -63,6 +63,10 @@ import org.maplibre.geojson.Point
 private const val ROUTE = "vibenav-route"
 private const val ALT = "vibenav-alternatives"
 private const val MARKERS = "vibenav-markers"
+private const val GPX = "vibenav-gpx"
+private const val GPX_POIS = "vibenav-gpx-pois"
+private const val HINT = "vibenav-track-hint"
+private const val ARROW_IMAGE = "vibenav-arrow"
 private const val FOLLOW_ZOOM = 15.5
 private const val NAV_TILT = 45.0
 
@@ -91,6 +95,10 @@ fun VibeMapView(
     markers: List<GeoPoint> = emptyList(),
     roadNameProbe: Pair<Int, GeoPoint>? = null,
     onRoadName: (Int, String?) -> Unit = { _, _ -> },
+    gpxTracks: List<com.vibenav.data.gpx.OverlayTrack> = emptyList(),
+    gpxPois: List<com.vibenav.data.gpx.GpxPoi> = emptyList(),
+    trackHint: com.vibenav.data.gpx.TrackHint? = null,
+    onPoiClick: (com.vibenav.data.gpx.GpxPoi) -> Unit = {},
     onLongPress: (GeoPoint) -> Unit = {},
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
@@ -109,6 +117,8 @@ fun VibeMapView(
     val isFullScreenState = rememberUpdatedState(isFullScreen)
     val onToggleFullScreenState = rememberUpdatedState(onToggleFullScreen)
     val onLongPressState = rememberUpdatedState(onLongPress)
+    val onPoiClickState = rememberUpdatedState(onPoiClick)
+    val poisState = rememberUpdatedState(gpxPois)
 
     val mapView = remember {
         MapLibre.getInstance(context)
@@ -151,7 +161,15 @@ fun VibeMapView(
             }
             m.addOnCameraMoveListener { cameraBearing = m.cameraPosition.bearing.toFloat() }
             m.addOnCameraIdleListener { cameraIdleTick++ }
-            m.addOnMapClickListener { if (!isFullScreenState.value) onToggleFullScreenState.value(); true }
+            m.addOnMapClickListener { p ->
+                // A tap on a GPX waypoint shows it; anywhere else switches to full-screen map.
+                val pt = m.projection.toScreenLocation(p)
+                val hit = m.queryRenderedFeatures(RectF(pt.x - 24, pt.y - 24, pt.x + 24, pt.y + 24), "$GPX_POIS-dots").firstOrNull()
+                val poi = hit?.getNumberProperty("i")?.toInt()?.let { poisState.value.getOrNull(it) }
+                if (poi != null) onPoiClickState.value(poi)
+                else if (!isFullScreenState.value) onToggleFullScreenState.value()
+                true
+            }
             m.addOnMapLongClickListener { p -> onLongPressState.value(GeoPoint(p.latitude, p.longitude)); true }
             map = m
         }
@@ -191,6 +209,40 @@ fun VibeMapView(
         s.getSourceAs<GeoJsonSource>(ALT)?.setGeoJson(lineFeatures(others))
         s.getSourceAs<GeoJsonSource>(ROUTE)?.setGeoJson(
             lineFeatures(if (previewRoutes.isNotEmpty()) selected else if (routePoints.size >= 2) listOf(routePoints) else emptyList())
+        )
+    }
+
+    // GPX overlays: tracks in their colour with direction arrows, and their waypoints.
+    LaunchedEffect(style, gpxTracks) {
+        val s = style ?: return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(GPX)?.setGeoJson(FeatureCollection.fromFeatures(gpxTracks.filter { it.points.size >= 2 }.map { t ->
+            Feature.fromGeometry(LineString.fromLngLats(t.points.map { Point.fromLngLat(it.longitude, it.latitude) })).also {
+                it.addStringProperty("color", hex(t.color))
+            }
+        }))
+    }
+    LaunchedEffect(style, gpxPois) {
+        val s = style ?: return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(GPX_POIS)?.setGeoJson(FeatureCollection.fromFeatures(gpxPois.mapIndexed { i, p ->
+            Feature.fromGeometry(Point.fromLngLat(p.lon, p.lat)).also {
+                it.addNumberProperty("i", i)
+                it.addStringProperty("name", p.name)
+                it.addStringProperty("color", hex(p.category.color))
+            }
+        }))
+    }
+    // Dashed line from the rider to the nearest visible track.
+    LaunchedEffect(style, trackHint) {
+        val s = style ?: return@LaunchedEffect
+        val h = trackHint
+        s.getSourceAs<GeoJsonSource>(HINT)?.setGeoJson(
+            if (h == null || h.onTrack) FeatureCollection.fromFeatures(emptyList())
+            else FeatureCollection.fromFeatures(listOf(
+                Feature.fromGeometry(LineString.fromLngLats(listOf(
+                    Point.fromLngLat(h.from.longitude, h.from.latitude), Point.fromLngLat(h.to.longitude, h.to.latitude)
+                ))).also { it.addStringProperty("color", hex(h.color)) },
+                Feature.fromGeometry(Point.fromLngLat(h.to.longitude, h.to.latitude)).also { it.addStringProperty("color", hex(h.color)) }
+            ))
         )
     }
 
@@ -346,7 +398,63 @@ fun VibeMapView(
     }
 }
 
+private fun hex(argb: Int) = String.format("#%06X", argb and 0xFFFFFF)
+
+/** White chevron used (tinted per track) to show a track's direction. */
+private fun arrowBitmap(): android.graphics.Bitmap {
+    val size = 48
+    val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+    val c = android.graphics.Canvas(bmp)
+    val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE; style = android.graphics.Paint.Style.STROKE
+        strokeWidth = 11f; strokeCap = android.graphics.Paint.Cap.ROUND; strokeJoin = android.graphics.Paint.Join.ROUND
+    }
+    // Points along +x, which is the line direction for line-placed symbols.
+    val path = android.graphics.Path().apply { moveTo(12f, 8f); lineTo(36f, 24f); lineTo(12f, 40f) }
+    c.drawPath(path, p)
+    return bmp
+}
+
 private fun addOverlayLayers(s: Style, dark: Boolean) {
+    s.addImage(ARROW_IMAGE, arrowBitmap(), true)
+    s.addSource(GeoJsonSource(GPX))
+    s.addSource(GeoJsonSource(GPX_POIS))
+    s.addSource(GeoJsonSource(HINT))
+    s.addLayer(
+        LineLayer("$GPX-casing", GPX).withProperties(
+            lineColor(if (dark) "#000000" else "#FFFFFF"), lineWidth(11f), lineOpacity(0.6f),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
+        )
+    )
+    s.addLayer(
+        LineLayer("$GPX-line", GPX).withProperties(
+            lineColor(org.maplibre.android.style.expressions.Expression.get("color")), lineWidth(7f), lineOpacity(0.9f),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
+        )
+    )
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$GPX-arrows", GPX).withProperties(
+            symbolPlacement(Property.SYMBOL_PLACEMENT_LINE), symbolSpacing(120f),
+            iconImage(ARROW_IMAGE), iconSize(0.6f),
+            iconColor(if (dark) "#000000" else "#FFFFFF"),
+            iconAllowOverlap(true), iconIgnorePlacement(true),
+            iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP)
+        )
+    )
+    s.addLayer(
+        LineLayer("$HINT-line", HINT).withProperties(
+            lineColor(org.maplibre.android.style.expressions.Expression.get("color")), lineWidth(3f),
+            lineDasharray(arrayOf(2f, 2f)), lineOpacity(0.9f)
+        )
+    )
+    s.addLayer(
+        CircleLayer("$HINT-end", HINT).withProperties(
+            circleRadius(7f), circleColor(org.maplibre.android.style.expressions.Expression.get("color")),
+            circleStrokeColor("#FFFFFF"), circleStrokeWidth(2f)
+        ).withFilter(org.maplibre.android.style.expressions.Expression.eq(
+            org.maplibre.android.style.expressions.Expression.geometryType(),
+            org.maplibre.android.style.expressions.Expression.literal("Point")))
+    )
     s.addSource(GeoJsonSource(ALT))
     s.addSource(GeoJsonSource(ROUTE))
     s.addSource(GeoJsonSource(MARKERS))
@@ -367,6 +475,20 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             lineColor(if (dark) "#00E5FF" else "#0091EA"), lineWidth(7f),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
+    )
+    s.addLayer(
+        CircleLayer("$GPX_POIS-dots", GPX_POIS).withProperties(
+            circleRadius(8f), circleColor(org.maplibre.android.style.expressions.Expression.get("color")),
+            circleStrokeColor("#FFFFFF"), circleStrokeWidth(2f)
+        )
+    )
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$GPX_POIS-labels", GPX_POIS).withProperties(
+            textField(org.maplibre.android.style.expressions.Expression.get("name")),
+            textFont(arrayOf("Noto Sans Medium")), textSize(12f), textOffset(arrayOf(0f, 1.4f)),
+            textAnchor(Property.TEXT_ANCHOR_TOP), textMaxWidth(9f),
+            textColor(if (dark) "#F1F5F9" else "#1B2430"), textHaloColor(if (dark) "#0B0E14" else "#FFFFFF"), textHaloWidth(1.5f)
+        ).withProperties(org.maplibre.android.style.layers.PropertyFactory.visibility(Property.VISIBLE)).also { it.minZoom = 10f }
     )
     s.addLayer(
         CircleLayer("$MARKERS-dots", MARKERS).withProperties(

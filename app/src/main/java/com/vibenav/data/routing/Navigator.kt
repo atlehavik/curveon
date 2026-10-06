@@ -124,6 +124,34 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
     fun previewTrack(name: String, points: List<LatLon>, options: RouteOptions) =
         preview(NavigationGoal.Track(name, points, options))
 
+    /**
+     * Start navigating along a track straight away (no preview): used when the rider is already
+     * riding it. Joins the track where the rider is.
+     */
+    fun followTrackNow(name: String, points: List<LatLon>, options: RouteOptions) {
+        val from = lastPosition ?: return
+        if (!routingData.isReady()) return fail(routingData.describe())
+        calcJob?.cancel()
+        _state.value = _state.value.copy(status = RoutingStatus.Calculating("Following $name…"), preview = null)
+        val goal = NavigationGoal.Track(name, points, options)
+        calcJob = scope.launch {
+            try {
+                val route = withContext(Dispatchers.Default) { TrackFollower(engine).route(from, points, options) }
+                activate(goal, route)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(status = RoutingStatus.Failed("Couldn't follow $name: ${message(e)}"))
+            }
+        }
+    }
+
+    /** Ride the previewed track the other way round. */
+    fun reversePreviewTrack() {
+        val g = _state.value.preview?.goal as? NavigationGoal.Track ?: return
+        preview(g.copy(points = g.points.reversed()))
+    }
+
     /** Another loop in the same direction and length. */
     fun shuffleRoundtrip() {
         val g = _state.value.preview?.goal as? NavigationGoal.Roundtrip ?: return

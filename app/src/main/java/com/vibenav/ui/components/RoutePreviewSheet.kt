@@ -48,6 +48,7 @@ fun RoutePreviewSheet(
     onToggleMotorways: () -> Unit,
     onRemoveStop: (Int) -> Unit,
     onShuffle: () -> Unit,
+    onReverse: () -> Unit = {},
     onSave: () -> Unit,
     onGo: () -> Unit,
     onClose: () -> Unit,
@@ -76,6 +77,7 @@ fun RoutePreviewSheet(
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
             )
             if (goal is NavigationGoal.Roundtrip) SmallIcon(Icons.Default.Shuffle, "Another loop", onShuffle)
+            if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, "Ride it the other way", onReverse)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, "Save route", onSave)
             SmallIcon(Icons.Default.Close, "Cancel", onClose)
         }

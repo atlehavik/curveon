@@ -39,11 +39,23 @@ class GpxImporter(private val context: Context, private val repository: VibeNavR
     }
 
     private suspend fun save(input: InputStream, fileName: String): List<String> {
-        val tracks = GpxParser.parseAll(input, fileName.substringBeforeLast('.'))
-        require(tracks.any { it.points.size >= 2 }) { "No track or route in $fileName" }
-        return tracks.filter { it.points.size >= 2 }.map { t ->
+        val tracks = GpxParser.parseAll(input, fileName.substringBeforeLast('.')).filter { it.points.size >= 2 }
+        require(tracks.isNotEmpty()) { "No track or route in $fileName" }
+        // Waypoints belong to the file; give each one to the track it is closest to.
+        val waypoints = tracks.first().waypoints
+        val byTrack = waypoints.groupBy { w ->
+            tracks.indices.minBy { i -> nearestKm(tracks[i].points, w.point) }
+        }
+        return tracks.mapIndexed { i, t ->
+            // Re-importing (e.g. a fresh TET download) updates the track and keeps the rider's
+            // map settings for it.
+            val existing = repository.findGpxTrack(t.name)
             repository.saveGpxTrack(
                 GpxTrack(
+                    id = existing?.id ?: 0,
+                    showOnMap = existing?.showOnMap ?: false,
+                    color = existing?.color ?: 0,
+                    showPois = existing?.showPois ?: true,
                     name = t.name,
                     filename = fileName,
                     totalDistanceKm = t.totalDistanceKm,
@@ -51,10 +63,21 @@ class GpxImporter(private val context: Context, private val repository: VibeNavR
                     maxElevationMeters = t.maxElevationMeters,
                     pointCount = t.points.size,
                     trackPointsJson = GpxParser.encodePoints(t.points),
+                    waypointsJson = com.vibenav.data.gpx.GpxOverlay.encodePois(byTrack[i].orEmpty()),
                     category = "Track"
                 )
             )
             t.name
         }
+    }
+
+    private fun nearestKm(points: List<com.vibenav.data.model.GeoPoint>, p: com.vibenav.data.model.GeoPoint): Double {
+        var best = Double.MAX_VALUE
+        // Every 5th point is plenty to decide which track a waypoint belongs to.
+        for (i in points.indices step 5) {
+            val q = points[i]
+            best = minOf(best, GpxParser.haversineDistanceKm(p.latitude, p.longitude, q.latitude, q.longitude))
+        }
+        return best
     }
 }
