@@ -117,9 +117,9 @@ class VibeNotificationListener : NotificationListenerService() {
         if (checkSelfPermission(android.Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return null
         val uri: Uri = contentResolver.query(
             ContactsContract.Contacts.CONTENT_URI,
-            arrayOf(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI),
-            "${ContactsContract.Contacts.DISPLAY_NAME} = ?", arrayOf(name), null
-        )?.use { c -> if (c.moveToFirst()) c.getString(0)?.let(Uri::parse) else null } ?: return null
+            arrayOf(ContactsContract.Contacts.PHOTO_URI, ContactsContract.Contacts.PHOTO_THUMBNAIL_URI),
+            "${ContactsContract.Contacts.DISPLAY_NAME} = ? COLLATE NOCASE", arrayOf(name), null
+        )?.use { c -> if (c.moveToFirst()) (c.getString(0) ?: c.getString(1))?.let(Uri::parse) else null } ?: return null
         return runCatching {
             contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) }
         }.getOrNull()?.let { CompanionHub.encodeJpeg(it, AVATAR_PX) }

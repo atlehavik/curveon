@@ -64,7 +64,13 @@ object TestScenarios {
         CompanionHub.update { it.copy(lastEvent = "Test message from $sender sent") }
     }
 
+    /**
+     * Rings from a real phone-book contact ("Pappa" if there is one, otherwise a favourite) without
+     * attaching a picture, so the companion has to find the photo in the phone book itself.
+     */
     fun postCall(context: Context) {
+        val contact = findContact(context)
+        val caller = contact ?: "Ola Hansen"
         val id = nextId++
         val nm = channel(context)
         fun action(title: String, choice: String) = Notification.Action.Builder(
@@ -75,12 +81,11 @@ object TestScenarios {
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
         ).build()
-        val caller = "Ola Hansen"
         val n = Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_companion)
             .setContentTitle(caller)
             .setContentText("Incoming call")
-            .setLargeIcon(avatar(caller))
+            .apply { if (contact == null) setLargeIcon(avatar(caller)) }
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
             .addAction(action("Answer", "answered"))
@@ -88,7 +93,20 @@ object TestScenarios {
             .addExtras(android.os.Bundle().apply { putBoolean(EXTRA_TEST, true) })
             .build()
         nm.notify(id, n)
-        CompanionHub.update { it.copy(lastEvent = "Test call from $caller ringing") }
+        CompanionHub.update {
+            it.copy(lastEvent = "Test call from $caller ringing" + if (contact == null) " (no \"Pappa\" or favourite in contacts)" else "")
+        }
+    }
+
+    private fun findContact(context: Context): String? {
+        if (context.checkSelfPermission(android.Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return null
+        val cr = context.contentResolver
+        val uri = android.provider.ContactsContract.Contacts.CONTENT_URI
+        val name = android.provider.ContactsContract.Contacts.DISPLAY_NAME
+        fun first(selection: String, args: Array<String>?) =
+            cr.query(uri, arrayOf(name), selection, args, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+        return first("$name = ? COLLATE NOCASE", arrayOf("Pappa"))
+            ?: first("${android.provider.ContactsContract.Contacts.STARRED} = 1 AND ${android.provider.ContactsContract.Contacts.PHOTO_URI} IS NOT NULL", null)
     }
 
     fun clear(context: Context) {

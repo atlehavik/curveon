@@ -75,6 +75,13 @@ class PhoneCompanionManager(
     private var tickerJob: Job? = null
     private val artCache = HashMap<String, Bitmap>()
 
+    /**
+     * Messages dismissed on the tablet: key -> text at the time. Dismissing only hides them here
+     * (like Android Auto); they stay unread on the phone. A new message in the same chat
+     * changes the text and brings it back.
+     */
+    private val hidden = HashMap<String, String>()
+
     init {
         if (prefs.getBoolean(KEY_DEMO, false)) startDemo() else start()
     }
@@ -179,6 +186,8 @@ class PhoneCompanionManager(
             }
             Message.MediaStopped -> { _currentTrack.value = null; _albumArt.value = null }
             is Message.NotificationPosted -> {
+                if (hidden[msg.key] == msg.text) return
+                hidden.remove(msg.key)
                 val item = NotificationItem(
                     id = msg.key, appName = msg.app, senderName = msg.sender, message = msg.text,
                     timestampMs = msg.timeMs, avatar = msg.avatarJpegBase64?.let(::decode),
@@ -186,7 +195,10 @@ class PhoneCompanionManager(
                 )
                 _notifications.value = listOf(item) + _notifications.value.filterNot { it.id == msg.key }
             }
-            is Message.NotificationRemoved -> _notifications.value = _notifications.value.filterNot { it.id == msg.key }
+            is Message.NotificationRemoved -> {
+                hidden.remove(msg.key)
+                _notifications.value = _notifications.value.filterNot { it.id == msg.key }
+            }
             is Message.VoiceReplyState -> {
                 val current = _voiceReply.value
                 if (current?.notificationKey == msg.key) {
@@ -217,6 +229,7 @@ class PhoneCompanionManager(
         _albumArt.value = null
         _notifications.value = emptyList()
         _voiceReply.value = null
+        hidden.clear()
     }
 
     // ------------------------------------------------------------------ commands
@@ -236,9 +249,10 @@ class PhoneCompanionManager(
 
     fun skipPrevious() = send(Message.MediaCommand(Message.MediaAction.PREVIOUS))
 
+    /** Hides a message on the tablet only; it stays unread on the phone. */
     fun dismissNotification(id: String) {
+        _notifications.value.firstOrNull { it.id == id }?.let { hidden[id] = it.message }
         _notifications.value = _notifications.value.filterNot { it.id == id }
-        send(Message.DismissNotification(id))
     }
 
     fun invokeAction(id: String, index: Int) = send(Message.InvokeAction(id, index))
