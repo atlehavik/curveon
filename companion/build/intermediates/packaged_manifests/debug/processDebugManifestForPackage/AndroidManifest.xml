@@ -18,6 +18,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!--
+         To show "Spotify"/"WhatsApp" instead of package names for any app that posts or plays.
+         Fine for a sideloaded personal app; would need review for Play Store distribution.
+    -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <queries>
         <intent>
