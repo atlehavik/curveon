@@ -64,6 +64,10 @@
             </intent-filter>
         </service>
 
+        <receiver
+            android:name="com.vibenav.companion.TestScenarios$TestActionReceiver"
+            android:exported="false" />
+
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="com.vibenav.companion.androidx-startup"

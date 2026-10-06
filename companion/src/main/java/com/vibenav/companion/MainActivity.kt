@@ -41,6 +41,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Opening the app is enough to (re)start sharing, e.g. after an update or a reboot.
+        if (!CompanionHub.status.value.serviceRunning && has(Manifest.permission.BLUETOOTH_CONNECT) && !stoppedByUser) {
+            CompanionService.start(this)
+        }
+    }
+
+    /** Remembers an explicit "Stop sharing" so we don't restart behind the rider's back. */
+    private var stoppedByUser: Boolean
+        get() = getSharedPreferences("companion", MODE_PRIVATE).getBoolean("stopped", false)
+        set(v) { getSharedPreferences("companion", MODE_PRIVATE).edit().putBoolean("stopped", v).apply() }
+
     @Composable
     private fun Screen() {
         val status by CompanionHub.status.collectAsStateWithLifecycle()
@@ -80,10 +93,20 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            Card("Test") {
+                Text("Send a fake message or call through the real chain to the tablet. " +
+                    "What the tablet sends back (reply, answer, decline) shows up under Status.", color = Muted, fontSize = 13.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { TestScenarios.postMessage(this@MainActivity) }, modifier = Modifier.weight(1f)) { Text("Message") }
+                    OutlinedButton(onClick = { TestScenarios.postCall(this@MainActivity) }, modifier = Modifier.weight(1f)) { Text("Incoming call") }
+                    OutlinedButton(onClick = { TestScenarios.clear(this@MainActivity) }, modifier = Modifier.weight(0.7f)) { Text("Clear") }
+                }
+            }
+
             Button(
                 onClick = {
-                    if (status.serviceRunning) CompanionService.stop(this@MainActivity)
-                    else CompanionService.start(this@MainActivity)
+                    if (status.serviceRunning) { stoppedByUser = true; CompanionService.stop(this@MainActivity) }
+                    else { stoppedByUser = false; CompanionService.start(this@MainActivity) }
                 },
                 enabled = status.serviceRunning || has(Manifest.permission.BLUETOOTH_CONNECT),
                 modifier = Modifier.fillMaxWidth().height(56.dp)

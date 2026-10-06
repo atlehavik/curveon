@@ -65,7 +65,8 @@ class VibeNotificationListener : NotificationListenerService() {
 
     private fun toMessage(sbn: StatusBarNotification): Message.NotificationPosted? {
         val n = sbn.notification
-        if (sbn.packageName == packageName) return null
+        // Our own notifications are ignored, except the test scenarios.
+        if (sbn.packageName == packageName && !n.extras.getBoolean(TestScenarios.EXTRA_TEST)) return null
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return null
         val isCall = n.category == Notification.CATEGORY_CALL
         val replyAction = findReplyAction(n)
