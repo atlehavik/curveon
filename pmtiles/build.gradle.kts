@@ -15,7 +15,7 @@ dependencies {
 }
 
 tasks.test {
-  systemProperty("vibenav.online", System.getProperty("vibenav.online") ?: "false")
-  systemProperty("vibenav.data", "${rootDir}/../VibeNav-data")
+  systemProperty("curveon.online", System.getProperty("curveon.online") ?: "false")
+  systemProperty("curveon.data", "${rootDir}/../Curveon-data")
   testLogging { events("passed", "skipped", "failed"); showStandardStreams = true }
 }

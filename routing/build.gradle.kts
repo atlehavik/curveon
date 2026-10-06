@@ -17,7 +17,7 @@ dependencies {
 
 tasks.test {
   // Integration tests read real segments from here when present, and are skipped otherwise.
-  systemProperty("vibenav.segments", System.getProperty("vibenav.segments")
-    ?: "${rootDir}/../VibeNav-data/brouter/segments4")
+  systemProperty("curveon.segments", System.getProperty("curveon.segments")
+    ?: "${rootDir}/../Curveon-data/brouter/segments4")
   testLogging { events("passed", "skipped", "failed"); showStandardStreams = true }
 }

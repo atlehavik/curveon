@@ -22,7 +22,7 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "VibeNav"
+rootProject.name = "Curveon"
 
 include(":app")
 include(":routing")

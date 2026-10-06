@@ -1,15 +1,15 @@
-// VibeNav Companion: runs on the rider's phone and mirrors notifications and media to the tablet.
+// Curveon Companion: runs on the rider's phone and mirrors notifications and media to the tablet.
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
 }
 
 android {
-  namespace = "com.vibenav.companion"
+  namespace = "com.curveon.companion"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.vibenav.companion"
+    applicationId = "com.curveon.companion"
     minSdk = 29
     targetSdk = 36
     versionCode = 1

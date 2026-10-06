@@ -1,5 +1,5 @@
 
-# Appname: VibeNav
+# Appname: Curveon
 
 # Short description
 * An application to use on motorcycle for both navigation and music control / message notification ++.

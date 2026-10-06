@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-  namespace = "com.vibenav"
+  namespace = "com.curveon"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.vibenav.tablet"
+    applicationId = "com.curveon.tablet"
     minSdk = 24
     targetSdk = 36
     versionCode = 1

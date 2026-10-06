@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Builds the offline destination search index (SQLite + FTS4) for VibeNav from an OSM extract.
+Builds the offline destination search index (SQLite + FTS4) for Curveon from an OSM extract.
 
     python build_search_index.py norway-latest.osm.pbf norway-search.sqlite
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Builds the offline Norway vector map (norway.pmtiles, ~1.7 GB) and regenerates the bundled
-# MapLibre styles. Needs curl, python3 and node. Output goes to $OUT (default ../VibeNav-data).
+# MapLibre styles. Needs curl, python3 and node. Output goes to $OUT (default ../Curveon-data).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-OUT="${OUT:-$HERE/../../../VibeNav-data}"
+OUT="${OUT:-$HERE/../../../Curveon-data}"
 mkdir -p "$OUT"
 cd "$OUT"
 
@@ -29,6 +29,6 @@ done
 cat <<MSG
 Done: $OUT/norway.pmtiles
 Install on the tablet by copying it to
-  Android/data/com.vibenav.tablet/files/maps/
-over USB, or with: adb push "$OUT/norway.pmtiles" /sdcard/Android/data/com.vibenav.tablet/files/maps/
+  Android/data/com.curveon.tablet/files/maps/
+over USB, or with: adb push "$OUT/norway.pmtiles" /sdcard/Android/data/com.curveon.tablet/files/maps/
 MSG

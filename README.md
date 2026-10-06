@@ -1,4 +1,4 @@
-# VibeNav
+# Curveon
 
 Offline motorcycle dashboard for a handlebar-mounted Android tablet (target: Hugerock X7, 7"
 1920x1080, Android 13), with a companion app on the rider's phone. See [App plan.md](App%20plan.md)
@@ -6,8 +6,8 @@ and [dashboard.md](dashboard.md) for the goals.
 
 | Module | What it is |
 |---|---|
-| `app` | The tablet app (`com.vibenav.tablet`): map, navigation, dashboard |
-| `companion` | Phone app (`com.vibenav.companion`): mirrors messages, calls and music to the tablet over Bluetooth |
+| `app` | The tablet app (`com.curveon.tablet`): map, navigation, dashboard |
+| `companion` | Phone app (`com.curveon.companion`): mirrors messages, calls and music to the tablet over Bluetooth |
 | `routing` | Offline routing on BRouter: motorcycle profile, roundtrips, GPX following, route tracking |
 | `protocol` | Tablet ⇄ phone messages (length-prefixed JSON over RFCOMM) |
 | `tools/map`, `tools/search` | Scripts that build the offline map and search index |
@@ -58,7 +58,7 @@ Emulator matching the tablet: AVD `Hugerock_X7` (API 33, 1080x1920 @ 320 dpi, la
 
 ## Data for the tablet (one-time)
 
-Everything lives under `Android/data/com.vibenav.tablet/files/` on the tablet; copy over USB
+Everything lives under `Android/data/com.curveon.tablet/files/` on the tablet; copy over USB
 or with `adb push`.
 
 | Folder | File(s) | Size | How to get it |

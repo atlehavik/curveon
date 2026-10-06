@@ -3,7 +3,7 @@ import fs from "fs";
 const flavor = process.argv[2] || "dark";
 const style = {
   version: 8,
-  name: `VibeNav ${flavor}`,
+  name: `Curveon ${flavor}`,
   glyphs: "asset://map/fonts/{fontstack}/{range}.pbf",
   sprite: `asset://map/sprites/${flavor}`,
   sources: {
