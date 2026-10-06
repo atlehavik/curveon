@@ -79,8 +79,33 @@ class RoundtripPlanner(private val engine: BRouterEngine) {
     private fun routeCircle(start: LatLon, radius: Double, directionDeg: Double, options: RouteOptions): Route {
         val center = Geo.destination(start, directionDeg, radius)
         val startAngle = directionDeg + 180.0
-        val vias = (1..VIA_POINTS).map { k -> Geo.destination(center, startAngle + k * 360.0 / (VIA_POINTS + 1), radius) }
-        return engine.route(listOf(start) + vias + start, options, viaCatchingRangeMeters = VIA_CATCHING_RANGE_M)
+        var vias = (1..VIA_POINTS).map { k -> Geo.destination(center, startAngle + k * 360.0 / (VIA_POINTS + 1), radius) }
+        var route = engine.route(listOf(start) + vias + start, options, viaCatchingRangeMeters = VIA_CATCHING_RANGE_M)
+        // A via that snapped onto a dead end makes the route ride in and turn back. Move such vias to
+        // the junction where the dead end starts, so the loop rides past it instead.
+        repeat(SPUR_FIX_PASSES) {
+            val spurs = Spurs.find(route)
+            if (spurs.isEmpty()) return route
+            var changed = false
+            vias = vias.map { via ->
+                val spur = spurs.minByOrNull { Geo.distance(it.turnaround, via) }
+                if (spur != null && Geo.distance(spur.turnaround, via) < VIA_CATCHING_RANGE_M + 500) {
+                    changed = true
+                    spur.base
+                } else via
+            }.filter { Geo.distance(it, start) > 500 }
+            if (!changed || vias.isEmpty()) return route
+            val fixed = try {
+                engine.route(listOf(start) + vias + start, options, viaCatchingRangeMeters = FIXED_VIA_CATCHING_RANGE_M)
+            } catch (e: RoutingException) {
+                return route
+            }
+            // Keep the fix only if it rides past the dead end rather than off somewhere else.
+            val withoutSpurs = route.distanceMeters - spurs.sumOf { it.halfLength * 2 }
+            if (fixed.distanceMeters > withoutSpurs * 1.4 + 3_000) return route
+            route = fixed
+        }
+        return route
     }
 
     internal fun score(route: Route, targetM: Double, options: RouteOptions): Double {
@@ -88,7 +113,9 @@ class RoundtripPlanner(private val engine: BRouterEngine) {
         val overlapPenalty = overlapFraction(route) * 150                          // 20% same road twice = -30
         val curveBonus = if (options.roadStyle == RoadStyle.FASTEST) 0.0 else route.curviness.toDouble()
         val gravelPenalty = if (options.surface == SurfacePreference.PAVED) route.unpavedShare() * 600 else 0.0
-        return curveBonus - lengthPenalty - overlapPenalty - gravelPenalty
+        // Riding into a dead end and back is the most annoying thing a loop can do.
+        val spurPenalty = Spurs.wastedMeters(route) / route.distanceMeters * 400
+        return curveBonus - lengthPenalty - overlapPenalty - gravelPenalty - spurPenalty
     }
 
     private fun Route.unpavedShare() = if (distanceMeters > 0) unpavedMeters / distanceMeters else 0.0
@@ -97,6 +124,9 @@ class RoundtripPlanner(private val engine: BRouterEngine) {
         private const val ROAD_DETOUR_FACTOR = 1.3
         private const val VIA_POINTS = 3
         private const val VIA_CATCHING_RANGE_M = 5000.0
+        /** Vias moved onto a junction are already on the road. */
+        private const val FIXED_VIA_CATCHING_RANGE_M = 100.0
+        private const val SPUR_FIX_PASSES = 3
         private const val LENGTH_TOLERANCE = 0.12
         private const val ACCEPTABLE_UNPAVED_SHARE = 0.03
         private val GRAVEL_NUDGES = listOf(0.8 to 12.0, 0.9 to -15.0)

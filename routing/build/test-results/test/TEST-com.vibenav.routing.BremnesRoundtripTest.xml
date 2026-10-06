@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.vibenav.routing.BremnesRoundtripTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-06T16:49:35.580Z" hostname="fedora" time="15.865">
+  <properties/>
+  <testcase name="roundtrips from bremnes have no out-and-back spurs" classname="com.vibenav.routing.BremnesRoundtripTest" time="15.861"/>
+  <system-out><![CDATA[dir=  0 km= 60 ->  54.2 km curvy=50 spurs=
+dir=  0 km=120 -> 118.0 km curvy=57 spurs=
+dir= 90 km= 60 ->  57.9 km curvy=65 spurs=
+dir= 90 km=120 -> 120.9 km curvy=57 spurs=
+dir=180 km= 60 ->  42.2 km curvy=83 spurs=3720m@59.7667,5.1204
+dir=180 km=120 -> 127.6 km curvy=52 spurs=1770m@59.7509,5.4962, 3040m@59.5671,5.4104
+dir=270 km= 60 ->  33.0 km curvy=73 spurs=210m@59.8396,5.0911
+dir=270 km=120 ->  35.0 km curvy=79 spurs=3540m@59.8396,5.0911, 1050m@59.8661,5.0819
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

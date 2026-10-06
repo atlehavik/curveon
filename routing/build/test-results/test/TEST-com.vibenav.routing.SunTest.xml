@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.vibenav.routing.SunTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-05T22:07:31.116Z" hostname="fedora" time="0.012">
-  <properties/>
-  <testcase name="oslo midsummer noon is high, midwinter midnight is dark" classname="com.vibenav.routing.SunTest" time="0.011"/>
-  <testcase name="midnight sun in tromso, polar night at noon" classname="com.vibenav.routing.SunTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
