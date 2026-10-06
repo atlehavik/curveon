@@ -98,7 +98,7 @@ fun GpxImportDialog(
                 }
             } else {
                 LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(tracks, key = { it.id }) { t ->
+                    items(tracks.sortedBy { it.name.lowercase() }, key = { it.id }) { t ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -113,7 +113,11 @@ fun GpxImportDialog(
                             Column(Modifier.weight(1f)) {
                                 Text(t.name, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(
-                                    "%.1f km · ↑ %d m · %s".format(t.totalDistanceKm, t.elevationGainMeters, t.filename),
+                                    listOfNotNull(
+                                        "%.1f km".format(t.totalDistanceKm),
+                                        t.elevationGainMeters.takeIf { it > 0 }?.let { "↑ $it m" }, // many files carry no elevation
+                                        t.filename
+                                    ).joinToString(" · "),
                                     color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                                 )
                             }

@@ -24,14 +24,23 @@ object GpxParser {
         val description: String = ""
     )
 
-    fun parse(inputStream: InputStream, defaultName: String = "Imported GPX Track"): ParsedGpxResult {
+    /** First track of the file, or all tracks joined when [parseAll] finds just one. */
+    fun parse(inputStream: InputStream, defaultName: String = "Imported GPX Track"): ParsedGpxResult =
+        parseAll(inputStream, defaultName).first()
+
+    /**
+     * Every <trk> (and <rte>) as its own result: files like the TET country downloads hold many
+     * sections that must not be joined into one line.
+     */
+    fun parseAll(inputStream: InputStream, defaultName: String = "Imported GPX Track"): List<ParsedGpxResult> {
         val parser = XmlPullParserFactory.newInstance().newPullParser()
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
         parser.setInput(inputStream, null)
 
         var docName: String? = null
-        val trackPoints = mutableListOf<GeoPoint>()
-        val routePoints = mutableListOf<GeoPoint>()
+        val tracks = mutableListOf<Pair<String?, MutableList<GeoPoint>>>() // (name, points) per trk/rte
+        var current: MutableList<GeoPoint>? = null
+        var currentName: String? = null
         val waypoints = mutableListOf<GpxWaypoint>()
 
         val stack = ArrayDeque<String>()
@@ -45,11 +54,14 @@ object GpxParser {
                 XmlPullParser.START_TAG -> {
                     val tag = parser.name.substringAfter(':')
                     stack.addLast(tag)
-                    if (tag == "trkpt" || tag == "rtept" || tag == "wpt") {
-                        lat = parser.getAttributeValue(null, "lat")?.toDoubleOrNull() ?: Double.NaN
-                        lon = parser.getAttributeValue(null, "lon")?.toDoubleOrNull() ?: Double.NaN
-                        ele = 0.0
-                        ptName = ""
+                    when (tag) {
+                        "trk", "rte" -> { current = mutableListOf(); currentName = null }
+                        "trkpt", "rtept", "wpt" -> {
+                            lat = parser.getAttributeValue(null, "lat")?.toDoubleOrNull() ?: Double.NaN
+                            lon = parser.getAttributeValue(null, "lon")?.toDoubleOrNull() ?: Double.NaN
+                            ele = 0.0
+                            ptName = ""
+                        }
                     }
                 }
                 XmlPullParser.TEXT -> {
@@ -60,30 +72,38 @@ object GpxParser {
                             "ele" -> ele = text.toDoubleOrNull() ?: 0.0
                             "name" -> when (parent) {
                                 "trkpt", "rtept", "wpt" -> ptName = text
-                                "trk", "rte", "metadata" -> if (docName == null) docName = text
+                                "trk", "rte" -> if (currentName == null) currentName = text
+                                "metadata" -> if (docName == null) docName = text
                             }
                         }
                     }
                 }
                 XmlPullParser.END_TAG -> {
                     val tag = stack.removeLastOrNull()
-                    if (!lat.isNaN() && !lon.isNaN()) when (tag) {
-                        "trkpt" -> trackPoints += GeoPoint(lat, lon, ele)
-                        "rtept" -> routePoints += GeoPoint(lat, lon, ele)
-                        "wpt" -> waypoints += GpxWaypoint(ptName.ifEmpty { "Waypoint ${waypoints.size + 1}" }, GeoPoint(lat, lon, ele))
+                    when (tag) {
+                        "trk", "rte" -> current?.let { if (it.size >= 2) tracks += currentName to it }.also { current = null }
+                        "trkpt", "rtept" -> if (!lat.isNaN() && !lon.isNaN()) current?.add(GeoPoint(lat, lon, ele))
+                        "wpt" -> if (!lat.isNaN() && !lon.isNaN()) waypoints += GpxWaypoint(ptName.ifEmpty { "Waypoint ${waypoints.size + 1}" }, GeoPoint(lat, lon, ele))
                     }
                 }
             }
             parser.next()
         }
 
-        // Prefer the recorded/planned track; fall back to a route, then to bare waypoints.
-        val points = when {
-            trackPoints.size >= 2 -> trackPoints
-            routePoints.size >= 2 -> routePoints
-            else -> waypoints.map { it.point }
+        if (tracks.isEmpty()) tracks += (docName ?: defaultName) to waypoints.map { it.point }.toMutableList()
+        return tracks.map { (name, points) ->
+            summarize(prettyName(name ?: docName ?: defaultName), points, waypoints)
         }
+    }
 
+    /** "TET_N-04-Lysefjorden-Utne_20260827" → "TET N-04 Lysefjorden-Utne". */
+    internal fun prettyName(raw: String): String =
+        raw.replace(Regex("_\\d{8}$"), "")
+            .replace(Regex("^(TET)_([A-Z]{1,3})-(\\d+)[-_]"), "$1 $2-$3 ")
+            .replace('_', ' ')
+            .trim()
+
+    private fun summarize(name: String, points: List<GeoPoint>, waypoints: List<GpxWaypoint>): ParsedGpxResult {
         var totalDist = 0.0
         var eleGain = 0.0
         var maxEle = points.firstOrNull()?.altitudeMeters ?: 0.0
@@ -94,15 +114,7 @@ object GpxParser {
             if (p2.altitudeMeters > p1.altitudeMeters) eleGain += p2.altitudeMeters - p1.altitudeMeters
             maxEle = max(maxEle, p2.altitudeMeters)
         }
-
-        return ParsedGpxResult(
-            name = docName ?: defaultName,
-            points = points,
-            totalDistanceKm = totalDist.toFloat(),
-            elevationGainMeters = eleGain.toInt(),
-            maxElevationMeters = maxEle.toInt(),
-            waypoints = waypoints
-        )
+        return ParsedGpxResult(name, points, totalDist.toFloat(), eleGain.toInt(), maxEle.toInt(), waypoints)
     }
 
     /** Compact "lat,lon,ele;lat,lon,ele" encoding used to store tracks in Room. */

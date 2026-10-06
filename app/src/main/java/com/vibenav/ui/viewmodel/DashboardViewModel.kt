@@ -545,34 +545,23 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _gpxMessage = MutableStateFlow<String?>(null)
     val gpxMessage: StateFlow<String?> = _gpxMessage.asStateFlow()
 
+    private val gpxImporter = com.vibenav.data.osm.GpxImporter(application, repository)
+
     fun importGpx(uri: Uri) {
         viewModelScope.launch {
-            runCatching {
-                val app = getApplication<Application>()
-                val fileName = app.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
-                    ?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: "track.gpx"
-                val parsed = withContext(Dispatchers.IO) {
-                    app.contentResolver.openInputStream(uri)!!.use {
-                        com.vibenav.data.osm.GpxParser.parse(it, fileName.removeSuffix(".gpx"))
-                    }
-                }
-                require(parsed.points.size >= 2) { "No track or route in $fileName" }
-                repository.saveGpxTrack(
-                    GpxTrack(
-                        name = parsed.name,
-                        filename = fileName,
-                        totalDistanceKm = parsed.totalDistanceKm,
-                        elevationGainMeters = parsed.elevationGainMeters,
-                        maxElevationMeters = parsed.maxElevationMeters,
-                        pointCount = parsed.points.size,
-                        trackPointsJson = com.vibenav.data.osm.GpxParser.encodePoints(parsed.points),
-                        category = if (parsed.points.size > 2) "Track" else "Route"
-                    )
-                )
-                parsed.name
-            }.onSuccess { _gpxMessage.value = "Imported $it" }
+            runCatching { gpxImporter.import(uri) }
+                .onSuccess { _gpxMessage.value = if (it.size == 1) "Imported ${it[0]}" else "Imported ${it.size} tracks" }
                 .onFailure { _gpxMessage.value = "Import failed: ${it.message}" }
         }
+    }
+
+    // Declared after gpxImporter and _gpxMessage so they exist when this runs.
+    init { importGpxInbox() }
+
+    /** GPX files copied over USB into the gpx/ folder are imported at startup. */
+    private fun importGpxInbox() = viewModelScope.launch {
+        val names = runCatching { gpxImporter.importInbox() }.getOrDefault(emptyList())
+        if (names.isNotEmpty()) _gpxMessage.value = "Imported ${names.size} tracks from the gpx folder"
     }
 
     fun deleteGpx(track: GpxTrack) {
