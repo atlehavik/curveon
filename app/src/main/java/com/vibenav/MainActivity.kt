@@ -19,6 +19,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.vibenav.ui.screens.DashboardScreen
 import com.vibenav.ui.theme.CockpitBackground
 import com.vibenav.ui.theme.VibeNavTheme
@@ -33,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         enableEdgeToEdge()
+        hideNavigationBar()
 
         // Keep screen awake for motorcycle mounting
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -79,6 +83,23 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * The navigation bar stays hidden while riding. Swipe up from the bottom edge and it appears
+     * over the app for a few seconds, then hides again. Dialogs and permission prompts can bring
+     * it back, so it is re-hidden whenever the app regains focus.
+     */
+    private fun hideNavigationBar() {
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.navigationBars())
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideNavigationBar()
     }
 
     private fun hasLocationPermission() =
