@@ -20,6 +20,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -109,11 +112,17 @@ fun RoutePreviewSheet(
                 SurfacePreference.MIXED -> "Mixed"
                 SurfacePreference.GRAVEL -> "Gravel"
             }
-            OptionChip(Icons.Default.Landscape, surfaceLabel, active = options.surface != SurfacePreference.PAVED) {
+            OptionChip(surfaceLabel, active = options.surface != SurfacePreference.PAVED, onClick = {
                 onSurface(SurfacePreference.entries[(options.surface.ordinal + 1) % SurfacePreference.entries.size])
+            }) {
+                Icon(Icons.Default.Landscape, null, tint = if (options.surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
             }
-            OptionChip(Icons.Default.DirectionsBoat, null, active = options.avoidFerries, crossed = true, onClick = onToggleFerries)
-            OptionChip(Icons.Default.AddRoad, null, active = options.avoidMotorways, crossed = true, onClick = onToggleMotorways)
+            OptionChip("Ferries", active = options.avoidFerries, avoid = true, onClick = onToggleFerries) {
+                Icon(Icons.Default.DirectionsBoat, null, tint = if (options.avoidFerries) NeonAmber else TextSecondary)
+            }
+            OptionChip("Motorways", active = options.avoidMotorways, avoid = true, onClick = onToggleMotorways) {
+                Image(painterResource(com.vibenav.R.drawable.ic_motorway), null, modifier = Modifier.size(22.dp))
+            }
             Spacer(Modifier.weight(1f))
             val ready = preview.selectedRoute != null
             Row(
@@ -180,8 +189,19 @@ private fun CurvinessBar(curviness: Int) {
     }
 }
 
+/**
+ * A route option. Avoid-toggles show their label struck through when on ("~~Motorways~~" = no
+ * motorways), which reads at a glance without extra words.
+ */
 @Composable
-private fun OptionChip(icon: ImageVector, label: String?, active: Boolean, crossed: Boolean = false, onClick: () -> Unit) {
+private fun OptionChip(
+    label: String,
+    active: Boolean,
+    avoid: Boolean = false,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit
+) {
+    val color = if (active) NeonAmber else TextSecondary
     Row(
         Modifier.height(44.dp).clip(RoundedCornerShape(22.dp))
             .background(if (active) NeonAmber.copy(alpha = 0.2f) else CockpitSurfaceVariant)
@@ -189,19 +209,14 @@ private fun OptionChip(icon: ImageVector, label: String?, active: Boolean, cross
             .clickable(onClick = onClick).padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(icon, label ?: "Avoid", tint = if (active) NeonAmber else TextSecondary, modifier = Modifier.size(20.dp))
-            // A struck-through icon reads as "avoid" without words.
-            if (crossed && active) Box(Modifier.size(width = 24.dp, height = 2.dp).background(NeonAmber).rotateDiagonal())
-        }
-        if (label != null) {
-            Spacer(Modifier.width(6.dp))
-            Text(label, color = if (active) NeonAmber else TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-        }
+        Box(Modifier.size(22.dp).graphicsLayer { alpha = if (avoid && active) 0.5f else 1f }, contentAlignment = Alignment.Center) { icon() }
+        Spacer(Modifier.width(6.dp))
+        Text(
+            label, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+            textDecoration = if (avoid && active) TextDecoration.LineThrough else null
+        )
     }
 }
-
-private fun Modifier.rotateDiagonal() = this.graphicsLayer { rotationZ = -45f }
 
 @Composable
 private fun SmallIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
