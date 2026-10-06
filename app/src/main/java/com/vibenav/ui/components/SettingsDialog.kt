@@ -1,309 +1,230 @@
 package com.vibenav.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.vibenav.data.bluetooth.PhoneCompanionManager
+import com.vibenav.data.map.MapDownloadState
+import com.vibenav.data.map.MapRegionStatus
 import com.vibenav.ui.theme.*
+import com.vibenav.ui.viewmodel.MapTheme
 
+private val OnCyan = Color(0xFF00363D)
+
+private enum class SettingsTab(val label: String, val icon: ImageVector) {
+    DISPLAY("Display", Icons.Default.Tune),
+    NAVIGATION("Navigation", Icons.Default.Navigation),
+    PHONE("Phone", Icons.Default.PhoneAndroid),
+    DATA("Maps & data", Icons.Default.Map)
+}
+
+/** Everything the Settings screen shows. */
+data class SettingsState(
+    val useMph: Boolean,
+    val mapTheme: MapTheme,
+    val obdEnabled: Boolean,
+    val autoZoom: Boolean,
+    val autoFollowTracks: Boolean,
+    val isNavigating: Boolean,
+    val isDemoRiding: Boolean,
+    val maps: List<MapRegionStatus>,
+    val mapDownload: MapDownloadState,
+    val routingDataStatus: String,
+    val searchStatus: String
+)
+
+/** What the Settings screen can change. */
+class SettingsActions(
+    val onUnits: (Boolean) -> Unit,
+    val onMapTheme: (MapTheme) -> Unit,
+    val onObd: (Boolean) -> Unit,
+    val onAutoZoom: (Boolean) -> Unit,
+    val onAutoFollow: (Boolean) -> Unit,
+    val onDemoRide: () -> Unit,
+    val onDownloadMap: (String) -> Unit,
+    val onCancelMapDownload: () -> Unit,
+    val onDeleteMap: (String) -> Unit,
+    val onImportMap: () -> Unit,
+    val onDownloadRouting: () -> Unit
+)
+
+/**
+ * Full-screen settings with tabs on the left (like Android Auto), so each page stays short and
+ * there is room for more.
+ */
 @Composable
-fun SettingsDialog(
-    useMph: Boolean,
-    onToggleUnits: () -> Unit,
-    isObdEnabled: Boolean,
-    onToggleObd: () -> Unit,
-    offlineMapStatus: String,
-    onImportMap: () -> Unit,
-    routingDataStatus: String,
-    onDownloadRoutingData: () -> Unit,
-    isNavigating: Boolean,
-    isDemoRiding: Boolean,
-    onToggleDemoRide: () -> Unit,
-    mapTheme: com.vibenav.ui.viewmodel.MapTheme,
-    onMapTheme: (com.vibenav.ui.viewmodel.MapTheme) -> Unit,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.85f)
-                .clip(RoundedCornerShape(28.dp))
-                .background(CockpitSurface)
-                .border(1.5.dp, CockpitBorder, RoundedCornerShape(28.dp))
-                .padding(20.dp)
-                .testTag("settings_dialog")
+fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, onDismiss: () -> Unit) {
+    var tab by rememberSaveable { mutableStateOf(SettingsTab.DISPLAY) }
+    var confirmDelete by remember { mutableStateOf<MapRegionStatus?>(null) }
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Row(
+            Modifier.fillMaxWidth(0.94f).fillMaxHeight(0.94f).clip(RoundedCornerShape(24.dp)).background(CockpitSurface)
+                .border(1.dp, CockpitBorder, RoundedCornerShape(24.dp)).testTag("settings_dialog")
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(CockpitSurfaceVariant),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings",
-                                tint = ElectricCyan,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "COCKPIT SETTINGS",
-                                color = TextPrimary,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp
-                            )
-                            Text(
-                                text = "Motorcycle Display & Offline Maps",
-                                color = TextSecondary,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.testTag("settings_dialog_close_btn")
+            Column(
+                Modifier.width(210.dp).fillMaxHeight().background(CockpitBackground.copy(alpha = 0.6f)).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text("Settings", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(start = 8.dp, top = 6.dp, end = 8.dp, bottom = 14.dp))
+                SettingsTab.entries.forEach { t ->
+                    val on = t == tab
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                            .clickable { tab = t }.padding(horizontal = 14.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = TextMuted
-                        )
+                        Icon(t.icon, null, tint = if (on) OnCyan else TextSecondary)
+                        Spacer(Modifier.width(12.dp))
+                        Text(t.label, color = if (on) OnCyan else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().testTag("settings_dialog_close_btn")) {
+                    Icon(Icons.Default.Close, null, tint = TextSecondary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Close", color = TextSecondary, fontSize = 15.sp)
+                }
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(CockpitSurfaceVariant)
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(text = "Map", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                Text(text = "Auto follows the sun at your position", color = TextSecondary, fontSize = 12.sp)
-                            }
-                            com.vibenav.ui.viewmodel.MapTheme.entries.forEach { t ->
-                                val on = t == mapTheme
-                                Box(
-                                    Modifier.padding(start = 6.dp).clip(RoundedCornerShape(10.dp))
-                                        .background(if (on) ElectricCyan else CockpitSurface)
-                                        .clickable { onMapTheme(t) }.padding(horizontal = 12.dp, vertical = 8.dp)
-                                ) {
-                                    Text(t.name.lowercase().replaceFirstChar { it.uppercase() },
-                                        color = if (on) Color(0xFF00363D) else TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                }
+            Box(Modifier.weight(1f).fillMaxHeight().padding(24.dp)) {
+                when (tab) {
+                    SettingsTab.DISPLAY -> Page {
+                        Setting("Speed") {
+                            Segmented(listOf(false, true), state.useMph, { if (it) "mph" else "km/h" }, actions.onUnits)
+                        }
+                        Setting("Map") {
+                            Segmented(MapTheme.entries, state.mapTheme, { it.name.lowercase().replaceFirstChar(Char::uppercase) }, actions.onMapTheme)
+                        }
+                        Setting("OBD2 data", "Engine data card when an adapter is connected") {
+                            Switch(state.obdEnabled, actions.onObd, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
+                        }
+                    }
+                    SettingsTab.NAVIGATION -> Page {
+                        Setting("Auto-zoom", "Zoom in when slow, out on fast roads") {
+                            Switch(state.autoZoom, actions.onAutoZoom, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
+                        }
+                        Setting("Auto-follow GPX tracks", "Navigate when riding along a track shown on the map") {
+                            Switch(state.autoFollowTracks, actions.onAutoFollow, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
+                        }
+                        Setting("Demo ride", "Drive the current route without GPS") {
+                            OutlinedButton(onClick = actions.onDemoRide, enabled = state.isNavigating || state.isDemoRiding) {
+                                Text(if (state.isDemoRiding) "Stop" else "Start", color = NeonAmber)
                             }
                         }
                     }
+                    SettingsTab.PHONE -> PhoneLinkContent(phone, Modifier.fillMaxSize())
+                    SettingsTab.DATA -> Page {
+                        SectionTitle("Offline maps")
+                        state.maps.forEach { m -> MapRow(m, state.mapDownload, actions) { confirmDelete = m } }
+                        (state.mapDownload as? MapDownloadState.Failed)?.let { Text(it.message, color = WarningRed, fontSize = 13.sp) }
+                        Text("Map data © OpenStreetMap contributors, via the Protomaps daily build. Download over Wi-Fi or the phone's hotspot.",
+                            color = TextMuted, fontSize = 12.sp)
+                        TextButton(onClick = actions.onImportMap) { Text("Import a .pmtiles file instead…", color = ElectricCyan) }
 
-                    item {
-                        Text(
-                            text = "DISPLAY & SPEEDOMETER",
-                            color = ElectricCyan,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
-
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(CockpitSurfaceVariant)
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(text = "Speed Units", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                Text(
-                                    text = if (useMph) "Imperial (MPH, Miles)" else "Metric (KM/H, Kilometers)",
-                                    color = TextSecondary,
-                                    fontSize = 12.sp
-                                )
-                            }
-                            Button(
-                                onClick = onToggleUnits,
-                                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.testTag("toggle_units_btn")
-                            ) {
-                                Text(
-                                    text = if (useMph) "SWITCH TO KM/H" else "SWITCH TO MPH",
-                                    color = Color(0xFF00363D),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                        SectionTitle("Routing data")
+                        Setting(state.routingDataStatus) {
+                            OutlinedButton(onClick = actions.onDownloadRouting) { Text("Download", color = ElectricCyan) }
                         }
-                    }
-
-                    item {
-                        Text(
-                            text = "OBD2 TELEMETRY GAUGE",
-                            color = ElectricCyan,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
-
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(CockpitSurfaceVariant)
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Show OBD2 Telemetry", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                Text(
-                                    text = "Engine RPM, Coolant temp, Gear, Battery volts",
-                                    color = TextSecondary,
-                                    fontSize = 12.sp
-                                )
-                            }
-                            Switch(
-                                checked = isObdEnabled,
-                                onCheckedChange = { onToggleObd() },
-                                colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan),
-                                modifier = Modifier.testTag("toggle_obd_switch")
-                            )
-                        }
-                    }
-
-                    item {
-                        Text(
-                            text = "OFFLINE MAP",
-                            color = ElectricCyan,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
-
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(CockpitSurfaceVariant)
-                                .padding(14.dp)
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Text(text = offlineMapStatus, color = TextPrimary, fontSize = 13.sp)
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Button(
-                                    onClick = onImportMap,
-                                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan.copy(alpha = 0.2f)),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan),
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Import .pmtiles map file…", color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-
-                    item {
-                        Text(
-                            text = "OFFLINE ROUTING DATA",
-                            color = ElectricCyan,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
-
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(CockpitSurfaceVariant)
-                                .padding(14.dp)
-                        ) {
-                            Text(text = routingDataStatus, color = TextPrimary, fontSize = 13.sp)
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Button(
-                                onClick = onDownloadRoutingData,
-                                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan.copy(alpha = 0.2f)),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, ElectricCyan),
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Download Norway routing data (~200 MB, needs internet)", color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-
-                    item {
-                        Button(
-                            onClick = onToggleDemoRide,
-                            enabled = isNavigating || isDemoRiding,
-                            colors = ButtonDefaults.buttonColors(containerColor = NeonAmber.copy(alpha = 0.2f)),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, NeonAmber),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth().testTag("demo_ride_btn")
-                        ) {
-                            Text(
-                                when {
-                                    isDemoRiding -> "Stop demo ride (back to GPS)"
-                                    isNavigating -> "Demo ride along the current route"
-                                    else -> "Demo ride (start a route first)"
-                                },
-                                color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold
-                            )
-                        }
+                        SectionTitle("Search index")
+                        Text(state.searchStatus, color = TextSecondary, fontSize = 13.sp)
                     }
                 }
             }
         }
+    }
+
+    confirmDelete?.let { m ->
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Delete the ${m.region.name} map?") },
+            text = { Text("Without it the map only shows online tiles.") },
+            confirmButton = { TextButton(onClick = { actions.onDeleteMap(m.region.id); confirmDelete = null }) { Text("Delete", color = WarningRed) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel") } }
+        )
+    }
+}
+
+@Composable
+private fun MapRow(m: MapRegionStatus, download: MapDownloadState, actions: SettingsActions, onDelete: () -> Unit) {
+    val running = (download as? MapDownloadState.Running)?.takeIf { it.regionId == m.region.id }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(m.region.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    when {
+                        m.installedBytes > 0 -> "%.1f GB".format(m.installedBytes / 1e9) +
+                            (m.installedBuild?.let { " · from $it" } ?: "") +
+                            (if (m.updateAvailable) " · newer map from ${m.latestBuild}" else "")
+                        else -> "Not installed · about %.1f GB".format(m.region.approxBytes / 1e9)
+                    },
+                    color = if (m.updateAvailable) NeonAmber else TextSecondary, fontSize = 13.sp
+                )
+            }
+            if (running != null) {
+                OutlinedButton(onClick = actions.onCancelMapDownload) { Text("Cancel", color = WarningRed) }
+            } else {
+                if (m.installedBytes > 0) {
+                    TextButton(onClick = onDelete) { Text("Delete", color = TextMuted) }
+                    Spacer(Modifier.width(6.dp))
+                }
+                Button(
+                    onClick = { actions.onDownloadMap(m.region.id) },
+                    enabled = download !is MapDownloadState.Running,
+                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)
+                ) { Text(if (m.installedBytes > 0) "Update" else "Download", color = OnCyan, fontWeight = FontWeight.Bold) }
+            }
+        }
+        if (running != null) {
+            LinearProgressIndicator(progress = { running.fraction }, color = ElectricCyan, trackColor = CockpitBorder,
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)))
+            Text(running.message, color = TextSecondary, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun Page(content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(18.dp), content = content)
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text.uppercase(), color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+}
+
+/** One setting: title (and an optional one-line hint) on the left, the control on the right. */
+@Composable
+private fun Setting(title: String, hint: String? = null, control: @Composable () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
+            Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp, maxLines = 1)
+        }
+        control()
     }
 }

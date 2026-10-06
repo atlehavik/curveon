@@ -4,12 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,444 +22,115 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.vibenav.data.model.*
+import androidx.compose.ui.window.DialogProperties
+import com.vibenav.data.model.CompassDirection
+import com.vibenav.data.model.GroundPreference
+import com.vibenav.data.model.RoadTypePreference
+import com.vibenav.data.model.RoundtripConfig
+import com.vibenav.routing.SurfacePreference
 import com.vibenav.ui.theme.*
 
+private val OnCyan = Color(0xFF00363D)
+
+/**
+ * GoRide-style roundtrip: pick a direction on the compass and a rough distance. Route options
+ * are the same chips as in the route preview.
+ */
 @Composable
 fun RoundtripDialog(
     initialConfig: RoundtripConfig,
     onDismiss: () -> Unit,
     onGenerate: (RoundtripConfig) -> Unit
 ) {
-    var selectedDistanceKm by remember { mutableIntStateOf(initialConfig.radiusKm) }
-    var selectedDirections by remember { mutableStateOf(initialConfig.selectedDirections) }
-    var selectedRoadType by remember { mutableStateOf(initialConfig.roadType) }
-    var selectedGround by remember { mutableStateOf(initialConfig.groundPreference) }
-    var avoidHighways by remember { mutableStateOf(initialConfig.avoidHighways) }
-    var avoidFerries by remember { mutableStateOf(initialConfig.avoidFerries) }
+    var config by remember { mutableStateOf(initialConfig.copy(avoidTolls = false)) }
+    val direction = config.selectedDirections.singleOrNull() ?: CompassDirection.NORTH
 
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.90f)
-                .clip(RoundedCornerShape(28.dp))
-                .background(CockpitSurface)
-                .border(1.5.dp, CockpitBorder, RoundedCornerShape(28.dp))
-                .padding(20.dp)
-                .testTag("roundtrip_dialog")
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            Modifier.fillMaxWidth(0.86f).clip(RoundedCornerShape(24.dp)).background(CockpitSurface)
+                .border(1.dp, CockpitBorder, RoundedCornerShape(24.dp)).padding(20.dp).testTag("roundtrip_dialog"),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(NeonAmber.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Explore,
-                                contentDescription = "Roundtrip",
-                                tint = NeonAmber,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "GORIDE ROUNDTRIP",
-                                color = TextPrimary,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Black,
-                                letterSpacing = 1.sp
-                            )
-                            Text(
-                                text = "Loop from & to current location",
-                                color = TextSecondary,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.testTag("roundtrip_dialog_close_btn")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = TextMuted
-                        )
-                    }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Explore, null, tint = NeonAmber, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Roundtrip", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                    Text("A loop from where you are, heading roughly that way", color = TextSecondary, fontSize = 13.sp)
                 }
+                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "Close", tint = TextSecondary) }
+            }
 
-                Spacer(modifier = Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                CompassRose(direction) { config = config.copy(selectedDirections = setOf(it)) }
 
-                // Scrollable Content
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // 1. Compass Direction Selector (Inspired by GoRide)
-                    item {
-                        Column {
-                            Text(
-                                text = "1. CHOOSE DIRECTION (COMPASS)",
-                                color = ElectricCyan,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // 8-way Compass Rose grid
-                            val allDirs = CompassDirection.entries.toTypedArray()
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    CompassButton(CompassDirection.NORTH_WEST, selectedDirections) { d ->
-                                        selectedDirections = toggleDirection(selectedDirections, d)
-                                    }
-                                    CompassButton(CompassDirection.NORTH, selectedDirections) { d ->
-                                        selectedDirections = toggleDirection(selectedDirections, d)
-                                    }
-                                    CompassButton(CompassDirection.NORTH_EAST, selectedDirections) { d ->
-                                        selectedDirections = toggleDirection(selectedDirections, d)
-                                    }
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    CompassButton(CompassDirection.WEST, selectedDirections) { d ->
-                                        selectedDirections = toggleDirection(selectedDirections, d)
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .size(54.dp)
-                                            .clip(CircleShape)
-                                            .background(CockpitSurfaceVariant),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.TwoWheeler,
-                                            contentDescription = "Motorcycle",
-                                            tint = NeonAmber,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                    CompassButton(CompassDirection.EAST, selectedDirections) { d ->
-                                        selectedDirections = toggleDirection(selectedDirections, d)
-                                    }
-                                }
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    CompassButton(CompassDirection.SOUTH_WEST, selectedDirections) { d ->
-                                        selectedDirections = toggleDirection(selectedDirections, d)
-                                    }
-                                    CompassButton(CompassDirection.SOUTH, selectedDirections) { d ->
-                                        selectedDirections = toggleDirection(selectedDirections, d)
-                                    }
-                                    CompassButton(CompassDirection.SOUTH_EAST, selectedDirections) { d ->
-                                        selectedDirections = toggleDirection(selectedDirections, d)
-                                    }
-                                }
-                            }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Label("Distance")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(40, 60, 100, 150, 220, 300).forEach { km ->
+                            val on = config.radiusKm == km
+                            Box(
+                                Modifier.clip(RoundedCornerShape(12.dp)).background(if (on) NeonAmber else CockpitSurfaceVariant)
+                                    .clickable { config = config.copy(radiusKm = km) }.padding(horizontal = 14.dp, vertical = 10.dp)
+                            ) { Text("$km km", color = if (on) Color.Black else TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
                         }
                     }
-
-                    // 2. Distance Selector
-                    item {
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "2. APPROXIMATE DISTANCE",
-                                    color = ElectricCyan,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 1.sp
-                                )
-                                Text(
-                                    text = "$selectedDistanceKm km",
-                                    color = NeonAmber,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Black
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Slider(
-                                value = selectedDistanceKm.toFloat(),
-                                onValueChange = { selectedDistanceKm = it.toInt() },
-                                valueRange = 25f..250f,
-                                steps = 8,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = NeonAmber,
-                                    activeTrackColor = NeonAmber,
-                                    inactiveTrackColor = CockpitSurfaceVariant
-                                ),
-                                modifier = Modifier.testTag("roundtrip_distance_slider")
-                            )
-
-                            // Quick preset chips
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                listOf(35, 60, 100, 150, 220).forEach { km ->
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(if (selectedDistanceKm == km) NeonAmber else CockpitSurfaceVariant)
-                                            .clickable { selectedDistanceKm = km }
-                                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Text(
-                                            text = "$km km",
-                                            color = if (selectedDistanceKm == km) Color.Black else TextSecondary,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 3. Road Curviness Selection
-                    item {
-                        Column {
-                            Text(
-                                text = "3. ROAD CURVINESS",
-                                color = ElectricCyan,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                RoadTypePreference.entries.forEach { type ->
-                                    val isSelected = selectedRoadType == type
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .background(if (isSelected) ElectricCyan.copy(alpha = 0.2f) else CockpitSurfaceVariant)
-                                            .border(
-                                                1.5.dp,
-                                                if (isSelected) ElectricCyan else CockpitBorder,
-                                                RoundedCornerShape(14.dp)
-                                            )
-                                            .clickable { selectedRoadType = type }
-                                            .padding(vertical = 10.dp, horizontal = 6.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                text = type.label,
-                                                color = if (isSelected) ElectricCyan else TextPrimary,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                text = when (type) {
-                                                    RoadTypePreference.FASTEST -> "Direct"
-                                                    RoadTypePreference.CURVY -> "Sweepers"
-                                                    RoadTypePreference.VERY_CURVY -> "Hairpins"
-                                                },
-                                                color = TextMuted,
-                                                fontSize = 10.sp
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 4. Ground Preference (Road, Gravel)
-                    item {
-                        Column {
-                            Text(
-                                text = "4. GROUND / TERRAIN",
-                                color = ElectricCyan,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                GroundPreference.entries.forEach { ground ->
-                                    val isSelected = selectedGround == ground
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .background(if (isSelected) EcoGreen.copy(alpha = 0.2f) else CockpitSurfaceVariant)
-                                            .border(
-                                                1.5.dp,
-                                                if (isSelected) EcoGreen else CockpitBorder,
-                                                RoundedCornerShape(14.dp)
-                                            )
-                                            .clickable { selectedGround = ground }
-                                            .padding(vertical = 10.dp, horizontal = 6.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = ground.label,
-                                            color = if (isSelected) EcoGreen else TextPrimary,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 5. Avoidances
-                    item {
-                        Column {
-                            Text(
-                                text = "5. ROUTE RESTRICTIONS",
-                                color = ElectricCyan,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(text = "Avoid Motorways / Highways", color = TextSecondary, fontSize = 13.sp)
-                                Switch(
-                                    checked = avoidHighways,
-                                    onCheckedChange = { avoidHighways = it },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan)
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(text = "Include Ferry Crossings", color = TextSecondary, fontSize = 13.sp)
-                                Switch(
-                                    checked = !avoidFerries,
-                                    onCheckedChange = { avoidFerries = !it },
-                                    colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan)
-                                )
-                            }
-                        }
-                    }
+                    Label("Roads")
+                    Segmented(
+                        RoadTypePreference.entries, config.roadType,
+                        label = { when (it) { RoadTypePreference.FASTEST -> "Fastest"; RoadTypePreference.CURVY -> "Curvy"; RoadTypePreference.VERY_CURVY -> "Super curvy" } },
+                        onSelect = { config = config.copy(roadType = it) }
+                    )
+                    RouteOptionChips(
+                        surface = SurfacePreference.entries[config.groundPreference.ordinal],
+                        avoidFerries = config.avoidFerries,
+                        avoidMotorways = config.avoidHighways,
+                        onSurface = { config = config.copy(groundPreference = GroundPreference.entries[it.ordinal]) },
+                        onToggleFerries = { config = config.copy(avoidFerries = !config.avoidFerries) },
+                        onToggleMotorways = { config = config.copy(avoidHighways = !config.avoidHighways) }
+                    )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Bottom Action: Generate Button
-                Button(
-                    onClick = {
-                        val config = RoundtripConfig(
-                            radiusKm = selectedDistanceKm,
-                            selectedDirections = if (selectedDirections.isEmpty()) setOf(CompassDirection.NORTH) else selectedDirections,
-                            roadType = selectedRoadType,
-                            groundPreference = selectedGround,
-                            avoidHighways = avoidHighways,
-                            avoidFerries = avoidFerries
-                        )
-                        onGenerate(config)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp)
-                        .testTag("roundtrip_generate_btn"),
-                    colors = ButtonDefaults.buttonColors(containerColor = NeonAmber),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AltRoute,
-                        contentDescription = "Generate Route",
-                        tint = Color.Black,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "CALCULATE CURVY ROUNDTRIP",
-                        color = Color.Black,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp
-                    )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                PillButton(Icons.Default.Explore, "Plan ${config.radiusKm} km ${direction.code}", NeonAmber, Color.Black,
+                    Modifier.widthIn(min = 260.dp).testTag("roundtrip_plan_btn")) {
+                    onGenerate(config.copy(selectedDirections = setOf(direction)))
                 }
             }
         }
     }
 }
 
-private fun toggleDirection(
-    current: Set<CompassDirection>,
-    target: CompassDirection
-): Set<CompassDirection> {
-    return if (current.contains(target)) {
-        if (current.size > 1) current - target else current
-    } else {
-        current + target
-    }
-}
-
 @Composable
-private fun CompassButton(
-    dir: CompassDirection,
-    selected: Set<CompassDirection>,
-    onToggle: (CompassDirection) -> Unit
-) {
-    val isSelected = selected.contains(dir)
-    Box(
-        modifier = Modifier
-            .size(54.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (isSelected) ElectricCyan else CockpitSurfaceVariant)
-            .border(
-                1.5.dp,
-                if (isSelected) ElectricCyan else CockpitBorder,
-                RoundedCornerShape(14.dp)
-            )
-            .clickable { onToggle(dir) },
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = dir.code,
-                color = if (isSelected) Color(0xFF00363D) else TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black
-            )
+private fun Label(text: String) = Text(text.uppercase(), color = ElectricCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+
+/** Eight directions around a centre; tap one. */
+@Composable
+private fun CompassRose(selected: CompassDirection, onSelect: (CompassDirection) -> Unit) {
+    val grid = listOf(
+        listOf(CompassDirection.NORTH_WEST, CompassDirection.NORTH, CompassDirection.NORTH_EAST),
+        listOf(CompassDirection.WEST, null, CompassDirection.EAST),
+        listOf(CompassDirection.SOUTH_WEST, CompassDirection.SOUTH, CompassDirection.SOUTH_EAST)
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        grid.forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { d ->
+                    if (d == null) {
+                        Box(Modifier.size(64.dp).clip(CircleShape).background(CockpitBackground), contentAlignment = Alignment.Center) {
+                            Box(Modifier.size(12.dp).clip(CircleShape).background(ElectricCyan))
+                        }
+                    } else {
+                        val on = d == selected
+                        Box(
+                            Modifier.size(64.dp).clip(CircleShape).background(if (on) NeonAmber else CockpitSurfaceVariant)
+                                .border(1.dp, if (on) NeonAmber else CockpitBorder, CircleShape).clickable { onSelect(d) },
+                            contentAlignment = Alignment.Center
+                        ) { Text(d.code, color = if (on) Color.Black else TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black) }
+                    }
+                }
+            }
         }
     }
 }

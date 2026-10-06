@@ -108,23 +108,10 @@ fun RoutePreviewSheet(
 
         // Options + GO
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // One chip that cycles tarmac → mixed → gravel: three options, one control.
-            val surfaceLabel = when (options.surface) {
-                SurfacePreference.PAVED -> "Tarmac"
-                SurfacePreference.MIXED -> "Mixed"
-                SurfacePreference.GRAVEL -> "Gravel"
-            }
-            OptionChip(surfaceLabel, active = options.surface != SurfacePreference.PAVED, onClick = {
-                onSurface(SurfacePreference.entries[(options.surface.ordinal + 1) % SurfacePreference.entries.size])
-            }) {
-                Icon(Icons.Default.Landscape, null, tint = if (options.surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
-            }
-            OptionChip("Ferries", active = options.avoidFerries, avoid = true, onClick = onToggleFerries) {
-                Icon(Icons.Default.DirectionsBoat, null, tint = if (options.avoidFerries) NeonAmber else TextSecondary)
-            }
-            OptionChip("Motorways", active = options.avoidMotorways, avoid = true, onClick = onToggleMotorways) {
-                Image(painterResource(com.vibenav.R.drawable.ic_motorway), null, modifier = Modifier.size(22.dp))
-            }
+            RouteOptionChips(
+                surface = options.surface, avoidFerries = options.avoidFerries, avoidMotorways = options.avoidMotorways,
+                onSurface = onSurface, onToggleFerries = onToggleFerries, onToggleMotorways = onToggleMotorways
+            )
             Spacer(Modifier.weight(1f))
             val ready = preview.selectedRoute != null
             Row(
@@ -188,35 +175,6 @@ private fun CurvinessBar(curviness: Int) {
         }
         Spacer(Modifier.width(6.dp))
         Icon(Icons.Default.Gesture, "Curviness", tint = TextMuted, modifier = Modifier.size(14.dp))
-    }
-}
-
-/**
- * A route option. Avoid-toggles show their label struck through when on ("~~Motorways~~" = no
- * motorways), which reads at a glance without extra words.
- */
-@Composable
-private fun OptionChip(
-    label: String,
-    active: Boolean,
-    avoid: Boolean = false,
-    onClick: () -> Unit,
-    icon: @Composable () -> Unit
-) {
-    val color = if (active) NeonAmber else TextSecondary
-    Row(
-        Modifier.height(44.dp).clip(RoundedCornerShape(22.dp))
-            .background(if (active) NeonAmber.copy(alpha = 0.2f) else CockpitSurfaceVariant)
-            .border(1.dp, if (active) NeonAmber else CockpitBorder, RoundedCornerShape(22.dp))
-            .clickable(onClick = onClick).padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(Modifier.size(22.dp).graphicsLayer { alpha = if (avoid && active) 0.5f else 1f }, contentAlignment = Alignment.Center) { icon() }
-        Spacer(Modifier.width(6.dp))
-        Text(
-            label, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold,
-            textDecoration = if (avoid && active) TextDecoration.LineThrough else null
-        )
     }
 }
 

@@ -140,7 +140,10 @@ fun FullMediaCard(
 ) {
     DashCard(modifier.fillMaxWidth().testTag("media_card_full")) {
         if (track == null) {
-            NothingPlaying(phoneState, phoneName)
+            // Connected but silent: tap to make the phone resume whatever played last.
+            Box(Modifier.matchParentSize().clickable(enabled = phoneState == CompanionConnectionState.CONNECTED, onClick = onPlayPause)) {
+                NothingPlaying(phoneState, phoneName)
+            }
             return@DashCard
         }
         if (art != null) {
@@ -207,9 +210,9 @@ private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: 
         Spacer(Modifier.height(10.dp))
         Text(
             when (state) {
-                CompanionConnectionState.CONNECTED -> "Nothing playing on $phoneName"
+                CompanionConnectionState.CONNECTED -> "Nothing playing on $phoneName\nTap to play"
                 CompanionConnectionState.CONNECTING -> "Connecting to $phoneName…"
-                CompanionConnectionState.NO_PHONE_SELECTED -> "No phone linked.\nPick your phone in Phone link."
+                CompanionConnectionState.NO_PHONE_SELECTED -> "No phone linked.\nPick your phone in Settings → Phone."
                 CompanionConnectionState.NO_PERMISSION -> "Allow Bluetooth access\nto link your phone."
                 CompanionConnectionState.BLUETOOTH_OFF -> "Bluetooth is off"
                 CompanionConnectionState.DISCONNECTED -> "Phone not connected.\nOpen VibeNav Companion on the phone."

@@ -30,9 +30,9 @@ import com.vibenav.data.bluetooth.CompanionConnectionState
 import com.vibenav.data.bluetooth.PhoneCompanionManager
 import com.vibenav.ui.theme.*
 
-/** Choose which paired phone to mirror, or turn on demo data. */
+/** Choose which paired phone to mirror, or turn on demo data. Shown in Settings → Phone. */
 @Composable
-fun PhoneLinkDialog(manager: PhoneCompanionManager, onDismiss: () -> Unit) {
+fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifier) {
     val state by manager.connectionState.collectAsStateWithLifecycle()
     val name by manager.connectedDeviceName.collectAsStateWithLifecycle()
     var refresh by remember { mutableIntStateOf(0) }
@@ -42,16 +42,8 @@ fun PhoneLinkDialog(manager: PhoneCompanionManager, onDismiss: () -> Unit) {
         manager.restart(); refresh++
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(
-            Modifier.fillMaxWidth(0.7f).fillMaxHeight(0.85f).clip(RoundedCornerShape(24.dp)).background(CockpitSurface)
-                .border(1.dp, CockpitBorder, RoundedCornerShape(24.dp)).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("PHONE LINK", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
-                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "Close", tint = TextSecondary) }
-            }
+    run {
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 when (state) {
                     CompanionConnectionState.CONNECTED -> "Connected to $name"

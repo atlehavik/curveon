@@ -1,3 +1,0 @@
-com.vibenav.companion
-drawable ic_companion
-string app_name

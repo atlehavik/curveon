@@ -54,6 +54,7 @@ android {
 dependencies {
   implementation(project(":routing"))
   implementation(project(":protocol"))
+  implementation(project(":pmtiles"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.material.icons.core)

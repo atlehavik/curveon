@@ -73,6 +73,65 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val recentDestinations = RecentDestinations(application)
     private val settings = application.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
 
+    // ---------------------------------------------------------------- map downloads
+
+    private val mapDownloads = com.vibenav.data.map.MapDownloads(application, offlineMaps)
+    private var latestMapBuild: String? = null
+    private val _mapStatuses = MutableStateFlow(mapDownloads.status(null))
+    val mapStatuses: StateFlow<List<com.vibenav.data.map.MapRegionStatus>> = _mapStatuses.asStateFlow()
+    private val _mapDownload = MutableStateFlow<com.vibenav.data.map.MapDownloadState>(com.vibenav.data.map.MapDownloadState.Idle)
+    val mapDownload: StateFlow<com.vibenav.data.map.MapDownloadState> = _mapDownload.asStateFlow()
+    /** Bumped when the offline map file changes so the map view reloads it. */
+    private val _mapVersion = MutableStateFlow(0)
+    val mapVersion: StateFlow<Int> = _mapVersion.asStateFlow()
+    @Volatile private var cancelMapDownload = false
+
+    /** Checks online (when there is a connection) whether a newer map build exists. */
+    fun refreshMapStatus() = viewModelScope.launch {
+        latestMapBuild = mapDownloads.latestBuild() ?: latestMapBuild
+        _mapStatuses.value = mapDownloads.status(latestMapBuild)
+    }
+
+    fun downloadMap(regionId: String) {
+        val region = mapDownloads.regions.firstOrNull { it.id == regionId } ?: return
+        if (_mapDownload.value is com.vibenav.data.map.MapDownloadState.Running) return
+        cancelMapDownload = false
+        _mapDownload.value = com.vibenav.data.map.MapDownloadState.Running(regionId, "Checking for the newest map…", 0f)
+        viewModelScope.launch {
+            try {
+                val build = mapDownloads.latestBuild() ?: error("No connection. Connect to the phone's hotspot or Wi-Fi.")
+                latestMapBuild = build
+                mapDownloads.download(region, build, onProgress = { msg, f ->
+                    _mapDownload.value = com.vibenav.data.map.MapDownloadState.Running(regionId, msg, f)
+                }, isCancelled = { cancelMapDownload })
+                _mapDownload.value = com.vibenav.data.map.MapDownloadState.Idle
+                _mapVersion.value++
+            } catch (e: Throwable) {
+                mapDownloads.cleanupPartial(region)
+                _mapDownload.value = if (cancelMapDownload) com.vibenav.data.map.MapDownloadState.Idle
+                else com.vibenav.data.map.MapDownloadState.Failed("Map download failed: ${e.message}")
+            }
+            _mapStatuses.value = mapDownloads.status(latestMapBuild)
+            _offlineMapStatus.value = describeOfflineMaps()
+        }
+    }
+
+    fun cancelMapDownload() { cancelMapDownload = true }
+
+    fun deleteMap(regionId: String) {
+        val region = mapDownloads.regions.firstOrNull { it.id == regionId } ?: return
+        mapDownloads.delete(region)
+        _mapStatuses.value = mapDownloads.status(latestMapBuild)
+        _mapVersion.value++
+    }
+
+    private val _autoZoom = MutableStateFlow(settings.getBoolean("autoZoom", true))
+    val autoZoom: StateFlow<Boolean> = _autoZoom.asStateFlow()
+    fun setAutoZoom(on: Boolean) { _autoZoom.value = on; settings.edit().putBoolean("autoZoom", on).apply() }
+
+    fun setUseMph(on: Boolean) { if (_telemetry.value.useMph != on) toggleSpeedUnits() }
+    fun setObd(on: Boolean) { if (_telemetry.value.isObdEnabled != on) toggleObd() }
+
     private val _offlineMapStatus = MutableStateFlow(describeOfflineMaps())
     val offlineMapStatus: StateFlow<String> = _offlineMapStatus.asStateFlow()
 
@@ -671,7 +730,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             runCatching {
                 offlineMaps.import(uri) { p -> _offlineMapStatus.value = "Importing… %.0f%%".format(p * 100) }
             }.onFailure { _offlineMapStatus.value = "Import failed: ${it.message}" }
-                .onSuccess { _offlineMapStatus.value = describeOfflineMaps() }
+                .onSuccess { _offlineMapStatus.value = describeOfflineMaps(); _mapVersion.value++; _mapStatuses.value = mapDownloads.status(latestMapBuild) }
         }
     }
 

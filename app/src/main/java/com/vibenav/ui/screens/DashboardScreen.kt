@@ -68,6 +68,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val trackHint by viewModel.trackHint.collectAsStateWithLifecycle()
     val poiCategories by viewModel.poiCategories.collectAsStateWithLifecycle()
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
+    val mapAutoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
+    val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.vibenav.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
     val preview by viewModel.preview.collectAsStateWithLifecycle()
@@ -92,7 +94,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var showSearch by remember { mutableStateOf(false) }
     var showRoundtrip by remember { mutableStateOf(false) }
     var showGpx by remember { mutableStateOf(false) }
-    var showPhoneLink by remember { mutableStateOf(false) }
+    var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.vibenav.data.model.CompassDirection.NORTH), avoidTolls = false)) }
     var showSettings by remember { mutableStateOf(false) }
     var showRides by remember { mutableStateOf(false) }
     /** A place picked while riding: add it as a stop or make it the destination? */
@@ -168,7 +170,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             unread = notifications.size,
             onSearch = { showSearch = true },
             onRoundtrip = { showRoundtrip = true },
-            onPhone = { showPhoneLink = true },
             onGpx = { showGpx = true },
             onSettings = { showSettings = true },
             onToggleMap = { viewModel.toggleFullScreenMap() }
@@ -199,6 +200,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     gpxPois = overlayPois,
                     trackHint = trackHint.takeIf { preview == null && !isNavigating },
                     onPoiClick = { shownPoi = it },
+                    autoZoom = mapAutoZoom,
+                    mapVersion = mapVersion,
                     overlays = mapOverlays
                 )
             }
@@ -284,9 +287,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     if (showRoundtrip) {
         RoundtripDialog(
-            initialConfig = RoundtripConfig(groundPreference = groundPreference),
+            initialConfig = lastRoundtrip,
             onDismiss = { showRoundtrip = false },
             onGenerate = { config ->
+                lastRoundtrip = config
                 viewModel.previewRoundtrip(config)
                 showRoundtrip = false
             }
@@ -316,28 +320,38 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
 
 
-    if (showPhoneLink) {
-        PhoneLinkDialog(manager = phone, onDismiss = { showPhoneLink = false })
-    }
 
     if (showSettings) {
+        val mapStatuses by viewModel.mapStatuses.collectAsStateWithLifecycle()
+        val mapDownload by viewModel.mapDownload.collectAsStateWithLifecycle()
+        val autoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
+        LaunchedEffect(Unit) { viewModel.refreshMapStatus() }
         SettingsDialog(
-            useMph = telemetry.useMph,
-            onToggleUnits = { viewModel.toggleSpeedUnits() },
-            isObdEnabled = telemetry.isObdEnabled,
-            onToggleObd = { viewModel.toggleObd() },
-            offlineMapStatus = offlineMapStatus,
-            onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
-            routingDataStatus = routingDataStatus,
-            onDownloadRoutingData = { viewModel.downloadRoutingData() },
-            isNavigating = navigationSummary != null,
-            isDemoRiding = isDemoRiding,
-            onToggleDemoRide = { viewModel.toggleDemoRide(); showSettings = false },
-            mapTheme = mapTheme,
-            onMapTheme = viewModel::setMapTheme,
+            state = SettingsState(
+                useMph = telemetry.useMph, mapTheme = mapTheme, obdEnabled = telemetry.isObdEnabled,
+                autoZoom = autoZoom, autoFollowTracks = autoFollow,
+                isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
+                maps = mapStatuses, mapDownload = mapDownload,
+                routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() }
+            ),
+            actions = SettingsActions(
+                onUnits = viewModel::setUseMph,
+                onMapTheme = viewModel::setMapTheme,
+                onObd = viewModel::setObd,
+                onAutoZoom = viewModel::setAutoZoom,
+                onAutoFollow = viewModel::setAutoFollow,
+                onDemoRide = { viewModel.toggleDemoRide(); showSettings = false },
+                onDownloadMap = viewModel::downloadMap,
+                onCancelMapDownload = viewModel::cancelMapDownload,
+                onDeleteMap = viewModel::deleteMap,
+                onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
+                onDownloadRouting = viewModel::downloadRoutingData
+            ),
+            phone = phone,
             onDismiss = { showSettings = false }
         )
     }
+
 }
 
 /**
@@ -353,7 +367,6 @@ private fun Rail(
     unread: Int,
     onSearch: () -> Unit,
     onRoundtrip: () -> Unit,
-    onPhone: () -> Unit,
     onGpx: () -> Unit,
     onSettings: () -> Unit,
     onToggleMap: () -> Unit
@@ -365,19 +378,7 @@ private fun Rail(
     ) {
         RailButton(Icons.Default.Search, "Where to?", ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
         RailButton(Icons.Default.Explore, "Roundtrip", NeonAmber, NeonAmber, tag = "rail_roundtrip", onClick = onRoundtrip)
-        // Full-screen map is for riding tracks: GPX manager instead of the phone link there.
-        if (isFullScreenMap) {
-            RailButton(Icons.Default.Route, "GPX manager", ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
-        } else Box {
-            RailButton(Icons.Default.PhoneAndroid, "Phone link", TextSecondary, TextPrimary, tag = "rail_phone", onClick = onPhone)
-            val dot = when (phoneState) {
-                CompanionConnectionState.CONNECTED -> EcoGreen
-                CompanionConnectionState.DEMO -> NeonAmber
-                CompanionConnectionState.CONNECTING -> ElectricCyan
-                else -> WarningRed
-            }
-            Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(dot).border(2.dp, CockpitSurface, CircleShape))
-        }
+        RailButton(Icons.Default.Route, "GPX manager", ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
         RailButton(Icons.Default.Settings, "Settings", TextSecondary, TextPrimary, tag = "rail_settings", onClick = onSettings)
         Spacer(Modifier.weight(1f))
         Clock()

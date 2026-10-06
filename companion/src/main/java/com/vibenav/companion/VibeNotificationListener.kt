@@ -218,7 +218,17 @@ class VibeNotificationListener : NotificationListenerService() {
     }
 
     fun mediaCommand(command: Message.MediaAction) = main.post {
-        val controls = controller?.transportControls ?: return@post
+        // Nothing playing (no active session): a "play" key press makes Android resume the app
+        // that played last, just like pressing play on a headset.
+        val controls = controller?.transportControls ?: run {
+            if (command == Message.MediaAction.PLAY_PAUSE) {
+                val am = getSystemService(android.media.AudioManager::class.java)
+                for (action in listOf(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.ACTION_UP)) {
+                    am.dispatchMediaKeyEvent(android.view.KeyEvent(action, android.view.KeyEvent.KEYCODE_MEDIA_PLAY))
+                }
+            }
+            return@post
+        }
         when (command) {
             Message.MediaAction.PLAY_PAUSE ->
                 if (controller?.playbackState?.state == PlaybackState.STATE_PLAYING) controls.pause() else controls.play()

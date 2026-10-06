@@ -28,4 +28,5 @@ include(":app")
 include(":routing")
 include(":protocol")
 include(":companion")
+include(":pmtiles")
 

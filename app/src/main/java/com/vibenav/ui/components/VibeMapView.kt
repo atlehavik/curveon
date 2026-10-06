@@ -70,6 +70,8 @@ private const val ARROW_IMAGE = "vibenav-arrow"
 private const val FOLLOW_ZOOM = 15.5
 private const val NAV_TILT = 45.0
 
+private enum class CameraMode2 { HEADING_UP, NORTH_UP, FREE }
+
 /** A route drawn during preview; [selected] is the one that will be ridden. */
 data class MapRoute(val points: List<GeoPoint>, val selected: Boolean)
 
@@ -99,17 +101,26 @@ fun VibeMapView(
     gpxPois: List<com.vibenav.data.gpx.GpxPoi> = emptyList(),
     trackHint: com.vibenav.data.gpx.TrackHint? = null,
     onPoiClick: (com.vibenav.data.gpx.GpxPoi) -> Unit = {},
+    /** Zoom follows speed (in when slow and twisty, out on fast roads). */
+    autoZoom: Boolean = true,
+    /** Changes when the offline map file was downloaded/replaced/deleted: reload the style. */
+    mapVersion: Int = 0,
     onLongPress: (GeoPoint) -> Unit = {},
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val offlineMaps = remember { OfflineMaps(context.applicationContext) }
-    val hasOfflineMap = remember { offlineMaps.activeMap() != null }
+    val hasOfflineMap = remember(mapVersion) { offlineMaps.activeMap() != null }
 
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var style by remember { mutableStateOf<Style?>(null) }
-    var following by remember { mutableStateOf(true) }
+    // Camera: heading-up follow, north-up follow, or free (the rider panned the map).
+    var mode by remember { mutableStateOf(CameraMode2.HEADING_UP) }
+    var followMode by remember { mutableStateOf(CameraMode2.HEADING_UP) }
+    val following = mode != CameraMode2.FREE
+    /** +/- while following nudges the speed-based zoom by this many levels. */
+    var zoomBias by remember { mutableDoubleStateOf(0.0) }
     var cameraBearing by remember { mutableFloatStateOf(0f) }
     var cameraIdleTick by remember { mutableIntStateOf(0) }
 
@@ -157,7 +168,7 @@ fun VibeMapView(
                 .zoom(FOLLOW_ZOOM)
                 .build()
             m.addOnCameraMoveStartedListener { reason ->
-                if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) following = false
+                if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) mode = CameraMode2.FREE
             }
             m.addOnCameraMoveListener { cameraBearing = m.cameraPosition.bearing.toFloat() }
             m.addOnCameraIdleListener { cameraIdleTick++ }
@@ -176,7 +187,7 @@ fun VibeMapView(
     }
 
     // Style: day or night. Switching style drops our layers, so they are re-added each time.
-    LaunchedEffect(map, dark) {
+    LaunchedEffect(map, dark, mapVersion) {
         val m = map ?: return@LaunchedEffect
         val json = offlineMaps.styleJson(if (dark) "dark" else "light") ?: OfflineMaps.ONLINE_FALLBACK_STYLE
         style = null
@@ -258,7 +269,7 @@ fun VibeMapView(
     LaunchedEffect(map, previewPoints.size) {
         val m = map ?: return@LaunchedEffect
         if (previewPoints.size < 2) return@LaunchedEffect
-        following = false
+        mode = CameraMode2.FREE
         val b = LatLngBounds.Builder()
         previewPoints.forEach { b.include(LatLng(it.latitude, it.longitude)) }
         b.include(LatLng(location.latitude, location.longitude))
@@ -267,14 +278,14 @@ fun VibeMapView(
         m.easeCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 60, 50, 120, (h * 0.52).toInt()), 800)
     }
     val inPreview = previewRoutes.isNotEmpty()
-    LaunchedEffect(inPreview) { if (!inPreview) following = true }
+    LaunchedEffect(inPreview) { if (!inPreview) mode = followMode }
 
     // Starting a route always brings the camera back to the rider.
     val hasRoute = routePoints.isNotEmpty()
-    LaunchedEffect(hasRoute) { if (hasRoute) following = true }
+    LaunchedEffect(hasRoute) { if (hasRoute) mode = followMode }
 
     // Rider position + camera follow
-    LaunchedEffect(map, style, location, headingDeg, following, hasGpsFix) {
+    LaunchedEffect(map, style, location, headingDeg, mode, zoomBias, hasGpsFix) {
         val m = map ?: return@LaunchedEffect
         if (style == null) return@LaunchedEffect
         if (hasGpsFix && m.locationComponent.isLocationComponentActivated) {
@@ -287,14 +298,16 @@ fun VibeMapView(
         }
         if (following && !inPreview) {
             val moving = speedKmh >= 5f
+            val headingUp = mode == CameraMode2.HEADING_UP
             m.easeCamera(
                 CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
                         .target(LatLng(location.latitude, location.longitude))
-                        .zoom(if (hasRoute) navigationZoom(speedKmh) else m.cameraPosition.zoom)
-                        .bearing(if (moving) headingDeg.toDouble() else m.cameraPosition.bearing)
-                        .tilt(if (moving && hasRoute) NAV_TILT else 0.0)
-                        .padding(0.0, if (moving) 250.0 else 0.0, 0.0, 0.0) // rider sits low on screen
+                        .zoom(if (autoZoom) (navigationZoom(speedKmh) + zoomBias).coerceIn(10.0, 18.5) else m.cameraPosition.zoom)
+                        .bearing(if (!headingUp) 0.0 else if (moving) headingDeg.toDouble() else m.cameraPosition.bearing)
+                        .tilt(if (headingUp && moving && hasRoute) NAV_TILT else 0.0)
+                        // Heading-up: rider low on screen to see more road ahead. North-up: centred.
+                        .padding(0.0, if (headingUp && moving) 250.0 else 0.0, 0.0, 0.0)
                         .build()
                 ),
                 900
@@ -348,34 +361,40 @@ fun VibeMapView(
             )
         }
 
-        // One button while following (shows north; tap again for north-up). Zoom buttons only
-        // appear once the rider has panned away, because while following the zoom is automatic.
+        // Camera button: heading-up ↔ north-up while following; after panning it brings the
+        // camera back. +/- are always there: while following with auto-zoom they nudge the
+        // speed-based zoom, otherwise they simply zoom.
         if (!inPreview) Column(
             modifier = Modifier.align(Alignment.CenterEnd).padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             MapButton(
                 onClick = {
-                    if (following) map?.animateCamera(CameraUpdateFactory.bearingTo(0.0))
-                    following = true
+                    if (mode == CameraMode2.FREE) mode = followMode
+                    else {
+                        followMode = if (mode == CameraMode2.HEADING_UP) CameraMode2.NORTH_UP else CameraMode2.HEADING_UP
+                        mode = followMode
+                    }
                 },
                 highlighted = following,
                 tag = "map_recenter_btn"
             ) {
-                if (following) {
-                    Icon(Icons.Default.Navigation, "North up", tint = Color(0xFF00363D),
-                        modifier = Modifier.size(24.dp).rotate(-cameraBearing))
-                } else {
-                    Icon(Icons.Default.MyLocation, "Follow me", tint = TextPrimary, modifier = Modifier.size(24.dp))
+                when (mode) {
+                    CameraMode2.HEADING_UP -> Icon(Icons.Default.Navigation, "Heading up – tap for north up", tint = Color(0xFF00363D),
+                        modifier = Modifier.size(26.dp))
+                    CameraMode2.NORTH_UP -> Text("N", color = Color(0xFF00363D), fontSize = 22.sp, fontWeight = FontWeight.Black)
+                    CameraMode2.FREE -> Icon(Icons.Default.MyLocation, "Follow me", tint = TextPrimary, modifier = Modifier.size(24.dp))
                 }
             }
-            if (!following) {
-                MapButton(onClick = { map?.animateCamera(CameraUpdateFactory.zoomIn()) }, tag = "map_zoom_in_btn") {
-                    Icon(Icons.Default.Add, "Zoom in", tint = TextPrimary, modifier = Modifier.size(24.dp))
-                }
-                MapButton(onClick = { map?.animateCamera(CameraUpdateFactory.zoomOut()) }, tag = "map_zoom_out_btn") {
-                    Icon(Icons.Default.Remove, "Zoom out", tint = TextPrimary, modifier = Modifier.size(24.dp))
-                }
+            MapButton(onClick = {
+                if (following && autoZoom) zoomBias = (zoomBias + 1).coerceAtMost(3.0) else map?.animateCamera(CameraUpdateFactory.zoomIn())
+            }, tag = "map_zoom_in_btn") {
+                Icon(Icons.Default.Add, "Zoom in", tint = TextPrimary, modifier = Modifier.size(24.dp))
+            }
+            MapButton(onClick = {
+                if (following && autoZoom) zoomBias = (zoomBias - 1).coerceAtLeast(-4.0) else map?.animateCamera(CameraUpdateFactory.zoomOut())
+            }, tag = "map_zoom_out_btn") {
+                Icon(Icons.Default.Remove, "Zoom out", tint = TextPrimary, modifier = Modifier.size(24.dp))
             }
         }
 
@@ -520,8 +539,9 @@ internal fun roadLabel(features: List<Feature>): String? {
     return listOfNotNull(ref, name?.takeIf { it != ref }).joinToString(" ").ifEmpty { null }
 }
 
-/** Zoom in for slow, twisty riding and out on fast roads so the next turn stays in view. */
+/** Zoom in for slow, twisty riding and out on fast roads so what's ahead stays in view. */
 private fun navigationZoom(speedKmh: Float): Double = when {
+    speedKmh < 8f -> 16.0 // standing still: a bit of overview
     speedKmh < 30f -> 16.5
     speedKmh < 60f -> 16.0
     speedKmh < 85f -> 15.3
