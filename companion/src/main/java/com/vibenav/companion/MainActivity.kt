@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
         val runtimeGranted = remember(refresh) { RUNTIME_PERMISSIONS.associateWith { has(it) } }
 
         Column(
-            Modifier.fillMaxSize().background(Bg).padding(20.dp).verticalScroll(rememberScrollState()),
+            Modifier.fillMaxSize().background(Bg).safeDrawingPadding().padding(20.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text("VibeNav Companion", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black)
