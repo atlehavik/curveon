@@ -135,7 +135,8 @@ fun SpeedLimitSign(limit: Int, size: Dp) {
 
 /**
  * Cover art fills the card, like Android Auto's media card when nothing else needs the space.
- * With more than one media app on the phone, their icons sit on top to switch between them.
+ * With more than one media app on the phone, swipe the card sideways to switch between them;
+ * small dots at the top show there are more.
  */
 @Composable
 fun FullMediaCard(
@@ -151,7 +152,14 @@ fun FullMediaCard(
     onReconnect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    DashCard(modifier.fillMaxWidth().testTag("media_card_full")) {
+    val current = apps.indexOfFirst { it.name == track?.sourceApp }
+    val switchable = track != null && apps.size > 1
+    val switchTo: (Int) -> Unit = { step -> onPlayApp(apps[Math.floorMod(current + step, apps.size)].packageName) }
+    DashCard(
+        modifier.fillMaxWidth()
+            .then(if (switchable) Modifier.swipeToSwitch(onNext = { switchTo(1) }, onPrevious = { switchTo(-1) }) else Modifier)
+            .testTag("media_card_full")
+    ) {
         if (track == null) {
             val connected = phoneState == CompanionConnectionState.CONNECTED
             val canRetry = phoneState == CompanionConnectionState.DISCONNECTED || phoneState == CompanionConnectionState.UNREACHABLE ||
@@ -183,11 +191,10 @@ fun FullMediaCard(
         }
         // Darken the lower half so text and buttons stay readable on any cover.
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.25f to Color.Transparent, 1f to Color(0xF2000000))))
-        if (apps.size > 1) {
-            Row(Modifier.align(Alignment.TopStart).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                apps.take(4).forEach { app ->
-                    val current = app.name == track.sourceApp
-                    MediaAppIcon(app, 44.dp, current) { if (!current) onPlayApp(app.packageName) }
+        if (switchable) {
+            Row(Modifier.align(Alignment.TopCenter).padding(10.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                apps.indices.forEach { i ->
+                    Box(Modifier.size(7.dp).clip(CircleShape).background(if (i == current) ElectricCyan else Color(0x88FFFFFF)))
                 }
             }
         }
@@ -379,6 +386,36 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
             }
         }
     }
+}
+
+/**
+ * Drag sideways past a quarter of the width to go to the next (left) or previous (right) media app;
+ * the card follows the finger a little and springs back either way.
+ */
+private fun Modifier.swipeToSwitch(onNext: () -> Unit, onPrevious: () -> Unit): Modifier = composed {
+    val offset = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    var width by remember { mutableIntStateOf(1) }
+    val next by rememberUpdatedState(onNext)
+    val previous by rememberUpdatedState(onPrevious)
+    var dragged by remember { mutableFloatStateOf(0f) }
+    this
+        .onSizeChanged { width = it.width.coerceAtLeast(1) }
+        .graphicsLayer { translationX = offset.value }
+        .pointerInput(Unit) {
+            detectHorizontalDragGestures(
+                onDragStart = { dragged = 0f },
+                onDragEnd = {
+                    if (kotlin.math.abs(dragged) > width / 4f) { if (dragged < 0) next() else previous() }
+                    scope.launch { offset.animateTo(0f, spring()) }
+                },
+                onDragCancel = { scope.launch { offset.animateTo(0f, spring()) } }
+            ) { change, dx ->
+                change.consume()
+                dragged += dx
+                scope.launch { offset.snapTo(dragged * 0.35f) }
+            }
+        }
 }
 
 /** Drag sideways past a third of the width to fling the card away; less snaps back. */
