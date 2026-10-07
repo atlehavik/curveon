@@ -431,6 +431,7 @@ private fun Rail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        Clock()
         RailButton(Icons.Default.Search, "Where to?", ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
         RailButton(Icons.Default.Explore, "Roundtrip", NeonAmber, NeonAmber, tag = "rail_roundtrip", onClick = onRoundtrip)
         RailButton(Icons.Default.Route, "GPX manager", ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
@@ -438,7 +439,6 @@ private fun Rail(
             filled = phoneOpen, tag = "rail_phone", onClick = onPhone)
         RailButton(Icons.Default.Settings, "Settings", TextSecondary, TextPrimary, tag = "rail_settings", onClick = onSettings)
         Spacer(Modifier.weight(1f))
-        Clock()
         Box {
             RailButton(
                 if (isFullScreenMap) Icons.Default.Dashboard else Icons.Default.Map,
