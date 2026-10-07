@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
                 Step("Notification access (messages, music)", notificationAccess) {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 }
-                Step("Bluetooth, microphone, contacts", runtimeGranted.values.all { it }) {
+                Step("Bluetooth, microphone, contacts, calls", runtimeGranted.values.all { it }) {
                     permissions.launch(RUNTIME_PERMISSIONS.toTypedArray())
                 }
             }
@@ -162,6 +162,8 @@ class MainActivity : ComponentActivity() {
             add(Manifest.permission.BLUETOOTH_CONNECT)
             add(Manifest.permission.RECORD_AUDIO)
             add(Manifest.permission.READ_CONTACTS)
+            add(Manifest.permission.READ_CALL_LOG)
+            add(Manifest.permission.CALL_PHONE)
             if (android.os.Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
         }
     }

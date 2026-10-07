@@ -45,6 +45,9 @@ object CompanionHub {
     /** Set by [CompanionService]; handles voice replies, which need a running foreground service. */
     @Volatile var voice: VoiceReplier? = null
 
+    /** Set by [CompanionService]; contacts, call log and dialing. */
+    @Volatile var phoneBook: PhoneBook? = null
+
     fun update(block: (Status) -> Status) {
         _status.value = block(_status.value)
     }
@@ -110,6 +113,9 @@ object CompanionHub {
             is Message.StartVoiceReply -> voice?.start(message.key)
                 ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "Voice reply unavailable"))
             is Message.CancelVoiceReply -> voice?.cancel()
+            is Message.RequestPhoneBook -> phoneBook?.sendPhoneBook()
+            is Message.RequestContactPhotos -> phoneBook?.sendPhotos(message.keys)
+            is Message.PlaceCall -> phoneBook?.placeCall(message.number)
             else -> Unit
         }
     }

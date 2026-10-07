@@ -42,6 +42,7 @@ class CompanionService : Service() {
         if (!running) {
             running = true
             CompanionHub.voice = VoiceReplier(this)
+            CompanionHub.phoneBook = PhoneBook(this)
             CompanionHub.update { it.copy(serviceRunning = true, lastEvent = "Waiting for the tablet…") }
             thread(name = "curveon-bt-server", isDaemon = true) { acceptLoop() }
         }
@@ -52,6 +53,8 @@ class CompanionService : Service() {
         running = false
         runCatching { serverSocket?.close() }
         CompanionHub.voice = null
+        CompanionHub.phoneBook?.shutdown()
+        CompanionHub.phoneBook = null
         CompanionHub.update { it.copy(serviceRunning = false, tabletName = null, lastEvent = "Stopped") }
         super.onDestroy()
     }
@@ -111,7 +114,7 @@ class CompanionService : Service() {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val notification = Notification.Builder(this, CHANNEL)
             .setContentTitle("Curveon Companion")
-            .setContentText("Sharing music and messages with your tablet")
+            .setContentText("Sharing music, messages and calls with your tablet")
             .setSmallIcon(R.drawable.ic_companion)
             .setContentIntent(open)
             .setOngoing(true)

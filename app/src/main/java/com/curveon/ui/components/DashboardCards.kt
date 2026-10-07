@@ -19,7 +19,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -226,23 +232,27 @@ private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: 
 
 // ---------------------------------------------------------------------------------- notifications
 
-/** The newest message, with big glove-friendly Reply / Dismiss (or call actions). */
+/**
+ * The newest message, with big glove-friendly Reply / Dismiss (or call actions). Dismiss clears it
+ * on the phone too; swiping it sideways only hides it here and leaves it unread on the phone.
+ */
 @Composable
 fun NotificationCard(
     notifications: List<NotificationItem>,
     onReply: (NotificationItem) -> Unit,
     onDismiss: (NotificationItem) -> Unit,
+    onSwipe: (NotificationItem) -> Unit,
     onAction: (NotificationItem, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // A ringing call always comes first and gets its own full card.
     notifications.firstOrNull { it.isIncomingCall }?.let { call ->
-        CallCard(call, onAction = { i -> onAction(call, i) }, onDismiss = { onDismiss(call) }, modifier = modifier)
+        CallCard(call, onAction = { i -> onAction(call, i) }, onDismiss = { onSwipe(call) }, modifier = modifier)
         return
     }
     var index by remember(notifications.size) { mutableIntStateOf(0) }
     val n = notifications.getOrNull(index) ?: notifications.firstOrNull() ?: return
-    DashCard(modifier.fillMaxWidth().testTag("notification_card"), border = if (n.isIncomingCall) EcoGreen else NeonAmber.copy(alpha = 0.6f)) {
+    DashCard(modifier.fillMaxWidth().swipeAway(n.id) { onSwipe(n) }.testTag("notification_card"), border = if (n.isIncomingCall) EcoGreen else NeonAmber.copy(alpha = 0.6f)) {
         Column(Modifier.fillMaxSize().padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Avatar(n, 52.dp)
@@ -309,7 +319,7 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.PhoneInTalk, null, tint = EcoGreen, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Incoming call · ${call.appName}", color = Color(0xFFD0D7E0), fontSize = 13.sp, maxLines = 1)
+                Text("${call.message} · ${call.appName}", color = Color(0xFFD0D7E0), fontSize = 13.sp, maxLines = 1)
             }
             Text(call.senderName, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 32.sp)
@@ -322,6 +332,36 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
             }
         }
     }
+}
+
+/** Drag sideways past a third of the width to fling the card away; less snaps back. */
+private fun Modifier.swipeAway(key: Any, onSwiped: () -> Unit): Modifier = composed {
+    val offset = remember(key) { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    var width by remember { mutableIntStateOf(1) }
+    val swiped by rememberUpdatedState(onSwiped)
+    this
+        .onSizeChanged { width = it.width.coerceAtLeast(1) }
+        .graphicsLayer {
+            translationX = offset.value
+            alpha = 1f - (kotlin.math.abs(offset.value) / width).coerceIn(0f, 1f) * 0.7f
+        }
+        .pointerInput(key) {
+            detectHorizontalDragGestures(
+                onDragEnd = {
+                    scope.launch {
+                        if (kotlin.math.abs(offset.value) > width / 3f) {
+                            offset.animateTo(kotlin.math.sign(offset.value) * width, tween(150))
+                            swiped()
+                        } else offset.animateTo(0f, spring())
+                    }
+                },
+                onDragCancel = { scope.launch { offset.animateTo(0f, spring()) } }
+            ) { change, dx ->
+                change.consume()
+                scope.launch { offset.snapTo(offset.value + dx) }
+            }
+        }
 }
 
 private fun isDecline(title: String) = listOf("decline", "avvis", "hang", "legg på", "reject").any { title.contains(it, ignoreCase = true) }

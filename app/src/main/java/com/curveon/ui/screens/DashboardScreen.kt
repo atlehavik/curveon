@@ -1,5 +1,6 @@
 package com.curveon.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -97,10 +98,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.curveon.data.model.CompassDirection.NORTH), avoidTolls = false)) }
     var showSettings by remember { mutableStateOf(false) }
     var showRides by remember { mutableStateOf(false) }
+    /** The phone app, shown in place of the map; null when closed. */
+    var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
     /** A place picked while riding: add it as a stop or make it the destination? */
     var pendingPlace by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
+    LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
+    // Fresh call log each time the phone opens (the contacts come along).
+    LaunchedEffect(phoneTab != null) { if (phoneTab != null) phone.refreshPhoneBook() }
+    BackHandler(enabled = phoneTab != null) { phoneTab = null }
 
     // Picking a place: while riding, ask stop-or-destination; otherwise go straight to the preview.
     val pickPlace: (GeoPoint, String) -> Unit = { point, name ->
@@ -126,12 +133,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } }
                 )
             }
-        }
-        toast?.let {
-            Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp).clip(RoundedCornerShape(12.dp))
-                    .background(CockpitSurface).border(1.dp, ElectricCyan, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp))
         }
         preview?.let { p ->
             RoutePreviewSheet(
@@ -171,6 +172,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onSearch = { showSearch = true },
             onRoundtrip = { showRoundtrip = true },
             onGpx = { showGpx = true },
+            phoneOpen = phoneTab != null,
+            onPhone = { phoneTab = if (phoneTab == null) PhoneTab.FAVORITES else null },
             onSettings = { showSettings = true },
             onToggleMap = { viewModel.toggleFullScreenMap() }
         )
@@ -204,6 +207,36 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     mapVersion = mapVersion,
                     overlays = mapOverlays
                 )
+                phoneTab?.let { tab ->
+                    val contacts by phone.contacts.collectAsStateWithLifecycle()
+                    val recents by phone.recentCalls.collectAsStateWithLifecycle()
+                    val photos by phone.photos.collectAsStateWithLifecycle()
+                    val contactsAllowed by phone.contactsAllowed.collectAsStateWithLifecycle()
+                    val callLogAllowed by phone.callLogAllowed.collectAsStateWithLifecycle()
+                    PhonePanel(
+                        state = PhonePanelState(
+                            contacts, recents, photos, contactsAllowed, callLogAllowed,
+                            connected = phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO,
+                            offlineText = if (phoneName.isEmpty()) "No phone linked" else "$phoneName isn't connected"
+                        ),
+                        tab = tab,
+                        onTab = { phoneTab = it },
+                        onCall = { number, name ->
+                            if (phone.placeCall(number)) { toast = "Calling $name…"; phoneTab = null }
+                            else toast = "Phone not connected"
+                        },
+                        onNeedPhoto = phone::requestPhoto,
+                        onClose = { phoneTab = null },
+                        modifier = Modifier.matchParentSize()
+                    )
+                }
+                // Above the map and the phone panel.
+                toast?.let {
+                    Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp).clip(RoundedCornerShape(12.dp))
+                            .background(CockpitSurface).border(1.dp, ElectricCyan, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 16.dp, vertical = 10.dp))
+                }
             }
 
             if (!isFullScreenMap) {
@@ -226,6 +259,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                             notifications = notifications,
                             onReply = { phone.startVoiceReply(it.id) },
                             onDismiss = { phone.dismissNotification(it.id) },
+                            onSwipe = { phone.hideNotification(it.id) },
                             onAction = { n, i -> phone.invokeAction(n.id, i) },
                             modifier = Modifier.weight(1f)
                         )
@@ -368,6 +402,8 @@ private fun Rail(
     onSearch: () -> Unit,
     onRoundtrip: () -> Unit,
     onGpx: () -> Unit,
+    phoneOpen: Boolean,
+    onPhone: () -> Unit,
     onSettings: () -> Unit,
     onToggleMap: () -> Unit
 ) {
@@ -379,6 +415,8 @@ private fun Rail(
         RailButton(Icons.Default.Search, "Where to?", ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
         RailButton(Icons.Default.Explore, "Roundtrip", NeonAmber, NeonAmber, tag = "rail_roundtrip", onClick = onRoundtrip)
         RailButton(Icons.Default.Route, "GPX manager", ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
+        RailButton(Icons.Default.Phone, "Phone", EcoGreen, if (phoneOpen) Color.Black else EcoGreen,
+            filled = phoneOpen, tag = "rail_phone", onClick = onPhone)
         RailButton(Icons.Default.Settings, "Settings", TextSecondary, TextPrimary, tag = "rail_settings", onClick = onSettings)
         Spacer(Modifier.weight(1f))
         Clock()

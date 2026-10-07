@@ -23,7 +23,21 @@ class ProtocolTest {
         Message.InvokeAction("k2", 1),
         Message.StartVoiceReply("k1"),
         Message.CancelVoiceReply("k1"),
-        Message.SendReply("k1", "Ja, 20 minutter")
+        Message.SendReply("k1", "Ja, 20 minutter"),
+        Message.Contacts(listOf(
+            Message.Contact(7, "Kari Nordmann", true, "7:12", listOf(Message.PhoneNumber("+47 912 34 567", "Mobile"))),
+            Message.Contact(8, "Ola", false, null, listOf(Message.PhoneNumber("22 33 44 55", "Work"), Message.PhoneNumber("900 00 000", "Mobile")))
+        )),
+        Message.Contacts(emptyList(), granted = false),
+        Message.RecentCalls(listOf(
+            Message.RecentCall("+4791234567", "Kari Nordmann", "Mobile", "7:12", Message.CallKind.MISSED, 3L, 2),
+            Message.RecentCall("12345", null, "", null, Message.CallKind.OUTGOING, 4L)
+        )),
+        Message.ContactPhotos(listOf(Message.Photo("7:12", "/9j/"), Message.Photo("9:1", null))),
+        Message.PhoneError("Calls aren't allowed"),
+        Message.RequestPhoneBook,
+        Message.RequestContactPhotos(listOf("7:12", "9:1")),
+        Message.PlaceCall("+47 912 34 567")
     )
 
     @Test

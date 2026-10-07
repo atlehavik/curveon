@@ -24,7 +24,9 @@ import com.curveon.protocol.Protocol
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -77,6 +79,30 @@ class PhoneCompanionManager(
 
     private val _voiceReply = MutableStateFlow<VoiceReply?>(null)
     val voiceReply: StateFlow<VoiceReply?> = _voiceReply.asStateFlow()
+
+    /** The phone book; null until the phone has sent it. Kept while the phone is away. */
+    private val _contacts = MutableStateFlow<List<Message.Contact>?>(null)
+    val contacts: StateFlow<List<Message.Contact>?> = _contacts.asStateFlow()
+
+    private val _recentCalls = MutableStateFlow<List<Message.RecentCall>?>(null)
+    val recentCalls: StateFlow<List<Message.RecentCall>?> = _recentCalls.asStateFlow()
+
+    /** False when the companion isn't allowed to read contacts / the call log. */
+    private val _contactsAllowed = MutableStateFlow(true)
+    val contactsAllowed: StateFlow<Boolean> = _contactsAllowed.asStateFlow()
+    private val _callLogAllowed = MutableStateFlow(true)
+    val callLogAllowed: StateFlow<Boolean> = _callLogAllowed.asStateFlow()
+
+    /** Contact photos by photo key, fetched as the phone screen shows them. */
+    private val _photos = MutableStateFlow<Map<String, Bitmap>>(emptyMap())
+    val photos: StateFlow<Map<String, Bitmap>> = _photos.asStateFlow()
+    private val requestedPhotos = HashSet<String>()
+    private val pendingPhotos = LinkedHashSet<String>()
+    private var photoJob: Job? = null
+
+    /** Things that went wrong on the phone (e.g. a call that couldn't be placed), for a short toast. */
+    private val _phoneErrors = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val phoneErrors: SharedFlow<String> = _phoneErrors
 
     @Volatile private var writer: MessageWriter? = null
     @Volatile private var socket: BluetoothSocket? = null
@@ -208,6 +234,9 @@ class PhoneCompanionManager(
             val w = MessageWriter(s.outputStream)
             writer = w
             w.write(Message.Hello(Build.MODEL))
+            w.write(Message.RequestPhoneBook) // so the phone screen opens with fresh lists
+            // Photos asked for on a link that then dropped never came; ask again when shown.
+            synchronized(requestedPhotos) { requestedPhotos.retainAll(_photos.value.keys) }
             _connectionState.value = CompanionConnectionState.CONNECTED
             _connectedDeviceName.value = device.name ?: address
             startTicker()
@@ -262,6 +291,13 @@ class PhoneCompanionManager(
                     if (msg.state == Message.VoiceState.SENT) scope.launch { delay(2500); if (_voiceReply.value?.state == Message.VoiceState.SENT) _voiceReply.value = null }
                 }
             }
+            is Message.Contacts -> { _contacts.value = msg.contacts; _contactsAllowed.value = msg.granted }
+            is Message.RecentCalls -> { _recentCalls.value = msg.calls; _callLogAllowed.value = msg.granted }
+            is Message.ContactPhotos -> {
+                val decoded = msg.photos.mapNotNull { p -> p.jpegBase64?.let(::decode)?.let { p.key to it } }
+                if (decoded.isNotEmpty()) _photos.value = _photos.value + decoded
+            }
+            is Message.PhoneError -> _phoneErrors.tryEmit(msg.text)
             else -> Unit
         }
     }
@@ -305,10 +341,41 @@ class PhoneCompanionManager(
 
     fun skipPrevious() = send(Message.MediaCommand(Message.MediaAction.PREVIOUS))
 
-    /** Hides a message on the tablet only; it stays unread on the phone. */
-    fun dismissNotification(id: String) {
+    /** Hides a message on the tablet only (swipe); it stays unread on the phone. */
+    fun hideNotification(id: String) {
         _notifications.value.firstOrNull { it.id == id }?.let { hidden[id] = it.message }
         _notifications.value = _notifications.value.filterNot { it.id == id }
+    }
+
+    /** Clears the message on the phone too (the Dismiss button). */
+    fun dismissNotification(id: String) {
+        _notifications.value = _notifications.value.filterNot { it.id == id }
+        send(Message.DismissNotification(id))
+    }
+
+    // ------------------------------------------------------------------ phone screen
+
+    /** Fresh contacts and call log, e.g. when the phone screen opens. */
+    fun refreshPhoneBook() = send(Message.RequestPhoneBook)
+
+    /** Asks for a contact photo once; requests from one screenful go together. */
+    fun requestPhoto(key: String) {
+        synchronized(requestedPhotos) { if (!requestedPhotos.add(key)) return }
+        synchronized(pendingPhotos) { pendingPhotos += key }
+        if (photoJob?.isActive == true) return
+        photoJob = scope.launch {
+            delay(120)
+            val keys = synchronized(pendingPhotos) { pendingPhotos.toList().also { pendingPhotos.clear() } }
+            if (keys.isNotEmpty()) send(Message.RequestContactPhotos(keys))
+        }
+    }
+
+    /** Dials on the phone. Returns false when there is no phone to dial with. */
+    fun placeCall(number: String): Boolean {
+        val state = _connectionState.value
+        if (state != CompanionConnectionState.CONNECTED && state != CompanionConnectionState.DEMO) return false
+        send(Message.PlaceCall(number))
+        return true
     }
 
     fun invokeAction(id: String, index: Int) = send(Message.InvokeAction(id, index))
@@ -353,6 +420,13 @@ class PhoneCompanionManager(
             NotificationItem("demo2", "Messages", "MC-klubben", "Søndagsturen går fra Lillehammer kl 10.",
                 System.currentTimeMillis() - 900_000, canReply = true)
         )
+        _contacts.value = DEMO_CONTACTS
+        _recentCalls.value = listOf(
+            Message.RecentCall("+47 912 34 567", "Kari Nordmann", "Mobile", null, Message.CallKind.MISSED, System.currentTimeMillis() - 25 * 60_000, 2),
+            Message.RecentCall("+47 22 33 44 55", "Verksted Otta", "Work", null, Message.CallKind.OUTGOING, System.currentTimeMillis() - 3 * 3600_000),
+            Message.RecentCall("+47 400 00 000", null, "", null, Message.CallKind.INCOMING, System.currentTimeMillis() - 26 * 3600_000),
+            Message.RecentCall("+47 934 56 789", "Per Hansen", "Mobile", null, Message.CallKind.REJECTED, System.currentTimeMillis() - 4 * 86400_000)
+        )
         startTicker()
     }
 
@@ -372,6 +446,14 @@ class PhoneCompanionManager(
                 _notifications.value = _notifications.value.filterNot { it.id == message.key }
                 delay(2500)
                 _voiceReply.value = null
+            }
+            is Message.PlaceCall -> {
+                val name = _contacts.value?.firstOrNull { c -> c.numbers.any { it.number == message.number } }?.name ?: message.number
+                _notifications.value = listOf(NotificationItem("democall", "Phone", name, "Calling…", isIncomingCall = true,
+                    actions = listOf("Hang up"))) + _notifications.value
+            }
+            is Message.InvokeAction -> if (message.key == "democall") {
+                _notifications.value = _notifications.value.filterNot { it.id == "democall" }
             }
             else -> Unit
         }
@@ -405,5 +487,17 @@ class PhoneCompanionManager(
         private const val KEY_ADDRESS = "address"
         private const val KEY_NAME = "name"
         private const val KEY_DEMO = "demo"
+
+        private val DEMO_CONTACTS = listOf(
+            "Anne Lise Berg" to false, "Bjørn Dahl" to true, "Eirik Solberg" to false, "Ingrid Moe" to true,
+            "Kari Nordmann" to true, "Lars Haugen" to false, "MC-klubben leder" to false, "Nils Bakke" to false,
+            "Ola Nordmann" to true, "Per Hansen" to false, "Siri Lunde" to false, "Tor Eriksen" to false,
+            "Verksted Otta" to true, "Åse Strand" to false
+        ).mapIndexed { i, (name, starred) ->
+            Message.Contact(i.toLong(), name, starred, null, buildList {
+                add(Message.PhoneNumber("+47 9%02d 34 567".format(i), "Mobile"))
+                if (i % 4 == 0) add(Message.PhoneNumber("+47 22 %02d 44 55".format(i), "Work"))
+            })
+        }
     }
 }
