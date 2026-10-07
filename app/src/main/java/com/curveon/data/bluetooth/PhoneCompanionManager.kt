@@ -1,9 +1,14 @@
 package com.curveon.data.bluetooth
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -16,7 +21,9 @@ import com.curveon.protocol.Message
 import com.curveon.protocol.MessageReader
 import com.curveon.protocol.MessageWriter
 import com.curveon.protocol.Protocol
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,9 +91,37 @@ class PhoneCompanionManager(
      */
     private val hidden = HashMap<String, String>()
 
+    /** Cuts a reconnect wait short: the phone may have just come within reach. */
+    private val wake = Channel<Unit>(Channel.CONFLATED)
+
+    private val wakeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(c: Context, intent: Intent) {
+            val relevant = when (intent.action) {
+                Intent.ACTION_SCREEN_ON -> true
+                BluetoothAdapter.ACTION_STATE_CHANGED ->
+                    intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1) == BluetoothAdapter.STATE_ON
+                BluetoothDevice.ACTION_ACL_CONNECTED -> {
+                    @Suppress("DEPRECATION")
+                    val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                    device?.address == selectedPhoneAddress()
+                }
+                else -> false
+            }
+            if (relevant) wake.trySend(Unit)
+        }
+    }
+
     init {
+        ContextCompat.registerReceiver(context, wakeReceiver, IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+            addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+        }, ContextCompat.RECEIVER_NOT_EXPORTED)
         if (prefs.getBoolean(KEY_DEMO, false)) startDemo() else start()
     }
+
+    /** Try to reach the phone now instead of waiting (e.g. the dashboard came to the front). */
+    fun reconnectSoon() { wake.trySend(Unit) }
 
     // ------------------------------------------------------------------ connection
 
@@ -117,6 +152,7 @@ class PhoneCompanionManager(
     private fun start() {
         linkJob = scope.launch(Dispatchers.IO) {
             var slowFailures = 0
+            var failures = 0
             while (isActive) {
                 val t0 = System.currentTimeMillis()
                 var attempted = false
@@ -140,7 +176,12 @@ class PhoneCompanionManager(
                     _connectionState.value = if (slowFailures >= UNREACHABLE_AFTER) CompanionConnectionState.UNREACHABLE
                         else CompanionConnectionState.DISCONNECTED
                 }
-                delay(RETRY_MS)
+                failures = if (attempted && !wasConnected) failures + 1 else 0
+                // Calling a phone that isn't there every few seconds for hours is what preceded the
+                // X7's Bluetooth getting stuck (twice). Back off while it stays away; the screen
+                // turning on, Bluetooth coming on or the phone's link appearing wakes us at once.
+                wake.tryReceive()
+                withTimeoutOrNull(retryDelay(failures)) { wake.receive() }
             }
         }
     }
@@ -353,6 +394,14 @@ class PhoneCompanionManager(
         private const val PAGE_TIMEOUT_MS = 4_000L
         private const val UNREACHABLE_AFTER = 4
         private const val RETRY_MS = 8_000L
+
+        /** Quick retries for the first couple of minutes, then less and less often. */
+        internal fun retryDelay(failures: Int): Long = when {
+            failures <= 8 -> RETRY_MS
+            failures <= 14 -> 30_000L
+            failures <= 24 -> 60_000L
+            else -> 120_000L
+        }
         private const val KEY_ADDRESS = "address"
         private const val KEY_NAME = "name"
         private const val KEY_DEMO = "demo"

@@ -97,6 +97,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        dashboardViewModel.phoneCompanion.reconnectSoon() // the rider is looking: don't wait out a back-off
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) hideNavigationBar()
