@@ -393,7 +393,7 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
 /**
  * Flip the card like a playing card to go to the next (drag left) or previous (drag right) media
  * app. It turns with the finger; let go past ~40° and it turns edge-on, waits for the phone to
- * switch ([showing] changes, or a short timeout), then the new app's card turns in from the other
+ * switch ([showing] changes, or at most a quarter second), then the new app's card turns in from the other
  * side. Less than that and it falls back.
  */
 private fun Modifier.flipToSwitch(showing: Any?, onNext: () -> Unit, onPrevious: () -> Unit): Modifier = composed {
@@ -427,11 +427,11 @@ private fun Modifier.flipToSwitch(showing: Any?, onNext: () -> Unit, onPrevious:
                         }
                         val sign = kotlin.math.sign(target)
                         val before = current
-                        angle.animateTo(90f * sign, tween(120, easing = FastOutLinearInEasing))
+                        angle.animateTo(90f * sign, tween(90, easing = FastOutLinearInEasing))
                         if (sign < 0) next() else previous()
-                        withTimeoutOrNull(700) { snapshotFlow { current }.first { it != before } }
+                        withTimeoutOrNull(250) { snapshotFlow { current }.first { it != before } }
                         angle.snapTo(-90f * sign)
-                        angle.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow))
+                        angle.animateTo(0f, tween(160, easing = LinearOutSlowInEasing))
                     }
                 },
                 onDragCancel = { scope.launch { angle.animateTo(0f, spring()) } }
