@@ -105,4 +105,15 @@ class NavigationTrackerTest {
         assertTrue(Geo.distance(hit.point, Geo.destination(start, 90.0, 750.0)) < 2)
         assertEquals(null, idx.nearest(Geo.destination(start, 0.0, 3000.0), 500.0))
     }
+
+    @Test
+    fun `snaps a drifting fix onto the road and points along it`() {
+        val tracker = NavigationTracker(lRoute())
+        // 12 m east of the northbound leg.
+        val p = tracker.update(Geo.destination(Geo.destination(LatLon(60.0, 10.0), 0.0, 400.0), 90.0, 12.0))
+        assertEquals(0.0, Geo.distance(p.snapped, Geo.destination(LatLon(60.0, 10.0), 0.0, 400.0)), 1.0)
+        assertEquals(0.0, p.routeBearingDeg, 1.0)
+        val corner = Geo.destination(LatLon(60.0, 10.0), 0.0, 1000.0)
+        assertEquals(90.0, tracker.update(Geo.destination(corner, 90.0, 300.0)).routeBearingDeg, 1.0)
+    }
 }

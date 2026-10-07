@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Bike stays on the road while navigating
+
+Only unit-tested (the tracker); needs a real ride with a route on the X7:
+
+- [ ] On the route, the bike sits on the route line and points along the road, also where GPS
+  drifts (trees, steep valleys) instead of floating beside it.
+- [ ] Take a different road on purpose: the bike stays on the line for ~3 s, then jumps to your
+  real position as the reroute starts. Shouldn't feel too sticky or too eager.
+- [ ] Tight hairpins: the arrow turns with the road without lagging badly.
+
 ## 2026-10-08 — Rides: select/delete, auto-save to GPX; map compass, 3D, "where am I" glow
 
 Selecting, deleting, auto-save switch, 3D, recenter and edge glow tested in the emulator (no map

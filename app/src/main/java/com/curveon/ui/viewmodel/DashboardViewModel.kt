@@ -444,11 +444,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun handleFix(fix: GpsFix, estimated: Boolean) {
         tripTracker.onFix(fix)
-        _currentLocation.value = GeoPoint(fix.latitude, fix.longitude, fix.altitudeMeters ?: _currentLocation.value.altitudeMeters)
+        navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble())
+        val onRoad = snapToRoute()
+        _currentLocation.value = GeoPoint(onRoad?.first?.lat ?: fix.latitude, onRoad?.first?.lon ?: fix.longitude,
+            fix.altitudeMeters ?: _currentLocation.value.altitudeMeters)
         val stats = tripTracker.stats
         _telemetry.value = _telemetry.value.copy(
             speedKmh = tripTracker.speedKmh,
-            headingDeg = tripTracker.headingDeg,
+            headingDeg = onRoad?.second ?: tripTracker.headingDeg,
             altitudeMeters = (fix.altitudeMeters ?: _telemetry.value.altitudeMeters.toDouble()).roundToInt(),
             hasGpsFix = true,
             gpsAccuracyMeters = (fix.accuracyMeters ?: 0f).roundToInt(),
@@ -456,9 +459,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             tripDistanceKm = (stats.distanceMeters / 1000.0).toFloat(),
             tripDurationMinutes = (stats.movingTimeMillis / 60_000L).toInt()
         )
-        navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble())
         recordRide(fix)
         watchTracks(fix)
+    }
+
+    /**
+     * Where to draw the rider while navigating, like Google Maps: on the route line, pointing along
+     * the road, as long as the rider is following it. GPS drift beside the road is ignored; the
+     * bike only leaves the line once the navigator decides we're off route (a few fixes well away
+     * from it, which also triggers the reroute) or when riding the wrong way along it.
+     * Null means show the raw GPS position. The ride log and trip stats always use raw GPS.
+     */
+    private fun snapToRoute(): Pair<LatLon, Float>? {
+        val p = navigator.state.value.progress ?: return null
+        if (p.offRoute || p.distanceFromRoute > SNAP_MAX_M) return null
+        val wrongWay = tripTracker.speedKmh >= 10f &&
+            kotlin.math.abs(com.curveon.routing.Geo.angleDiff(tripTracker.headingDeg.toDouble(), p.routeBearingDeg)) > 100
+        if (wrongWay) return null
+        return p.snapped to p.routeBearingDeg.toFloat()
     }
 
     private fun recordRide(fix: GpsFix) {
@@ -876,6 +894,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     companion object {
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
         private const val DR_START_MS = 3_000L
+        /** A single fix further from the route than this is shown as it is, even before off-route kicks in. */
+        private const val SNAP_MAX_M = 150.0
         private const val DR_MAX_MS = 15 * 60_000L // longest Norwegian road tunnel (Lærdal, 24.5 km) at low speed
 
         fun routeOptions(
