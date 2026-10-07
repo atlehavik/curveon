@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Norsk bokmål. Same names and order as values/strings.xml. -->
+<resources>
+
+    <!-- Shared -->
+    <string name="where_to">Hvor skal du?</string>
+    <string name="roundtrip">Rundtur</string>
+    <string name="gpx_manager">GPX-spor</string>
+    <string name="phone">Telefon</string>
+    <string name="settings">Innstillinger</string>
+    <string name="dashboard">Dashbord</string>
+    <string name="full_map">Fullt kart</string>
+    <string name="follow">Følg</string>
+    <string name="distance_m">%.0f m</string>
+    <string name="distance_km">%.1f km</string>
+    <string name="map_point">Kartpunkt</string>
+    <string name="cancel">Avbryt</string>
+    <string name="delete">Slett</string>
+    <string name="save">Lagre</string>
+    <string name="close">Lukk</string>
+    <string name="start">Start</string>
+    <string name="stop">Stopp</string>
+    <string name="download">Last ned</string>
+    <string name="retry">Prøv igjen</string>
+
+    <!-- Dashboard toasts -->
+    <string name="toast_saved_to_where_to">Lagret i Hvor skal du?</string>
+    <string name="toast_saved_to_gpx">Lagret i GPX-spor</string>
+    <string name="toast_calling">Ringer %1$s…</string>
+    <string name="toast_phone_not_connected">Telefonen er ikke tilkoblet</string>
+    <string name="toast_connect_phone_to_call">Koble til telefonen for å ringe</string>
+    <string name="phone_none_linked">Ingen telefon koblet til</string>
+    <string name="phone_connecting_to">Kobler til %1$s…</string>
+    <string name="phone_not_connected_named">%1$s er ikke tilkoblet</string>
+    <string name="update">Oppdater</string>
+    <string name="size_gb">%.1f GB</string>
+
+    <!-- Route options -->
+    <string name="surface_tarmac">Asfalt</string>
+    <string name="surface_mixed">Blandet</string>
+    <string name="surface_gravel">Grus</string>
+    <string name="ferries">Ferjer</string>
+    <string name="motorways">Motorveier</string>
+
+    <!-- Settings -->
+    <string name="settings_display">Skjerm</string>
+    <string name="settings_navigation">Navigasjon</string>
+    <string name="settings_maps_data">Kart og data</string>
+    <string name="settings_language">Språk</string>
+    <string name="settings_speed">Fart</string>
+    <string name="settings_map">Kart</string>
+    <string name="map_theme_auto">Auto</string>
+    <string name="map_theme_day">Dag</string>
+    <string name="map_theme_night">Natt</string>
+    <string name="settings_obd">OBD2-data</string>
+    <string name="settings_obd_hint">Motordata når en adapter er tilkoblet</string>
+    <string name="settings_auto_zoom">Auto-zoom</string>
+    <string name="settings_auto_zoom_hint">Zoom inn i lav fart, ut på raske veier</string>
+    <string name="settings_auto_follow">Følg GPX-spor automatisk</string>
+    <string name="settings_auto_follow_hint">Naviger når du kjører langs et spor på kartet</string>
+    <string name="settings_demo_ride">Demotur</string>
+    <string name="settings_demo_ride_hint">Kjør gjeldende rute uten GPS</string>
+    <string name="settings_offline_maps">Frakoblede kart</string>
+    <string name="settings_map_attribution">Kartdata © OpenStreetMap-bidragsytere, via Protomaps sitt daglige bygg. Last ned over Wi-Fi eller telefonens delte nett.</string>
+    <string name="settings_import_pmtiles">Importer en .pmtiles-fil i stedet…</string>
+    <string name="settings_routing_data">Rutedata</string>
+    <string name="settings_search_index">Søkeindeks</string>
+    <string name="settings_delete_map_title">Slette kartet over %1$s?</string>
+    <string name="settings_delete_map_text">Uten det viser kartet bare nettbaserte kartfliser.</string>
+    <string name="settings_map_from">fra %1$s</string>
+    <string name="settings_map_newer">nyere kart fra %1$s</string>
+    <string name="settings_map_not_installed">Ikke installert · omtrent %.1f GB</string>
+
+    <!-- Status messages -->
+    <string name="map_checking_newest">Ser etter nyeste kart…</string>
+    <string name="map_no_connection">Ingen tilkobling. Koble til telefonens delte nett eller Wi-Fi.</string>
+    <string name="map_download_failed">Nedlasting av kart mislyktes: %1$s</string>
+    <string name="import_failed">Import mislyktes: %1$s</string>
+    <string name="importing_percent">Importerer… %.0f%%</string>
+    <string name="download_complete">Nedlasting fullført</string>
+    <string name="gpx_imported_one">Importerte %1$s</string>
+    <plurals name="gpx_imported_tracks">
+        <item quantity="one">Importerte %d spor</item>
+        <item quantity="other">Importerte %d spor</item>
+    </plurals>
+    <plurals name="gpx_imported_inbox">
+        <item quantity="one">Importerte %d spor fra gpx-mappen</item>
+        <item quantity="other">Importerte %d spor fra gpx-mappen</item>
+    </plurals>
+    <string name="gpx_exported">Eksporterte %1$s</string>
+    <string name="gpx_export_failed">Eksport mislyktes: %1$s</string>
+    <string name="routing_downloading">Laster ned rutedata %1$s (%2$d/%3$d)…</string>
+    <string name="routing_download_failed">Nedlasting mislyktes: %1$s. Koble til telefonens delte nett og prøv igjen.</string>
+    <string name="routing_installed">Rutedata for Norge er installert (%1$d ruter, %2$.0f MB)</string>
+    <string name="routing_none">Ingen rutedata. Last ned (~200 MB) når du er på nett, eller kopier .rd5-filer til %1$s</string>
+    <string name="routing_incomplete">Rutedata er ufullstendige: mangler %1$s</string>
+    <string name="offline_map_none">Ingen frakoblede kart installert. Kopier en .pmtiles-fil til %1$s eller importer en.</string>
+    <string name="offline_map_line">%1$s – %2$.0f MB</string>
+    <string name="offline_map_restart">(start appen på nytt etter å ha byttet kart)</string>
+    <string name="ride">Tur</string>
+    <string name="ride_earlier">Tidligere tur</string>
+
+    <!-- Turn instructions -->
+    <string name="turn_then">deretter %1$s</string>
+    <string name="turn_start">Start</string>
+    <string name="turn_straight">Fortsett rett frem</string>
+    <string name="turn_bear_left">Hold svakt til venstre</string>
+    <string name="turn_left">Sving til venstre</string>
+    <string name="turn_sharp_left">Skarpt til venstre</string>
+    <string name="turn_bear_right">Hold svakt til høyre</string>
+    <string name="turn_right">Sving til høyre</string>
+    <string name="turn_sharp_right">Skarpt til høyre</string>
+    <string name="turn_keep_left">Hold til venstre</string>
+    <string name="turn_keep_right">Hold til høyre</string>
+    <string name="turn_exit_left">Ta avkjøringen til venstre</string>
+    <string name="turn_exit_right">Ta avkjøringen til høyre</string>
+    <string name="turn_u_turn">Snu</string>
+    <string name="turn_roundabout_exit">Rundkjøring, ta %1$d. avkjøring</string>
+    <string name="turn_roundabout">Kjør inn i rundkjøringen</string>
+    <string name="turn_arrive_at">Fremme ved %1$s</string>
+    <string name="turn_arrive">Fremme ved målet</string>
+
+    <!-- Navigator -->
+    <string name="nav_following">Følger %1$s…</string>
+    <string name="nav_follow_failed">Kunne ikke følge %1$s: %2$s</string>
+    <string name="nav_waiting_gps">Venter på GPS-posisjon</string>
+    <string name="nav_adding_stop">Legger til %1$s…</string>
+    <string name="nav_add_stop_failed">Kunne ikke legge til %1$s: %2$s</string>
+    <string name="nav_recalculating">Beregner på nytt…</string>
+    <string name="nav_no_roundtrip">Fant ingen rundtur i den retningen. Prøv en annen retning eller lengde.</string>
+    <string name="nav_no_road">Fant ingen vei der</string>
+
+    <!-- Dashboard cards -->
+    <string name="speed_camera">Fotoboks</string>
+    <string name="speed_camera_in">Fotoboks %1$d m</string>
+    <string name="gps_estimating">Ingen GPS – anslår posisjon</string>
+    <string name="gps_searching">Søker etter GPS…</string>
+    <string name="rpm_and">%1$d o/min · %2$s</string>
+    <string name="trip_summary">Tur %1$.1f km · %2$d:%3$02d</string>
+    <string name="media_previous">Forrige</string>
+    <string name="media_play_pause">Spill av/pause</string>
+    <string name="media_next">Neste</string>
+    <string name="media_nothing_pick">Ingenting spilles på %1$s\nVelg hva som skal spilles</string>
+    <string name="media_nothing_tap">Ingenting spilles på %1$s\nTrykk for å spille</string>
+    <string name="media_no_phone">Ingen telefon koblet til.\nVelg telefonen i Innstillinger → Telefon.</string>
+    <string name="media_no_permission">Gi tilgang til Bluetooth\nfor å koble til telefonen.</string>
+    <string name="bluetooth_off">Bluetooth er av</string>
+    <string name="media_disconnected">Telefonen er ikke tilkoblet.\nTrykk for å koble til nå.</string>
+    <string name="media_unreachable">Får ikke kontakt med %1$s over Bluetooth.\nTrykk for å prøve igjen, eller slå Bluetooth av og på her.</string>
+    <string name="media_nothing">Ingenting spilles</string>
+    <string name="reply">Svar</string>
+    <string name="dismiss">Avvis</string>
+    <string name="decline">Avvis</string>
+    <string name="reply_to">Svar til %1$s</string>
+    <string name="speak_now">Snakk nå…</string>
+    <string name="something_went_wrong">Noe gikk galt</string>
+    <string name="sent">Sendt</string>
+    <string name="send">Send</string>
+    <string name="say_again">Si det igjen</string>
+    <string name="try_again">Prøv igjen</string>
+    <string name="ago_now">nå</string>
+    <string name="ago_min">%1$d min</string>
+    <string name="ago_hours">%1$d t</string>
+
+    <!-- Map -->
+    <string name="map_heading_up">Kjøreretning opp – trykk for nord opp</string>
+    <string name="map_follow_me">Følg meg</string>
+    <string name="map_zoom_in">Zoom inn</string>
+    <string name="map_zoom_out">Zoom ut</string>
+    <string name="map_online_only">Ingen frakoblede kart installert – viser nettkart. Importer et i Innstillinger.</string>
+    <string name="distance_km_whole">%.0f km</string>
+    <string name="clear">Tøm</string>
+    <string name="delete_named">Slette %1$s?</string>
+
+    <!-- Where to? -->
+    <string name="search_placeholder">Hvor skal du? Sted, adresse, bensin, utsiktspunkt…</string>
+    <string name="search_nearest">Nærmeste</string>
+    <string name="search_saved_routes">Lagrede ruter</string>
+    <string name="search_recent">Nylige</string>
+    <string name="search_online">på nett</string>
+    <string name="search_no_matches">Ingen treff</string>
+
+    <!-- Kinds of places -->
+    <string name="kind_city">By</string>
+    <string name="kind_town">Tettsted</string>
+    <string name="kind_village">Bygd</string>
+    <string name="kind_suburb">Bydel</string>
+    <string name="kind_hamlet">Grend</string>
+    <string name="kind_island">Øy</string>
+    <string name="kind_street">Gate</string>
+    <string name="kind_fuel">Bensin</string>
+    <string name="kind_charging">Lading</string>
+    <string name="kind_cafe">Kafé</string>
+    <string name="kind_restaurant">Restaurant</string>
+    <string name="kind_pub">Pub</string>
+    <string name="kind_dining">Mat</string>
+    <string name="kind_ferry">Ferjekai</string>
+    <string name="kind_parking">Parkering</string>
+    <string name="kind_viewpoint">Utsiktspunkt</string>
+    <string name="kind_camping">Camping</string>
+    <string name="kind_hotel">Hotell</string>
+    <string name="kind_hut">Hytte</string>
+    <string name="kind_attraction">Severdighet</string>
+    <string name="kind_museum">Museum</string>
+    <string name="kind_supermarket">Matbutikk</string>
+    <string name="kind_shop">Butikk</string>
+    <string name="kind_pass">Fjellovergang</string>
+    <string name="kind_peak">Topp</string>
+    <string name="kind_motorcycle_shop">Motorsykkelbutikk</string>
+    <string name="kind_fast_food">Gatekjøkken</string>
+    <string name="search_index_installed">Frakoblet søkeindeks er installert (%.0f MB)</string>
+    <string name="search_index_none">Ingen frakoblet søkeindeks. Kopier %1$s til %2$s. Søk på nett virker når du er tilkoblet.</string>
+    <string name="rename">Gi nytt navn</string>
+    <string name="more">Mer</string>
+    <string name="collapse">Skjul</string>
+    <string name="expand">Vis</string>
+    <string name="call">Ring</string>
+    <string name="take_me_there">Kjør dit</string>
+    <string name="compass_points">N,NØ,Ø,SØ,S,SV,V,NV</string>
+
+    <!-- GPX -->
+    <string name="gpx_import">Importer</string>
+    <string name="gpx_auto_follow">Følg automatisk</string>
+    <string name="gpx_auto_follow_hint">Start navigasjon når du kjører langs et spor som vises på kartet</string>
+    <string name="gpx_empty">Ingen spor ennå. Importer en .gpx-fil, eller kopier filer til nettbrettets\nAndroid/data/com.curveon.tablet/files/gpx-mappe over USB.</string>
+    <string name="gpx_export">Eksporter GPX</string>
+    <string name="gpx_ungroup">Løs opp gruppen</string>
+    <string name="gpx_delete_group">Slett gruppen</string>
+    <string name="gpx_move_to_group">Flytt til gruppe</string>
+    <plurals name="gpx_delete_group_text">
+        <item quantity="one">Sporet i den blir også slettet. Bruk Løs opp gruppen for å beholde det.</item>
+        <item quantity="other">De %d sporene i den blir også slettet. Bruk Løs opp gruppen for å beholde dem.</item>
+    </plurals>
+    <string name="gpx_rename_track">Gi sporet nytt navn</string>
+    <string name="gpx_rename_group">Gi gruppen nytt navn</string>
+    <string name="gpx_move_to">Flytt %1$s til</string>
+    <plurals name="gpx_tracks_count">
+        <item quantity="one">%d spor</item>
+        <item quantity="other">%d spor</item>
+    </plurals>
+    <plurals name="gpx_waypoints_count">
+        <item quantity="one">%d veipunkt</item>
+        <item quantity="other">%d veipunkter</item>
+    </plurals>
+    <string name="gpx_waypoints">Veipunkter</string>
+
+    <!-- Waypoints -->
+    <string name="poi_camping">Camping</string>
+    <string name="poi_fuel">Bensin</string>
+    <string name="poi_lodging">Overnatting</string>
+    <string name="poi_food">Mat</string>
+    <string name="poi_scenic">Severdig</string>
+    <string name="poi_info">Info</string>
+    <string name="poi_alert">Varsel</string>
+    <string name="poi_picnic">Rasteplass</string>
+    <string name="poi_swimming">Bading</string>
+    <string name="poi_ferry">Ferje</string>
+    <string name="poi_water">Drikkevann</string>
+    <string name="poi_toilet">Toalett</string>
+    <string name="poi_elevation">%.0f moh.</string>
+    <string name="poi_added">Lagt til %1$s</string>
+    <string name="create">Opprett</string>
+    <string name="gpx_shown">Vises på kartet</string>
+    <string name="gpx_hidden">Skjult</string>
+    <string name="gpx_partly_shown">Delvis vist</string>
+    <string name="gpx_as_recorded">Som tatt opp</string>
+    <string name="gpx_inverted">Snudd</string>
+    <string name="gpx_mixed_directions">Blandede retninger</string>
+    <string name="gpx_no_group">Ingen gruppe</string>
+    <string name="gpx_new_group">Ny gruppe</string>
+
+    <!-- Phone -->
+    <string name="phone_favorites">Favoritter</string>
+    <string name="phone_recents">Nylige</string>
+    <string name="phone_contacts">Kontakter</string>
+    <string name="phone_keypad">Tastatur</string>
+    <string name="phone_no_share_contacts">Telefonen deler ikke kontakter</string>
+    <string name="phone_no_share_calls">Telefonen deler ikke anropsloggen</string>
+    <string name="phone_allow_hint">Åpne Curveon Companion på telefonen og gi tilgang til kontakter og anrop.</string>
+    <string name="phone_no_favorites">Ingen favoritter ennå</string>
+    <string name="phone_no_favorites_hint">Merk kontakter med stjerne på telefonen, så dukker de opp her.</string>
+    <string name="phone_no_recents">Ingen nylige anrop</string>
+    <string name="phone_no_contacts">Ingen kontakter med telefonnummer</string>
+    <string name="tap_to_connect">Trykk for å koble til nå</string>
+    <string name="yesterday">I går</string>
+    <plurals name="phone_numbers">
+        <item quantity="one">%d nummer</item>
+        <item quantity="other">%d numre</item>
+    </plurals>
+    <string name="distance_km_int">%1$d km</string>
+    <string name="distance_m_int">%1$d m</string>
+    <string name="selected">Valgt</string>
+    <string name="add_stop">Legg til stopp</string>
+    <string name="go_here">Kjør hit</string>
+
+    <!-- Roundtrip and route preview -->
+    <string name="roundtrip_subtitle">En runde fra der du er, omtrent i den retningen</string>
+    <string name="roundtrip_distance">Lengde</string>
+    <string name="roundtrip_roads">Veier</string>
+    <string name="roundtrip_plan">Planlegg %1$d km %2$s</string>
+    <string name="style_fastest">Raskest</string>
+    <string name="style_curvy">Svingete</string>
+    <string name="style_super_curvy">Supersvingete</string>
+    <string name="preview_roundtrip_title">Rundtur · omtrent %.0f km</string>
+    <string name="preview_another_loop">En annen runde</string>
+    <string name="preview_reverse">Kjør motsatt vei</string>
+    <string name="preview_save">Lagre ruten</string>
+    <string name="preview_remove_stop">Fjern stopp</string>
+    <plurals name="preview_includes_ferries">
+        <item quantity="one">Inkluderer en ferje.</item>
+        <item quantity="other">Inkluderer %d ferjer.</item>
+    </plurals>
+    <string name="preview_ferry_loop">Ingen runde så lang i den retningen uten – prøv en annen retning eller lengde.</string>
+    <string name="preview_ferry_road">Det finnes ingen vei dit uten.</string>
+    <string name="preview_go">KJØR</string>
+    <string name="preview_km_gravel">%.0f km grus</string>
+    <plurals name="preview_ferries">
+        <item quantity="one">ferje</item>
+        <item quantity="other">%d ferjer</item>
+    </plurals>
+    <string name="preview_curviness">Svingete</string>
+
+    <!-- Navigation bar -->
+    <string name="fuel_none_ahead">ingen foran</string>
+    <string name="fuel_none_on_route">Ingen bensin resten av ruten</string>
+    <string name="nav_stop">Stopp navigasjonen</string>
+
+    <!-- Rides -->
+    <string name="rides">Turer</string>
+    <string name="rides_recording">● Tar opp · %1$s</string>
+    <string name="rides_this_ride">denne turen</string>
+    <string name="rides_empty">Turer tas opp automatisk når du kommer i gang.</string>
+    <string name="rides_ride_again">Kjør igjen</string>
+    <string name="rides_save_to_gpx">Lagre i GPX-spor</string>
+    <string name="rides_save_to_group">Lagre i GPX-gruppe</string>
+    <string name="stat_km">km</string>
+    <string name="stat_riding">kjøretid</string>
+    <string name="stat_avg_speed">snitt km/t</string>
+    <string name="stat_max_speed">maks km/t</string>
+    <string name="stat_climb">m stigning</string>
+    <string name="stat_lean">helning V / H</string>
+
+    <!-- Phone link -->
+    <string name="link_connected">Koblet til %1$s</string>
+    <string name="link_disconnected">%1$s svarer ikke. Åpne Curveon Companion på telefonen og trykk Start deling.</string>
+    <string name="link_unreachable">Bluetooth på %1$s svarer ikke i det hele tatt. Hvis Curveon Companion deler, slå Bluetooth av og på på nettbrettet (eller telefonen).</string>
+    <string name="link_pick">Velg telefonen din nedenfor. Den må først være paret i Androids Bluetooth-innstillinger.</string>
+    <string name="link_no_permission">Curveon trenger tillatelse til å bruke Bluetooth.</string>
+    <string name="link_demo">Viser demomusikk og -meldinger.</string>
+    <string name="link_allow_bluetooth">Tillat Bluetooth</string>
+    <string name="link_demo_data">Demodata</string>
+    <string name="link_demo_data_hint">Eksempelmusikk og -meldinger, for å prøve dashbordet uten telefon</string>
+
+    <!-- OBD2 -->
+    <string name="obd_title">OBD2-DATA</string>
+    <string name="obd_online">TILKOBLET</string>
+    <string name="obd_standby">VENTER</string>
+    <string name="obd_coolant">Kjølevæske</string>
+    <string name="obd_battery">Batteri</string>
+    <string name="obd_altitude">Høyde</string>
+
+    <!-- Maps download, service, import -->
+    <string name="region_norway">Norge</string>
+    <string name="map_no_space">Ikke nok ledig plass: trenger omtrent %1$.1f GB, %2$.1f GB ledig</string>
+    <string name="map_reading_index">Leser kartindeksen</string>
+    <string name="map_reading_index_parts">Leser kartindeksen (%1$d av %2$d deler)</string>
+    <string name="map_downloading">Laster ned kart – %1$.0f av %2$.0f MB</string>
+    <string name="service_channel">Kjøring</string>
+    <string name="service_running">GPS og navigasjon kjører</string>
+    <string name="gpx_no_track_in">Ingen spor eller rute i %1$s</string>
+    <string name="saved_loop">Rundtur</string>
+    <string name="saved_track">Spor</string>
+</resources>

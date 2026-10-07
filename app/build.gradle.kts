@@ -47,6 +47,8 @@ android {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
+  // Lists English and Norwegian under the system's App languages too.
+  androidResources { generateLocaleConfig = true }
   buildFeatures {
     compose = true
     buildConfig = true

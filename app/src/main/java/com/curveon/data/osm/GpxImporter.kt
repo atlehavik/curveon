@@ -40,7 +40,7 @@ class GpxImporter(private val context: Context, private val repository: CurveonR
 
     private suspend fun save(input: InputStream, fileName: String): List<String> {
         val tracks = GpxParser.parseAll(input, fileName.substringBeforeLast('.')).filter { it.points.size >= 2 }
-        require(tracks.isNotEmpty()) { "No track or route in $fileName" }
+        require(tracks.isNotEmpty()) { context.getString(com.curveon.R.string.gpx_no_track_in, fileName) }
         // Waypoints belong to the file; give each one to the track it is closest to.
         val waypoints = tracks.first().waypoints
         val byTrack = waypoints.groupBy { w ->

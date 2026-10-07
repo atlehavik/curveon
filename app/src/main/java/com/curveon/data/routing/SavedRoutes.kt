@@ -40,7 +40,7 @@ object SavedRoutes {
                     .toString()
             )
             else -> base.copy(
-                subtitle = if (goal is NavigationGoal.Roundtrip) "Loop" else "Track",
+                subtitle = if (goal is NavigationGoal.Roundtrip) "Loop" else "Track", // shown translated in Where to?
                 waypointsJson = JSONObject().put("options", optionsJson(o)).toString(),
                 polylineJson = encode(route.points.map { LatLon(it.lat, it.lon) })
             )
@@ -93,7 +93,7 @@ object SavedRoutes {
 }
 
 /** The last few destinations, shown when the search box is empty. */
-class RecentDestinations(context: Context) {
+class RecentDestinations(private val context: Context) {
     private val prefs = context.getSharedPreferences("recents", Context.MODE_PRIVATE)
 
     fun all(): List<Stop> = runCatching {
@@ -102,7 +102,7 @@ class RecentDestinations(context: Context) {
     }.getOrDefault(emptyList())
 
     fun add(stop: Stop) {
-        if (stop.name == MAP_POINT) return
+        if (stop.name == context.getString(com.curveon.R.string.map_point)) return
         val list = listOf(stop) + all().filterNot { it.name == stop.name || com.curveon.routing.Geo.distance(it.point, stop.point) < 100 }
         val a = JSONArray(list.take(MAX).map { JSONObject().put("name", it.name).put("lat", it.point.lat).put("lon", it.point.lon) })
         prefs.edit().putString(KEY, a.toString()).apply()
@@ -111,6 +111,5 @@ class RecentDestinations(context: Context) {
     companion object {
         private const val KEY = "list"
         private const val MAX = 8
-        const val MAP_POINT = "Map point"
     }
 }

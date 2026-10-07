@@ -1,5 +1,7 @@
 package com.curveon.ui.components
 
+import com.curveon.R
+import androidx.compose.ui.res.stringResource
 import android.annotation.SuppressLint
 import android.graphics.RectF
 import android.location.Location
@@ -241,7 +243,7 @@ fun CurveonMapView(
         s.getSourceAs<GeoJsonSource>(GPX_POIS)?.setGeoJson(FeatureCollection.fromFeatures(gpxPois.mapIndexed { i, p ->
             Feature.fromGeometry(Point.fromLngLat(p.lon, p.lat)).also {
                 it.addNumberProperty("i", i)
-                it.addStringProperty("name", p.name)
+                it.addStringProperty("name", p.displayName(context))
                 it.addStringProperty("color", hex(p.category.color))
                 it.addStringProperty("icon", poiImageName(p.kind))
             }
@@ -385,21 +387,21 @@ fun CurveonMapView(
                 tag = "map_recenter_btn"
             ) {
                 when (mode) {
-                    CameraMode2.HEADING_UP -> Icon(Icons.Default.Navigation, "Heading up – tap for north up", tint = Color(0xFF00363D),
+                    CameraMode2.HEADING_UP -> Icon(Icons.Default.Navigation, stringResource(R.string.map_heading_up), tint = Color(0xFF00363D),
                         modifier = Modifier.size(26.dp))
                     CameraMode2.NORTH_UP -> Text("N", color = Color(0xFF00363D), fontSize = 22.sp, fontWeight = FontWeight.Black)
-                    CameraMode2.FREE -> Icon(Icons.Default.MyLocation, "Follow me", tint = TextPrimary, modifier = Modifier.size(24.dp))
+                    CameraMode2.FREE -> Icon(Icons.Default.MyLocation, stringResource(R.string.map_follow_me), tint = TextPrimary, modifier = Modifier.size(24.dp))
                 }
             }
             MapButton(onClick = {
                 if (following && autoZoom) zoomBias = (zoomBias + 1).coerceAtMost(3.0) else map?.animateCamera(CameraUpdateFactory.zoomIn())
             }, tag = "map_zoom_in_btn") {
-                Icon(Icons.Default.Add, "Zoom in", tint = TextPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.Add, stringResource(R.string.map_zoom_in), tint = TextPrimary, modifier = Modifier.size(24.dp))
             }
             MapButton(onClick = {
                 if (following && autoZoom) zoomBias = (zoomBias - 1).coerceAtLeast(-4.0) else map?.animateCamera(CameraUpdateFactory.zoomOut())
             }, tag = "map_zoom_out_btn") {
-                Icon(Icons.Default.Remove, "Zoom out", tint = TextPrimary, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.Remove, stringResource(R.string.map_zoom_out), tint = TextPrimary, modifier = Modifier.size(24.dp))
             }
         }
 
@@ -407,7 +409,7 @@ fun CurveonMapView(
 
         if (!hasOfflineMap) {
             Text(
-                text = "No offline map installed – showing online map. Import one in Settings.",
+                text = stringResource(R.string.map_online_only),
                 color = NeonAmber,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,

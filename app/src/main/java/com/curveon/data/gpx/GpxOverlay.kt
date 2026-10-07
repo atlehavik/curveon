@@ -1,5 +1,7 @@
 package com.curveon.data.gpx
 
+import android.content.Context
+import com.curveon.R
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GpxTrack
 import com.curveon.data.osm.GpxParser
@@ -7,14 +9,14 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Kinds of waypoint we can show and filter, from the GPX <sym> (or the name prefix TET uses). */
-enum class PoiCategory(val label: String, val color: Int) {
-    CAMPING("Camping", 0xFF2E7D32.toInt()),
-    FUEL("Fuel", 0xFF00C853.toInt()),
-    LODGING("Lodging", 0xFF8E24AA.toInt()),
-    FOOD("Food", 0xFFFF7043.toInt()),
-    SCENIC("Scenic", 0xFF039BE5.toInt()),
-    INFO("Info", 0xFF90A4AE.toInt()),
-    ALERT("Alert", 0xFFFF1744.toInt());
+enum class PoiCategory(val label: Int, val color: Int) {
+    CAMPING(R.string.poi_camping, 0xFF2E7D32.toInt()),
+    FUEL(R.string.poi_fuel, 0xFF00C853.toInt()),
+    LODGING(R.string.poi_lodging, 0xFF8E24AA.toInt()),
+    FOOD(R.string.poi_food, 0xFFFF7043.toInt()),
+    SCENIC(R.string.poi_scenic, 0xFF039BE5.toInt()),
+    INFO(R.string.poi_info, 0xFF90A4AE.toInt()),
+    ALERT(R.string.poi_alert, 0xFFFF1744.toInt());
 
     companion object {
         fun of(symbol: String, name: String): PoiCategory {
@@ -36,24 +38,24 @@ enum class PoiCategory(val label: String, val color: Int) {
  * What a waypoint is, finer than [PoiCategory]: decides the icon drawn on the map when zoomed
  * in. Each kind belongs to a category, which gives the colour and the filter.
  */
-enum class PoiKind(val label: String, val category: PoiCategory) {
-    CAMPING("Camping", PoiCategory.CAMPING),
-    FUEL("Fuel", PoiCategory.FUEL),
-    LODGING("Lodging", PoiCategory.LODGING),
-    RESTAURANT("Restaurant", PoiCategory.FOOD),
-    CAFE("Café", PoiCategory.FOOD),
-    SHOP("Shop", PoiCategory.FOOD),
-    SCENIC("Scenic", PoiCategory.SCENIC),
-    PICNIC("Picnic area", PoiCategory.SCENIC),
-    SWIMMING("Swimming", PoiCategory.SCENIC),
-    MUSEUM("Museum", PoiCategory.SCENIC),
-    FERRY("Ferry", PoiCategory.INFO),
-    WATER("Drinking water", PoiCategory.INFO),
-    TOILET("Toilet", PoiCategory.INFO),
-    PARKING("Parking", PoiCategory.INFO),
-    TOWN("Town", PoiCategory.INFO),
-    INFO("Info", PoiCategory.INFO),
-    ALERT("Alert", PoiCategory.ALERT);
+enum class PoiKind(val label: Int, val category: PoiCategory) {
+    CAMPING(R.string.poi_camping, PoiCategory.CAMPING),
+    FUEL(R.string.poi_fuel, PoiCategory.FUEL),
+    LODGING(R.string.poi_lodging, PoiCategory.LODGING),
+    RESTAURANT(R.string.kind_restaurant, PoiCategory.FOOD),
+    CAFE(R.string.kind_cafe, PoiCategory.FOOD),
+    SHOP(R.string.kind_shop, PoiCategory.FOOD),
+    SCENIC(R.string.poi_scenic, PoiCategory.SCENIC),
+    PICNIC(R.string.poi_picnic, PoiCategory.SCENIC),
+    SWIMMING(R.string.poi_swimming, PoiCategory.SCENIC),
+    MUSEUM(R.string.kind_museum, PoiCategory.SCENIC),
+    FERRY(R.string.poi_ferry, PoiCategory.INFO),
+    WATER(R.string.poi_water, PoiCategory.INFO),
+    TOILET(R.string.poi_toilet, PoiCategory.INFO),
+    PARKING(R.string.kind_parking, PoiCategory.INFO),
+    TOWN(R.string.kind_town, PoiCategory.INFO),
+    INFO(R.string.poi_info, PoiCategory.INFO),
+    ALERT(R.string.poi_alert, PoiCategory.ALERT);
 
     companion object {
         fun of(symbol: String, name: String): PoiKind {
@@ -87,6 +89,7 @@ enum class PoiKind(val label: String, val category: PoiCategory) {
 
 /** A waypoint from a GPX file, with everything the file says about it. */
 data class GpxPoi(
+    /** Empty when the file only says what it is ("FUEL_"): see [displayName]. */
     val name: String,
     val description: String,
     val category: PoiCategory,
@@ -105,7 +108,10 @@ data class GpxPoi(
     val elevation: Double? = null,
     /** The track it came with. */
     val trackName: String = ""
-)
+) {
+    /** The name, or what it is ("Fuel") when the file gives no name. */
+    fun displayName(context: Context): String = name.ifEmpty { context.getString(kind.label) }
+}
 
 /** A track drawn on the map, decoded once. */
 data class OverlayTrack(
@@ -163,7 +169,7 @@ object GpxOverlay {
     fun decodePois(json: String): List<GpxPoi> = decodeWaypoints(json).map { w ->
         val kind = PoiKind.of(w.symbol, w.name)
         GpxPoi(
-            name = cleanName(w.name) ?: kind.label, description = w.description, category = kind.category,
+            name = cleanName(w.name) ?: "", description = w.description, category = kind.category,
             lat = w.point.latitude, lon = w.point.longitude, kind = kind, rawName = w.name, symbol = w.symbol,
             comment = w.comment, links = w.links, time = w.time, address = w.address, phone = w.phone,
             categories = w.categories, elevation = w.point.altitudeMeters.takeIf { w.hasElevation }

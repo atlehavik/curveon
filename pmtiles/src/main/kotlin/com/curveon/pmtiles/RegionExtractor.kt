@@ -44,7 +44,17 @@ class Region(val rings: List<List<DoubleArray>>) {
     }
 }
 
-data class ExtractProgress(val phase: String, val doneBytes: Long, val totalBytes: Long) {
+/** [phase] is for logs; apps show their own text for [stage] ([partsDone] of [parts] while indexing). */
+data class ExtractProgress(
+    val phase: String,
+    val doneBytes: Long,
+    val totalBytes: Long,
+    val stage: Stage = Stage.DONE,
+    val partsDone: Int = 0,
+    val parts: Int = 0
+) {
+    enum class Stage { READING_INDEX, DOWNLOADING, DONE }
+
     val fraction get() = if (totalBytes > 0) (doneBytes.toDouble() / totalBytes).toFloat().coerceIn(0f, 1f) else 0f
 }
 
@@ -63,7 +73,7 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
         onProgress: (ExtractProgress) -> Unit = {},
         isCancelled: () -> Boolean = { false }
     ) {
-        onProgress(ExtractProgress("Reading map index", 0, 0))
+        onProgress(ExtractProgress("Reading map index", 0, 0, ExtractProgress.Stage.READING_INDEX))
         val head = get(url, 0, 16_384)
         val h = Pmtiles.readHeader(head)
         val zMax = min(maxZoom, h.maxZoom)
@@ -114,7 +124,7 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
                     process(Pmtiles.parseDirectory(Pmtiles.decompress(bytes.copyOfRange(o, o + lens[m].toInt()), h.internalCompression)))
                 }
                 done += members.size
-                onProgress(ExtractProgress("Reading map index ($done of ${offs.size} parts)", 0, 0))
+                onProgress(ExtractProgress("Reading map index ($done of ${offs.size} parts)", 0, 0, ExtractProgress.Stage.READING_INDEX, done, offs.size))
             }
         }
         val n = fId.size
@@ -191,7 +201,7 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
                     o.write(chunk, (uniqOff[k] - start).toInt(), uniqLen[k])
                     written += uniqLen[k]
                 }
-                onProgress(ExtractProgress("Downloading map", written, total))
+                onProgress(ExtractProgress("Downloading map", written, total, ExtractProgress.Stage.DOWNLOADING))
                 i = j + 1
             }
         }

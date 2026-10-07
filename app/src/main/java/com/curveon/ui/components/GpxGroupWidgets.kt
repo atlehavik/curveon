@@ -1,5 +1,7 @@
 package com.curveon.ui.components
 
+import androidx.compose.ui.res.stringResource
+import com.curveon.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,11 +39,11 @@ import com.curveon.ui.theme.*
 @Composable
 fun VisibilityIcon(mix: Mix, color: Color, size: Dp = 26.dp) {
     when (mix) {
-        Mix.ALL -> Icon(Icons.Default.Visibility, "Shown on map", tint = color, modifier = Modifier.size(size))
-        Mix.NONE -> Icon(Icons.Default.VisibilityOff, "Hidden", tint = TextMuted, modifier = Modifier.size(size))
+        Mix.ALL -> Icon(Icons.Default.Visibility, stringResource(R.string.gpx_shown), tint = color, modifier = Modifier.size(size))
+        Mix.NONE -> Icon(Icons.Default.VisibilityOff, stringResource(R.string.gpx_hidden), tint = TextMuted, modifier = Modifier.size(size))
         Mix.MIXED -> Box(Modifier.size(size)) {
             Icon(
-                Icons.Default.Visibility, "Partly shown", tint = color,
+                Icons.Default.Visibility, stringResource(R.string.gpx_partly_shown), tint = color,
                 modifier = Modifier.fillMaxSize().drawWithContent { clipRect(right = size.toPx() / 2) { this@drawWithContent.drawContent() } }
             )
             Icon(
@@ -76,9 +78,9 @@ fun ColorSwatch(colors: List<Int>, size: Dp = 22.dp) {
 @Composable
 fun DirectionIcon(mix: Mix) {
     when (mix) {
-        Mix.NONE -> Icon(Icons.Default.TrendingFlat, "As recorded", tint = TextMuted)
-        Mix.ALL -> Icon(Icons.Default.TrendingFlat, "Inverted", tint = NeonAmber, modifier = Modifier.rotate(180f))
-        Mix.MIXED -> Icon(Icons.Default.SwapHoriz, "Mixed directions", tint = NeonAmber)
+        Mix.NONE -> Icon(Icons.Default.TrendingFlat, stringResource(R.string.gpx_as_recorded), tint = TextMuted)
+        Mix.ALL -> Icon(Icons.Default.TrendingFlat, stringResource(R.string.gpx_inverted), tint = NeonAmber, modifier = Modifier.rotate(180f))
+        Mix.MIXED -> Icon(Icons.Default.SwapHoriz, stringResource(R.string.gpx_mixed_directions), tint = NeonAmber)
     }
 }
 
@@ -97,8 +99,8 @@ fun RenameDialog(title: String, initial: String, onRename: (String) -> Unit, onD
                 colors = fieldColors(), modifier = Modifier.fillMaxWidth().focusRequester(focus)
             )
         },
-        confirmButton = { TextButton(onClick = { onRename(text.text); onDismiss() }, enabled = text.text.isNotBlank()) { Text("Save", color = ElectricCyan) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        confirmButton = { TextButton(onClick = { onRename(text.text); onDismiss() }, enabled = text.text.isNotBlank()) { Text(stringResource(R.string.save), color = ElectricCyan) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
     )
 }
 
@@ -121,7 +123,7 @@ fun GroupPickerDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 LazyColumn(Modifier.heightIn(max = 260.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    item { PickRow(Icons.Default.Remove, "No group", current == null) { onPick(null, null); onDismiss() } }
+                    item { PickRow(Icons.Default.Remove, stringResource(R.string.gpx_no_group), current == null) { onPick(null, null); onDismiss() } }
                     items(groups, key = { it.id }) { g ->
                         PickRow(Icons.Default.FolderOpen, g.name, current == g.id) { onPick(g.id, null); onDismiss() }
                     }
@@ -129,17 +131,17 @@ fun GroupPickerDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = newName, onValueChange = { newName = it }, singleLine = true,
-                        placeholder = { Text("New group") }, colors = fieldColors(), modifier = Modifier.weight(1f)
+                        placeholder = { Text(stringResource(R.string.gpx_new_group)) }, colors = fieldColors(), modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
                     TextButton(onClick = { onPick(null, newName.trim()); onDismiss() }, enabled = newName.isNotBlank()) {
-                        Text("Create", color = if (newName.isNotBlank()) ElectricCyan else TextMuted)
+                        Text(stringResource(R.string.create), color = if (newName.isNotBlank()) ElectricCyan else TextMuted)
                     }
                 }
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
     )
 }
 

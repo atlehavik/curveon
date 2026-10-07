@@ -1,6 +1,7 @@
 package com.curveon.data.routing
 
 import android.content.Context
+import com.curveon.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -32,9 +33,9 @@ class RoutingData(private val context: Context) {
         val missing = missingNorwayTiles()
         val size = tiles.sumOf { it.length() } / 1e6
         return when {
-            missing.isEmpty() -> "Norway routing data installed (%d tiles, %.0f MB)".format(tiles.size, size)
-            tiles.isEmpty() -> "No routing data. Download it (~200 MB) while online, or copy .rd5 files to $segmentsDir"
-            else -> "Routing data incomplete: missing ${missing.joinToString()}"
+            missing.isEmpty() -> context.getString(R.string.routing_installed, tiles.size, size)
+            tiles.isEmpty() -> context.getString(R.string.routing_none, segmentsDir.toString())
+            else -> context.getString(R.string.routing_incomplete, missing.joinToString())
         }
     }
 

@@ -1,6 +1,7 @@
 package com.curveon.data.search
 
 import android.content.Context
+import com.curveon.R
 import android.database.sqlite.SQLiteDatabase
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -47,8 +48,8 @@ class PlaceSearch(private val context: Context) {
     fun hasOfflineIndex() = indexFile.exists()
 
     fun describe(): String =
-        if (hasOfflineIndex()) "Offline search index installed (%.0f MB)".format(indexFile.length() / 1e6)
-        else "No offline search index. Copy $INDEX_FILE to $indexDir. Online search works when connected."
+        if (hasOfflineIndex()) context.getString(R.string.search_index_installed, indexFile.length() / 1e6)
+        else context.getString(R.string.search_index_none, INDEX_FILE, indexDir.toString())
 
     suspend fun search(query: String, nearLat: Double, nearLon: Double, limit: Int = 30): List<SearchResult> =
         withContext(Dispatchers.IO) {
@@ -184,7 +185,7 @@ class PlaceSearch(private val context: Context) {
                 "SELECT lat, lon, maxspeed FROM cameras WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
                 arrayOf(minLat.toString(), maxLat.toString(), minLon.toString(), maxLon.toString())
             ).use { c ->
-                buildList { while (c.moveToNext()) add(Poi("Speed camera", c.getDouble(0), c.getDouble(1), if (c.isNull(2)) null else c.getInt(2))) }
+                buildList { while (c.moveToNext()) add(Poi(context.getString(R.string.speed_camera), c.getDouble(0), c.getDouble(1), if (c.isNull(2)) null else c.getInt(2))) }
             }
         }.getOrDefault(emptyList())
     }

@@ -1,5 +1,8 @@
 package com.curveon.ui.components
 
+import com.curveon.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -70,16 +73,16 @@ fun RoutePreviewSheet(
             Text(
                 when (goal) {
                     is NavigationGoal.Destination -> goal.name
-                    is NavigationGoal.Roundtrip -> "Roundtrip · about %.0f km".format(goal.distanceKm)
+                    is NavigationGoal.Roundtrip -> stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
                     is NavigationGoal.Track -> goal.name
                 },
                 color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
             )
-            if (goal is NavigationGoal.Roundtrip) SmallIcon(Icons.Default.Shuffle, "Another loop", onShuffle)
-            if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, "Ride it the other way", onReverse)
-            if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, "Save route", onSave)
-            SmallIcon(Icons.Default.Close, "Cancel", onClose)
+            if (goal is NavigationGoal.Roundtrip) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
+            if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
+            if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
+            SmallIcon(Icons.Default.Close, stringResource(R.string.cancel), onClose)
         }
 
         // Stops (only A→B trips have them); tap × to drop one.
@@ -92,7 +95,7 @@ fun RoutePreviewSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("${i + 1}. ${s.name}", color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                        Icon(Icons.Default.Close, "Remove stop", tint = NeonAmber, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Close, stringResource(R.string.preview_remove_stop), tint = NeonAmber, modifier = Modifier.size(16.dp))
                     }
                 }
             }
@@ -118,9 +121,9 @@ fun RoutePreviewSheet(
                 Icon(Icons.Default.DirectionsBoat, null, tint = NeonAmber, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    (if (ferries == 1) "Includes a ferry. " else "Includes $ferries ferries. ") + when (goal) {
-                        is NavigationGoal.Roundtrip -> "No loop this long that way without one – try another direction or distance."
-                        else -> "There is no road there without one."
+                    pluralStringResource(R.plurals.preview_includes_ferries, ferries, ferries) + " " + when (goal) {
+                        is NavigationGoal.Roundtrip -> stringResource(R.string.preview_ferry_loop)
+                        else -> stringResource(R.string.preview_ferry_road)
                     },
                     color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold
                 )
@@ -143,7 +146,7 @@ fun RoutePreviewSheet(
             ) {
                 Icon(Icons.Default.Navigation, null, tint = if (ready) OnCyan else TextMuted)
                 Spacer(Modifier.width(8.dp))
-                Text("GO", color = if (ready) OnCyan else TextMuted, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Text(stringResource(R.string.preview_go), color = if (ready) OnCyan else TextMuted, fontSize = 20.sp, fontWeight = FontWeight.Black)
             }
         }
     }
@@ -161,19 +164,21 @@ private fun CandidateCard(c: RouteCandidate, selected: Boolean, single: Boolean,
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         if (!single) Text(
-            when (c.style) { RoadStyle.FASTEST -> "Fastest"; RoadStyle.CURVY -> "Curvy"; RoadStyle.VERY_CURVY -> "Super curvy"; null -> "" },
+            when (c.style) { RoadStyle.FASTEST -> stringResource(R.string.style_fastest); RoadStyle.CURVY -> stringResource(R.string.style_curvy); RoadStyle.VERY_CURVY -> stringResource(R.string.style_super_curvy); null -> "" },
             color = if (selected) ElectricCyan else TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold
         )
         when {
             route != null -> {
                 val min = (route.durationSeconds / 60).toInt()
                 Text("%d:%02d".format(min / 60, min % 60), color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                Text("%.0f km".format(route.distanceMeters / 1000), color = TextSecondary, fontSize = 13.sp)
+                Text(stringResource(R.string.distance_km_whole, route.distanceMeters / 1000), color = TextSecondary, fontSize = 13.sp)
                 Spacer(Modifier.height(6.dp))
                 CurvinessBar(route.curviness)
+                val gravel = stringResource(R.string.preview_km_gravel, route.unpavedMeters / 1000)
+                val ferries = pluralStringResource(R.plurals.preview_ferries, route.ferryCount, route.ferryCount)
                 val notes = buildList {
-                    if (route.unpavedMeters > 1000) add("%.0f km gravel".format(route.unpavedMeters / 1000))
-                    if (route.ferryCount > 0) add(if (route.ferryCount == 1) "ferry" else "${route.ferryCount} ferries")
+                    if (route.unpavedMeters > 1000) add(gravel)
+                    if (route.ferryCount > 0) add(ferries)
                 }
                 if (notes.isNotEmpty()) Text(notes.joinToString(" · "), color = NeonAmber, fontSize = 11.sp, maxLines = 1)
             }
@@ -195,7 +200,7 @@ private fun CurvinessBar(curviness: Int) {
                 .background(if (i < filled) NeonAmber else CockpitBorder))
         }
         Spacer(Modifier.width(6.dp))
-        Icon(Icons.Default.Gesture, "Curviness", tint = TextMuted, modifier = Modifier.size(14.dp))
+        Icon(Icons.Default.Gesture, stringResource(R.string.preview_curviness), tint = TextMuted, modifier = Modifier.size(14.dp))
     }
 }
 

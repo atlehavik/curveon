@@ -1,5 +1,7 @@
 package com.curveon.ui.components
 
+import com.curveon.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -88,13 +90,9 @@ fun TurnByTurnBanner(
     }
 }
 
-private fun formatDistance(meters: Int): String {
-    return if (meters >= 1000) {
-        "%.1f km".format(meters / 1000f)
-    } else {
-        "$meters m"
-    }
-}
+@Composable
+private fun formatDistance(meters: Int): String =
+    if (meters >= 1000) stringResource(R.string.distance_km, meters / 1000f) else stringResource(R.string.distance_m_int, meters)
 
 private fun getTurnIcon(type: TurnType): ImageVector {
     return when (type) {

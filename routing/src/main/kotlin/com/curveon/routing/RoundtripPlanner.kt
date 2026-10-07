@@ -138,7 +138,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     }
 
     private fun noRoundtrip(cause: Throwable?) =
-        RoutingException("Could not find a roundtrip in that direction (${cause?.message}). Try another direction or distance.")
+        NoRoundtripException("Could not find a roundtrip in that direction (${cause?.message}). Try another direction or distance.")
 
     /** Routes one circle; if a via point lands on an unreachable bit of road, shrinks the circle once and retries. */
     private fun loop(start: LatLon, radius: Double, directionDeg: Double, options: RouteOptions): Loop =

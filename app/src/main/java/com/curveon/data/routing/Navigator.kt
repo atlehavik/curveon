@@ -9,6 +9,8 @@ import com.curveon.routing.NavigationTracker
 import com.curveon.routing.ProfileInstaller
 import com.curveon.routing.RoadStyle
 import com.curveon.routing.RoundtripPlanner
+import com.curveon.routing.NoRoundtripException
+import com.curveon.R
 import com.curveon.routing.Route
 import com.curveon.routing.RouteCorridor
 import com.curveon.routing.RouteOptions
@@ -54,9 +56,10 @@ sealed interface NavigationGoal {
         val distanceKm: Double,
         val directionDeg: Double,
         override val options: RouteOptions,
-        val variant: Int = 0
+        val variant: Int = 0,
+        val name: String = ""
     ) : NavigationGoal {
-        override val title get() = "Roundtrip"
+        override val title get() = name
     }
 
     /** A fixed line to ride: an imported GPX track, a saved roundtrip or a route with an added stop. */
@@ -93,7 +96,7 @@ data class NavigationState(
  * Owns routing: previews (several styles side by side), the active route, following the rider
  * along it, stops, and rerouting.
  */
-class Navigator(context: Context, private val scope: CoroutineScope) {
+class Navigator(private val context: Context, private val scope: CoroutineScope) {
 
     val routingData = RoutingData(context)
     private val profileDir = File(context.filesDir, "brouter-profiles")
@@ -119,7 +122,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
         preview(NavigationGoal.Destination(name, destination, options, stops))
 
     fun previewRoundtrip(distanceKm: Double, directionDeg: Double, options: RouteOptions, variant: Int = 0) =
-        preview(NavigationGoal.Roundtrip(distanceKm, directionDeg, options, variant))
+        preview(NavigationGoal.Roundtrip(distanceKm, directionDeg, options, variant, context.getString(R.string.roundtrip)))
 
     fun previewTrack(name: String, points: List<LatLon>, options: RouteOptions) =
         preview(NavigationGoal.Track(name, points, options))
@@ -132,7 +135,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
         val from = lastPosition ?: return
         if (!routingData.isReady()) return fail(routingData.describe())
         calcJob?.cancel()
-        _state.value = _state.value.copy(status = RoutingStatus.Calculating("Following $name…"), preview = null)
+        _state.value = _state.value.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_following, name)), preview = null)
         val goal = NavigationGoal.Track(name, points, options)
         calcJob = scope.launch {
             try {
@@ -141,7 +144,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = RoutingStatus.Failed("Couldn't follow $name: ${message(e)}"))
+                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_follow_failed, name, message(e))))
             }
         }
     }
@@ -199,7 +202,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
     }
 
     private fun preview(goal: NavigationGoal, keepSelection: Int? = null) {
-        val from = lastPosition ?: return fail("Waiting for GPS position")
+        val from = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
         if (!routingData.isReady()) return fail(routingData.describe())
         previewJob?.cancel()
         val styles: List<RoadStyle?> = if (goal is NavigationGoal.Destination) RoadStyle.entries else listOf(null)
@@ -326,7 +329,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
         val route = s.route ?: return
         val pos = lastPosition ?: return
         calcJob?.cancel()
-        _state.value = s.copy(status = RoutingStatus.Calculating("Adding ${stop.name}…"))
+        _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_adding_stop, stop.name)))
         calcJob = scope.launch {
             try {
                 val (newGoal, newRoute) = withContext(Dispatchers.Default) {
@@ -349,7 +352,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = RoutingStatus.Failed("Couldn't add ${stop.name}: ${message(e)}"))
+                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_add_stop_failed, stop.name, message(e))))
             }
         }
     }
@@ -372,7 +375,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
         val goal = current.goal ?: return
         val route = current.route ?: return
         lastRerouteAt = now
-        _state.value = current.copy(status = RoutingStatus.Calculating("Recalculating…"))
+        _state.value = current.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))
         calcJob = scope.launch {
             try {
                 val newRoute = withContext(Dispatchers.Default) {
@@ -422,8 +425,9 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
     }
 
     private fun message(e: Throwable): String = when {
+        e is NoRoundtripException -> context.getString(R.string.nav_no_roundtrip)
         e.message?.contains("not mapped", true) == true || e.message?.contains("no track", true) == true ->
-            "No road found there"
+            context.getString(R.string.nav_no_road)
         else -> e.message ?: e.toString()
     }
 

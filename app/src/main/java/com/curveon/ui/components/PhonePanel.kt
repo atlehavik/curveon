@@ -50,15 +50,18 @@ import com.curveon.protocol.Message
 import com.curveon.ui.theme.*
 import kotlinx.coroutines.launch
 import java.text.Normalizer
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.curveon.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-enum class PhoneTab(val label: String, val icon: ImageVector) {
-    FAVORITES("Favorites", Icons.Default.Star),
-    RECENTS("Recents", Icons.Default.History),
-    CONTACTS("Contacts", Icons.Default.Contacts),
-    KEYPAD("Keypad", Icons.Default.Dialpad)
+enum class PhoneTab(val label: Int, val icon: ImageVector) {
+    FAVORITES(R.string.phone_favorites, Icons.Default.Star),
+    RECENTS(R.string.phone_recents, Icons.Default.History),
+    CONTACTS(R.string.phone_contacts, Icons.Default.Contacts),
+    KEYPAD(R.string.phone_keypad, Icons.Default.Dialpad)
 }
 
 /** What the phone panel shows; all of it comes from the phone over the companion link. */
@@ -88,10 +91,10 @@ fun PhoneDialog(
     onClose: () -> Unit
 ) {
     CockpitDialog(
-        title = "Phone", icon = Icons.Default.Phone, accent = EcoGreen, onDismiss = onClose, tag = "phone_panel",
+        title = stringResource(R.string.phone), icon = Icons.Default.Phone, accent = EcoGreen, onDismiss = onClose, tag = "phone_panel",
         header = {
             Icon(Icons.Default.Phone, null, tint = EcoGreen, modifier = Modifier.size(28.dp))
-            Text("Phone", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Text(stringResource(R.string.phone), color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
             Spacer(Modifier.width(8.dp))
             Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 PhoneTab.entries.forEach { t ->
@@ -106,17 +109,17 @@ fun PhoneDialog(
                 key?.let { state.photos[it] }
             }
             when (tab) {
-                PhoneTab.FAVORITES -> ContactsGate(state, state.contacts, state.contactsAllowed, "contacts", onReconnect) { all ->
+                PhoneTab.FAVORITES -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect) { all ->
                     val favorites = all.filter { it.starred }
-                    if (favorites.isEmpty()) Empty(Icons.Default.StarBorder, "No favorites yet", "Star contacts on your phone and they show up here.")
+                    if (favorites.isEmpty()) Empty(Icons.Default.StarBorder, stringResource(R.string.phone_no_favorites), stringResource(R.string.phone_no_favorites_hint))
                     else Favorites(favorites, photo, onCall)
                 }
-                PhoneTab.RECENTS -> ContactsGate(state, state.recents, state.callLogAllowed, "the call log", onReconnect) { calls ->
-                    if (calls.isEmpty()) Empty(Icons.Default.History, "No recent calls", "")
+                PhoneTab.RECENTS -> ContactsGate(state, state.recents, state.callLogAllowed, stringResource(R.string.phone_no_share_calls), onReconnect) { calls ->
+                    if (calls.isEmpty()) Empty(Icons.Default.History, stringResource(R.string.phone_no_recents), "")
                     else Recents(calls, photo, onCall)
                 }
-                PhoneTab.CONTACTS -> ContactsGate(state, state.contacts, state.contactsAllowed, "contacts", onReconnect) { all ->
-                    if (all.isEmpty()) Empty(Icons.Default.Contacts, "No contacts with a phone number", "")
+                PhoneTab.CONTACTS -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect) { all ->
+                    if (all.isEmpty()) Empty(Icons.Default.Contacts, stringResource(R.string.phone_no_contacts), "")
                     else ContactList(all, photo, onCall)
                 }
                 PhoneTab.KEYPAD -> Keypad(onCall)
@@ -135,9 +138,9 @@ private fun TabButton(tab: PhoneTab, selected: Boolean, modifier: Modifier, onCl
         horizontalArrangement = Arrangement.Center
     ) {
         val color = if (selected) Color(0xFF00363D) else TextSecondary
-        Icon(tab.icon, tab.label, tint = color, modifier = Modifier.size(24.dp))
+        Icon(tab.icon, stringResource(tab.label), tint = color, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(6.dp))
-        Text(tab.label, color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip)
+        Text(stringResource(tab.label), color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip)
     }
 }
 
@@ -147,16 +150,16 @@ private fun <T> ContactsGate(
     state: PhonePanelState,
     data: List<T>?,
     allowed: Boolean,
-    what: String,
+    /** Shown when the phone doesn't share it, e.g. "The phone doesn't share contacts". */
+    notShared: String,
     onReconnect: () -> Unit,
     content: @Composable (List<T>) -> Unit
 ) {
     when {
-        !allowed -> Empty(Icons.Default.Lock, "The phone doesn't share $what",
-            "Open Curveon Companion on the phone and allow contacts and calls.")
+        !allowed -> Empty(Icons.Default.Lock, notShared, stringResource(R.string.phone_allow_hint))
         data != null -> content(data)
         !state.connected -> Box(Modifier.fillMaxSize().clickable(onClick = onReconnect)) {
-            Empty(Icons.Default.PhonelinkOff, state.offlineText, "Tap to connect now")
+            Empty(Icons.Default.PhonelinkOff, state.offlineText, stringResource(R.string.tap_to_connect))
         }
         else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = ElectricCyan) }
     }
@@ -254,12 +257,13 @@ private fun Recents(calls: List<Message.RecentCall>, photo: @Composable (String?
     }
 }
 
+@Composable
 private fun whenText(ms: Long): String {
     val now = System.currentTimeMillis()
     return when {
-        now - ms < 60_000 -> "now"
+        now - ms < 60_000 -> stringResource(R.string.ago_now)
         DateUtils.isToday(ms) -> SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(ms))
-        DateUtils.isToday(ms + DateUtils.DAY_IN_MILLIS) -> "Yesterday"
+        DateUtils.isToday(ms + DateUtils.DAY_IN_MILLIS) -> stringResource(R.string.yesterday)
         now - ms < 6 * DateUtils.DAY_IN_MILLIS -> SimpleDateFormat("EEEE", Locale.getDefault()).format(Date(ms))
         else -> SimpleDateFormat("d MMM", Locale.getDefault()).format(Date(ms))
     }
@@ -298,7 +302,7 @@ private fun ContactList(contacts: List<Message.Contact>, photo: @Composable (Str
                             else expanded = if (expanded == c.id) null else c.id
                         }) {
                             Text(
-                                if (c.numbers.size == 1) c.numbers[0].label.ifEmpty { c.numbers[0].number } else "${c.numbers.size} numbers",
+                                if (c.numbers.size == 1) c.numbers[0].label.ifEmpty { c.numbers[0].number } else pluralStringResource(R.plurals.phone_numbers, c.numbers.size, c.numbers.size),
                                 color = TextSecondary, fontSize = 14.sp, maxLines = 1
                             )
                         }
@@ -398,7 +402,7 @@ private fun Keypad(onCall: (String, String) -> Unit) {
                 Modifier.size(56.dp).clip(CircleShape)
                     .combinedClickable(onClick = { number = number.dropLast(1) }, onLongClick = { number = "" }),
                 contentAlignment = Alignment.Center
-            ) { Icon(Icons.AutoMirrored.Filled.Backspace, "Delete", tint = TextSecondary, modifier = Modifier.size(28.dp)) }
+            ) { Icon(Icons.AutoMirrored.Filled.Backspace, stringResource(R.string.delete), tint = TextSecondary, modifier = Modifier.size(28.dp)) }
         }
         Spacer(Modifier.height(6.dp))
         Column(
@@ -426,7 +430,7 @@ private fun Keypad(onCall: (String, String) -> Unit) {
             }
         }
         Spacer(Modifier.height(10.dp))
-        PillButton(Icons.Default.Call, "Call", if (number.isEmpty()) CockpitSurfaceVariant else EcoGreen,
+        PillButton(Icons.Default.Call, stringResource(R.string.call), if (number.isEmpty()) CockpitSurfaceVariant else EcoGreen,
             if (number.isEmpty()) TextMuted else Color.Black, Modifier.widthIn(max = 420.dp).fillMaxWidth().testTag("keypad_call")) {
             if (number.isNotEmpty()) onCall(number, number)
         }

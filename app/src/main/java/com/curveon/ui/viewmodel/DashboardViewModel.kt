@@ -1,9 +1,11 @@
 package com.curveon.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.curveon.R
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.data.db.AppDatabase
 import com.curveon.data.gpx.GpxGroups
@@ -60,10 +62,11 @@ data class NavigationSummary(
     val nextStop: Pair<String, Double>? = null
 )
 
-enum class MapTheme { AUTO, DAY, NIGHT }
+enum class MapTheme(val label: Int) { AUTO(com.curveon.R.string.map_theme_auto), DAY(com.curveon.R.string.map_theme_day), NIGHT(com.curveon.R.string.map_theme_night) }
 
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val app: Context = application
     private val db = AppDatabase.getDatabase(application)
     private val repository = CurveonRepository(db.routeDao(), db.gpxDao())
     private val rideDao = db.rideDao()
@@ -74,6 +77,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val hazards = RouteHazards(placeSearch)
     private val recentDestinations = RecentDestinations(application)
     private val settings = application.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+
+    /** Text in the language the rider chose (the app context follows it). */
+    private fun str(id: Int, vararg args: Any): String = getApplication<Application>().getString(id, *args)
 
     // ---------------------------------------------------------------- map downloads
 
@@ -98,10 +104,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val region = mapDownloads.regions.firstOrNull { it.id == regionId } ?: return
         if (_mapDownload.value is com.curveon.data.map.MapDownloadState.Running) return
         cancelMapDownload = false
-        _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(regionId, "Checking for the newest map…", 0f)
+        _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(regionId, str(R.string.map_checking_newest), 0f)
         viewModelScope.launch {
             try {
-                val build = mapDownloads.latestBuild() ?: error("No connection. Connect to the phone's hotspot or Wi-Fi.")
+                val build = mapDownloads.latestBuild() ?: error(str(R.string.map_no_connection))
                 latestMapBuild = build
                 mapDownloads.download(region, build, onProgress = { msg, f ->
                     _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(regionId, msg, f)
@@ -111,7 +117,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             } catch (e: Throwable) {
                 mapDownloads.cleanupPartial(region)
                 _mapDownload.value = if (cancelMapDownload) com.curveon.data.map.MapDownloadState.Idle
-                else com.curveon.data.map.MapDownloadState.Failed("Map download failed: ${e.message}")
+                else com.curveon.data.map.MapDownloadState.Failed(str(R.string.map_download_failed, e.message ?: ""))
             }
             _mapStatuses.value = mapDownloads.status(latestMapBuild)
             _offlineMapStatus.value = describeOfflineMaps()
@@ -139,6 +145,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _routingDataStatus = MutableStateFlow(navigator.routingData.describe())
     val routingDataStatus: StateFlow<String> = _routingDataStatus.asStateFlow()
+
+    /** After a language change: redo the status texts that were written in the old language. */
+    fun refreshTexts() {
+        _routingDataStatus.value = navigator.routingData.describe()
+        _offlineMapStatus.value = describeOfflineMaps()
+        _gpxMessage.value = null
+    }
 
     val savedRoutes = repository.allRoutes.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -264,9 +277,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         TurnInstruction(
             index = idx,
             type = m.toTurnType(),
-            text = m.describe() +
+            text = m.describe(app) +
                 (road?.let { " · $it" } ?: "") +
-                (then?.let { " · then " + it.describe(null).lowercase() } ?: ""),
+                (then?.let { " · " + str(R.string.turn_then, it.describe(app).lowercase()) } ?: ""),
             distanceMeters = roundDistance(p.distanceToNextManeuver),
             streetName = road ?: "",
             speedLimitKmh = p.speedLimitKmh ?: 0,
@@ -494,7 +507,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val pts = RideRecorder.parseTrack(ride.track).map { GeoPoint(it.lat, it.lon, it.ele) }
         if (pts.size < 2) return@launch
         val group = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId
-        val name = ride.title.ifEmpty { "Ride" } + " · " +
+        val name = ride.title.ifEmpty { str(R.string.ride) } + " · " +
             java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ride.startMs))
         repository.saveGpxTrack(
             GpxTrack(
@@ -513,7 +526,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Ride a logged ride again, as a track. */
     fun rideAgain(ride: Ride) {
         val pts = RideRecorder.parseTrack(ride.track).map { LatLon(it.lat, it.lon) }
-        if (pts.size >= 2) navigator.previewTrack(ride.title.ifEmpty { "Earlier ride" }, pts, RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED))
+        if (pts.size >= 2) navigator.previewTrack(ride.title.ifEmpty { str(R.string.ride_earlier) }, pts, RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED))
     }
 
     // ---------------------------------------------------------------- demo ride
@@ -669,8 +682,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun importGpx(uri: Uri) {
         viewModelScope.launch {
             runCatching { gpxImporter.import(uri) }
-                .onSuccess { _gpxMessage.value = if (it.size == 1) "Imported ${it[0]}" else "Imported ${it.size} tracks" }
-                .onFailure { _gpxMessage.value = "Import failed: ${it.message}" }
+                .onSuccess { _gpxMessage.value = if (it.size == 1) str(R.string.gpx_imported_one, it[0])
+                    else getApplication<Application>().resources.getQuantityString(R.plurals.gpx_imported_tracks, it.size, it.size) }
+                .onFailure { _gpxMessage.value = str(R.string.import_failed, it.message ?: "") }
         }
     }
 
@@ -680,7 +694,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** GPX files copied over USB into the gpx/ folder are imported at startup. */
     private fun importGpxInbox() = viewModelScope.launch {
         val names = runCatching { gpxImporter.importInbox() }.getOrDefault(emptyList())
-        if (names.isNotEmpty()) _gpxMessage.value = "Imported ${names.size} tracks from the gpx folder"
+        if (names.isNotEmpty()) _gpxMessage.value = getApplication<Application>().resources.getQuantityString(R.plurals.gpx_imported_inbox, names.size, names.size)
     }
 
     private fun watchTracks(fix: GpsFix) {
@@ -789,7 +803,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val xml = GpxWriter.write(track?.name ?: g!!.name, tracks, g)
             getApplication<Application>().contentResolver.openOutputStream(uri)!!.use { it.write(xml.toByteArray()) }
         }
-        _gpxMessage.value = result.fold({ "Exported ${track?.name ?: group?.name}" }, { "Export failed: ${it.message}" })
+        _gpxMessage.value = result.fold({ str(R.string.gpx_exported, track?.name ?: group?.name ?: "") }, { str(R.string.gpx_export_failed, it.message ?: "") })
     }
 
     fun setTrackPois(track: GpxTrack, show: Boolean) = viewModelScope.launch { repository.updateGpxTrack(track.copy(showPois = show)) }
@@ -813,9 +827,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             runCatching {
                 navigator.routingData.downloadNorway { done, total, file ->
-                    _routingDataStatus.value = if (done < total) "Downloading routing data $file (${done + 1}/$total)…" else "Download complete"
+                    _routingDataStatus.value = if (done < total) str(R.string.routing_downloading, file, done + 1, total) else str(R.string.download_complete)
                 }
-            }.onFailure { _routingDataStatus.value = "Download failed: ${it.message}. Connect to the phone's hotspot and retry." }
+            }.onFailure { _routingDataStatus.value = str(R.string.routing_download_failed, it.message ?: "") }
                 .onSuccess { _routingDataStatus.value = navigator.routingData.describe() }
         }
     }
@@ -824,15 +838,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun describeOfflineMaps(): String {
         val maps = offlineMaps.installedMaps()
-        return if (maps.isEmpty()) "No offline map installed. Copy a .pmtiles file to ${offlineMaps.mapsDir} or import one."
-        else maps.joinToString("\n") { "%s – %.0f MB".format(it.name, it.length() / 1e6) } + "\n(restart the app after changing maps)"
+        return if (maps.isEmpty()) str(R.string.offline_map_none, offlineMaps.mapsDir)
+        else maps.joinToString("\n") { str(R.string.offline_map_line, it.name, it.length() / 1e6) } + "\n" + str(R.string.offline_map_restart)
     }
 
     fun importOfflineMap(uri: Uri) {
         viewModelScope.launch {
             runCatching {
-                offlineMaps.import(uri) { p -> _offlineMapStatus.value = "Importing… %.0f%%".format(p * 100) }
-            }.onFailure { _offlineMapStatus.value = "Import failed: ${it.message}" }
+                offlineMaps.import(uri) { p -> _offlineMapStatus.value = str(R.string.importing_percent, p * 100) }
+            }.onFailure { _offlineMapStatus.value = str(R.string.import_failed, it.message ?: "") }
                 .onSuccess { _offlineMapStatus.value = describeOfflineMaps(); _mapVersion.value++; _mapStatuses.value = mapDownloads.status(latestMapBuild) }
         }
     }
@@ -882,22 +896,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             ManeuverType.ARRIVE -> TurnType.DESTINATION
         }
 
-        fun Maneuver.describe(stopName: String? = null): String = when (type) {
-            ManeuverType.DEPART -> "Start"
-            ManeuverType.STRAIGHT -> "Continue straight"
-            ManeuverType.SLIGHT_LEFT -> "Bear left"
-            ManeuverType.LEFT -> "Turn left"
-            ManeuverType.SHARP_LEFT -> "Sharp left"
-            ManeuverType.SLIGHT_RIGHT -> "Bear right"
-            ManeuverType.RIGHT -> "Turn right"
-            ManeuverType.SHARP_RIGHT -> "Sharp right"
-            ManeuverType.KEEP_LEFT -> "Keep left"
-            ManeuverType.KEEP_RIGHT -> "Keep right"
-            ManeuverType.EXIT_LEFT -> "Take the exit on the left"
-            ManeuverType.EXIT_RIGHT -> "Take the exit on the right"
-            ManeuverType.U_TURN -> "Make a U-turn"
-            ManeuverType.ROUNDABOUT -> if (exitNumber > 0) "Roundabout, take exit $exitNumber" else "Enter the roundabout"
-            ManeuverType.ARRIVE -> if (stopName != null) "Arrive at $stopName" else "Arrive at destination"
+        fun Maneuver.describe(context: Context, stopName: String? = null): String = when (type) {
+            ManeuverType.DEPART -> context.getString(R.string.turn_start)
+            ManeuverType.STRAIGHT -> context.getString(R.string.turn_straight)
+            ManeuverType.SLIGHT_LEFT -> context.getString(R.string.turn_bear_left)
+            ManeuverType.LEFT -> context.getString(R.string.turn_left)
+            ManeuverType.SHARP_LEFT -> context.getString(R.string.turn_sharp_left)
+            ManeuverType.SLIGHT_RIGHT -> context.getString(R.string.turn_bear_right)
+            ManeuverType.RIGHT -> context.getString(R.string.turn_right)
+            ManeuverType.SHARP_RIGHT -> context.getString(R.string.turn_sharp_right)
+            ManeuverType.KEEP_LEFT -> context.getString(R.string.turn_keep_left)
+            ManeuverType.KEEP_RIGHT -> context.getString(R.string.turn_keep_right)
+            ManeuverType.EXIT_LEFT -> context.getString(R.string.turn_exit_left)
+            ManeuverType.EXIT_RIGHT -> context.getString(R.string.turn_exit_right)
+            ManeuverType.U_TURN -> context.getString(R.string.turn_u_turn)
+            ManeuverType.ROUNDABOUT -> if (exitNumber > 0) context.getString(R.string.turn_roundabout_exit, exitNumber) else context.getString(R.string.turn_roundabout)
+            ManeuverType.ARRIVE -> if (stopName != null) context.getString(R.string.turn_arrive_at, stopName) else context.getString(R.string.turn_arrive)
         }
     }
 }

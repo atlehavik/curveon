@@ -57,4 +57,7 @@ data class Route(
     val ferryCount: Int
 )
 
-class RoutingException(message: String) : Exception(message)
+open class RoutingException(message: String) : Exception(message)
+
+/** No loop could be routed in the asked direction; the app tells the rider in their language. */
+class NoRoundtripException(message: String) : RoutingException(message)

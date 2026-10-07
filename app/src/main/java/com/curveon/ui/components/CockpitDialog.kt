@@ -1,5 +1,7 @@
 package com.curveon.ui.components
 
+import com.curveon.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -64,7 +66,7 @@ fun CockpitDialog(
                     }
                     actions()
                     Box(Modifier.testTag("${tag}_close")) {
-                        RoundButton(Icons.Default.Close, "Close", 48.dp, CockpitSurfaceVariant, TextPrimary, onDismiss)
+                        RoundButton(Icons.Default.Close, stringResource(R.string.close), 48.dp, CockpitSurfaceVariant, TextPrimary, onDismiss)
                     }
                 }
                 content()

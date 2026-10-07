@@ -20,12 +20,14 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.curveon.R
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.search.SearchResult
 import com.curveon.ui.theme.*
@@ -65,17 +67,17 @@ fun DestinationSearchDialog(
     LaunchedEffect(Unit) { focus.requestFocus() }
 
     CockpitDialog(
-        title = "Where to?", icon = Icons.Default.Search, accent = ElectricCyan, onDismiss = onDismiss,
+        title = stringResource(R.string.where_to), icon = Icons.Default.Search, accent = ElectricCyan, onDismiss = onDismiss,
         tag = "destination_search_dialog",
         header = {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("Where to? Town, address, fuel, viewpoint…") },
+                placeholder = { Text(stringResource(R.string.search_placeholder)) },
                 leadingIcon = { Icon(Icons.Default.Search, null, tint = ElectricCyan) },
                 trailingIcon = {
                     if (searching) CircularProgressIndicator(Modifier.size(20.dp), color = ElectricCyan, strokeWidth = 2.dp)
-                    else if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, "Clear", tint = TextSecondary) }
+                    else if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, stringResource(R.string.clear), tint = TextSecondary) }
                 },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -89,9 +91,9 @@ fun DestinationSearchDialog(
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onNearest != null) {
-                Text("NEAREST", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.search_nearest).uppercase(), color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 NearestCategory.entries.forEach { cat ->
-                    Shortcut(cat.icon, cat.label, cat.tint, selected = nearest == cat) {
+                    Shortcut(cat.icon, stringResource(cat.label), cat.tint, selected = nearest == cat) {
                         query = ""
                         nearest = cat
                         scope.launch { searching = true; results = onNearest(cat.kinds); searching = false }
@@ -104,19 +106,19 @@ fun DestinationSearchDialog(
         LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // Nothing typed: what you are most likely to want, without typing on the bike.
             if (query.isEmpty() && nearest == null) {
-                if (savedRoutes.isNotEmpty()) item { SectionLabel("Saved routes") }
+                if (savedRoutes.isNotEmpty()) item { SectionLabel(stringResource(R.string.search_saved_routes)) }
                 items(savedRoutes, key = { "saved${it.id}" }) { item ->
                     ListRow(
                         icon = if (item.isRoundtrip) Icons.Default.Loop else Icons.Default.Bookmark,
                         title = item.title,
-                        subtitle = listOf(item.subtitle, "%.0f km".format(item.totalDistanceKm), "%d:%02d".format(item.estimatedMinutes / 60, item.estimatedMinutes % 60))
+                        subtitle = listOf(savedSubtitle(item.subtitle), stringResource(R.string.distance_km_whole, item.totalDistanceKm), "%d:%02d".format(item.estimatedMinutes / 60, item.estimatedMinutes % 60))
                             .filter { it.isNotEmpty() }.joinToString(" · "),
                         trailing = null,
                         onClick = { onPickSaved(item) },
                         onLongClick = { confirmDelete = item }
                     )
                 }
-                if (recents.isNotEmpty()) item { SectionLabel("Recent") }
+                if (recents.isNotEmpty()) item { SectionLabel(stringResource(R.string.search_recent)) }
                 items(recents, key = { "recent${it.name}${it.point.lat}" }) { stop ->
                     ListRow(Icons.Default.History, stop.name, "", null, onClick = {
                         onPick(SearchResult(stop.name, "", "recent", stop.point.lat, stop.point.lon, 0.0))
@@ -138,7 +140,7 @@ fun DestinationSearchDialog(
                     Column(Modifier.weight(1f)) {
                         Text(r.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            listOf(r.area, kindLabel(r.kind)).filter { it.isNotEmpty() }.joinToString(" · ") + if (r.online) " · online" else "",
+                            listOf(r.area, kindLabel(r.kind)).filter { it.isNotEmpty() }.joinToString(" · ") + if (r.online) " · " + stringResource(R.string.search_online) else "",
                             color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -146,7 +148,7 @@ fun DestinationSearchDialog(
                 }
             }
             if (results.isEmpty() && query.trim().length >= 2 && !searching) {
-                item { Text("No matches", color = TextMuted, modifier = Modifier.padding(12.dp)) }
+                item { Text(stringResource(R.string.search_no_matches), color = TextMuted, modifier = Modifier.padding(12.dp)) }
             }
         }
     }
@@ -154,9 +156,9 @@ fun DestinationSearchDialog(
     confirmDelete?.let { item ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text("Delete ${item.title}?") },
-            confirmButton = { TextButton(onClick = { onDeleteSaved(item); confirmDelete = null }) { Text("Delete", color = WarningRed) } },
-            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel") } }
+            title = { Text(stringResource(R.string.delete_named, item.title)) },
+            confirmButton = { TextButton(onClick = { onDeleteSaved(item); confirmDelete = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 }
@@ -179,11 +181,11 @@ private fun Shortcut(icon: ImageVector, label: String, tint: Color, selected: Bo
 }
 
 /** One-tap "nearest …" searches; [kinds] are the search-index kinds each one covers. */
-private enum class NearestCategory(val label: String, val icon: ImageVector, val tint: Color, val kinds: List<String>) {
-    FUEL("Fuel", Icons.Default.LocalGasStation, EcoGreen, listOf("fuel")),
-    CAMPING("Camping", Icons.Default.Cabin, ElectricCyan, listOf("camp_site")),
-    HOTEL("Hotel", Icons.Default.Hotel, ElectricCyan, listOf("hotel")),
-    DINING("Dining", Icons.Default.Restaurant, ElectricCyan, listOf("restaurant", "cafe", "fast_food")),
+private enum class NearestCategory(val label: Int, val icon: ImageVector, val tint: Color, val kinds: List<String>) {
+    FUEL(R.string.kind_fuel, Icons.Default.LocalGasStation, EcoGreen, listOf("fuel")),
+    CAMPING(R.string.kind_camping, Icons.Default.Cabin, ElectricCyan, listOf("camp_site")),
+    HOTEL(R.string.kind_hotel, Icons.Default.Hotel, ElectricCyan, listOf("hotel")),
+    DINING(R.string.kind_dining, Icons.Default.Restaurant, ElectricCyan, listOf("restaurant", "cafe", "fast_food")),
 }
 
 @Composable
@@ -213,7 +215,16 @@ private fun ListRow(icon: ImageVector, title: String, subtitle: String, trailing
     }
 }
 
-private fun formatKm(km: Double) = if (km < 10) "%.1f km".format(km) else "%.0f km".format(km)
+/** Saved routes store "Loop"/"Track" (or "via …", the same in both languages); shown in the rider's language. */
+@Composable
+private fun savedSubtitle(stored: String) = when (stored) {
+    "Loop" -> stringResource(R.string.saved_loop)
+    "Track" -> stringResource(R.string.saved_track)
+    else -> stored
+}
+
+@Composable
+private fun formatKm(km: Double) = if (km < 10) stringResource(R.string.distance_km, km) else stringResource(R.string.distance_km_whole, km)
 
 private fun kindIcon(kind: String): ImageVector = when (kind) {
     "city", "town", "village", "suburb", "borough", "quarter", "hamlet", "neighbourhood", "locality", "isolated_dwelling" -> Icons.Default.LocationCity
@@ -235,15 +246,34 @@ private fun kindIcon(kind: String): ImageVector = when (kind) {
     else -> Icons.Default.Place
 }
 
+@Composable
 private fun kindLabel(kind: String): String = when (kind) {
-    "street" -> "Street"
-    "fuel" -> "Fuel"
-    "ferry" -> "Ferry terminal"
-    "viewpoint" -> "Viewpoint"
-    "camp_site" -> "Camping"
-    "pass" -> "Mountain pass"
-    "peak" -> "Peak"
-    "motorcycle_shop" -> "Motorcycle shop"
-    "fast_food" -> "Fast food"
-    else -> kind.replace('_', ' ').replaceFirstChar { it.uppercase() }
-}
+    "city" -> R.string.kind_city
+    "town" -> R.string.kind_town
+    "village" -> R.string.kind_village
+    "suburb", "borough", "quarter", "neighbourhood" -> R.string.kind_suburb
+    "hamlet", "locality", "isolated_dwelling" -> R.string.kind_hamlet
+    "island" -> R.string.kind_island
+    "street" -> R.string.kind_street
+    "fuel" -> R.string.kind_fuel
+    "charging" -> R.string.kind_charging
+    "cafe" -> R.string.kind_cafe
+    "restaurant" -> R.string.kind_restaurant
+    "pub" -> R.string.kind_pub
+    "ferry" -> R.string.kind_ferry
+    "parking" -> R.string.kind_parking
+    "viewpoint" -> R.string.kind_viewpoint
+    "camp_site" -> R.string.kind_camping
+    "hotel" -> R.string.kind_hotel
+    "hut" -> R.string.kind_hut
+    "attraction" -> R.string.kind_attraction
+    "museum" -> R.string.kind_museum
+    "supermarket" -> R.string.kind_supermarket
+    "shop" -> R.string.kind_shop
+    "pass" -> R.string.kind_pass
+    "peak" -> R.string.kind_peak
+    "motorcycle_shop" -> R.string.kind_motorcycle_shop
+    "fast_food" -> R.string.kind_fast_food
+    "recent" -> R.string.search_recent
+    else -> null
+}?.let { stringResource(it) } ?: kind.replace('_', ' ').replaceFirstChar { it.uppercase() }

@@ -16,9 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.curveon.AppLanguage
+import com.curveon.R
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.data.map.MapDownloadState
 import com.curveon.data.map.MapRegionStatus
@@ -27,15 +30,16 @@ import com.curveon.ui.viewmodel.MapTheme
 
 private val OnCyan = Color(0xFF00363D)
 
-private enum class SettingsTab(val label: String, val icon: ImageVector) {
-    DISPLAY("Display", Icons.Default.Tune),
-    NAVIGATION("Navigation", Icons.Default.Navigation),
-    PHONE("Phone", Icons.Default.PhoneAndroid),
-    DATA("Maps & data", Icons.Default.Map)
+private enum class SettingsTab(val label: Int, val icon: ImageVector) {
+    DISPLAY(R.string.settings_display, Icons.Default.Tune),
+    NAVIGATION(R.string.settings_navigation, Icons.Default.Navigation),
+    PHONE(R.string.phone, Icons.Default.PhoneAndroid),
+    DATA(R.string.settings_maps_data, Icons.Default.Map)
 }
 
 /** Everything the Settings screen shows. */
 data class SettingsState(
+    val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
     val obdEnabled: Boolean,
@@ -51,6 +55,7 @@ data class SettingsState(
 
 /** What the Settings screen can change. */
 class SettingsActions(
+    val onLanguage: (AppLanguage) -> Unit,
     val onUnits: (Boolean) -> Unit,
     val onMapTheme: (MapTheme) -> Unit,
     val onObd: (Boolean) -> Unit,
@@ -72,7 +77,7 @@ class SettingsActions(
 fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, onDismiss: () -> Unit) {
     var tab by rememberSaveable { mutableStateOf(SettingsTab.DISPLAY) }
     var confirmDelete by remember { mutableStateOf<MapRegionStatus?>(null) }
-    CockpitDialog(title = "Settings", icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
+    CockpitDialog(title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
         Row(Modifier.fillMaxSize()) {
             Column(
                 Modifier.width(210.dp).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f)).padding(8.dp),
@@ -87,7 +92,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                     ) {
                         Icon(t.icon, null, tint = if (on) OnCyan else TextSecondary)
                         Spacer(Modifier.width(12.dp))
-                        Text(t.label, color = if (on) OnCyan else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(t.label), color = if (on) OnCyan else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -95,43 +100,46 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
             Box(Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp, end = 6.dp)) {
                 when (tab) {
                     SettingsTab.DISPLAY -> Page {
-                        Setting("Speed") {
+                        if (AppLanguage.canChoose) Setting(stringResource(R.string.settings_language)) {
+                            Segmented(AppLanguage.entries, state.language, { it.label }, actions.onLanguage)
+                        }
+                        Setting(stringResource(R.string.settings_speed)) {
                             Segmented(listOf(false, true), state.useMph, { if (it) "mph" else "km/h" }, actions.onUnits)
                         }
-                        Setting("Map") {
-                            Segmented(MapTheme.entries, state.mapTheme, { it.name.lowercase().replaceFirstChar(Char::uppercase) }, actions.onMapTheme)
+                        Setting(stringResource(R.string.settings_map)) {
+                            Segmented(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
                         }
-                        Setting("OBD2 data", "Engine data card when an adapter is connected") {
+                        Setting(stringResource(R.string.settings_obd), stringResource(R.string.settings_obd_hint)) {
                             Switch(state.obdEnabled, actions.onObd, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
                         }
                     }
                     SettingsTab.NAVIGATION -> Page {
-                        Setting("Auto-zoom", "Zoom in when slow, out on fast roads") {
+                        Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint)) {
                             Switch(state.autoZoom, actions.onAutoZoom, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
                         }
-                        Setting("Auto-follow GPX tracks", "Navigate when riding along a track shown on the map") {
+                        Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
                             Switch(state.autoFollowTracks, actions.onAutoFollow, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
                         }
-                        Setting("Demo ride", "Drive the current route without GPS") {
+                        Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
                             OutlinedButton(onClick = actions.onDemoRide, enabled = state.isNavigating || state.isDemoRiding) {
-                                Text(if (state.isDemoRiding) "Stop" else "Start", color = NeonAmber)
+                                Text(stringResource(if (state.isDemoRiding) R.string.stop else R.string.start), color = NeonAmber)
                             }
                         }
                     }
                     SettingsTab.PHONE -> PhoneLinkContent(phone, Modifier.fillMaxSize())
                     SettingsTab.DATA -> Page {
-                        SectionTitle("Offline maps")
+                        SectionTitle(stringResource(R.string.settings_offline_maps))
                         state.maps.forEach { m -> MapRow(m, state.mapDownload, actions) { confirmDelete = m } }
                         (state.mapDownload as? MapDownloadState.Failed)?.let { Text(it.message, color = WarningRed, fontSize = 13.sp) }
-                        Text("Map data © OpenStreetMap contributors, via the Protomaps daily build. Download over Wi-Fi or the phone's hotspot.",
+                        Text(stringResource(R.string.settings_map_attribution),
                             color = TextMuted, fontSize = 12.sp)
-                        TextButton(onClick = actions.onImportMap) { Text("Import a .pmtiles file instead…", color = ElectricCyan) }
+                        TextButton(onClick = actions.onImportMap) { Text(stringResource(R.string.settings_import_pmtiles), color = ElectricCyan) }
 
-                        SectionTitle("Routing data")
+                        SectionTitle(stringResource(R.string.settings_routing_data))
                         Setting(state.routingDataStatus) {
-                            OutlinedButton(onClick = actions.onDownloadRouting) { Text("Download", color = ElectricCyan) }
+                            OutlinedButton(onClick = actions.onDownloadRouting) { Text(stringResource(R.string.download), color = ElectricCyan) }
                         }
-                        SectionTitle("Search index")
+                        SectionTitle(stringResource(R.string.settings_search_index))
                         Text(state.searchStatus, color = TextSecondary, fontSize = 13.sp)
                     }
                 }
@@ -142,10 +150,10 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
     confirmDelete?.let { m ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text("Delete the ${m.region.name} map?") },
-            text = { Text("Without it the map only shows online tiles.") },
-            confirmButton = { TextButton(onClick = { actions.onDeleteMap(m.region.id); confirmDelete = null }) { Text("Delete", color = WarningRed) } },
-            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Cancel") } }
+            title = { Text(stringResource(R.string.settings_delete_map_title, stringResource(m.region.name))) },
+            text = { Text(stringResource(R.string.settings_delete_map_text)) },
+            confirmButton = { TextButton(onClick = { actions.onDeleteMap(m.region.id); confirmDelete = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 }
@@ -159,29 +167,29 @@ private fun MapRow(m: MapRegionStatus, download: MapDownloadState, actions: Sett
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(m.region.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(m.region.name), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Text(
                     when {
-                        m.installedBytes > 0 -> "%.1f GB".format(m.installedBytes / 1e9) +
-                            (m.installedBuild?.let { " · from $it" } ?: "") +
-                            (if (m.updateAvailable) " · newer map from ${m.latestBuild}" else "")
-                        else -> "Not installed · about %.1f GB".format(m.region.approxBytes / 1e9)
+                        m.installedBytes > 0 -> stringResource(R.string.size_gb, m.installedBytes / 1e9) +
+                            (m.installedBuild?.let { " · " + stringResource(R.string.settings_map_from, it) } ?: "") +
+                            (if (m.updateAvailable) " · " + stringResource(R.string.settings_map_newer, m.latestBuild ?: "") else "")
+                        else -> stringResource(R.string.settings_map_not_installed, m.region.approxBytes / 1e9)
                     },
                     color = if (m.updateAvailable) NeonAmber else TextSecondary, fontSize = 13.sp
                 )
             }
             if (running != null) {
-                OutlinedButton(onClick = actions.onCancelMapDownload) { Text("Cancel", color = WarningRed) }
+                OutlinedButton(onClick = actions.onCancelMapDownload) { Text(stringResource(R.string.cancel), color = WarningRed) }
             } else {
                 if (m.installedBytes > 0) {
-                    TextButton(onClick = onDelete) { Text("Delete", color = TextMuted) }
+                    TextButton(onClick = onDelete) { Text(stringResource(R.string.delete), color = TextMuted) }
                     Spacer(Modifier.width(6.dp))
                 }
                 Button(
                     onClick = { actions.onDownloadMap(m.region.id) },
                     enabled = download !is MapDownloadState.Running,
                     colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)
-                ) { Text(if (m.installedBytes > 0) "Update" else "Download", color = OnCyan, fontWeight = FontWeight.Bold) }
+                ) { Text(stringResource(if (m.installedBytes > 0) R.string.update else R.string.download), color = OnCyan, fontWeight = FontWeight.Bold) }
             }
         }
         if (running != null) {

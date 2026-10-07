@@ -1,5 +1,7 @@
 package com.curveon.ui.components
 
+import com.curveon.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,27 +43,27 @@ fun RoundtripDialog(
     val direction = config.selectedDirections.singleOrNull() ?: CompassDirection.NORTH
 
     CockpitDialog(
-        title = "Roundtrip", icon = Icons.Default.Explore, accent = NeonAmber, onDismiss = onDismiss,
-        tag = "roundtrip_dialog", subtitle = "A loop from where you are, heading roughly that way"
+        title = stringResource(R.string.roundtrip), icon = Icons.Default.Explore, accent = NeonAmber, onDismiss = onDismiss,
+        tag = "roundtrip_dialog", subtitle = stringResource(R.string.roundtrip_subtitle)
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
             CompassRose(direction) { config = config.copy(selectedDirections = setOf(it)) }
 
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Label("Distance")
+                Label(stringResource(R.string.roundtrip_distance))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(40, 60, 100, 150, 220, 300).forEach { km ->
                         val on = config.radiusKm == km
                         Box(
                             Modifier.clip(RoundedCornerShape(12.dp)).background(if (on) NeonAmber else CockpitSurfaceVariant)
                                 .clickable { config = config.copy(radiusKm = km) }.padding(horizontal = 14.dp, vertical = 10.dp)
-                        ) { Text("$km km", color = if (on) Color.Black else TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
+                        ) { Text(stringResource(R.string.distance_km_int, km), color = if (on) Color.Black else TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
                     }
                 }
-                Label("Roads")
+                Label(stringResource(R.string.roundtrip_roads))
                 Segmented(
                     RoadTypePreference.entries, config.roadType,
-                    label = { when (it) { RoadTypePreference.FASTEST -> "Fastest"; RoadTypePreference.CURVY -> "Curvy"; RoadTypePreference.VERY_CURVY -> "Super curvy" } },
+                    label = { stringResource(when (it) { RoadTypePreference.FASTEST -> R.string.style_fastest; RoadTypePreference.CURVY -> R.string.style_curvy; RoadTypePreference.VERY_CURVY -> R.string.style_super_curvy }) },
                     onSelect = { config = config.copy(roadType = it) }
                 )
                 RouteOptionChips(
@@ -77,13 +79,17 @@ fun RoundtripDialog(
 
         Spacer(Modifier.weight(1f))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            PillButton(Icons.Default.Explore, "Plan ${config.radiusKm} km ${direction.code}", NeonAmber, Color.Black,
+            PillButton(Icons.Default.Explore, stringResource(R.string.roundtrip_plan, config.radiusKm, compassPoint(direction)), NeonAmber, Color.Black,
                 Modifier.widthIn(min = 260.dp).testTag("roundtrip_plan_btn")) {
                 onGenerate(config.copy(selectedDirections = setOf(direction)))
             }
         }
     }
 }
+
+/** "N", "NE"… in the rider's language. */
+@Composable
+private fun compassPoint(d: CompassDirection) = stringResource(R.string.compass_points).split(',')[d.ordinal]
 
 @Composable
 private fun Label(text: String) = Text(text.uppercase(), color = ElectricCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -110,7 +116,7 @@ private fun CompassRose(selected: CompassDirection, onSelect: (CompassDirection)
                             Modifier.size(64.dp).clip(CircleShape).background(if (on) NeonAmber else CockpitSurfaceVariant)
                                 .border(1.dp, if (on) NeonAmber else CockpitBorder, CircleShape).clickable { onSelect(d) },
                             contentAlignment = Alignment.Center
-                        ) { Text(d.code, color = if (on) Color.Black else TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black) }
+                        ) { Text(compassPoint(d), color = if (on) Color.Black else TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black) }
                     }
                 }
             }

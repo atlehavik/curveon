@@ -1,5 +1,7 @@
 package com.curveon.ui.components
 
+import com.curveon.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -47,7 +49,7 @@ fun Obd2TelemetryCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "OBD2 TELEMETRY",
+                        text = stringResource(R.string.obd_title),
                         color = TextPrimary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -62,7 +64,7 @@ fun Obd2TelemetryCard(
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = if (telemetry.isObdConnected) "ONLINE" else "STANDBY",
+                        text = stringResource(if (telemetry.isObdConnected) R.string.obd_online else R.string.obd_standby),
                         color = if (telemetry.isObdConnected) EcoGreen else WarningRed,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
@@ -79,28 +81,28 @@ fun Obd2TelemetryCard(
             ) {
                 TelemetryMetricItem(
                     icon = Icons.Default.Thermostat,
-                    label = "COOLANT",
+                    label = stringResource(R.string.obd_coolant).uppercase(),
                     value = "${telemetry.coolantTempC}°C",
                     tint = if (telemetry.coolantTempC > 105) WarningRed else ElectricCyan
                 )
 
                 TelemetryMetricItem(
                     icon = Icons.Default.ElectricMeter,
-                    label = "BATTERY",
+                    label = stringResource(R.string.obd_battery).uppercase(),
                     value = "%.1fV".format(telemetry.batteryVoltage),
                     tint = if (telemetry.batteryVoltage < 12.0f) WarningRed else EcoGreen
                 )
 
                 TelemetryMetricItem(
                     icon = Icons.Default.LocalGasStation,
-                    label = "FUEL",
+                    label = stringResource(R.string.poi_fuel).uppercase(),
                     value = "${telemetry.fuelPercent}%",
                     tint = if (telemetry.fuelPercent < 20) WarningRed else NeonAmber
                 )
 
                 TelemetryMetricItem(
                     icon = Icons.Default.Terrain,
-                    label = "ALTITUDE",
+                    label = stringResource(R.string.obd_altitude).uppercase(),
                     value = "${telemetry.altitudeMeters}m",
                     tint = TextPrimary
                 )

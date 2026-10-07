@@ -41,6 +41,8 @@ import androidx.compose.ui.unit.sp
 import com.curveon.data.bluetooth.CompanionConnectionState
 import com.curveon.data.bluetooth.MediaApp
 import com.curveon.data.bluetooth.VoiceReply
+import androidx.compose.ui.res.stringResource
+import com.curveon.R
 import com.curveon.data.model.MusicTrack
 import com.curveon.data.model.NotificationItem
 import com.curveon.data.model.TelemetryData
@@ -98,16 +100,16 @@ fun SpeedCard(
                         modifier = Modifier.padding(bottom = 8.dp))
                 }
                 if (camera != null) Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.PhotoCamera, "Speed camera", tint = NeonAmber, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.PhotoCamera, stringResource(R.string.speed_camera), tint = NeonAmber, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Speed camera %d m".format((camera.distanceMeters / 10).toInt() * 10),
+                    Text(stringResource(R.string.speed_camera_in, (camera.distanceMeters / 10).toInt() * 10),
                         color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 } else Text(
                     when {
-                        telemetry.isDeadReckoning -> "No GPS – estimating position"
-                        telemetry.isObdConnected -> "%d rpm · %s".format(telemetry.rpm, tripText(telemetry))
+                        telemetry.isDeadReckoning -> stringResource(R.string.gps_estimating)
+                        telemetry.isObdConnected -> stringResource(R.string.rpm_and, telemetry.rpm, tripText(telemetry))
                         telemetry.hasGpsFix -> tripText(telemetry)
-                        else -> "Searching for GPS…"
+                        else -> stringResource(R.string.gps_searching)
                     },
                     color = if (telemetry.hasGpsFix) TextSecondary else NeonAmber,
                     fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1
@@ -118,8 +120,9 @@ fun SpeedCard(
     }
 }
 
+@Composable
 private fun tripText(t: TelemetryData) =
-    "Trip %.1f km · %d:%02d".format(t.tripDistanceKm, t.tripDurationMinutes / 60, t.tripDurationMinutes % 60)
+    stringResource(R.string.trip_summary, t.tripDistanceKm, t.tripDurationMinutes / 60, t.tripDurationMinutes % 60)
 
 @Composable
 fun SpeedLimitSign(limit: Int, size: Dp) {
@@ -214,9 +217,9 @@ fun FullMediaCard(
             }
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                RoundButton(Icons.Default.SkipPrevious, "Previous", 56.dp, Color(0x33FFFFFF), Color.White, onPrevious)
-                RoundButton(if (track.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Play/pause", 72.dp, ElectricCyan, OnCyan, onPlayPause)
-                RoundButton(Icons.Default.SkipNext, "Next", 56.dp, Color(0x33FFFFFF), Color.White, onNext)
+                RoundButton(Icons.Default.SkipPrevious, stringResource(R.string.media_previous), 56.dp, Color(0x33FFFFFF), Color.White, onPrevious)
+                RoundButton(if (track.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, stringResource(R.string.media_play_pause), 72.dp, ElectricCyan, OnCyan, onPlayPause)
+                RoundButton(Icons.Default.SkipNext, stringResource(R.string.media_next), 56.dp, Color(0x33FFFFFF), Color.White, onNext)
             }
         }
     }
@@ -236,9 +239,9 @@ fun MiniMediaCard(track: MusicTrack, art: Bitmap?, onPlayPause: () -> Unit, onNe
                 Text(track.title, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(track.artist, color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            RoundButton(if (track.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Play/pause", 48.dp, ElectricCyan, OnCyan, onPlayPause)
+            RoundButton(if (track.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, stringResource(R.string.media_play_pause), 48.dp, ElectricCyan, OnCyan, onPlayPause)
             Spacer(Modifier.width(6.dp))
-            RoundButton(Icons.Default.SkipNext, "Next", 48.dp, CockpitSurfaceVariant, TextPrimary, onNext)
+            RoundButton(Icons.Default.SkipNext, stringResource(R.string.media_next), 48.dp, CockpitSurfaceVariant, TextPrimary, onNext)
         }
     }
 }
@@ -270,14 +273,14 @@ private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: 
         Spacer(Modifier.height(10.dp))
         Text(
             when (state) {
-                CompanionConnectionState.CONNECTED -> if (choosing) "Nothing playing on $phoneName\nPick what to play" else "Nothing playing on $phoneName\nTap to play"
-                CompanionConnectionState.CONNECTING -> "Connecting to $phoneName…"
-                CompanionConnectionState.NO_PHONE_SELECTED -> "No phone linked.\nPick your phone in Settings → Phone."
-                CompanionConnectionState.NO_PERMISSION -> "Allow Bluetooth access\nto link your phone."
-                CompanionConnectionState.BLUETOOTH_OFF -> "Bluetooth is off"
-                CompanionConnectionState.DISCONNECTED -> "Phone not connected.\nTap to connect now."
-                CompanionConnectionState.UNREACHABLE -> "Can't reach $phoneName over Bluetooth.\nTap to try again, or turn Bluetooth off and on here."
-                CompanionConnectionState.DEMO -> "Nothing playing"
+                CompanionConnectionState.CONNECTED -> stringResource(if (choosing) R.string.media_nothing_pick else R.string.media_nothing_tap, phoneName)
+                CompanionConnectionState.CONNECTING -> stringResource(R.string.phone_connecting_to, phoneName)
+                CompanionConnectionState.NO_PHONE_SELECTED -> stringResource(R.string.media_no_phone)
+                CompanionConnectionState.NO_PERMISSION -> stringResource(R.string.media_no_permission)
+                CompanionConnectionState.BLUETOOTH_OFF -> stringResource(R.string.bluetooth_off)
+                CompanionConnectionState.DISCONNECTED -> stringResource(R.string.media_disconnected)
+                CompanionConnectionState.UNREACHABLE -> stringResource(R.string.media_unreachable, phoneName)
+                CompanionConnectionState.DEMO -> stringResource(R.string.media_nothing)
             },
             color = TextSecondary, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
@@ -337,8 +340,8 @@ fun NotificationCard(
                             if (decline) WarningRed else EcoGreen, Color.Black, Modifier.weight(1f)) { onAction(n, i) }
                     }
                 } else {
-                    if (n.canReply) PillButton(Icons.Default.Mic, "Reply", ElectricCyan, OnCyan, Modifier.weight(1f).testTag("notification_reply_btn")) { onReply(n) }
-                    PillButton(Icons.Default.Close, "Dismiss", CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("notification_dismiss_btn")) { onDismiss(n) }
+                    if (n.canReply) PillButton(Icons.Default.Mic, stringResource(R.string.reply), ElectricCyan, OnCyan, Modifier.weight(1f).testTag("notification_reply_btn")) { onReply(n) }
+                    PillButton(Icons.Default.Close, stringResource(R.string.dismiss), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("notification_dismiss_btn")) { onDismiss(n) }
                 }
             }
         }
@@ -379,7 +382,7 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
                 maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 32.sp)
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PillButton(Icons.Default.CallEnd, call.actions.getOrNull(declineIndex ?: -1) ?: "Decline", WarningRed, Color.White,
+                PillButton(Icons.Default.CallEnd, call.actions.getOrNull(declineIndex ?: -1) ?: stringResource(R.string.decline), WarningRed, Color.White,
                     Modifier.weight(1f).height(64.dp)) { if (declineIndex != null) onAction(declineIndex) else onDismiss() }
                 if (answerIndex != null) PillButton(Icons.Default.Call, call.actions[answerIndex], EcoGreen, Color.Black,
                     Modifier.weight(1f).height(64.dp)) { onAction(answerIndex) }
@@ -476,18 +479,18 @@ private fun isDecline(title: String) = listOf("decline", "avvis", "hang", "legg 
 fun VoiceReplyCard(reply: VoiceReply, onSend: () -> Unit, onRetry: () -> Unit, onCancel: () -> Unit, modifier: Modifier = Modifier) {
     DashCard(modifier.fillMaxWidth().testTag("voice_reply_card"), border = ElectricCyan) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Reply to ${reply.senderName}", color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(stringResource(R.string.reply_to, reply.senderName), color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 when (reply.state) {
-                    VoiceState.LISTENING -> ListeningPulse("Speak now…")
+                    VoiceState.LISTENING -> ListeningPulse(stringResource(R.string.speak_now))
                     VoiceState.PARTIAL -> Text("“${reply.text}…”", color = TextPrimary, fontSize = 20.sp, lineHeight = 26.sp)
                     VoiceState.RESULT -> Text("“${reply.text}”", color = TextPrimary, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
-                    VoiceState.ERROR -> Text(reply.text.ifEmpty { "Something went wrong" }, color = NeonAmber, fontSize = 18.sp)
+                    VoiceState.ERROR -> Text(reply.text.ifEmpty { stringResource(R.string.something_went_wrong) }, color = NeonAmber, fontSize = 18.sp)
                     VoiceState.SENT -> Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CheckCircle, null, tint = EcoGreen, modifier = Modifier.size(36.dp))
                         Spacer(Modifier.width(10.dp))
-                        Text("Sent", color = EcoGreen, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.sent), color = EcoGreen, fontSize = 22.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -495,16 +498,16 @@ fun VoiceReplyCard(reply: VoiceReply, onSend: () -> Unit, onRetry: () -> Unit, o
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 when (reply.state) {
                     VoiceState.RESULT -> {
-                        PillButton(Icons.Default.Send, "Send", EcoGreen, Color.Black, Modifier.weight(1f).testTag("voice_send_btn"), onSend)
-                        RoundButton(Icons.Default.Refresh, "Say again", 56.dp, CockpitSurfaceVariant, TextPrimary, onRetry)
-                        RoundButton(Icons.Default.Close, "Cancel", 56.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
+                        PillButton(Icons.Default.Send, stringResource(R.string.send), EcoGreen, Color.Black, Modifier.weight(1f).testTag("voice_send_btn"), onSend)
+                        RoundButton(Icons.Default.Refresh, stringResource(R.string.say_again), 56.dp, CockpitSurfaceVariant, TextPrimary, onRetry)
+                        RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 56.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
                     }
                     VoiceState.ERROR -> {
-                        PillButton(Icons.Default.Mic, "Try again", ElectricCyan, OnCyan, Modifier.weight(1f), onRetry)
-                        PillButton(Icons.Default.Close, "Cancel", CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f), onCancel)
+                        PillButton(Icons.Default.Mic, stringResource(R.string.try_again), ElectricCyan, OnCyan, Modifier.weight(1f), onRetry)
+                        PillButton(Icons.Default.Close, stringResource(R.string.cancel), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f), onCancel)
                     }
                     VoiceState.SENT -> Unit
-                    else -> PillButton(Icons.Default.Close, "Cancel", CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f), onCancel)
+                    else -> PillButton(Icons.Default.Close, stringResource(R.string.cancel), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f), onCancel)
                 }
             }
         }
@@ -533,12 +536,13 @@ private fun Avatar(n: NotificationItem, size: Dp) {
     }
 }
 
+@Composable
 private fun ago(ms: Long): String {
     val min = ((System.currentTimeMillis() - ms) / 60_000).coerceAtLeast(0)
     return when {
-        min < 1 -> "now"
-        min < 60 -> "$min min"
-        else -> "${min / 60} h"
+        min < 1 -> stringResource(R.string.ago_now)
+        min < 60 -> stringResource(R.string.ago_min, min)
+        else -> stringResource(R.string.ago_hours, min / 60)
     }
 }
 

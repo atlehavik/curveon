@@ -1,3 +1,374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English. Every string here also goes in values-nb/strings.xml (Norwegian). -->
 <resources>
-    <string name="app_name">Curveon</string>
+    <string name="app_name" translatable="false">Curveon</string>
+
+    <!-- Shared -->
+    <string name="where_to">Where to?</string>
+    <string name="roundtrip">Roundtrip</string>
+    <string name="gpx_manager">GPX manager</string>
+    <string name="phone">Phone</string>
+    <string name="settings">Settings</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="full_map">Full map</string>
+    <string name="follow">Follow</string>
+    <string name="distance_m">%.0f m</string>
+    <string name="distance_km">%.1f km</string>
+    <string name="map_point">Map point</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="close">Close</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="download">Download</string>
+    <string name="retry">Retry</string>
+
+    <!-- Dashboard toasts -->
+    <string name="toast_saved_to_where_to">Saved to Where to?</string>
+    <string name="toast_saved_to_gpx">Saved to GPX</string>
+    <string name="toast_calling">Calling %1$s…</string>
+    <string name="toast_phone_not_connected">Phone not connected</string>
+    <string name="toast_connect_phone_to_call">Connect the phone to call</string>
+    <string name="phone_none_linked">No phone linked</string>
+    <string name="phone_connecting_to">Connecting to %1$s…</string>
+    <string name="phone_not_connected_named">%1$s isn\'t connected</string>
+    <string name="update">Update</string>
+    <string name="size_gb">%.1f GB</string>
+
+    <!-- Route options -->
+    <string name="surface_tarmac">Tarmac</string>
+    <string name="surface_mixed">Mixed</string>
+    <string name="surface_gravel">Gravel</string>
+    <string name="ferries">Ferries</string>
+    <string name="motorways">Motorways</string>
+
+    <!-- Settings -->
+    <string name="settings_display">Display</string>
+    <string name="settings_navigation">Navigation</string>
+    <string name="settings_maps_data">Maps &amp; data</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_speed">Speed</string>
+    <string name="settings_map">Map</string>
+    <string name="map_theme_auto">Auto</string>
+    <string name="map_theme_day">Day</string>
+    <string name="map_theme_night">Night</string>
+    <string name="settings_obd">OBD2 data</string>
+    <string name="settings_obd_hint">Engine data card when an adapter is connected</string>
+    <string name="settings_auto_zoom">Auto-zoom</string>
+    <string name="settings_auto_zoom_hint">Zoom in when slow, out on fast roads</string>
+    <string name="settings_auto_follow">Auto-follow GPX tracks</string>
+    <string name="settings_auto_follow_hint">Navigate when riding along a track shown on the map</string>
+    <string name="settings_demo_ride">Demo ride</string>
+    <string name="settings_demo_ride_hint">Drive the current route without GPS</string>
+    <string name="settings_offline_maps">Offline maps</string>
+    <string name="settings_map_attribution">Map data © OpenStreetMap contributors, via the Protomaps daily build. Download over Wi-Fi or the phone\'s hotspot.</string>
+    <string name="settings_import_pmtiles">Import a .pmtiles file instead…</string>
+    <string name="settings_routing_data">Routing data</string>
+    <string name="settings_search_index">Search index</string>
+    <string name="settings_delete_map_title">Delete the %1$s map?</string>
+    <string name="settings_delete_map_text">Without it the map only shows online tiles.</string>
+    <string name="settings_map_from">from %1$s</string>
+    <string name="settings_map_newer">newer map from %1$s</string>
+    <string name="settings_map_not_installed">Not installed · about %.1f GB</string>
+
+    <!-- Status messages -->
+    <string name="map_checking_newest">Checking for the newest map…</string>
+    <string name="map_no_connection">No connection. Connect to the phone\'s hotspot or Wi-Fi.</string>
+    <string name="map_download_failed">Map download failed: %1$s</string>
+    <string name="import_failed">Import failed: %1$s</string>
+    <string name="importing_percent">Importing… %.0f%%</string>
+    <string name="download_complete">Download complete</string>
+    <string name="gpx_imported_one">Imported %1$s</string>
+    <plurals name="gpx_imported_tracks">
+        <item quantity="one">Imported %d track</item>
+        <item quantity="other">Imported %d tracks</item>
+    </plurals>
+    <plurals name="gpx_imported_inbox">
+        <item quantity="one">Imported %d track from the gpx folder</item>
+        <item quantity="other">Imported %d tracks from the gpx folder</item>
+    </plurals>
+    <string name="gpx_exported">Exported %1$s</string>
+    <string name="gpx_export_failed">Export failed: %1$s</string>
+    <string name="routing_downloading">Downloading routing data %1$s (%2$d/%3$d)…</string>
+    <string name="routing_download_failed">Download failed: %1$s. Connect to the phone\'s hotspot and retry.</string>
+    <string name="routing_installed">Norway routing data installed (%1$d tiles, %2$.0f MB)</string>
+    <string name="routing_none">No routing data. Download it (~200 MB) while online, or copy .rd5 files to %1$s</string>
+    <string name="routing_incomplete">Routing data incomplete: missing %1$s</string>
+    <string name="offline_map_none">No offline map installed. Copy a .pmtiles file to %1$s or import one.</string>
+    <string name="offline_map_line">%1$s – %2$.0f MB</string>
+    <string name="offline_map_restart">(restart the app after changing maps)</string>
+    <string name="ride">Ride</string>
+    <string name="ride_earlier">Earlier ride</string>
+
+    <!-- Turn instructions -->
+    <string name="turn_then">then %1$s</string>
+    <string name="turn_start">Start</string>
+    <string name="turn_straight">Continue straight</string>
+    <string name="turn_bear_left">Bear left</string>
+    <string name="turn_left">Turn left</string>
+    <string name="turn_sharp_left">Sharp left</string>
+    <string name="turn_bear_right">Bear right</string>
+    <string name="turn_right">Turn right</string>
+    <string name="turn_sharp_right">Sharp right</string>
+    <string name="turn_keep_left">Keep left</string>
+    <string name="turn_keep_right">Keep right</string>
+    <string name="turn_exit_left">Take the exit on the left</string>
+    <string name="turn_exit_right">Take the exit on the right</string>
+    <string name="turn_u_turn">Make a U-turn</string>
+    <string name="turn_roundabout_exit">Roundabout, take exit %1$d</string>
+    <string name="turn_roundabout">Enter the roundabout</string>
+    <string name="turn_arrive_at">Arrive at %1$s</string>
+    <string name="turn_arrive">Arrive at destination</string>
+
+    <!-- Navigator -->
+    <string name="nav_following">Following %1$s…</string>
+    <string name="nav_follow_failed">Couldn\'t follow %1$s: %2$s</string>
+    <string name="nav_waiting_gps">Waiting for GPS position</string>
+    <string name="nav_adding_stop">Adding %1$s…</string>
+    <string name="nav_add_stop_failed">Couldn\'t add %1$s: %2$s</string>
+    <string name="nav_recalculating">Recalculating…</string>
+    <string name="nav_no_roundtrip">Could not find a roundtrip in that direction. Try another direction or distance.</string>
+    <string name="nav_no_road">No road found there</string>
+
+    <!-- Dashboard cards -->
+    <string name="speed_camera">Speed camera</string>
+    <string name="speed_camera_in">Speed camera %1$d m</string>
+    <string name="gps_estimating">No GPS – estimating position</string>
+    <string name="gps_searching">Searching for GPS…</string>
+    <string name="rpm_and">%1$d rpm · %2$s</string>
+    <string name="trip_summary">Trip %1$.1f km · %2$d:%3$02d</string>
+    <string name="media_previous">Previous</string>
+    <string name="media_play_pause">Play/pause</string>
+    <string name="media_next">Next</string>
+    <string name="media_nothing_pick">Nothing playing on %1$s\nPick what to play</string>
+    <string name="media_nothing_tap">Nothing playing on %1$s\nTap to play</string>
+    <string name="media_no_phone">No phone linked.\nPick your phone in Settings → Phone.</string>
+    <string name="media_no_permission">Allow Bluetooth access\nto link your phone.</string>
+    <string name="bluetooth_off">Bluetooth is off</string>
+    <string name="media_disconnected">Phone not connected.\nTap to connect now.</string>
+    <string name="media_unreachable">Can\'t reach %1$s over Bluetooth.\nTap to try again, or turn Bluetooth off and on here.</string>
+    <string name="media_nothing">Nothing playing</string>
+    <string name="reply">Reply</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="decline">Decline</string>
+    <string name="reply_to">Reply to %1$s</string>
+    <string name="speak_now">Speak now…</string>
+    <string name="something_went_wrong">Something went wrong</string>
+    <string name="sent">Sent</string>
+    <string name="send">Send</string>
+    <string name="say_again">Say again</string>
+    <string name="try_again">Try again</string>
+    <string name="ago_now">now</string>
+    <string name="ago_min">%1$d min</string>
+    <string name="ago_hours">%1$d h</string>
+
+    <!-- Map -->
+    <string name="map_heading_up">Heading up – tap for north up</string>
+    <string name="map_follow_me">Follow me</string>
+    <string name="map_zoom_in">Zoom in</string>
+    <string name="map_zoom_out">Zoom out</string>
+    <string name="map_online_only">No offline map installed – showing online map. Import one in Settings.</string>
+    <string name="distance_km_whole">%.0f km</string>
+    <string name="clear">Clear</string>
+    <string name="delete_named">Delete %1$s?</string>
+
+    <!-- Where to? -->
+    <string name="search_placeholder">Where to? Town, address, fuel, viewpoint…</string>
+    <string name="search_nearest">Nearest</string>
+    <string name="search_saved_routes">Saved routes</string>
+    <string name="search_recent">Recent</string>
+    <string name="search_online">online</string>
+    <string name="search_no_matches">No matches</string>
+
+    <!-- Kinds of places -->
+    <string name="kind_city">City</string>
+    <string name="kind_town">Town</string>
+    <string name="kind_village">Village</string>
+    <string name="kind_suburb">District</string>
+    <string name="kind_hamlet">Hamlet</string>
+    <string name="kind_island">Island</string>
+    <string name="kind_street">Street</string>
+    <string name="kind_fuel">Fuel</string>
+    <string name="kind_charging">Charging</string>
+    <string name="kind_cafe">Café</string>
+    <string name="kind_restaurant">Restaurant</string>
+    <string name="kind_pub">Pub</string>
+    <string name="kind_dining">Dining</string>
+    <string name="kind_ferry">Ferry terminal</string>
+    <string name="kind_parking">Parking</string>
+    <string name="kind_viewpoint">Viewpoint</string>
+    <string name="kind_camping">Camping</string>
+    <string name="kind_hotel">Hotel</string>
+    <string name="kind_hut">Cabin</string>
+    <string name="kind_attraction">Attraction</string>
+    <string name="kind_museum">Museum</string>
+    <string name="kind_supermarket">Supermarket</string>
+    <string name="kind_shop">Shop</string>
+    <string name="kind_pass">Mountain pass</string>
+    <string name="kind_peak">Peak</string>
+    <string name="kind_motorcycle_shop">Motorcycle shop</string>
+    <string name="kind_fast_food">Fast food</string>
+    <string name="search_index_installed">Offline search index installed (%.0f MB)</string>
+    <string name="search_index_none">No offline search index. Copy %1$s to %2$s. Online search works when connected.</string>
+    <string name="rename">Rename</string>
+    <string name="more">More</string>
+    <string name="collapse">Collapse</string>
+    <string name="expand">Expand</string>
+    <string name="call">Call</string>
+    <string name="take_me_there">Take me there</string>
+    <string name="compass_points">N,NE,E,SE,S,SW,W,NW</string>
+
+    <!-- GPX -->
+    <string name="gpx_import">Import</string>
+    <string name="gpx_auto_follow">Auto-follow</string>
+    <string name="gpx_auto_follow_hint">Start navigation when you ride along a track shown on the map</string>
+    <string name="gpx_empty">No tracks yet. Import a .gpx file, or copy files into the tablet\'s\nAndroid/data/com.curveon.tablet/files/gpx folder over USB.</string>
+    <string name="gpx_export">Export GPX</string>
+    <string name="gpx_ungroup">Ungroup</string>
+    <string name="gpx_delete_group">Delete group</string>
+    <string name="gpx_move_to_group">Move to group</string>
+    <plurals name="gpx_delete_group_text">
+        <item quantity="one">Its %d track is deleted too. Use Ungroup to keep it.</item>
+        <item quantity="other">Its %d tracks are deleted too. Use Ungroup to keep them.</item>
+    </plurals>
+    <string name="gpx_rename_track">Rename track</string>
+    <string name="gpx_rename_group">Rename group</string>
+    <string name="gpx_move_to">Move %1$s to</string>
+    <plurals name="gpx_tracks_count">
+        <item quantity="one">%d track</item>
+        <item quantity="other">%d tracks</item>
+    </plurals>
+    <plurals name="gpx_waypoints_count">
+        <item quantity="one">%d waypoint</item>
+        <item quantity="other">%d waypoints</item>
+    </plurals>
+    <string name="gpx_waypoints">Waypoints</string>
+
+    <!-- Waypoints -->
+    <string name="poi_camping">Camping</string>
+    <string name="poi_fuel">Fuel</string>
+    <string name="poi_lodging">Lodging</string>
+    <string name="poi_food">Food</string>
+    <string name="poi_scenic">Scenic</string>
+    <string name="poi_info">Info</string>
+    <string name="poi_alert">Alert</string>
+    <string name="poi_picnic">Picnic area</string>
+    <string name="poi_swimming">Swimming</string>
+    <string name="poi_ferry">Ferry</string>
+    <string name="poi_water">Drinking water</string>
+    <string name="poi_toilet">Toilet</string>
+    <string name="poi_elevation">%.0f m above sea level</string>
+    <string name="poi_added">Added %1$s</string>
+    <string name="create">Create</string>
+    <string name="gpx_shown">Shown on map</string>
+    <string name="gpx_hidden">Hidden</string>
+    <string name="gpx_partly_shown">Partly shown</string>
+    <string name="gpx_as_recorded">As recorded</string>
+    <string name="gpx_inverted">Inverted</string>
+    <string name="gpx_mixed_directions">Mixed directions</string>
+    <string name="gpx_no_group">No group</string>
+    <string name="gpx_new_group">New group</string>
+
+    <!-- Phone -->
+    <string name="phone_favorites">Favorites</string>
+    <string name="phone_recents">Recents</string>
+    <string name="phone_contacts">Contacts</string>
+    <string name="phone_keypad">Keypad</string>
+    <string name="phone_no_share_contacts">The phone doesn\'t share contacts</string>
+    <string name="phone_no_share_calls">The phone doesn\'t share the call log</string>
+    <string name="phone_allow_hint">Open Curveon Companion on the phone and allow contacts and calls.</string>
+    <string name="phone_no_favorites">No favorites yet</string>
+    <string name="phone_no_favorites_hint">Star contacts on your phone and they show up here.</string>
+    <string name="phone_no_recents">No recent calls</string>
+    <string name="phone_no_contacts">No contacts with a phone number</string>
+    <string name="tap_to_connect">Tap to connect now</string>
+    <string name="yesterday">Yesterday</string>
+    <plurals name="phone_numbers">
+        <item quantity="one">%d number</item>
+        <item quantity="other">%d numbers</item>
+    </plurals>
+    <string name="distance_km_int">%1$d km</string>
+    <string name="distance_m_int">%1$d m</string>
+    <string name="selected">Selected</string>
+    <string name="add_stop">Add stop</string>
+    <string name="go_here">Go here</string>
+
+    <!-- Roundtrip and route preview -->
+    <string name="roundtrip_subtitle">A loop from where you are, heading roughly that way</string>
+    <string name="roundtrip_distance">Distance</string>
+    <string name="roundtrip_roads">Roads</string>
+    <string name="roundtrip_plan">Plan %1$d km %2$s</string>
+    <string name="style_fastest">Fastest</string>
+    <string name="style_curvy">Curvy</string>
+    <string name="style_super_curvy">Super curvy</string>
+    <string name="preview_roundtrip_title">Roundtrip · about %.0f km</string>
+    <string name="preview_another_loop">Another loop</string>
+    <string name="preview_reverse">Ride it the other way</string>
+    <string name="preview_save">Save route</string>
+    <string name="preview_remove_stop">Remove stop</string>
+    <plurals name="preview_includes_ferries">
+        <item quantity="one">Includes a ferry.</item>
+        <item quantity="other">Includes %d ferries.</item>
+    </plurals>
+    <string name="preview_ferry_loop">No loop this long that way without one – try another direction or distance.</string>
+    <string name="preview_ferry_road">There is no road there without one.</string>
+    <string name="preview_go">GO</string>
+    <string name="preview_km_gravel">%.0f km gravel</string>
+    <plurals name="preview_ferries">
+        <item quantity="one">ferry</item>
+        <item quantity="other">%d ferries</item>
+    </plurals>
+    <string name="preview_curviness">Curviness</string>
+
+    <!-- Navigation bar -->
+    <string name="fuel_none_ahead">none ahead</string>
+    <string name="fuel_none_on_route">No fuel on the rest of the route</string>
+    <string name="nav_stop">Stop navigation</string>
+
+    <!-- Rides -->
+    <string name="rides">Rides</string>
+    <string name="rides_recording">● Recording · %1$s</string>
+    <string name="rides_this_ride">this ride</string>
+    <string name="rides_empty">Rides are recorded automatically once you get going.</string>
+    <string name="rides_ride_again">Ride again</string>
+    <string name="rides_save_to_gpx">Save to GPX</string>
+    <string name="rides_save_to_group">Save to GPX group</string>
+    <string name="stat_km">km</string>
+    <string name="stat_riding">riding</string>
+    <string name="stat_avg_speed">avg km/h</string>
+    <string name="stat_max_speed">max km/h</string>
+    <string name="stat_climb">m climb</string>
+    <string name="stat_lean">lean L / R</string>
+
+    <!-- Phone link -->
+    <string name="link_connected">Connected to %1$s</string>
+    <string name="link_disconnected">%1$s is not answering. Open Curveon Companion on the phone and tap Start sharing.</string>
+    <string name="link_unreachable">%1$s\'s Bluetooth doesn\'t answer at all. If Curveon Companion is sharing, turn Bluetooth off and on on this tablet (or the phone).</string>
+    <string name="link_pick">Pick your phone below. It must be paired in Android\'s Bluetooth settings first.</string>
+    <string name="link_no_permission">Curveon needs permission to use Bluetooth.</string>
+    <string name="link_demo">Showing demo music and messages.</string>
+    <string name="link_allow_bluetooth">Allow Bluetooth</string>
+    <string name="link_demo_data">Demo data</string>
+    <string name="link_demo_data_hint">Sample music and messages, for trying the dashboard without a phone</string>
+
+    <!-- OBD2 -->
+    <string name="obd_title">OBD2 TELEMETRY</string>
+    <string name="obd_online">ONLINE</string>
+    <string name="obd_standby">STANDBY</string>
+    <string name="obd_coolant">Coolant</string>
+    <string name="obd_battery">Battery</string>
+    <string name="obd_altitude">Altitude</string>
+
+    <!-- Maps download, service, import -->
+    <string name="region_norway">Norway</string>
+    <string name="map_no_space">Not enough free space: about %1$.1f GB needed, %2$.1f GB free</string>
+    <string name="map_reading_index">Reading map index</string>
+    <string name="map_reading_index_parts">Reading map index (%1$d of %2$d parts)</string>
+    <string name="map_downloading">Downloading map – %1$.0f of %2$.0f MB</string>
+    <string name="service_channel">Riding</string>
+    <string name="service_running">GPS and navigation are running</string>
+    <string name="gpx_no_track_in">No track or route in %1$s</string>
+    <string name="saved_loop">Loop</string>
+    <string name="saved_track">Track</string>
 </resources>

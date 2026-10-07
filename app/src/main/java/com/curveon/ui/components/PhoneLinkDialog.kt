@@ -1,5 +1,7 @@
 package com.curveon.ui.components
 
+import com.curveon.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -46,14 +48,14 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
         Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 when (state) {
-                    CompanionConnectionState.CONNECTED -> "Connected to $name"
-                    CompanionConnectionState.CONNECTING -> "Connecting to $name…"
-                    CompanionConnectionState.DISCONNECTED -> "$name is not answering. Open Curveon Companion on the phone and tap Start sharing."
-                    CompanionConnectionState.UNREACHABLE -> "$name's Bluetooth doesn't answer at all. If Curveon Companion is sharing, turn Bluetooth off and on on this tablet (or the phone)."
-                    CompanionConnectionState.NO_PHONE_SELECTED -> "Pick your phone below. It must be paired in Android's Bluetooth settings first."
-                    CompanionConnectionState.NO_PERMISSION -> "Curveon needs permission to use Bluetooth."
-                    CompanionConnectionState.BLUETOOTH_OFF -> "Bluetooth is off."
-                    CompanionConnectionState.DEMO -> "Showing demo music and messages."
+                    CompanionConnectionState.CONNECTED -> stringResource(R.string.link_connected, name)
+                    CompanionConnectionState.CONNECTING -> stringResource(R.string.phone_connecting_to, name)
+                    CompanionConnectionState.DISCONNECTED -> stringResource(R.string.link_disconnected, name)
+                    CompanionConnectionState.UNREACHABLE -> stringResource(R.string.link_unreachable, name)
+                    CompanionConnectionState.NO_PHONE_SELECTED -> stringResource(R.string.link_pick)
+                    CompanionConnectionState.NO_PERMISSION -> stringResource(R.string.link_no_permission)
+                    CompanionConnectionState.BLUETOOTH_OFF -> stringResource(R.string.bluetooth_off)
+                    CompanionConnectionState.DEMO -> stringResource(R.string.link_demo)
                 },
                 color = TextSecondary, fontSize = 14.sp
             )
@@ -61,7 +63,7 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
             if (state == CompanionConnectionState.NO_PERMISSION && Build.VERSION.SDK_INT >= 31) {
                 Button(onClick = { permission.launch(Manifest.permission.BLUETOOTH_CONNECT) },
                     colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
-                    Text("Allow Bluetooth", color = androidx.compose.ui.graphics.Color(0xFF00363D), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.link_allow_bluetooth), color = androidx.compose.ui.graphics.Color(0xFF00363D), fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -78,15 +80,15 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
                             Text(p.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             Text(p.address, color = TextMuted, fontSize = 11.sp)
                         }
-                        if (p.address == selected) Icon(Icons.Default.CheckCircle, "Selected", tint = EcoGreen)
+                        if (p.address == selected) Icon(Icons.Default.CheckCircle, stringResource(R.string.selected), tint = EcoGreen)
                     }
                 }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Demo data", color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    Text("Sample music and messages, for trying the dashboard without a phone", color = TextMuted, fontSize = 12.sp)
+                    Text(stringResource(R.string.link_demo_data), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.link_demo_data_hint), color = TextMuted, fontSize = 12.sp)
                 }
                 Switch(
                     checked = state == CompanionConnectionState.DEMO,

@@ -17,10 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.curveon.R
 import com.curveon.routing.SurfacePreference
 import com.curveon.ui.theme.*
 
@@ -40,19 +42,19 @@ fun RouteOptionChips(
 ) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         val surfaceLabel = when (surface) {
-            SurfacePreference.PAVED -> "Tarmac"
-            SurfacePreference.MIXED -> "Mixed"
-            SurfacePreference.GRAVEL -> "Gravel"
+            SurfacePreference.PAVED -> stringResource(R.string.surface_tarmac)
+            SurfacePreference.MIXED -> stringResource(R.string.surface_mixed)
+            SurfacePreference.GRAVEL -> stringResource(R.string.surface_gravel)
         }
         OptionChip(surfaceLabel, active = surface != SurfacePreference.PAVED, onClick = {
             onSurface(SurfacePreference.entries[(surface.ordinal + 1) % SurfacePreference.entries.size])
         }) {
             Icon(Icons.Default.Landscape, null, tint = if (surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
         }
-        OptionChip("Ferries", active = avoidFerries, avoid = true, onClick = onToggleFerries) {
+        OptionChip(stringResource(R.string.ferries), active = avoidFerries, avoid = true, onClick = onToggleFerries) {
             Icon(Icons.Default.DirectionsBoat, null, tint = if (avoidFerries) NeonAmber else TextSecondary)
         }
-        OptionChip("Motorways", active = avoidMotorways, avoid = true, onClick = onToggleMotorways) {
+        OptionChip(stringResource(R.string.motorways), active = avoidMotorways, avoid = true, onClick = onToggleMotorways) {
             Image(painterResource(com.curveon.R.drawable.ic_motorway), null, modifier = Modifier.size(22.dp))
         }
     }
@@ -89,7 +91,7 @@ fun OptionChip(
 
 /** A row of mutually exclusive choices (km/h | mph, Auto | Day | Night, …). */
 @Composable
-fun <T> Segmented(options: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
+fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier.clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant).padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp)

@@ -3,27 +3,20 @@ package com.curveon.data.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-enum class RoadTypePreference(val label: String, val description: String) {
-    FASTEST("Fastest", "Direct highway and main corridors"),
-    CURVY("Curvy", "Scenic mountain passes & winding secondary roads"),
-    VERY_CURVY("Super Curvy", "Maximum twisties, hairpin turns & scenic backroads")
-}
+enum class RoadTypePreference { FASTEST, CURVY, VERY_CURVY }
 
-enum class GroundPreference(val label: String, val icon: String) {
-    PAVED("Tarmac Only", "Smooth asphalt and paved surfaces"),
-    MIXED("Mixed Roads", "Tarmac with occasional light trails"),
-    GRAVEL("Gravel Adventure", "Unpaved forest tracks & ADV gravel sections")
-}
+enum class GroundPreference { PAVED, MIXED, GRAVEL }
 
-enum class CompassDirection(val code: String, val label: String, val angleDegrees: Float) {
-    NORTH("N", "North", 0f),
-    NORTH_EAST("NE", "North-East", 45f),
-    EAST("E", "East", 90f),
-    SOUTH_EAST("SE", "South-East", 135f),
-    SOUTH("S", "South", 180f),
-    SOUTH_WEST("SW", "South-West", 225f),
-    WEST("W", "West", 270f),
-    NORTH_WEST("NW", "North-West", 315f)
+/** Clockwise from north, in the order of R.string.compass_points. */
+enum class CompassDirection(val angleDegrees: Float) {
+    NORTH(0f),
+    NORTH_EAST(45f),
+    EAST(90f),
+    SOUTH_EAST(135f),
+    SOUTH(180f),
+    SOUTH_WEST(225f),
+    WEST(270f),
+    NORTH_WEST(315f)
 }
 
 enum class TurnType {

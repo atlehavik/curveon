@@ -13,16 +13,20 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.curveon.R
 import com.curveon.data.bluetooth.CompanionConnectionState
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GroundPreference
@@ -51,6 +55,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val navigationSummary by viewModel.navigationSummary.collectAsStateWithLifecycle()
     val routingStatus by viewModel.routingStatus.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
     val phone = viewModel.phoneCompanion
     val track by phone.currentTrack.collectAsStateWithLifecycle()
     val albumArt by phone.albumArt.collectAsStateWithLifecycle()
@@ -98,7 +103,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var showRoundtrip by remember { mutableStateOf(false) }
     var showGpx by remember { mutableStateOf(false) }
     var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.curveon.data.model.CompassDirection.NORTH), avoidTolls = false)) }
-    var showSettings by remember { mutableStateOf(false) }
+    // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
+    var showSettings by rememberSaveable { mutableStateOf(false) }
     var showRides by remember { mutableStateOf(false) }
     /** The phone app's open tab; null when closed. */
     var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
@@ -145,7 +151,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onRemoveStop = viewModel::removePreviewStop,
                 onShuffle = viewModel::shuffleRoundtrip,
                 onReverse = viewModel::reversePreviewTrack,
-                onSave = { viewModel.saveRoute(p.goal.title); toast = "Saved to Where to?" },
+                onSave = { viewModel.saveRoute(p.goal.title); toast = context.getString(R.string.toast_saved_to_where_to) },
                 onGo = viewModel::startPreview,
                 onClose = viewModel::cancelPreview,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).widthIn(max = 640.dp).fillMaxWidth()
@@ -207,7 +213,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     markers = markers,
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,
-                    onLongPress = { pickPlace(it, "Map point") },
+                    onLongPress = { pickPlace(it, context.getString(R.string.map_point)) },
                     gpxTracks = overlayTracks,
                     gpxPois = overlayPois,
                     trackHint = trackHint.takeIf { preview == null && !isNavigating },
@@ -282,16 +288,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     contacts, recents, photos, contactsAllowed, callLogAllowed,
                     connected = phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO,
                     offlineText = when {
-                        phoneName.isEmpty() -> "No phone linked"
-                        phoneState == CompanionConnectionState.CONNECTING -> "Connecting to $phoneName…"
-                        else -> "$phoneName isn't connected"
+                        phoneName.isEmpty() -> stringResource(R.string.phone_none_linked)
+                        phoneState == CompanionConnectionState.CONNECTING -> stringResource(R.string.phone_connecting_to, phoneName)
+                        else -> stringResource(R.string.phone_not_connected_named, phoneName)
                     }
                 ),
                 tab = tab,
                 onTab = { phoneTab = it },
                 onCall = { number, name ->
-                    if (phone.placeCall(number)) { toast = "Calling $name…"; phoneTab = null }
-                    else toast = "Phone not connected"
+                    if (phone.placeCall(number)) { toast = context.getString(R.string.toast_calling, name); phoneTab = null }
+                    else toast = context.getString(R.string.toast_phone_not_connected)
                 },
                 onNeedPhoto = phone::requestPhoto,
                 onReconnect = phone::retryNow,
@@ -328,7 +334,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 rides = rides,
                 onRideAgain = { showRides = false; viewModel.rideAgain(it) },
                 gpxGroups = gpxGroups,
-                onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = "Saved to GPX" },
+                onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
                 onDelete = { viewModel.deleteRide(it) },
                 onDismiss = { showRides = false }
             )
@@ -381,8 +387,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         shownPoi?.let { poi ->
             PoiDialog(
                 poi, from = currentLocation,
-                onGo = { shownPoi = null; pickPlace(GeoPoint(poi.lat, poi.lon), poi.name) },
-                onCall = { number -> if (phone.placeCall(number)) toast = "Calling ${poi.name}…" else toast = "Connect the phone to call" },
+                onGo = { shownPoi = null; pickPlace(GeoPoint(poi.lat, poi.lon), poi.displayName(context)) },
+                onCall = { number -> if (phone.placeCall(number)) toast = context.getString(R.string.toast_calling, poi.displayName(context)) else toast = context.getString(R.string.toast_connect_phone_to_call) },
                 onDismiss = { shownPoi = null }
             )
         }
@@ -396,6 +402,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             LaunchedEffect(Unit) { viewModel.refreshMapStatus() }
             SettingsDialog(
                 state = SettingsState(
+                    language = remember { com.curveon.AppLanguage.current(context) },
                     useMph = telemetry.useMph, mapTheme = mapTheme, obdEnabled = telemetry.isObdEnabled,
                     autoZoom = autoZoom, autoFollowTracks = autoFollow,
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
@@ -403,6 +410,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() }
                 ),
                 actions = SettingsActions(
+                    onLanguage = { com.curveon.AppLanguage.set(context, it) },
                     onUnits = viewModel::setUseMph,
                     onMapTheme = viewModel::setMapTheme,
                     onObd = viewModel::setObd,
@@ -451,17 +459,17 @@ private fun Rail(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Clock()
-        RailButton(Icons.Default.Search, "Where to?", ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
-        RailButton(Icons.Default.Explore, "Roundtrip", NeonAmber, NeonAmber, tag = "rail_roundtrip", onClick = onRoundtrip)
-        RailButton(Icons.Default.Route, "GPX manager", ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
-        RailButton(Icons.Default.Phone, "Phone", EcoGreen, if (phoneOpen) Color.Black else EcoGreen,
+        RailButton(Icons.Default.Search, stringResource(R.string.where_to), ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
+        RailButton(Icons.Default.Explore, stringResource(R.string.roundtrip), NeonAmber, NeonAmber, tag = "rail_roundtrip", onClick = onRoundtrip)
+        RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
+        RailButton(Icons.Default.Phone, stringResource(R.string.phone), EcoGreen, if (phoneOpen) Color.Black else EcoGreen,
             filled = phoneOpen, tag = "rail_phone", onClick = onPhone)
-        RailButton(Icons.Default.Settings, "Settings", TextSecondary, TextPrimary, tag = "rail_settings", onClick = onSettings)
+        RailButton(Icons.Default.Settings, stringResource(R.string.settings), TextSecondary, TextPrimary, tag = "rail_settings", onClick = onSettings)
         Spacer(Modifier.weight(1f))
         Box {
             RailButton(
                 if (isFullScreenMap) Icons.Default.Dashboard else Icons.Default.Map,
-                if (isFullScreenMap) "Dashboard" else "Full map",
+                stringResource(if (isFullScreenMap) R.string.dashboard else R.string.full_map),
                 ElectricCyan, if (isFullScreenMap) Color(0xFF00363D) else ElectricCyan,
                 filled = isFullScreenMap, tag = "rail_toggle_map", onClick = onToggleMap
             )
@@ -530,7 +538,7 @@ private fun TrackChip(h: com.curveon.data.gpx.TrackHint, onClick: () -> Unit) {
             modifier = Modifier.widthIn(max = 260.dp), overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         Spacer(Modifier.width(10.dp))
         Text(
-            if (h.onTrack) "Follow" else if (h.distanceMeters < 1000) "%.0f m".format(h.distanceMeters) else "%.1f km".format(h.distanceMeters / 1000),
+            if (h.onTrack) stringResource(R.string.follow) else if (h.distanceMeters < 1000) stringResource(R.string.distance_m, h.distanceMeters) else stringResource(R.string.distance_km, h.distanceMeters / 1000),
             color = color, fontSize = 14.sp, fontWeight = FontWeight.Black
         )
     }

@@ -52,7 +52,7 @@ class RouteHazards(private val search: PlaceSearch) {
         if (!ready) return null
         val next = fuel.firstOrNull { it.along > along + 50 }
         val distance = next?.let { it.along - along } ?: return if (remaining > LONG_GAP_M) {
-            FuelHint("No fuel on the rest of the route", LatLon(0.0, 0.0), remaining, isLongGap = true)
+            FuelHint("",  LatLon(0.0, 0.0), remaining, isLongGap = true)
         } else null
         return FuelHint(next.poi.name, LatLon(next.poi.lat, next.poi.lon), distance, distance > LONG_GAP_M)
     }

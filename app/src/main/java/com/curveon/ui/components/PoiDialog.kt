@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -31,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.curveon.R
 import com.curveon.data.gpx.GpxPoi
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.osm.GpxParser
@@ -48,6 +51,7 @@ import kotlin.math.sin
 @Composable
 fun PoiDialog(poi: GpxPoi, from: GeoPoint?, onGo: () -> Unit, onCall: ((String) -> Unit)?, onDismiss: () -> Unit) {
     val color = Color(poi.category.color)
+    val name = poi.displayName(LocalContext.current)
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             Modifier.padding(24.dp).widthIn(max = 900.dp).clip(RoundedCornerShape(20.dp)).background(CockpitSurface)
@@ -61,12 +65,12 @@ fun PoiDialog(poi: GpxPoi, from: GeoPoint?, onGo: () -> Unit, onCall: ((String) 
                 }
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    listOf(poi.kind.label, poi.symbol).filter { it.isNotBlank() }.distinctBy { it.lowercase() }.joinToString(" · ").uppercase(),
+                    listOf(stringResource(poi.kind.label), poi.symbol).filter { it.isNotBlank() }.distinctBy { it.lowercase() }.joinToString(" · ").uppercase(),
                     color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)
                 )
                 from?.let { Text(distanceText(it, poi), color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
             }
-            Text(poi.name, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
+            Text(name, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
 
             // Landscape: the text on the left, the facts (address, phone, …) beside it so they
             // stay in view however long the description is.
@@ -92,8 +96,8 @@ fun PoiDialog(poi: GpxPoi, from: GeoPoint?, onGo: () -> Unit, onCall: ((String) 
                     poi.links.filter { (href, _) -> href !in poi.description && href !in poi.comment }.forEach { (href, text) ->
                         Fact(Icons.Default.Link, linkified(href, text.ifBlank { href.substringAfter("://").substringBefore('?').trimEnd('/') }))
                     }
-                    poi.elevation?.let { Fact(Icons.Default.Terrain, "%.0f m above sea level".format(it)) }
-                    dateText(poi.time)?.let { Fact(Icons.Default.Event, "Added $it") }
+                    poi.elevation?.let { Fact(Icons.Default.Terrain, stringResource(R.string.poi_elevation, it)) }
+                    dateText(poi.time)?.let { Fact(Icons.Default.Event, stringResource(R.string.poi_added, it)) }
                     if (poi.categories.isNotEmpty()) Fact(Icons.Default.Sell, poi.categories.joinToString(", "))
                     if (poi.trackName.isNotBlank()) Fact(Icons.Default.Route, poi.trackName)
                     Fact(Icons.Default.Place, String.format(Locale.ROOT, "%.5f, %.5f", poi.lat, poi.lon))
@@ -101,13 +105,13 @@ fun PoiDialog(poi: GpxPoi, from: GeoPoint?, onGo: () -> Unit, onCall: ((String) 
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onDismiss) { Text("Close", color = TextSecondary) }
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close), color = TextSecondary) }
                 if (onCall != null && poi.phone.isNotBlank()) {
                     Spacer(Modifier.width(8.dp))
-                    PillButton(Icons.Default.Call, "Call", CockpitSurfaceVariant, TextPrimary) { onCall(poi.phone) }
+                    PillButton(Icons.Default.Call, stringResource(R.string.call), CockpitSurfaceVariant, TextPrimary) { onCall(poi.phone) }
                 }
                 Spacer(Modifier.width(8.dp))
-                PillButton(Icons.Default.Navigation, "Take me there", ElectricCyan, Color(0xFF00363D), onClick = onGo)
+                PillButton(Icons.Default.Navigation, stringResource(R.string.take_me_there), ElectricCyan, Color(0xFF00363D), onClick = onGo)
             }
         }
     }
@@ -145,12 +149,13 @@ private fun linkified(text: String, label: String? = null): AnnotatedString = bu
 }
 
 /** "12 km NE" from the rider. */
+@Composable
 private fun distanceText(from: GeoPoint, poi: GpxPoi): String {
     val km = GpxParser.haversineDistanceKm(from.latitude, from.longitude, poi.lat, poi.lon)
     val la1 = Math.toRadians(from.latitude); val la2 = Math.toRadians(poi.lat); val dLon = Math.toRadians(poi.lon - from.longitude)
     val bearing = (Math.toDegrees(atan2(sin(dLon) * cos(la2), cos(la1) * sin(la2) - sin(la1) * cos(la2) * cos(dLon))) + 360) % 360
-    val dir = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")[((bearing + 22.5) / 45).toInt() % 8]
-    val dist = if (km < 1) "%.0f m".format(km * 1000) else if (km < 10) "%.1f km".format(km) else "%.0f km".format(km)
+    val dir = stringResource(R.string.compass_points).split(',')[((bearing + 22.5) / 45).toInt() % 8]
+    val dist = if (km < 1) stringResource(R.string.distance_m, km * 1000) else if (km < 10) stringResource(R.string.distance_km, km) else stringResource(R.string.distance_km_whole, km)
     return "$dist $dir"
 }
 

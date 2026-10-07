@@ -34,6 +34,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // The language may just have changed (the screen restarts then): redo texts made earlier.
+        dashboardViewModel.refreshTexts()
+
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         enableEdgeToEdge()
         hideSystemBars()

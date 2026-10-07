@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-07 — Language: English / Norsk
+
+Tested in the emulator (switching both ways, Settings stays open). On the X7:
+
+- [ ] Settings → Display → Språk/Language: pick Norsk; the whole app turns Norwegian at once.
+- [ ] Ride with navigation in Norwegian: turn banner ("Sving til høyre · deretter …") fits, and
+  numbers use decimal comma (12,5 km).
+- [ ] Android Settings → Apps → Curveon → Language lists English and Norsk too.
+- [ ] Reset if needed: `adb -s 241181d1 shell cmd locale set-app-locales com.curveon.tablet --locales en`
+
 ## 2026-10-07 — GPX groups: database upgrade on the X7
 
 The GPX groups build was installed on the X7 by mistake while it was connected. It upgrades the

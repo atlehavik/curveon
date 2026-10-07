@@ -1,5 +1,7 @@
 package com.curveon.ui.components
 
+import com.curveon.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,11 +55,11 @@ fun NavigationSummaryBar(
     ) {
         Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
         Text(
-            "%.0f km · %d:%02d".format(summary.remainingKm, summary.remainingMinutes / 60, summary.remainingMinutes % 60),
+            stringResource(R.string.distance_km_whole, summary.remainingKm) + " · %d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
             color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold
         )
         summary.nextStop?.let { (name, km) ->
-            Text("${name.take(14)} %.0f km".format(km), color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(name.take(14) + " " + stringResource(R.string.distance_km_whole, km), color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
         }
         if (fuel != null && (fuel.isLongGap || fuel.distanceMeters < 60_000)) {
             val color = if (fuel.isLongGap) NeonAmber else EcoGreen
@@ -67,9 +69,9 @@ fun NavigationSummaryBar(
                     .testTag("fuel_chip"),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.LocalGasStation, fuel.name, tint = color, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.LocalGasStation, fuel.name.ifEmpty { stringResource(R.string.fuel_none_on_route) }, tint = color, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(4.dp))
-                Text(if (fuel.point.lat == 0.0) "none ahead" else "%.0f km".format(fuel.distanceMeters / 1000),
+                Text(if (fuel.point.lat == 0.0) stringResource(R.string.fuel_none_ahead) else stringResource(R.string.distance_km_whole, fuel.distanceMeters / 1000),
                     color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
@@ -77,7 +79,7 @@ fun NavigationSummaryBar(
             onClick = onStop,
             modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
         ) {
-            Icon(Icons.Default.Close, "Stop navigation", tint = WarningRed)
+            Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
         }
     }
 }
@@ -112,7 +114,7 @@ fun RoutingStatusCard(status: RoutingStatus, onDismiss: () -> Unit, modifier: Mo
             Spacer(Modifier.width(12.dp))
             Text(status.message, color = TextPrimary, fontSize = 13.sp, modifier = Modifier.weight(1f, fill = false))
             Spacer(Modifier.width(8.dp))
-            Icon(Icons.Default.Close, "Dismiss", tint = TextSecondary)
+            Icon(Icons.Default.Close, stringResource(R.string.dismiss), tint = TextSecondary)
         }
     }
 }
@@ -135,9 +137,9 @@ fun StopOrDestinationDialog(name: String, onAddStop: () -> Unit, onNewDestinatio
         ) {
             Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton(Icons.Default.AddLocationAlt, "Add stop", NeonAmber, androidx.compose.ui.graphics.Color.Black,
+                PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, androidx.compose.ui.graphics.Color.Black,
                     Modifier.weight(1f).testTag("add_stop_btn"), onAddStop)
-                PillButton(Icons.Default.Flag, "Go here", ElectricCyan, androidx.compose.ui.graphics.Color(0xFF00363D),
+                PillButton(Icons.Default.Flag, stringResource(R.string.go_here), ElectricCyan, androidx.compose.ui.graphics.Color(0xFF00363D),
                     Modifier.weight(1f), onNewDestination)
             }
         }
