@@ -211,7 +211,11 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
         previewJob = scope.launch {
             styles.mapIndexed { i, style ->
                 async(Dispatchers.Default) {
+                    val t0 = System.nanoTime()
                     val result = runCatching { calculate(goal, from, style) }
+                    android.util.Log.i("Curveon", "Routed ${goal::class.simpleName} ${style ?: ""} in %.1f s: %s".format(
+                        (System.nanoTime() - t0) / 1e9,
+                        result.fold({ "%.0f km, %d ferries".format(it.distanceMeters / 1000, it.ferryCount) }, { "failed: ${it.message}" })))
                     synchronized(this@Navigator) {
                         val p = _state.value.preview ?: return@async
                         if (p.goal != goal) return@async
@@ -233,7 +237,7 @@ class Navigator(context: Context, private val scope: CoroutineScope) {
             listOf(from) + goal.stops.map { it.point } + goal.destination,
             goal.options.copy(roadStyle = style ?: goal.options.roadStyle)
         )
-        is NavigationGoal.Roundtrip -> RoundtripPlanner(engine).plan(
+        is NavigationGoal.Roundtrip -> RoundtripPlanner(engine) { android.util.Log.d("CurveonPlan", it) }.plan(
             from, goal.distanceKm, goal.directionDeg, goal.options,
             rotationsDeg = listOf(0.0, -30.0, 30.0).map { it + goal.variant * 17.0 }
         )

@@ -29,6 +29,13 @@ android {
   }
 
   buildTypes {
+    // Like release (not debuggable, so ART runs routing at full speed) but signed with the debug
+    // key, so it installs over a debug build and keeps the app's data. For the bike tablet.
+    create("ride") {
+      initWith(getByName("debug"))
+      isDebuggable = false
+      matchingFallbacks += "release"
+    }
     release {
       isCrunchPngs = false
       isMinifyEnabled = false

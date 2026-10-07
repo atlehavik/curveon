@@ -19,5 +19,9 @@ tasks.test {
   // Integration tests read real segments from here when present, and are skipped otherwise.
   systemProperty("curveon.segments", System.getProperty("curveon.segments")
     ?: "${rootDir}/../Curveon-data/brouter/segments4")
+  systemProperty("curveon.mem", System.getProperty("curveon.mem") ?: "64")
+  System.getProperty("curveon.cases")?.let { systemProperty("curveon.cases", it) }
+  systemProperty("curveon.bench", System.getProperty("curveon.bench") ?: "false")
+  System.getProperty("curveon.jfr")?.let { jvmArgs("-XX:StartFlightRecording=filename=$it,settings=profile") }
   testLogging { events("passed", "skipped", "failed"); showStandardStreams = true }
 }

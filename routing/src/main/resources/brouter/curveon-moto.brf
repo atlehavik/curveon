@@ -14,6 +14,7 @@ assign surface_pref    = 0      # %surface_pref% | 0 = paved only, 1 = mixed, 2 
 assign avoid_ferries   = false  # %avoid_ferries% | Avoid ferries | boolean
 assign avoid_motorways = false  # %avoid_motorways% | Avoid motorways | boolean
 assign avoid_toll      = false  # %avoid_toll% | Avoid toll roads | boolean
+assign avoided_ferry_cost = 1000000 # %avoided_ferry_cost% | Cost of one ferry when avoiding them (~1 per metre of detour) | number
 
 assign downhillcost = 0
 assign uphillcost   = 0
@@ -29,6 +30,10 @@ assign turnInstructionRoundabouts   = true
 assign considerTurnRestrictions     = true
 assign processUnusedTags            = true   # export maxspeed etc. for the speed-limit sign
 
+# Search: pass 1 is a quick greedy A* that finds some route; pass 2 then finds the best one but
+# skips anything that cannot beat it. pass2coefficient is the A* estimate of remaining cost per
+# metre of straight-line distance; it must not exceed the cheapest costfactor (1.0 for tarmac,
+# 0.85 for gravel when gravel is preferred) or the result is no longer the best route.
 assign pass1coefficient = 1.5
 
 assign fastest    = equal road_style 0
@@ -38,6 +43,8 @@ assign very_curvy = equal road_style 2
 assign paved_only   = equal surface_pref 0
 assign mixed        = equal surface_pref 1
 assign gravel_lover = equal surface_pref 2
+
+assign pass2coefficient = if gravel_lover then 0.85 else 1.0
 
 ---context:way
 
@@ -92,8 +99,11 @@ assign turncost = if fastest then 30 else 10
 
 assign initialclassifier = if route=ferry then classifier_ferry else classifier_none
 
+# An avoided ferry costs as much as a ~1000 km detour by default: taken only when there is no
+# road at all (an island destination), never to save time. Roundtrip planning lowers it, see
+# RoundtripPlanner.
 assign initialcost =
-       if route=ferry then ( if avoid_ferries then 100000 else 3000 )
+       if route=ferry then ( if avoid_ferries then avoided_ferry_cost else 3000 )
        else 0
 
 # Base cost per metre by road class and riding style

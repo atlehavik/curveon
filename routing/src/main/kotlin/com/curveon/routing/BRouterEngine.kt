@@ -17,14 +17,26 @@ import kotlin.math.roundToInt
 class BRouterEngine(
     private val segmentDir: File,
     private val profileDir: File,
-    private val timeoutMillis: Long = 60_000L
+    private val timeoutMillis: Long = 60_000L,
+    /**
+     * Memory BRouter may fill with decoded map data before it starts throwing data away (and
+     * decoding it again later). Its default of 64 MB is sized for old phones.
+     */
+    private val memoryClassMb: Int = 64
 ) {
 
-    /** Route from the first to the last waypoint, passing the ones in between in order. */
+    /**
+     * Route from the first to the last waypoint, passing the ones in between in order.
+     *
+     * @param avoidedFerryCost what one ferry costs when [RouteOptions.avoidFerries] is on, in metres
+     *   of detour. The default makes ferries a last resort; a lower value keeps searches near
+     *   islands quick (BRouter explores everything cheaper than the first route it finds).
+     */
     fun route(
         waypoints: List<LatLon>,
         options: RouteOptions,
-        viaCatchingRangeMeters: Double? = null
+        viaCatchingRangeMeters: Double? = null,
+        avoidedFerryCost: Int = AVOIDED_FERRY_COST
     ): Route {
         require(waypoints.size >= 2) { "Need at least start and destination" }
         val nodes = waypoints.mapIndexed { i, p ->
@@ -36,8 +48,9 @@ class BRouterEngine(
         }
         val rc = RoutingContext().apply {
             localFunction = File(profileDir, PROFILE_FILE).absolutePath
-            keyValues = profileParams(options)
+            keyValues = profileParams(options, avoidedFerryCost)
             waypointCatchingRange = viaCatchingRangeMeters ?: DEFAULT_CATCHING_RANGE_M
+            memoryclass = memoryClassMb
         }
         val engine = RoutingEngine(null, null, segmentDir, nodes, rc, RoutingEngine.BROUTER_ENGINEMODE_ROUTING)
         engine.quite = true
@@ -47,13 +60,23 @@ class BRouterEngine(
         return toRoute(track)
     }
 
-    private fun profileParams(o: RouteOptions): MutableMap<String, String> = hashMapOf(
-        "road_style" to o.roadStyle.ordinal.toString(),
-        "surface_pref" to o.surface.ordinal.toString(),
-        "avoid_ferries" to o.avoidFerries.flag(),
-        "avoid_motorways" to o.avoidMotorways.flag(),
-        "avoid_toll" to o.avoidToll.flag()
-    )
+    private fun profileParams(o: RouteOptions, avoidedFerryCost: Int): MutableMap<String, String> {
+        val params = sortedMapOf(
+            "road_style" to o.roadStyle.ordinal.toString(),
+            "surface_pref" to o.surface.ordinal.toString(),
+            "avoid_ferries" to o.avoidFerries.flag(),
+            "avoid_motorways" to o.avoidMotorways.flag(),
+            "avoid_toll" to o.avoidToll.flag(),
+            "avoided_ferry_cost" to avoidedFerryCost.toString()
+        )
+        // BRouter caches parsed profiles keyed by the *sum* of the parameters' hash codes, so
+        // "curvy, no ferries" (1 + 1) is the same profile to it as "very curvy, ferries" (2 + 0) and
+        // a route would silently use whichever was parsed first. One extra value spelling out all the
+        // parameters makes every combination's sum different.
+        // (Values must be numbers: all digits of all parameters, behind a 9 so none get lost.)
+        params[CACHE_KEY] = "9" + params.values.joinToString("")
+        return HashMap(params)
+    }
 
     private fun Boolean.flag() = if (this) "1" else "0"
 
@@ -126,6 +149,12 @@ class BRouterEngine(
 
     companion object {
         const val PROFILE_FILE = "curveon-moto.brf"
+
+        private const val CACHE_KEY = "curveon_params"
+
+        /** An avoided ferry is worth a ~1000 km detour. */
+        const val AVOIDED_FERRY_COST = 1_000_000
+
 
         /** Start/destination may be a tap in the forest; snap to a road up to this far away. */
         const val DEFAULT_CATCHING_RANGE_M = 1_500.0

@@ -42,4 +42,40 @@ object Routes {
             ferryCount = a.ferryCount + b.ferryCount
         )
     }
+
+    /**
+     * Joins legs routed one by one into one route. A leg's end and the next leg's start are the same
+     * via point; a turn there is added from the geometry (the router only gives turns inside a leg).
+     */
+    fun joinLegs(legs: List<Route>): Route {
+        var out = legs.first()
+        for (leg in legs.drop(1)) {
+            val joinIndex = out.points.lastIndex
+            val turn = turnAt(out, leg)
+            out = concat(out, leg)
+            if (turn != null) {
+                out = out.copy(maneuvers = (out.maneuvers + Maneuver(turn, joinIndex, out.points[joinIndex].distanceFromStart))
+                    .sortedBy { it.pointIndex })
+            }
+        }
+        return out.copy(curviness = Curviness.score(out.points.map { LatLon(it.lat, it.lon) }))
+    }
+
+    /** The turn from the end of [a] into the start of [b], or null when riding on (roughly) straight. */
+    private fun turnAt(a: Route, b: Route): ManeuverType? {
+        val (inPoint, inBearing) = pointAt(a, a.distanceMeters - 30.0)
+        val (_, outBearing) = pointAt(b, minOf(30.0, b.distanceMeters))
+        if (a.distanceMeters < 1 || b.distanceMeters < 1) return null
+        val end = a.points.last()
+        val arrive = Geo.bearing(inPoint.lat, inPoint.lon, end.lat, end.lon).takeIf { Geo.distance(inPoint.lat, inPoint.lon, end.lat, end.lon) > 1 } ?: inBearing
+        val d = Geo.angleDiff(arrive, outBearing)
+        val abs = kotlin.math.abs(d)
+        return when {
+            abs < 30 -> null
+            abs > 165 -> ManeuverType.U_TURN
+            abs < 60 -> if (d > 0) ManeuverType.SLIGHT_RIGHT else ManeuverType.SLIGHT_LEFT
+            abs < 130 -> if (d > 0) ManeuverType.RIGHT else ManeuverType.LEFT
+            else -> if (d > 0) ManeuverType.SHARP_RIGHT else ManeuverType.SHARP_LEFT
+        }
+    }
 }

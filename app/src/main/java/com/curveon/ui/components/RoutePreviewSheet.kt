@@ -106,6 +106,27 @@ fun RoutePreviewSheet(
             }
         }
 
+        // Ferries switched off but the route still has one: say so plainly, and why.
+        val ferries = preview.selectedRoute?.ferryCount ?: 0
+        if (options.avoidFerries && ferries > 0) {
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(NeonAmber.copy(alpha = 0.16f))
+                    .border(1.dp, NeonAmber, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp)
+                    .testTag("preview_ferry_warning"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.DirectionsBoat, null, tint = NeonAmber, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    (if (ferries == 1) "Includes a ferry. " else "Includes $ferries ferries. ") + when (goal) {
+                        is NavigationGoal.Roundtrip -> "No loop this long that way without one – try another direction or distance."
+                        else -> "There is no road there without one."
+                    },
+                    color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
         // Options + GO
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             RouteOptionChips(

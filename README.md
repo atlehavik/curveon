@@ -50,9 +50,15 @@ Requirements: JDK 17+ (21 recommended) and the Android SDK (`local.properties` â
 
 ```
 ./gradlew :app:installDebug          # tablet app on the connected device/emulator
+./gradlew :app:installRide           # same app, not debuggable: routing ~40% faster (for the bike)
 ./gradlew :companion:installDebug    # phone app (with the phone connected)
 ./gradlew test                       # unit tests; :routing:test also routes over real Norway data
+./gradlew :routing:test --tests '*RoutingBenchmarkTest*' -Dcurveon.bench=true   # routing timings
 ```
+
+The ride build is signed with the debug key, so it installs over a debug build and keeps the
+app's data. After installing, `adb shell cmd package compile -m speed -f com.curveon.tablet`
+compiles it ahead of time instead of waiting for Android to do it overnight.
 
 Emulator matching the tablet: AVD `Hugerock_X7` (API 33, 1080x1920 @ 320 dpi, landscape).
 
