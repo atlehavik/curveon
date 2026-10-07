@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.curveon.data.bluetooth.CompanionConnectionState
+import com.curveon.data.bluetooth.MediaApp
 import com.curveon.data.bluetooth.VoiceReply
 import com.curveon.data.model.MusicTrack
 import com.curveon.data.model.NotificationItem
@@ -132,23 +133,44 @@ fun SpeedLimitSign(limit: Int, size: Dp) {
 
 // ---------------------------------------------------------------------------------- media
 
-/** Cover art fills the card, like Android Auto's media card when nothing else needs the space. */
+/**
+ * Cover art fills the card, like Android Auto's media card when nothing else needs the space.
+ * With more than one media app on the phone, their icons sit on top to switch between them.
+ */
 @Composable
 fun FullMediaCard(
     track: MusicTrack?,
     art: Bitmap?,
     phoneState: CompanionConnectionState,
     phoneName: String,
+    apps: List<MediaApp>,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onPlayApp: (String) -> Unit,
+    onReconnect: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     DashCard(modifier.fillMaxWidth().testTag("media_card_full")) {
         if (track == null) {
-            // Connected but silent: tap to make the phone resume whatever played last.
-            Box(Modifier.matchParentSize().clickable(enabled = phoneState == CompanionConnectionState.CONNECTED, onClick = onPlayPause)) {
-                NothingPlaying(phoneState, phoneName)
+            val connected = phoneState == CompanionConnectionState.CONNECTED
+            val canRetry = phoneState == CompanionConnectionState.DISCONNECTED || phoneState == CompanionConnectionState.UNREACHABLE ||
+                phoneState == CompanionConnectionState.CONNECTING
+            // Connected but silent: pick an app, or tap to make the phone resume whatever played last.
+            // Not connected: tap to try right now (e.g. sharing was just turned on on the phone).
+            Box(Modifier.matchParentSize().clickable(enabled = (connected && apps.isEmpty()) || canRetry,
+                onClick = if (connected) onPlayPause else onReconnect)) {
+                NothingPlaying(phoneState, phoneName, choosing = connected && apps.isNotEmpty())
+                if (connected && apps.isNotEmpty()) {
+                    Row(Modifier.align(Alignment.BottomCenter).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        apps.take(4).forEach { app ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(64.dp)) {
+                                MediaAppIcon(app, 56.dp, current = false) { onPlayApp(app.packageName) }
+                                Text(app.name, color = TextSecondary, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
+                }
             }
             return@DashCard
         }
@@ -161,6 +183,14 @@ fun FullMediaCard(
         }
         // Darken the lower half so text and buttons stay readable on any cover.
         Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.25f to Color.Transparent, 1f to Color(0xF2000000))))
+        if (apps.size > 1) {
+            Row(Modifier.align(Alignment.TopStart).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                apps.take(4).forEach { app ->
+                    val current = app.name == track.sourceApp
+                    MediaAppIcon(app, 44.dp, current) { if (!current) onPlayApp(app.packageName) }
+                }
+            }
+        }
         Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(16.dp)) {
             Text(track.title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
@@ -206,9 +236,26 @@ fun MiniMediaCard(track: MusicTrack, art: Bitmap?, onPlayPause: () -> Unit, onNe
     }
 }
 
+/** A media app on the phone; the one being shown gets a cyan ring. */
 @Composable
-private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: String) {
-    Column(Modifier.align(Alignment.Center).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+private fun MediaAppIcon(app: MediaApp, size: Dp, current: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier.size(size).clip(CircleShape).background(Color(0xCC1A1F26))
+            .border(if (current) 3.dp else 1.dp, if (current) ElectricCyan else Color(0x55FFFFFF), CircleShape)
+            .clickable(onClick = onClick).padding(size * 0.14f).testTag("media_app_${app.packageName}"),
+        contentAlignment = Alignment.Center
+    ) {
+        if (app.icon != null) Image(app.icon.asImageBitmap(), app.name, modifier = Modifier.fillMaxSize())
+        else Text(app.name.take(1), color = Color.White, fontSize = (size.value * 0.4f).sp, fontWeight = FontWeight.Black)
+    }
+}
+
+@Composable
+private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: String, choosing: Boolean) {
+    Column(
+        Modifier.align(if (choosing) Alignment.TopCenter else Alignment.Center).padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Icon(
             if (state == CompanionConnectionState.CONNECTED) Icons.Default.MusicOff else Icons.Default.PhonelinkOff,
             null, tint = TextMuted, modifier = Modifier.size(56.dp)
@@ -216,13 +263,13 @@ private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: 
         Spacer(Modifier.height(10.dp))
         Text(
             when (state) {
-                CompanionConnectionState.CONNECTED -> "Nothing playing on $phoneName\nTap to play"
+                CompanionConnectionState.CONNECTED -> if (choosing) "Nothing playing on $phoneName\nPick what to play" else "Nothing playing on $phoneName\nTap to play"
                 CompanionConnectionState.CONNECTING -> "Connecting to $phoneName…"
                 CompanionConnectionState.NO_PHONE_SELECTED -> "No phone linked.\nPick your phone in Settings → Phone."
                 CompanionConnectionState.NO_PERMISSION -> "Allow Bluetooth access\nto link your phone."
                 CompanionConnectionState.BLUETOOTH_OFF -> "Bluetooth is off"
-                CompanionConnectionState.DISCONNECTED -> "Phone not connected.\nOpen Curveon Companion on the phone."
-                CompanionConnectionState.UNREACHABLE -> "Can't reach $phoneName over Bluetooth.\nTurn Bluetooth off and on here."
+                CompanionConnectionState.DISCONNECTED -> "Phone not connected.\nTap to connect now."
+                CompanionConnectionState.UNREACHABLE -> "Can't reach $phoneName over Bluetooth.\nTap to try again, or turn Bluetooth off and on here."
                 CompanionConnectionState.DEMO -> "Nothing playing"
             },
             color = TextSecondary, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -310,7 +357,7 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
             Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF2000000))))
         } else {
             Box(Modifier.matchParentSize().padding(bottom = 140.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(140.dp).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
+                Box(Modifier.heightIn(max = 140.dp).fillMaxHeight(0.85f).aspectRatio(1f).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
                     Text(call.initials, color = EcoGreen, fontSize = 52.sp, fontWeight = FontWeight.Black)
                 }
             }

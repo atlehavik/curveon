@@ -1,7 +1,6 @@
 package com.curveon.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,12 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.data.map.MapDownloadState
 import com.curveon.data.map.MapRegionStatus
@@ -76,17 +72,12 @@ class SettingsActions(
 fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, onDismiss: () -> Unit) {
     var tab by rememberSaveable { mutableStateOf(SettingsTab.DISPLAY) }
     var confirmDelete by remember { mutableStateOf<MapRegionStatus?>(null) }
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Row(
-            Modifier.fillMaxWidth(0.94f).fillMaxHeight(0.94f).clip(RoundedCornerShape(24.dp)).background(CockpitSurface)
-                .border(1.dp, CockpitBorder, RoundedCornerShape(24.dp)).testTag("settings_dialog")
-        ) {
+    CockpitDialog(title = "Settings", icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
+        Row(Modifier.fillMaxSize()) {
             Column(
-                Modifier.width(210.dp).fillMaxHeight().background(CockpitBackground.copy(alpha = 0.6f)).padding(12.dp),
+                Modifier.width(210.dp).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f)).padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text("Settings", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(start = 8.dp, top = 6.dp, end = 8.dp, bottom = 14.dp))
                 SettingsTab.entries.forEach { t ->
                     val on = t == tab
                     Row(
@@ -99,15 +90,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Text(t.label, color = if (on) OnCyan else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().testTag("settings_dialog_close_btn")) {
-                    Icon(Icons.Default.Close, null, tint = TextSecondary)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Close", color = TextSecondary, fontSize = 15.sp)
-                }
             }
 
-            Box(Modifier.weight(1f).fillMaxHeight().padding(24.dp)) {
+            Box(Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp, end = 6.dp)) {
                 when (tab) {
                     SettingsTab.DISPLAY -> Page {
                         Setting("Speed") {

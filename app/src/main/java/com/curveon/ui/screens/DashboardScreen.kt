@@ -1,6 +1,5 @@
 package com.curveon.ui.screens
 
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -59,6 +58,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val voiceReply by phone.voiceReply.collectAsStateWithLifecycle()
     val phoneState by phone.connectionState.collectAsStateWithLifecycle()
     val phoneName by phone.connectedDeviceName.collectAsStateWithLifecycle()
+    val mediaApps by phone.mediaApps.collectAsStateWithLifecycle()
+    val ringing = notifications.firstOrNull { it.isIncomingCall }
 
     val offlineMapStatus by viewModel.offlineMapStatus.collectAsStateWithLifecycle()
     val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
@@ -98,7 +99,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.curveon.data.model.CompassDirection.NORTH), avoidTolls = false)) }
     var showSettings by remember { mutableStateOf(false) }
     var showRides by remember { mutableStateOf(false) }
-    /** The phone app, shown in place of the map; null when closed. */
+    /** The phone app's open tab; null when closed. */
     var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
     /** A place picked while riding: add it as a stop or make it the destination? */
     var pendingPlace by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
@@ -107,7 +108,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
     // Fresh call log each time the phone opens (the contacts come along).
     LaunchedEffect(phoneTab != null) { if (phoneTab != null) phone.refreshPhoneBook() }
-    BackHandler(enabled = phoneTab != null) { phoneTab = null }
 
     // Picking a place: while riding, ask stop-or-destination; otherwise go straight to the preview.
     val pickPlace: (GeoPoint, String) -> Unit = { point, name ->
@@ -150,10 +150,18 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).widthIn(max = 640.dp).fillMaxWidth()
             )
         }
-        // In full-screen map keep music reachable, like Android Auto's media pill.
-        if (isFullScreenMap) track?.let { t ->
-            MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
-                Modifier.align(Alignment.BottomEnd).padding(14.dp).width(300.dp))
+        // In full-screen map a ringing call takes the corner; otherwise keep music reachable, like
+        // Android Auto's media pill – except while a route preview needs the bottom (its Go button).
+        if (isFullScreenMap) {
+            if (ringing != null) {
+                CallCard(ringing, onAction = { i -> phone.invokeAction(ringing.id, i) }, onDismiss = { phone.hideNotification(ringing.id) },
+                    // Never over the speed (top-right): the limit matters during a call too.
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(top = FULL_MAP_SPEED_CLEARANCE).padding(14.dp)
+                        .width(SIDE_COLUMN_WIDTH).heightIn(max = 360.dp).fillMaxHeight())
+            } else if (preview == null) track?.let { t ->
+                MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
+                    Modifier.align(Alignment.BottomEnd).padding(14.dp).width(300.dp))
+            }
         }
     }
 
@@ -207,30 +215,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     mapVersion = mapVersion,
                     overlays = mapOverlays
                 )
-                phoneTab?.let { tab ->
-                    val contacts by phone.contacts.collectAsStateWithLifecycle()
-                    val recents by phone.recentCalls.collectAsStateWithLifecycle()
-                    val photos by phone.photos.collectAsStateWithLifecycle()
-                    val contactsAllowed by phone.contactsAllowed.collectAsStateWithLifecycle()
-                    val callLogAllowed by phone.callLogAllowed.collectAsStateWithLifecycle()
-                    PhonePanel(
-                        state = PhonePanelState(
-                            contacts, recents, photos, contactsAllowed, callLogAllowed,
-                            connected = phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO,
-                            offlineText = if (phoneName.isEmpty()) "No phone linked" else "$phoneName isn't connected"
-                        ),
-                        tab = tab,
-                        onTab = { phoneTab = it },
-                        onCall = { number, name ->
-                            if (phone.placeCall(number)) { toast = "Calling $name…"; phoneTab = null }
-                            else toast = "Phone not connected"
-                        },
-                        onNeedPhoto = phone::requestPhoto,
-                        onClose = { phoneTab = null },
-                        modifier = Modifier.matchParentSize()
-                    )
-                }
-                // Above the map and the phone panel.
                 toast?.let {
                     Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp).clip(RoundedCornerShape(12.dp))
@@ -265,12 +249,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                         )
                     }
 
+                    // A ringing call gets the whole column; a message shares it with a one-row player.
                     if (attention) {
-                        track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
+                        if (ringing == null) track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
                     } else {
                         FullMediaCard(
-                            track = track, art = albumArt, phoneState = phoneState, phoneName = phoneName,
+                            track = track, art = albumArt, phoneState = phoneState, phoneName = phoneName, apps = mediaApps,
                             onPlayPause = { phone.togglePlayPause() }, onNext = { phone.skipNext() }, onPrevious = { phone.skipPrevious() },
+                            onPlayApp = phone::playApp, onReconnect = phone::retryNow,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -283,107 +269,137 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     // ------------------------------------------------------------------ dialogs
 
-    if (showSearch) {
-        DestinationSearchDialog(
-            searchStatus = remember { viewModel.searchStatus() },
-            onSearch = { viewModel.searchPlaces(it) },
-            onPick = { r -> showSearch = false; pickPlace(GeoPoint(r.lat, r.lon), r.name) },
-            onRoundtrip = { showSearch = false; showRoundtrip = true },
-            onGpx = { showSearch = false; showGpx = true },
-            onDismiss = { showSearch = false },
-            savedRoutes = savedRoutes,
-            recents = remember(showSearch) { viewModel.recents() },
-            onPickSaved = { showSearch = false; viewModel.previewSaved(it) },
-            onDeleteSaved = { viewModel.deleteSavedRoute(it) },
-            onNearestFuel = { viewModel.nearestFuel() }
-        )
-    }
+    CompositionLocalProvider(LocalToast provides toast) {
+        phoneTab?.let { tab ->
+            val contacts by phone.contacts.collectAsStateWithLifecycle()
+            val recents by phone.recentCalls.collectAsStateWithLifecycle()
+            val photos by phone.photos.collectAsStateWithLifecycle()
+            val contactsAllowed by phone.contactsAllowed.collectAsStateWithLifecycle()
+            val callLogAllowed by phone.callLogAllowed.collectAsStateWithLifecycle()
+            PhoneDialog(
+                state = PhonePanelState(
+                    contacts, recents, photos, contactsAllowed, callLogAllowed,
+                    connected = phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO,
+                    offlineText = when {
+                        phoneName.isEmpty() -> "No phone linked"
+                        phoneState == CompanionConnectionState.CONNECTING -> "Connecting to $phoneName…"
+                        else -> "$phoneName isn't connected"
+                    }
+                ),
+                tab = tab,
+                onTab = { phoneTab = it },
+                onCall = { number, name ->
+                    if (phone.placeCall(number)) { toast = "Calling $name…"; phoneTab = null }
+                    else toast = "Phone not connected"
+                },
+                onNeedPhoto = phone::requestPhoto,
+                onReconnect = phone::retryNow,
+                onClose = { phoneTab = null }
+            )
+        }
 
-    pendingPlace?.let { (point, name) ->
-        StopOrDestinationDialog(
-            name = name,
-            onAddStop = { viewModel.addStop(point, name); pendingPlace = null },
-            onNewDestination = { viewModel.previewDestination(point, name); pendingPlace = null },
-            onDismiss = { pendingPlace = null }
-        )
-    }
+        if (showSearch) {
+            DestinationSearchDialog(
+                searchStatus = remember { viewModel.searchStatus() },
+                onSearch = { viewModel.searchPlaces(it) },
+                onPick = { r -> showSearch = false; pickPlace(GeoPoint(r.lat, r.lon), r.name) },
+                onRoundtrip = { showSearch = false; showRoundtrip = true },
+                onGpx = { showSearch = false; showGpx = true },
+                onDismiss = { showSearch = false },
+                savedRoutes = savedRoutes,
+                recents = remember(showSearch) { viewModel.recents() },
+                onPickSaved = { showSearch = false; viewModel.previewSaved(it) },
+                onDeleteSaved = { viewModel.deleteSavedRoute(it) },
+                onNearestFuel = { viewModel.nearestFuel() }
+            )
+        }
 
-    if (showRides) {
-        RideLogDialog(
-            current = currentRide,
-            rides = rides,
-            onRideAgain = { showRides = false; viewModel.rideAgain(it) },
-            onExport = { r, uri -> viewModel.exportRide(r, uri); toast = "GPX saved" },
-            onDelete = { viewModel.deleteRide(it) },
-            onDismiss = { showRides = false }
-        )
-    }
+        pendingPlace?.let { (point, name) ->
+            StopOrDestinationDialog(
+                name = name,
+                onAddStop = { viewModel.addStop(point, name); pendingPlace = null },
+                onNewDestination = { viewModel.previewDestination(point, name); pendingPlace = null },
+                onDismiss = { pendingPlace = null }
+            )
+        }
 
-    if (showRoundtrip) {
-        RoundtripDialog(
-            initialConfig = lastRoundtrip,
-            onDismiss = { showRoundtrip = false },
-            onGenerate = { config ->
-                lastRoundtrip = config
-                viewModel.previewRoundtrip(config)
-                showRoundtrip = false
-            }
-        )
-    }
+        if (showRides) {
+            RideLogDialog(
+                current = currentRide,
+                rides = rides,
+                onRideAgain = { showRides = false; viewModel.rideAgain(it) },
+                onExport = { r, uri -> viewModel.exportRide(r, uri); toast = "GPX saved" },
+                onDelete = { viewModel.deleteRide(it) },
+                onDismiss = { showRides = false }
+            )
+        }
 
-    if (showGpx) {
-        GpxManagerDialog(
-            tracks = savedGpxTracks,
-            message = gpxMessage,
-            poiCategories = poiCategories,
-            autoFollow = autoFollow,
-            onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
-            onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
-            onColor = { t, c -> viewModel.setTrackColor(t, c) },
-            onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
-            onTogglePoiCategory = viewModel::togglePoiCategory,
-            onAutoFollow = viewModel::setAutoFollow,
-            onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
-            onDelete = { viewModel.deleteGpx(it) },
-            onDismiss = { showGpx = false }
-        )
-    }
+        if (showRoundtrip) {
+            RoundtripDialog(
+                initialConfig = lastRoundtrip,
+                onDismiss = { showRoundtrip = false },
+                onGenerate = { config ->
+                    lastRoundtrip = config
+                    viewModel.previewRoundtrip(config)
+                    showRoundtrip = false
+                }
+            )
+        }
 
-    shownPoi?.let { poi ->
-        PoiDialog(poi, onGo = { shownPoi = null; pickPlace(GeoPoint(poi.lat, poi.lon), poi.name) }, onDismiss = { shownPoi = null })
-    }
-
-
-
-    if (showSettings) {
-        val mapStatuses by viewModel.mapStatuses.collectAsStateWithLifecycle()
-        val mapDownload by viewModel.mapDownload.collectAsStateWithLifecycle()
-        val autoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
-        LaunchedEffect(Unit) { viewModel.refreshMapStatus() }
-        SettingsDialog(
-            state = SettingsState(
-                useMph = telemetry.useMph, mapTheme = mapTheme, obdEnabled = telemetry.isObdEnabled,
-                autoZoom = autoZoom, autoFollowTracks = autoFollow,
-                isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
-                maps = mapStatuses, mapDownload = mapDownload,
-                routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() }
-            ),
-            actions = SettingsActions(
-                onUnits = viewModel::setUseMph,
-                onMapTheme = viewModel::setMapTheme,
-                onObd = viewModel::setObd,
-                onAutoZoom = viewModel::setAutoZoom,
+        if (showGpx) {
+            GpxManagerDialog(
+                tracks = savedGpxTracks,
+                message = gpxMessage,
+                poiCategories = poiCategories,
+                autoFollow = autoFollow,
+                onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
+                onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
+                onColor = { t, c -> viewModel.setTrackColor(t, c) },
+                onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
+                onTogglePoiCategory = viewModel::togglePoiCategory,
                 onAutoFollow = viewModel::setAutoFollow,
-                onDemoRide = { viewModel.toggleDemoRide(); showSettings = false },
-                onDownloadMap = viewModel::downloadMap,
-                onCancelMapDownload = viewModel::cancelMapDownload,
-                onDeleteMap = viewModel::deleteMap,
-                onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
-                onDownloadRouting = viewModel::downloadRoutingData
-            ),
-            phone = phone,
-            onDismiss = { showSettings = false }
-        )
+                onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
+                onDelete = { viewModel.deleteGpx(it) },
+                onDismiss = { showGpx = false }
+            )
+        }
+
+        shownPoi?.let { poi ->
+            PoiDialog(poi, onGo = { shownPoi = null; pickPlace(GeoPoint(poi.lat, poi.lon), poi.name) }, onDismiss = { shownPoi = null })
+        }
+
+
+
+        if (showSettings) {
+            val mapStatuses by viewModel.mapStatuses.collectAsStateWithLifecycle()
+            val mapDownload by viewModel.mapDownload.collectAsStateWithLifecycle()
+            val autoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) { viewModel.refreshMapStatus() }
+            SettingsDialog(
+                state = SettingsState(
+                    useMph = telemetry.useMph, mapTheme = mapTheme, obdEnabled = telemetry.isObdEnabled,
+                    autoZoom = autoZoom, autoFollowTracks = autoFollow,
+                    isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
+                    maps = mapStatuses, mapDownload = mapDownload,
+                    routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() }
+                ),
+                actions = SettingsActions(
+                    onUnits = viewModel::setUseMph,
+                    onMapTheme = viewModel::setMapTheme,
+                    onObd = viewModel::setObd,
+                    onAutoZoom = viewModel::setAutoZoom,
+                    onAutoFollow = viewModel::setAutoFollow,
+                    onDemoRide = { viewModel.toggleDemoRide(); showSettings = false },
+                    onDownloadMap = viewModel::downloadMap,
+                    onCancelMapDownload = viewModel::cancelMapDownload,
+                    onDeleteMap = viewModel::deleteMap,
+                    onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
+                    onDownloadRouting = viewModel::downloadRoutingData
+                ),
+                phone = phone,
+                onDismiss = { showSettings = false }
+            )
+        }
     }
 
 }
@@ -393,6 +409,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
  * at a glance; the map still gets ~55% of the screen and goes full width with one tap.
  */
 private val SIDE_COLUMN_WIDTH = 300.dp
+
+/** Room for the full-map speed and limit sign in the top-right corner (about 66 dp tall). */
+private val FULL_MAP_SPEED_CLEARANCE = 80.dp
 
 @Composable
 private fun Rail(

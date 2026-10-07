@@ -26,8 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.curveon.data.model.Ride
 import com.curveon.data.ride.RideRecorder
 import com.curveon.ui.theme.*
@@ -55,62 +53,51 @@ fun RideLogDialog(
     }
     val history = rides.filter { it.id != current?.id }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(
-            Modifier.fillMaxWidth(0.85f).fillMaxHeight(0.92f).clip(RoundedCornerShape(24.dp)).background(CockpitSurface)
-                .border(1.dp, CockpitBorder, RoundedCornerShape(24.dp)).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("RIDES", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
-                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "Close", tint = TextSecondary) }
+    CockpitDialog(title = "Rides", icon = Icons.Default.TwoWheeler, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog") {
+        if (current != null) {
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(ElectricCyan.copy(alpha = 0.1f))
+                    .border(1.dp, ElectricCyan.copy(alpha = 0.5f), RoundedCornerShape(16.dp)).padding(14.dp)
+            ) {
+                Text("● Recording · ${current.title.ifEmpty { "this ride" }}", color = ElectricCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                Stats(current)
             }
+        }
 
-            if (current != null) {
+        if (history.isEmpty() && current == null) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Text("Rides are recorded automatically once you get going.", color = TextMuted, fontSize = 15.sp)
+            }
+        } else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(history, key = { it.id }) { r ->
+                val open = expanded == r.id
                 Column(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(ElectricCyan.copy(alpha = 0.1f))
-                        .border(1.dp, ElectricCyan.copy(alpha = 0.5f), RoundedCornerShape(16.dp)).padding(14.dp)
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitSurfaceVariant)
+                        .clickable { expanded = if (open) null else r.id }.padding(14.dp)
                 ) {
-                    Text("● Recording · ${current.title.ifEmpty { "this ride" }}", color = ElectricCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Stats(current)
-                }
-            }
-
-            if (history.isEmpty() && current == null) {
-                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                    Text("Rides are recorded automatically once you get going.", color = TextMuted, fontSize = 15.sp)
-                }
-            } else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(history, key = { it.id }) { r ->
-                    val open = expanded == r.id
-                    Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitSurfaceVariant)
-                            .clickable { expanded = if (open) null else r.id }.padding(14.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            TrackThumbnail(r, Modifier.size(56.dp))
-                            Spacer(Modifier.width(12.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(r.title.ifEmpty { "Ride" }, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold,
-                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(dateText(r), color = TextSecondary, fontSize = 12.sp)
-                            }
-                            Text("%.0f km".format(r.distanceMeters / 1000), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TrackThumbnail(r, Modifier.size(56.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(r.title.ifEmpty { "Ride" }, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(dateText(r), color = TextSecondary, fontSize = 12.sp)
                         }
-                        if (open) {
-                            Spacer(Modifier.height(12.dp))
-                            Stats(r)
-                            Spacer(Modifier.height(12.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                PillButton(Icons.Default.Replay, "Ride again", ElectricCyan, androidx.compose.ui.graphics.Color(0xFF00363D),
-                                    Modifier.weight(1f)) { onRideAgain(r) }
-                                PillButton(Icons.Default.IosShare, "GPX", CockpitSurface, TextPrimary, Modifier.weight(1f)) {
-                                    exporting = r
-                                    exportLauncher.launch(fileName(r))
-                                }
-                                RoundButton(Icons.Default.DeleteOutline, "Delete", 56.dp, CockpitSurface, TextMuted) { onDelete(r) }
+                        Text("%.0f km".format(r.distanceMeters / 1000), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    }
+                    if (open) {
+                        Spacer(Modifier.height(12.dp))
+                        Stats(r)
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            PillButton(Icons.Default.Replay, "Ride again", ElectricCyan, androidx.compose.ui.graphics.Color(0xFF00363D),
+                                Modifier.weight(1f)) { onRideAgain(r) }
+                            PillButton(Icons.Default.IosShare, "GPX", CockpitSurface, TextPrimary, Modifier.weight(1f)) {
+                                exporting = r
+                                exportLauncher.launch(fileName(r))
                             }
+                            RoundButton(Icons.Default.DeleteOutline, "Delete", 56.dp, CockpitSurface, TextMuted) { onDelete(r) }
                         }
                     }
                 }

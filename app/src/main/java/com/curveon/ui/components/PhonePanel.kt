@@ -74,48 +74,48 @@ data class PhonePanelState(
 )
 
 /**
- * Android Auto-style phone app that fills the map area: Favorites (starred contacts), Recents,
- * Contacts and a Keypad. Tapping a person calls them on the phone.
+ * Android Auto-style phone app: Favorites (starred contacts), Recents, Contacts and a Keypad.
+ * Tapping a person calls them on the phone.
  */
 @Composable
-fun PhonePanel(
+fun PhoneDialog(
     state: PhonePanelState,
     tab: PhoneTab,
     onTab: (PhoneTab) -> Unit,
     onCall: (number: String, name: String) -> Unit,
     onNeedPhoto: (String) -> Unit,
-    onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    onReconnect: () -> Unit,
+    onClose: () -> Unit
 ) {
-    Column(
-        modifier.clip(RoundedCornerShape(20.dp)).background(CockpitBackground).testTag("phone_panel")
-    ) {
-        Row(
-            Modifier.fillMaxWidth().background(CockpitSurface).padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            PhoneTab.entries.forEach { t ->
-                TabButton(t, selected = t == tab, Modifier.weight(1f)) { onTab(t) }
+    CockpitDialog(
+        title = "Phone", icon = Icons.Default.Phone, accent = EcoGreen, onDismiss = onClose, tag = "phone_panel",
+        header = {
+            Icon(Icons.Default.Phone, null, tint = EcoGreen, modifier = Modifier.size(28.dp))
+            Text("Phone", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Spacer(Modifier.width(8.dp))
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                PhoneTab.entries.forEach { t ->
+                    TabButton(t, selected = t == tab, Modifier.weight(1f)) { onTab(t) }
+                }
             }
-            RoundButton(Icons.Default.Close, "Close phone", 52.dp, CockpitSurfaceVariant, TextPrimary, onClose)
         }
-        Box(Modifier.fillMaxSize()) {
+    ) {
+        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(CockpitBackground)) {
             val photo: @Composable (String?) -> Bitmap? = { key ->
                 if (key != null) LaunchedEffect(key) { onNeedPhoto(key) }
                 key?.let { state.photos[it] }
             }
             when (tab) {
-                PhoneTab.FAVORITES -> ContactsGate(state, state.contacts, state.contactsAllowed, "contacts") { all ->
+                PhoneTab.FAVORITES -> ContactsGate(state, state.contacts, state.contactsAllowed, "contacts", onReconnect) { all ->
                     val favorites = all.filter { it.starred }
                     if (favorites.isEmpty()) Empty(Icons.Default.StarBorder, "No favorites yet", "Star contacts on your phone and they show up here.")
                     else Favorites(favorites, photo, onCall)
                 }
-                PhoneTab.RECENTS -> ContactsGate(state, state.recents, state.callLogAllowed, "the call log") { calls ->
+                PhoneTab.RECENTS -> ContactsGate(state, state.recents, state.callLogAllowed, "the call log", onReconnect) { calls ->
                     if (calls.isEmpty()) Empty(Icons.Default.History, "No recent calls", "")
                     else Recents(calls, photo, onCall)
                 }
-                PhoneTab.CONTACTS -> ContactsGate(state, state.contacts, state.contactsAllowed, "contacts") { all ->
+                PhoneTab.CONTACTS -> ContactsGate(state, state.contacts, state.contactsAllowed, "contacts", onReconnect) { all ->
                     if (all.isEmpty()) Empty(Icons.Default.Contacts, "No contacts with a phone number", "")
                     else ContactList(all, photo, onCall)
                 }
@@ -128,7 +128,7 @@ fun PhonePanel(
 @Composable
 private fun TabButton(tab: PhoneTab, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Row(
-        modifier.height(52.dp).clip(RoundedCornerShape(26.dp))
+        modifier.height(48.dp).clip(RoundedCornerShape(24.dp))
             .background(if (selected) ElectricCyan else Color.Transparent)
             .clickable(onClick = onClick).padding(horizontal = 8.dp).testTag("phone_tab_${tab.name.lowercase()}"),
         verticalAlignment = Alignment.CenterVertically,
@@ -148,13 +148,16 @@ private fun <T> ContactsGate(
     data: List<T>?,
     allowed: Boolean,
     what: String,
+    onReconnect: () -> Unit,
     content: @Composable (List<T>) -> Unit
 ) {
     when {
         !allowed -> Empty(Icons.Default.Lock, "The phone doesn't share $what",
             "Open Curveon Companion on the phone and allow contacts and calls.")
         data != null -> content(data)
-        !state.connected -> Empty(Icons.Default.PhonelinkOff, state.offlineText, "")
+        !state.connected -> Box(Modifier.fillMaxSize().clickable(onClick = onReconnect)) {
+            Empty(Icons.Default.PhonelinkOff, state.offlineText, "Tap to connect now")
+        }
         else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = ElectricCyan) }
     }
 }

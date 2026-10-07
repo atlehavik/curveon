@@ -25,8 +25,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.search.SearchResult
 import com.curveon.ui.theme.*
@@ -67,98 +65,87 @@ fun DestinationSearchDialog(
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .fillMaxHeight(0.92f)
-                .clip(RoundedCornerShape(24.dp))
-                .background(CockpitSurface)
-                .border(1.dp, CockpitBorder, RoundedCornerShape(24.dp))
-                .padding(18.dp)
-                .testTag("destination_search_dialog"),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text("Where to? Town, address, fuel, viewpoint…") },
-                    leadingIcon = { Icon(Icons.Default.Search, null, tint = ElectricCyan) },
-                    trailingIcon = {
-                        if (searching) CircularProgressIndicator(Modifier.size(20.dp), color = ElectricCyan, strokeWidth = 2.dp)
-                        else if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, "Clear", tint = TextSecondary) }
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
-                        focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder, cursorColor = ElectricCyan
-                    ),
-                    modifier = Modifier.weight(1f).focusRequester(focus).testTag("destination_search_field")
-                )
-                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, "Close", tint = TextSecondary) }
+    CockpitDialog(
+        title = "Where to?", icon = Icons.Default.Search, accent = ElectricCyan, onDismiss = onDismiss,
+        tag = "destination_search_dialog",
+        header = {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text("Where to? Town, address, fuel, viewpoint…") },
+                leadingIcon = { Icon(Icons.Default.Search, null, tint = ElectricCyan) },
+                trailingIcon = {
+                    if (searching) CircularProgressIndicator(Modifier.size(20.dp), color = ElectricCyan, strokeWidth = 2.dp)
+                    else if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, "Clear", tint = TextSecondary) }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
+                    focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder, cursorColor = ElectricCyan
+                ),
+                modifier = Modifier.weight(1f).focusRequester(focus).testTag("destination_search_field")
+            )
+        }
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Shortcut(Icons.Default.Explore, "Roundtrip", NeonAmber, onRoundtrip)
+            Shortcut(Icons.Default.Route, "GPX tracks", ElectricCyan, onGpx)
+            if (onNearestFuel != null) Shortcut(Icons.Default.LocalGasStation, "Nearest fuel", EcoGreen) {
+                query = ""
+                showingFuel = true
+                scope.launch { searching = true; results = onNearestFuel(); searching = false }
             }
+            Spacer(Modifier.weight(1f))
+            Text(searchStatus, color = TextMuted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterVertically).widthIn(max = 420.dp))
+        }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Shortcut(Icons.Default.Explore, "Roundtrip", NeonAmber, onRoundtrip)
-                Shortcut(Icons.Default.Route, "GPX tracks", ElectricCyan, onGpx)
-                if (onNearestFuel != null) Shortcut(Icons.Default.LocalGasStation, "Nearest fuel", EcoGreen) {
-                    query = ""
-                    showingFuel = true
-                    scope.launch { searching = true; results = onNearestFuel(); searching = false }
+        LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Nothing typed: what you are most likely to want, without typing on the bike.
+            if (query.isEmpty() && !showingFuel) {
+                if (savedRoutes.isNotEmpty()) item { SectionLabel("Saved routes") }
+                items(savedRoutes, key = { "saved${it.id}" }) { item ->
+                    ListRow(
+                        icon = if (item.isRoundtrip) Icons.Default.Loop else Icons.Default.Bookmark,
+                        title = item.title,
+                        subtitle = listOf(item.subtitle, "%.0f km".format(item.totalDistanceKm), "%d:%02d".format(item.estimatedMinutes / 60, item.estimatedMinutes % 60))
+                            .filter { it.isNotEmpty() }.joinToString(" · "),
+                        trailing = null,
+                        onClick = { onPickSaved(item) },
+                        onLongClick = { confirmDelete = item }
+                    )
                 }
-                Spacer(Modifier.weight(1f))
-                Text(searchStatus, color = TextMuted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterVertically).widthIn(max = 420.dp))
+                if (recents.isNotEmpty()) item { SectionLabel("Recent") }
+                items(recents, key = { "recent${it.name}${it.point.lat}" }) { stop ->
+                    ListRow(Icons.Default.History, stop.name, "", null, onClick = {
+                        onPick(SearchResult(stop.name, "", "recent", stop.point.lat, stop.point.lon, 0.0))
+                    })
+                }
             }
-
-            LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                // Nothing typed: what you are most likely to want, without typing on the bike.
-                if (query.isEmpty() && !showingFuel) {
-                    if (savedRoutes.isNotEmpty()) item { SectionLabel("Saved routes") }
-                    items(savedRoutes, key = { "saved${it.id}" }) { item ->
-                        ListRow(
-                            icon = if (item.isRoundtrip) Icons.Default.Loop else Icons.Default.Bookmark,
-                            title = item.title,
-                            subtitle = listOf(item.subtitle, "%.0f km".format(item.totalDistanceKm), "%d:%02d".format(item.estimatedMinutes / 60, item.estimatedMinutes % 60))
-                                .filter { it.isNotEmpty() }.joinToString(" · "),
-                            trailing = null,
-                            onClick = { onPickSaved(item) },
-                            onLongClick = { confirmDelete = item }
+            items(results) { r ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(CockpitSurfaceVariant)
+                        .clickable { onPick(r) }
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(kindIcon(r.kind), null, tint = ElectricCyan, modifier = Modifier.size(26.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(r.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            listOf(r.area, kindLabel(r.kind)).filter { it.isNotEmpty() }.joinToString(" · ") + if (r.online) " · online" else "",
+                            color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                     }
-                    if (recents.isNotEmpty()) item { SectionLabel("Recent") }
-                    items(recents, key = { "recent${it.name}${it.point.lat}" }) { stop ->
-                        ListRow(Icons.Default.History, stop.name, "", null, onClick = {
-                            onPick(SearchResult(stop.name, "", "recent", stop.point.lat, stop.point.lon, 0.0))
-                        })
-                    }
+                    Text(formatKm(r.distanceKm), color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
-                items(results) { r ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(CockpitSurfaceVariant)
-                            .clickable { onPick(r) }
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(kindIcon(r.kind), null, tint = ElectricCyan, modifier = Modifier.size(26.dp))
-                        Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(r.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(
-                                listOf(r.area, kindLabel(r.kind)).filter { it.isNotEmpty() }.joinToString(" · ") + if (r.online) " · online" else "",
-                                color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        Text(formatKm(r.distanceKm), color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-                if (results.isEmpty() && query.trim().length >= 2 && !searching) {
-                    item { Text("No matches", color = TextMuted, modifier = Modifier.padding(12.dp)) }
-                }
+            }
+            if (results.isEmpty() && query.trim().length >= 2 && !searching) {
+                item { Text("No matches", color = TextMuted, modifier = Modifier.padding(12.dp)) }
             }
         }
     }

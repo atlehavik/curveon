@@ -44,6 +44,9 @@ enum class CompanionConnectionState {
 
 data class PairedPhone(val name: String, val address: String)
 
+/** A media app on the phone the rider can switch to. */
+data class MediaApp(val packageName: String, val name: String, val playing: Boolean, val icon: Bitmap?)
+
 /** A spoken reply in progress: recorded on the phone, confirmed on the tablet. */
 data class VoiceReply(
     val notificationKey: String,
@@ -73,6 +76,10 @@ class PhoneCompanionManager(
 
     private val _albumArt = MutableStateFlow<Bitmap?>(null)
     val albumArt: StateFlow<Bitmap?> = _albumArt.asStateFlow()
+
+    /** The phone's media apps (playing or paused), so the rider can pick one. */
+    private val _mediaApps = MutableStateFlow<List<MediaApp>>(emptyList())
+    val mediaApps: StateFlow<List<MediaApp>> = _mediaApps.asStateFlow()
 
     private val _notifications = MutableStateFlow<List<NotificationItem>>(emptyList())
     val notifications: StateFlow<List<NotificationItem>> = _notifications.asStateFlow()
@@ -120,6 +127,9 @@ class PhoneCompanionManager(
     /** Cuts a reconnect wait short: the phone may have just come within reach. */
     private val wake = Channel<Unit>(Channel.CONFLATED)
 
+    /** The rider asked to connect now; also counts if it comes in during an attempt. */
+    @Volatile private var retryRequested = false
+
     private val wakeReceiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context, intent: Intent) {
             val relevant = when (intent.action) {
@@ -148,6 +158,20 @@ class PhoneCompanionManager(
 
     /** Try to reach the phone now instead of waiting (e.g. the dashboard came to the front). */
     fun reconnectSoon() { wake.trySend(Unit) }
+
+    /**
+     * The rider tapped "not connected" (e.g. just turned sharing on): try at once, forget the
+     * back-off, and if an attempt is under way, go again right after it.
+     */
+    fun retryNow() {
+        val state = _connectionState.value
+        if (state == CompanionConnectionState.CONNECTED || state == CompanionConnectionState.DEMO) return
+        retryRequested = true
+        if (state == CompanionConnectionState.DISCONNECTED || state == CompanionConnectionState.UNREACHABLE) {
+            _connectionState.value = CompanionConnectionState.CONNECTING
+        }
+        wake.trySend(Unit)
+    }
 
     // ------------------------------------------------------------------ connection
 
@@ -203,11 +227,18 @@ class PhoneCompanionManager(
                         else CompanionConnectionState.DISCONNECTED
                 }
                 failures = if (attempted && !wasConnected) failures + 1 else 0
+                if (retryRequested) {
+                    retryRequested = false
+                    failures = 0
+                    slowFailures = 0
+                    continue
+                }
                 // Calling a phone that isn't there every few seconds for hours is what preceded the
                 // X7's Bluetooth getting stuck (twice). Back off while it stays away; the screen
                 // turning on, Bluetooth coming on or the phone's link appearing wakes us at once.
                 wake.tryReceive()
                 withTimeoutOrNull(retryDelay(failures)) { wake.receive() }
+                if (retryRequested) { retryRequested = false; failures = 0; slowFailures = 0 }
             }
         }
     }
@@ -270,6 +301,10 @@ class PhoneCompanionManager(
                 if (_currentTrack.value?.artId == msg.artId) _albumArt.value = bmp
             }
             Message.MediaStopped -> { _currentTrack.value = null; _albumArt.value = null }
+            is Message.MediaSources -> _mediaApps.value = msg.sources.map { src ->
+                val known = _mediaApps.value.firstOrNull { it.packageName == src.packageName }
+                MediaApp(src.packageName, src.app, src.playing, known?.icon ?: src.iconPngBase64?.let(::decode))
+            }
             is Message.NotificationPosted -> {
                 if (hidden[msg.key] == msg.text) return
                 hidden.remove(msg.key)
@@ -281,6 +316,7 @@ class PhoneCompanionManager(
                 _notifications.value = listOf(item) + _notifications.value.filterNot { it.id == msg.key }
             }
             is Message.NotificationRemoved -> {
+                if (_notifications.value.any { it.id == msg.key && it.isIncomingCall }) Log.i(TAG, "Phone removed call ${msg.key}")
                 hidden.remove(msg.key)
                 _notifications.value = _notifications.value.filterNot { it.id == msg.key }
             }
@@ -317,7 +353,9 @@ class PhoneCompanionManager(
     }
 
     private fun clearPhoneState() {
+        if (_notifications.value.any { it.isIncomingCall }) Log.i(TAG, "Link dropped during a call")
         _currentTrack.value = null
+        _mediaApps.value = emptyList()
         _albumArt.value = null
         _notifications.value = emptyList()
         _voiceReply.value = null
@@ -340,6 +378,9 @@ class PhoneCompanionManager(
     fun skipNext() = send(Message.MediaCommand(Message.MediaAction.NEXT))
 
     fun skipPrevious() = send(Message.MediaCommand(Message.MediaAction.PREVIOUS))
+
+    /** Listen to this app instead (the phone pauses the others). */
+    fun playApp(packageName: String) = send(Message.PlayMediaApp(packageName))
 
     /** Hides a message on the tablet only (swipe); it stays unread on the phone. */
     fun hideNotification(id: String) {
@@ -414,6 +455,10 @@ class PhoneCompanionManager(
         _albumArt.value = runCatching {
             BitmapFactory.decodeResource(context.resources, com.curveon.R.drawable.motorcycle_album_art_1790798891980)
         }.getOrNull()
+        _mediaApps.value = listOf(
+            MediaApp("com.spotify.music", "Spotify", true, null),
+            MediaApp("com.google.android.apps.podcasts", "Podcasts", false, null)
+        )
         _notifications.value = listOf(
             NotificationItem("demo1", "WhatsApp", "Kari Nordmann", "Er på Dombås om 20 min, møtes på Statoil? ☕",
                 System.currentTimeMillis() - 120_000, canReply = true),
@@ -432,6 +477,11 @@ class PhoneCompanionManager(
 
     private fun demoCommand(message: Message) {
         when (message) {
+            is Message.PlayMediaApp -> {
+                _mediaApps.value = _mediaApps.value.map { it.copy(playing = it.packageName == message.packageName) }
+                val app = _mediaApps.value.firstOrNull { it.packageName == message.packageName }?.name.orEmpty()
+                _currentTrack.value = _currentTrack.value?.copy(sourceApp = app, isPlaying = true)
+            }
             is Message.MediaCommand -> if (message.command != Message.MediaAction.PLAY_PAUSE) {
                 _currentTrack.value = _currentTrack.value?.copy(currentPositionSeconds = 0)
             }

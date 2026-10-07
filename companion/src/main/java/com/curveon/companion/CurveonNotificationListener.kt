@@ -31,7 +31,7 @@ class CurveonNotificationListener : NotificationListenerService() {
     private val active = HashMap<String, StatusBarNotification>()
     private var controller: MediaController? = null
     private var sessionManager: MediaSessionManager? = null
-    private val sessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { pickController(it.orEmpty()) }
+    private val sessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { onSessionsChanged(it.orEmpty()) }
 
     override fun onListenerConnected() {
         CompanionHub.listener = this
@@ -39,7 +39,7 @@ class CurveonNotificationListener : NotificationListenerService() {
         sessionManager = getSystemService(MediaSessionManager::class.java)?.also { msm ->
             val me = ComponentName(this, CurveonNotificationListener::class.java)
             msm.addOnActiveSessionsChangedListener(sessionsListener, me, main)
-            pickController(msm.getActiveSessions(me))
+            onSessionsChanged(msm.getActiveSessions(me))
         }
         CompanionHub.update { it.copy(lastEvent = "Notification access active") }
     }
@@ -48,6 +48,8 @@ class CurveonNotificationListener : NotificationListenerService() {
         if (CompanionHub.listener === this) CompanionHub.listener = null
         sessionManager?.removeOnActiveSessionsChangedListener(sessionsListener)
         controller?.unregisterCallback(mediaCallback)
+        watchers.forEach { (c, cb) -> c.unregisterCallback(cb) }
+        watchers.clear()
     }
 
     // ---------------------------------------------------------------- notifications
@@ -167,13 +169,62 @@ class CurveonNotificationListener : NotificationListenerService() {
         }
     }
 
-    private fun pickController(controllers: List<MediaController>) {
-        val best = controllers.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: controllers.firstOrNull()
-        if (best?.sessionToken == controller?.sessionToken) return
+    /** Every media app with a session, playing or paused; each one watched for starting to play. */
+    private var sessions: List<MediaController> = emptyList()
+    private val watchers = HashMap<MediaController, MediaController.Callback>()
+
+    private fun onSessionsChanged(controllers: List<MediaController>) {
+        watchers.forEach { (c, cb) -> c.unregisterCallback(cb) }
+        watchers.clear()
+        sessions = controllers
+        controllers.forEach { c ->
+            val cb = object : MediaController.Callback() {
+                override fun onPlaybackStateChanged(state: PlaybackState?) {
+                    // The app that started playing last is the one the tablet shows and controls.
+                    if (state?.state == PlaybackState.STATE_PLAYING && c.sessionToken != controller?.sessionToken) follow(c)
+                    pushSources()
+                }
+            }
+            c.registerCallback(cb, main)
+            watchers[c] = cb
+        }
+        val current = controllers.firstOrNull { it.sessionToken == controller?.sessionToken }
+        val best = controllers.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING } ?: current ?: controllers.firstOrNull()
+        if (best?.sessionToken != controller?.sessionToken) follow(best)
+        pushSources()
+    }
+
+    private fun follow(c: MediaController?) {
         controller?.unregisterCallback(mediaCallback)
-        controller = best
-        best?.registerCallback(mediaCallback, main)
+        controller = c
+        c?.registerCallback(mediaCallback, main)
         pushMedia()
+    }
+
+    private val icons = HashMap<String, String?>()
+    private var lastSources: List<Message.MediaSource>? = null
+
+    private fun pushSources() {
+        val list = sessions.distinctBy { it.packageName }.map { c ->
+            Message.MediaSource(
+                c.packageName, appLabel(c.packageName), c.playbackState?.state == PlaybackState.STATE_PLAYING,
+                icons.getOrPut(c.packageName) {
+                    runCatching { CompanionHub.encodePng(packageManager.getApplicationIcon(c.packageName), ICON_PX) }.getOrNull()
+                }
+            )
+        }
+        if (list == lastSources) return
+        lastSources = list
+        CompanionHub.setMediaSources(list)
+    }
+
+    /** The rider picked this app on the tablet: pause whatever else plays and start it. */
+    fun playApp(pkg: String) = main.post {
+        val target = sessions.firstOrNull { it.packageName == pkg } ?: return@post
+        sessions.filter { it.packageName != pkg && it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            .forEach { it.transportControls.pause() }
+        follow(target)
+        target.transportControls.play()
     }
 
     private var lastArtId: String? = null
@@ -244,5 +295,6 @@ class CurveonNotificationListener : NotificationListenerService() {
         private const val AVATAR_PX = 128
         private const val CALL_PX = 512
         private const val ART_PX = 360
+        private const val ICON_PX = 96
     }
 }

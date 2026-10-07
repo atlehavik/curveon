@@ -14,6 +14,11 @@ class ProtocolTest {
         Message.MediaState("Podcast", "", "", "Pocket Casts", 0, 0, false, null),
         Message.MediaStopped,
         Message.MediaArt("abc", "/9j/4AAQ"),
+        Message.MediaSources(listOf(
+            Message.MediaSource("com.spotify.music", "Spotify", true, "iVBOR"),
+            Message.MediaSource("au.com.shiftyjelly.pocketcasts", "Pocket Casts", false, null)
+        )),
+        Message.PlayMediaApp("com.spotify.music"),
         Message.NotificationPosted("k1", "WhatsApp", "Kari", "Ses på Dombås? 🏍️", 1L, null, true, false, emptyList()),
         Message.NotificationPosted("k2", "Phone", "Ola", "Incoming call", 2L, "AAAA", false, true, listOf("Answer", "Decline")),
         Message.NotificationRemoved("k1"),

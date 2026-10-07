@@ -38,6 +38,8 @@ object CompanionHub {
         private set
     @Volatile var art: Message.MediaArt? = null
         private set
+    @Volatile var mediaSources: Message.MediaSources? = null
+        private set
 
     /** Set by [CurveonNotificationListener]; handles commands that need the listener service. */
     @Volatile var listener: CurveonNotificationListener? = null
@@ -72,6 +74,7 @@ object CompanionHub {
     private fun snapshot(): List<Message> = buildList {
         art?.let { add(it) }
         media?.let { add(it) }
+        mediaSources?.let { add(it) }
         addAll(notifications.values.sortedBy { it.timeMs })
     }
 
@@ -102,11 +105,18 @@ object CompanionHub {
         broadcast(state ?: Message.MediaStopped)
     }
 
+    fun setMediaSources(sources: List<Message.MediaSource>) {
+        val message = Message.MediaSources(sources)
+        mediaSources = message
+        broadcast(message)
+    }
+
     // ---- commands from the tablet ----
 
     fun handle(message: Message) {
         when (message) {
             is Message.MediaCommand -> listener?.mediaCommand(message.command)
+            is Message.PlayMediaApp -> listener?.playApp(message.packageName)
             is Message.DismissNotification -> listener?.dismiss(message.key)
             is Message.InvokeAction -> listener?.invokeAction(message.key, message.actionIndex)
             is Message.SendReply -> listener?.reply(message.key, message.text)
@@ -133,6 +143,16 @@ object CompanionHub {
             }
         }
         return encodeJpeg(bitmap, maxSize, quality)
+    }
+
+    /** App icons keep their transparency, so PNG rather than JPEG. */
+    fun encodePng(drawable: Drawable, size: Int): String {
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, size, size)
+        drawable.draw(Canvas(bitmap))
+        val out = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
     }
 
     fun encodeJpeg(bitmap: Bitmap?, maxSize: Int, quality: Int = 80): String? {

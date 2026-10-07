@@ -52,6 +52,19 @@ sealed interface Message {
         override fun toJson() = obj("media_art").put("artId", artId).put("jpeg", jpegBase64)
     }
 
+    /**
+     * The phone's media apps that have a session (playing or paused), so the rider can pick which
+     * one to listen to. [MediaSource.package] identifies it in [PlayMediaApp].
+     */
+    data class MediaSources(val sources: List<MediaSource>) : Message {
+        override fun toJson() = obj("media_sources").put("list", JSONArray(sources.map {
+            JSONObject().put("pkg", it.packageName).put("app", it.app).put("playing", it.playing)
+                .put("icon", it.iconPngBase64 ?: JSONObject.NULL)
+        }))
+    }
+
+    data class MediaSource(val packageName: String, val app: String, val playing: Boolean, val iconPngBase64: String?)
+
     data class NotificationPosted(
         val key: String,
         val app: String,
@@ -149,6 +162,11 @@ sealed interface Message {
 
     enum class MediaAction { PLAY_PAUSE, NEXT, PREVIOUS }
 
+    /** Play this media app (and pause any other that is playing). */
+    data class PlayMediaApp(val packageName: String) : Message {
+        override fun toJson() = obj("play_media_app").put("pkg", packageName)
+    }
+
     data class DismissNotification(val key: String) : Message {
         override fun toJson() = obj("dismiss").put("key", key)
     }
@@ -197,6 +215,9 @@ sealed interface Message {
             )
             "media_stopped" -> MediaStopped
             "media_art" -> MediaArt(o.getString("artId"), o.getString("jpeg"))
+            "media_sources" -> MediaSources(o.optJSONArray("list").objects().map {
+                MediaSource(it.getString("pkg"), it.optString("app"), it.optBoolean("playing"), it.nullableString("icon"))
+            })
             "notification" -> NotificationPosted(
                 o.getString("key"), o.optString("app"), o.optString("sender"), o.optString("text"), o.optLong("time"),
                 o.optString("avatar").takeIf { it.isNotEmpty() && !o.isNull("avatar") },
@@ -206,6 +227,7 @@ sealed interface Message {
             "notification_removed" -> NotificationRemoved(o.getString("key"))
             "voice_state" -> VoiceReplyState(o.getString("key"), VoiceState.valueOf(o.getString("state")), o.optString("text"))
             "media_command" -> MediaCommand(MediaAction.valueOf(o.getString("command")))
+            "play_media_app" -> PlayMediaApp(o.getString("pkg"))
             "dismiss" -> DismissNotification(o.getString("key"))
             "invoke_action" -> InvokeAction(o.getString("key"), o.getInt("index"))
             "start_voice_reply" -> StartVoiceReply(o.getString("key"))
