@@ -34,6 +34,6 @@ commands are in [README.md](README.md); goals in [App plan.md](App%20plan.md) an
 - Bluetooth, real calls, tunnel dead reckoning and gyro lean can't be verified in the emulator;
   say so rather than claiming they work.
 - Commit messages describe the change from the rider's point of view (see `git log`).
-- Committing is always allowed once a build has been installed on the devices (X7 or Pixel); no need
-  to ask first. Pushing still needs asking.
+- Committing and pushing are always allowed once a build has been installed on the devices (X7 or
+  Pixel); no need to ask first.
 - The app was renamed from VibeNav on 2026-10-06: anything still saying vibenav is stale.
