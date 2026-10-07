@@ -11,7 +11,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 Selecting, deleting, auto-save switch, 3D, recenter and edge glow tested in the emulator (no map
 tiles there, so 3D was only seen on a blank map). On the X7:
 
-- [ ] After a real ride with "Save every ride to GPX" on: the ride shows up as a track in the
+- [ ] After a real ride with "Auto-save new rides to GPX" on: the ride shows up as a track in the
   chosen GPX group once it ends (20 min standing still, or the app closing does *not* count).
 - [ ] 3D while riding: road ahead readable, rider not too low; tilt/zoom feel right in twisty roads.
 - [ ] Pan the map away while riding: the cyan glow on the edge points the right way and follows as

@@ -347,7 +347,7 @@
         <item quantity="other">Slette %d turer?</item>
     </plurals>
     <string name="rides_delete_text">Kopier lagret i GPX-spor beholdes.</string>
-    <string name="rides_auto_save">Lagre alle turer i GPX</string>
+    <string name="rides_auto_save">Autolagre nye turer i GPX</string>
     <string name="rides_auto_save_off">Av – turene ligger bare her</string>
     <string name="rides_auto_save_group">I %1$s · trykk for å bytte</string>
     <string name="rides_auto_save_pick">Hvilken gruppe skal turene lagres i?</string>
