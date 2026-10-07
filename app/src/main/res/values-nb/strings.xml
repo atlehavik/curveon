@@ -163,7 +163,9 @@
     <string name="ago_hours">%1$d t</string>
 
     <!-- Map -->
-    <string name="map_heading_up">Kjøreretning opp – trykk for nord opp</string>
+    <string name="map_heading_up">Kjøreretning opp – trykk for 3D</string>
+    <string name="map_north_up">Nord opp – trykk for kjøreretning opp</string>
+    <string name="map_3d">3D – trykk for nord opp</string>
     <string name="map_follow_me">Følg meg</string>
     <string name="map_zoom_in">Zoom inn</string>
     <string name="map_zoom_out">Zoom ut</string>
@@ -333,6 +335,22 @@
     <string name="rides_ride_again">Kjør igjen</string>
     <string name="rides_save_to_gpx">Lagre i GPX-spor</string>
     <string name="rides_save_to_group">Lagre i GPX-gruppe</string>
+    <string name="rides_select">Velg turer</string>
+    <string name="rides_select_all">Alle</string>
+    <string name="rides_select_none">Ingen</string>
+    <plurals name="rides_selected">
+        <item quantity="one">%d valgt</item>
+        <item quantity="other">%d valgt</item>
+    </plurals>
+    <plurals name="rides_delete_title">
+        <item quantity="one">Slette %d tur?</item>
+        <item quantity="other">Slette %d turer?</item>
+    </plurals>
+    <string name="rides_delete_text">Kopier lagret i GPX-spor beholdes.</string>
+    <string name="rides_auto_save">Lagre alle turer i GPX</string>
+    <string name="rides_auto_save_off">Av – turene ligger bare her</string>
+    <string name="rides_auto_save_group">I %1$s · trykk for å bytte</string>
+    <string name="rides_auto_save_pick">Hvilken gruppe skal turene lagres i?</string>
     <string name="stat_km">km</string>
     <string name="stat_riding">kjøretid</string>
     <string name="stat_avg_speed">snitt km/t</string>

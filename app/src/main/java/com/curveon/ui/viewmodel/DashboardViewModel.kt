@@ -488,7 +488,26 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val endName = end?.let { placeName(it.lat, it.lon) }
             val title = if (finish && endName != null && endName != startName) "$startName → $endName" else ride.title
             rideDao.update(ride.copy(title = title))
+            if (finish) autoSaveRide(ride.copy(title = title))
         }
+    }
+
+    /** Group every finished ride is copied into as a GPX track; null = off. */
+    private val _autoSaveRidesGroup = MutableStateFlow(settings.getLong("autoSaveRidesGroup", 0L).takeIf { it != 0L })
+    val autoSaveRidesGroup: StateFlow<Long?> = _autoSaveRidesGroup.asStateFlow()
+
+    /** Turns auto-saving on into [groupId], or a new group called [newGroup]; both null turns it off. */
+    fun setAutoSaveRides(groupId: Long?, newGroup: String?) = viewModelScope.launch {
+        val id = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId
+        _autoSaveRidesGroup.value = id
+        settings.edit().putLong("autoSaveRidesGroup", id ?: 0L).apply()
+    }
+
+    private suspend fun autoSaveRide(ride: Ride) {
+        val groupId = _autoSaveRidesGroup.value ?: return
+        // The group was deleted since: stop rather than scatter rides as loose tracks.
+        if (db.gpxDao().getGroupById(groupId) == null) { setAutoSaveRides(null, null); return }
+        storeRideAsGpx(ride, groupId)
     }
 
     /** Name for a ride end: the closest place, nudged towards real towns when distances are similar. */
@@ -500,13 +519,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             ?.name
     }
 
-    fun deleteRide(ride: Ride) = viewModelScope.launch { rideDao.delete(ride.id) }
+    fun deleteRides(ids: Collection<Long>) = viewModelScope.launch { rideDao.delete(ids.toList()) }
 
     /** Keeps a ride as a track in the GPX collection, in [groupId] or a new group called [newGroup]. */
     fun saveRideToGpx(ride: Ride, groupId: Long?, newGroup: String?) = viewModelScope.launch {
+        storeRideAsGpx(ride, newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId)
+    }
+
+    private suspend fun storeRideAsGpx(ride: Ride, group: Long?) {
         val pts = RideRecorder.parseTrack(ride.track).map { GeoPoint(it.lat, it.lon, it.ele) }
-        if (pts.size < 2) return@launch
-        val group = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId
+        if (pts.size < 2) return
         val name = ride.title.ifEmpty { str(R.string.ride) } + " · " +
             java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ride.startMs))
         repository.saveGpxTrack(

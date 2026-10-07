@@ -72,9 +72,10 @@ private const val ARROW_IMAGE = "curveon-arrow"
 /** GPX waypoints turn from dots into icons from this zoom in (about 30 km across the map). */
 private const val POI_ICON_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
-private const val NAV_TILT = 45.0
+private const val TILT_3D = 60.0
 
-private enum class CameraMode2 { HEADING_UP, NORTH_UP, FREE }
+/** How the camera turns while following the rider; the rider picks it with the compass button. */
+private enum class Orientation { NORTH_UP, HEADING_UP, THREE_D }
 
 /** A route drawn during preview; [selected] is the one that will be ridden. */
 data class MapRoute(val points: List<GeoPoint>, val selected: Boolean)
@@ -94,7 +95,6 @@ fun CurveonMapView(
     groundPreference: GroundPreference,
     currentTurnInstruction: TurnInstruction?,
     isFullScreen: Boolean,
-    onToggleFullScreen: () -> Unit,
     modifier: Modifier = Modifier,
     dark: Boolean = true,
     previewRoutes: List<MapRoute> = emptyList(),
@@ -119,18 +119,21 @@ fun CurveonMapView(
 
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var style by remember { mutableStateOf<Style?>(null) }
-    // Camera: heading-up follow, north-up follow, or free (the rider panned the map).
-    var mode by remember { mutableStateOf(CameraMode2.HEADING_UP) }
-    var followMode by remember { mutableStateOf(CameraMode2.HEADING_UP) }
-    val following = mode != CameraMode2.FREE
+    // Camera: follows the rider (north up, heading up or 3D) until the rider pans the map.
+    val prefs = remember { context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE) }
+    var orientation by remember {
+        mutableStateOf(runCatching { Orientation.valueOf(prefs.getString("mapOrientation", null)!!) }.getOrDefault(Orientation.HEADING_UP))
+    }
+    var following by remember { mutableStateOf(true) }
+    /** Where the rider is on screen (px), to hint at them from the edge once they're out of view. */
+    var riderScreen by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
     /** +/- while following nudges the speed-based zoom by this many levels. */
     var zoomBias by remember { mutableDoubleStateOf(0.0) }
     var cameraBearing by remember { mutableFloatStateOf(0f) }
     var cameraIdleTick by remember { mutableIntStateOf(0) }
 
     // Map listeners are registered once, so read changing values through State holders.
-    val isFullScreenState = rememberUpdatedState(isFullScreen)
-    val onToggleFullScreenState = rememberUpdatedState(onToggleFullScreen)
+    val locationState = rememberUpdatedState(location)
     val onLongPressState = rememberUpdatedState(onLongPress)
     val onPoiClickState = rememberUpdatedState(onPoiClick)
     val poisState = rememberUpdatedState(gpxPois)
@@ -173,18 +176,23 @@ fun CurveonMapView(
                 .zoom(FOLLOW_ZOOM)
                 .build()
             m.addOnCameraMoveStartedListener { reason ->
-                if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) mode = CameraMode2.FREE
+                if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) following = false
             }
-            m.addOnCameraMoveListener { cameraBearing = m.cameraPosition.bearing.toFloat() }
-            m.addOnCameraIdleListener { cameraIdleTick++ }
+            val trackRider = {
+                val loc = locationState.value
+                val p = m.projection.toScreenLocation(LatLng(loc.latitude, loc.longitude))
+                riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y)
+            }
+            m.addOnCameraMoveListener { cameraBearing = m.cameraPosition.bearing.toFloat(); trackRider() }
+            m.addOnCameraIdleListener { cameraIdleTick++; trackRider() }
             m.addOnMapClickListener { p ->
-                // A tap on a GPX waypoint shows it; anywhere else switches to full-screen map.
+                // A tap on a GPX waypoint shows it. Only the rail button switches map/dashboard,
+                // so a stray tap on the map never takes the dashboard away.
                 val pt = m.projection.toScreenLocation(p)
                 val hit = m.queryRenderedFeatures(RectF(pt.x - 24, pt.y - 24, pt.x + 24, pt.y + 24), "$GPX_POIS-dots", "$GPX_POIS-icons").firstOrNull()
                 val poi = hit?.getNumberProperty("i")?.toInt()?.let { poisState.value.getOrNull(it) }
                 if (poi != null) onPoiClickState.value(poi)
-                else if (!isFullScreenState.value) onToggleFullScreenState.value()
-                true
+                poi != null
             }
             m.addOnMapLongClickListener { p -> onLongPressState.value(GeoPoint(p.latitude, p.longitude)); true }
             map = m
@@ -276,7 +284,7 @@ fun CurveonMapView(
     LaunchedEffect(map, previewPoints.size) {
         val m = map ?: return@LaunchedEffect
         if (previewPoints.size < 2) return@LaunchedEffect
-        mode = CameraMode2.FREE
+        following = false
         val b = LatLngBounds.Builder()
         previewPoints.forEach { b.include(LatLng(it.latitude, it.longitude)) }
         b.include(LatLng(location.latitude, location.longitude))
@@ -285,14 +293,14 @@ fun CurveonMapView(
         m.easeCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 60, 50, 120, (h * 0.52).toInt()), 800)
     }
     val inPreview = previewRoutes.isNotEmpty()
-    LaunchedEffect(inPreview) { if (!inPreview) mode = followMode }
+    LaunchedEffect(inPreview) { if (!inPreview) following = true }
 
     // Starting a route always brings the camera back to the rider.
     val hasRoute = routePoints.isNotEmpty()
-    LaunchedEffect(hasRoute) { if (hasRoute) mode = followMode }
+    LaunchedEffect(hasRoute) { if (hasRoute) following = true }
 
     // Rider position + camera follow
-    LaunchedEffect(map, style, location, headingDeg, mode, zoomBias, hasGpsFix) {
+    LaunchedEffect(map, style, location, headingDeg, following, orientation, zoomBias, hasGpsFix) {
         val m = map ?: return@LaunchedEffect
         if (style == null) return@LaunchedEffect
         if (hasGpsFix && m.locationComponent.isLocationComponentActivated) {
@@ -305,21 +313,24 @@ fun CurveonMapView(
         }
         if (following && !inPreview) {
             val moving = speedKmh >= 5f
-            val headingUp = mode == CameraMode2.HEADING_UP
+            val threeD = orientation == Orientation.THREE_D
             m.easeCamera(
                 CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
                         .target(LatLng(location.latitude, location.longitude))
-                        .zoom(if (autoZoom) (navigationZoom(speedKmh) + zoomBias).coerceIn(10.0, 18.5) else m.cameraPosition.zoom)
-                        .bearing(if (!headingUp) 0.0 else if (moving) headingDeg.toDouble() else m.cameraPosition.bearing)
-                        .tilt(if (headingUp && moving && hasRoute) NAV_TILT else 0.0)
-                        // Heading-up: rider low on screen to see more road ahead. North-up: centred.
-                        .padding(0.0, if (headingUp && moving) 250.0 else 0.0, 0.0, 0.0)
+                        // 3D looks further ahead, so it can sit a little closer.
+                        .zoom(if (autoZoom) (navigationZoom(speedKmh) + zoomBias + if (threeD) 0.5 else 0.0).coerceIn(10.0, 18.5) else m.cameraPosition.zoom)
+                        .bearing(if (orientation == Orientation.NORTH_UP) 0.0 else if (moving) headingDeg.toDouble() else m.cameraPosition.bearing)
+                        .tilt(if (threeD) TILT_3D else 0.0)
+                        // Heading up and 3D: rider low on screen to see more road ahead. North up: centred.
+                        .padding(0.0, if (threeD) 0.3 * mapView.height else if (orientation == Orientation.HEADING_UP && moving) 250.0 else 0.0, 0.0, 0.0)
                         .build()
                 ),
                 900
             )
         }
+        val p = m.projection.toScreenLocation(LatLng(location.latitude, location.longitude))
+        riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y)
     }
 
     // Road name after the next turn, read from the vector tiles once that spot is on screen.
@@ -348,6 +359,7 @@ fun CurveonMapView(
             .testTag("map_container")
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
+        if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, Modifier.matchParentSize()) }
 
         if (currentTurnInstruction != null) {
             Box(
@@ -368,29 +380,35 @@ fun CurveonMapView(
             )
         }
 
-        // Camera button: heading-up ↔ north-up while following; after panning it brings the
-        // camera back. +/- are always there: while following with auto-zoom they nudge the
-        // speed-based zoom, otherwise they simply zoom.
+        // Compass button: north up → heading up → 3D. Once the rider pans the map away, a second
+        // button brings the camera back to them; it hides again while following. +/- are always
+        // there: while following with auto-zoom they nudge the speed-based zoom, otherwise they zoom.
         if (!inPreview) Column(
             modifier = Modifier.align(Alignment.CenterEnd).padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             MapButton(
                 onClick = {
-                    if (mode == CameraMode2.FREE) mode = followMode
-                    else {
-                        followMode = if (mode == CameraMode2.HEADING_UP) CameraMode2.NORTH_UP else CameraMode2.HEADING_UP
-                        mode = followMode
+                    orientation = Orientation.entries[(orientation.ordinal + 1) % Orientation.entries.size]
+                    prefs.edit().putString("mapOrientation", orientation.name).apply()
+                    // Not following: turn the map where it is; following picks it up by itself.
+                    if (!following) map?.let { m ->
+                        m.animateCamera(CameraUpdateFactory.newCameraPosition(
+                            CameraPosition.Builder(m.cameraPosition)
+                                .bearing(if (orientation == Orientation.NORTH_UP) 0.0 else headingDeg.toDouble())
+                                .tilt(if (orientation == Orientation.THREE_D) TILT_3D else 0.0)
+                                .build()
+                        ), 600)
                     }
                 },
-                highlighted = following,
-                tag = "map_recenter_btn"
+                tag = "map_orientation_btn"
             ) {
-                when (mode) {
-                    CameraMode2.HEADING_UP -> Icon(Icons.Default.Navigation, stringResource(R.string.map_heading_up), tint = Color(0xFF00363D),
+                when (orientation) {
+                    Orientation.NORTH_UP -> Text("N", color = ElectricCyan, fontSize = 22.sp, fontWeight = FontWeight.Black,
+                        modifier = Modifier.rotate(-cameraBearing))
+                    Orientation.HEADING_UP -> Icon(Icons.Default.Navigation, stringResource(R.string.map_heading_up), tint = ElectricCyan,
                         modifier = Modifier.size(26.dp))
-                    CameraMode2.NORTH_UP -> Text("N", color = Color(0xFF00363D), fontSize = 22.sp, fontWeight = FontWeight.Black)
-                    CameraMode2.FREE -> Icon(Icons.Default.MyLocation, stringResource(R.string.map_follow_me), tint = TextPrimary, modifier = Modifier.size(24.dp))
+                    Orientation.THREE_D -> Text("3D", color = ElectricCyan, fontSize = 18.sp, fontWeight = FontWeight.Black)
                 }
             }
             MapButton(onClick = {
@@ -402,6 +420,12 @@ fun CurveonMapView(
                 if (following && autoZoom) zoomBias = (zoomBias - 1).coerceAtLeast(-4.0) else map?.animateCamera(CameraUpdateFactory.zoomOut())
             }, tag = "map_zoom_out_btn") {
                 Icon(Icons.Default.Remove, stringResource(R.string.map_zoom_out), tint = TextPrimary, modifier = Modifier.size(24.dp))
+            }
+            // Its own slot, so the other buttons don't jump when it comes and goes.
+            Box(Modifier.size(52.dp)) {
+                if (!following) MapButton(onClick = { following = true }, highlighted = true, tag = "map_recenter_btn") {
+                    Icon(Icons.Default.MyLocation, stringResource(R.string.map_follow_me), tint = Color(0xFF00363D), modifier = Modifier.size(24.dp))
+                }
             }
         }
 
@@ -595,6 +619,38 @@ private fun MapButton(
             .border(1.dp, CockpitBorder, CircleShape)
             .testTag(tag)
     ) { content() }
+}
+
+/**
+ * The rider is off screen: a glow on the edge in their direction, stronger the closer they are,
+ * so it's clear at a glance where "me" went after panning around.
+ */
+@Composable
+private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, modifier: Modifier) {
+    androidx.compose.foundation.Canvas(modifier) {
+        val w = size.width; val h = size.height
+        val margin = 12.dp.toPx()
+        if (rider.x in -margin..w + margin && rider.y in -margin..h + margin) return@Canvas
+        if (rider.x.isNaN() || rider.y.isNaN()) return@Canvas
+        val c = center
+        val d = rider - c
+        // Where the line from the centre towards the rider leaves the screen.
+        val t = minOf(
+            if (d.x != 0f) (w / 2) / kotlin.math.abs(d.x) else Float.MAX_VALUE,
+            if (d.y != 0f) (h / 2) / kotlin.math.abs(d.y) else Float.MAX_VALUE
+        )
+        val edge = c + d * t
+        val beyond = d.getDistance() * (1 - t)
+        val near = (1f - beyond / (maxOf(w, h) * 3f)).coerceIn(0.35f, 1f)
+        val radius = 110.dp.toPx() * (0.7f + 0.3f * near)
+        drawCircle(
+            androidx.compose.ui.graphics.Brush.radialGradient(
+                listOf(ElectricCyan.copy(alpha = 0.75f * near), ElectricCyan.copy(alpha = 0.3f * near), Color.Transparent),
+                center = edge, radius = radius
+            ),
+            radius = radius, center = edge
+        )
+    }
 }
 
 @Composable

@@ -91,6 +91,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
+    val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
 
     val importMapLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.importOfflineMap(uri)
@@ -205,7 +206,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     groundPreference = groundPreference,
                     currentTurnInstruction = currentTurnInstruction,
                     isFullScreen = isFullScreenMap,
-                    onToggleFullScreen = { viewModel.toggleFullScreenMap() },
                     dark = mapDark,
                     previewRoutes = preview?.candidates?.mapIndexedNotNull { i, c ->
                         c.route?.let { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, i == preview!!.selected) }
@@ -335,7 +335,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onRideAgain = { showRides = false; viewModel.rideAgain(it) },
                 gpxGroups = gpxGroups,
                 onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
-                onDelete = { viewModel.deleteRide(it) },
+                autoSaveGroup = autoSaveRidesGroup,
+                onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
+                onDelete = { viewModel.deleteRides(it) },
                 onDismiss = { showRides = false }
             )
         }

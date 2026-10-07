@@ -114,7 +114,9 @@ fun GroupPickerDialog(
     groups: List<GpxGroup>,
     current: Long?,
     onPick: (Long?, String?) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Offer "no group" (moving a track), or only real groups (where rides are auto-saved). */
+    allowNone: Boolean = true
 ) {
     var newName by remember { mutableStateOf("") }
     AlertDialog(
@@ -123,7 +125,7 @@ fun GroupPickerDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 LazyColumn(Modifier.heightIn(max = 260.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    item { PickRow(Icons.Default.Remove, stringResource(R.string.gpx_no_group), current == null) { onPick(null, null); onDismiss() } }
+                    if (allowNone) item { PickRow(Icons.Default.Remove, stringResource(R.string.gpx_no_group), current == null) { onPick(null, null); onDismiss() } }
                     items(groups, key = { it.id }) { g ->
                         PickRow(Icons.Default.FolderOpen, g.name, current == g.id) { onPick(g.id, null); onDismiss() }
                     }

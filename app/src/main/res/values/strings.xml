@@ -164,7 +164,9 @@
     <string name="ago_hours">%1$d h</string>
 
     <!-- Map -->
-    <string name="map_heading_up">Heading up – tap for north up</string>
+    <string name="map_heading_up">Heading up – tap for 3D</string>
+    <string name="map_north_up">North up – tap for heading up</string>
+    <string name="map_3d">3D – tap for north up</string>
     <string name="map_follow_me">Follow me</string>
     <string name="map_zoom_in">Zoom in</string>
     <string name="map_zoom_out">Zoom out</string>
@@ -334,6 +336,22 @@
     <string name="rides_ride_again">Ride again</string>
     <string name="rides_save_to_gpx">Save to GPX</string>
     <string name="rides_save_to_group">Save to GPX group</string>
+    <string name="rides_select">Select rides</string>
+    <string name="rides_select_all">All</string>
+    <string name="rides_select_none">None</string>
+    <plurals name="rides_selected">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <plurals name="rides_delete_title">
+        <item quantity="one">Delete %d ride?</item>
+        <item quantity="other">Delete %d rides?</item>
+    </plurals>
+    <string name="rides_delete_text">Copies saved to GPX are kept.</string>
+    <string name="rides_auto_save">Save every ride to GPX</string>
+    <string name="rides_auto_save_off">Off – rides are only kept here</string>
+    <string name="rides_auto_save_group">Into %1$s · tap to change</string>
+    <string name="rides_auto_save_pick">Save rides to which group?</string>
     <string name="stat_km">km</string>
     <string name="stat_riding">riding</string>
     <string name="stat_avg_speed">avg km/h</string>

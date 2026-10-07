@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Rides: select/delete, auto-save to GPX; map compass, 3D, "where am I" glow
+
+Selecting, deleting, auto-save switch, 3D, recenter and edge glow tested in the emulator (no map
+tiles there, so 3D was only seen on a blank map). On the X7:
+
+- [ ] After a real ride with "Save every ride to GPX" on: the ride shows up as a track in the
+  chosen GPX group once it ends (20 min standing still, or the app closing does *not* count).
+- [ ] 3D while riding: road ahead readable, rider not too low; tilt/zoom feel right in twisty roads.
+- [ ] Pan the map away while riding: the cyan glow on the edge points the right way and follows as
+  you move; the ◎ button brings you back and disappears.
+- [ ] A tap on the small dashboard map no longer goes full screen (only the rail button does).
+
 ## 2026-10-07 — Language: English / Norsk
 
 Tested in the emulator (switching both ways, Settings stays open). On the X7:
