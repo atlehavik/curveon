@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
 
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         enableEdgeToEdge()
-        hideNavigationBar()
+        hideSystemBars()
 
         // Keep screen awake for motorcycle mounting
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -86,14 +86,15 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * The navigation bar stays hidden while riding. Swipe up from the bottom edge and it appears
-     * over the app for a few seconds, then hides again. Dialogs and permission prompts can bring
-     * it back, so it is re-hidden whenever the app regains focus.
+     * The status and navigation bars stay hidden while riding, so the app fills the whole screen.
+     * Swipe in from the top or bottom edge and they appear over the app for a few seconds, then
+     * hide again. Dialogs and permission prompts can bring them back, so they are re-hidden
+     * whenever the app regains focus.
      */
-    private fun hideNavigationBar() {
+    private fun hideSystemBars() {
         WindowCompat.getInsetsController(window, window.decorView).apply {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.navigationBars())
+            hide(WindowInsetsCompat.Type.systemBars())
         }
     }
 
@@ -104,7 +105,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideNavigationBar()
+        if (hasFocus) hideSystemBars()
     }
 
     private fun hasLocationPermission() =
