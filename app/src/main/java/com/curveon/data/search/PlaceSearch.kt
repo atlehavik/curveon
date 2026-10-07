@@ -190,19 +190,24 @@ class PlaceSearch(private val context: Context) {
     }
 
     /** Closest places of one kind, e.g. the nearest fuel stations. */
-    suspend fun nearest(kind: String, lat: Double, lon: Double, limit: Int = 10): List<SearchResult> = withContext(Dispatchers.IO) {
+    suspend fun nearest(kind: String, lat: Double, lon: Double, limit: Int = 10): List<SearchResult> =
+        nearest(listOf(kind), lat, lon, limit)
+
+    /** Closest places of any of these kinds, e.g. restaurants, cafés and fast food for "dining". */
+    suspend fun nearest(kinds: List<String>, lat: Double, lon: Double, limit: Int = 10): List<SearchResult> = withContext(Dispatchers.IO) {
         val db = openDb() ?: return@withContext emptyList()
+        val kindSql = kinds.joinToString(",") { "?" }
         var radius = 0.1
         var rows: List<SearchResult> = emptyList()
         while (radius <= 1.6 && rows.size < limit) { // widen the box until we have enough
             rows = runCatching {
                 db.rawQuery(
-                    "SELECT name, area, lat, lon FROM entries WHERE kind = ? AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
-                    arrayOf(kind, (lat - radius).toString(), (lat + radius).toString(), (lon - radius * 2).toString(), (lon + radius * 2).toString())
+                    "SELECT name, area, lat, lon, kind FROM entries WHERE kind IN ($kindSql) AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
+                    (kinds + listOf((lat - radius).toString(), (lat + radius).toString(), (lon - radius * 2).toString(), (lon + radius * 2).toString())).toTypedArray()
                 ).use { c ->
                     buildList {
                         while (c.moveToNext()) add(
-                            SearchResult(c.getString(0), c.getString(1) ?: "", kind, c.getDouble(2), c.getDouble(3),
+                            SearchResult(c.getString(0), c.getString(1) ?: "", c.getString(4), c.getDouble(2), c.getDouble(3),
                                 Geo.distance(lat, lon, c.getDouble(2), c.getDouble(3)) / 1000)
                         )
                     }

@@ -630,9 +630,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     suspend fun searchPlaces(query: String) =
         placeSearch.search(query, _currentLocation.value.latitude, _currentLocation.value.longitude)
 
-    suspend fun nearestFuel(): List<SearchResult> {
+    suspend fun nearest(kinds: List<String>): List<SearchResult> {
         val p = _currentLocation.value
-        return placeSearch.nearest("fuel", p.latitude, p.longitude, 8)
+        return placeSearch.nearest(kinds, p.latitude, p.longitude, 8)
     }
 
     // ---------------------------------------------------------------- GPX import

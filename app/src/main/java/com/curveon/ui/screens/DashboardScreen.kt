@@ -303,14 +303,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 searchStatus = remember { viewModel.searchStatus() },
                 onSearch = { viewModel.searchPlaces(it) },
                 onPick = { r -> showSearch = false; pickPlace(GeoPoint(r.lat, r.lon), r.name) },
-                onRoundtrip = { showSearch = false; showRoundtrip = true },
-                onGpx = { showSearch = false; showGpx = true },
                 onDismiss = { showSearch = false },
                 savedRoutes = savedRoutes,
                 recents = remember(showSearch) { viewModel.recents() },
                 onPickSaved = { showSearch = false; viewModel.previewSaved(it) },
                 onDeleteSaved = { viewModel.deleteSavedRoute(it) },
-                onNearestFuel = { viewModel.nearestFuel() }
+                onNearest = { viewModel.nearest(it) }
             )
         }
 

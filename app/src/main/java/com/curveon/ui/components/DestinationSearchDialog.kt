@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,32 +33,30 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.combinedClickable
 
-/** "Where to?": offline place/address/POI search, with shortcuts to roundtrips and GPX tracks. */
+/** "Where to?": offline place/address/POI search, with one-tap "nearest fuel / camping / hotel / dining". */
 @Composable
 fun DestinationSearchDialog(
     searchStatus: String,
     onSearch: suspend (String) -> List<SearchResult>,
     onPick: (SearchResult) -> Unit,
-    onRoundtrip: () -> Unit,
-    onGpx: () -> Unit,
     onDismiss: () -> Unit,
     savedRoutes: List<com.curveon.data.model.RouteItem> = emptyList(),
     recents: List<com.curveon.data.routing.Stop> = emptyList(),
     onPickSaved: (com.curveon.data.model.RouteItem) -> Unit = {},
     onDeleteSaved: (com.curveon.data.model.RouteItem) -> Unit = {},
-    onNearestFuel: (suspend () -> List<SearchResult>)? = null
+    onNearest: (suspend (kinds: List<String>) -> List<SearchResult>)? = null
 ) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
-    var showingFuel by remember { mutableStateOf(false) }
+    var nearest by remember { mutableStateOf<NearestCategory?>(null) }
     var confirmDelete by remember { mutableStateOf<com.curveon.data.model.RouteItem?>(null) }
     val focus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(query) {
-        if (query.isNotEmpty()) showingFuel = false
-        if (query.trim().length < 2) { if (!showingFuel) results = emptyList(); return@LaunchedEffect }
+        if (query.isNotEmpty()) nearest = null
+        if (query.trim().length < 2) { if (nearest == null) results = emptyList(); return@LaunchedEffect }
         delay(250) // debounce typing
         searching = true
         results = onSearch(query)
@@ -88,21 +87,23 @@ fun DestinationSearchDialog(
             )
         }
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Shortcut(Icons.Default.Explore, "Roundtrip", NeonAmber, onRoundtrip)
-            Shortcut(Icons.Default.Route, "GPX tracks", ElectricCyan, onGpx)
-            if (onNearestFuel != null) Shortcut(Icons.Default.LocalGasStation, "Nearest fuel", EcoGreen) {
-                query = ""
-                showingFuel = true
-                scope.launch { searching = true; results = onNearestFuel(); searching = false }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (onNearest != null) {
+                Text("NEAREST", color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                NearestCategory.entries.forEach { cat ->
+                    Shortcut(cat.icon, cat.label, cat.tint, selected = nearest == cat) {
+                        query = ""
+                        nearest = cat
+                        scope.launch { searching = true; results = onNearest(cat.kinds); searching = false }
+                    }
+                }
             }
-            Spacer(Modifier.weight(1f))
-            Text(searchStatus, color = TextMuted, fontSize = 11.sp, modifier = Modifier.align(Alignment.CenterVertically).widthIn(max = 420.dp))
+            Text(searchStatus, color = TextMuted, fontSize = 11.sp, textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         }
 
         LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // Nothing typed: what you are most likely to want, without typing on the bike.
-            if (query.isEmpty() && !showingFuel) {
+            if (query.isEmpty() && nearest == null) {
                 if (savedRoutes.isNotEmpty()) item { SectionLabel("Saved routes") }
                 items(savedRoutes, key = { "saved${it.id}" }) { item ->
                     ListRow(
@@ -161,11 +162,11 @@ fun DestinationSearchDialog(
 }
 
 @Composable
-private fun Shortcut(icon: ImageVector, label: String, tint: Color, onClick: () -> Unit) {
+private fun Shortcut(icon: ImageVector, label: String, tint: Color, selected: Boolean = false, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(tint.copy(alpha = 0.15f))
+            .background(tint.copy(alpha = if (selected) 0.35f else 0.15f))
             .border(1.dp, tint, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),
@@ -175,6 +176,14 @@ private fun Shortcut(icon: ImageVector, label: String, tint: Color, onClick: () 
         Spacer(Modifier.width(8.dp))
         Text(label, color = tint, fontSize = 14.sp, fontWeight = FontWeight.Bold)
     }
+}
+
+/** One-tap "nearest …" searches; [kinds] are the search-index kinds each one covers. */
+private enum class NearestCategory(val label: String, val icon: ImageVector, val tint: Color, val kinds: List<String>) {
+    FUEL("Fuel", Icons.Default.LocalGasStation, EcoGreen, listOf("fuel")),
+    CAMPING("Camping", Icons.Default.Cabin, ElectricCyan, listOf("camp_site")),
+    HOTEL("Hotel", Icons.Default.Hotel, ElectricCyan, listOf("hotel")),
+    DINING("Dining", Icons.Default.Restaurant, ElectricCyan, listOf("restaurant", "cafe", "fast_food")),
 }
 
 @Composable
