@@ -23,7 +23,7 @@ found yet. The tablet now logs which of two things happened.
 ## 2026-10-07 — choosing the music app (Spotify vs. podcast)
 
 - [ ] With both Spotify and the podcast app opened on the phone, the music card on the tablet shows
-      small dots at the top. Swipe the card sideways: it should pause the first app and play the other.
+      small dots at the top. Flip the card sideways (drag): it should pause the first app and play the other.
 - [ ] Stop all music, then tap the empty music card: it should offer the app icons to pick from.
 - [ ] "Phone not connected": turn sharing on in Curveon Companion, tap the music card on the tablet —
       it should connect within a few seconds instead of waiting for the next automatic try.

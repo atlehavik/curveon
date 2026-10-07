@@ -25,7 +25,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -135,7 +137,7 @@ fun SpeedLimitSign(limit: Int, size: Dp) {
 
 /**
  * Cover art fills the card, like Android Auto's media card when nothing else needs the space.
- * With more than one media app on the phone, swipe the card sideways to switch between them;
+ * With more than one media app on the phone, flip the card sideways to switch between them;
  * small dots at the top show there are more.
  */
 @Composable
@@ -157,7 +159,7 @@ fun FullMediaCard(
     val switchTo: (Int) -> Unit = { step -> onPlayApp(apps[Math.floorMod(current + step, apps.size)].packageName) }
     DashCard(
         modifier.fillMaxWidth()
-            .then(if (switchable) Modifier.swipeToSwitch(onNext = { switchTo(1) }, onPrevious = { switchTo(-1) }) else Modifier)
+            .then(if (switchable) Modifier.flipToSwitch(showing = track?.sourceApp, onNext = { switchTo(1) }, onPrevious = { switchTo(-1) }) else Modifier)
             .testTag("media_card_full")
     ) {
         if (track == null) {
@@ -389,31 +391,55 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
 }
 
 /**
- * Drag sideways past a quarter of the width to go to the next (left) or previous (right) media app;
- * the card follows the finger a little and springs back either way.
+ * Flip the card like a playing card to go to the next (drag left) or previous (drag right) media
+ * app. It turns with the finger; let go past ~40° and it turns edge-on, waits for the phone to
+ * switch ([showing] changes, or a short timeout), then the new app's card turns in from the other
+ * side. Less than that and it falls back.
  */
-private fun Modifier.swipeToSwitch(onNext: () -> Unit, onPrevious: () -> Unit): Modifier = composed {
-    val offset = remember { Animatable(0f) }
+private fun Modifier.flipToSwitch(showing: Any?, onNext: () -> Unit, onPrevious: () -> Unit): Modifier = composed {
+    val angle = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     var width by remember { mutableIntStateOf(1) }
     val next by rememberUpdatedState(onNext)
     val previous by rememberUpdatedState(onPrevious)
+    val current by rememberUpdatedState(showing)
     var dragged by remember { mutableFloatStateOf(0f) }
     this
         .onSizeChanged { width = it.width.coerceAtLeast(1) }
-        .graphicsLayer { translationX = offset.value }
+        .graphicsLayer {
+            rotationY = angle.value
+            cameraDistance = 14f * density
+            // A turning card gets a touch smaller and darker, which sells the depth.
+            val turned = kotlin.math.abs(angle.value) / 90f
+            scaleX = 1f - 0.06f * turned
+            scaleY = 1f - 0.06f * turned
+            alpha = 1f - 0.35f * turned
+        }
         .pointerInput(Unit) {
             detectHorizontalDragGestures(
                 onDragStart = { dragged = 0f },
                 onDragEnd = {
-                    if (kotlin.math.abs(dragged) > width / 4f) { if (dragged < 0) next() else previous() }
-                    scope.launch { offset.animateTo(0f, spring()) }
+                    val target = angle.value
+                    scope.launch {
+                        if (kotlin.math.abs(target) < 40f) {
+                            angle.animateTo(0f, spring(dampingRatio = 0.6f))
+                            return@launch
+                        }
+                        val sign = kotlin.math.sign(target)
+                        val before = current
+                        angle.animateTo(90f * sign, tween(120, easing = FastOutLinearInEasing))
+                        if (sign < 0) next() else previous()
+                        withTimeoutOrNull(700) { snapshotFlow { current }.first { it != before } }
+                        angle.snapTo(-90f * sign)
+                        angle.animateTo(0f, spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow))
+                    }
                 },
-                onDragCancel = { scope.launch { offset.animateTo(0f, spring()) } }
+                onDragCancel = { scope.launch { angle.animateTo(0f, spring()) } }
             ) { change, dx ->
                 change.consume()
                 dragged += dx
-                scope.launch { offset.snapTo(dragged * 0.35f) }
+                // Dragging left turns the right edge towards you, like lifting a card from that side.
+                scope.launch { angle.snapTo((dragged / width * 150f).coerceIn(-90f, 90f)) }
             }
         }
 }
