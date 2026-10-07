@@ -117,6 +117,13 @@ class PhoneCompanionManager(
     private var tickerJob: Job? = null
     private val artCache = HashMap<String, Bitmap>()
 
+    /** Last song and cover seen from each media app, so switching to it shows at once. */
+    private val lastByApp = HashMap<String, Pair<MusicTrack, Bitmap?>>()
+
+    /** App just switched to: until the phone catches up, ignore updates from the one we left. */
+    @Volatile private var switchingTo: String? = null
+    @Volatile private var switchingUntil = 0L
+
     /**
      * Messages dismissed on the tablet: key -> text at the time. Dismissing only hides them here
      * (like Android Auto); they stay unread on the phone. A new message in the same chat
@@ -287,6 +294,9 @@ class PhoneCompanionManager(
         when (msg) {
             is Message.Hello -> _connectedDeviceName.value = _connectedDeviceName.value.ifEmpty { msg.deviceName }
             is Message.MediaState -> {
+                val target = switchingTo
+                if (target != null && System.currentTimeMillis() < switchingUntil && msg.app != target) return
+                switchingTo = null
                 _currentTrack.value = MusicTrack(
                     title = msg.title, artist = msg.artist, album = msg.album,
                     durationSeconds = (msg.durationMs / 1000).toInt(),
@@ -294,11 +304,12 @@ class PhoneCompanionManager(
                     isPlaying = msg.playing, sourceApp = msg.app, artId = msg.artId
                 )
                 _albumArt.value = msg.artId?.let { artCache[it] }
+                rememberForApp()
             }
             is Message.MediaArt -> decode(msg.jpegBase64)?.let { bmp ->
                 if (artCache.size > 20) artCache.clear()
                 artCache[msg.artId] = bmp
-                if (_currentTrack.value?.artId == msg.artId) _albumArt.value = bmp
+                if (_currentTrack.value?.artId == msg.artId) { _albumArt.value = bmp; rememberForApp() }
             }
             Message.MediaStopped -> { _currentTrack.value = null; _albumArt.value = null }
             is Message.MediaSources -> _mediaApps.value = msg.sources.map { src ->
@@ -379,8 +390,26 @@ class PhoneCompanionManager(
 
     fun skipPrevious() = send(Message.MediaCommand(Message.MediaAction.PREVIOUS))
 
-    /** Listen to this app instead (the phone pauses the others). */
-    fun playApp(packageName: String) = send(Message.PlayMediaApp(packageName))
+    /**
+     * Listen to this app instead (the phone pauses the others). Shows its last known song right
+     * away; the phone takes the better part of a second to report it.
+     */
+    fun playApp(packageName: String) {
+        val app = _mediaApps.value.firstOrNull { it.packageName == packageName }
+        if (app != null) {
+            val (track, art) = lastByApp[app.name] ?: (MusicTrack(title = app.name, artist = "", sourceApp = app.name) to null)
+            _currentTrack.value = track.copy(isPlaying = true)
+            _albumArt.value = art
+            switchingTo = app.name
+            switchingUntil = System.currentTimeMillis() + 2_000
+        }
+        send(Message.PlayMediaApp(packageName))
+    }
+
+    private fun rememberForApp() {
+        val t = _currentTrack.value ?: return
+        if (t.sourceApp.isNotEmpty()) lastByApp[t.sourceApp] = t to _albumArt.value
+    }
 
     /** Hides a message on the tablet only (swipe); it stays unread on the phone. */
     fun hideNotification(id: String) {

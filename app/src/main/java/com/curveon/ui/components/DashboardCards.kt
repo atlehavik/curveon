@@ -25,9 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -159,7 +157,7 @@ fun FullMediaCard(
     val switchTo: (Int) -> Unit = { step -> onPlayApp(apps[Math.floorMod(current + step, apps.size)].packageName) }
     DashCard(
         modifier.fillMaxWidth()
-            .then(if (switchable) Modifier.flipToSwitch(showing = track?.sourceApp, onNext = { switchTo(1) }, onPrevious = { switchTo(-1) }) else Modifier)
+            .then(if (switchable) Modifier.flipToSwitch(onNext = { switchTo(1) }, onPrevious = { switchTo(-1) }) else Modifier)
             .testTag("media_card_full")
     ) {
         if (track == null) {
@@ -392,17 +390,16 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
 
 /**
  * Flip the card like a playing card to go to the next (drag left) or previous (drag right) media
- * app. It turns with the finger; let go past ~40° and it turns edge-on, waits for the phone to
- * switch ([showing] changes, or at most a quarter second), then the new app's card turns in from the other
- * side. Less than that and it falls back.
+ * app. It turns with the finger; let go past ~40° and it turns edge-on, switches, and the new app's
+ * card (shown at once from what the tablet remembers) turns in from the other side. Less than that
+ * and it falls back.
  */
-private fun Modifier.flipToSwitch(showing: Any?, onNext: () -> Unit, onPrevious: () -> Unit): Modifier = composed {
+private fun Modifier.flipToSwitch(onNext: () -> Unit, onPrevious: () -> Unit): Modifier = composed {
     val angle = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     var width by remember { mutableIntStateOf(1) }
     val next by rememberUpdatedState(onNext)
     val previous by rememberUpdatedState(onPrevious)
-    val current by rememberUpdatedState(showing)
     var dragged by remember { mutableFloatStateOf(0f) }
     this
         .onSizeChanged { width = it.width.coerceAtLeast(1) }
@@ -426,10 +423,8 @@ private fun Modifier.flipToSwitch(showing: Any?, onNext: () -> Unit, onPrevious:
                             return@launch
                         }
                         val sign = kotlin.math.sign(target)
-                        val before = current
                         angle.animateTo(90f * sign, tween(90, easing = FastOutLinearInEasing))
                         if (sign < 0) next() else previous()
-                        withTimeoutOrNull(250) { snapshotFlow { current }.first { it != before } }
                         angle.snapTo(-90f * sign)
                         angle.animateTo(0f, tween(160, easing = LinearOutSlowInEasing))
                     }
