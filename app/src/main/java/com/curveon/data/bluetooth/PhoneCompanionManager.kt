@@ -28,6 +28,8 @@ enum class CompanionConnectionState {
     CONNECTING,
     CONNECTED,
     DISCONNECTED,
+    /** The phone's radio doesn't answer at all (each try runs into the ~5 s page timeout). */
+    UNREACHABLE,
     DEMO
 }
 
@@ -114,17 +116,29 @@ class PhoneCompanionManager(
 
     private fun start() {
         linkJob = scope.launch(Dispatchers.IO) {
+            var slowFailures = 0
             while (isActive) {
+                val t0 = System.currentTimeMillis()
+                var attempted = false
                 val address = selectedPhoneAddress()
                 when {
                     !hasPermission() -> _connectionState.value = CompanionConnectionState.NO_PERMISSION
                     address == null -> _connectionState.value = CompanionConnectionState.NO_PHONE_SELECTED
                     !bluetoothOn() -> _connectionState.value = CompanionConnectionState.BLUETOOTH_OFF
-                    else -> runCatching { connectAndServe(address) }.onFailure { Log.i(TAG, "Phone link: ${it.message}") }
+                    else -> {
+                        attempted = true
+                        runCatching { connectAndServe(address) }.onFailure { Log.i(TAG, "Phone link: ${it.message}") }
+                    }
                 }
                 clearPhoneState()
-                if (_connectionState.value == CompanionConnectionState.CONNECTED || _connectionState.value == CompanionConnectionState.CONNECTING) {
-                    _connectionState.value = CompanionConnectionState.DISCONNECTED
+                // A phone that is on but not sharing refuses at once; one whose radio doesn't answer
+                // (or a tablet whose Bluetooth got stuck, seen on the X7) fails after the ~5 s page
+                // timeout. Several of those in a row get their own state, with a hint what to do.
+                val wasConnected = _connectionState.value == CompanionConnectionState.CONNECTED
+                slowFailures = if (attempted && !wasConnected && System.currentTimeMillis() - t0 >= PAGE_TIMEOUT_MS) slowFailures + 1 else 0
+                if (attempted) {
+                    _connectionState.value = if (slowFailures >= UNREACHABLE_AFTER) CompanionConnectionState.UNREACHABLE
+                        else CompanionConnectionState.DISCONNECTED
                 }
                 delay(RETRY_MS)
             }
@@ -142,7 +156,8 @@ class PhoneCompanionManager(
 
     @SuppressLint("MissingPermission")
     private fun connectAndServe(address: String) {
-        _connectionState.value = CompanionConnectionState.CONNECTING
+        // Keep showing "can't reach" while retrying; it clears once a connection works.
+        if (_connectionState.value != CompanionConnectionState.UNREACHABLE) _connectionState.value = CompanionConnectionState.CONNECTING
         val adapter = context.getSystemService(BluetoothManager::class.java)!!.adapter
         val device = adapter.getRemoteDevice(address)
         val s = device.createRfcommSocketToServiceRecord(Protocol.SERVICE_UUID)
@@ -335,6 +350,8 @@ class PhoneCompanionManager(
 
     companion object {
         private const val TAG = "PhoneLink"
+        private const val PAGE_TIMEOUT_MS = 4_000L
+        private const val UNREACHABLE_AFTER = 4
         private const val RETRY_MS = 8_000L
         private const val KEY_ADDRESS = "address"
         private const val KEY_NAME = "name"

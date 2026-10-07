@@ -216,6 +216,7 @@ private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: 
                 CompanionConnectionState.NO_PERMISSION -> "Allow Bluetooth access\nto link your phone."
                 CompanionConnectionState.BLUETOOTH_OFF -> "Bluetooth is off"
                 CompanionConnectionState.DISCONNECTED -> "Phone not connected.\nOpen Curveon Companion on the phone."
+                CompanionConnectionState.UNREACHABLE -> "Can't reach $phoneName over Bluetooth.\nTurn Bluetooth off and on here."
                 CompanionConnectionState.DEMO -> "Nothing playing"
             },
             color = TextSecondary, fontSize = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center

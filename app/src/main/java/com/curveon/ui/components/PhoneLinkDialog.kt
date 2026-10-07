@@ -49,6 +49,7 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
                     CompanionConnectionState.CONNECTED -> "Connected to $name"
                     CompanionConnectionState.CONNECTING -> "Connecting to $name…"
                     CompanionConnectionState.DISCONNECTED -> "$name is not answering. Open Curveon Companion on the phone and tap Start sharing."
+                    CompanionConnectionState.UNREACHABLE -> "$name's Bluetooth doesn't answer at all. If Curveon Companion is sharing, turn Bluetooth off and on on this tablet (or the phone)."
                     CompanionConnectionState.NO_PHONE_SELECTED -> "Pick your phone below. It must be paired in Android's Bluetooth settings first."
                     CompanionConnectionState.NO_PERMISSION -> "Curveon needs permission to use Bluetooth."
                     CompanionConnectionState.BLUETOOTH_OFF -> "Bluetooth is off."
