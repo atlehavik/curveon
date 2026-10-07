@@ -45,6 +45,5 @@ class RideRecorderTest {
         assertEquals(RideRecorder.Event.FINISHED, recorder.onFix(GpsFix(lat, 10.0, 100.0, 0f, 0f, 5f, clock), 0f, 0f))
         val done = recorder.finish()!!
         assertTrue("points ${RideRecorder.parseTrack(done.track).size}", RideRecorder.parseTrack(done.track).size > 100)
-        assertTrue(RideRecorder.toGpx(done).contains("<trkpt"))
     }
 }

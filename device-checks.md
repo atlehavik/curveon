@@ -6,6 +6,22 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-07 — GPX groups: database upgrade on the X7
+
+The GPX groups build was installed on the X7 by mistake while it was connected. It upgrades the
+database the first time the app opens (your 20 TET tracks become the group "TET S"). This upgrade
+was tested in the emulator on a copy of the X7's data. A backup of the X7 database taken before the
+upgrade is in `~/develop/Curveon-data/db-backup-2026-10-07/x7/`.
+
+- [ ] Open Curveon on the X7, then GPX: one group "TET S" (20 tracks) and your tracks shown as before.
+- [ ] Rides: all 7 rides still there; "Save to GPX" on a ride puts it in the group you pick.
+- [ ] Map: a track set to inverted (← in the GPX list) shows its arrows the other way.
+- [ ] Waypoint details: install the newest build (`./gradlew :app:installDebug` with only the X7
+      connected), then GPX → Import → `Download/S.gpx` again. Your group and track settings are kept;
+      the waypoints now get address, phone, links, etc. Do the same for any other TET file you use.
+- [ ] Map: zoomed out, Sweden's waypoints are coloured dots; zoomed in (about 30 km across the
+      screen) they turn into icons. Tap one (e.g. a campsite) and check the details look right.
+
 ## 2026-10-07 — incoming call card disappears after a moment
 
 On the dashboard the call card showed briefly, then the music card took its place. The cause wasn't

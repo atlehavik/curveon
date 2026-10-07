@@ -67,6 +67,8 @@ private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val HINT = "curveon-track-hint"
 private const val ARROW_IMAGE = "curveon-arrow"
+/** GPX waypoints turn from dots into icons from this zoom in (about 30 km across the map). */
+private const val POI_ICON_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
 private const val NAV_TILT = 45.0
 
@@ -130,6 +132,7 @@ fun CurveonMapView(
     val onLongPressState = rememberUpdatedState(onLongPress)
     val onPoiClickState = rememberUpdatedState(onPoiClick)
     val poisState = rememberUpdatedState(gpxPois)
+    val poiBadges = rememberPoiBadges()
 
     val mapView = remember {
         MapLibre.getInstance(context)
@@ -175,7 +178,7 @@ fun CurveonMapView(
             m.addOnMapClickListener { p ->
                 // A tap on a GPX waypoint shows it; anywhere else switches to full-screen map.
                 val pt = m.projection.toScreenLocation(p)
-                val hit = m.queryRenderedFeatures(RectF(pt.x - 24, pt.y - 24, pt.x + 24, pt.y + 24), "$GPX_POIS-dots").firstOrNull()
+                val hit = m.queryRenderedFeatures(RectF(pt.x - 24, pt.y - 24, pt.x + 24, pt.y + 24), "$GPX_POIS-dots", "$GPX_POIS-icons").firstOrNull()
                 val poi = hit?.getNumberProperty("i")?.toInt()?.let { poisState.value.getOrNull(it) }
                 if (poi != null) onPoiClickState.value(poi)
                 else if (!isFullScreenState.value) onToggleFullScreenState.value()
@@ -193,6 +196,7 @@ fun CurveonMapView(
         style = null
         m.setStyle(Style.Builder().fromJson(json)) { s ->
             addOverlayLayers(s, dark)
+            poiBadges.forEach { (name, bmp) -> s.addImage(name, bmp) }
             activatePuck(m, s, context)
             style = s
         }
@@ -239,6 +243,7 @@ fun CurveonMapView(
                 it.addNumberProperty("i", i)
                 it.addStringProperty("name", p.name)
                 it.addStringProperty("color", hex(p.category.color))
+                it.addStringProperty("icon", poiImageName(p.kind))
             }
         }))
     }
@@ -495,19 +500,23 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )
+    // Zoomed out: small dots in the category colour (many waypoints stay readable). Zoomed in:
+    // a badge with an icon per kind, and the name.
     s.addLayer(
         CircleLayer("$GPX_POIS-dots", GPX_POIS).withProperties(
             circleRadius(8f), circleColor(org.maplibre.android.style.expressions.Expression.get("color")),
             circleStrokeColor("#FFFFFF"), circleStrokeWidth(2f)
-        )
+        ).also { it.maxZoom = POI_ICON_ZOOM }
     )
     s.addLayer(
-        org.maplibre.android.style.layers.SymbolLayer("$GPX_POIS-labels", GPX_POIS).withProperties(
+        org.maplibre.android.style.layers.SymbolLayer("$GPX_POIS-icons", GPX_POIS).withProperties(
+            iconImage(org.maplibre.android.style.expressions.Expression.get("icon")),
+            iconAllowOverlap(true), iconIgnorePlacement(true),
             textField(org.maplibre.android.style.expressions.Expression.get("name")),
-            textFont(arrayOf("Noto Sans Medium")), textSize(12f), textOffset(arrayOf(0f, 1.4f)),
-            textAnchor(Property.TEXT_ANCHOR_TOP), textMaxWidth(9f),
+            textFont(arrayOf("Noto Sans Medium")), textSize(12f), textOffset(arrayOf(0f, 1.5f)),
+            textAnchor(Property.TEXT_ANCHOR_TOP), textMaxWidth(9f), textOptional(true),
             textColor(if (dark) "#F1F5F9" else "#1B2430"), textHaloColor(if (dark) "#0B0E14" else "#FFFFFF"), textHaloWidth(1.5f)
-        ).withProperties(org.maplibre.android.style.layers.PropertyFactory.visibility(Property.VISIBLE)).also { it.minZoom = 10f }
+        ).also { it.minZoom = POI_ICON_ZOOM }
     )
     s.addLayer(
         CircleLayer("$MARKERS-dots", MARKERS).withProperties(

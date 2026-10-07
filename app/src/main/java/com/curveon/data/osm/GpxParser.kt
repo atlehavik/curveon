@@ -23,7 +23,21 @@ object GpxParser {
         val point: GeoPoint,
         val description: String = "",
         /** GPX <sym>, e.g. "Campground", "Gas Station". */
-        val symbol: String = ""
+        val symbol: String = "",
+        /** <cmt>, when it says something else than the description. */
+        val comment: String = "",
+        /** <link href> with its <text> (may be empty). */
+        val links: List<Pair<String, String>> = emptyList(),
+        /** <time>, as written in the file. */
+        val time: String = "",
+        /** <type>, e.g. "user". */
+        val type: String = "",
+        /** From Garmin extensions: street, postal code + city, state, country. */
+        val address: List<String> = emptyList(),
+        val phone: String = "",
+        /** Garmin categories the creator sorted it into. */
+        val categories: List<String> = emptyList(),
+        val hasElevation: Boolean = false
     )
 
     /** First track of the file, or all tracks joined when [parseAll] finds just one. */
@@ -52,6 +66,15 @@ object GpxParser {
         var ptName = ""
         var ptDesc = ""
         var ptSym = ""
+        var ptCmt = ""
+        var ptTime = ""
+        var ptType = ""
+        var ptPhone = ""
+        var ptHasEle = false
+        val ptLinks = mutableListOf<Pair<String, String>>()
+        val ptAddr = LinkedHashMap<String, String>()
+        val ptCats = LinkedHashSet<String>()
+        val ptStreets = LinkedHashSet<String>()
 
         while (parser.eventType != XmlPullParser.END_DOCUMENT) {
             when (parser.eventType) {
@@ -67,17 +90,30 @@ object GpxParser {
                             ptName = ""
                             ptDesc = ""
                             ptSym = ""
+                            ptCmt = ""; ptTime = ""; ptType = ""; ptPhone = ""; ptHasEle = false
+                            ptLinks.clear(); ptAddr.clear(); ptCats.clear(); ptStreets.clear()
                         }
+                        "link" -> if ("wpt" in stack) parser.getAttributeValue(null, "href")?.let { ptLinks += it to "" }
                     }
                 }
                 XmlPullParser.TEXT -> {
                     val text = parser.text?.trim().orEmpty()
                     if (text.isNotEmpty() && stack.isNotEmpty()) {
                         val parent = stack.getOrNull(stack.size - 2)
+                        val inWpt = "wpt" in stack
                         when (stack.last()) {
-                            "ele" -> ele = text.toDoubleOrNull() ?: 0.0
+                            "ele" -> { ele = text.toDoubleOrNull() ?: 0.0; if (parent == "wpt") ptHasEle = true }
                             "sym" -> if (parent == "wpt") ptSym = text
-                            "desc", "cmt" -> if (parent == "wpt" && ptDesc.isEmpty()) ptDesc = text
+                            "desc" -> if (parent == "wpt") ptDesc = text
+                            "cmt" -> if (parent == "wpt") ptCmt = text
+                            "time" -> if (parent == "wpt") ptTime = text
+                            "type" -> if (parent == "wpt") ptType = text
+                            "text" -> if (parent == "link" && inWpt && ptLinks.isNotEmpty()) ptLinks[ptLinks.size - 1] = ptLinks.last().first to text
+                            // Garmin gpxx/wptx1 extensions repeat the same fields: keep the first.
+                            "StreetAddress" -> if (inWpt) ptStreets += text
+                            "City", "State", "PostalCode", "Country" -> if (inWpt) ptAddr.putIfAbsent(stack.last(), text)
+                            "PhoneNumber" -> if (inWpt && ptPhone.isEmpty()) ptPhone = text
+                            "Category" -> if (inWpt) ptCats += text
                             "name" -> when (parent) {
                                 "trkpt", "rtept", "wpt" -> ptName = text
                                 "trk", "rte" -> if (currentName == null) currentName = text
@@ -91,7 +127,19 @@ object GpxParser {
                     when (tag) {
                         "trk", "rte" -> current?.let { if (it.size >= 2) tracks += currentName to it }.also { current = null }
                         "trkpt", "rtept" -> if (!lat.isNaN() && !lon.isNaN()) current?.add(GeoPoint(lat, lon, ele))
-                        "wpt" -> if (!lat.isNaN() && !lon.isNaN()) waypoints += GpxWaypoint(ptName.ifEmpty { "Waypoint ${waypoints.size + 1}" }, GeoPoint(lat, lon, ele), ptDesc, ptSym)
+                        "wpt" -> if (!lat.isNaN() && !lon.isNaN()) {
+                            val desc = ptDesc.ifEmpty { ptCmt }
+                            waypoints += GpxWaypoint(
+                                ptName.ifEmpty { "Waypoint ${waypoints.size + 1}" }, GeoPoint(lat, lon, ele), desc, ptSym,
+                                comment = ptCmt.takeIf { it != desc }.orEmpty(),
+                                links = ptLinks.toList(), time = ptTime, type = ptType,
+                                address = ptStreets.toList() + listOfNotNull(
+                                    listOfNotNull(ptAddr["PostalCode"], ptAddr["City"]).joinToString(" ").ifEmpty { null },
+                                    ptAddr["State"], ptAddr["Country"]
+                                ),
+                                phone = ptPhone, categories = ptCats.toList(), hasElevation = ptHasEle
+                            )
+                        }
                     }
                 }
             }

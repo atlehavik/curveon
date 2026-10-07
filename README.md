@@ -19,7 +19,11 @@ and [dashboard.md](dashboard.md) for the goals.
 - **Offline routing** with Fastest / Curvy / Super curvy, Tarmac / Mixed / Gravel, avoid
   ferries / motorways; ETA and remaining distance; rerouting when you leave the route.
 - **GoRide-style roundtrip**: pick direction(s) and distance.
-- **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first.
+- **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first. Tracks live in
+  groups (a multi-track file becomes one) that can show/hide, colour and invert all their tracks at once
+  while keeping each track's own settings; tracks and groups can be renamed and exported as GPX.
+  Waypoints show as coloured dots when zoomed out and as an icon per kind (camping, fuel, ferry, …)
+  when zoomed in; tapping one shows everything the file has on it (address, phone, links, …).
 - **Destination search**, offline (towns, addresses with house numbers, fuel, cafés,
   viewpoints, campsites, ferries, passes…), plus online results when the tablet has a connection.
 - **Route preview**: Fastest / Curvy / Super curvy side by side (time, km, curviness, gravel and
@@ -32,7 +36,7 @@ and [dashboard.md](dashboard.md) for the goals.
 - **Day/night map** that follows the sun at your position (or fixed in Settings).
 - **Tunnels**: position keeps moving along the route at your speed when GPS drops out.
 - **Ride log**: rides record automatically (distance, time, speeds, climb, gyro lean angle);
-  tap the speed card to see them, export GPX or ride one again.
+  tap the speed card to see them, save one to the GPX collection or ride one again.
 - **Speed limit sign** from OSM data, while navigating and while free riding.
 - **Dashboard** (Android Auto-like): speed + limit, newest message with Reply/Dismiss, calls
   with Answer/Decline, music with full cover art when nothing else needs the space.

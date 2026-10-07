@@ -126,21 +126,5 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
             val f = p.split(',')
             if (f.size < 4) null else TrackPoint(f[0].toDouble(), f[1].toDouble(), f[2].toDouble(), f[3].toLong())
         }
-
-        /** GPX 1.1 for sharing or importing elsewhere. */
-        fun toGpx(ride: Ride): String {
-            val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
-            val name = ride.title.ifEmpty { "Curveon ride" }.replace("&", "&amp;").replace("<", "&lt;")
-            return buildString {
-                append("""<?xml version="1.0" encoding="UTF-8"?>""").append('\n')
-                append("""<gpx version="1.1" creator="Curveon" xmlns="http://www.topografix.com/GPX/1/1">""").append('\n')
-                append("<trk><name>$name</name><trkseg>\n")
-                for (p in parseTrack(ride.track)) {
-                    append(String.format(Locale.ROOT, "<trkpt lat=\"%.5f\" lon=\"%.5f\"><ele>%.0f</ele><time>%s</time></trkpt>\n",
-                        p.lat, p.lon, p.ele, iso.format(java.util.Date(ride.startMs + p.secondsFromStart * 1000))))
-                }
-                append("</trkseg></trk></gpx>\n")
-            }
-        }
     }
 }

@@ -1,7 +1,5 @@
 package com.curveon.ui.components
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,17 +38,14 @@ fun RideLogDialog(
     current: Ride?,
     rides: List<Ride>,
     onRideAgain: (Ride) -> Unit,
-    onExport: (Ride, android.net.Uri) -> Unit,
+    gpxGroups: List<com.curveon.data.model.GpxGroup>,
+    /** Keep the ride in the GPX collection: (ride, existing group or null, new group name or null). */
+    onSaveToGpx: (Ride, Long?, String?) -> Unit,
     onDelete: (Ride) -> Unit,
     onDismiss: () -> Unit
 ) {
     var expanded by remember { mutableStateOf<Long?>(null) }
-    var exporting by remember { mutableStateOf<Ride?>(null) }
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/gpx+xml")) { uri ->
-        val r = exporting
-        if (uri != null && r != null) onExport(r, uri)
-        exporting = null
-    }
+    var saving by remember { mutableStateOf<Ride?>(null) }
     val history = rides.filter { it.id != current?.id }
 
     CockpitDialog(title = "Rides", icon = Icons.Default.TwoWheeler, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog") {
@@ -93,16 +88,17 @@ fun RideLogDialog(
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             PillButton(Icons.Default.Replay, "Ride again", ElectricCyan, androidx.compose.ui.graphics.Color(0xFF00363D),
                                 Modifier.weight(1f)) { onRideAgain(r) }
-                            PillButton(Icons.Default.IosShare, "GPX", CockpitSurface, TextPrimary, Modifier.weight(1f)) {
-                                exporting = r
-                                exportLauncher.launch(fileName(r))
-                            }
+                            PillButton(Icons.Default.Route, "Save to GPX", CockpitSurface, TextPrimary, Modifier.weight(1f)) { saving = r }
                             RoundButton(Icons.Default.DeleteOutline, "Delete", 56.dp, CockpitSurface, TextMuted) { onDelete(r) }
                         }
                     }
                 }
             }
         }
+    }
+
+    saving?.let { r ->
+        GroupPickerDialog("Save to GPX group", gpxGroups, current = null, onPick = { id, name -> onSaveToGpx(r, id, name) }, onDismiss = { saving = null })
     }
 }
 
@@ -152,7 +148,3 @@ private fun TrackThumbnail(r: Ride, modifier: Modifier) {
 
 private fun dateText(r: Ride): String =
     SimpleDateFormat("EEE d MMM · HH:mm", Locale.getDefault()).format(Date(r.startMs))
-
-private fun fileName(r: Ride): String =
-    "Curveon " + SimpleDateFormat("yyyy-MM-dd HHmm", Locale.ROOT).format(Date(r.startMs)) +
-        (if (r.title.isNotEmpty()) " " + r.title.replace(Regex("[^\\p{L}\\p{N} →-]"), "") else "") + ".gpx"

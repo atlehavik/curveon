@@ -24,5 +24,9 @@ data class GpxTrack(
     /** Overlay colour, ARGB. 0 = not chosen yet (a palette colour is used). */
     @ColumnInfo(defaultValue = "0") val color: Int = 0,
     /** Show the file's waypoints (campsites, fuel, …) along this track. */
-    @ColumnInfo(defaultValue = "1") val showPois: Boolean = true
+    @ColumnInfo(defaultValue = "1") val showPois: Boolean = true,
+    /** The group it belongs to, or null for a loose track. */
+    val groupId: Long? = null,
+    /** Ride (and draw the arrows) against the recorded direction. */
+    @ColumnInfo(defaultValue = "0") val reversed: Boolean = false
 )

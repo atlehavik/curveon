@@ -6,6 +6,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.data.db.AppDatabase
+import com.curveon.data.gpx.GpxGroups
+import com.curveon.data.gpx.GpxWriter
 import com.curveon.data.location.DemoRide
 import com.curveon.data.location.GpsFix
 import com.curveon.data.location.LocationSource
@@ -140,16 +142,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     val savedRoutes = repository.allRoutes.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val gpxGroups = repository.allGpxGroups.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // ---------------------------------------------------------------- GPX overlays
 
     private val trackWatcher = com.curveon.data.gpx.TrackWatcher()
 
-    /** Tracks switched on in the GPX manager, decoded for the map. */
-    val overlayTracks: StateFlow<List<com.curveon.data.gpx.OverlayTrack>> = repository.allGpxTracks
-        .map { list -> list.filter { it.showOnMap } }
+    /** Tracks switched on in the GPX manager (directly or by their group), decoded for the map. */
+    val overlayTracks: StateFlow<List<com.curveon.data.gpx.OverlayTrack>> = combine(repository.allGpxTracks, repository.allGpxGroups) { tracks, groups ->
+        val byId = groups.associateBy { it.id }
+        tracks.map { it to it.groupId?.let(byId::get) }.filter { (t, g) -> GpxGroups.visible(t, g) }
+    }
         .distinctUntilChanged()
-        .map { list -> withContext(Dispatchers.Default) { list.map(com.curveon.data.gpx.GpxOverlay::overlay) } }
+        .map { list -> withContext(Dispatchers.Default) { list.map { (t, g) -> com.curveon.data.gpx.GpxOverlay.overlay(t, g) } } }
         .onEach { trackWatcher.setTracks(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -484,8 +489,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun deleteRide(ride: Ride) = viewModelScope.launch { rideDao.delete(ride.id) }
 
-    fun exportRide(ride: Ride, uri: Uri) = viewModelScope.launch(Dispatchers.IO) {
-        getApplication<Application>().contentResolver.openOutputStream(uri)?.use { it.write(RideRecorder.toGpx(ride).toByteArray()) }
+    /** Keeps a ride as a track in the GPX collection, in [groupId] or a new group called [newGroup]. */
+    fun saveRideToGpx(ride: Ride, groupId: Long?, newGroup: String?) = viewModelScope.launch {
+        val pts = RideRecorder.parseTrack(ride.track).map { GeoPoint(it.lat, it.lon, it.ele) }
+        if (pts.size < 2) return@launch
+        val group = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId
+        val name = ride.title.ifEmpty { "Ride" } + " · " +
+            java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ride.startMs))
+        repository.saveGpxTrack(
+            GpxTrack(
+                name = name,
+                totalDistanceKm = (ride.distanceMeters / 1000).toFloat(),
+                elevationGainMeters = ride.ascentMeters.roundToInt(),
+                maxElevationMeters = pts.maxOf { it.altitudeMeters }.roundToInt(),
+                pointCount = pts.size,
+                trackPointsJson = com.curveon.data.osm.GpxParser.encodePoints(pts),
+                category = "Ride",
+                groupId = group
+            )
+        )
     }
 
     /** Ride a logged ride again, as a track. */
@@ -559,9 +581,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         )
     }
 
+    /** Preview riding a track, in the direction set for it (or its group); [reverse] flips that. */
     fun previewGpx(track: GpxTrack, reverse: Boolean, ground: GroundPreference) {
+        val inverted = GpxGroups.reversed(track, track.groupId?.let { id -> gpxGroups.value.firstOrNull { it.id == id } }) != reverse
         val pts = com.curveon.data.osm.GpxParser.decodePoints(track.trackPointsJson).map { LatLon(it.latitude, it.longitude) }
-        navigator.previewTrack(track.name, if (reverse) pts.reversed() else pts,
+        navigator.previewTrack(track.name, if (inverted) pts.reversed() else pts,
             RouteOptions(RoadStyle.FASTEST, SurfacePreference.entries[ground.ordinal]))
     }
 
@@ -684,10 +708,89 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun setTrackOnMap(track: GpxTrack, show: Boolean) = viewModelScope.launch {
-        repository.updateGpxTrack(track.copy(showOnMap = show, color = com.curveon.data.gpx.GpxOverlay.colorOf(track)))
+        // Pin the palette colour so it doesn't change when other tracks come and go.
+        val pinned = track.copy(color = com.curveon.data.gpx.GpxOverlay.colorOf(track))
+        inGroup(pinned) { g, tracks -> GpxGroups.setTrackVisible(g, tracks, track.id, show) } ?: repository.updateGpxTrack(pinned.copy(showOnMap = show))
     }
 
-    fun setTrackColor(track: GpxTrack, color: Int) = viewModelScope.launch { repository.updateGpxTrack(track.copy(color = color)) }
+    fun setTrackColor(track: GpxTrack, color: Int) = viewModelScope.launch {
+        inGroup(track) { g, tracks -> GpxGroups.setTrackColor(g, tracks, track.id, color) } ?: repository.updateGpxTrack(track.copy(color = color))
+    }
+
+    fun setTrackReversed(track: GpxTrack, reversed: Boolean) = viewModelScope.launch {
+        inGroup(track) { g, tracks -> GpxGroups.setTrackReversed(g, tracks, track.id, reversed) } ?: repository.updateGpxTrack(track.copy(reversed = reversed))
+    }
+
+    /**
+     * Applies a change to one track of a group (which may turn a group override back to custom);
+     * null when the track has no group.
+     */
+    private suspend fun inGroup(track: GpxTrack, change: (GpxGroup, List<GpxTrack>) -> Pair<GpxGroup, List<GpxTrack>>): Unit? {
+        val g = track.groupId?.let { repository.gpxGroup(it) } ?: return null
+        val tracks = repository.gpxTracksInGroup(g.id).map { if (it.id == track.id) track else it }
+        val (g2, changed) = change(g, tracks)
+        repository.updateGpxTracks(changed)
+        repository.updateGpxGroup(g2)
+        return Unit
+    }
+
+    fun renameTrack(track: GpxTrack, name: String) = viewModelScope.launch {
+        if (name.isNotBlank()) repository.updateGpxTrack(track.copy(name = name.trim()))
+    }
+
+    fun moveTrack(track: GpxTrack, groupId: Long?, newGroup: String?) = viewModelScope.launch {
+        val target = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId
+        // Keep how it looks now: its old group's overrides become its own settings.
+        val old = track.groupId?.let { repository.gpxGroup(it) }
+        repository.updateGpxTrack(
+            track.copy(
+                groupId = target,
+                showOnMap = GpxGroups.visible(track, old),
+                reversed = GpxGroups.reversed(track, old),
+                color = GpxGroups.color(track, old)
+            )
+        )
+    }
+
+    fun toggleGroupVisibility(g: GpxGroup) = viewModelScope.launch {
+        val tracks = repository.gpxTracksInGroup(g.id)
+        val next = GpxGroups.nextVisibility(g, tracks)
+        // Pin palette colours, as for a single track.
+        repository.updateGpxTracks(tracks.filter { it.color == 0 }.map { it.copy(color = com.curveon.data.gpx.GpxOverlay.colorOf(it)) })
+        repository.updateGpxGroup(next)
+    }
+
+    fun toggleGroupDirection(g: GpxGroup) = viewModelScope.launch {
+        repository.updateGpxGroup(GpxGroups.nextDirection(g, repository.gpxTracksInGroup(g.id)))
+    }
+
+    /** [color] null: back to each track's own colour; otherwise all tracks in that colour. */
+    fun setGroupColor(g: GpxGroup, color: Int?) = viewModelScope.launch {
+        repository.updateGpxGroup(if (color == null) g.copy(sameColor = false) else g.copy(sameColor = true, color = color))
+    }
+
+    fun renameGroup(g: GpxGroup, name: String) = viewModelScope.launch {
+        if (name.isNotBlank()) repository.updateGpxGroup(g.copy(name = name.trim()))
+    }
+
+    /** Ungroup keeps the tracks (looking as they do now); delete removes them too. */
+    fun deleteGroup(g: GpxGroup, keepTracks: Boolean) = viewModelScope.launch {
+        if (keepTracks) repository.updateGpxTracks(repository.gpxTracksInGroup(g.id).map {
+            it.copy(showOnMap = GpxGroups.visible(it, g), reversed = GpxGroups.reversed(it, g), color = GpxGroups.color(it, g))
+        })
+        repository.deleteGpxGroup(g.id, keepTracks)
+    }
+
+    /** Writes a track, or a whole group when [track] is null, to a GPX file the rider picked. */
+    fun exportGpx(group: GpxGroup?, track: GpxTrack?, uri: Uri) = viewModelScope.launch(Dispatchers.IO) {
+        val result = runCatching {
+            val g = group ?: track?.groupId?.let { repository.gpxGroup(it) }
+            val tracks = if (track != null) listOf(track) else repository.gpxTracksInGroup(g!!.id).sortedBy { it.name.lowercase() }
+            val xml = GpxWriter.write(track?.name ?: g!!.name, tracks, g)
+            getApplication<Application>().contentResolver.openOutputStream(uri)!!.use { it.write(xml.toByteArray()) }
+        }
+        _gpxMessage.value = result.fold({ "Exported ${track?.name ?: group?.name}" }, { "Export failed: ${it.message}" })
+    }
 
     fun setTrackPois(track: GpxTrack, show: Boolean) = viewModelScope.launch { repository.updateGpxTrack(track.copy(showPois = show)) }
 

@@ -12,7 +12,7 @@ import java.io.InputStream
 /**
  * Imports GPX files: picked in the app, or copied over USB into
  * Android/data/com.curveon.tablet/files/gpx/ (imported at startup, then moved to gpx/imported/).
- * Each track in a file becomes its own entry.
+ * Each track in a file becomes its own entry; a file with several tracks becomes a group.
  */
 class GpxImporter(private val context: Context, private val repository: CurveonRepository) {
 
@@ -46,16 +46,24 @@ class GpxImporter(private val context: Context, private val repository: CurveonR
         val byTrack = waypoints.groupBy { w ->
             tracks.indices.minBy { i -> nearestKm(tracks[i].points, w.point) }
         }
+        // Several tracks: put new ones in a group named after the file (made only when needed).
+        var group: Long? = null
+        val groupName = com.curveon.data.gpx.GpxGroups.defaultName(GpxParser.prettyName(fileName.substringBeforeLast('.')), tracks.map { it.name })
         return tracks.mapIndexed { i, t ->
             // Re-importing (e.g. a fresh TET download) updates the track and keeps the rider's
             // map settings for it.
             val existing = repository.findGpxTrack(t.name)
+            val groupId = if (existing != null) existing.groupId
+            else if (tracks.size > 1) group ?: repository.gpxGroupNamed(groupName).id.also { group = it }
+            else null
             repository.saveGpxTrack(
                 GpxTrack(
                     id = existing?.id ?: 0,
                     showOnMap = existing?.showOnMap ?: false,
                     color = existing?.color ?: 0,
                     showPois = existing?.showPois ?: true,
+                    reversed = existing?.reversed ?: false,
+                    groupId = groupId,
                     name = t.name,
                     filename = fileName,
                     totalDistanceKm = t.totalDistanceKm,

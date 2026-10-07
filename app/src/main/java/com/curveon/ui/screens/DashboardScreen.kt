@@ -65,6 +65,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
     val isDemoRiding by viewModel.isDemoRiding.collectAsStateWithLifecycle()
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
+    val gpxGroups by viewModel.gpxGroups.collectAsStateWithLifecycle()
     val overlayTracks by viewModel.overlayTracks.collectAsStateWithLifecycle()
     val overlayPois by viewModel.overlayPois.collectAsStateWithLifecycle()
     val trackHint by viewModel.trackHint.collectAsStateWithLifecycle()
@@ -326,7 +327,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 current = currentRide,
                 rides = rides,
                 onRideAgain = { showRides = false; viewModel.rideAgain(it) },
-                onExport = { r, uri -> viewModel.exportRide(r, uri); toast = "GPX saved" },
+                gpxGroups = gpxGroups,
+                onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = "Saved to GPX" },
                 onDelete = { viewModel.deleteRide(it) },
                 onDismiss = { showRides = false }
             )
@@ -347,23 +349,42 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         if (showGpx) {
             GpxManagerDialog(
                 tracks = savedGpxTracks,
+                groups = gpxGroups,
                 message = gpxMessage,
                 poiCategories = poiCategories,
                 autoFollow = autoFollow,
-                onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
-                onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
-                onColor = { t, c -> viewModel.setTrackColor(t, c) },
-                onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
+                actions = remember(viewModel) {
+                    GpxActions(
+                        onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
+                        onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
+                        onColor = { t, c -> viewModel.setTrackColor(t, c) },
+                        onReverse = { t, r -> viewModel.setTrackReversed(t, r) },
+                        onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
+                        onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
+                        onDelete = { viewModel.deleteGpx(it) },
+                        onRenameTrack = { t, name -> viewModel.renameTrack(t, name) },
+                        onMove = { t, id, name -> viewModel.moveTrack(t, id, name) },
+                        onGroupVisibility = { viewModel.toggleGroupVisibility(it) },
+                        onGroupDirection = { viewModel.toggleGroupDirection(it) },
+                        onGroupColor = { g, c -> viewModel.setGroupColor(g, c) },
+                        onRenameGroup = { g, name -> viewModel.renameGroup(g, name) },
+                        onDeleteGroup = { g, keep -> viewModel.deleteGroup(g, keep) },
+                        onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) }
+                    )
+                },
                 onTogglePoiCategory = viewModel::togglePoiCategory,
                 onAutoFollow = viewModel::setAutoFollow,
-                onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
-                onDelete = { viewModel.deleteGpx(it) },
                 onDismiss = { showGpx = false }
             )
         }
 
         shownPoi?.let { poi ->
-            PoiDialog(poi, onGo = { shownPoi = null; pickPlace(GeoPoint(poi.lat, poi.lon), poi.name) }, onDismiss = { shownPoi = null })
+            PoiDialog(
+                poi, from = currentLocation,
+                onGo = { shownPoi = null; pickPlace(GeoPoint(poi.lat, poi.lon), poi.name) },
+                onCall = { number -> if (phone.placeCall(number)) toast = "Calling ${poi.name}…" else toast = "Connect the phone to call" },
+                onDismiss = { shownPoi = null }
+            )
         }
 
 
