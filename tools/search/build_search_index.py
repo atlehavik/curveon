@@ -3,6 +3,7 @@
 Builds the offline destination search index (SQLite + FTS4) for Curveon from an OSM extract.
 
     python build_search_index.py norway-latest.osm.pbf norway-search.sqlite
+    python build_search_index.py a.osm.pbf,b.osm.pbf out.sqlite     # several extracts into one index
 
 Contents
   entries      places (towns, villages, …), useful POIs (fuel, cafés, viewpoints, campsites,
@@ -152,11 +153,12 @@ class NearestPlace:
         return best
 
 
-def main(pbf, out):
+def main(pbfs, out):
     t0 = time.time()
-    print(f"Reading {pbf} …", flush=True)
     c = Collector()
-    c.apply_file(pbf, locations=True, idx="flex_mem")
+    for pbf in pbfs.split(","):
+        print(f"Reading {pbf} …", flush=True)
+        c.apply_file(pbf, locations=True, idx="flex_mem")
     print(f"Read in {time.time() - t0:.0f}s: {len(c.places)} places, {len(c.pois)} pois, "
           f"{len(c.addresses)} streets, {len(c.cameras)} speed cameras", flush=True)
 
@@ -197,7 +199,7 @@ def main(pbf, out):
     cur.executemany("INSERT INTO cameras VALUES (?,?,?)", [(round(a, 6), round(b, 6), m) for a, b, m in c.cameras])
     cur.execute("INSERT INTO meta VALUES ('built', ?)", (time.strftime("%Y-%m-%d"),))
     cur.execute("INSERT INTO meta VALUES ('schema', '2')")
-    cur.execute("INSERT INTO meta VALUES ('source', ?)", (pbf.split("/")[-1],))
+    cur.execute("INSERT INTO meta VALUES ('source', ?)", (",".join(p.split("/")[-1] for p in pbfs.split(",")),))
     db.commit()
     print("Indexing …", flush=True)
     db.executescript("""

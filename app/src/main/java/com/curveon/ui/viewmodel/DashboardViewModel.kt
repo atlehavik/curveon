@@ -83,7 +83,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ---------------------------------------------------------------- map downloads
 
-    private val mapDownloads = com.curveon.data.map.MapDownloads(application, offlineMaps, navigator.routingData)
+    private val mapDownloads = com.curveon.data.map.MapDownloads(application, offlineMaps, navigator.routingData, placeSearch.indexes)
     val mapCatalog get() = mapDownloads.catalog
     private var latestMapBuild: String? = null
     private val _installedMaps = MutableStateFlow(mapDownloads.installed(null))
@@ -113,6 +113,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Checks online (when there is a connection) whether a newer map build exists. */
     fun refreshMapStatus() = viewModelScope.launch {
         latestMapBuild = mapDownloads.latestBuild() ?: latestMapBuild
+        mapDownloads.refreshSearch()
         updateMapStatus()
     }
 
@@ -139,9 +140,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val progress = { msg: String, f: Float -> _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(id, msg, f) }
             try {
                 val installed = _installedMaps.value.firstOrNull { it.id == id }
-                if (installed != null && installed.newerBuild == null && installed.missingRouting.isNotEmpty()) {
-                    // Map is current: only fetch the routing tiles it lacks.
-                    mapDownloads.downloadRouting(area, progress, isCancelled = { cancelMapDownload })
+                if (installed != null && installed.newerBuild == null && (installed.missingRouting.isNotEmpty() || installed.missingSearch)) {
+                    // Map is current: only fetch the routing and search it lacks.
+                    mapDownloads.completeMissing(area, progress, isCancelled = { cancelMapDownload })
                 } else {
                     val build = mapDownloads.latestBuild() ?: error(str(R.string.map_no_connection))
                     latestMapBuild = build

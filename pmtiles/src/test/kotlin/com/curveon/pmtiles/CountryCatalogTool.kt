@@ -54,7 +54,7 @@ class CountryCatalogTool {
             val set = HashSet<Long>()
             for (id in covers[i]) {
                 set += id - base
-                val (x, y) = xy(Z, id - base)
+                val (x, y) = Pmtiles.tileXY(Z, id - base)
                 for (dx in -1..1) for (dy in -1..1) {
                     val ny = y + dy
                     if (ny < 0 || ny >= n) continue
@@ -72,7 +72,7 @@ class CountryCatalogTool {
         for (a in areas) {
             val cells = sortedSetOf<String>()
             for (d in a.tiles) {
-                val (x, y) = xy(Z, d)
+                val (x, y) = Pmtiles.tileXY(Z, d)
                 val w = x * 360.0 / n - 180; val e = (x + 1) * 360.0 / n - 180
                 val north = lat(y, n); val south = lat(y + 1, n)
                 for (lon in cell(w)..cell(e - 1e-9) step 5) for (la in cell(south)..cell(north - 1e-9) step 5) {
@@ -187,23 +187,5 @@ class CountryCatalogTool {
         const val MAX_ZOOM = 14
         const val SEGMENTS_URL = "https://brouter.de/brouter/segments4/"
         const val BUILDS_URL = "https://build-metadata.protomaps.dev/builds.json"
-
-        /** Inverse of the Hilbert index within zoom [z]: (x, y). */
-        fun xy(z: Int, d: Long): Pair<Int, Int> {
-            var x = 0L; var y = 0L; var t = d
-            var s = 1L
-            val n = 1L shl z
-            while (s < n) {
-                val rx = 1L and (t / 2)
-                val ry = 1L and (t xor rx)
-                if (ry == 0L) {
-                    if (rx == 1L) { x = s - 1 - x; y = s - 1 - y }
-                    val tmp = x; x = y; y = tmp
-                }
-                x += s * rx; y += s * ry
-                t /= 4; s *= 2
-            }
-            return x.toInt() to y.toInt()
-        }
     }
 }

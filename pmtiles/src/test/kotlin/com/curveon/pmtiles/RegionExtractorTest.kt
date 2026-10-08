@@ -21,7 +21,7 @@ class RegionExtractorTest {
     fun `a zoom-10 mask covers exactly its descendants and ancestors`() {
         val (x, y) = 545 to 290 // somewhere in southern Norway
         val d = Pmtiles.tileId(10, x, y) - Pmtiles.zoomBase(10)
-        assertEquals(x to y, CountryCatalogTool.xy(10, d))
+        assertEquals(x to y, Pmtiles.tileXY(10, d))
         val r = TileMask(longArrayOf(d, d + 1), 0.0, 0.0, 0.0, 0.0).ranges(8, 12)
         val expected = mutableListOf(Pmtiles.tileId(8, x / 4, y / 4), Pmtiles.tileId(9, x / 2, y / 2), Pmtiles.tileId(10, x, y))
         for (i in 0 until 2) for (j in 0 until 2) expected += Pmtiles.tileId(11, 2 * x + i, 2 * y + j)

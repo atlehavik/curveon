@@ -28,28 +28,35 @@ data class SearchResult(
 )
 
 /**
- * Destination search. Offline first, from the index built by tools/search/build_search_index.py
- * (Android/data/com.curveon.tablet/files/search/norway-search.sqlite); when the tablet is online
- * (phone hotspot) Photon/OpenStreetMap results are added.
+ * Destination search. Offline first, over the search index of every downloaded country (see
+ * [SearchIndexes]); when the tablet is online (phone hotspot) Photon/OpenStreetMap results are added.
  */
 class PlaceSearch(private val context: Context) {
 
-    val indexDir: File
-        get() = File(context.getExternalFilesDir(null) ?: context.filesDir, "search").apply { mkdirs() }
+    val indexes = SearchIndexes(context).also { it.onChange = ::reload }
 
-    private val indexFile get() = File(indexDir, INDEX_FILE)
+    val indexDir: File get() = indexes.dir
 
-    private var db: SQLiteDatabase? = null
+    @Volatile private var dbs: List<SQLiteDatabase>? = null
 
     private val http by lazy {
         OkHttpClient.Builder().connectTimeout(4, TimeUnit.SECONDS).readTimeout(6, TimeUnit.SECONDS).build()
     }
 
-    fun hasOfflineIndex() = indexFile.exists()
+    fun hasOfflineIndex() = indexes.installed().isNotEmpty()
 
-    fun describe(): String =
-        if (hasOfflineIndex()) context.getString(R.string.search_index_installed, indexFile.length() / 1e6)
-        else context.getString(R.string.search_index_none, INDEX_FILE, indexDir.toString())
+    fun describe(): String {
+        val files = indexes.installed()
+        return if (files.isEmpty()) context.getString(R.string.search_index_none)
+        else context.resources.getQuantityString(R.plurals.search_index_installed, files.size, files.size, files.sumOf { it.length() } / 1e6)
+    }
+
+    /** Closes the open indexes, so added or removed countries are picked up. */
+    @Synchronized
+    fun reload() {
+        dbs?.forEach { runCatching { it.close() } }
+        dbs = null
+    }
 
     suspend fun search(query: String, nearLat: Double, nearLon: Double, limit: Int = 30): List<SearchResult> =
         withContext(Dispatchers.IO) {
@@ -61,19 +68,20 @@ class PlaceSearch(private val context: Context) {
                 .take(limit)
         }
 
-    private fun openDb(): SQLiteDatabase? {
-        db?.let { if (it.isOpen) return it }
-        if (!indexFile.exists()) return null
-        return SQLiteDatabase.openDatabase(indexFile.path, null, SQLiteDatabase.OPEN_READONLY).also { db = it }
+    @Synchronized
+    private fun openDbs(): List<SQLiteDatabase> {
+        dbs?.let { list -> if (list.all { it.isOpen }) return list }
+        return indexes.installed().mapNotNull { f ->
+            runCatching { SQLiteDatabase.openDatabase(f.path, null, SQLiteDatabase.OPEN_READONLY) }.getOrNull()
+        }.also { dbs = it }
     }
 
     internal fun searchOffline(query: String, nearLat: Double, nearLon: Double, limit: Int): List<SearchResult> {
-        val database = openDb() ?: return emptyList()
         val parsed = parseQuery(query)
         if (parsed.terms.isEmpty()) return emptyList()
         val match = parsed.terms.joinToString(" ") { "$it*" }
         val rows = mutableListOf<Pair<SearchResult, Double>>()
-        database.rawQuery(
+        for (database in openDbs()) runCatching { database.rawQuery(
             """SELECT e.id, e.name, e.kind, e.area, e.rank, e.lat, e.lon FROM entries_fts f
                JOIN entries e ON e.id = f.docid WHERE f.search MATCH ? LIMIT 400""",
             arrayOf(match)
@@ -95,7 +103,7 @@ class PlaceSearch(private val context: Context) {
                 val addressBonus = if (kind == "street" && parsed.houseNumber != null) 80 else 0
                 rows += result to score(result, c.getInt(4) + addressBonus, parsed)
             }
-        }
+        } }
         return rows.sortedByDescending { it.second }.map { it.first }.distinctBy { "${it.name}|${it.area}" }.take(limit)
     }
 
@@ -168,26 +176,24 @@ class PlaceSearch(private val context: Context) {
 
     /** Fuel stations inside a bounding box (for "next fuel along the route"). */
     suspend fun fuelInBox(minLat: Double, maxLat: Double, minLon: Double, maxLon: Double): List<Poi> = withContext(Dispatchers.IO) {
-        val db = openDb() ?: return@withContext emptyList()
-        runCatching {
+        openDbs().flatMap { db -> runCatching {
             db.rawQuery(
                 "SELECT name, lat, lon FROM entries WHERE kind = 'fuel' AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
                 arrayOf(minLat.toString(), maxLat.toString(), minLon.toString(), maxLon.toString())
             ).use { c -> buildList { while (c.moveToNext()) add(Poi(c.getString(0), c.getDouble(1), c.getDouble(2))) } }
-        }.getOrDefault(emptyList())
+        }.getOrDefault(emptyList()) }.distinctBy { "${it.name}|${(it.lat * 2000).toInt()}|${(it.lon * 1000).toInt()}" }
     }
 
     /** Fixed speed cameras inside a bounding box. Empty with an index built before cameras were added. */
     suspend fun camerasInBox(minLat: Double, maxLat: Double, minLon: Double, maxLon: Double): List<Poi> = withContext(Dispatchers.IO) {
-        val db = openDb() ?: return@withContext emptyList()
-        runCatching {
+        openDbs().flatMap { db -> runCatching {
             db.rawQuery(
                 "SELECT lat, lon, maxspeed FROM cameras WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
                 arrayOf(minLat.toString(), maxLat.toString(), minLon.toString(), maxLon.toString())
             ).use { c ->
                 buildList { while (c.moveToNext()) add(Poi(context.getString(R.string.speed_camera), c.getDouble(0), c.getDouble(1), if (c.isNull(2)) null else c.getInt(2))) }
             }
-        }.getOrDefault(emptyList())
+        }.getOrDefault(emptyList()) }.distinctBy { "${(it.lat * 5000).toInt()}|${(it.lon * 2500).toInt()}" }
     }
 
     /** Closest places of one kind, e.g. the nearest fuel stations. */
@@ -196,12 +202,13 @@ class PlaceSearch(private val context: Context) {
 
     /** Closest places of any of these kinds, e.g. restaurants, cafés and fast food for "dining". */
     suspend fun nearest(kinds: List<String>, lat: Double, lon: Double, limit: Int = 10): List<SearchResult> = withContext(Dispatchers.IO) {
-        val db = openDb() ?: return@withContext emptyList()
+        val databases = openDbs()
+        if (databases.isEmpty()) return@withContext emptyList()
         val kindSql = kinds.joinToString(",") { "?" }
         var radius = 0.1
         var rows: List<SearchResult> = emptyList()
         while (radius <= 1.6 && rows.size < limit) { // widen the box until we have enough
-            rows = runCatching {
+            rows = databases.flatMap { db -> runCatching {
                 db.rawQuery(
                     "SELECT name, area, lat, lon, kind FROM entries WHERE kind IN ($kindSql) AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
                     (kinds + listOf((lat - radius).toString(), (lat + radius).toString(), (lon - radius * 2).toString(), (lon + radius * 2).toString())).toTypedArray()
@@ -213,7 +220,7 @@ class PlaceSearch(private val context: Context) {
                         )
                     }
                 }
-            }.getOrDefault(emptyList())
+            }.getOrDefault(emptyList()) }.distinctBy { "${it.name}|${(it.lat * 2000).toInt()}" }
             radius *= 2
         }
         rows.sortedBy { it.distanceKm }.take(limit)
@@ -222,8 +229,6 @@ class PlaceSearch(private val context: Context) {
     internal data class ParsedQuery(val text: String, val terms: List<String>, val houseNumber: String?)
 
     companion object {
-        const val INDEX_FILE = "norway-search.sqlite"
-
         private val HOUSE_NUMBER = Regex("^\\d{1,4}[a-z]?$")
 
         /** Same normalisation as the index builder: lowercase, æ→ae, ø→o, å→a, no accents or punctuation. */

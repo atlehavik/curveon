@@ -121,6 +121,24 @@ object Pmtiles {
     /** Id of the first tile at zoom [z] (all tiles of lower zooms come before it). */
     fun zoomBase(z: Int): Long = ((1L shl (2 * z)) - 1) / 3
 
+    /** Inverse of the Hilbert index [d] within zoom [z]: (x, y). */
+    fun tileXY(z: Int, d: Long): Pair<Int, Int> {
+        var x = 0L; var y = 0L; var t = d
+        var s = 1L
+        val n = 1L shl z
+        while (s < n) {
+            val rx = 1L and (t / 2)
+            val ry = 1L and (t xor rx)
+            if (ry == 0L) {
+                if (rx == 1L) { x = s - 1 - x; y = s - 1 - y }
+                val tmp = x; x = y; y = tmp
+            }
+            x += s * rx; y += s * ry
+            t /= 4; s *= 2
+        }
+        return x.toInt() to y.toInt()
+    }
+
     /** Tile id on the Hilbert curve, as the spec defines it. */
     fun tileId(z: Int, x: Int, y: Int): Long {
         val acc = zoomBase(z)

@@ -209,8 +209,7 @@
     <string name="kind_peak">Topp</string>
     <string name="kind_motorcycle_shop">Motorsykkelbutikk</string>
     <string name="kind_fast_food">Gatekjøkken</string>
-    <string name="search_index_installed">Frakoblet søkeindeks er installert (%.0f MB)</string>
-    <string name="search_index_none">Ingen frakoblet søkeindeks. Kopier %1$s til %2$s. Søk på nett virker når du er tilkoblet.</string>
+    <string name="search_index_none">Ingen frakoblet søk ennå. Det følger med hvert land du laster ned; søk på nett virker når du er tilkoblet.</string>
     <string name="rename">Gi nytt navn</string>
     <string name="more">Mer</string>
     <string name="collapse">Skjul</string>
@@ -406,8 +405,18 @@
         <item quantity="other">%d deler</item>
     </plurals>
     <string name="maps_routing_missing">mangler rutedata</string>
-    <string name="maps_get_routing">Hent rutedata</string>
     <string name="maps_none">Ingen kart ennå. Last ned landene du kjører i.</string>
     <string name="maps_by_hand">kopiert inn manuelt</string>
-    <string name="maps_hint">Hvert land kommer med rutedataene sine. Naboland deler rutefiler, så det neste blir ofte mindre. Steder, gater og fotobokser i søket er frakoblet bare for Norge; ellers trenger søket nett.</string>
+    <string name="maps_hint">Hvert land kommer med rutedata og frakoblet søk. Naboland deler rutefiler, så det neste blir ofte mindre.</string>
+    <plurals name="search_index_installed">
+        <item quantity="one">Frakoblet søk for %1$d område (%2$.0f MB)</item>
+        <item quantity="other">Frakoblet søk for %1$d områder (%2$.0f MB)</item>
+    </plurals>
+    <string name="search_downloading">Laster ned søk – %1$.0f av %2$.0f MB</string>
+    <string name="search_building">Bygger søk fra kartet (%1$d %%)</string>
+    <string name="search_saving">Lagrer søk…</string>
+    <string name="maps_search_missing">mangler søk</string>
+    <string name="maps_search_basic">enkelt søk</string>
+    <string name="maps_search_better">fullere søk tilgjengelig</string>
+    <string name="maps_get_missing">Hent det som mangler</string>
 </resources>

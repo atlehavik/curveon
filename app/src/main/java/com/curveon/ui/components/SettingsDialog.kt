@@ -176,7 +176,8 @@ private fun InstalledMap.displayName() = area?.displayName(LocalConfiguration.cu
 private fun MapRow(m: InstalledMap, download: MapDownloadState, queue: List<String>, actions: SettingsActions, onDelete: () -> Unit) {
     val running = (download as? MapDownloadState.Running)?.takeIf { it.areaId == m.id }
     val busy = running != null || m.id in queue
-    val warn = m.newerBuild != null || m.missingRouting.isNotEmpty()
+    val missing = m.missingRouting.isNotEmpty() || m.missingSearch
+    val warn = m.newerBuild != null || missing
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -189,7 +190,14 @@ private fun MapRow(m: InstalledMap, download: MapDownloadState, queue: List<Stri
                         if (m.bytes < 1e9) stringResource(R.string.size_mb, maxOf(1.0, m.bytes / 1e6)) else stringResource(R.string.size_gb, m.bytes / 1e9),
                         if (m.area == null) stringResource(R.string.maps_by_hand) else m.build?.let { stringResource(R.string.settings_map_from, it) },
                         m.newerBuild?.let { stringResource(R.string.settings_map_newer, it) },
-                        stringResource(R.string.maps_routing_missing).takeIf { m.missingRouting.isNotEmpty() }
+                        stringResource(R.string.maps_routing_missing).takeIf { m.missingRouting.isNotEmpty() },
+                        when {
+                            m.area == null -> null
+                            m.search == com.curveon.data.search.SearchIndexes.Source.NONE -> stringResource(R.string.maps_search_missing)
+                            m.betterSearch -> stringResource(R.string.maps_search_better)
+                            m.search == com.curveon.data.search.SearchIndexes.Source.MAP -> stringResource(R.string.maps_search_basic)
+                            else -> null
+                        }
                     ).joinToString(" · "),
                     color = if (warn) NeonAmber else TextSecondary, fontSize = 13.sp
                 )
@@ -202,7 +210,7 @@ private fun MapRow(m: InstalledMap, download: MapDownloadState, queue: List<Stri
                 if (m.area != null) {
                     Spacer(Modifier.width(6.dp))
                     Button(onClick = { actions.onDownloadMap(m.id) }, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
-                        Text(stringResource(if (m.newerBuild == null && m.missingRouting.isNotEmpty()) R.string.maps_get_routing else R.string.update),
+                        Text(stringResource(if (m.newerBuild == null && missing) R.string.maps_get_missing else R.string.update),
                             color = OnCyan, fontWeight = FontWeight.Bold)
                     }
                 }

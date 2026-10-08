@@ -210,8 +210,7 @@
     <string name="kind_peak">Peak</string>
     <string name="kind_motorcycle_shop">Motorcycle shop</string>
     <string name="kind_fast_food">Fast food</string>
-    <string name="search_index_installed">Offline search index installed (%.0f MB)</string>
-    <string name="search_index_none">No offline search index. Copy %1$s to %2$s. Online search works when connected.</string>
+    <string name="search_index_none">No offline search yet. It comes with each country you download; online search works when connected.</string>
     <string name="rename">Rename</string>
     <string name="more">More</string>
     <string name="collapse">Collapse</string>
@@ -407,8 +406,18 @@
         <item quantity="other">%d parts</item>
     </plurals>
     <string name="maps_routing_missing">routing data missing</string>
-    <string name="maps_get_routing">Get routing</string>
     <string name="maps_none">No maps yet. Download the countries you ride in.</string>
     <string name="maps_by_hand">copied by hand</string>
-    <string name="maps_hint">Each country comes with its routing data. Neighbours share routing tiles, so the next one is often smaller. Places, streets and speed cameras in search are offline for Norway only; elsewhere search needs a connection.</string>
+    <string name="maps_hint">Each country comes with its routing data and offline search. Neighbours share routing tiles, so the next one is often smaller.</string>
+    <plurals name="search_index_installed">
+        <item quantity="one">Offline search for %1$d area (%2$.0f MB)</item>
+        <item quantity="other">Offline search for %1$d areas (%2$.0f MB)</item>
+    </plurals>
+    <string name="search_downloading">Downloading search – %1$.0f of %2$.0f MB</string>
+    <string name="search_building">Building search from the map (%1$d %%)</string>
+    <string name="search_saving">Saving search…</string>
+    <string name="maps_search_missing">search missing</string>
+    <string name="maps_search_basic">basic search</string>
+    <string name="maps_search_better">fuller search available</string>
+    <string name="maps_get_missing">Get missing</string>
 </resources>

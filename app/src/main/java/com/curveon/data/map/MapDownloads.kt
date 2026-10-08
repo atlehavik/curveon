@@ -3,6 +3,7 @@ package com.curveon.data.map
 import android.content.Context
 import com.curveon.R
 import com.curveon.data.routing.RoutingData
+import com.curveon.data.search.SearchIndexes
 import com.curveon.pmtiles.ExtractProgress
 import com.curveon.pmtiles.RegionExtractor
 import kotlinx.coroutines.Dispatchers
@@ -24,8 +25,13 @@ data class InstalledMap(
     /** Newest build online, when known and a month or more newer than [build]. */
     val newerBuild: String?,
     /** Routing tiles this country needs that aren't on the tablet. */
-    val missingRouting: List<String>
-)
+    val missingRouting: List<String>,
+    val search: SearchIndexes.Source,
+    /** Search is built from the map, but a full one (POIs, house numbers, cameras) is online. */
+    val betterSearch: Boolean
+) {
+    val missingSearch get() = area != null && (search == SearchIndexes.Source.NONE || betterSearch)
+}
 
 sealed interface MapDownloadState {
     data object Idle : MapDownloadState
@@ -39,7 +45,18 @@ sealed interface MapDownloadState {
  * country's BRouter routing tiles come from brouter.de. Needs a connection (phone hotspot or
  * Wi-Fi) while downloading only.
  */
-class MapDownloads(private val context: Context, private val maps: OfflineMaps, private val routing: RoutingData) {
+class MapDownloads(
+    private val context: Context,
+    private val maps: OfflineMaps,
+    private val routing: RoutingData,
+    private val search: SearchIndexes
+) {
+
+    /** Full search indexes online (area id to bytes), once [refreshSearch] has reached the server. */
+    @Volatile var searchAvailable: Map<String, Long>? = null
+        private set
+
+    suspend fun refreshSearch() { search.available()?.let { searchAvailable = it } }
 
     val catalog = MapCatalog(context)
     private val prefs = context.getSharedPreferences("maps", Context.MODE_PRIVATE)
@@ -49,6 +66,7 @@ class MapDownloads(private val context: Context, private val maps: OfflineMaps, 
 
     fun installed(latestBuild: String?): List<InstalledMap> {
         val tiles = routing.installedNames()
+        val sources = HashMap<String, SearchIndexes.Source>()
         return maps.installedMaps().map { f ->
             val id = f.nameWithoutExtension
             val area = catalog.byId[id]
@@ -59,7 +77,9 @@ class MapDownloads(private val context: Context, private val maps: OfflineMaps, 
             InstalledMap(
                 id, area, f, f.length(), build,
                 latest?.takeIf { area != null && (build == null || daysBetween(build, it) >= STALE_DAYS) },
-                area?.routing?.filterNot { it in tiles }.orEmpty()
+                area?.routing?.filterNot { it in tiles }.orEmpty(),
+                search.source(id).also { src -> sources[id] = src },
+                sources[id] == SearchIndexes.Source.MAP && searchAvailable?.containsKey(id) == true
             )
         }
     }
@@ -68,7 +88,7 @@ class MapDownloads(private val context: Context, private val maps: OfflineMaps, 
 
     /** What downloading [area] would add: its map, plus the routing tiles not already on the tablet. */
     fun downloadBytes(area: CatalogArea, installedTiles: Set<String>) =
-        area.mapBytes + area.routing.filterNot { it in installedTiles }.sumOf { catalog.routingBytes(it) }
+        area.mapBytes + area.routing.filterNot { it in installedTiles }.sumOf { catalog.routingBytes(it) } + (searchAvailable?.get(area.id) ?: 0L)
 
     /** Key of the newest Protomaps build, e.g. "20261006.pmtiles"; null when offline. */
     suspend fun latestBuild(): String? = withContext(Dispatchers.IO) {
@@ -95,19 +115,27 @@ class MapDownloads(private val context: Context, private val maps: OfflineMaps, 
                     ExtractProgress.Stage.DOWNLOADING -> context.getString(R.string.map_downloading, p.doneBytes / 1e6, p.totalBytes / 1e6)
                     ExtractProgress.Stage.DONE -> context.getString(R.string.download_complete)
                 }
-                // The map is most of the download; routing tiles get the last 10 %.
-                onProgress(msg, p.fraction * 0.9f)
+                // The map is most of the download; routing and search share the last 20 %.
+                onProgress(msg, p.fraction * 0.8f)
             }, isCancelled = isCancelled)
             prefs.edit().putString("build_${area.id}", build.removeSuffix(".pmtiles")).apply()
-            downloadRouting(area, onProgress, isCancelled)
+            completeMissing(area, onProgress, isCancelled)
         }
 
-    suspend fun downloadRouting(area: CatalogArea, onProgress: (String, Float) -> Unit, isCancelled: () -> Boolean) =
+    /** Routing tiles the area lacks, and its search when missing or when a fuller one is online. */
+    suspend fun completeMissing(area: CatalogArea, onProgress: (String, Float) -> Unit, isCancelled: () -> Boolean) {
         routing.download(area.routing, { done, total, tile ->
-            if (done < total) onProgress(context.getString(R.string.routing_downloading, tile, done + 1, total), 0.9f + 0.1f * done / total)
+            if (done < total) onProgress(context.getString(R.string.routing_downloading, tile, done + 1, total), 0.8f + 0.05f * done / total)
         }, isCancelled)
+        if (searchAvailable == null) refreshSearch()
+        val src = search.source(area.id)
+        if (src == SearchIndexes.Source.NONE || (src == SearchIndexes.Source.MAP && searchAvailable?.containsKey(area.id) == true)) {
+            search.install(area.id, file(area), searchAvailable, { msg, f -> onProgress(msg, 0.85f + 0.15f * f) }, isCancelled)
+        }
+    }
 
     fun cleanupPartial(id: String) {
+        search.cleanupPartial(id)
         File(maps.mapsDir, "$id.pmtiles.part").delete()
         File(maps.mapsDir, "$id.pmtiles.data").delete()
     }
@@ -117,6 +145,7 @@ class MapDownloads(private val context: Context, private val maps: OfflineMaps, 
         File(maps.mapsDir, "$id.pmtiles").delete()
         cleanupPartial(id)
         prefs.edit().remove("build_$id").apply()
+        search.delete(id)
         val area = catalog.byId[id] ?: return
         val stillNeeded = maps.installedMaps().mapNotNull { catalog.byId[it.nameWithoutExtension] }.flatMap { it.routing }.toSet()
         routing.delete(area.routing.filterNot { it in stillNeeded })

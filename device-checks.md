@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Offline search in every country
+
+Tried in the emulator: Norway's search built from the map (~2 min, "basic search"), then replaced by
+the full one from the cloud ("fuller search available" → Get missing). On the X7 the old Norway
+index carried over as the full one. Still to try on the X7:
+
+- [ ] Download a new country (e.g. Sweden, once https://github.com/atlehavik/curveon-data/releases/tag/search
+  has `sweden.sqlite.gz`): search finds a town, a street with house number and a fuel station there.
+- [ ] Search while in Norway still finds Norwegian addresses first; with two countries installed,
+  results from both show up.
+- [ ] Optional: in airplane mode, build search from the map for a small country (Get missing with
+  no connection falls back to it) and see how long it takes on the X7.
+
 ## 2026-10-08 — Download maps by country
 
 Tried in the emulator (Faroe Islands: download, list, delete) and on the X7 (Faroe Islands next to
@@ -15,7 +28,6 @@ Norway on the map, then deleted again). Still to try on the X7:
   progress, then the map shows across the border and routes work there.
 - [ ] Pick two or three countries in a row: they queue ("Waiting") and download one after another;
   Cancel on a waiting one takes it out.
-- [ ] Norway shows "routing data missing" (Svalbard/Jan Mayen tiles): "Get routing" fetches just those.
 - [ ] Border areas (e.g. Svinesund): roads look normal where the two maps overlap (no doubled labels).
 - [ ] Free space: DMD2 keeps its own 29 GB; Curveon can't read it (Android blocks other apps' folders).
 
