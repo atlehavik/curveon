@@ -55,7 +55,9 @@ fun GpxManagerDialog(
     actions: GpxActions,
     onTogglePoiCategory: (PoiCategory) -> Unit,
     onAutoFollow: (Boolean) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Page menu when shown inside the GPX & rides dialog. */
+    sideBar: (@Composable () -> Unit)? = null
 ) {
     var confirmDelete by remember { mutableStateOf<GpxTrack?>(null) }
     var confirmDeleteGroup by remember { mutableStateOf<GpxGroup?>(null) }
@@ -88,7 +90,7 @@ fun GpxManagerDialog(
     }
 
     CockpitDialog(
-        title = "GPX", icon = Icons.Default.Route, accent = ElectricCyan, onDismiss = onDismiss, tag = "gpx_manager",
+        title = "GPX", icon = Icons.Default.Route, accent = ElectricCyan, onDismiss = onDismiss, tag = "gpx_manager", sideBar = sideBar,
         actions = {
             Button(
                 onClick = actions.onImport,

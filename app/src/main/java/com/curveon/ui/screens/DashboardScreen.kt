@@ -106,7 +106,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.curveon.data.model.CompassDirection.NORTH), avoidTolls = false)) }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
     var showSettings by rememberSaveable { mutableStateOf(false) }
-    var showRides by remember { mutableStateOf(false) }
+    var tracksTab by rememberSaveable { mutableStateOf(TracksTab.GPX) }
     /** The phone app's open tab; null when closed. */
     var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
     /** A place picked while riding: add it as a stop or make it the destination? */
@@ -235,7 +235,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    SpeedCard(telemetry, onClick = { showRides = true }, camera = cameraAlert)
+                    SpeedCard(telemetry, camera = cameraAlert)
 
                     val attention = voiceReply != null || notifications.isNotEmpty()
                     when {
@@ -328,20 +328,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
-        if (showRides) {
-            RideLogDialog(
-                current = currentRide,
-                rides = rides,
-                onRideAgain = { showRides = false; viewModel.rideAgain(it) },
-                gpxGroups = gpxGroups,
-                onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
-                autoSaveGroup = autoSaveRidesGroup,
-                onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
-                onDelete = { viewModel.deleteRides(it) },
-                onDismiss = { showRides = false }
-            )
-        }
-
         if (showRoundtrip) {
             RoundtripDialog(
                 initialConfig = lastRoundtrip,
@@ -354,8 +340,22 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
-        if (showGpx) {
-            GpxManagerDialog(
+        if (showGpx) HostDialog(onDismiss = { showGpx = false }) {
+            val tabs = @Composable {
+                DialogTabs(TracksTab.entries, tracksTab, { stringResource(it.label) }, { it.icon }, { tracksTab = it }, width = 170.dp)
+            }
+            if (tracksTab == TracksTab.RIDES) RideLogDialog(
+                current = currentRide,
+                rides = rides,
+                onRideAgain = { showGpx = false; viewModel.rideAgain(it) },
+                gpxGroups = gpxGroups,
+                onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
+                autoSaveGroup = autoSaveRidesGroup,
+                onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
+                onDelete = { viewModel.deleteRides(it) },
+                onDismiss = { showGpx = false },
+                sideBar = tabs
+            ) else GpxManagerDialog(
                 tracks = savedGpxTracks,
                 groups = gpxGroups,
                 message = gpxMessage,
@@ -382,7 +382,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 },
                 onTogglePoiCategory = viewModel::togglePoiCategory,
                 onAutoFollow = viewModel::setAutoFollow,
-                onDismiss = { showGpx = false }
+                onDismiss = { showGpx = false },
+                sideBar = tabs
             )
         }
 
@@ -558,4 +559,10 @@ private fun TrackChip(h: com.curveon.data.gpx.TrackHint, onClick: () -> Unit) {
             color = color, fontSize = 14.sp, fontWeight = FontWeight.Black
         )
     }
+}
+
+/** Pages of the GPX & rides dialog (rail button). */
+private enum class TracksTab(val label: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    GPX(R.string.gpx_tab, Icons.Default.Route),
+    RIDES(R.string.rides, Icons.Default.TwoWheeler)
 }

@@ -6,7 +6,8 @@
     <!-- Shared -->
     <string name="where_to">Where to?</string>
     <string name="roundtrip">Roundtrip</string>
-    <string name="gpx_manager">GPX manager</string>
+    <string name="gpx_manager">GPX &amp; rides</string>
+    <string name="gpx_tab">GPX</string>
     <string name="phone">Phone</string>
     <string name="settings">Settings</string>
     <string name="dashboard">Dashboard</string>

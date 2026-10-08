@@ -56,7 +56,9 @@ fun RideLogDialog(
     /** (existing group or null, new group name or null); both null turns auto-saving off. */
     onAutoSave: (Long?, String?) -> Unit,
     onDelete: (Collection<Long>) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Page menu when shown inside the GPX & rides dialog. */
+    sideBar: (@Composable () -> Unit)? = null
 ) {
     var expanded by remember { mutableStateOf<Long?>(null) }
     var saving by remember { mutableStateOf<Ride?>(null) }
@@ -68,7 +70,7 @@ fun RideLogDialog(
     val autoGroup = gpxGroups.firstOrNull { it.id == autoSaveGroup }
 
     CockpitDialog(
-        title = stringResource(R.string.rides), icon = Icons.Default.TwoWheeler, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog",
+        title = stringResource(R.string.rides), icon = Icons.Default.TwoWheeler, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog", sideBar = sideBar,
         subtitle = selection?.let { pluralStringResource(R.plurals.rides_selected, it.size, it.size) },
         actions = {
             val sel = selection

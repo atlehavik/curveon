@@ -38,7 +38,7 @@ and [dashboard.md](dashboard.md) for the goals.
 - **Day/night map** that follows the sun at your position (or fixed in Settings).
 - **Tunnels**: position keeps moving along the route at your speed when GPS drops out.
 - **Ride log**: rides record automatically (distance, time, speeds, climb, gyro lean angle);
-  tap the speed card to see them, save one to the GPX collection or ride one again.
+  find them under Rides in the GPX & rides dialog (rail), save one to the GPX collection or ride one again.
 - **Speed limit sign** from OSM data, while navigating and while free riding.
 - **Dashboard** (Android Auto-like): speed + limit, newest message with Reply/Dismiss, calls
   with Answer/Decline, music with full cover art when nothing else needs the space.

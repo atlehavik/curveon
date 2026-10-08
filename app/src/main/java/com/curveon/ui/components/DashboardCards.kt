@@ -72,7 +72,6 @@ private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorde
 @Composable
 fun SpeedCard(
     telemetry: TelemetryData,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     camera: com.curveon.data.routing.CameraAlert? = null
 ) {
@@ -86,7 +85,7 @@ fun SpeedCard(
     }
     DashCard(modifier.fillMaxWidth().testTag("speed_card"), border = border) {
         Row(
-            Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {

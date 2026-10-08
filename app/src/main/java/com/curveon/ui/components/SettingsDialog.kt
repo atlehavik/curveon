@@ -83,23 +83,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
     var confirmDelete by remember { mutableStateOf<InstalledMap?>(null) }
     CockpitDialog(title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
         Row(Modifier.fillMaxSize()) {
-            Column(
-                Modifier.width(210.dp).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f)).padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                SettingsTab.entries.forEach { t ->
-                    val on = t == tab
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
-                            .clickable { tab = t }.padding(horizontal = 14.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(t.icon, null, tint = if (on) OnCyan else TextSecondary)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(t.label), color = if (on) OnCyan else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
+            DialogTabs(SettingsTab.entries, tab, { stringResource(it.label) }, { it.icon }, { tab = it })
 
             Box(Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp, end = 6.dp)) {
                 when (tab) {

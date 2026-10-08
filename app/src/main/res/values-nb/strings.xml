@@ -5,7 +5,8 @@
     <!-- Shared -->
     <string name="where_to">Hvor skal du?</string>
     <string name="roundtrip">Rundtur</string>
-    <string name="gpx_manager">GPX-spor</string>
+    <string name="gpx_manager">GPX og turer</string>
+    <string name="gpx_tab">GPX</string>
     <string name="phone">Telefon</string>
     <string name="settings">Innstillinger</string>
     <string name="dashboard">Dashbord</string>

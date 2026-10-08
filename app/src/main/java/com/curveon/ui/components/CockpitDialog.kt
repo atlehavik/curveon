@@ -11,7 +11,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,10 +49,12 @@ fun CockpitDialog(
     subtitle: String? = null,
     header: (@Composable RowScope.() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    /** A menu on the left (see [DialogTabs]), for screens with several pages like Settings. */
+    sideBar: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val toast = LocalToast.current
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    val frame = @Composable {
         Box(
             Modifier.fillMaxWidth(0.94f).fillMaxHeight(0.94f).clip(DialogShape).background(CockpitSurface)
                 .border(1.dp, CockpitBorder, DialogShape).testTag(tag)
@@ -69,7 +73,11 @@ fun CockpitDialog(
                         RoundButton(Icons.Default.Close, stringResource(R.string.close), 48.dp, CockpitSurfaceVariant, TextPrimary, onDismiss)
                     }
                 }
-                content()
+                if (sideBar == null) content()
+                else Row(Modifier.fillMaxSize()) {
+                    sideBar()
+                    Column(Modifier.weight(1f).fillMaxHeight().padding(start = 18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+                }
             }
             toast?.let {
                 Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
@@ -79,6 +87,46 @@ fun CockpitDialog(
             }
         }
     }
+    // Inside a [HostDialog] the pages swap without closing and reopening the window.
+    if (LocalInHostDialog.current) frame()
+    else Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) { frame() }
 }
+
+private val LocalInHostDialog = compositionLocalOf { false }
+
+/** One dialog window whose [CockpitDialog] pages (e.g. GPX and Rides) can change in place. */
+@Composable
+fun HostDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        CompositionLocalProvider(LocalInHostDialog provides true) { content() }
+    }
+}
+
+/** The left-hand page menu of a dialog (Settings, GPX & rides): icon and label per page. */
+@Composable
+fun <T> DialogTabs(
+    items: List<T>, selected: T, label: @Composable (T) -> String, icon: (T) -> ImageVector, onSelect: (T) -> Unit,
+    width: androidx.compose.ui.unit.Dp = 210.dp
+) {
+    Column(
+        Modifier.width(width).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f)).padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        items.forEach { t ->
+            val on = t == selected
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                    .clickable { onSelect(t) }.padding(horizontal = 14.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(icon(t), null, tint = if (on) OnCyanText else TextSecondary)
+                Spacer(Modifier.width(12.dp))
+                Text(label(t), color = if (on) OnCyanText else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+        }
+    }
+}
+
+private val OnCyanText = Color(0xFF00363D)
 
 private val DialogShape = RoundedCornerShape(24.dp)
