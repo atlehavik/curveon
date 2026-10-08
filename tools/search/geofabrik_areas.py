@@ -60,7 +60,10 @@ def main(catalog_path, out_path):
     boxes = {f["properties"]["id"]: bbox(f["geometry"]) for f in feats if f.get("geometry")}
 
     out, unmatched = {}, []
+    split = {a["parent"] for a in catalog if a["parent"]}
     for a in catalog:
+        if a["id"] in split:
+            continue  # the USA, Canada, Russia: downloaded by state/region only
         ids = []
         if a["parent"] == "united-states-of-america":
             ids = ["us/" + slug(a["name"])]
@@ -85,7 +88,7 @@ def main(catalog_path, out_path):
                 ids = [min(inside)[1]]
         if ids:
             out[a["id"]] = [by_id[i]["properties"]["urls"]["pbf"] for i in ids]
-        elif a["parent"] == "" and not any(c["parent"] == a["id"] for c in catalog):
+        else:
             unmatched.append(a["id"])
     json.dump(out, open(out_path, "w"), indent=1, sort_keys=True)
     print(f"{len(out)} areas matched -> {out_path}")
