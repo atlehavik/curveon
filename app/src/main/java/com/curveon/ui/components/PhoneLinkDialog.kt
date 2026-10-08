@@ -3,97 +3,229 @@ package com.curveon.ui.components
 import com.curveon.R
 import androidx.compose.ui.res.stringResource
 import android.Manifest
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
+import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.curveon.data.bluetooth.CompanionConnectionState
+import com.curveon.data.bluetooth.MediaApp
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.ui.theme.*
 
-/** Choose which paired phone to mirror, or turn on demo data. Shown in Settings → Phone. */
+/**
+ * Settings → Phone: how the linked phone is doing (with Forget), its music apps to mark as
+ * favorites, the other paired phones to switch to, and demo data.
+ */
 @Composable
 fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifier) {
     val state by manager.connectionState.collectAsStateWithLifecycle()
     val name by manager.connectedDeviceName.collectAsStateWithLifecycle()
+    val installed by manager.installedApps.collectAsStateWithLifecycle()
+    val favorites by manager.favoriteApps.collectAsStateWithLifecycle()
+    val sessions by manager.mediaApps.collectAsStateWithLifecycle()
     var refresh by remember { mutableIntStateOf(0) }
     val phones = remember(refresh, state) { manager.pairedPhones() }
     val selected = remember(refresh, state) { manager.selectedPhoneAddress() }
+    var confirmForget by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         manager.restart(); refresh++
     }
+    val demo = state == CompanionConnectionState.DEMO
 
-    run {
-        Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                when (state) {
-                    CompanionConnectionState.CONNECTED -> stringResource(R.string.link_connected, name)
-                    CompanionConnectionState.CONNECTING -> stringResource(R.string.phone_connecting_to, name)
-                    CompanionConnectionState.DISCONNECTED -> stringResource(R.string.link_disconnected, name)
-                    CompanionConnectionState.UNREACHABLE -> stringResource(R.string.link_unreachable, name)
-                    CompanionConnectionState.NO_PHONE_SELECTED -> stringResource(R.string.link_pick)
-                    CompanionConnectionState.NO_PERMISSION -> stringResource(R.string.link_no_permission)
-                    CompanionConnectionState.BLUETOOTH_OFF -> stringResource(R.string.bluetooth_off)
-                    CompanionConnectionState.DEMO -> stringResource(R.string.link_demo)
-                },
-                color = TextSecondary, fontSize = 14.sp
-            )
+    Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (demo || selected != null) LinkedPhoneCard(manager, onForget = { confirmForget = true })
+        else Text(
+            stringResource(if (state == CompanionConnectionState.NO_PERMISSION) R.string.link_no_permission else R.string.link_pick),
+            color = TextSecondary, fontSize = 14.sp
+        )
 
-            if (state == CompanionConnectionState.NO_PERMISSION && Build.VERSION.SDK_INT >= 31) {
-                Button(onClick = { permission.launch(Manifest.permission.BLUETOOTH_CONNECT) },
-                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
-                    Text(stringResource(R.string.link_allow_bluetooth), color = androidx.compose.ui.graphics.Color(0xFF00363D), fontWeight = FontWeight.Bold)
-                }
+        if (state == CompanionConnectionState.NO_PERMISSION && Build.VERSION.SDK_INT >= 31) {
+            Button(onClick = { permission.launch(Manifest.permission.BLUETOOTH_CONNECT) },
+                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
+                Text(stringResource(R.string.link_allow_bluetooth), color = Color(0xFF00363D), fontWeight = FontWeight.Bold)
             }
+        }
 
-            LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(phones) { p ->
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant)
-                            .clickable { manager.selectPhone(p); refresh++ }.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Smartphone, null, tint = ElectricCyan)
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(p.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                            Text(p.address, color = TextMuted, fontSize = 11.sp)
+        if (demo || selected != null) {
+            LinkSectionTitle(stringResource(R.string.link_music_apps))
+            if (installed.isEmpty()) Text(stringResource(R.string.link_music_apps_none), color = TextMuted, fontSize = 13.sp)
+            else {
+                Text(stringResource(R.string.link_music_apps_hint), color = TextMuted, fontSize = 13.sp)
+                installed.chunked(2).forEach { pair ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        pair.forEach { app ->
+                            val running = sessions.firstOrNull { it.packageName == app.packageName && it.running }
+                            MusicAppRow(app, running?.playing, app.packageName in favorites, Modifier.weight(1f)) {
+                                manager.setFavoriteApp(app.packageName, it)
+                            }
                         }
-                        if (p.address == selected) Icon(Icons.Default.CheckCircle, stringResource(R.string.selected), tint = EcoGreen)
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }
             }
+        }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.link_demo_data), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                    Text(stringResource(R.string.link_demo_data_hint), color = TextMuted, fontSize = 12.sp)
+        val others = phones.filter { it.address != selected }
+        if (!demo && others.isNotEmpty()) {
+            LinkSectionTitle(stringResource(if (selected == null) R.string.link_paired_phones else R.string.link_other_phones))
+            others.forEach { p ->
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant)
+                        .clickable { manager.selectPhone(p); refresh++ }.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Smartphone, null, tint = TextSecondary)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(p.name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(p.address, color = TextMuted, fontSize = 11.sp)
+                    }
+                    Text(stringResource(R.string.link_use), color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
-                CockpitSwitch(
-                    checked = state == CompanionConnectionState.DEMO,
-                    onCheckedChange = { manager.setDemo(it); refresh++ }, accent = NeonAmber)
             }
         }
+        if (!demo) TextButton(onClick = {
+            runCatching { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        }) { Text(stringResource(R.string.link_bluetooth_settings), color = ElectricCyan) }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.link_demo_data), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.link_demo_data_hint), color = TextMuted, fontSize = 12.sp)
+            }
+            CockpitSwitch(checked = demo, onCheckedChange = { manager.setDemo(it); refresh++ }, accent = NeonAmber)
+        }
     }
+
+    if (confirmForget) AlertDialog(
+        onDismissRequest = { confirmForget = false },
+        title = { Text(stringResource(R.string.link_forget_title, name)) },
+        text = { Text(stringResource(R.string.link_forget_text)) },
+        confirmButton = {
+            TextButton(onClick = { manager.forgetPhone(); confirmForget = false; refresh++ }) {
+                Text(stringResource(R.string.link_forget), color = WarningRed)
+            }
+        },
+        dismissButton = { TextButton(onClick = { confirmForget = false }) { Text(stringResource(R.string.cancel)) } }
+    )
+}
+
+/** The phone Curveon links to: connection, model, battery, what it shares, and Forget. */
+@Composable
+private fun LinkedPhoneCard(manager: PhoneCompanionManager, onForget: () -> Unit) {
+    val state by manager.connectionState.collectAsStateWithLifecycle()
+    val name by manager.connectedDeviceName.collectAsStateWithLifecycle()
+    val status by manager.phoneStatus.collectAsStateWithLifecycle()
+    val since by manager.connectedSince.collectAsStateWithLifecycle()
+    val contactsAllowed by manager.contactsAllowed.collectAsStateWithLifecycle()
+    val callLogAllowed by manager.callLogAllowed.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val connected = state == CompanionConnectionState.CONNECTED || state == CompanionConnectionState.DEMO
+    val (label, color) = when (state) {
+        CompanionConnectionState.CONNECTED -> stringResource(R.string.link_status_connected) to EcoGreen
+        CompanionConnectionState.DEMO -> stringResource(R.string.link_demo_data) to NeonAmber
+        CompanionConnectionState.CONNECTING -> stringResource(R.string.link_status_connecting) to NeonAmber
+        else -> stringResource(R.string.link_status_offline) to WarningRed
+    }
+
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Smartphone, null, tint = ElectricCyan, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.width(12.dp))
+            Text(name, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Spacer(Modifier.width(12.dp))
+            Box(Modifier.size(9.dp).clip(CircleShape).background(color))
+            Spacer(Modifier.width(6.dp))
+            Text(label, color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            if (state == CompanionConnectionState.DISCONNECTED || state == CompanionConnectionState.UNREACHABLE) {
+                OutlinedButton(onClick = manager::retryNow) { Text(stringResource(R.string.link_connect_now), color = ElectricCyan) }
+                Spacer(Modifier.width(8.dp))
+            }
+            if (state != CompanionConnectionState.DEMO) TextButton(onClick = onForget) { Text(stringResource(R.string.link_forget), color = TextMuted) }
+        }
+
+        val s = status
+        if (connected && s != null) {
+            Text(
+                listOfNotNull(
+                    s.model.takeIf { it.isNotEmpty() && it != name },
+                    s.batteryPercent.takeIf { it >= 0 }?.let {
+                        stringResource(if (s.charging) R.string.link_battery_charging else R.string.link_battery, it)
+                    },
+                    since?.let { stringResource(R.string.link_since, DateFormat.getTimeFormat(context).format(java.util.Date(it))) }
+                ).joinToString(" · "),
+                color = TextSecondary, fontSize = 14.sp
+            )
+            if (!s.notificationAccess) Text(stringResource(R.string.link_no_notification_access), color = NeonAmber, fontSize = 13.sp)
+        }
+        if (connected && (!contactsAllowed || !callLogAllowed)) Text(stringResource(R.string.link_no_contacts), color = NeonAmber, fontSize = 13.sp)
+        when (state) {
+            CompanionConnectionState.DISCONNECTED -> stringResource(R.string.link_disconnected, name)
+            CompanionConnectionState.UNREACHABLE -> stringResource(R.string.link_unreachable, name)
+            CompanionConnectionState.BLUETOOTH_OFF -> stringResource(R.string.bluetooth_off)
+            CompanionConnectionState.NO_PERMISSION -> stringResource(R.string.link_no_permission)
+            else -> null
+        }?.let { Text(it, color = TextSecondary, fontSize = 13.sp) }
+    }
+}
+
+/** A music app on the phone; tap to make it a favorite (always in the music card). */
+@Composable
+private fun MusicAppRow(app: MediaApp, playing: Boolean?, favorite: Boolean, modifier: Modifier, onFavorite: (Boolean) -> Unit) {
+    Row(
+        modifier.height(64.dp).clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant)
+            .clickable { onFavorite(!favorite) }.padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.size(36.dp).clip(CircleShape).background(Color(0xCC1A1F26)), contentAlignment = Alignment.Center) {
+            if (app.icon != null) Image(app.icon.asImageBitmap(), null, modifier = Modifier.size(28.dp))
+            else Text(app.name.take(1), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(app.name, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (playing != null) Text(stringResource(if (playing) R.string.link_app_playing else R.string.link_app_running), color = TextMuted, fontSize = 12.sp)
+        }
+        Icon(
+            if (favorite) Icons.Default.Star else Icons.Default.StarBorder,
+            stringResource(R.string.link_favorite), tint = if (favorite) NeonAmber else TextMuted
+        )
+    }
+}
+
+@Composable
+private fun LinkSectionTitle(text: String) {
+    Text(text.uppercase(), color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
 }

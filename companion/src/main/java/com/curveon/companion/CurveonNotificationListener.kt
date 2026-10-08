@@ -114,9 +114,7 @@ class CurveonNotificationListener : NotificationListenerService() {
     private fun findReplyAction(n: Notification): Notification.Action? =
         n.actions?.firstOrNull { a -> a.remoteInputs?.any { it.allowFreeFormInput } == true }
 
-    private fun appLabel(pkg: String): String = runCatching {
-        packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString()
-    }.getOrDefault(pkg)
+    private fun appLabel(pkg: String): String = MediaApps.label(this, pkg)
 
     /** Falls back to the phone book so the tablet shows real faces, like Android Auto does. */
     private fun contactPhoto(name: String, px: Int = AVATAR_PX): String? {
@@ -218,13 +216,22 @@ class CurveonNotificationListener : NotificationListenerService() {
         CompanionHub.setMediaSources(list)
     }
 
-    /** The rider picked this app on the tablet: pause whatever else plays and start it. */
+    /**
+     * The rider picked this app on the tablet: pause whatever else plays and start it. A favourite
+     * that isn't running (no media session) gets started through [MediaApps.start].
+     */
     fun playApp(pkg: String) = main.post {
-        val target = sessions.firstOrNull { it.packageName == pkg } ?: return@post
         sessions.filter { it.packageName != pkg && it.playbackState?.state == PlaybackState.STATE_PLAYING }
             .forEach { it.transportControls.pause() }
-        follow(target)
-        target.transportControls.play()
+        val target = sessions.firstOrNull { it.packageName == pkg }
+        if (target != null) {
+            follow(target)
+            target.transportControls.play()
+        } else {
+            MediaApps.start(this, pkg) {
+                sessions.any { it.packageName == pkg && it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            }
+        }
     }
 
     private var lastArtId: String? = null
@@ -291,6 +298,11 @@ class CurveonNotificationListener : NotificationListenerService() {
     private fun sha1(s: String) = MessageDigest.getInstance("SHA-1").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }.take(16)
 
     companion object {
+        fun isEnabled(context: android.content.Context): Boolean {
+            val me = ComponentName(context, CurveonNotificationListener::class.java).flattenToString()
+            return android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")?.contains(me) == true
+        }
+
         private const val TAG = "CurveonListener"
         private const val AVATAR_PX = 128
         private const val CALL_PX = 512

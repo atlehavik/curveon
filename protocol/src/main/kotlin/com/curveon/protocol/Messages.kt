@@ -65,6 +65,29 @@ sealed interface Message {
 
     data class MediaSource(val packageName: String, val app: String, val playing: Boolean, val iconPngBase64: String?)
 
+    /**
+     * Every media app installed on the phone that can be started from outside (it offers a media
+     * browser, like for Android Auto), running or not. The rider marks favourites among them.
+     */
+    data class InstalledMediaApps(val apps: List<MediaSource>) : Message {
+        override fun toJson() = obj("installed_media_apps").put("list", JSONArray(apps.map {
+            JSONObject().put("pkg", it.packageName).put("app", it.app).put("icon", it.iconPngBase64 ?: JSONObject.NULL)
+        }))
+    }
+
+    /** How the phone is doing, for Settings → Phone on the tablet. Sent on connect and on changes. */
+    data class PhoneStatus(
+        val model: String,
+        val batteryPercent: Int,
+        val charging: Boolean,
+        /** Without it there are no messages or music on the tablet. */
+        val notificationAccess: Boolean,
+        val appVersion: String
+    ) : Message {
+        override fun toJson() = obj("phone_status").put("model", model).put("battery", batteryPercent)
+            .put("charging", charging).put("notifications", notificationAccess).put("version", appVersion)
+    }
+
     data class NotificationPosted(
         val key: String,
         val app: String,
@@ -218,6 +241,13 @@ sealed interface Message {
             "media_sources" -> MediaSources(o.optJSONArray("list").objects().map {
                 MediaSource(it.getString("pkg"), it.optString("app"), it.optBoolean("playing"), it.nullableString("icon"))
             })
+            "installed_media_apps" -> InstalledMediaApps(o.optJSONArray("list").objects().map {
+                MediaSource(it.getString("pkg"), it.optString("app"), false, it.nullableString("icon"))
+            })
+            "phone_status" -> PhoneStatus(
+                o.optString("model"), o.optInt("battery", -1), o.optBoolean("charging"),
+                o.optBoolean("notifications", true), o.optString("version")
+            )
             "notification" -> NotificationPosted(
                 o.getString("key"), o.optString("app"), o.optString("sender"), o.optString("text"), o.optLong("time"),
                 o.optString("avatar").takeIf { it.isNotEmpty() && !o.isNull("avatar") },

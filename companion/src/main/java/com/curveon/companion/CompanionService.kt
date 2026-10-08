@@ -9,9 +9,12 @@ import android.app.Service
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.os.BatteryManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -45,6 +48,7 @@ class CompanionService : Service() {
             CompanionHub.phoneBook = PhoneBook(this)
             CompanionHub.update { it.copy(serviceRunning = true, lastEvent = "Waiting for the tablet…") }
             thread(name = "curveon-bt-server", isDaemon = true) { acceptLoop() }
+            registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         }
         return START_STICKY
     }
@@ -52,11 +56,39 @@ class CompanionService : Service() {
     override fun onDestroy() {
         running = false
         runCatching { serverSocket?.close() }
+        runCatching { unregisterReceiver(batteryReceiver) }
         CompanionHub.voice = null
         CompanionHub.phoneBook?.shutdown()
         CompanionHub.phoneBook = null
         CompanionHub.update { it.copy(serviceRunning = false, tabletName = null, lastEvent = "Stopped") }
         super.onDestroy()
+    }
+
+    // ---- status for the tablet's Settings → Phone ----
+
+    @Volatile private var lastStatus: Message.PhoneStatus? = null
+
+    /** Fires on every small battery change; the tablet only hears when something it shows changed. */
+    private val batteryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val status = phoneStatus(intent)
+            if (status == lastStatus) return
+            lastStatus = status
+            CompanionHub.broadcast(status)
+        }
+    }
+
+    private fun phoneStatus(battery: Intent? = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))): Message.PhoneStatus {
+        val level = battery?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = battery?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+        val plugged = (battery?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
+        return Message.PhoneStatus(
+            model = Build.MODEL,
+            batteryPercent = if (level < 0 || scale <= 0) -1 else level * 100 / scale,
+            charging = plugged,
+            notificationAccess = CurveonNotificationListener.isEnabled(this),
+            appVersion = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull().orEmpty()
+        )
     }
 
     @SuppressLint("MissingPermission") // checked by MainActivity before starting the service
@@ -91,6 +123,8 @@ class CompanionService : Service() {
         try {
             writer.write(Message.Hello(Build.MODEL))
             CompanionHub.addTablet(writer, name)
+            writer.write(phoneStatus().also { lastStatus = it })
+            writer.write(MediaApps.installed(this))
             val reader = MessageReader(socket.inputStream)
             while (running) {
                 val msg = reader.read() ?: break

@@ -1,7 +1,6 @@
 package com.curveon.companion
 
 import android.Manifest
-import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -145,10 +144,7 @@ class MainActivity : ComponentActivity() {
 
     private fun has(permission: String) = checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
 
-    private fun hasNotificationAccess(): Boolean {
-        val me = ComponentName(this, CurveonNotificationListener::class.java).flattenToString()
-        return Settings.Secure.getString(contentResolver, "enabled_notification_listeners")?.contains(me) == true
-    }
+    private fun hasNotificationAccess() = CurveonNotificationListener.isEnabled(this)
 
     companion object {
         private val Bg = Color(0xFF0B1016)

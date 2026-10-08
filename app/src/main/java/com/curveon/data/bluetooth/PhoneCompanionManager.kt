@@ -44,8 +44,11 @@ enum class CompanionConnectionState {
 
 data class PairedPhone(val name: String, val address: String)
 
-/** A media app on the phone the rider can switch to. */
-data class MediaApp(val packageName: String, val name: String, val playing: Boolean, val icon: Bitmap?)
+/**
+ * A media app on the phone the rider can switch to. [running] is false for a favorite that has no
+ * media session yet; picking it makes the phone start it.
+ */
+data class MediaApp(val packageName: String, val name: String, val playing: Boolean, val icon: Bitmap?, val running: Boolean = true)
 
 /** A spoken reply in progress: recorded on the phone, confirmed on the tablet. */
 data class VoiceReply(
@@ -77,9 +80,30 @@ class PhoneCompanionManager(
     private val _albumArt = MutableStateFlow<Bitmap?>(null)
     val albumArt: StateFlow<Bitmap?> = _albumArt.asStateFlow()
 
-    /** The phone's media apps (playing or paused), so the rider can pick one. */
+    /**
+     * What the music card switches between: the phone's media apps that are running (playing or
+     * paused) plus the rider's favorites, running or not. Sorted by name so swiping keeps its order.
+     */
     private val _mediaApps = MutableStateFlow<List<MediaApp>>(emptyList())
     val mediaApps: StateFlow<List<MediaApp>> = _mediaApps.asStateFlow()
+
+    /** Media apps with a session on the phone right now. */
+    private var sessionApps: List<MediaApp> = emptyList()
+
+    /** Every media app installed on the phone; kept (without icons) while the phone is away. */
+    private val _installedApps = MutableStateFlow(loadInstalledApps())
+    val installedApps: StateFlow<List<MediaApp>> = _installedApps.asStateFlow()
+
+    private val _favoriteApps = MutableStateFlow(prefs.getStringSet(KEY_FAVORITE_APPS, emptySet())!!.toSet())
+    val favoriteApps: StateFlow<Set<String>> = _favoriteApps.asStateFlow()
+
+    /** Model, battery and access on the phone; null while not connected. */
+    private val _phoneStatus = MutableStateFlow<Message.PhoneStatus?>(null)
+    val phoneStatus: StateFlow<Message.PhoneStatus?> = _phoneStatus.asStateFlow()
+
+    /** When the current connection came up (wall clock), or null. */
+    private val _connectedSince = MutableStateFlow<Long?>(null)
+    val connectedSince: StateFlow<Long?> = _connectedSince.asStateFlow()
 
     private val _notifications = MutableStateFlow<List<NotificationItem>>(emptyList())
     val notifications: StateFlow<List<NotificationItem>> = _notifications.asStateFlow()
@@ -194,6 +218,21 @@ class PhoneCompanionManager(
             .sortedBy { it.name }
     }
 
+    /**
+     * Stop using this phone: no more connecting, and its contacts, calls and music apps are
+     * forgotten. It stays paired in Android (unpairing needs Android's Bluetooth settings).
+     */
+    fun forgetPhone() {
+        prefs.edit().remove(KEY_ADDRESS).remove(KEY_NAME).remove(KEY_INSTALLED_APPS).apply()
+        _connectedDeviceName.value = ""
+        _contacts.value = null
+        _recentCalls.value = null
+        _photos.value = emptyMap()
+        synchronized(requestedPhotos) { requestedPhotos.clear() }
+        _installedApps.value = emptyList()
+        restart()
+    }
+
     fun selectPhone(phone: PairedPhone) {
         prefs.edit().putString(KEY_ADDRESS, phone.address).putString(KEY_NAME, phone.name).putBoolean(KEY_DEMO, false).apply()
         _connectedDeviceName.value = phone.name
@@ -203,6 +242,7 @@ class PhoneCompanionManager(
     /** Re-evaluate after permissions were granted or Bluetooth was switched on. */
     fun restart() {
         stopLink()
+        _installedApps.value = loadInstalledApps() // demo mode swaps in its own list
         if (prefs.getBoolean(KEY_DEMO, false)) startDemo() else start()
     }
 
@@ -276,6 +316,7 @@ class PhoneCompanionManager(
             // Photos asked for on a link that then dropped never came; ask again when shown.
             synchronized(requestedPhotos) { requestedPhotos.retainAll(_photos.value.keys) }
             _connectionState.value = CompanionConnectionState.CONNECTED
+            _connectedSince.value = System.currentTimeMillis()
             _connectedDeviceName.value = device.name ?: address
             startTicker()
             val reader = MessageReader(s.inputStream)
@@ -312,10 +353,20 @@ class PhoneCompanionManager(
                 if (_currentTrack.value?.artId == msg.artId) { _albumArt.value = bmp; rememberForApp() }
             }
             Message.MediaStopped -> { _currentTrack.value = null; _albumArt.value = null }
-            is Message.MediaSources -> _mediaApps.value = msg.sources.map { src ->
-                val known = _mediaApps.value.firstOrNull { it.packageName == src.packageName }
-                MediaApp(src.packageName, src.app, src.playing, known?.icon ?: src.iconPngBase64?.let(::decode))
+            is Message.MediaSources -> {
+                sessionApps = msg.sources.map { src ->
+                    MediaApp(src.packageName, src.app, src.playing, knownIcon(src.packageName) ?: src.iconPngBase64?.let(::decode))
+                }
+                publishMediaApps()
             }
+            is Message.InstalledMediaApps -> {
+                _installedApps.value = msg.apps.map { src ->
+                    MediaApp(src.packageName, src.app, false, knownIcon(src.packageName) ?: src.iconPngBase64?.let(::decode), running = false)
+                }
+                saveInstalledApps()
+                publishMediaApps()
+            }
+            is Message.PhoneStatus -> _phoneStatus.value = msg
             is Message.NotificationPosted -> {
                 if (hidden[msg.key] == msg.text) return
                 hidden.remove(msg.key)
@@ -367,6 +418,9 @@ class PhoneCompanionManager(
         if (_notifications.value.any { it.isIncomingCall }) Log.i(TAG, "Link dropped during a call")
         _currentTrack.value = null
         _mediaApps.value = emptyList()
+        sessionApps = emptyList()
+        _phoneStatus.value = null
+        _connectedSince.value = null
         _albumArt.value = null
         _notifications.value = emptyList()
         _voiceReply.value = null
@@ -397,13 +451,52 @@ class PhoneCompanionManager(
     fun playApp(packageName: String) {
         val app = _mediaApps.value.firstOrNull { it.packageName == packageName }
         if (app != null) {
-            val (track, art) = lastByApp[app.name] ?: (MusicTrack(title = app.name, artist = "", sourceApp = app.name) to null)
+            val starting = MusicTrack(title = app.name, artist = if (app.running) "" else context.getString(com.curveon.R.string.media_starting), sourceApp = app.name)
+            val (track, art) = lastByApp[app.name] ?: (starting to null)
+            val before = _currentTrack.value to _albumArt.value
             _currentTrack.value = track.copy(isPlaying = true)
             _albumArt.value = art
             switchingTo = app.name
-            switchingUntil = System.currentTimeMillis() + 2_000
+            // Starting an app that wasn't running takes a few seconds on the phone.
+            switchingUntil = System.currentTimeMillis() + if (app.running) 2_000 else START_TIMEOUT_MS
+            // No session from it in time: the phone couldn't start it. Show what played before.
+            if (!app.running && _connectionState.value == CompanionConnectionState.CONNECTED) scope.launch {
+                delay(START_TIMEOUT_MS)
+                if (switchingTo != app.name || _mediaApps.value.any { it.packageName == packageName && it.running }) return@launch
+                switchingTo = null
+                _currentTrack.value = before.first
+                _albumArt.value = before.second
+                _phoneErrors.tryEmit(context.getString(com.curveon.R.string.media_start_failed, app.name))
+            }
         }
         send(Message.PlayMediaApp(packageName))
+    }
+
+    fun setFavoriteApp(packageName: String, favorite: Boolean) {
+        val set = if (favorite) _favoriteApps.value + packageName else _favoriteApps.value - packageName
+        _favoriteApps.value = set
+        prefs.edit().putStringSet(KEY_FAVORITE_APPS, set).apply()
+        publishMediaApps()
+    }
+
+    private fun publishMediaApps() {
+        val state = _connectionState.value
+        if (state != CompanionConnectionState.CONNECTED && state != CompanionConnectionState.DEMO) return
+        val favorites = _installedApps.value.filter { it.packageName in _favoriteApps.value && sessionApps.none { s -> s.packageName == it.packageName } }
+        _mediaApps.value = (sessionApps + favorites).sortedBy { it.name.lowercase() }
+    }
+
+    private fun knownIcon(pkg: String): Bitmap? =
+        (sessionApps + _installedApps.value).firstOrNull { it.packageName == pkg }?.icon
+
+    private fun loadInstalledApps(): List<MediaApp> = runCatching {
+        val a = org.json.JSONArray(prefs.getString(KEY_INSTALLED_APPS, "[]"))
+        (0 until a.length()).map { i -> a.getJSONObject(i).let { MediaApp(it.getString("pkg"), it.getString("name"), false, null, running = false) } }
+    }.getOrDefault(emptyList())
+
+    private fun saveInstalledApps() {
+        val a = org.json.JSONArray(_installedApps.value.map { org.json.JSONObject().put("pkg", it.packageName).put("name", it.name) })
+        prefs.edit().putString(KEY_INSTALLED_APPS, a.toString()).apply()
     }
 
     private fun rememberForApp() {
@@ -484,10 +577,14 @@ class PhoneCompanionManager(
         _albumArt.value = runCatching {
             BitmapFactory.decodeResource(context.resources, com.curveon.R.drawable.motorcycle_album_art_1790798891980)
         }.getOrNull()
-        _mediaApps.value = listOf(
+        sessionApps = listOf(
             MediaApp("com.spotify.music", "Spotify", true, null),
             MediaApp("com.google.android.apps.podcasts", "Podcasts", false, null)
         )
+        _installedApps.value = DEMO_INSTALLED_APPS
+        _phoneStatus.value = Message.PhoneStatus("Pixel 9a", 78, false, true, "1.0")
+        _connectedSince.value = System.currentTimeMillis()
+        publishMediaApps()
         _notifications.value = listOf(
             NotificationItem("demo1", "WhatsApp", "Kari Nordmann", "Er på Dombås om 20 min, møtes på Statoil? ☕",
                 System.currentTimeMillis() - 120_000, canReply = true),
@@ -507,7 +604,11 @@ class PhoneCompanionManager(
     private fun demoCommand(message: Message) {
         when (message) {
             is Message.PlayMediaApp -> {
-                _mediaApps.value = _mediaApps.value.map { it.copy(playing = it.packageName == message.packageName) }
+                if (sessionApps.none { it.packageName == message.packageName }) {
+                    _installedApps.value.firstOrNull { it.packageName == message.packageName }?.let { sessionApps = sessionApps + it.copy(running = true) }
+                }
+                sessionApps = sessionApps.map { it.copy(playing = it.packageName == message.packageName) }
+                publishMediaApps()
                 val app = _mediaApps.value.firstOrNull { it.packageName == message.packageName }?.name.orEmpty()
                 _currentTrack.value = _currentTrack.value?.copy(sourceApp = app, isPlaying = true)
             }
@@ -555,6 +656,7 @@ class PhoneCompanionManager(
         private const val PAGE_TIMEOUT_MS = 4_000L
         private const val UNREACHABLE_AFTER = 4
         private const val RETRY_MS = 8_000L
+        private const val START_TIMEOUT_MS = 10_000L
 
         /** Quick retries for the first couple of minutes, then less and less often. */
         internal fun retryDelay(failures: Int): Long = when {
@@ -566,6 +668,13 @@ class PhoneCompanionManager(
         private const val KEY_ADDRESS = "address"
         private const val KEY_NAME = "name"
         private const val KEY_DEMO = "demo"
+        private const val KEY_FAVORITE_APPS = "favorite_media_apps"
+        private const val KEY_INSTALLED_APPS = "installed_media_apps"
+
+        private val DEMO_INSTALLED_APPS = listOf(
+            "com.google.android.apps.podcasts" to "Podcasts", "no.nrk.mobil.radio" to "NRK Radio",
+            "com.spotify.music" to "Spotify", "com.google.android.apps.youtube.music" to "YouTube Music"
+        ).map { (pkg, name) -> MediaApp(pkg, name, false, null, running = false) }
 
         private val DEMO_CONTACTS = listOf(
             "Anne Lise Berg" to false, "Bjørn Dahl" to true, "Eirik Solberg" to false, "Ingrid Moe" to true,
