@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.browse.MediaBrowser
 import android.media.session.MediaController
+import android.media.session.PlaybackState
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -58,33 +59,54 @@ object MediaApps {
     private var browser: MediaBrowser? = null
     /** Token for the pending steps of a start, so a new start cancels them. */
     private val STEPS = Any()
+    private const val BROWSER_WAIT_MS = 3_000L
+    /** The tablet gives up after 10 s; stop a little before. */
+    private const val GIVE_UP_MS = 9_000L
 
     /**
      * Start [pkg], which has no media session right now. First through its media browser (asking
-     * for "what played last", as Android's own media resumption does); if that doesn't get it
-     * playing, with a play key sent to the app.
-     * [isPlaying] tells whether the app has started playing by now.
+     * for "what played last", as Android's own media resumption does). Most apps only let Android
+     * Auto and the system in (Spotify, NRK Radio and YouTube Music all refuse), so then a play key
+     * is sent to the app. Spotify plays from that. Others only wake up and create a session without
+     * playing: once it appears it is told to play. YouTube Music keeps its session inactive, which
+     * hides it from us, so it can't be started this way (repeated keys and "play from search" with
+     * "Display over other apps" were tried; the latter opens the app behind the lock screen, no sound).
+     * [session] is the app's media session once it has one.
      */
-    fun start(context: Context, pkg: String, isPlaying: () -> Boolean) {
+    fun start(context: Context, pkg: String, session: () -> MediaController?) {
         val service = browserService(context, pkg)
         Log.i(TAG, "Starting $pkg (browser: ${service?.className})")
         main.removeCallbacksAndMessages(STEPS) // a start still under way for another app
         browser?.disconnect()
         browser = null
         val t0 = SystemClock.elapsedRealtime()
-        val giveUp = Runnable {
-            if (isPlaying()) return@Runnable done(pkg, "play key")
-            Log.i(TAG, "$pkg: didn't start") // the tablet notices and tells the rider
-            done(pkg, null)
+        var keySent = false
+        var toldSession = false
+        lateinit var check: Runnable
+        check = Runnable {
+            val c = session()
+            val waited = SystemClock.elapsedRealtime() - t0
+            when {
+                c?.playbackState?.state == PlaybackState.STATE_PLAYING ->
+                    return@Runnable done(pkg, if (keySent) "play key" else "browser")
+                c != null && !toldSession -> {
+                    Log.i(TAG, "$pkg: has a session after $waited ms (${c.playbackState?.state}), play")
+                    toldSession = true
+                    c.transportControls.play()
+                }
+                !keySent && waited >= BROWSER_WAIT_MS -> {
+                    keySent = true
+                    Log.i(TAG, "$pkg: not playing, sending a play key")
+                    sendPlayKey(context, pkg)
+                }
+                waited >= GIVE_UP_MS -> {
+                    Log.i(TAG, "$pkg: didn't start") // the tablet notices and tells the rider
+                    return@Runnable done(pkg, null)
+                }
+            }
+            main.postAtTime(check, STEPS, SystemClock.uptimeMillis() + 500)
         }
-        val playKey = Runnable {
-            if (isPlaying()) return@Runnable done(pkg, "browser")
-            Log.i(TAG, "$pkg: not playing, sending a play key")
-            sendPlayKey(context, pkg)
-            main.postAtTime(giveUp, STEPS, SystemClock.uptimeMillis() + 4_000)
-        }
-        // Give the browser a moment; one that refuses (Spotify does) goes straight to the play key.
-        main.postAtTime(playKey, STEPS, SystemClock.uptimeMillis() + 4_000)
+        main.postAtTime(check, STEPS, SystemClock.uptimeMillis() + 500)
         if (service != null) {
             val hints = Bundle().apply { putBoolean(MediaBrowserService.BrowserRoot.EXTRA_RECENT, true) }
             lateinit var b: MediaBrowser
@@ -96,8 +118,11 @@ object MediaApps {
                 }
                 override fun onConnectionFailed() {
                     Log.i(TAG, "$pkg: browser refused the connection")
-                    main.removeCallbacksAndMessages(STEPS)
-                    playKey.run()
+                    if (!keySent) {
+                        keySent = true
+                        Log.i(TAG, "$pkg: sending a play key")
+                        sendPlayKey(context, pkg)
+                    }
                 }
             }, hints)
             browser = b

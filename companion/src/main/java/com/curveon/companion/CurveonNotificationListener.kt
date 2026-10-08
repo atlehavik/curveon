@@ -228,9 +228,7 @@ class CurveonNotificationListener : NotificationListenerService() {
             follow(target)
             target.transportControls.play()
         } else {
-            MediaApps.start(this, pkg) {
-                sessions.any { it.packageName == pkg && it.playbackState?.state == PlaybackState.STATE_PLAYING }
-            }
+            MediaApps.start(this, pkg) { sessions.firstOrNull { it.packageName == pkg } }
         }
     }
 

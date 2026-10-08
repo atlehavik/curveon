@@ -14,7 +14,10 @@ on the phone (Spotify refuses Curveon's media browser, the play key fallback wor
 
 - [ ] Spotify should now start in ~4 s instead of ~8 s (a refused browser goes straight to the
   play key): close Spotify on the phone, swipe to it on the X7.
-- [ ] Star NRK Radio / Podme / YouTube Music too, close them on the phone (swipe away from
+- YouTube Music can't be started from the tablet when it isn't running (it only lets Android
+  Auto/the system start it; tried play keys and "play from search"). Once it has played on the
+  phone it can be switched to like the others.
+- [ ] Star NRK Radio / Podme too, close them on the phone (swipe away from
   recents), then swipe to each on the X7. Which start, and how? `adb -s 58301JEBF17776 logcat -s CurveonMedia`
   → "browser connected … play" / "started by play key" / "didn't start" (the tablet then says so).
 - [ ] Forget in Settings → Phone: the phone moves to "Paired phones"; tapping it there links it again.

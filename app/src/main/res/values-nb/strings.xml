@@ -488,5 +488,5 @@
     <string name="link_app_playing">Spiller</string>
     <string name="link_app_running">Kjører</string>
     <string name="media_starting">Starter …</string>
-    <string name="media_start_failed">%1$s startet ikke på telefonen. Åpne den der én gang.</string>
+    <string name="media_start_failed">%1$s vil ikke starte herfra. Spill noe i den på telefonen én gang, så kan du bytte til den her etterpå.</string>
 </resources>

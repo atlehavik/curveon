@@ -489,5 +489,5 @@
     <string name="link_app_playing">Playing</string>
     <string name="link_app_running">Running</string>
     <string name="media_starting">Starting…</string>
-    <string name="media_start_failed">%1$s didn\'t start on the phone. Open it there once.</string>
+    <string name="media_start_failed">%1$s won\'t start from here. Play something in it on the phone once; after that you can switch to it here.</string>
 </resources>
