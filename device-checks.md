@@ -17,13 +17,14 @@ destination on a farm/forest road stopped on the nearest tarmac. Now tracks are 
 
 ## 2026-10-08 — Route start at home
 
-Your road (OSM way 520497619) ends on the cycle path 6 m from Stavlandsvegen without being joined to it,
-so the router used to start on Stavlandsvegen ~65 m away. Now routes start (and end) on your road and
-cross those metres, never riding along the path. Tried in the emulator with the GPS at your house.
+In OSM your road (way 520497619) is joined to the roads only through the cycle path (the map is
+wrong). Cycle paths/footpaths are now used only at the very start/end of a route when there is no
+road way out (as little as possible, no length limit), never in the middle. From your house that is
+18 m of path stub onto Stavlandsvegen. Tried in the emulator with the GPS at your house.
 
-- [ ] At home on the X7: plan a trip → the line starts at the house, "Turn left · Fv4998 Stavlandsvegen"
+- [ ] At home on the X7: plan a trip → the line starts at the house, "Bear left · Fv4998 Stavlandsvegen"
   after ~70 m. Ride it: no "Recalculating" on the way down to the road.
-- [ ] Ride home with a trip to the house: it should end on your road, not on Stavlandsvegen.
+- [ ] Ride home with a trip to the house: it should end at the house.
 - Still worth fixing in OSM (join the service road to Stavlandsvegen), so other apps get it right too.
 
 ## 2026-10-08 — Editing a trip on the map

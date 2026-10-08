@@ -8,9 +8,9 @@ import java.io.File
 import java.nio.file.Files
 
 /**
- * Stavlandsvegen 197: the rider's road (way 520497619, service) ends on the cycle path 6 m from
- * Stavlandsvegen without being joined to it in OSM. Routes must still start and end at the house,
- * crossing those metres, and never ride along the cycle path.
+ * Stavlandsvegen 197: in OSM the rider's road (way 520497619, service) is joined to the network only
+ * through the cycle path (the map is wrong). Routes must still start and end at the house, using as
+ * little path as needed at the ends, and never a path in the middle of the trip.
  */
 class OwnRoadTest {
     private val segments = File(System.getProperty("curveon.segments") ?: "")
@@ -19,8 +19,16 @@ class OwnRoadTest {
 
     private fun engine() = BRouterEngine(segments, ProfileInstaller.install(Files.createTempDirectory("p").toFile()))
 
-    private fun pathMetres(r: Route) = r.points.zipWithNext()
-        .filter { (_, b) -> b.highway in OwnRoad.PATHS }.sumOf { (a, b) -> b.distanceFromStart - a.distanceFromStart }
+    private fun pathMetres(r: Route, from: Double = 0.0, to: Double = Double.MAX_VALUE) = r.points.zipWithNext()
+        .filter { (a, b) -> b.highway in OwnRoad.PATHS && a.distanceFromStart >= from && b.distanceFromStart <= to }
+        .sumOf { (a, b) -> b.distanceFromStart - a.distanceFromStart }
+
+    /** Paths only near the ends (getting away from / to the house), none in between. */
+    private fun assertPathsOnlyAtEnds(r: Route) {
+        println("  path metres: %.0f in all, %.0f in the middle".format(pathMetres(r), pathMetres(r, 2_500.0, r.distanceMeters - 2_500.0)))
+        assertEquals(0.0, pathMetres(r, 2_500.0, r.distanceMeters - 2_500.0), 0.1)
+        assertTrue("as little path as possible", pathMetres(r) < 400)
+    }
 
     @Test
     fun `leaving home starts on the own road`() {
@@ -31,7 +39,7 @@ class OwnRoadTest {
             println("$style: starts %.0f m from home on %s, first roads %s, path %.0f m".format(
                 Geo.distance(home, LatLon(first.lat, first.lon)), first.highway, r.points.take(12).map { it.highway }.distinct(), pathMetres(r)))
             assertTrue(Geo.distance(home, LatLon(first.lat, first.lon)) < 35)
-            assertEquals(0.0, pathMetres(r), 0.1)
+            assertPathsOnlyAtEnds(r)
             assertTrue("route should go to Bergen", r.distanceMeters > 90_000)
         }
     }
@@ -44,6 +52,6 @@ class OwnRoadTest {
         println("home: ends %.0f m from home, last roads %s".format(
             Geo.distance(home, LatLon(last.lat, last.lon)), r.points.takeLast(12).map { it.highway }.distinct()))
         assertTrue(Geo.distance(home, LatLon(last.lat, last.lon)) < 35)
-        assertEquals(0.0, pathMetres(r), 0.1)
+        assertPathsOnlyAtEnds(r)
     }
 }
