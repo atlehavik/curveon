@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Route start at home
+
+Your road (OSM way 520497619, `highway=service`) only touches the cycle path in OpenStreetMap, never
+Stavlandsvegen, so for a motorbike it's cut off and routes start on Stavlandsvegen ~65 m away. The app
+now draws a dotted line to the start and no longer re-plans every 10 s while you're at home.
+
+- [ ] At home: plan a trip, press GO, wait a minute: no "Recalculating" and the dotted line to Stavlandsvegen;
+  ride off: the line goes once you're on Stavlandsvegen. `adb -s 241181d1 logcat -s CurveonNav` should stay quiet.
+- [ ] Fix the gap in OSM (openstreetmap.org/way/520497619 → Edit): join the end of the service road to
+  Stavlandsvegen (draw the few metres across the cycle path, tag `highway=service`). Once BRouter's
+  segments are rebuilt from it (weekly on brouter.de) and downloaded again, routes start on your road.
+
 ## 2026-10-08 — Editing a trip on the map
 
 Tried in the emulator: long-press on the route line → edit mode, dragging the line (dashed guess,

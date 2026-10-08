@@ -361,6 +361,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     }.orEmpty(),
                     markers = if (editor != null) emptyList() else markers,
                     editor = editor,
+                    // The route starts on the nearest road the map joins up: show the way to it.
+                    approachTo = if (preview != null) preview?.selectedRoute?.points?.firstOrNull()?.takeIf { planGoal?.start == null }?.let { GeoPoint(it.lat, it.lon) }
+                        else navState.approach?.let { GeoPoint(it.lat, it.lon) },
                     onEditRoute = if (planGoal != null && !editing && mapPick == null) ({ editing = true }) else null,
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,

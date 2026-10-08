@@ -66,6 +66,7 @@ private const val ROUTE = "curveon-route"
 private const val ALT = "curveon-alternatives"
 private const val MARKERS = "curveon-markers"
 private const val PICK = "curveon-pick"
+private const val APPROACH = "curveon-approach"
 private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val HINT = "curveon-track-hint"
@@ -115,6 +116,8 @@ fun CurveonMapView(
     onTap: ((GeoPoint) -> Unit)? = null,
     /** The place picked so far, shown as a pin. */
     pickedPoint: GeoPoint? = null,
+    /** Where the route starts when that isn't where the rider is: a dashed line from them to it. */
+    approachTo: GeoPoint? = null,
     /** Editing the previewed trip on the map (drag its places or its line); null when not. */
     editor: RouteEditor? = null,
     /** Long-press on the previewed route line: start editing it. */
@@ -363,6 +366,12 @@ fun CurveonMapView(
         )
     }
 
+    LaunchedEffect(style, location, approachTo) {
+        val s = style ?: return@LaunchedEffect
+        val to = approachTo?.takeIf { haversine(location, it) > 20 }
+        s.getSourceAs<GeoJsonSource>(APPROACH)?.setGeoJson(lineFeatures(listOfNotNull(to?.let { listOf(location, it) })))
+    }
+
     // Editing: the trip's places as handles. The dashed guess goes once the new route is in.
     LaunchedEffect(style, editor?.handles, dark) {
         val s = style ?: return@LaunchedEffect
@@ -604,6 +613,13 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(ALT))
     s.addSource(GeoJsonSource(ROUTE))
     s.addSource(GeoJsonSource(MARKERS))
+    s.addSource(GeoJsonSource(APPROACH))
+    s.addLayer(
+        LineLayer("$APPROACH-line", APPROACH).withProperties(
+            lineColor(if (dark) "#00E5FF" else "#0091EA"), lineWidth(4f), lineOpacity(0.85f),
+            lineDasharray(arrayOf(0.6f, 1.6f)), lineCap(Property.LINE_CAP_ROUND)
+        )
+    )
     s.addLayer(
         LineLayer("$ALT-line", ALT).withProperties(
             lineColor(if (dark) "#5A6B7D" else "#8FA3B8"), lineWidth(6f), lineOpacity(0.85f),
@@ -780,3 +796,6 @@ private fun FullMapSpeedCluster(speedKmh: Float, speedLimitKmh: Int, modifier: M
         if (speedLimitKmh > 0) SpeedLimitSign(speedLimitKmh, 36.dp)
     }
 }
+
+private fun haversine(a: GeoPoint, b: GeoPoint): Double =
+    com.curveon.routing.Geo.distance(a.latitude, a.longitude, b.latitude, b.longitude)

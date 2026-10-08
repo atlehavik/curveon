@@ -143,7 +143,13 @@ data class NavigationState(
     /** Distance along [route] of each remaining stop, for drawing and for dropping passed stops. */
     val stopsAlong: List<Pair<Stop, Double>> = emptyList(),
     /** Off the route with no quick way back: the rider is being asked what to do. */
-    val wrongTurn: WrongTurn? = null
+    val wrongTurn: WrongTurn? = null,
+    /**
+     * Where the route starts while the rider still has to get there: their own road isn't joined
+     * to the road network in the map data (e.g. it only touches a cycle path), so the route
+     * begins on the nearest road that is. Not "off route" until they have been on it.
+     */
+    val approach: LatLon? = null
 ) {
     val isNavigating get() = route != null
 }
@@ -171,6 +177,17 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     /** After "carry on", leaving the route again before this time re-plans without asking. */
     private var followUntil = 0L
     private var arrivalJob: Job? = null
+    /** How far the route started from the rider, while they haven't reached it yet (see [NavigationState.approach]). */
+    private var approachGap = 0.0
+
+    /** A new route: does it start a little way from the rider? */
+    private fun approachTo(route: Route): LatLon? {
+        val pos = lastPosition ?: return null
+        val first = route.points.firstOrNull()?.let { LatLon(it.lat, it.lon) } ?: return null
+        val gap = Geo.distance(pos, first)
+        approachGap = gap
+        return first.takeIf { gap > offRouteSettings.offRouteMeters && gap < MAX_APPROACH_M }
+    }
 
     /** Style the rider picked last time; the preview pre-selects it. */
     var preferredStyle: RoadStyle = RoadStyle.CURVY
@@ -400,7 +417,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             goal = goal,
             route = route,
             progress = pos?.let { tracker!!.update(it) },
-            stopsAlong = stopsAlong(goal, route)
+            stopsAlong = stopsAlong(goal, route),
+            approach = approachTo(route)
         )
     }
 
@@ -428,6 +446,11 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val t = tracker ?: return
         val progress = t.update(position, accuracyMeters)
         var current = _state.value.copy(progress = progress)
+        // Getting to where the route starts: done once on it; gone elsewhere, it's off route as usual.
+        current.approach?.let { a ->
+            if (progress.distanceFromRoute <= offRouteSettings.offRouteMeters || Geo.distance(position, a) > approachGap + APPROACH_SLACK_M)
+                current = current.copy(approach = null)
+        }
 
         // Drop stops we have ridden past, so a reroute doesn't send us back to them.
         val passed = current.stopsAlong.filter { it.second < progress.distanceAlongRoute - 50 }
@@ -451,7 +474,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 Geo.distance(asking.askedAt, position) > AUTO_AFTER_RIDING_M) {
                 if (asking.isTrip) newRouteFromHere(keepStops = true) else rejoinAhead()
             }
-            progress.offRoute -> maybeReroute(position)
+            progress.offRoute && current.approach == null -> maybeReroute(position)
         }
     }
 
@@ -620,7 +643,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             progress = tracker!!.update(position),
             status = RoutingStatus.Idle,
             wrongTurn = null,
-            stopsAlong = stopsAlong(_state.value.goal ?: return, newRoute)
+            stopsAlong = stopsAlong(_state.value.goal ?: return, newRoute),
+            approach = approachTo(newRoute)
         )
     }
 
@@ -691,6 +715,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     companion object {
         private const val REROUTE_COOLDOWN_MS = 10_000L
+        /** A route starting further away than this isn't "your road missing from the map" any more. */
+        private const val MAX_APPROACH_M = 1_500.0
+        /** Ridden this much further from the route's start than you began: you went elsewhere. */
+        private const val APPROACH_SLACK_M = 200.0
         private const val HEADING_BASE_M = 20.0
         /** Unanswered question: carry on by itself only once the rider has ridden this far on. */
         private const val AUTO_AFTER_RIDING_M = 150.0
