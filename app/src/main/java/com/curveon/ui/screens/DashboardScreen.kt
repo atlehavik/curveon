@@ -398,8 +398,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
 
         if (showSettings) {
-            val mapStatuses by viewModel.mapStatuses.collectAsStateWithLifecycle()
+            val installedMaps by viewModel.installedMaps.collectAsStateWithLifecycle()
             val mapDownload by viewModel.mapDownload.collectAsStateWithLifecycle()
+            val mapQueue by viewModel.mapQueue.collectAsStateWithLifecycle()
+            var showMapCatalog by remember { mutableStateOf(false) }
+            val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
             val autoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
             LaunchedEffect(Unit) { viewModel.refreshMapStatus() }
             SettingsDialog(
@@ -408,7 +411,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     useMph = telemetry.useMph, mapTheme = mapTheme, obdEnabled = telemetry.isObdEnabled,
                     autoZoom = autoZoom, autoFollowTracks = autoFollow,
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
-                    maps = mapStatuses, mapDownload = mapDownload,
+                    maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
+                    mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
                     routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() }
                 ),
                 actions = SettingsActions(
@@ -423,11 +427,21 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onCancelMapDownload = viewModel::cancelMapDownload,
                     onDeleteMap = viewModel::deleteMap,
                     onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
-                    onDownloadRouting = viewModel::downloadRoutingData
+                    onBrowseMaps = { showMapCatalog = true }
                 ),
                 phone = phone,
                 onDismiss = { showSettings = false }
             )
+            if (showMapCatalog) {
+                MapCatalogDialog(
+                    catalog = viewModel.mapCatalog, installed = installedMaps, download = mapDownload, queue = mapQueue,
+                    freeBytes = remember(installedMaps, mapDownload is com.curveon.data.map.MapDownloadState.Running) { viewModel.freeStorageBytes() },
+                    downloadBytes = remember(installedMaps) { viewModel.mapDownloadSizer() },
+                    startContinent = remember { viewModel.currentContinent() },
+                    onDownload = viewModel::downloadMap, onCancel = viewModel::cancelMapDownload,
+                    onDismiss = { showMapCatalog = false }
+                )
+            }
         }
     }
 

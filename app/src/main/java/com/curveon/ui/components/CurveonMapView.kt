@@ -115,7 +115,7 @@ fun CurveonMapView(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val offlineMaps = remember { OfflineMaps(context.applicationContext) }
-    val hasOfflineMap = remember(mapVersion) { offlineMaps.activeMap() != null }
+    val hasOfflineMap = remember(mapVersion) { offlineMaps.installedMaps().isNotEmpty() }
 
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var style by remember { mutableStateOf<Style?>(null) }

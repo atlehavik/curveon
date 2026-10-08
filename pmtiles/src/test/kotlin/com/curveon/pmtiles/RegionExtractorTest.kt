@@ -18,6 +18,19 @@ class RegionExtractorTest {
     }
 
     @Test
+    fun `a zoom-10 mask covers exactly its descendants and ancestors`() {
+        val (x, y) = 545 to 290 // somewhere in southern Norway
+        val d = Pmtiles.tileId(10, x, y) - Pmtiles.zoomBase(10)
+        assertEquals(x to y, CountryCatalogTool.xy(10, d))
+        val r = TileMask(longArrayOf(d, d + 1), 0.0, 0.0, 0.0, 0.0).ranges(8, 12)
+        val expected = mutableListOf(Pmtiles.tileId(8, x / 4, y / 4), Pmtiles.tileId(9, x / 2, y / 2), Pmtiles.tileId(10, x, y))
+        for (i in 0 until 2) for (j in 0 until 2) expected += Pmtiles.tileId(11, 2 * x + i, 2 * y + j)
+        for (i in 0 until 4) for (j in 0 until 4) expected += Pmtiles.tileId(12, 4 * x + i, 4 * y + j)
+        val covered = (0 until r.size).flatMap { (r.starts[it] until r.ends[it]).toList() }
+        assertEquals(expected.sorted(), covered)
+    }
+
+    @Test
     fun `directories round trip`() {
         val e = listOf(Pmtiles.Entry(5, 0, 100, 1), Pmtiles.Entry(6, 100, 50, 3), Pmtiles.Entry(20, 0, 100, 1))
         assertEquals(e, Pmtiles.deserializeDirectory(Pmtiles.serializeDirectory(e)))

@@ -34,6 +34,7 @@
     <string name="phone_not_connected_named">%1$s er ikke tilkoblet</string>
     <string name="update">Oppdater</string>
     <string name="size_gb">%.1f GB</string>
+    <string name="size_mb">%.0f MB</string>
 
     <!-- Route options -->
     <string name="surface_tarmac">Asfalt</string>
@@ -66,10 +67,9 @@
     <string name="settings_routing_data">Rutedata</string>
     <string name="settings_search_index">Søkeindeks</string>
     <string name="settings_delete_map_title">Slette kartet over %1$s?</string>
-    <string name="settings_delete_map_text">Uten det viser kartet bare nettbaserte kartfliser.</string>
+    <string name="settings_delete_map_text">Rutedataene slettes også, med mindre et annet land du har bruker dem.</string>
     <string name="settings_map_from">fra %1$s</string>
     <string name="settings_map_newer">nyere kart fra %1$s</string>
-    <string name="settings_map_not_installed">Ikke installert · omtrent %.1f GB</string>
 
     <!-- Status messages -->
     <string name="map_checking_newest">Ser etter nyeste kart…</string>
@@ -91,9 +91,8 @@
     <string name="gpx_export_failed">Eksport mislyktes: %1$s</string>
     <string name="routing_downloading">Laster ned rutedata %1$s (%2$d/%3$d)…</string>
     <string name="routing_download_failed">Nedlasting mislyktes: %1$s. Koble til telefonens delte nett og prøv igjen.</string>
-    <string name="routing_installed">Rutedata for Norge er installert (%1$d ruter, %2$.0f MB)</string>
-    <string name="routing_none">Ingen rutedata. Last ned (~200 MB) når du er på nett, eller kopier .rd5-filer til %1$s</string>
-    <string name="routing_incomplete">Rutedata er ufullstendige: mangler %1$s</string>
+    <string name="routing_installed">Rutedata installert (%1$d ruter, %2$.0f MB)</string>
+    <string name="routing_none">Ingen rutedata ennå. De følger med hvert land du laster ned, eller kopier .rd5-filer til %1$s</string>
     <string name="offline_map_none">Ingen frakoblede kart installert. Kopier en .pmtiles-fil til %1$s eller importer en.</string>
     <string name="offline_map_line">%1$s – %2$.0f MB</string>
     <string name="offline_map_restart">(start appen på nytt etter å ha byttet kart)</string>
@@ -378,7 +377,6 @@
     <string name="obd_altitude">Høyde</string>
 
     <!-- Maps download, service, import -->
-    <string name="region_norway">Norge</string>
     <string name="map_no_space">Ikke nok ledig plass: trenger omtrent %1$.1f GB, %2$.1f GB ledig</string>
     <string name="map_reading_index">Leser kartindeksen</string>
     <string name="map_reading_index_parts">Leser kartindeksen (%1$d av %2$d deler)</string>
@@ -388,4 +386,28 @@
     <string name="gpx_no_track_in">Ingen spor eller rute i %1$s</string>
     <string name="saved_loop">Rundtur</string>
     <string name="saved_track">Spor</string>
+    <!-- Kartnedlasting per land -->
+    <string name="continent_europe">Europa</string>
+    <string name="continent_north_america">Nord-Amerika</string>
+    <string name="continent_south_america">Sør-Amerika</string>
+    <string name="continent_asia">Asia</string>
+    <string name="continent_africa">Afrika</string>
+    <string name="continent_oceania">Oseania</string>
+    <string name="maps_title">Last ned kart</string>
+    <string name="maps_add">Last ned land…</string>
+    <string name="maps_free">%.1f GB ledig</string>
+    <string name="maps_about">ca. %.1f GB</string>
+    <string name="maps_about_mb">ca. %.0f MB</string>
+    <string name="maps_installed">Installert</string>
+    <string name="maps_waiting">Venter</string>
+    <string name="maps_too_big">For stort for én nedlasting: velg delstater eller regioner</string>
+    <plurals name="maps_parts">
+        <item quantity="one">%d del</item>
+        <item quantity="other">%d deler</item>
+    </plurals>
+    <string name="maps_routing_missing">mangler rutedata</string>
+    <string name="maps_get_routing">Hent rutedata</string>
+    <string name="maps_none">Ingen kart ennå. Last ned landene du kjører i.</string>
+    <string name="maps_by_hand">kopiert inn manuelt</string>
+    <string name="maps_hint">Hvert land kommer med rutedataene sine. Naboland deler rutefiler, så det neste blir ofte mindre. Steder, gater og fotobokser i søket er frakoblet bare for Norge; ellers trenger søket nett.</string>
 </resources>

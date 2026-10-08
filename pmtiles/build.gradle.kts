@@ -17,5 +17,8 @@ dependencies {
 tasks.test {
   systemProperty("curveon.online", System.getProperty("curveon.online") ?: "false")
   systemProperty("curveon.data", "${rootDir}/../Curveon-data")
+  systemProperty("curveon.catalog", System.getProperty("curveon.catalog") ?: "false")
+  systemProperty("curveon.root", "$rootDir")
+  maxHeapSize = "6g"
   testLogging { events("passed", "skipped", "failed"); showStandardStreams = true }
 }

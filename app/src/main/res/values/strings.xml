@@ -35,6 +35,7 @@
     <string name="phone_not_connected_named">%1$s isn\'t connected</string>
     <string name="update">Update</string>
     <string name="size_gb">%.1f GB</string>
+    <string name="size_mb">%.0f MB</string>
 
     <!-- Route options -->
     <string name="surface_tarmac">Tarmac</string>
@@ -67,10 +68,9 @@
     <string name="settings_routing_data">Routing data</string>
     <string name="settings_search_index">Search index</string>
     <string name="settings_delete_map_title">Delete the %1$s map?</string>
-    <string name="settings_delete_map_text">Without it the map only shows online tiles.</string>
+    <string name="settings_delete_map_text">Its routing data goes too, unless another country you have uses it.</string>
     <string name="settings_map_from">from %1$s</string>
     <string name="settings_map_newer">newer map from %1$s</string>
-    <string name="settings_map_not_installed">Not installed · about %.1f GB</string>
 
     <!-- Status messages -->
     <string name="map_checking_newest">Checking for the newest map…</string>
@@ -92,9 +92,8 @@
     <string name="gpx_export_failed">Export failed: %1$s</string>
     <string name="routing_downloading">Downloading routing data %1$s (%2$d/%3$d)…</string>
     <string name="routing_download_failed">Download failed: %1$s. Connect to the phone\'s hotspot and retry.</string>
-    <string name="routing_installed">Norway routing data installed (%1$d tiles, %2$.0f MB)</string>
-    <string name="routing_none">No routing data. Download it (~200 MB) while online, or copy .rd5 files to %1$s</string>
-    <string name="routing_incomplete">Routing data incomplete: missing %1$s</string>
+    <string name="routing_installed">Routing data installed (%1$d tiles, %2$.0f MB)</string>
+    <string name="routing_none">No routing data yet. It comes with each country you download, or copy .rd5 files to %1$s</string>
     <string name="offline_map_none">No offline map installed. Copy a .pmtiles file to %1$s or import one.</string>
     <string name="offline_map_line">%1$s – %2$.0f MB</string>
     <string name="offline_map_restart">(restart the app after changing maps)</string>
@@ -379,7 +378,6 @@
     <string name="obd_altitude">Altitude</string>
 
     <!-- Maps download, service, import -->
-    <string name="region_norway">Norway</string>
     <string name="map_no_space">Not enough free space: about %1$.1f GB needed, %2$.1f GB free</string>
     <string name="map_reading_index">Reading map index</string>
     <string name="map_reading_index_parts">Reading map index (%1$d of %2$d parts)</string>
@@ -389,4 +387,28 @@
     <string name="gpx_no_track_in">No track or route in %1$s</string>
     <string name="saved_loop">Loop</string>
     <string name="saved_track">Track</string>
+    <!-- Map downloads by country -->
+    <string name="continent_europe">Europe</string>
+    <string name="continent_north_america">North America</string>
+    <string name="continent_south_america">South America</string>
+    <string name="continent_asia">Asia</string>
+    <string name="continent_africa">Africa</string>
+    <string name="continent_oceania">Oceania</string>
+    <string name="maps_title">Download maps</string>
+    <string name="maps_add">Download countries…</string>
+    <string name="maps_free">%.1f GB free</string>
+    <string name="maps_about">about %.1f GB</string>
+    <string name="maps_about_mb">about %.0f MB</string>
+    <string name="maps_installed">Installed</string>
+    <string name="maps_waiting">Waiting</string>
+    <string name="maps_too_big">Too big for one download: pick states or regions</string>
+    <plurals name="maps_parts">
+        <item quantity="one">%d part</item>
+        <item quantity="other">%d parts</item>
+    </plurals>
+    <string name="maps_routing_missing">routing data missing</string>
+    <string name="maps_get_routing">Get routing</string>
+    <string name="maps_none">No maps yet. Download the countries you ride in.</string>
+    <string name="maps_by_hand">copied by hand</string>
+    <string name="maps_hint">Each country comes with its routing data. Neighbours share routing tiles, so the next one is often smaller. Places, streets and speed cameras in search are offline for Norway only; elsewhere search needs a connection.</string>
 </resources>

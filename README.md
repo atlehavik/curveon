@@ -14,8 +14,9 @@ and [dashboard.md](dashboard.md) for the goals.
 
 ## What works
 
-- **Offline map** of Norway (Protomaps vector tiles, MapLibre), dark style, heading-up follow,
-  tap map for full screen, long-press to navigate somewhere.
+- **Offline maps of any country** (Protomaps vector tiles, MapLibre): Settings → Maps & data →
+  Download countries, by continent like DMD2; each country brings its routing data. Several
+  countries show together. Dark style, heading-up follow, long-press to navigate somewhere.
 - **Offline routing** with Fastest / Curvy / Super curvy, Tarmac / Mixed / Gravel, avoid
   ferries / motorways; ETA and remaining distance; rerouting when you leave the route.
 - **GoRide-style roundtrip**: pick direction(s) and distance.
@@ -73,9 +74,13 @@ or with `adb push`.
 
 | Folder | File(s) | Size | How to get it |
 |---|---|---|---|
-| `maps/` | `norway.pmtiles` | 1.7 GB | `tools/map/build-norway-map.sh` (or Settings → Import map) |
-| `routing/segments4/` | `E*_N*.rd5` (16 files) | 210 MB | Settings → Download routing data (when online), or from https://brouter.de/brouter/segments4/ |
+| `maps/` | `<country>.pmtiles` | Norway 1.7 GB | Settings → Download countries (when online), or `tools/map/build-norway-map.sh` / Settings → Import |
+| `routing/segments4/` | `E*_N*.rd5` | Norway 210 MB | Comes with each country, or from https://brouter.de/brouter/segments4/ |
 | `search/` | `norway-search.sqlite` | 150 MB | `tools/search/build_search_index.py` (see `tools/search/README.md`) |
+
+The country list (`app/src/main/assets/map/countries.json`: outlines as zoom-10 tiles, sizes,
+routing tiles) is rebuilt with `tools/map/build-countries.sh`; only needed if borders or the
+split of big countries should change.
 
 ## Phone setup (Pixel)
 

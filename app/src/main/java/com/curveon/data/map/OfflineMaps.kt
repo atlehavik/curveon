@@ -4,12 +4,15 @@ import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 
 /**
  * Offline vector maps are PMTiles archives (Protomaps schema) stored in the app's external files
- * directory, e.g. /sdcard/Android/data/com.curveon.tablet/files/maps/norway.pmtiles.
- * They can be copied there over USB or imported through the system file picker.
+ * directory, e.g. /sdcard/Android/data/com.curveon.tablet/files/maps/norway.pmtiles, one per
+ * country. They are downloaded in Settings (MapDownloads), copied there over USB or imported
+ * through the system file picker; all of them are shown together.
  */
 class OfflineMaps(private val context: Context) {
 
@@ -19,15 +22,36 @@ class OfflineMaps(private val context: Context) {
     fun installedMaps(): List<File> =
         mapsDir.listFiles { f -> f.isFile && f.name.endsWith(".pmtiles") }?.sortedBy { it.name }.orEmpty()
 
-    /** The map to render. Only one region is supported for now; the largest file wins. */
-    fun activeMap(): File? = installedMaps().maxByOrNull { it.length() }
-
-    /** Builds a MapLibre style JSON for [flavor] ("dark" or "light"), or null when no map is installed. */
+    /**
+     * Builds a MapLibre style JSON for [flavor] ("dark" or "light") over every installed map, or
+     * null when none is installed. Each map gets its own source and a copy of each layer right
+     * after the first map's, so water, roads and labels still stack in the right order where
+     * countries meet.
+     */
     fun styleJson(flavor: String): String? {
-        val map = activeMap() ?: return null
-        val template = context.assets.open("map/styles/$flavor.json").bufferedReader().use { it.readText() }
-        return template.replace("__PMTILES_URL__", "file://${map.absolutePath}")
+        val maps = installedMaps()
+        if (maps.isEmpty()) return null
+        val style = JSONObject(context.assets.open("map/styles/$flavor.json").bufferedReader().use { it.readText() })
+        val sources = style.getJSONObject("sources")
+        val template = sources.getJSONObject(SOURCE)
+        maps.forEachIndexed { i, f ->
+            sources.put(sourceName(i), JSONObject(template.toString()).put("url", "pmtiles://file://${f.absolutePath}"))
+        }
+        val layers = style.getJSONArray("layers")
+        val out = JSONArray()
+        for (k in 0 until layers.length()) {
+            val layer = layers.getJSONObject(k)
+            if (layer.optString("source") != SOURCE) { out.put(layer); continue }
+            for (i in maps.indices) {
+                // The first map keeps the original ids (other code looks layers up by them).
+                out.put(JSONObject(layer.toString()).put("source", sourceName(i)).apply { if (i > 0) put("id", "${layer.getString("id")}~$i") })
+            }
+        }
+        style.put("layers", out)
+        return style.toString()
     }
+
+    private fun sourceName(i: Int) = if (i == 0) SOURCE else "$SOURCE$i"
 
     suspend fun import(uri: Uri, onProgress: (Float) -> Unit = {}): File = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
@@ -56,6 +80,8 @@ class OfflineMaps(private val context: Context) {
     }
 
     companion object {
+        private const val SOURCE = "protomaps"
+
         /** Used when no offline map is installed and the tablet happens to be online. */
         const val ONLINE_FALLBACK_STYLE = """
             {"version":8,"sources":{"osm":{"type":"raster","tileSize":256,

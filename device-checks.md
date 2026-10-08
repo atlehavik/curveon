@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Download maps by country
+
+Tried in the emulator (Faroe Islands: download, list, delete) and on the X7 (Faroe Islands next to
+Norway on the map, then deleted again). Still to try on the X7:
+
+- [ ] Settings → Maps & data → Download countries → Sweden (or another country you'll ride):
+  progress, then the map shows across the border and routes work there.
+- [ ] Pick two or three countries in a row: they queue ("Waiting") and download one after another;
+  Cancel on a waiting one takes it out.
+- [ ] Norway shows "routing data missing" (Svalbard/Jan Mayen tiles): "Get routing" fetches just those.
+- [ ] Border areas (e.g. Svinesund): roads look normal where the two maps overlap (no doubled labels).
+- [ ] Free space: DMD2 keeps its own 29 GB; Curveon can't read it (Android blocks other apps' folders).
+
 ## 2026-10-08 — Bike stays on the road while navigating
 
 Only unit-tested (the tracker); needs a real ride with a route on the X7:

@@ -83,53 +83,93 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ---------------------------------------------------------------- map downloads
 
-    private val mapDownloads = com.curveon.data.map.MapDownloads(application, offlineMaps)
+    private val mapDownloads = com.curveon.data.map.MapDownloads(application, offlineMaps, navigator.routingData)
+    val mapCatalog get() = mapDownloads.catalog
     private var latestMapBuild: String? = null
-    private val _mapStatuses = MutableStateFlow(mapDownloads.status(null))
-    val mapStatuses: StateFlow<List<com.curveon.data.map.MapRegionStatus>> = _mapStatuses.asStateFlow()
+    private val _installedMaps = MutableStateFlow(mapDownloads.installed(null))
+    val installedMaps: StateFlow<List<com.curveon.data.map.InstalledMap>> = _installedMaps.asStateFlow()
     private val _mapDownload = MutableStateFlow<com.curveon.data.map.MapDownloadState>(com.curveon.data.map.MapDownloadState.Idle)
     val mapDownload: StateFlow<com.curveon.data.map.MapDownloadState> = _mapDownload.asStateFlow()
-    /** Bumped when the offline map file changes so the map view reloads it. */
+    /** Countries waiting their turn after the one downloading now. */
+    private val _mapQueue = MutableStateFlow<List<String>>(emptyList())
+    val mapQueue: StateFlow<List<String>> = _mapQueue.asStateFlow()
+    /** Bumped when the offline map files change so the map view reloads them. */
     private val _mapVersion = MutableStateFlow(0)
     val mapVersion: StateFlow<Int> = _mapVersion.asStateFlow()
     @Volatile private var cancelMapDownload = false
+    private var mapWorker: Job? = null
+
+    fun freeStorageBytes() = mapDownloads.freeBytes()
+
+    /** Download size per area, given the routing tiles on the tablet right now. */
+    fun mapDownloadSizer(): (com.curveon.data.map.CatalogArea) -> Long {
+        val have = navigator.routingData.installedNames()
+        return { mapDownloads.downloadBytes(it, have) }
+    }
+
+    /** Continent to open the country list on: where the rider is, else Europe. */
+    fun currentContinent(): String = _currentLocation.value.let { mapCatalog.areaAt(it.latitude, it.longitude)?.continent } ?: "Europe"
 
     /** Checks online (when there is a connection) whether a newer map build exists. */
     fun refreshMapStatus() = viewModelScope.launch {
         latestMapBuild = mapDownloads.latestBuild() ?: latestMapBuild
-        _mapStatuses.value = mapDownloads.status(latestMapBuild)
+        updateMapStatus()
     }
 
-    fun downloadMap(regionId: String) {
-        val region = mapDownloads.regions.firstOrNull { it.id == regionId } ?: return
-        if (_mapDownload.value is com.curveon.data.map.MapDownloadState.Running) return
-        cancelMapDownload = false
-        _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(regionId, str(R.string.map_checking_newest), 0f)
-        viewModelScope.launch {
+    private fun updateMapStatus() {
+        _installedMaps.value = mapDownloads.installed(latestMapBuild)
+        _routingDataStatus.value = navigator.routingData.describe()
+    }
+
+    /** Queues a country (map and routing); downloads run one after another. */
+    fun downloadMap(areaId: String) {
+        val running = (_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId
+        if (areaId == running || areaId in _mapQueue.value || mapCatalog.byId[areaId] == null) return
+        _mapQueue.value = _mapQueue.value + areaId
+        if (mapWorker?.isActive != true) mapWorker = viewModelScope.launch { runMapQueue() }
+    }
+
+    private suspend fun runMapQueue() {
+        while (true) {
+            val id = _mapQueue.value.firstOrNull() ?: break
+            _mapQueue.value = _mapQueue.value.drop(1)
+            val area = mapCatalog.byId[id] ?: continue
+            cancelMapDownload = false
+            _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(id, str(R.string.map_checking_newest), 0f)
+            val progress = { msg: String, f: Float -> _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(id, msg, f) }
             try {
-                val build = mapDownloads.latestBuild() ?: error(str(R.string.map_no_connection))
-                latestMapBuild = build
-                mapDownloads.download(region, build, onProgress = { msg, f ->
-                    _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(regionId, msg, f)
-                }, isCancelled = { cancelMapDownload })
+                val installed = _installedMaps.value.firstOrNull { it.id == id }
+                if (installed != null && installed.newerBuild == null && installed.missingRouting.isNotEmpty()) {
+                    // Map is current: only fetch the routing tiles it lacks.
+                    mapDownloads.downloadRouting(area, progress, isCancelled = { cancelMapDownload })
+                } else {
+                    val build = mapDownloads.latestBuild() ?: error(str(R.string.map_no_connection))
+                    latestMapBuild = build
+                    mapDownloads.download(area, build, progress, isCancelled = { cancelMapDownload })
+                    _mapVersion.value++
+                }
                 _mapDownload.value = com.curveon.data.map.MapDownloadState.Idle
-                _mapVersion.value++
             } catch (e: Throwable) {
-                mapDownloads.cleanupPartial(region)
-                _mapDownload.value = if (cancelMapDownload) com.curveon.data.map.MapDownloadState.Idle
-                else com.curveon.data.map.MapDownloadState.Failed(str(R.string.map_download_failed, e.message ?: ""))
+                mapDownloads.cleanupPartial(id)
+                if (cancelMapDownload) _mapDownload.value = com.curveon.data.map.MapDownloadState.Idle
+                else {
+                    _mapDownload.value = com.curveon.data.map.MapDownloadState.Failed(str(R.string.map_download_failed, e.message ?: ""))
+                    _mapQueue.value = emptyList() // no connection or no space: the rest would fail too
+                }
             }
-            _mapStatuses.value = mapDownloads.status(latestMapBuild)
-            _offlineMapStatus.value = describeOfflineMaps()
+            updateMapStatus()
         }
     }
 
-    fun cancelMapDownload() { cancelMapDownload = true }
+    /** Stops [areaId]: the running download, or takes it out of the queue. */
+    fun cancelMapDownload(areaId: String) {
+        if ((_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId == areaId) cancelMapDownload = true
+        else _mapQueue.value = _mapQueue.value - areaId
+    }
 
-    fun deleteMap(regionId: String) {
-        val region = mapDownloads.regions.firstOrNull { it.id == regionId } ?: return
-        mapDownloads.delete(region)
-        _mapStatuses.value = mapDownloads.status(latestMapBuild)
+    fun deleteMap(id: String) {
+        mapDownloads.delete(id)
+        updateMapStatus()
         _mapVersion.value++
     }
 
@@ -863,17 +903,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch { repository.deleteGpxTrack(track.id) }
     }
 
-    fun downloadRoutingData() {
-        viewModelScope.launch {
-            runCatching {
-                navigator.routingData.downloadNorway { done, total, file ->
-                    _routingDataStatus.value = if (done < total) str(R.string.routing_downloading, file, done + 1, total) else str(R.string.download_complete)
-                }
-            }.onFailure { _routingDataStatus.value = str(R.string.routing_download_failed, it.message ?: "") }
-                .onSuccess { _routingDataStatus.value = navigator.routingData.describe() }
-        }
-    }
-
     // ---------------------------------------------------------------- offline map
 
     private fun describeOfflineMaps(): String {
@@ -887,7 +916,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             runCatching {
                 offlineMaps.import(uri) { p -> _offlineMapStatus.value = str(R.string.importing_percent, p * 100) }
             }.onFailure { _offlineMapStatus.value = str(R.string.import_failed, it.message ?: "") }
-                .onSuccess { _offlineMapStatus.value = describeOfflineMaps(); _mapVersion.value++; _mapStatuses.value = mapDownloads.status(latestMapBuild) }
+                .onSuccess { _offlineMapStatus.value = describeOfflineMaps(); _mapVersion.value++; updateMapStatus() }
         }
     }
 

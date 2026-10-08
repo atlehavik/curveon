@@ -14,12 +14,83 @@ import kotlin.math.min
 import kotlin.math.sinh
 import kotlin.math.tan
 
+/** Something to cut out of a PMTiles archive: the tiles it covers and its bounds for the header. */
+interface TileArea {
+    val minLon: Double
+    val minLat: Double
+    val maxLon: Double
+    val maxLat: Double
+    fun ranges(minZoom: Int, maxZoom: Int): TileRanges
+}
+
+/** Sorted, non-overlapping tile id ranges [starts[i], ends[i]). */
+class TileRanges(val starts: LongArray, val ends: LongArray) {
+    val size get() = starts.size
+    val tileCount get() = (0 until size).sumOf { ends[it] - starts[it] }
+
+    /** Index of the first range that ends after [id]. */
+    fun firstEndingAfter(id: Long): Int {
+        var lo = 0; var hi = size
+        while (lo < hi) { val m = (lo + hi) ushr 1; if (ends[m] <= id) lo = m + 1 else hi = m }
+        return lo
+    }
+
+    fun intersects(from: Long, to: Long): Boolean {
+        val k = firstEndingAfter(from)
+        return k < size && starts[k] < to
+    }
+
+    companion object {
+        /** Ranges from sorted, distinct tile ids (consecutive ids become one range). */
+        fun ofSortedIds(ids: LongArray): TileRanges {
+            val s = LongList(); val e = LongList()
+            for (id in ids) {
+                if (e.size > 0 && e[e.size - 1] == id) e[e.size - 1] = id + 1 else { s.add(id); e.add(id + 1) }
+            }
+            return TileRanges(s.toArray(), e.toArray())
+        }
+    }
+}
+
+/**
+ * An area given as zoom-10 tiles (Hilbert indexes within zoom 10, as [start, end) pairs).
+ * On the Hilbert curve every tile inside a zoom-10 tile has an id in one unbroken range, and so
+ * does every tile containing it, which makes the cover at any zoom a handful of ranges.
+ */
+class TileMask(
+    val z10: LongArray,
+    override val minLon: Double, override val minLat: Double, override val maxLon: Double, override val maxLat: Double
+) : TileArea {
+    override fun ranges(minZoom: Int, maxZoom: Int): TileRanges {
+        val s = LongList(); val e = LongList()
+        for (z in minZoom..maxZoom) {
+            val base = Pmtiles.zoomBase(z)
+            for (i in 0 until z10.size step 2) {
+                val (a, b) = if (z >= MASK_ZOOM) {
+                    val k = 2 * (z - MASK_ZOOM)
+                    (z10[i] shl k) to (z10[i + 1] shl k)
+                } else {
+                    val k = 2 * (MASK_ZOOM - z)
+                    (z10[i] shr k) to (((z10[i + 1] - 1) shr k) + 1)
+                }
+                if (e.size > 0 && e[e.size - 1] >= base + a) { if (base + b > e[e.size - 1]) e[e.size - 1] = base + b }
+                else { s.add(base + a); e.add(base + b) }
+            }
+        }
+        return TileRanges(s.toArray(), e.toArray())
+    }
+
+    companion object { const val MASK_ZOOM = 10 }
+}
+
 /** A region as closed (lon, lat) rings, filled even-odd (so holes work). */
-class Region(val rings: List<List<DoubleArray>>) {
-    val minLon = rings.flatten().minOf { it[0] }
-    val maxLon = rings.flatten().maxOf { it[0] }
-    val minLat = rings.flatten().minOf { it[1] }
-    val maxLat = rings.flatten().maxOf { it[1] }
+class Region(val rings: List<List<DoubleArray>>) : TileArea {
+    override val minLon = rings.flatten().minOf { it[0] }
+    override val maxLon = rings.flatten().maxOf { it[0] }
+    override val minLat = rings.flatten().minOf { it[1] }
+    override val maxLat = rings.flatten().maxOf { it[1] }
+
+    override fun ranges(minZoom: Int, maxZoom: Int) = TileRanges.ofSortedIds(RegionExtractor.coverTiles(this, minZoom, maxZoom))
 
     companion object {
         /** Reads a GeoJSON Polygon/MultiPolygon (Feature or bare geometry) without a JSON library. */
@@ -67,7 +138,7 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
 
     fun extract(
         url: String,
-        region: Region,
+        region: TileArea,
         maxZoom: Int,
         out: File,
         onProgress: (ExtractProgress) -> Unit = {},
@@ -78,8 +149,8 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
         val h = Pmtiles.readHeader(head)
         val zMax = min(maxZoom, h.maxZoom)
 
-        // 1. Which tiles do we want? (sorted ids; ~6 M for Norway at zoom 14, kept as a LongArray)
-        val wanted = coverTiles(region, h.minZoom, zMax)
+        // 1. Which tiles do we want? (sorted id ranges)
+        val wanted = region.ranges(h.minZoom, zMax)
 
         // 2. Walk the directory tree. Matches go into primitive arrays as runs of consecutive ids
         //    sharing one tile – millions of tiles must not become objects on a phone-sized heap.
@@ -91,18 +162,15 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
                 val id = d.ids[i]
                 if (d.runs[i] > 0) {
                     val end = id + d.runs[i]
-                    var k = lowerBound(wanted, id)
-                    while (k < wanted.size && wanted[k] < end) {
-                        val first = wanted[k]
-                        var run = 1
-                        while (k + run < wanted.size && wanted[k + run] == first + run && wanted[k + run] < end) run++
-                        fId.add(first); fOff.add(d.offsets[i]); fLen.add(d.lengths[i]); fRun.add(run)
-                        k += run
+                    var k = wanted.firstEndingAfter(id)
+                    while (k < wanted.size && wanted.starts[k] < end) {
+                        val first = max(id, wanted.starts[k])
+                        fId.add(first); fOff.add(d.offsets[i]); fLen.add(d.lengths[i]); fRun.add((min(end, wanted.ends[k]) - first).toInt())
+                        k++
                     }
                 } else {
                     val end = if (i + 1 < d.size) d.ids[i + 1] else Long.MAX_VALUE
-                    val k = lowerBound(wanted, id)
-                    if (k < wanted.size && wanted[k] < end) { pendingOff.add(h.leafOffset + d.offsets[i]); pendingLen.add(d.lengths[i].toLong()) }
+                    if (wanted.intersects(id, end)) { pendingOff.add(h.leafOffset + d.offsets[i]); pendingLen.add(d.lengths[i].toLong()) }
                 }
             }
         }
@@ -269,12 +337,6 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
             }
         }
         throw lastError!!
-    }
-
-    private fun lowerBound(a: LongArray, v: Long): Int {
-        var lo = 0; var hi = a.size
-        while (lo < hi) { val m = (lo + hi) ushr 1; if (a[m] < v) lo = m + 1 else hi = m }
-        return lo
     }
 
     companion object {

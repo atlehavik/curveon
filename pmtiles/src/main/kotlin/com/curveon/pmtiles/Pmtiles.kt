@@ -118,9 +118,12 @@ object Pmtiles {
         return out.toByteArray()
     }
 
+    /** Id of the first tile at zoom [z] (all tiles of lower zooms come before it). */
+    fun zoomBase(z: Int): Long = ((1L shl (2 * z)) - 1) / 3
+
     /** Tile id on the Hilbert curve, as the spec defines it. */
     fun tileId(z: Int, x: Int, y: Int): Long {
-        val acc = ((1L shl (2 * z)) - 1) / 3
+        val acc = zoomBase(z)
         val n = 1L shl z
         var tx = x.toLong(); var ty = y.toLong()
         var d = 0L

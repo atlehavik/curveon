@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -23,8 +24,8 @@ import androidx.compose.ui.unit.sp
 import com.curveon.AppLanguage
 import com.curveon.R
 import com.curveon.data.bluetooth.PhoneCompanionManager
+import com.curveon.data.map.InstalledMap
 import com.curveon.data.map.MapDownloadState
-import com.curveon.data.map.MapRegionStatus
 import com.curveon.ui.theme.*
 import com.curveon.ui.viewmodel.MapTheme
 
@@ -47,8 +48,11 @@ data class SettingsState(
     val autoFollowTracks: Boolean,
     val isNavigating: Boolean,
     val isDemoRiding: Boolean,
-    val maps: List<MapRegionStatus>,
+    val maps: List<InstalledMap>,
     val mapDownload: MapDownloadState,
+    val mapQueue: List<String>,
+    /** Name of a catalog country/region by id, in the rider's language. */
+    val mapName: (String) -> String,
     val routingDataStatus: String,
     val searchStatus: String
 )
@@ -63,10 +67,10 @@ class SettingsActions(
     val onAutoFollow: (Boolean) -> Unit,
     val onDemoRide: () -> Unit,
     val onDownloadMap: (String) -> Unit,
-    val onCancelMapDownload: () -> Unit,
+    val onCancelMapDownload: (String) -> Unit,
     val onDeleteMap: (String) -> Unit,
     val onImportMap: () -> Unit,
-    val onDownloadRouting: () -> Unit
+    val onBrowseMaps: () -> Unit
 )
 
 /**
@@ -76,7 +80,7 @@ class SettingsActions(
 @Composable
 fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, onDismiss: () -> Unit) {
     var tab by rememberSaveable { mutableStateOf(SettingsTab.DISPLAY) }
-    var confirmDelete by remember { mutableStateOf<MapRegionStatus?>(null) }
+    var confirmDelete by remember { mutableStateOf<InstalledMap?>(null) }
     CockpitDialog(title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
         Row(Modifier.fillMaxSize()) {
             Column(
@@ -129,16 +133,23 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                     SettingsTab.PHONE -> PhoneLinkContent(phone, Modifier.fillMaxSize())
                     SettingsTab.DATA -> Page {
                         SectionTitle(stringResource(R.string.settings_offline_maps))
-                        state.maps.forEach { m -> MapRow(m, state.mapDownload, actions) { confirmDelete = m } }
+                        if (state.maps.isEmpty()) Text(stringResource(R.string.maps_none), color = TextSecondary, fontSize = 14.sp)
+                        state.maps.forEach { m -> MapRow(m, state.mapDownload, state.mapQueue, actions) { confirmDelete = m } }
+                        // Downloads queued from the country list that aren't installed yet.
+                        val pending = listOfNotNull((state.mapDownload as? MapDownloadState.Running)?.areaId) + state.mapQueue
+                        pending.filter { id -> state.maps.none { it.id == id } }.forEach { id -> PendingRow(id, state.mapName(id), state.mapDownload, actions) }
                         (state.mapDownload as? MapDownloadState.Failed)?.let { Text(it.message, color = WarningRed, fontSize = 13.sp) }
+                        Button(onClick = actions.onBrowseMaps, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
+                            Icon(Icons.Default.Public, null, tint = OnCyan)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.maps_add), color = OnCyan, fontWeight = FontWeight.Bold)
+                        }
                         Text(stringResource(R.string.settings_map_attribution),
                             color = TextMuted, fontSize = 12.sp)
                         TextButton(onClick = actions.onImportMap) { Text(stringResource(R.string.settings_import_pmtiles), color = ElectricCyan) }
 
                         SectionTitle(stringResource(R.string.settings_routing_data))
-                        Setting(state.routingDataStatus) {
-                            OutlinedButton(onClick = actions.onDownloadRouting) { Text(stringResource(R.string.download), color = ElectricCyan) }
-                        }
+                        Text(state.routingDataStatus, color = TextSecondary, fontSize = 13.sp)
                         SectionTitle(stringResource(R.string.settings_search_index))
                         Text(state.searchStatus, color = TextSecondary, fontSize = 13.sp)
                     }
@@ -150,53 +161,71 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
     confirmDelete?.let { m ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(stringResource(R.string.settings_delete_map_title, stringResource(m.region.name))) },
+            title = { Text(stringResource(R.string.settings_delete_map_title, m.displayName())) },
             text = { Text(stringResource(R.string.settings_delete_map_text)) },
-            confirmButton = { TextButton(onClick = { actions.onDeleteMap(m.region.id); confirmDelete = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
+            confirmButton = { TextButton(onClick = { actions.onDeleteMap(m.id); confirmDelete = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 }
 
 @Composable
-private fun MapRow(m: MapRegionStatus, download: MapDownloadState, actions: SettingsActions, onDelete: () -> Unit) {
-    val running = (download as? MapDownloadState.Running)?.takeIf { it.regionId == m.region.id }
+private fun InstalledMap.displayName() = area?.displayName(LocalConfiguration.current.locales[0]) ?: file.name
+
+@Composable
+private fun MapRow(m: InstalledMap, download: MapDownloadState, queue: List<String>, actions: SettingsActions, onDelete: () -> Unit) {
+    val running = (download as? MapDownloadState.Running)?.takeIf { it.areaId == m.id }
+    val busy = running != null || m.id in queue
+    val warn = m.newerBuild != null || m.missingRouting.isNotEmpty()
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(stringResource(m.region.name), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(m.displayName(), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    when {
-                        m.installedBytes > 0 -> stringResource(R.string.size_gb, m.installedBytes / 1e9) +
-                            (m.installedBuild?.let { " · " + stringResource(R.string.settings_map_from, it) } ?: "") +
-                            (if (m.updateAvailable) " · " + stringResource(R.string.settings_map_newer, m.latestBuild ?: "") else "")
-                        else -> stringResource(R.string.settings_map_not_installed, m.region.approxBytes / 1e9)
-                    },
-                    color = if (m.updateAvailable) NeonAmber else TextSecondary, fontSize = 13.sp
+                    listOfNotNull(
+                        if (m.bytes < 1e9) stringResource(R.string.size_mb, maxOf(1.0, m.bytes / 1e6)) else stringResource(R.string.size_gb, m.bytes / 1e9),
+                        if (m.area == null) stringResource(R.string.maps_by_hand) else m.build?.let { stringResource(R.string.settings_map_from, it) },
+                        m.newerBuild?.let { stringResource(R.string.settings_map_newer, it) },
+                        stringResource(R.string.maps_routing_missing).takeIf { m.missingRouting.isNotEmpty() }
+                    ).joinToString(" · "),
+                    color = if (warn) NeonAmber else TextSecondary, fontSize = 13.sp
                 )
             }
-            if (running != null) {
-                OutlinedButton(onClick = actions.onCancelMapDownload) { Text(stringResource(R.string.cancel), color = WarningRed) }
+            if (busy) {
+                if (running == null) Text(stringResource(R.string.maps_waiting), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(end = 8.dp))
+                OutlinedButton(onClick = { actions.onCancelMapDownload(m.id) }) { Text(stringResource(R.string.cancel), color = WarningRed) }
             } else {
-                if (m.installedBytes > 0) {
-                    TextButton(onClick = onDelete) { Text(stringResource(R.string.delete), color = TextMuted) }
+                TextButton(onClick = onDelete) { Text(stringResource(R.string.delete), color = TextMuted) }
+                if (m.area != null) {
                     Spacer(Modifier.width(6.dp))
+                    Button(onClick = { actions.onDownloadMap(m.id) }, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
+                        Text(stringResource(if (m.newerBuild == null && m.missingRouting.isNotEmpty()) R.string.maps_get_routing else R.string.update),
+                            color = OnCyan, fontWeight = FontWeight.Bold)
+                    }
                 }
-                Button(
-                    onClick = { actions.onDownloadMap(m.region.id) },
-                    enabled = download !is MapDownloadState.Running,
-                    colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)
-                ) { Text(stringResource(if (m.installedBytes > 0) R.string.update else R.string.download), color = OnCyan, fontWeight = FontWeight.Bold) }
             }
         }
-        if (running != null) {
-            LinearProgressIndicator(progress = { running.fraction }, color = ElectricCyan, trackColor = CockpitBorder,
-                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)))
-            Text(running.message, color = TextSecondary, fontSize = 12.sp)
+        if (running != null) DownloadProgress(running)
+    }
+}
+
+/** A queued or running download of a country that isn't on the tablet yet. */
+@Composable
+private fun PendingRow(id: String, name: String, download: MapDownloadState, actions: SettingsActions) {
+    val running = (download as? MapDownloadState.Running)?.takeIf { it.areaId == id }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(name, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            if (running == null) Text(stringResource(R.string.maps_waiting), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(end = 8.dp))
+            OutlinedButton(onClick = { actions.onCancelMapDownload(id) }) { Text(stringResource(R.string.cancel), color = WarningRed) }
         }
+        if (running != null) DownloadProgress(running)
     }
 }
 
