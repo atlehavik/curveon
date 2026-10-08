@@ -47,6 +47,22 @@ class BRouterEngine(
          */
         tracksAsLastResort: Boolean = true
     ): Route {
+        val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false)
+        // Start and end on the rider's own road even where the map doesn't join it to the network.
+        return OwnRoad { pts, look -> routeOnce(pts, options, null, avoidedFerryCost, null, emptyList(), tracksAsLastResort, look) }.join(waypoints, r)
+    }
+
+    private fun routeOnce(
+        waypoints: List<LatLon>,
+        options: RouteOptions,
+        viaCatchingRangeMeters: Double?,
+        avoidedFerryCost: Int,
+        startHeadingDeg: Double?,
+        noGo: List<NoGo>,
+        tracksAsLastResort: Boolean,
+        /** Paths count as roads: only to find where the rider's own road meets one (see [OwnRoad]). */
+        lookPastPaths: Boolean
+    ): Route {
         require(waypoints.size >= 2) { "Need at least start and destination" }
         val nodes = waypoints.mapIndexed { i, p ->
             OsmNodeNamed().apply {
@@ -57,7 +73,7 @@ class BRouterEngine(
         }
         val rc = RoutingContext().apply {
             localFunction = File(profileDir, PROFILE_FILE).absolutePath
-            keyValues = profileParams(options, avoidedFerryCost, tracksAsLastResort)
+            keyValues = profileParams(options, avoidedFerryCost, tracksAsLastResort, lookPastPaths)
             waypointCatchingRange = viaCatchingRangeMeters ?: DEFAULT_CATCHING_RANGE_M
             memoryclass = memoryClassMb
             if (startHeadingDeg != null) {
@@ -87,7 +103,7 @@ class BRouterEngine(
         return toRoute(track)
     }
 
-    private fun profileParams(o: RouteOptions, avoidedFerryCost: Int, tracksAsLastResort: Boolean): MutableMap<String, String> {
+    private fun profileParams(o: RouteOptions, avoidedFerryCost: Int, tracksAsLastResort: Boolean, lookPastPaths: Boolean): MutableMap<String, String> {
         val params = sortedMapOf(
             "road_style" to o.roadStyle.ordinal.toString(),
             "surface_pref" to o.surface.ordinal.toString(),
@@ -95,7 +111,8 @@ class BRouterEngine(
             "avoid_motorways" to o.avoidMotorways.flag(),
             "avoid_toll" to o.avoidToll.flag(),
             "avoided_ferry_cost" to avoidedFerryCost.toString(),
-            "tracks_last_resort" to tracksAsLastResort.flag()
+            "tracks_last_resort" to tracksAsLastResort.flag(),
+            "look_past_paths" to lookPastPaths.flag()
         )
         // BRouter caches parsed profiles keyed by the *sum* of the parameters' hash codes, so
         // "curvy, no ferries" (1 + 1) is the same profile to it as "very curvy, ferries" (2 + 0) and

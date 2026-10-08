@@ -22,7 +22,8 @@ and [dashboard.md](dashboard.md) for the goals.
   ferries / motorways; ETA and remaining distance; rerouting when you leave the route.
   Every road a motorcycle may use is routable, tracks of any grade included: with Tarmac a track is
   only a last resort (to reach a place that is on one), never a short cut. Cycle paths and footpaths
-  are never used (not allowed by law), so a road the map only joins to one can't be routed from.
+  are never used (not allowed by law). Where the map leaves a driveway or farm road ending on a
+  cycle path a few metres from the road, routes still start/end on it and just cross those metres.
 - **GoRide-style roundtrip**: pick direction(s) and distance.
 - **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first. Tracks live in
   groups (a multi-track file becomes one) that can show/hide, colour and invert all their tracks at once

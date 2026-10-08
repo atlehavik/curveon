@@ -15,6 +15,7 @@ assign avoid_ferries   = false  # %avoid_ferries% | Avoid ferries | boolean
 assign avoid_motorways = false  # %avoid_motorways% | Avoid motorways | boolean
 assign avoid_toll      = false  # %avoid_toll% | Avoid toll roads | boolean
 assign tracks_last_resort = 1    # %tracks_last_resort% | With Tarmac, tracks may still be used to reach a place on one (0 = never) | number
+assign look_past_paths = 0       # %look_past_paths% | Only for finding where an own road meets a path: paths count (never ridden) | number
 assign avoided_ferry_cost = 1000000 # %avoided_ferry_cost% | Cost of one ferry when avoiding them (~1 per metre of detour) | number
 
 assign downhillcost = 0
@@ -195,7 +196,12 @@ assign road_cost = multiply class_cost multiply surface_factor multiply track_fa
 assign is_motor_road = highway=motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service|track|road
 
 assign costfactor =
-  if not motoraccess then ( if and is_motor_road not and is_track no_tracks then min 9999 max 8 multiply 2 road_cost else 10000 )
+  if not motoraccess then
+  (
+    if and is_motor_road not and is_track no_tracks then min 9999 max 8 multiply 2 road_cost
+    else if and ( equal look_past_paths 1 ) highway=cycleway|footway|path|pedestrian|bridleway|steps then 30
+    else 10000
+  )
   else if isbadoneway then 10000
   else min 9999 road_cost
 

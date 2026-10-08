@@ -17,15 +17,14 @@ destination on a farm/forest road stopped on the nearest tarmac. Now tracks are 
 
 ## 2026-10-08 — Route start at home
 
-Your road (OSM way 520497619, `highway=service`) only touches the cycle path in OpenStreetMap, never
-Stavlandsvegen, so for a motorbike it's cut off and routes start on Stavlandsvegen ~65 m away. The app
-now draws a dotted line to the start and no longer re-plans every 10 s while you're at home.
+Your road (OSM way 520497619) ends on the cycle path 6 m from Stavlandsvegen without being joined to it,
+so the router used to start on Stavlandsvegen ~65 m away. Now routes start (and end) on your road and
+cross those metres, never riding along the path. Tried in the emulator with the GPS at your house.
 
-- [ ] At home: plan a trip, press GO, wait a minute: no "Recalculating" and the dotted line to Stavlandsvegen;
-  ride off: the line goes once you're on Stavlandsvegen. `adb -s 241181d1 logcat -s CurveonNav` should stay quiet.
-- [ ] Fix the gap in OSM (openstreetmap.org/way/520497619 → Edit): join the end of the service road to
-  Stavlandsvegen (draw the few metres across the cycle path, tag `highway=service`). Once BRouter's
-  segments are rebuilt from it (weekly on brouter.de) and downloaded again, routes start on your road.
+- [ ] At home on the X7: plan a trip → the line starts at the house, "Turn left · Fv4998 Stavlandsvegen"
+  after ~70 m. Ride it: no "Recalculating" on the way down to the road.
+- [ ] Ride home with a trip to the house: it should end on your road, not on Stavlandsvegen.
+- Still worth fixing in OSM (join the service road to Stavlandsvegen), so other apps get it right too.
 
 ## 2026-10-08 — Editing a trip on the map
 
