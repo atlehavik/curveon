@@ -358,3 +358,51 @@ fun MapPickBar(
         }
     }
 }
+
+/**
+ * Editing a trip on the map: what to do (or that the new route is being found, or why it
+ * couldn't be), the selected route's time and length, Undo and Done.
+ */
+@Composable
+fun RouteEditBar(
+    summary: String?,
+    busy: Boolean,
+    error: String?,
+    canUndo: Boolean,
+    onUndo: () -> Unit,
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val grow = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) { grow.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 500f)) }
+    Row(
+        modifier
+            .graphicsLayer {
+                scaleX = 0.6f + 0.4f * grow.value; scaleY = 0.6f + 0.4f * grow.value; alpha = grow.value.coerceIn(0f, 1f)
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+            }
+            .clip(RoundedCornerShape(30.dp)).background(CockpitSurface.copy(alpha = 0.97f))
+            .border(2.dp, if (error != null) WarningRed else ElectricCyan, RoundedCornerShape(30.dp))
+            .padding(6.dp)
+            .testTag("route_edit_bar"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+            if (busy) CircularProgressIndicator(color = ElectricCyan, strokeWidth = 3.dp, modifier = Modifier.size(26.dp))
+            else Icon(Icons.Default.Gesture, null, tint = if (error != null) WarningRed else ElectricCyan)
+        }
+        Column(Modifier.widthIn(max = 380.dp)) {
+            Text(
+                error ?: stringResource(if (busy) R.string.edit_route_working else R.string.edit_route_hint),
+                color = if (error != null) WarningRed else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            if (summary != null && !busy && error == null) Text(summary, color = TextSecondary, fontSize = 13.sp, maxLines = 1)
+        }
+        Box(Modifier.testTag("route_edit_undo").graphicsLayer { alpha = if (canUndo) 1f else 0.35f }) {
+            RoundButton(Icons.Default.Undo, stringResource(R.string.undo), 48.dp, CockpitSurfaceVariant, TextPrimary) { if (canUndo) onUndo() }
+        }
+        PillButton(Icons.Default.Check, stringResource(R.string.done), ElectricCyan, OnCyanDark, Modifier.testTag("route_edit_done"), onDone)
+    }
+}

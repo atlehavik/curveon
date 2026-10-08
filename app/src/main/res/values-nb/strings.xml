@@ -436,6 +436,13 @@
     <string name="pick_hint_stop">Trykk i kartet der du vil stoppe</string>
     <string name="pick_hint_start">Trykk i kartet der turen starter</string>
     <string name="back_to_search">Tilbake til søket</string>
+    <string name="edit_on_map">Endre i kartet</string>
+    <string name="edit_route_hint">Dra linja eller et stopp for å endre ruta</string>
+    <string name="edit_route_working">Finner veien…</string>
+    <string name="undo">Angre</string>
+    <string name="done">Ferdig</string>
+    <string name="change_place">Bytt sted</string>
+    <string name="add_stop_before">Nytt stopp før</string>
     <string name="move_earlier">Før</string>
     <string name="move_later">Etter</string>
     <string name="save_route_title">Lagre ruten</string>

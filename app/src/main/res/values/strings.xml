@@ -437,6 +437,13 @@
     <string name="pick_hint_stop">Tap the map where you want to stop</string>
     <string name="pick_hint_start">Tap the map where the trip starts</string>
     <string name="back_to_search">Back to search</string>
+    <string name="edit_on_map">Edit on map</string>
+    <string name="edit_route_hint">Drag the line or a stop to change the route</string>
+    <string name="edit_route_working">Finding the way…</string>
+    <string name="undo">Undo</string>
+    <string name="done">Done</string>
+    <string name="change_place">Change place</string>
+    <string name="add_stop_before">Add stop before</string>
     <string name="move_earlier">Earlier</string>
     <string name="move_later">Later</string>
     <string name="save_route_title">Save route</string>

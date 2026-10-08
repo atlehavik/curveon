@@ -32,10 +32,10 @@ object SavedRoutes {
         )
         return when (goal) {
             is NavigationGoal.Destination -> base.copy(
-                subtitle = if (goal.stops.isEmpty()) "" else "via " + goal.stops.joinToString { it.name },
+                subtitle = goal.stops.filterNot { it.via }.let { real -> if (real.isEmpty()) "" else "via " + real.joinToString { it.name } },
                 waypointsJson = JSONObject()
                     .put("options", optionsJson(o))
-                    .put("stops", JSONArray(goal.stops.map { stopJson(it.name, it.point) }))
+                    .put("stops", JSONArray(goal.stops.map { stopJson(it.name, it.point).apply { if (it.via) put("via", true) } }))
                     .put("destination", stopJson(goal.name, goal.destination))
                     .apply { goal.start?.let { put("start", stopJson(it.name, it.point)) } }
                     .toString(),
@@ -54,10 +54,17 @@ object SavedRoutes {
         val options = json.optJSONObject("options")?.let(::parseOptions)
             ?: RouteOptions(RoadStyle.valueOf(item.roadType), SurfacePreference.valueOf(item.groundType))
         val dest = json.optJSONObject("destination")
-        return if (dest != null && item.polylineJson.isEmpty()) { // saved before routes kept their line
+        // A→B trips come back with their stops, start and destination, so they can be changed;
+        // until they are, the saved line is ridden as it is.
+        return if (dest != null) {
             val stops = json.optJSONArray("stops")?.let { a -> (0 until a.length()).map { parseStop(a.getJSONObject(it)) } }.orEmpty()
             val d = parseStop(dest)
-            NavigationGoal.Destination(d.name, d.point, options, stops)
+            NavigationGoal.Destination(
+                d.name, d.point, options, stops,
+                start = json.optJSONObject("start")?.let(::parseStop),
+                fixedLine = item.polylineJson.takeIf { it.isNotEmpty() }?.let(::decode)?.takeIf { it.size >= 2 },
+                saved = SavedRef(item.id, item.title)
+            )
         } else {
             NavigationGoal.Track(item.title, decode(item.polylineJson), options)
         }
@@ -75,7 +82,7 @@ object SavedRoutes {
 
     private fun stopJson(name: String, p: LatLon) = JSONObject().put("name", name).put("lat", p.lat).put("lon", p.lon)
 
-    private fun parseStop(j: JSONObject) = Stop(j.getString("name"), LatLon(j.getDouble("lat"), j.getDouble("lon")))
+    private fun parseStop(j: JSONObject) = Stop(j.getString("name"), LatLon(j.getDouble("lat"), j.getDouble("lon")), j.optBoolean("via"))
 
     /** Thinned to ~every 25 m so a 300 km loop stays a few hundred kB. */
     fun encode(points: List<LatLon>): String {

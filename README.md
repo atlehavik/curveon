@@ -31,6 +31,12 @@ and [dashboard.md](dashboard.md) for the goals.
 - **Route preview**: Fastest / Curvy / Super curvy side by side (time, km, curviness, gravel and
   ferries) before you ride; surface and avoid options adjust them in place.
 - **Stops**: pick a place while riding → *Add stop* (inserted where it adds least detour) or *Go here*.
+- **Editing a planned trip**: tap a stop chip to move it earlier/later, *Change place* (search or pick
+  on map), *Add stop before*, or remove it. **Edit on map** (long-press the route line, or the squiggle in
+  the preview): drag a stop, the start or the destination to move it, or drag the line itself to make
+  the route go through that point (a dashed guess follows the finger, then it re-routes); Undo / Done.
+- **Saved A→B routes** open with their stops, start and destination: ridden on the exact saved line until
+  something is changed; saving again under the same name updates the saved route.
 - **Pick on map** in every search (destination, stop, start): the search shrinks into a bar on the full
   map; tap to drop a pin (tap again to move it), then *Go here* / *Add stop* / *Start here*.
 - **Saved routes and recents** show up in the empty search, with a *Nearest fuel* shortcut.

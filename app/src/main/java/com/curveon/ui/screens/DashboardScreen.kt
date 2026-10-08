@@ -109,10 +109,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** "Pick on map": what the search was for while the rider taps the map; null when not picking. */
     var mapPick by remember { mutableStateOf<SearchPurpose?>(null) }
     var picked by remember { mutableStateOf<Pair<GeoPoint, String?>?>(null) }
-    /** Whether the map was full-screen before picking, to go back to the dashboard afterwards. */
-    var wasFullScreen by remember { mutableStateOf(true) }
     /** The search reopens growing out of the pick bar. */
     var searchGrowIn by remember { mutableStateOf(false) }
+    /** Editing the previewed trip by dragging it on the map. */
+    var editing by remember { mutableStateOf(false) }
+    /** Stop menu opened from its handle while editing (index into the trip's stops). */
+    var editStopMenu by remember { mutableStateOf<Int?>(null) }
+    /** Where the next stop from the search goes; null = wherever it adds least detour. */
+    var stopTarget by remember { mutableStateOf<StopTarget?>(null) }
     var showRouteMenu by remember { mutableStateOf(false) }
     /** Suggested name while the save dialog is open. */
     var saveName by remember { mutableStateOf<String?>(null) }
@@ -143,31 +147,84 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val usePlace: (SearchPurpose, GeoPoint, String) -> Unit = { purpose, point, name ->
         when (purpose) {
             SearchPurpose.DESTINATION -> pickPlace(point, name)
-            SearchPurpose.STOP -> viewModel.addStop(point, name)
+            SearchPurpose.STOP -> when (val t = stopTarget) {
+                null -> viewModel.addStop(point, name)
+                is StopTarget.Before -> viewModel.insertPreviewStop(t.index, point, name)
+                is StopTarget.Instead -> viewModel.replacePreviewStop(t.index, point, name)
+            }
             SearchPurpose.START -> viewModel.setPreviewStart(point, name)
         }
     }
     val startMapPick: (SearchPurpose) -> Unit = { purpose ->
-        // Back from the bar to the search and onto the map again: the map is still forced full.
-        if (!searchGrowIn) wasFullScreen = isFullScreenMap
         searchGrowIn = false
         searchPurpose = null
         picked = null
         mapPick = purpose
-        viewModel.setFullScreenMap(true)
     }
-    /** Closes the search; if it came back from picking on the map, the dashboard comes back too. */
     val closeSearch: () -> Unit = {
         searchPurpose = null
-        if (searchGrowIn && !wasFullScreen) viewModel.setFullScreenMap(false)
         searchGrowIn = false
+        stopTarget = null
     }
     val endMapPick: () -> Unit = {
         mapPick = null
         picked = null
-        if (!wasFullScreen) viewModel.setFullScreenMap(false)
+        stopTarget = null
     }
+    // Picking on the map, editing the trip on it, or the search back up from the pick bar: the map
+    // goes full-screen, and the dashboard comes back afterwards if that's where the rider was.
+    val mapMode = mapPick != null || editing || searchGrowIn
+    var dashboardBefore by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(mapMode) {
+        if (mapMode) {
+            if (dashboardBefore == null) dashboardBefore = !isFullScreenMap
+            viewModel.setFullScreenMap(true)
+        } else dashboardBefore?.let { if (it) viewModel.setFullScreenMap(false); dashboardBefore = null }
+    }
+    val planGoal = preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination
+    LaunchedEffect(planGoal == null) { if (planGoal == null) { editing = false; editStopMenu = null } }
+    androidx.activity.compose.BackHandler(enabled = editing && mapPick == null) { editing = false }
     androidx.activity.compose.BackHandler(enabled = mapPick != null) { endMapPick() }
+
+    // Editing on the map: the trip's places as handles, and the last route found, kept on screen
+    // (with the dashed guess) while the next one is worked out.
+    val selectedLine = remember(preview?.selectedRoute) { preview?.selectedRoute?.points?.map { GeoPoint(it.lat, it.lon) } }
+    var editLine by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
+    LaunchedEffect(selectedLine) { if (selectedLine != null) editLine = selectedLine }
+    val selectedCandidate = preview?.candidates?.getOrNull(preview!!.selected)
+    val editor = if (!editing || planGoal == null) null else remember(planGoal, selectedCandidate) {
+        var number = 0
+        val handles = buildList {
+            planGoal.start?.let { add(RouteHandle(GeoPoint(it.point.lat, it.point.lon), HandleKind.START)) }
+            planGoal.stops.forEachIndexed { i, st ->
+                add(RouteHandle(GeoPoint(st.point.lat, st.point.lon), if (st.via) HandleKind.VIA else HandleKind.STOP, i, if (st.via) "" else "${++number}"))
+            }
+            add(RouteHandle(GeoPoint(planGoal.destination.lat, planGoal.destination.lon), HandleKind.DESTINATION))
+        }
+        RouteEditor(
+            handles = handles,
+            busy = selectedCandidate != null && selectedCandidate.route == null && selectedCandidate.error == null,
+            onMoveHandle = { h, at ->
+                scope.launch {
+                    val name = viewModel.describePoint(at)
+                    when (h.kind) {
+                        HandleKind.START -> viewModel.setPreviewStart(at, name)
+                        HandleKind.DESTINATION -> viewModel.setPreviewDestination(at, name)
+                        HandleKind.STOP -> viewModel.replacePreviewStop(h.stopIndex, at, name)
+                        HandleKind.VIA -> viewModel.replacePreviewStop(h.stopIndex, at, name, via = true)
+                    }
+                }
+            },
+            onInsert = { i, at -> scope.launch { viewModel.insertPreviewStop(i, at, viewModel.describePoint(at), via = true) } },
+            onTapHandle = { h ->
+                when (h.kind) {
+                    HandleKind.STOP, HandleKind.VIA -> editStopMenu = h.stopIndex
+                    HandleKind.START -> searchPurpose = SearchPurpose.START
+                    HandleKind.DESTINATION -> searchPurpose = SearchPurpose.DESTINATION
+                }
+            }
+        )
+    }
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
         // Picking a place: just the map and the little bar; the rest waits.
@@ -176,9 +233,23 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             MapPickBar(
                 purpose = pickPurpose,
                 picked = picked?.let { it.second ?: "…" },
-                onConfirm = { picked?.let { (p, n) -> if (n != null) { endMapPick(); usePlace(pickPurpose, p, n) } } },
+                onConfirm = { picked?.let { (p, n) -> if (n != null) { usePlace(pickPurpose, p, n); endMapPick() } } },
                 onBackToSearch = { mapPick = null; picked = null; searchGrowIn = true; searchPurpose = pickPurpose },
                 onCancel = endMapPick,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
+            )
+        } else if (editing) {
+            val route = preview?.selectedRoute
+            RouteEditBar(
+                summary = route?.let { r ->
+                    val min = (r.durationSeconds / 60).toInt()
+                    "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, r.distanceMeters / 1000)
+                },
+                busy = editor?.busy == true,
+                error = selectedCandidate?.error,
+                canUndo = preview?.canUndo == true,
+                onUndo = viewModel::undoPreviewEdit,
+                onDone = { editing = false },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
             )
         } else if (!searchGrowIn) { // nor while the search is back up over the map
@@ -224,6 +295,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onAddStop = { searchPurpose = SearchPurpose.STOP },
                     onMoveStop = viewModel::movePreviewStop,
                     onEditStart = { searchPurpose = SearchPurpose.START },
+                onChangeStop = { i -> stopTarget = StopTarget.Instead(i); searchPurpose = SearchPurpose.STOP },
+                onAddStopBefore = { i -> stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP },
+                onEditOnMap = { editing = true },
                     onReverse = viewModel::reversePreviewTrack,
                     onSave = askSaveName,
                     onGo = viewModel::startPreview,
@@ -281,10 +355,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     currentTurnInstruction = currentTurnInstruction,
                     isFullScreen = isFullScreenMap,
                     dark = mapDark,
-                    previewRoutes = preview?.candidates?.mapIndexedNotNull { i, c ->
+                    previewRoutes = if (editor != null) listOf(MapRoute(editLine, true)).filter { it.points.size >= 2 }
+                    else preview?.candidates?.mapIndexedNotNull { i, c ->
                         c.route?.let { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, i == preview!!.selected) }
                     }.orEmpty(),
-                    markers = markers,
+                    markers = if (editor != null) emptyList() else markers,
+                    editor = editor,
+                    onEditRoute = if (planGoal != null && !editing && mapPick == null) ({ editing = true }) else null,
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,
                     onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
@@ -389,9 +466,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 searchStatus = remember { viewModel.searchStatus() },
                 onSearch = { viewModel.searchPlaces(it) },
                 onPick = { r ->
-                    closeSearch()
                     if (purpose == SearchPurpose.START && r.kind == KIND_HERE) viewModel.setPreviewStart(null, "")
                     else usePlace(purpose, GeoPoint(r.lat, r.lon), r.name)
+                    closeSearch()
                 },
                 onDismiss = closeSearch,
                 savedRoutes = savedRoutes,
@@ -418,6 +495,21 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
+        editStopMenu?.let { i ->
+            val stops = planGoal?.stops.orEmpty()
+            val st = stops.getOrNull(i)
+            if (st == null) editStopMenu = null
+            else StopMenuDialog(
+                name = st.name,
+                canMoveEarlier = !st.via && i > 0, canMoveLater = !st.via && i < stops.lastIndex,
+                onMove = { d -> editStopMenu = null; viewModel.movePreviewStop(i, d) },
+                onRemove = { editStopMenu = null; viewModel.removePreviewStop(i) },
+                onDismiss = { editStopMenu = null },
+                onChangePlace = { editStopMenu = null; stopTarget = StopTarget.Instead(i); searchPurpose = SearchPurpose.STOP },
+                onAddBefore = { editStopMenu = null; stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP }
+            )
+        }
+
         saveName?.let { suggested ->
             SaveRouteDialog(
                 initialName = suggested,
@@ -428,10 +520,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
         if (showRouteMenu && isNavigating) {
             val along = navState.progress?.distanceAlongRoute ?: 0.0
+            val realStops = navState.stopsAlong.withIndex().filter { !it.value.first.via }
             RouteMenuDialog(
                 title = navState.goal?.title ?: "",
-                stops = navState.stopsAlong.map { (stop, at) -> stop.name to ((at - along) / 1000).coerceAtLeast(0.0) },
-                onRemoveStop = { i -> showRouteMenu = false; viewModel.removeStop(i) },
+                // Points the route was dragged through aren't stops to the rider.
+                stops = realStops.map { (_, sa) -> sa.first.name to ((sa.second - along) / 1000).coerceAtLeast(0.0) },
+                onRemoveStop = { i -> showRouteMenu = false; realStops.getOrNull(i)?.let { viewModel.removeStop(it.index) } },
                 onAddStop = { showRouteMenu = false; searchPurpose = SearchPurpose.STOP },
                 onSave = { showRouteMenu = false; askSaveName() },
                 onEnd = { showRouteMenu = false; viewModel.stopNavigation() },
@@ -672,6 +766,13 @@ private fun TrackChip(h: com.curveon.data.gpx.TrackHint, onClick: () -> Unit) {
             color = color, fontSize = 14.sp, fontWeight = FontWeight.Black
         )
     }
+}
+
+/** Where a stop chosen in the search goes in the planned trip: before stop [index], or in its place. */
+private sealed interface StopTarget {
+    val index: Int
+    data class Before(override val index: Int) : StopTarget
+    data class Instead(override val index: Int) : StopTarget
 }
 
 /** Pages of the GPX & rides dialog (rail button). */

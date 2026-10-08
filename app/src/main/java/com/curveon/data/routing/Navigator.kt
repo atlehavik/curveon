@@ -38,7 +38,11 @@ sealed interface RoutingStatus {
     data class Failed(val message: String) : RoutingStatus
 }
 
-data class Stop(val name: String, val point: LatLon)
+/** A place to ride through. [via] = a point the route was dragged through on the map, not a real stop. */
+data class Stop(val name: String, val point: LatLon, val via: Boolean = false)
+
+/** The saved route a preview was opened from, so saving it again under the same name updates it. */
+data class SavedRef(val id: Long, val title: String)
 
 /** How far along [route] each of [stops] is (they are visited in order). */
 fun alongDistances(stops: List<Stop>, route: Route): List<Double> {
@@ -92,7 +96,10 @@ sealed interface NavigationGoal {
         override val options: RouteOptions,
         val stops: List<Stop> = emptyList(),
         /** Planning from somewhere else than where the rider is; null = from here. */
-        val start: Stop? = null
+        val start: Stop? = null,
+        /** A saved route's exact line: ridden as it is until the trip is changed. */
+        val fixedLine: List<LatLon>? = null,
+        val saved: SavedRef? = null
     ) : NavigationGoal {
         override val title get() = name
     }
@@ -119,7 +126,9 @@ data class RouteCandidate(val style: RoadStyle?, val route: Route? = null, val e
 data class RoutePreview(
     val goal: NavigationGoal,
     val candidates: List<RouteCandidate>,
-    val selected: Int
+    val selected: Int,
+    /** There is an earlier version of the trip to go back to. */
+    val canUndo: Boolean = false
 ) {
     val selectedRoute get() = candidates.getOrNull(selected)?.route
     val calculating get() = candidates.any { it.route == null && it.error == null }
@@ -176,28 +185,52 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     fun previewDestination(name: String, destination: LatLon, options: RouteOptions, stops: List<Stop> = emptyList(), start: Stop? = null) =
         preview(NavigationGoal.Destination(name, destination, options, stops, start))
 
-    /** Plan the previewed trip from [start] instead of from here (null = from here again). */
-    fun setPreviewStart(start: Stop?) {
+    /** A saved A→B route: its stops stay editable, and it rides its saved line until changed. */
+    fun previewPlanned(goal: NavigationGoal.Destination) = preview(goal)
+
+    /** Earlier versions of the previewed trip, newest last, for Undo. */
+    private val previewHistory = ArrayList<NavigationGoal.Destination>()
+
+    /** Change the previewed A→B trip (remembering the old one for Undo). It no longer follows a saved line. */
+    private fun editPreview(change: (NavigationGoal.Destination) -> NavigationGoal.Destination?) {
         val p = _state.value.preview ?: return
         val g = p.goal as? NavigationGoal.Destination ?: return
-        preview(g.copy(start = start), p.selected)
+        val changed = change(g)?.copy(fixedLine = null) ?: return
+        previewHistory += g
+        if (previewHistory.size > 30) previewHistory.removeAt(0)
+        // A saved line had one option; changed, it gets all three, starting with the style it was saved with.
+        val selected = if (g.fixedLine != null) RoadStyle.entries.indexOf(g.options.roadStyle) else p.selected
+        preview(changed, selected, keepHistory = true)
     }
+
+    /** Back to the trip as it was before the last change. */
+    fun undoPreviewEdit() {
+        val p = _state.value.preview ?: return
+        val last = previewHistory.removeLastOrNull() ?: return
+        preview(last, p.selected, keepHistory = true)
+    }
+
+    /** Plan the previewed trip from [start] instead of from here (null = from here again). */
+    fun setPreviewStart(start: Stop?) = editPreview { it.copy(start = start) }
 
     /** Make [stop] the previewed trip's destination, keeping its stops and start. */
-    fun setPreviewDestination(stop: Stop) {
-        val p = _state.value.preview ?: return
-        val g = p.goal as? NavigationGoal.Destination ?: return
-        preview(g.copy(name = stop.name, destination = stop.point), p.selected)
-    }
+    fun setPreviewDestination(stop: Stop) = editPreview { it.copy(name = stop.name, destination = stop.point) }
 
     /** Move a previewed stop one place earlier ([delta] -1) or later (+1). */
-    fun movePreviewStop(index: Int, delta: Int) {
-        val p = _state.value.preview ?: return
-        val g = p.goal as? NavigationGoal.Destination ?: return
+    fun movePreviewStop(index: Int, delta: Int) = editPreview { g ->
         val to = index + delta
-        if (index !in g.stops.indices || to !in g.stops.indices) return
-        val stops = g.stops.toMutableList().also { java.util.Collections.swap(it, index, to) }
-        preview(g.copy(stops = stops), p.selected)
+        if (index !in g.stops.indices || to !in g.stops.indices) null
+        else g.copy(stops = g.stops.toMutableList().also { java.util.Collections.swap(it, index, to) })
+    }
+
+    /** Put [stop] in the previewed trip at [index] (0 = first), e.g. "add stop before" or a point dragged on the map. */
+    fun insertPreviewStop(index: Int, stop: Stop) = editPreview { g ->
+        g.copy(stops = g.stops.toMutableList().also { it.add(index.coerceIn(0, g.stops.size), stop) })
+    }
+
+    /** Replace the previewed stop at [index] with [stop] (a wrong place moved or picked again). */
+    fun replacePreviewStop(index: Int, stop: Stop) = editPreview { g ->
+        if (index !in g.stops.indices) null else g.copy(stops = g.stops.toMutableList().also { it[index] = stop })
     }
 
     fun previewRoundtrip(distanceKm: Double, directionDeg: Double, options: RouteOptions, variant: Int = 0) =
@@ -248,7 +281,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 is NavigationGoal.Roundtrip -> g.copy(options = transform(g.options))
                 is NavigationGoal.Track -> g.copy(options = transform(g.options))
             },
-            keepSelection = p.selected
+            keepSelection = p.selected, keepHistory = true
         )
     }
 
@@ -257,9 +290,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         _state.value = _state.value.copy(preview = p.copy(selected = index))
     }
 
-    fun removePreviewStop(index: Int) {
-        val g = _state.value.preview?.goal as? NavigationGoal.Destination ?: return
-        preview(g.copy(stops = g.stops.filterIndexed { i, _ -> i != index }), keepSelection = _state.value.preview?.selected)
+    fun removePreviewStop(index: Int) = editPreview { g ->
+        if (index !in g.stops.indices) null else g.copy(stops = g.stops.filterIndexed { i, _ -> i != index })
     }
 
     fun cancelPreview() {
@@ -274,6 +306,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val route = candidate.route ?: return
         candidate.style?.let { preferredStyle = it }
         val planned = p.goal as? NavigationGoal.Destination
+        // An unchanged saved route: ride its line, rejoining it after a wrong turn as before.
+        if (planned?.fixedLine != null) return activate(NavigationGoal.Track(planned.saved?.title ?: planned.name, planned.fixedLine, planned.options), route)
         if (planned?.start != null) {
             // Planned from elsewhere: ride to the planned line and along it.
             return followTrackNow(planned.name, route.points.map { LatLon(it.lat, it.lon) },
@@ -286,15 +320,18 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         activate(goal, route)
     }
 
-    private fun preview(goal: NavigationGoal, keepSelection: Int? = null) {
-        val from = (goal as? NavigationGoal.Destination)?.start?.point ?: lastPosition
+    private fun preview(goal: NavigationGoal, keepSelection: Int? = null, keepHistory: Boolean = false) {
+        if (!keepHistory) previewHistory.clear()
+        val planned = goal as? NavigationGoal.Destination
+        // A saved line is joined from where the rider is, like a track.
+        val from = (if (planned?.fixedLine != null) lastPosition ?: planned.start?.point else planned?.start?.point ?: lastPosition)
             ?: return fail(context.getString(R.string.nav_waiting_gps))
         if (!routingData.isReady()) return fail(routingData.describe())
         previewJob?.cancel()
-        val styles: List<RoadStyle?> = if (goal is NavigationGoal.Destination) RoadStyle.entries else listOf(null)
-        val selected = keepSelection ?: styles.indexOf(preferredStyle).coerceAtLeast(0)
+        val styles: List<RoadStyle?> = if (planned != null && planned.fixedLine == null) RoadStyle.entries else listOf(null)
+        val selected = (keepSelection ?: styles.indexOf(preferredStyle)).coerceIn(0, styles.lastIndex)
         _state.value = _state.value.copy(
-            preview = RoutePreview(goal, styles.map { RouteCandidate(it) }, selected),
+            preview = RoutePreview(goal, styles.map { RouteCandidate(it) }, selected, canUndo = previewHistory.isNotEmpty()),
             status = RoutingStatus.Idle
         )
         previewJob = scope.launch {
@@ -322,7 +359,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     private fun calculate(goal: NavigationGoal, from: LatLon, style: RoadStyle?): Route = when (goal) {
-        is NavigationGoal.Destination -> engine.route(
+        is NavigationGoal.Destination -> if (goal.fixedLine != null) TrackFollower(engine).route(from, goal.fixedLine, goal.options) else engine.route(
             listOf(from) + goal.stops.map { it.point } + goal.destination,
             goal.options.copy(roadStyle = style ?: goal.options.roadStyle)
         )
@@ -426,7 +463,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val s = _state.value
         val previewGoal = s.preview?.goal
         if (previewGoal is NavigationGoal.Destination) {
-            return preview(previewGoal.copy(stops = insertStop(previewGoal.start?.point ?: lastPosition, previewGoal.stops, previewGoal.destination, stop)), s.preview.selected)
+            return editPreview { g -> g.copy(stops = insertStop(g.start?.point ?: lastPosition, g.stops, g.destination, stop)) }
         }
         val goal = s.goal ?: return previewDestination(stop.name, stop.point, RouteOptions(preferredStyle))
         val route = s.route ?: return

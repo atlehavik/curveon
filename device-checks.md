@@ -6,6 +6,17 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Editing a trip on the map
+
+Tried in the emulator: long-press on the route line → edit mode, dragging the line (dashed guess,
+then the new route), dragging the new point again, Undo, tapping a point → menu, Add stop before,
+saving a changed saved route under its name (updated, not copied).
+
+- [ ] On the X7 with gloves: is it easy to grab the line (22 dp either side) and the stop handles
+  (30 dp) without panning the map by accident? Too fiddly → say so and they can be made bigger.
+- [ ] Ride a saved A→B route without changing it: it should still follow its saved line (and rejoin it
+  after a wrong turn) like before.
+
 ## 2026-10-08 — Pick on map
 
 Tried in the emulator: destination, + Stop and the start chip each open the map from "Pick on

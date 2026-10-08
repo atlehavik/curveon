@@ -55,6 +55,12 @@ fun RoutePreviewSheet(
     onMoveStop: (index: Int, delta: Int) -> Unit = { _, _ -> },
     onEditStart: () -> Unit = {},
     onReverse: () -> Unit = {},
+    /** Pick another place for stop i (search or map). */
+    onChangeStop: (Int) -> Unit = {},
+    /** Put a new stop just before stop i. */
+    onAddStopBefore: (Int) -> Unit = {},
+    /** Edit the trip by dragging it on the map. */
+    onEditOnMap: () -> Unit = {},
     onSave: () -> Unit,
     onGo: () -> Unit,
     onClose: () -> Unit,
@@ -84,6 +90,7 @@ fun RoutePreviewSheet(
             )
             if (goal is NavigationGoal.Roundtrip) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
+            if (goal is NavigationGoal.Destination && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
             SmallIcon(Icons.Default.Close, stringResource(R.string.cancel), onClose)
         }
@@ -102,9 +109,12 @@ fun RoutePreviewSheet(
                     goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
                     if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
                 )
+                var number = 0
                 goal.stops.forEachIndexed { i, s ->
                     val leg = legs?.getOrNull(i)?.let { sec -> " · %d:%02d".format((sec / 3600).toInt(), ((sec % 3600) / 60).toInt()) } ?: ""
-                    PlanChip(null, "${i + 1}. ${s.name}$leg", NeonAmber, "preview_stop_$i", onClick = { stopMenu = i })
+                    // Points the route was dragged through: a quieter chip, no number.
+                    if (s.via) PlanChip(Icons.Default.Gesture, s.name, TextSecondary, "preview_stop_$i", onClick = { stopMenu = i })
+                    else PlanChip(null, "${++number}. ${s.name}$leg", NeonAmber, "preview_stop_$i", onClick = { stopMenu = i })
                 }
                 PlanChip(Icons.Default.AddLocationAlt, stringResource(R.string.stop_short), NeonAmber, "preview_add_stop", onAddStop, outlined = true)
             }
@@ -115,7 +125,9 @@ fun RoutePreviewSheet(
                     canMoveEarlier = i > 0, canMoveLater = i < goal.stops.lastIndex,
                     onMove = { d -> stopMenu = null; onMoveStop(i, d) },
                     onRemove = { stopMenu = null; onRemoveStop(i) },
-                    onDismiss = { stopMenu = null }
+                    onDismiss = { stopMenu = null },
+                    onChangePlace = { stopMenu = null; onChangeStop(i) },
+                    onAddBefore = { stopMenu = null; onAddStopBefore(i) }
                 )
             }
         }
@@ -260,9 +272,15 @@ private fun PlanChip(icon: ImageVector?, text: String, color: Color, tag: String
     }
 }
 
-/** A previewed stop: move it earlier or later in the trip, or drop it. */
+/**
+ * A previewed stop: move it earlier or later in the trip, pick another place for it (a wrong tap
+ * on the map), put a new stop before it, or drop it.
+ */
 @Composable
-private fun StopMenuDialog(name: String, canMoveEarlier: Boolean, canMoveLater: Boolean, onMove: (Int) -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
+fun StopMenuDialog(
+    name: String, canMoveEarlier: Boolean, canMoveLater: Boolean, onMove: (Int) -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit,
+    onChangePlace: (() -> Unit)? = null, onAddBefore: (() -> Unit)? = null
+) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             Modifier.clip(RoundedCornerShape(20.dp)).background(CockpitSurface).border(1.dp, CockpitBorder, RoundedCornerShape(20.dp))
@@ -274,6 +292,12 @@ private fun StopMenuDialog(name: String, canMoveEarlier: Boolean, canMoveLater: 
                 if (canMoveEarlier) PillButton(Icons.Default.ArrowBack, stringResource(R.string.move_earlier), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f)) { onMove(-1) }
                 if (canMoveLater) PillButton(Icons.Default.ArrowForward, stringResource(R.string.move_later), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f)) { onMove(1) }
                 PillButton(Icons.Default.Close, stringResource(R.string.preview_remove_stop), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("stop_menu_remove"), onRemove)
+            }
+            if (onChangePlace != null || onAddBefore != null) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (onChangePlace != null) PillButton(Icons.Default.EditLocationAlt, stringResource(R.string.change_place), CockpitSurfaceVariant, TextPrimary,
+                    Modifier.weight(1f).testTag("stop_menu_change"), onChangePlace)
+                if (onAddBefore != null) PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop_before), NeonAmber.copy(alpha = 0.2f), NeonAmber,
+                    Modifier.weight(1f).testTag("stop_menu_add_before"), onAddBefore)
             }
         }
     }

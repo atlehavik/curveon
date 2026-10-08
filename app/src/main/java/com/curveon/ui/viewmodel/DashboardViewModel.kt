@@ -271,7 +271,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val routeMarkers: StateFlow<List<GeoPoint>> = navigator.state
         .map { s ->
             val g = (s.preview?.goal ?: s.goal) as? NavigationGoal.Destination ?: return@map emptyList()
-            (listOfNotNull(g.start?.point) + g.stops.map { it.point } + g.destination).map { GeoPoint(it.lat, it.lon) }
+            (listOfNotNull(g.start?.point) + g.stops.filterNot { it.via }.map { it.point } + g.destination).map { GeoPoint(it.lat, it.lon) }
         }
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -349,7 +349,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 arrivalTimeMillis = System.currentTimeMillis() + (p.remainingSeconds * 1000).toLong(),
                 title = s.goal?.title ?: "",
                 curviness = route.curviness,
-                nextStop = s.stopsAlong.firstOrNull()?.let { (stop, along) -> stop.name to (along - p.distanceAlongRoute) / 1000.0 }
+                nextStop = s.stopsAlong.firstOrNull { !it.first.via }?.let { (stop, along) -> stop.name to (along - p.distanceAlongRoute) / 1000.0 }
             )
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -608,6 +608,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         suspend fun named(s: Stop) = if (s.name == str(R.string.map_point) || s.name.startsWith(near)) placeName(s.point.lat, s.point.lon) else s.name
         return when (goal) {
             is NavigationGoal.Destination -> {
+                goal.saved?.let { return it.title }
                 val from = goal.start?.let { named(it) } ?: route?.points?.firstOrNull()?.let { placeName(it.lat, it.lon) }
                     ?: placeName(here.latitude, here.longitude)
                 val to = named(Stop(goal.name, goal.destination)) ?: goal.name
@@ -764,7 +765,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun previewSaved(item: RouteItem) {
         when (val g = SavedRoutes.toGoal(item)) {
-            is NavigationGoal.Destination -> navigator.previewDestination(g.name, g.destination, g.options, g.stops)
+            is NavigationGoal.Destination -> navigator.previewPlanned(g)
             is NavigationGoal.Track -> navigator.previewTrack(g.name, g.points, g.options)
             is NavigationGoal.Roundtrip -> Unit // saved loops are stored as tracks
         }
@@ -779,6 +780,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun togglePreviewAvoidMotorways() = navigator.updatePreviewOptions { it.copy(avoidMotorways = !it.avoidMotorways) }
 
     fun removePreviewStop(index: Int) = navigator.removePreviewStop(index)
+
+    fun undoPreviewEdit() = navigator.undoPreviewEdit()
+
+    /** Put a stop at [index] in the previewed trip; [via] for a point the route was dragged through. */
+    fun insertPreviewStop(index: Int, point: GeoPoint, name: String, via: Boolean = false) =
+        navigator.insertPreviewStop(index, Stop(name, LatLon(point.latitude, point.longitude), via))
+
+    /** Move the previewed stop at [index] to [point] (keeps being a via point if it was one). */
+    fun replacePreviewStop(index: Int, point: GeoPoint, name: String, via: Boolean = false) =
+        navigator.replacePreviewStop(index, Stop(name, LatLon(point.latitude, point.longitude), via))
 
     fun shuffleRoundtrip() = navigator.shuffleRoundtrip()
 
@@ -806,7 +817,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val g = if (goal is NavigationGoal.Destination && s.preview != null) {
             goal.copy(options = goal.options.copy(roadStyle = s.preview.candidates[s.preview.selected].style ?: goal.options.roadStyle))
         } else goal
-        viewModelScope.launch { repository.saveRoute(SavedRoutes.toItem(g, route, name)) }
+        // Saved again under its own name: the saved route is updated rather than copied.
+        val item = SavedRoutes.toItem(g, route, name).let { item ->
+            (g as? NavigationGoal.Destination)?.saved?.takeIf { it.title == name }?.let { item.copy(id = it.id) } ?: item
+        }
+        viewModelScope.launch { repository.saveRoute(item) }
     }
 
     fun deleteSavedRoute(item: RouteItem) = viewModelScope.launch { repository.deleteRoute(item.id) }

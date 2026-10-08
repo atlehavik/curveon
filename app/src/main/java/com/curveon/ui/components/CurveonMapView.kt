@@ -115,6 +115,10 @@ fun CurveonMapView(
     onTap: ((GeoPoint) -> Unit)? = null,
     /** The place picked so far, shown as a pin. */
     pickedPoint: GeoPoint? = null,
+    /** Editing the previewed trip on the map (drag its places or its line); null when not. */
+    editor: RouteEditor? = null,
+    /** Long-press on the previewed route line: start editing it. */
+    onEditRoute: (() -> Unit)? = null,
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -141,6 +145,9 @@ fun CurveonMapView(
     val locationState = rememberUpdatedState(location)
     val onLongPressState = rememberUpdatedState(onLongPress)
     val onTapState = rememberUpdatedState(onTap)
+    val editorState = rememberUpdatedState(editor)
+    val onEditRouteState = rememberUpdatedState(onEditRoute)
+    val previewRoutesState = rememberUpdatedState(previewRoutes)
     val onPoiClickState = rememberUpdatedState(onPoiClick)
     val poisState = rememberUpdatedState(gpxPois)
     val poiBadges = rememberPoiBadges()
@@ -203,8 +210,67 @@ fun CurveonMapView(
             }
             m.addOnMapLongClickListener { p ->
                 val at = GeoPoint(p.latitude, p.longitude)
-                onTapState.value?.invoke(at) ?: onLongPressState.value(at)
+                val editRoute = onEditRouteState.value
+                val line = previewRoutesState.value.firstOrNull { it.selected }?.points.orEmpty()
+                val pt = m.projection.toScreenLocation(p)
+                when {
+                    onTapState.value != null -> onTapState.value?.invoke(at)
+                    editRoute != null && editorState.value == null && line.size >= 2 &&
+                        grabEdit(RouteEditor(emptyList(), false, { _, _ -> }, { _, _ -> }, {}), line, m, pt.x, pt.y, mapView.resources.displayMetrics.density) != null -> editRoute()
+                    else -> onLongPressState.value(at)
+                }
                 true
+            }
+            // Editing a route: a finger on a handle or on the line drags it (the map doesn't pan);
+            // anywhere else the map moves as usual.
+            val slop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+            var grabbed: EditGrab? = null
+            var downX = 0f
+            var downY = 0f
+            var dragAt: GeoPoint? = null
+            fun clearDrag() = m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
+            mapView.setOnTouchListener { v, e ->
+                val ed = editorState.value
+                if (ed == null) { grabbed = null; return@setOnTouchListener false }
+                when (e.actionMasked) {
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        val line = previewRoutesState.value.firstOrNull { it.selected }?.points.orEmpty()
+                        grabbed = grabEdit(ed, line, m, e.x, e.y, v.resources.displayMetrics.density)
+                        dragAt = null
+                        downX = e.x; downY = e.y
+                        if (grabbed != null) v.parent?.requestDisallowInterceptTouchEvent(true)
+                        grabbed != null
+                    }
+                    android.view.MotionEvent.ACTION_MOVE -> {
+                        val g = grabbed ?: return@setOnTouchListener false
+                        if (dragAt != null || kotlin.math.hypot(e.x - downX, e.y - downY) > slop) {
+                            val ll = m.projection.fromScreenLocation(android.graphics.PointF(e.x, e.y))
+                            val at = GeoPoint(ll.latitude, ll.longitude)
+                            dragAt = at
+                            m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(dragFeatures(g, at))
+                        }
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_UP -> {
+                        val g = grabbed ?: return@setOnTouchListener false
+                        grabbed = null
+                        val at = dragAt
+                        when {
+                            at == null -> { clearDrag(); if (g is EditGrab.Handle) ed.onTapHandle(g.handle) }
+                            g is EditGrab.Handle -> ed.onMoveHandle(g.handle, at)
+                            g is EditGrab.Line -> ed.onInsert(g.insertAt, at)
+                        }
+                        v.performClick()
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_CANCEL -> {
+                        val had = grabbed != null
+                        grabbed = null
+                        if (had) clearDrag()
+                        had
+                    }
+                    else -> grabbed != null
+                }
             }
             map = m
         }
@@ -297,12 +363,24 @@ fun CurveonMapView(
         )
     }
 
+    // Editing: the trip's places as handles. The dashed guess goes once the new route is in.
+    LaunchedEffect(style, editor?.handles, dark) {
+        val s = style ?: return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(EDIT_HANDLES)?.setGeoJson(handleFeatures(editor?.handles.orEmpty(), dark))
+    }
+    LaunchedEffect(style, editor?.busy, editor == null, previewRoutes) {
+        val s = style ?: return@LaunchedEffect
+        if (editor?.busy != true) s.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
+    }
+
     // Preview: show the whole trip. Leaving preview hands the camera back to following.
     val previewPoints = remember(previewRoutes) { previewRoutes.flatMap { it.points } }
     LaunchedEffect(map, previewPoints.size) {
         val m = map ?: return@LaunchedEffect
         if (previewPoints.size < 2) return@LaunchedEffect
         following = false
+        // Editing: the rider has zoomed in on the part they're changing; leave the camera there.
+        if (editorState.value != null) return@LaunchedEffect
         val b = LatLngBounds.Builder()
         previewPoints.forEach { b.include(LatLng(it.latitude, it.longitude)) }
         b.include(LatLng(location.latitude, location.longitude))
@@ -567,6 +645,7 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             circleRadius(9f), circleColor("#FF9100"), circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f)
         )
     )
+    addEditLayers(s, dark)
     s.addSource(GeoJsonSource(PICK))
     s.addLayer(
         CircleLayer("$PICK-dot", PICK).withProperties(
