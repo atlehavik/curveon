@@ -103,11 +103,9 @@ fun RideLogDialog(
                     color = TextMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }
-            Switch(
+            CockpitSwitch(
                 checked = autoGroup != null,
-                onCheckedChange = { on -> if (on) pickingAutoGroup = true else onAutoSave(null, null) },
-                colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan)
-            )
+                onCheckedChange = { on -> if (on) pickingAutoGroup = true else onAutoSave(null, null) })
         }
 
         if (current != null) {

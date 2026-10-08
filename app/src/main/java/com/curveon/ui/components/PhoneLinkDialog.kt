@@ -90,11 +90,9 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
                     Text(stringResource(R.string.link_demo_data), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Text(stringResource(R.string.link_demo_data_hint), color = TextMuted, fontSize = 12.sp)
                 }
-                Switch(
+                CockpitSwitch(
                     checked = state == CompanionConnectionState.DEMO,
-                    onCheckedChange = { manager.setDemo(it); refresh++ },
-                    colors = SwitchDefaults.colors(checkedThumbColor = NeonAmber)
-                )
+                    onCheckedChange = { manager.setDemo(it); refresh++ }, accent = NeonAmber)
             }
         }
     }

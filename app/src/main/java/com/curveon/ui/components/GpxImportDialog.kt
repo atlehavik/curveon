@@ -111,7 +111,7 @@ fun GpxManagerDialog(
                 Text(stringResource(R.string.gpx_auto_follow), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Text(stringResource(R.string.gpx_auto_follow_hint), color = TextMuted, fontSize = 12.sp)
             }
-            Switch(checked = autoFollow, onCheckedChange = onAutoFollow, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
+            CockpitSwitch(checked = autoFollow, onCheckedChange = onAutoFollow)
         }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             PoiCategory.entries.forEach { c ->

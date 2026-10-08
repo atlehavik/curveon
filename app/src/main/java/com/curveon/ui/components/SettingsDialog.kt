@@ -98,15 +98,15 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             Segmented(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
                         }
                         Setting(stringResource(R.string.settings_obd), stringResource(R.string.settings_obd_hint)) {
-                            Switch(state.obdEnabled, actions.onObd, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
+                            CockpitSwitch(state.obdEnabled, actions.onObd)
                         }
                     }
                     SettingsTab.NAVIGATION -> Page {
                         Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint)) {
-                            Switch(state.autoZoom, actions.onAutoZoom, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
+                            CockpitSwitch(state.autoZoom, actions.onAutoZoom)
                         }
                         Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
-                            Switch(state.autoFollowTracks, actions.onAutoFollow, colors = SwitchDefaults.colors(checkedThumbColor = ElectricCyan))
+                            CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
                         }
                         Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
                             OutlinedButton(onClick = actions.onDemoRide, enabled = state.isNavigating || state.isDemoRiding) {

@@ -129,4 +129,19 @@ fun <T> DialogTabs(
 
 private val OnCyanText = Color(0xFF00363D)
 
+/**
+ * The app's on/off switch: a dark knob on a cyan (or [accent]) track when on, a grey knob on a
+ * dark outlined track when off, so the state reads at a glance on the bike.
+ */
+@Composable
+fun CockpitSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit, modifier: Modifier = Modifier, accent: Color = ElectricCyan) {
+    androidx.compose.material3.Switch(
+        checked = checked, onCheckedChange = onCheckedChange, modifier = modifier,
+        colors = androidx.compose.material3.SwitchDefaults.colors(
+            checkedThumbColor = CockpitBackground, checkedTrackColor = accent, checkedBorderColor = accent,
+            uncheckedThumbColor = TextSecondary, uncheckedTrackColor = CockpitBackground, uncheckedBorderColor = TextMuted
+        )
+    )
+}
+
 private val DialogShape = RoundedCornerShape(24.dp)
