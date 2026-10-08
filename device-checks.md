@@ -12,9 +12,8 @@ Tried on the X7 + Pixel: Settings → Phone shows Pixel 9a, battery, "connected 
 detected music apps; starring Spotify (not running) and swiping the music card to it started it
 on the phone (Spotify refuses Curveon's media browser, the play key fallback worked after ~8 s).
 
-- [ ] The Pixel was unplugged before the last companion build: install it
-  (`ANDROID_SERIAL=58301JEBF17776 ./gradlew :companion:installDebug`). With it, a refused
-  browser goes straight to the play key, so Spotify should start in ~4 s instead of ~8 s.
+- [ ] Spotify should now start in ~4 s instead of ~8 s (a refused browser goes straight to the
+  play key): close Spotify on the phone, swipe to it on the X7.
 - [ ] Star NRK Radio / Podme / YouTube Music too, close them on the phone (swipe away from
   recents), then swipe to each on the X7. Which start, and how? `adb -s 58301JEBF17776 logcat -s CurveonMedia`
   → "browser connected … play" / "started by play key" / "didn't start" (the tablet then says so).
