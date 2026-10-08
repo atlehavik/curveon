@@ -5,7 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandLess
@@ -70,7 +72,8 @@ fun MapCatalogDialog(
     ) {
         Row(Modifier.fillMaxSize()) {
             Column(
-                Modifier.width(210.dp).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f)).padding(8.dp),
+                Modifier.width(210.dp).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f))
+                    .verticalScroll(rememberScrollState()).padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 MapCatalog.CONTINENTS.forEach { c ->
