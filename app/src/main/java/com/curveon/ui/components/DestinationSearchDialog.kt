@@ -18,6 +18,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -53,7 +55,11 @@ fun DestinationSearchDialog(
     onPickSaved: (com.curveon.data.model.RouteItem) -> Unit = {},
     onDeleteSaved: (com.curveon.data.model.RouteItem) -> Unit = {},
     onNearest: (suspend (kinds: List<String>) -> List<SearchResult>)? = null,
-    purpose: SearchPurpose = SearchPurpose.DESTINATION
+    purpose: SearchPurpose = SearchPurpose.DESTINATION,
+    /** "Pick on map": the dialog shrinks onto the map and this is called once it's gone. */
+    onPickOnMap: (() -> Unit)? = null,
+    /** Coming back from picking on the map: grow out of the map instead of just appearing. */
+    growIn: Boolean = false
 ) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
@@ -72,10 +78,25 @@ fun DestinationSearchDialog(
         searching = false
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
+    // 1 = open, 0 = shrunk into the "pick on map" bar at the bottom of the map.
+    val size = remember { androidx.compose.animation.core.Animatable(if (growIn) 0f else 1f) }
+    LaunchedEffect(Unit) { if (growIn) size.animateTo(1f, androidx.compose.animation.core.tween(260)) }
+    val minimize: () -> Unit = {
+        scope.launch {
+            size.animateTo(0f, androidx.compose.animation.core.tween(280, easing = androidx.compose.animation.core.FastOutLinearInEasing))
+            onPickOnMap?.invoke()
+        }
+    }
 
     CockpitDialog(
         title = stringResource(R.string.where_to), icon = Icons.Default.Search, accent = ElectricCyan, onDismiss = onDismiss,
         tag = "destination_search_dialog",
+        frameModifier = Modifier.graphicsLayer {
+            scaleX = 0.2f + 0.8f * size.value
+            scaleY = 0.08f + 0.92f * size.value
+            alpha = (size.value * 1.6f).coerceAtMost(1f)
+            transformOrigin = TransformOrigin(0.5f, 1f)
+        },
         header = {
             OutlinedTextField(
                 value = query,
@@ -108,6 +129,13 @@ fun DestinationSearchDialog(
             )
         }
     ) {
+        // The window's dim fades with the frame, so the map shows through as it shrinks.
+        val window = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        LaunchedEffect(window) {
+            val w = window ?: return@LaunchedEffect
+            val dim = w.attributes.dimAmount
+            snapshotFlow { size.value }.collect { w.setDimAmount(dim * it) }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onNearest != null) {
                 Text(stringResource(R.string.search_nearest).uppercase(), color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -120,6 +148,9 @@ fun DestinationSearchDialog(
                 }
             }
             Text(searchStatus, color = TextMuted, fontSize = 11.sp, textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            if (onPickOnMap != null) Box(Modifier.testTag("search_pick_on_map")) {
+                Shortcut(Icons.Default.Map, stringResource(R.string.pick_on_map), if (purpose == SearchPurpose.STOP) NeonAmber else ElectricCyan, onClick = minimize)
+            }
         }
 
         LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {

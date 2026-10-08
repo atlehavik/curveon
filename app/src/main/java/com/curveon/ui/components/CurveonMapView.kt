@@ -65,6 +65,7 @@ import org.maplibre.geojson.Point
 private const val ROUTE = "curveon-route"
 private const val ALT = "curveon-alternatives"
 private const val MARKERS = "curveon-markers"
+private const val PICK = "curveon-pick"
 private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val HINT = "curveon-track-hint"
@@ -110,6 +111,10 @@ fun CurveonMapView(
     /** Changes when the offline map file was downloaded/replaced/deleted: reload the style. */
     mapVersion: Int = 0,
     onLongPress: (GeoPoint) -> Unit = {},
+    /** Picking a place on the map: a tap goes here instead of opening waypoints. */
+    onTap: ((GeoPoint) -> Unit)? = null,
+    /** The place picked so far, shown as a pin. */
+    pickedPoint: GeoPoint? = null,
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -135,6 +140,7 @@ fun CurveonMapView(
     // Map listeners are registered once, so read changing values through State holders.
     val locationState = rememberUpdatedState(location)
     val onLongPressState = rememberUpdatedState(onLongPress)
+    val onTapState = rememberUpdatedState(onTap)
     val onPoiClickState = rememberUpdatedState(onPoiClick)
     val poisState = rememberUpdatedState(gpxPois)
     val poiBadges = rememberPoiBadges()
@@ -186,6 +192,7 @@ fun CurveonMapView(
             m.addOnCameraMoveListener { cameraBearing = m.cameraPosition.bearing.toFloat(); trackRider() }
             m.addOnCameraIdleListener { cameraIdleTick++; trackRider() }
             m.addOnMapClickListener { p ->
+                onTapState.value?.let { tap -> tap(GeoPoint(p.latitude, p.longitude)); return@addOnMapClickListener true }
                 // A tap on a GPX waypoint shows it. Only the rail button switches map/dashboard,
                 // so a stray tap on the map never takes the dashboard away.
                 val pt = m.projection.toScreenLocation(p)
@@ -194,7 +201,11 @@ fun CurveonMapView(
                 if (poi != null) onPoiClickState.value(poi)
                 poi != null
             }
-            m.addOnMapLongClickListener { p -> onLongPressState.value(GeoPoint(p.latitude, p.longitude)); true }
+            m.addOnMapLongClickListener { p ->
+                val at = GeoPoint(p.latitude, p.longitude)
+                onTapState.value?.invoke(at) ?: onLongPressState.value(at)
+                true
+            }
             map = m
         }
     }
@@ -276,6 +287,13 @@ fun CurveonMapView(
         val s = style ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(MARKERS)?.setGeoJson(
             FeatureCollection.fromFeatures(markers.map { p -> Feature.fromGeometry(Point.fromLngLat(p.longitude, p.latitude)) })
+        )
+    }
+
+    LaunchedEffect(style, pickedPoint) {
+        val s = style ?: return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(PICK)?.setGeoJson(
+            FeatureCollection.fromFeatures(listOfNotNull(pickedPoint).map { p -> Feature.fromGeometry(Point.fromLngLat(p.longitude, p.latitude)) })
         )
     }
 
@@ -547,6 +565,12 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
     s.addLayer(
         CircleLayer("$MARKERS-dots", MARKERS).withProperties(
             circleRadius(9f), circleColor("#FF9100"), circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f)
+        )
+    )
+    s.addSource(GeoJsonSource(PICK))
+    s.addLayer(
+        CircleLayer("$PICK-dot", PICK).withProperties(
+            circleRadius(13f), circleColor(if (dark) "#00E5FF" else "#0091EA"), circleStrokeColor("#FFFFFF"), circleStrokeWidth(4f)
         )
     )
 }

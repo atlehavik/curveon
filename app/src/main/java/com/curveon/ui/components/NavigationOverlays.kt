@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -294,6 +295,66 @@ fun WrongTurnCard(
                     Icons.Default.Navigation, carryOn, ElectricCyan, OnCyanDark, Modifier.weight(1.4f).testTag("wrong_turn_carry_on")
                 ) { if (wrongTurn.isTrip && wrongTurn.stopsLeft > 0) askStops = true else onCarryOn(true) }
             }
+        }
+    }
+}
+
+/**
+ * What the search dialog shrinks into for "Pick on map": a small bar at the bottom of the map.
+ * Tap the map to drop a pin (tap again to move it); then the bar names the place and offers to
+ * use it. The search icon grows the dialog back; ✕ gives up.
+ */
+@Composable
+fun MapPickBar(
+    purpose: SearchPurpose,
+    picked: String?,
+    onConfirm: () -> Unit,
+    onBackToSearch: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Grows out of the shrinking dialog (bottom centre).
+    val grow = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) { grow.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 500f)) }
+    val accent = if (purpose == SearchPurpose.STOP) NeonAmber else ElectricCyan
+    Row(
+        modifier
+            .graphicsLayer {
+                scaleX = 0.6f + 0.4f * grow.value; scaleY = 0.6f + 0.4f * grow.value; alpha = grow.value.coerceIn(0f, 1f)
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+            }
+            .clip(RoundedCornerShape(30.dp)).background(CockpitSurface.copy(alpha = 0.97f))
+            .border(2.dp, accent, RoundedCornerShape(30.dp))
+            .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
+            .testTag("map_pick_bar"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(Modifier.testTag("map_pick_search")) {
+            RoundButton(Icons.Default.Search, stringResource(R.string.back_to_search), 48.dp, CockpitSurfaceVariant, accent, onBackToSearch)
+        }
+        Text(
+            picked ?: stringResource(when (purpose) {
+                SearchPurpose.DESTINATION -> R.string.pick_hint_destination
+                SearchPurpose.STOP -> R.string.pick_hint_stop
+                SearchPurpose.START -> R.string.pick_hint_start
+            }),
+            color = if (picked != null) TextPrimary else TextSecondary,
+            fontSize = if (picked != null) 17.sp else 15.sp, fontWeight = if (picked != null) FontWeight.Black else FontWeight.Bold,
+            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 340.dp).padding(horizontal = 4.dp)
+        )
+        if (picked != null) {
+            val (icon, label) = when (purpose) {
+                SearchPurpose.DESTINATION -> Icons.Default.Flag to R.string.go_here
+                SearchPurpose.STOP -> Icons.Default.AddLocationAlt to R.string.add_stop
+                SearchPurpose.START -> Icons.Default.TripOrigin to R.string.start_here
+            }
+            PillButton(icon, stringResource(label), accent, if (purpose == SearchPurpose.STOP) Color.Black else OnCyanDark,
+                Modifier.testTag("map_pick_confirm"), onConfirm)
+        }
+        Box(Modifier.testTag("map_pick_cancel")) {
+            RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 48.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
         }
     }
 }

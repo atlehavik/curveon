@@ -51,12 +51,14 @@ fun CockpitDialog(
     actions: @Composable RowScope.() -> Unit = {},
     /** A menu on the left (see [DialogTabs]), for screens with several pages like Settings. */
     sideBar: (@Composable () -> Unit)? = null,
+    /** Applied to the frame first, e.g. a scale while it shrinks onto the map. */
+    frameModifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val toast = LocalToast.current
     val frame = @Composable {
         Box(
-            Modifier.fillMaxWidth(0.94f).fillMaxHeight(0.94f).clip(DialogShape).background(CockpitSurface)
+            frameModifier.fillMaxWidth(0.94f).fillMaxHeight(0.94f).clip(DialogShape).background(CockpitSurface)
                 .border(1.dp, CockpitBorder, DialogShape).testTag(tag)
         ) {
             Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

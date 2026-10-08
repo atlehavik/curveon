@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Pick on map
+
+Tried in the emulator: destination, + Stop and the start chip each open the map from "Pick on
+map", the dialog shrinks into the bar, tap drops a pin, confirm works and the dashboard comes back.
+
+- [ ] On the X7 with gloves: is a tap on the map reliable enough to drop the pin (not taken as a
+  small pan)? And is the shrink animation smooth on the X7, or does it stutter?
+
 ## 2026-10-08 — Phone status, music app favorites
 
 Tried on the X7 + Pixel: Settings → Phone shows Pixel 9a, battery, "connected since" and the

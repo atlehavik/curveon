@@ -687,6 +687,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _isFullScreenMap.value = !_isFullScreenMap.value
     }
 
+    fun setFullScreenMap(on: Boolean) { _isFullScreenMap.value = on }
+
     fun toggleSpeedUnits() {
         _telemetry.value = _telemetry.value.copy(useMph = !_telemetry.value.useMph)
         settings.edit().putBoolean("mph", _telemetry.value.useMph).apply()

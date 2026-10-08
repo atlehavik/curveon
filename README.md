@@ -31,6 +31,8 @@ and [dashboard.md](dashboard.md) for the goals.
 - **Route preview**: Fastest / Curvy / Super curvy side by side (time, km, curviness, gravel and
   ferries) before you ride; surface and avoid options adjust them in place.
 - **Stops**: pick a place while riding → *Add stop* (inserted where it adds least detour) or *Go here*.
+- **Pick on map** in every search (destination, stop, start): the search shrinks into a bar on the full
+  map; tap to drop a pin (tap again to move it), then *Go here* / *Add stop* / *Start here*.
 - **Saved routes and recents** show up in the empty search, with a *Nearest fuel* shortcut.
 - **Fuel along the route** in the trip bar (tap to add it as a stop), amber when the gap is long.
 - **Speed camera warnings** (OSM fixed cameras), navigating or free riding.

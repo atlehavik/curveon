@@ -432,6 +432,11 @@
     <string name="from_place">From %1$s</string>
     <string name="search_add_stop">Add stop</string>
     <string name="search_start_from">Start from</string>
+    <string name="pick_on_map">Pick on map</string>
+    <string name="pick_hint_destination">Tap the map where you want to go</string>
+    <string name="pick_hint_stop">Tap the map where you want to stop</string>
+    <string name="pick_hint_start">Tap the map where the trip starts</string>
+    <string name="back_to_search">Back to search</string>
     <string name="move_earlier">Earlier</string>
     <string name="move_later">Later</string>
     <string name="save_route_title">Save route</string>

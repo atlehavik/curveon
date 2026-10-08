@@ -106,6 +106,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     /** The open search and what it is for; null when closed. */
     var searchPurpose by remember { mutableStateOf<SearchPurpose?>(null) }
+    /** "Pick on map": what the search was for while the rider taps the map; null when not picking. */
+    var mapPick by remember { mutableStateOf<SearchPurpose?>(null) }
+    var picked by remember { mutableStateOf<Pair<GeoPoint, String?>?>(null) }
+    /** Whether the map was full-screen before picking, to go back to the dashboard afterwards. */
+    var wasFullScreen by remember { mutableStateOf(true) }
+    /** The search reopens growing out of the pick bar. */
+    var searchGrowIn by remember { mutableStateOf(false) }
     var showRouteMenu by remember { mutableStateOf(false) }
     /** Suggested name while the save dialog is open. */
     var saveName by remember { mutableStateOf<String?>(null) }
@@ -132,55 +139,98 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         if (isNavigating || planning) pendingPlace = point to name else viewModel.previewDestination(point, name)
     }
 
+    // The search result (or picked map point) for each purpose.
+    val usePlace: (SearchPurpose, GeoPoint, String) -> Unit = { purpose, point, name ->
+        when (purpose) {
+            SearchPurpose.DESTINATION -> pickPlace(point, name)
+            SearchPurpose.STOP -> viewModel.addStop(point, name)
+            SearchPurpose.START -> viewModel.setPreviewStart(point, name)
+        }
+    }
+    val startMapPick: (SearchPurpose) -> Unit = { purpose ->
+        // Back from the bar to the search and onto the map again: the map is still forced full.
+        if (!searchGrowIn) wasFullScreen = isFullScreenMap
+        searchGrowIn = false
+        searchPurpose = null
+        picked = null
+        mapPick = purpose
+        viewModel.setFullScreenMap(true)
+    }
+    /** Closes the search; if it came back from picking on the map, the dashboard comes back too. */
+    val closeSearch: () -> Unit = {
+        searchPurpose = null
+        if (searchGrowIn && !wasFullScreen) viewModel.setFullScreenMap(false)
+        searchGrowIn = false
+    }
+    val endMapPick: () -> Unit = {
+        mapPick = null
+        picked = null
+        if (!wasFullScreen) viewModel.setFullScreenMap(false)
+    }
+    androidx.activity.compose.BackHandler(enabled = mapPick != null) { endMapPick() }
+
     val mapOverlays: @Composable BoxScope.() -> Unit = {
-        Column(
-            // In full-screen the media pill takes the bottom-right corner, so keep trip info left.
-            modifier = if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 14.dp)
-            else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
-            horizontalAlignment = if (isFullScreenMap) Alignment.Start else Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            RoutingStatusCard(routingStatus, onDismiss = { viewModel.dismissRoutingError() })
-            if (preview == null && !isNavigating) trackHint?.let { h ->
-                TrackChip(h, onClick = { viewModel.followOverlayTrack(h.trackId, h.onTrack && h.reverse) })
+        // Picking a place: just the map and the little bar; the rest waits.
+        val pickPurpose = mapPick
+        if (pickPurpose != null) {
+            MapPickBar(
+                purpose = pickPurpose,
+                picked = picked?.let { it.second ?: "…" },
+                onConfirm = { picked?.let { (p, n) -> if (n != null) { endMapPick(); usePlace(pickPurpose, p, n) } } },
+                onBackToSearch = { mapPick = null; picked = null; searchGrowIn = true; searchPurpose = pickPurpose },
+                onCancel = endMapPick,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
+            )
+        } else if (!searchGrowIn) { // nor while the search is back up over the map
+            Column(
+                // In full-screen the media pill takes the bottom-right corner, so keep trip info left.
+                modifier = if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 14.dp)
+                else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
+                horizontalAlignment = if (isFullScreenMap) Alignment.Start else Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                RoutingStatusCard(routingStatus, onDismiss = { viewModel.dismissRoutingError() })
+                if (preview == null && !isNavigating) trackHint?.let { h ->
+                    TrackChip(h, onClick = { viewModel.followOverlayTrack(h.trackId, h.onTrack && h.reverse) })
+                }
+                if (preview == null) navigationSummary?.let {
+                    NavigationSummaryBar(
+                        it, onStop = { viewModel.stopNavigation() },
+                        fuel = fuelHint,
+                        onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } },
+                        onAddStop = { searchPurpose = SearchPurpose.STOP },
+                        onOpen = { showRouteMenu = true }
+                    )
+                }
             }
-            if (preview == null) navigationSummary?.let {
-                NavigationSummaryBar(
-                    it, onStop = { viewModel.stopNavigation() },
-                    fuel = fuelHint,
-                    onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } },
-                    onAddStop = { searchPurpose = SearchPurpose.STOP },
-                    onOpen = { showRouteMenu = true }
+            if (preview == null) wrongTurn?.let { wt ->
+                WrongTurnCard(
+                    wt,
+                    onTurnBack = viewModel::turnBack,
+                    onCarryOn = { keep -> if (wt.isTrip) viewModel.newRouteFromHere(keep) else viewModel.rejoinAhead() },
+                    // Below the turn banner, over the middle of the map.
+                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp)
                 )
             }
-        }
-        if (preview == null) wrongTurn?.let { wt ->
-            WrongTurnCard(
-                wt,
-                onTurnBack = viewModel::turnBack,
-                onCarryOn = { keep -> if (wt.isTrip) viewModel.newRouteFromHere(keep) else viewModel.rejoinAhead() },
-                // Below the turn banner, over the middle of the map.
-                modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp)
-            )
-        }
-        preview?.let { p ->
-            RoutePreviewSheet(
-                preview = p,
-                onSelect = viewModel::selectCandidate,
-                onSurface = viewModel::setPreviewSurface,
-                onToggleFerries = viewModel::togglePreviewAvoidFerries,
-                onToggleMotorways = viewModel::togglePreviewAvoidMotorways,
-                onRemoveStop = viewModel::removePreviewStop,
-                onShuffle = viewModel::shuffleRoundtrip,
-                onAddStop = { searchPurpose = SearchPurpose.STOP },
-                onMoveStop = viewModel::movePreviewStop,
-                onEditStart = { searchPurpose = SearchPurpose.START },
-                onReverse = viewModel::reversePreviewTrack,
-                onSave = askSaveName,
-                onGo = viewModel::startPreview,
-                onClose = viewModel::cancelPreview,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).widthIn(max = 640.dp).fillMaxWidth()
-            )
+            preview?.let { p ->
+                RoutePreviewSheet(
+                    preview = p,
+                    onSelect = viewModel::selectCandidate,
+                    onSurface = viewModel::setPreviewSurface,
+                    onToggleFerries = viewModel::togglePreviewAvoidFerries,
+                    onToggleMotorways = viewModel::togglePreviewAvoidMotorways,
+                    onRemoveStop = viewModel::removePreviewStop,
+                    onShuffle = viewModel::shuffleRoundtrip,
+                    onAddStop = { searchPurpose = SearchPurpose.STOP },
+                    onMoveStop = viewModel::movePreviewStop,
+                    onEditStart = { searchPurpose = SearchPurpose.START },
+                    onReverse = viewModel::reversePreviewTrack,
+                    onSave = askSaveName,
+                    onGo = viewModel::startPreview,
+                    onClose = viewModel::cancelPreview,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).widthIn(max = 640.dp).fillMaxWidth()
+                )
+            }
         }
         // In full-screen map a ringing call takes the corner; otherwise keep music reachable, like
         // Android Auto's media pill – except while a route preview needs the bottom (its Go button).
@@ -190,7 +240,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     // Never over the speed (top-right): the limit matters during a call too.
                     modifier = Modifier.align(Alignment.BottomEnd).padding(top = FULL_MAP_SPEED_CLEARANCE).padding(14.dp)
                         .width(SIDE_COLUMN_WIDTH).heightIn(max = 360.dp).fillMaxHeight())
-            } else if (preview == null) track?.let { t ->
+            } else if (preview == null && mapPick == null) track?.let { t ->
                 MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
                     Modifier.align(Alignment.BottomEnd).padding(14.dp).width(300.dp))
             }
@@ -238,6 +288,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,
                     onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
+                    onTap = if (mapPick != null) ({ p ->
+                        picked = p to null
+                        scope.launch { val name = viewModel.describePoint(p); if (picked?.first == p) picked = p to name }
+                    }) else null,
+                    pickedPoint = picked?.first,
                     gpxTracks = overlayTracks,
                     gpxPois = overlayPois,
                     trackHint = trackHint.takeIf { preview == null && !isNavigating },
@@ -334,21 +389,19 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 searchStatus = remember { viewModel.searchStatus() },
                 onSearch = { viewModel.searchPlaces(it) },
                 onPick = { r ->
-                    searchPurpose = null
-                    val point = GeoPoint(r.lat, r.lon)
-                    when (purpose) {
-                        SearchPurpose.DESTINATION -> pickPlace(point, r.name)
-                        SearchPurpose.STOP -> viewModel.addStop(point, r.name)
-                        SearchPurpose.START -> if (r.kind == KIND_HERE) viewModel.setPreviewStart(null, "") else viewModel.setPreviewStart(point, r.name)
-                    }
+                    closeSearch()
+                    if (purpose == SearchPurpose.START && r.kind == KIND_HERE) viewModel.setPreviewStart(null, "")
+                    else usePlace(purpose, GeoPoint(r.lat, r.lon), r.name)
                 },
-                onDismiss = { searchPurpose = null },
+                onDismiss = closeSearch,
                 savedRoutes = savedRoutes,
                 recents = remember(purpose) { viewModel.recents() },
-                onPickSaved = { searchPurpose = null; viewModel.previewSaved(it) },
+                onPickSaved = { closeSearch(); viewModel.previewSaved(it) },
                 onDeleteSaved = { viewModel.deleteSavedRoute(it) },
                 onNearest = { viewModel.nearest(it) },
-                purpose = purpose
+                purpose = purpose,
+                onPickOnMap = { startMapPick(purpose) },
+                growIn = searchGrowIn
             )
         }
 
