@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Tracks with Tarmac
+
+Before, Tarmac forbade every `highway=track` (and grade4/5 were forbidden even with Gravel), so a
+destination on a farm/forest road stopped on the nearest tarmac. Now tracks are a last resort.
+
+- [ ] With Tarmac: Where to? → long-press the map on a gravel/forest track → Go here: the route should
+  end on the track. A trip between towns should still use no tracks.
+- [ ] Follow a GPX track that runs over gravel roads with Tarmac selected: it should stay on the GPX line.
+
 ## 2026-10-08 — Route start at home
 
 Your road (OSM way 520497619, `highway=service`) only touches the cycle path in OpenStreetMap, never

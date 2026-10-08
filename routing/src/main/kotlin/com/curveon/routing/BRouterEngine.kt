@@ -40,7 +40,12 @@ class BRouterEngine(
         /** Direction the rider is moving at the start, so turning off ahead costs less than turning round. */
         startHeadingDeg: Double? = null,
         /** Small areas the route must not pass through (e.g. the road just behind the rider). */
-        noGo: List<NoGo> = emptyList()
+        noGo: List<NoGo> = emptyList(),
+        /**
+         * With Tarmac, tracks may still be ridden when they are the only way to a place (a farm,
+         * a cabin, a forest road home). Off false for ways back to a route: those should be roads.
+         */
+        tracksAsLastResort: Boolean = true
     ): Route {
         require(waypoints.size >= 2) { "Need at least start and destination" }
         val nodes = waypoints.mapIndexed { i, p ->
@@ -52,7 +57,7 @@ class BRouterEngine(
         }
         val rc = RoutingContext().apply {
             localFunction = File(profileDir, PROFILE_FILE).absolutePath
-            keyValues = profileParams(options, avoidedFerryCost)
+            keyValues = profileParams(options, avoidedFerryCost, tracksAsLastResort)
             waypointCatchingRange = viaCatchingRangeMeters ?: DEFAULT_CATCHING_RANGE_M
             memoryclass = memoryClassMb
             if (startHeadingDeg != null) {
@@ -82,14 +87,15 @@ class BRouterEngine(
         return toRoute(track)
     }
 
-    private fun profileParams(o: RouteOptions, avoidedFerryCost: Int): MutableMap<String, String> {
+    private fun profileParams(o: RouteOptions, avoidedFerryCost: Int, tracksAsLastResort: Boolean): MutableMap<String, String> {
         val params = sortedMapOf(
             "road_style" to o.roadStyle.ordinal.toString(),
             "surface_pref" to o.surface.ordinal.toString(),
             "avoid_ferries" to o.avoidFerries.flag(),
             "avoid_motorways" to o.avoidMotorways.flag(),
             "avoid_toll" to o.avoidToll.flag(),
-            "avoided_ferry_cost" to avoidedFerryCost.toString()
+            "avoided_ferry_cost" to avoidedFerryCost.toString(),
+            "tracks_last_resort" to tracksAsLastResort.flag()
         )
         // BRouter caches parsed profiles keyed by the *sum* of the parameters' hash codes, so
         // "curvy, no ferries" (1 + 1) is the same profile to it as "very curvy, ferries" (2 + 0) and

@@ -14,6 +14,7 @@ assign surface_pref    = 0      # %surface_pref% | 0 = paved only, 1 = mixed, 2 
 assign avoid_ferries   = false  # %avoid_ferries% | Avoid ferries | boolean
 assign avoid_motorways = false  # %avoid_motorways% | Avoid motorways | boolean
 assign avoid_toll      = false  # %avoid_toll% | Avoid toll roads | boolean
+assign tracks_last_resort = 1    # %tracks_last_resort% | With Tarmac, tracks may still be used to reach a place on one (0 = never) | number
 assign avoided_ferry_cost = 1000000 # %avoided_ferry_cost% | Cost of one ferry when avoiding them (~1 per metre of detour) | number
 
 assign downhillcost = 0
@@ -43,6 +44,7 @@ assign very_curvy = equal road_style 2
 assign paved_only   = equal surface_pref 0
 assign mixed        = equal surface_pref 1
 assign gravel_lover = equal surface_pref 2
+assign no_tracks    = and paved_only ( equal tracks_last_resort 0 )
 
 assign pass2coefficient = if gravel_lover then 0.85 else 1.0
 
@@ -69,7 +71,7 @@ assign motoraccess
                                    switch route=ferry                          1
                                    switch isresidentialorliving                1
                                    switch highway=service                      1
-                                   switch and is_track not paved_only          1
+                                   switch is_track                             ( not no_tracks )
                                    0
                                    access=yes|permissive|designated|destination
                             vehicle=yes|permissive|designated|destination
@@ -169,26 +171,33 @@ assign surface_factor =
     if gravel_lover then 1.15 else 1.0
   )
 
+# Any track is a road an adventure bike can ride. With Tarmac it is a last resort (to reach a
+# place that is only on a track), never a short cut; rougher grades cost more, none is forbidden.
 assign track_factor =
   if not is_track then 1.0
-  else if paved_only then 10000
+  else if no_tracks then 10000
+  else if paved_only then 6.0
   else switch tracktype=grade1|grade2 1.0
        switch tracktype=grade3 ( if gravel_lover then 1.3 else 3.0 )
-       switch tracktype= ( if gravel_lover then 1.5 else 4.0 )
-       10000
+       switch tracktype=grade4 ( if gravel_lover then 2.0 else 5.0 )
+       switch tracktype=grade5 ( if gravel_lover then 3.0 else 8.0 )
+       ( if gravel_lover then 1.5 else 4.0 )
 
 assign avoid_factor =
   multiply ( if and avoid_motorways highway=motorway|motorway_link then 8.0 else 1.0 )
            ( if and avoid_toll toll=yes then 5.0 else 1.0 )
 
+assign road_cost = multiply class_cost multiply surface_factor multiply track_factor avoid_factor
+
 # Roads a motorcycle physically can use but may not be allowed on (private farm/cabin roads):
-# very expensive instead of forbidden, so a ride can start or end on one.
+# very expensive instead of forbidden, so a ride can start or end on one. Cycle paths and
+# footpaths are never ridden: that is against the law.
 assign is_motor_road = highway=motorway|motorway_link|trunk|trunk_link|primary|primary_link|secondary|secondary_link|tertiary|tertiary_link|unclassified|residential|living_street|service|track|road
 
 assign costfactor =
-  if not motoraccess then ( if and is_motor_road not and is_track paved_only then 8 else 10000 )
+  if not motoraccess then ( if and is_motor_road not and is_track no_tracks then min 9999 max 8 multiply 2 road_cost else 10000 )
   else if isbadoneway then 10000
-  else min 9999 multiply class_cost multiply surface_factor multiply track_factor avoid_factor
+  else min 9999 road_cost
 
 # way priorities used for turn instruction generation
 assign priorityclassifier =

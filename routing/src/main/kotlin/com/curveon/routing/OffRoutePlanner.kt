@@ -73,7 +73,7 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
         val ways = ends.mapIndexedNotNull { i, along ->
             runCatching {
                 val (target, routeBearing) = Routes.pointAt(route, along)
-                val leg = if (i == 0) first else engine.route(listOf(position, target), options, startHeadingDeg = headingDeg, noGo = noGo)
+                val leg = if (i == 0) first else engine.route(listOf(position, target), options, startHeadingDeg = headingDeg, noGo = noGo, tracksAsLastResort = false)
                 if (leg == null || turnsBack(leg, position, headingDeg) || uTurnsAhead(leg) || arrivesAgainst(leg, routeBearing)) null
                 else join(leg, route, along)
             }.getOrNull()
@@ -91,7 +91,7 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
     /** Back to the route just after where the rider left it, turning round if that is the way. */
     fun back(position: LatLon, route: Route, leftAlong: Double, options: RouteOptions): WayBack {
         val along = minOf(leftAlong + BACK_JOIN_M, route.distanceMeters)
-        val leg = engine.route(listOf(position, Routes.pointAt(route, along).first), options)
+        val leg = engine.route(listOf(position, Routes.pointAt(route, along).first), options, tracksAsLastResort = false)
         return join(leg, route, along)
     }
 
@@ -101,7 +101,7 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
      */
     fun fromHere(position: LatLon, headingDeg: Double, waypoints: List<LatLon>, options: RouteOptions): Route =
         forwardOnly(position, headingDeg, waypoints, options).second
-            ?: engine.route(listOf(position) + waypoints, options, startHeadingDeg = headingDeg)
+            ?: engine.route(listOf(position) + waypoints, options, startHeadingDeg = headingDeg, tracksAsLastResort = false)
 
     /**
      * Routes from [position] through [waypoints] without turning back the way the rider came.
@@ -115,7 +115,7 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
     ): Pair<List<NoGo>, Route?> {
         val noGo = known.toMutableList()
         repeat(MAX_BLOCKS + 1) {
-            val r = runCatching { engine.route(listOf(position) + waypoints, options, startHeadingDeg = headingDeg, noGo = noGo) }
+            val r = runCatching { engine.route(listOf(position) + waypoints, options, startHeadingDeg = headingDeg, noGo = noGo, tracksAsLastResort = false) }
                 .getOrNull() ?: return noGo to null
             val block = when {
                 turnsBack(r, position, headingDeg) -> blockBehind(r)
