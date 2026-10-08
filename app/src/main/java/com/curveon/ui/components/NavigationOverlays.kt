@@ -29,8 +29,9 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Remaining distance / arrival time with a stop button, shown at the bottom of the map. Next stop
- * and fuel appear only when there is something worth knowing; tapping fuel adds it as a stop.
+ * Remaining distance / arrival time with add-stop and stop buttons, shown at the bottom of the map.
+ * Next stop and fuel appear only when there is something worth knowing; tapping fuel adds it as a
+ * stop. Tapping the bar opens the route menu (stops, save).
  */
 @Composable
 fun NavigationSummaryBar(
@@ -38,7 +39,9 @@ fun NavigationSummaryBar(
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
     fuel: com.curveon.data.routing.FuelHint? = null,
-    onFuel: () -> Unit = {}
+    onFuel: () -> Unit = {},
+    onAddStop: () -> Unit = {},
+    onOpen: () -> Unit = {}
 ) {
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
@@ -48,6 +51,7 @@ fun NavigationSummaryBar(
             .clip(RoundedCornerShape(16.dp))
             .background(CockpitSurface.copy(alpha = 0.95f))
             .border(1.dp, CockpitBorder, RoundedCornerShape(16.dp))
+            .clickable(onClick = onOpen)
             .padding(start = 16.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
             .testTag("nav_summary_bar"),
         verticalAlignment = Alignment.CenterVertically,
@@ -74,6 +78,12 @@ fun NavigationSummaryBar(
                 Text(if (fuel.point.lat == 0.0) stringResource(R.string.fuel_none_ahead) else stringResource(R.string.distance_km_whole, fuel.distanceMeters / 1000),
                     color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
+        }
+        IconButton(
+            onClick = onAddStop,
+            modifier = Modifier.size(44.dp).clip(CircleShape).background(NeonAmber.copy(alpha = 0.2f)).testTag("nav_add_stop_btn")
+        ) {
+            Icon(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), tint = NeonAmber)
         }
         IconButton(
             onClick = onStop,
@@ -120,27 +130,169 @@ fun RoutingStatusCard(status: RoutingStatus, onDismiss: () -> Unit, modifier: Mo
 }
 
 /**
- * While riding, a picked place can be a stop on the way or a new destination. Two big buttons,
- * nothing else.
+ * A picked place while riding or planning: a stop on the way, the destination, or (planning) where
+ * the trip starts. Big buttons, nothing else.
  */
 @Composable
-fun StopOrDestinationDialog(name: String, onAddStop: () -> Unit, onNewDestination: () -> Unit, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
+fun PlaceActionDialog(
+    name: String,
+    onAddStop: () -> Unit,
+    onGoHere: () -> Unit,
+    onStartHere: (() -> Unit)?,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .background(CockpitSurface)
                 .border(1.dp, CockpitBorder, RoundedCornerShape(20.dp))
                 .padding(20.dp)
-                .widthIn(max = 480.dp),
+                .widthIn(max = 760.dp)
+                .testTag("place_action_dialog"),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, androidx.compose.ui.graphics.Color.Black,
+                PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black,
                     Modifier.weight(1f).testTag("add_stop_btn"), onAddStop)
-                PillButton(Icons.Default.Flag, stringResource(R.string.go_here), ElectricCyan, androidx.compose.ui.graphics.Color(0xFF00363D),
-                    Modifier.weight(1f), onNewDestination)
+                PillButton(Icons.Default.Flag, stringResource(R.string.go_here), ElectricCyan, OnCyanDark,
+                    Modifier.weight(1f).testTag("go_here_btn"), onGoHere)
+                if (onStartHere != null) PillButton(Icons.Default.TripOrigin, stringResource(R.string.start_here), CockpitSurfaceVariant, TextPrimary,
+                    Modifier.weight(1f).testTag("start_here_btn"), onStartHere)
+            }
+        }
+    }
+}
+
+private val OnCyanDark = Color(0xFF00363D)
+
+/** Name the route before saving it; [initialName] is a suggestion from the places it passes. */
+@Composable
+fun SaveRouteDialog(initialName: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var name by remember(initialName) { mutableStateOf(initialName) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CockpitSurface,
+        title = { Text(stringResource(R.string.save_route_title), color = TextPrimary, fontWeight = FontWeight.Black) },
+        text = {
+            OutlinedTextField(
+                value = name, onValueChange = { name = it }, singleLine = true,
+                label = { Text(stringResource(R.string.save_route_name)) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
+                    focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder, cursorColor = ElectricCyan
+                ),
+                modifier = Modifier.fillMaxWidth().testTag("save_route_name")
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank(), modifier = Modifier.testTag("save_route_confirm")) {
+                Text(stringResource(R.string.save), color = ElectricCyan, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = TextSecondary) } }
+    )
+}
+
+/** The active route: its stops (remove one), add a stop, save it, end navigation. */
+@Composable
+fun RouteMenuDialog(
+    title: String,
+    stops: List<Pair<String, Double?>>,
+    onRemoveStop: (Int) -> Unit,
+    onAddStop: () -> Unit,
+    onSave: () -> Unit,
+    onEnd: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(CockpitSurface)
+                .border(1.dp, CockpitBorder, RoundedCornerShape(20.dp))
+                .padding(20.dp)
+                .widthIn(max = 760.dp)
+                .testTag("route_menu_dialog"),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(title.ifEmpty { stringResource(R.string.route_menu_title) }, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            if (stops.isEmpty()) Text(stringResource(R.string.route_stops_none), color = TextMuted, fontSize = 14.sp)
+            stops.forEachIndexed { i, (name, km) ->
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(NeonAmber.copy(alpha = 0.12f))
+                        .padding(start = 14.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("${i + 1}. $name", color = NeonAmber, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
+                    if (km != null) Text(stringResource(R.string.distance_km_whole, km), color = TextSecondary, fontSize = 14.sp)
+                    IconButton(onClick = { onRemoveStop(i) }) { Icon(Icons.Default.Close, stringResource(R.string.preview_remove_stop), tint = NeonAmber) }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black, Modifier.weight(1f).testTag("menu_add_stop"), onAddStop)
+                PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("menu_save"), onSave)
+                PillButton(Icons.Default.Close, stringResource(R.string.nav_end), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("menu_end"), onEnd)
+            }
+        }
+    }
+}
+
+/**
+ * Off the route with no quick way back. Two big buttons; the "carry on" one counts down and is
+ * chosen by itself if the rider keeps riding. On a trip with stops left, carrying on asks once
+ * more whether to keep them.
+ */
+@Composable
+fun WrongTurnCard(
+    wrongTurn: com.curveon.data.routing.WrongTurn,
+    onTurnBack: () -> Unit,
+    onCarryOn: (keepStops: Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var askStops by remember(wrongTurn) { mutableStateOf(false) }
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(wrongTurn) { while (true) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(500) } }
+    val secondsLeft = ((wrongTurn.autoAtMillis - now + 999) / 1000).coerceAtLeast(0).toInt()
+    Column(
+        modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(CockpitSurface.copy(alpha = 0.97f))
+            .border(2.dp, NeonAmber, RoundedCornerShape(20.dp))
+            .padding(16.dp)
+            .widthIn(max = 600.dp)
+            .testTag("wrong_turn_card"),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.WrongLocation, null, tint = NeonAmber, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(stringResource(R.string.wrong_turn_title), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Text(
+                    if (askStops) androidx.compose.ui.res.pluralStringResource(R.plurals.wrong_turn_stops_left, wrongTurn.stopsLeft, wrongTurn.stopsLeft)
+                    else wrongTurn.aheadExtraMinutes?.let { stringResource(R.string.wrong_turn_trip, it) } ?: stringResource(R.string.wrong_turn_no_ahead),
+                    color = TextSecondary, fontSize = 14.sp
+                )
+            }
+        }
+        // Counts down while riding on; at 0 it waits for the rider to ride on (or answer).
+        val carryOn = stringResource(if (wrongTurn.isTrip) R.string.wrong_turn_new_route else R.string.wrong_turn_rejoin_ahead) +
+            if (secondsLeft > 0) " · " + stringResource(R.string.wrong_turn_auto, secondsLeft) else ""
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (askStops) {
+                PillButton(Icons.Default.Place, stringResource(R.string.wrong_turn_keep_stops), ElectricCyan, OnCyanDark,
+                    Modifier.weight(1f).testTag("wrong_turn_keep_stops")) { onCarryOn(true) }
+                PillButton(Icons.Default.SkipNext, stringResource(R.string.wrong_turn_skip_stops), CockpitSurfaceVariant, TextPrimary,
+                    Modifier.weight(1f).testTag("wrong_turn_skip_stops")) { onCarryOn(false) }
+            } else {
+                PillButton(Icons.Default.UTurnLeft, stringResource(R.string.wrong_turn_back), NeonAmber, Color.Black,
+                    Modifier.weight(1f).testTag("wrong_turn_back"), onTurnBack)
+                // Not offered on a loop/track when there is no way ahead: carrying on means nothing then.
+                if (wrongTurn.isTrip || wrongTurn.aheadExtraMinutes != null) PillButton(
+                    Icons.Default.Navigation, carryOn, ElectricCyan, OnCyanDark, Modifier.weight(1.4f).testTag("wrong_turn_carry_on")
+                ) { if (wrongTurn.isTrip && wrongTurn.stopsLeft > 0) askStops = true else onCarryOn(true) }
             }
         }
     }

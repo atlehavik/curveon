@@ -421,4 +421,49 @@
     <string name="maps_search_basic">basic search</string>
     <string name="maps_search_better">fuller search available</string>
     <string name="maps_get_missing">Get missing</string>
+
+    <!-- Stops, planner, saving -->
+    <string name="near_place">Near %1$s</string>
+    <string name="loop_name_from">Loop from %1$s, %2$d km</string>
+    <string name="loop_name">Loop, %1$d km</string>
+    <string name="stop_short">Stop</string>
+    <string name="start_here">Start here</string>
+    <string name="from_here">From my position</string>
+    <string name="from_place">From %1$s</string>
+    <string name="search_add_stop">Add stop</string>
+    <string name="search_start_from">Start from</string>
+    <string name="move_earlier">Earlier</string>
+    <string name="move_later">Later</string>
+    <string name="save_route_title">Save route</string>
+    <string name="save_route_name">Name</string>
+    <string name="preview_arrive">Arrive %1$s</string>
+    <string name="preview_after_dark">after dark</string>
+    <string name="preview_planned_hint">Planned from elsewhere: GO rides to the line, then along it</string>
+    <string name="route_menu_title">Route</string>
+    <string name="route_stops_none">No stops. Add one here, or long-press the map.</string>
+    <string name="nav_end">End navigation</string>
+    <!-- Wrong turn -->
+    <string name="wrong_turn_title">Off route</string>
+    <string name="wrong_turn_trip">Carrying on costs %1$d min more than turning back.</string>
+    <string name="wrong_turn_no_ahead">No way back without turning round.</string>
+    <string name="wrong_turn_back">Turn back</string>
+    <string name="wrong_turn_new_route">New route from here</string>
+    <string name="wrong_turn_rejoin_ahead">Rejoin further ahead</string>
+    <string name="wrong_turn_auto">in %1$d s</string>
+    <string name="wrong_turn_keep_stops">Keep stops</string>
+    <string name="wrong_turn_skip_stops">Skip stops</string>
+    <plurals name="wrong_turn_stops_left">
+        <item quantity="one">%1$d stop left. Keep it?</item>
+        <item quantity="other">%1$d stops left. Keep them?</item>
+    </plurals>
+    <string name="nav_turning_back">Routing back…</string>
+    <string name="nav_reroute_failed">Couldn\'t find a new route: %1$s</string>
+    <!-- Settings: off route -->
+    <string name="settings_off_route">Off route after</string>
+    <string name="settings_off_route_hint">Distance from the line before navigation reacts</string>
+    <string name="settings_rejoin_minutes">Quiet rejoin: extra time</string>
+    <string name="settings_rejoin_minutes_hint">Carry on quietly if at most this much slower</string>
+    <string name="settings_rejoin_percent">Quiet rejoin: extra share</string>
+    <string name="settings_rejoin_percent_hint">…and at most this share of the trip left</string>
+    <string name="minutes_short">%1$d min</string>
 </resources>

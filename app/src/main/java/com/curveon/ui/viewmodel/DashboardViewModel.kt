@@ -271,7 +271,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val routeMarkers: StateFlow<List<GeoPoint>> = navigator.state
         .map { s ->
             val g = (s.preview?.goal ?: s.goal) as? NavigationGoal.Destination ?: return@map emptyList()
-            (g.stops.map { it.point } + g.destination).map { GeoPoint(it.lat, it.lon) }
+            (listOfNotNull(g.start?.point) + g.stops.map { it.point } + g.destination).map { GeoPoint(it.lat, it.lon) }
         }
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -309,6 +309,17 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val currentTurnInstruction: StateFlow<TurnInstruction?> = combine(navigator.state, roadNames) { s, names ->
         val p = s.progress ?: return@combine null
         val route = s.route ?: return@combine null
+        // Riding against the route (e.g. just after "Turn back"): the route starts behind the rider,
+        // which has no turn of its own, so say it.
+        val heading = navigator.heading()
+        if (heading != null && !p.offRoute && p.distanceFromRoute < 40 && tripTracker.speedKmh > 5 &&
+            kotlin.math.abs(com.curveon.routing.Geo.angleDiff(heading, p.routeBearingDeg)) > 135) {
+            val u = Maneuver(ManeuverType.U_TURN, 0, p.distanceAlongRoute)
+            return@combine TurnInstruction(
+                index = -1, type = u.toTurnType(), text = u.describe(app), distanceMeters = 0, streetName = "",
+                speedLimitKmh = p.speedLimitKmh ?: 0, location = GeoPoint(p.snapped.lat, p.snapped.lon)
+            )
+        }
         val m = p.nextManeuver
         val idx = route.maneuvers.indexOf(m)
         val then = p.followingManeuver?.takeIf {
@@ -485,7 +496,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun handleFix(fix: GpsFix, estimated: Boolean) {
         tripTracker.onFix(fix)
-        navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble())
+        navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble(),
+            tripTracker.headingDeg.toDouble().takeIf { tripTracker.speedKmh > 5 })
         val onRoad = snapToRoute()
         _currentLocation.value = GeoPoint(onRoad?.first?.lat ?: fix.latitude, onRoad?.first?.lon ?: fix.longitude,
             fix.altitudeMeters ?: _currentLocation.value.altitudeMeters)
@@ -570,12 +582,44 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /** Name for a ride end: the closest place, nudged towards real towns when distances are similar. */
-    private suspend fun placeName(lat: Double, lon: Double): String? {
+    private suspend fun placeName(lat: Double, lon: Double): String? = nearestPlace(lat, lon)?.name
+
+    private suspend fun nearestPlace(lat: Double, lon: Double): SearchResult? {
         val bonusKm = mapOf("city" to 3.0, "town" to 2.0, "village" to 1.0, "suburb" to 0.5, "hamlet" to 0.0)
         return bonusKm.keys.mapNotNull { kind -> placeSearch.nearest(kind, lat, lon, 1).firstOrNull() }
             .filter { it.distanceKm < 10 }
             .minByOrNull { it.distanceKm - (bonusKm[it.kind] ?: 0.0) }
-            ?.name
+    }
+
+    /** A name for a point picked on the map: "Voss", "Near Voss", or "Map point" out in the wild. */
+    suspend fun describePoint(point: GeoPoint): String {
+        val p = runCatching { nearestPlace(point.latitude, point.longitude) }.getOrNull() ?: return str(R.string.map_point)
+        return if (p.distanceKm < 1.5) p.name else str(R.string.near_place, p.name)
+    }
+
+    /** What to call the previewed or active route when saving it, e.g. "Voss – Bergen" or "Loop from Voss, 120 km". */
+    suspend fun suggestedRouteName(): String {
+        val s = navigator.state.value
+        val goal = s.preview?.goal ?: s.goal ?: return ""
+        val route = s.preview?.selectedRoute ?: s.route
+        val here = _currentLocation.value
+        // Points picked on the map are called "Map point" / "Near X": name them after the place instead.
+        val near = str(R.string.near_place, "")
+        suspend fun named(s: Stop) = if (s.name == str(R.string.map_point) || s.name.startsWith(near)) placeName(s.point.lat, s.point.lon) else s.name
+        return when (goal) {
+            is NavigationGoal.Destination -> {
+                val from = goal.start?.let { named(it) } ?: route?.points?.firstOrNull()?.let { placeName(it.lat, it.lon) }
+                    ?: placeName(here.latitude, here.longitude)
+                val to = named(Stop(goal.name, goal.destination)) ?: goal.name
+                if (from == null || from == to) to else "$from – $to"
+            }
+            is NavigationGoal.Roundtrip -> {
+                val from = route?.points?.firstOrNull()?.let { placeName(it.lat, it.lon) } ?: placeName(here.latitude, here.longitude)
+                val km = ((route?.distanceMeters ?: goal.distanceKm * 1000) / 1000).roundToInt()
+                if (from != null) str(R.string.loop_name_from, from, km) else str(R.string.loop_name, km)
+            }
+            is NavigationGoal.Track -> goal.name
+        }
     }
 
     fun deleteRides(ids: Collection<Long>) = viewModelScope.launch { rideDao.delete(ids.toList()) }
@@ -665,6 +709,39 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun previewDestination(point: GeoPoint, name: String) {
         navigator.previewDestination(name, LatLon(point.latitude, point.longitude), lastOptions)
+    }
+
+    /** Plan the previewed trip from [point] (null = from where I am). */
+    fun setPreviewStart(point: GeoPoint?, name: String) =
+        navigator.setPreviewStart(point?.let { Stop(name, LatLon(it.latitude, it.longitude)) })
+
+    fun setPreviewDestination(point: GeoPoint, name: String) = navigator.setPreviewDestination(Stop(name, LatLon(point.latitude, point.longitude)))
+
+    fun movePreviewStop(index: Int, delta: Int) = navigator.movePreviewStop(index, delta)
+
+    /** Remove a stop from the active trip (re-plans from here). */
+    fun removeStop(index: Int) = navigator.removeStop(index)
+
+    // Wrong turn: the rider's answer
+    val wrongTurn: StateFlow<com.curveon.data.routing.WrongTurn?> =
+        navigator.state.map { it.wrongTurn }.distinctUntilChanged().stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    fun turnBack() = navigator.turnBack()
+    fun newRouteFromHere(keepStops: Boolean) = navigator.newRouteFromHere(keepStops)
+    fun rejoinAhead() = navigator.rejoinAhead()
+
+    private val _offRouteSettings = MutableStateFlow(
+        com.curveon.data.routing.OffRouteSettings(
+            offRouteMeters = settings.getInt("offRouteMeters", 40),
+            maxExtraMinutes = settings.getInt("offRouteExtraMin", 3),
+            maxExtraPercent = settings.getInt("offRouteExtraPct", 10)
+        ).also { navigator.offRouteSettings = it }
+    )
+    val offRouteSettings: StateFlow<com.curveon.data.routing.OffRouteSettings> = _offRouteSettings.asStateFlow()
+    fun setOffRouteSettings(s: com.curveon.data.routing.OffRouteSettings) {
+        _offRouteSettings.value = s
+        navigator.offRouteSettings = s
+        settings.edit().putInt("offRouteMeters", s.offRouteMeters).putInt("offRouteExtraMin", s.maxExtraMinutes)
+            .putInt("offRouteExtraPct", s.maxExtraPercent).apply()
     }
 
     fun previewRoundtrip(config: RoundtripConfig) {

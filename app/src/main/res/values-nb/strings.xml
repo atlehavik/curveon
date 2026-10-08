@@ -420,4 +420,49 @@
     <string name="maps_search_basic">enkelt søk</string>
     <string name="maps_search_better">fullere søk tilgjengelig</string>
     <string name="maps_get_missing">Hent det som mangler</string>
+
+    <!-- Stops, planner, saving -->
+    <string name="near_place">Nær %1$s</string>
+    <string name="loop_name_from">Runde fra %1$s, %2$d km</string>
+    <string name="loop_name">Runde, %1$d km</string>
+    <string name="stop_short">Stopp</string>
+    <string name="start_here">Start her</string>
+    <string name="from_here">Fra der jeg er</string>
+    <string name="from_place">Fra %1$s</string>
+    <string name="search_add_stop">Legg til stopp</string>
+    <string name="search_start_from">Start fra</string>
+    <string name="move_earlier">Før</string>
+    <string name="move_later">Etter</string>
+    <string name="save_route_title">Lagre ruten</string>
+    <string name="save_route_name">Navn</string>
+    <string name="preview_arrive">Fremme %1$s</string>
+    <string name="preview_after_dark">i mørket</string>
+    <string name="preview_planned_hint">Planlagt fra et annet sted: KJØR tar deg til ruten, så langs den</string>
+    <string name="route_menu_title">Rute</string>
+    <string name="route_stops_none">Ingen stopp. Legg til her, eller trykk lenge på kartet.</string>
+    <string name="nav_end">Avslutt navigering</string>
+    <!-- Wrong turn -->
+    <string name="wrong_turn_title">Utenfor ruten</string>
+    <string name="wrong_turn_trip">Å kjøre videre tar %1$d min mer enn å snu.</string>
+    <string name="wrong_turn_no_ahead">Ingen vei tilbake uten å snu.</string>
+    <string name="wrong_turn_back">Snu</string>
+    <string name="wrong_turn_new_route">Ny rute herfra</string>
+    <string name="wrong_turn_rejoin_ahead">Finn ruten lenger fram</string>
+    <string name="wrong_turn_auto">om %1$d s</string>
+    <string name="wrong_turn_keep_stops">Behold stopp</string>
+    <string name="wrong_turn_skip_stops">Dropp stopp</string>
+    <plurals name="wrong_turn_stops_left">
+        <item quantity="one">%1$d stopp igjen. Beholde det?</item>
+        <item quantity="other">%1$d stopp igjen. Beholde dem?</item>
+    </plurals>
+    <string name="nav_turning_back">Finner veien tilbake…</string>
+    <string name="nav_reroute_failed">Fant ingen ny rute: %1$s</string>
+    <!-- Settings: off route -->
+    <string name="settings_off_route">Utenfor ruten etter</string>
+    <string name="settings_off_route_hint">Avstand fra ruten før navigasjonen reagerer</string>
+    <string name="settings_rejoin_minutes">Stille omkjøring: ekstra tid</string>
+    <string name="settings_rejoin_minutes_hint">Kjør videre stille hvis høyst så mye tregere</string>
+    <string name="settings_rejoin_percent">Stille omkjøring: ekstra andel</string>
+    <string name="settings_rejoin_percent_hint">… og høyst så stor del av resten av turen</string>
+    <string name="minutes_short">%1$d min</string>
 </resources>

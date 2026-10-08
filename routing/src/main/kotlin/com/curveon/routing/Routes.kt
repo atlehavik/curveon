@@ -18,6 +18,50 @@ object Routes {
         return LatLon(a.lat + (b.lat - a.lat) * f, a.lon + (b.lon - a.lon) * f) to Geo.bearing(a.lat, a.lon, b.lat, b.lon)
     }
 
+    /** Seconds from the start of [route] to [distance] metres along it. */
+    fun secondsAt(route: Route, distance: Double): Double {
+        val pts = route.points
+        val i = pts.indexOfFirst { it.distanceFromStart >= distance }
+        if (i <= 0) return if (i == 0) 0.0 else route.durationSeconds
+        val a = pts[i - 1]
+        val b = pts[i]
+        val span = b.distanceFromStart - a.distanceFromStart
+        val f = if (span > 0) (distance - a.distanceFromStart) / span else 0.0
+        return a.secondsFromStart + (b.secondsFromStart - a.secondsFromStart) * f
+    }
+
+    /** The part of [route] from [fromDistance] metres on, as a route of its own. */
+    fun slice(route: Route, fromDistance: Double): Route {
+        val pts = route.points
+        val start = pts.indexOfLast { it.distanceFromStart <= fromDistance }.coerceIn(0, maxOf(pts.size - 2, 0))
+        val d0 = pts[start].distanceFromStart
+        val t0 = pts[start].secondsFromStart
+        val points = pts.subList(start, pts.size).map { it.copy(distanceFromStart = it.distanceFromStart - d0, secondsFromStart = it.secondsFromStart - t0) }
+        val maneuvers = listOf(Maneuver(ManeuverType.DEPART, 0, 0.0)) + route.maneuvers
+            .filter { it.pointIndex > start && it.type != ManeuverType.DEPART }
+            .map { it.copy(pointIndex = it.pointIndex - start, distanceFromStart = it.distanceFromStart - d0) }
+        var ascent = 0.0
+        var unpaved = 0.0
+        var ferries = 0
+        for (i in 1 until points.size) {
+            val a = points[i - 1]
+            val b = points[i]
+            if (b.elevation > a.elevation) ascent += b.elevation - a.elevation
+            if (b.unpaved) unpaved += b.distanceFromStart - a.distanceFromStart
+            if (b.ferry && !a.ferry) ferries++
+        }
+        return Route(
+            points = points,
+            maneuvers = maneuvers,
+            distanceMeters = points.last().distanceFromStart,
+            durationSeconds = points.last().secondsFromStart,
+            ascentMeters = ascent,
+            curviness = Curviness.score(points.map { LatLon(it.lat, it.lon) }),
+            unpavedMeters = unpaved,
+            ferryCount = ferries
+        )
+    }
+
     /** Joins [b] onto the end of [a] (b should start where a ends). */
     fun concat(a: Route, b: Route): Route {
         val offsetD = a.distanceMeters

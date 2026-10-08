@@ -6,6 +6,8 @@ import com.curveon.routing.Geo
 import com.curveon.routing.LatLon
 import com.curveon.routing.NavigationProgress
 import com.curveon.routing.NavigationTracker
+import com.curveon.routing.OffRouteDecision
+import com.curveon.routing.OffRoutePlanner
 import com.curveon.routing.ProfileInstaller
 import com.curveon.routing.RoadStyle
 import com.curveon.routing.RoundtripPlanner
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.math.roundToInt
 
 sealed interface RoutingStatus {
     data object Idle : RoutingStatus
@@ -36,6 +39,46 @@ sealed interface RoutingStatus {
 }
 
 data class Stop(val name: String, val point: LatLon)
+
+/** How far along [route] each of [stops] is (they are visited in order). */
+fun alongDistances(stops: List<Stop>, route: Route): List<Double> {
+    if (stops.isEmpty()) return emptyList()
+    val corridor = RouteCorridor(route)
+    var after = 0.0
+    return stops.map { s ->
+        (corridor.alongDistance(s.point.lat, s.point.lon, 2_000.0, after) ?: after).also { after = it }
+    }
+}
+
+/** How forgiving navigation is about leaving the route (Settings → Navigation). */
+data class OffRouteSettings(
+    /** Further than this from the line counts as off route. */
+    val offRouteMeters: Int = 40,
+    /** A way back that keeps riding ahead is taken quietly when it costs at most this many minutes more… */
+    val maxExtraMinutes: Int = 3,
+    /** …and at most this share of the trip that is left. */
+    val maxExtraPercent: Int = 10
+)
+
+/**
+ * The rider left the route and there is no quick way back without turning round: ask whether to
+ * turn back or carry on. If nobody answers by [autoAtMillis] and the rider has ridden on, still
+ * off the route, we carry on ("new route from here" / "rejoin further ahead"). Stopped at the
+ * roadside, the question waits.
+ */
+data class WrongTurn(
+    /** True on an A→B trip (re-plan to the destination); false on a loop or track (rejoin it). */
+    val isTrip: Boolean,
+    /** Stops still to visit, so carrying on can ask whether to keep them. */
+    val stopsLeft: Int,
+    /** Where the rider left the route, metres along it. */
+    val leftAlong: Double,
+    /** Extra minutes the best way ahead costs over turning back, null when there is none. */
+    val aheadExtraMinutes: Int?,
+    val autoAtMillis: Long,
+    /** Where the rider was when asked: carrying on by itself needs them to have ridden on since. */
+    val askedAt: LatLon
+)
 
 /** What the rider asked for, kept so we can recalculate after leaving the route. */
 sealed interface NavigationGoal {
@@ -47,7 +90,9 @@ sealed interface NavigationGoal {
         val name: String,
         val destination: LatLon,
         override val options: RouteOptions,
-        val stops: List<Stop> = emptyList()
+        val stops: List<Stop> = emptyList(),
+        /** Planning from somewhere else than where the rider is; null = from here. */
+        val start: Stop? = null
     ) : NavigationGoal {
         override val title get() = name
     }
@@ -87,7 +132,9 @@ data class NavigationState(
     val status: RoutingStatus = RoutingStatus.Idle,
     val preview: RoutePreview? = null,
     /** Distance along [route] of each remaining stop, for drawing and for dropping passed stops. */
-    val stopsAlong: List<Pair<Stop, Double>> = emptyList()
+    val stopsAlong: List<Pair<Stop, Double>> = emptyList(),
+    /** Off the route with no quick way back: the rider is being asked what to do. */
+    val wrongTurn: WrongTurn? = null
 ) {
     val isNavigating get() = route != null
 }
@@ -108,18 +155,50 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private var calcJob: Job? = null
     private var previewJob: Job? = null
     private var lastPosition: LatLon? = null
+    private var lastHeading: Double? = null
+    /** Where the rider was ~20 m ago, for a heading from how they actually moved. */
+    private var headingAnchor: LatLon? = null
     private var lastRerouteAt = 0L
+    /** After "carry on", leaving the route again before this time re-plans without asking. */
+    private var followUntil = 0L
     private var arrivalJob: Job? = null
 
     /** Style the rider picked last time; the preview pre-selects it. */
     var preferredStyle: RoadStyle = RoadStyle.CURVY
 
+    var offRouteSettings = OffRouteSettings()
+
     private val engine by lazy { BRouterEngine(routingData.segmentsDir, ProfileInstaller.install(profileDir)) }
+    private val offRoute by lazy { OffRoutePlanner(engine) }
 
     // ------------------------------------------------------------------ preview
 
-    fun previewDestination(name: String, destination: LatLon, options: RouteOptions, stops: List<Stop> = emptyList()) =
-        preview(NavigationGoal.Destination(name, destination, options, stops))
+    fun previewDestination(name: String, destination: LatLon, options: RouteOptions, stops: List<Stop> = emptyList(), start: Stop? = null) =
+        preview(NavigationGoal.Destination(name, destination, options, stops, start))
+
+    /** Plan the previewed trip from [start] instead of from here (null = from here again). */
+    fun setPreviewStart(start: Stop?) {
+        val p = _state.value.preview ?: return
+        val g = p.goal as? NavigationGoal.Destination ?: return
+        preview(g.copy(start = start), p.selected)
+    }
+
+    /** Make [stop] the previewed trip's destination, keeping its stops and start. */
+    fun setPreviewDestination(stop: Stop) {
+        val p = _state.value.preview ?: return
+        val g = p.goal as? NavigationGoal.Destination ?: return
+        preview(g.copy(name = stop.name, destination = stop.point), p.selected)
+    }
+
+    /** Move a previewed stop one place earlier ([delta] -1) or later (+1). */
+    fun movePreviewStop(index: Int, delta: Int) {
+        val p = _state.value.preview ?: return
+        val g = p.goal as? NavigationGoal.Destination ?: return
+        val to = index + delta
+        if (index !in g.stops.indices || to !in g.stops.indices) return
+        val stops = g.stops.toMutableList().also { java.util.Collections.swap(it, index, to) }
+        preview(g.copy(stops = stops), p.selected)
+    }
 
     fun previewRoundtrip(distanceKm: Double, directionDeg: Double, options: RouteOptions, variant: Int = 0) =
         preview(NavigationGoal.Roundtrip(distanceKm, directionDeg, options, variant, context.getString(R.string.roundtrip)))
@@ -194,6 +273,12 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val candidate = p.candidates.getOrNull(p.selected) ?: return
         val route = candidate.route ?: return
         candidate.style?.let { preferredStyle = it }
+        val planned = p.goal as? NavigationGoal.Destination
+        if (planned?.start != null) {
+            // Planned from elsewhere: ride to the planned line and along it.
+            return followTrackNow(planned.name, route.points.map { LatLon(it.lat, it.lon) },
+                planned.options.copy(roadStyle = candidate.style ?: planned.options.roadStyle))
+        }
         val goal = when (val g = p.goal) {
             is NavigationGoal.Destination -> g.copy(options = g.options.copy(roadStyle = candidate.style ?: g.options.roadStyle))
             else -> g
@@ -202,7 +287,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     private fun preview(goal: NavigationGoal, keepSelection: Int? = null) {
-        val from = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
+        val from = (goal as? NavigationGoal.Destination)?.start?.point ?: lastPosition
+            ?: return fail(context.getString(R.string.nav_waiting_gps))
         if (!routingData.isReady()) return fail(routingData.describe())
         previewJob?.cancel()
         val styles: List<RoadStyle?> = if (goal is NavigationGoal.Destination) RoadStyle.entries else listOf(null)
@@ -268,9 +354,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     private fun activate(goal: NavigationGoal, route: Route) {
         previewJob?.cancel()
+        followUntil = 0L
         arrivalJob?.cancel()
         arrivalJob = null
-        tracker = NavigationTracker(route)
+        tracker = newTracker(route)
         val pos = lastPosition
         _state.value = NavigationState(
             goal = goal,
@@ -282,17 +369,25 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     private fun stopsAlong(goal: NavigationGoal, route: Route): List<Pair<Stop, Double>> {
         val stops = (goal as? NavigationGoal.Destination)?.stops ?: return emptyList()
-        val corridor = RouteCorridor(route)
-        var after = 0.0
-        return stops.map { s ->
-            val along = corridor.alongDistance(s.point.lat, s.point.lon, 2_000.0, after) ?: after
-            after = along
-            s to along
-        }
+        return stops.zip(alongDistances(stops, route))
     }
 
-    fun onLocation(position: LatLon, accuracyMeters: Double) {
+    /** Which way the rider is moving (from the last ~20 m ridden), null until known. */
+    fun heading(): Double? = lastHeading
+
+    private fun newTracker(route: Route) = NavigationTracker(route, offRouteSettings.offRouteMeters.toDouble())
+
+    fun onLocation(position: LatLon, accuracyMeters: Double, headingDeg: Double? = null) {
         lastPosition = position
+        // Heading from the last ~20 m ridden; the GPS bearing only until we have that (some
+        // receivers, and the emulator, report a bearing of 0 when they don't know).
+        val anchor = headingAnchor
+        if (anchor == null || Geo.distance(anchor, position) > 200) headingAnchor = position
+        else if (Geo.distance(anchor, position) >= HEADING_BASE_M) {
+            lastHeading = Geo.bearing(anchor.lat, anchor.lon, position.lat, position.lon)
+            headingAnchor = position
+        }
+        if (lastHeading == null && headingDeg != null) lastHeading = headingDeg
         val t = tracker ?: return
         val progress = t.update(position, accuracyMeters)
         var current = _state.value.copy(progress = progress)
@@ -308,10 +403,18 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
         _state.value = current
 
-        if (progress.arrived && current.goal !is NavigationGoal.Roundtrip) {
-            if (arrivalJob == null) arrivalJob = scope.launch { delay(15_000); if (tracker === t) stop() }
-        } else if (progress.offRoute) {
-            maybeReroute(position)
+        val asking = current.wrongTurn
+        when {
+            progress.arrived && current.goal !is NavigationGoal.Roundtrip ->
+                if (arrivalJob == null) arrivalJob = scope.launch { delay(15_000); if (tracker === t) stop() }
+            // Back on the line while we were asking: nothing to decide any more.
+            asking != null && !progress.offRoute -> _state.value = current.copy(wrongTurn = null)
+            // Not answered and still riding away: carry on the way the rider is going.
+            asking != null -> if (System.currentTimeMillis() >= asking.autoAtMillis && calcJob?.isActive != true &&
+                Geo.distance(asking.askedAt, position) > AUTO_AFTER_RIDING_M) {
+                if (asking.isTrip) newRouteFromHere(keepStops = true) else rejoinAhead()
+            }
+            progress.offRoute -> maybeReroute(position)
         }
     }
 
@@ -323,7 +426,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val s = _state.value
         val previewGoal = s.preview?.goal
         if (previewGoal is NavigationGoal.Destination) {
-            return preview(previewGoal.copy(stops = insertStop(lastPosition, previewGoal.stops, previewGoal.destination, stop)), s.preview.selected)
+            return preview(previewGoal.copy(stops = insertStop(previewGoal.start?.point ?: lastPosition, previewGoal.stops, previewGoal.destination, stop)), s.preview.selected)
         }
         val goal = s.goal ?: return previewDestination(stop.name, stop.point, RouteOptions(preferredStyle))
         val route = s.route ?: return
@@ -336,7 +439,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                     when (goal) {
                         is NavigationGoal.Destination -> {
                             val g = goal.copy(stops = insertStop(pos, goal.stops, goal.destination, stop))
-                            g to engine.route(listOf(pos) + g.stops.map { it.point } + g.destination, g.options)
+                            g to routeFromHere(pos, g.stops.map { it.point } + g.destination, g.options)
                         }
                         else -> {
                             val toStop = engine.route(listOf(pos, stop.point), goal.options)
@@ -368,37 +471,155 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         return stops.toMutableList().also { it.add((best + 1 - offset).coerceIn(0, stops.size), stop) }
     }
 
+    /**
+     * Left the route. If there is a way back that keeps riding the way the rider is going and costs
+     * little more than turning round (Settings → Navigation), take it quietly. Otherwise ask
+     * ([WrongTurn]): turn back, or carry on with a new route.
+     */
     private fun maybeReroute(position: LatLon) {
         val now = System.currentTimeMillis()
         val current = _state.value
         if (calcJob?.isActive == true || now - lastRerouteAt < REROUTE_COOLDOWN_MS) return
         val goal = current.goal ?: return
         val route = current.route ?: return
+        val heading = lastHeading
+        val leftAlong = current.progress?.distanceAlongRoute ?: 0.0
         lastRerouteAt = now
         _state.value = current.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))
         calcJob = scope.launch {
             try {
-                val newRoute = withContext(Dispatchers.Default) {
-                    when (goal) {
-                        is NavigationGoal.Destination ->
-                            engine.route(listOf(position) + goal.stops.map { it.point } + goal.destination, goal.options)
-                        // For a loop or track, ride back onto it a little further ahead instead of re-planning.
-                        is NavigationGoal.Roundtrip, is NavigationGoal.Track ->
-                            rejoin(position, route, current.progress?.distanceAlongRoute ?: 0.0, goal.options)
-                    }
+                val s = offRouteSettings
+                val trip = (goal as? NavigationGoal.Destination)?.let { g -> g.stops.map { it.point } + g.destination }
+                // The rider chose to carry on a moment ago (following someone, own way): no more questions.
+                val following = now < followUntil && heading != null
+                val decision = withContext(Dispatchers.Default) {
+                    if (following) offRoute.decide(position, heading, route, leftAlong, goal.options, Double.MAX_VALUE, Double.MAX_VALUE, trip)
+                    else offRoute.decide(position, heading, route, leftAlong, goal.options, s.maxExtraMinutes * 60.0, s.maxExtraPercent / 100.0, trip)
                 }
-                tracker = NavigationTracker(newRoute)
-                _state.value = _state.value.copy(
-                    route = newRoute,
-                    progress = tracker!!.update(position),
-                    status = RoutingStatus.Idle,
-                    stopsAlong = stopsAlong(_state.value.goal ?: goal, newRoute)
-                )
+                android.util.Log.i("CurveonNav", "Off route at %.0f m, heading %s: %s".format(leftAlong, heading?.let { "%.0f".format(it) } ?: "none", describe(decision)))
+                when (decision) {
+                    is OffRouteDecision.Rejoin -> adopt(position, decision.way.route)
+                    is OffRouteDecision.Ask -> _state.value = _state.value.copy(
+                        status = RoutingStatus.Idle,
+                        wrongTurn = WrongTurn(
+                            isTrip = goal is NavigationGoal.Destination,
+                            stopsLeft = (goal as? NavigationGoal.Destination)?.stops?.size ?: 0,
+                            leftAlong = leftAlong,
+                            aheadExtraMinutes = decision.ahead?.let { ((it.totalSeconds - decision.back.totalSeconds) / 60).roundToInt().coerceAtLeast(0) },
+                            autoAtMillis = System.currentTimeMillis() + WRONG_TURN_AUTO_MS,
+                            askedAt = position
+                        )
+                    )
+                    OffRouteDecision.Replan -> adopt(position, when (goal) {
+                        // Nothing found from the route's point of view: re-plan as before.
+                        is NavigationGoal.Destination -> routeFromHere(position, goal.stops.map { it.point } + goal.destination, goal.options)
+                        else -> rejoin(position, route, leftAlong, goal.options)
+                    })
+                }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
                 // Keep the old route on screen; we will try again after the cooldown.
                 _state.value = _state.value.copy(status = RoutingStatus.Idle)
+            }
+        }
+    }
+
+    private fun describe(d: OffRouteDecision) = when (d) {
+        is OffRouteDecision.Rejoin -> "rejoin at %.0f m (+%.0f s)".format(d.way.joinAlong, d.extraSeconds)
+        is OffRouteDecision.Ask -> "ask (ahead ${d.ahead?.let { "+%.0f s".format(it.totalSeconds - d.back.totalSeconds) } ?: "none"})"
+        OffRouteDecision.Replan -> "replan"
+    }
+
+    /** Wrong-turn answer: back to where the route was left (turning round). */
+    fun turnBack() = answerWrongTurn(R.string.nav_turning_back) { pos, goal, route, wt ->
+        goal to offRoute.back(pos, route, wt.leftAlong, goal.options).route
+    }
+
+    /** Wrong-turn answer on a trip: a new route to the destination that starts the way the rider is going. */
+    fun newRouteFromHere(keepStops: Boolean) = answerWrongTurn(R.string.nav_recalculating, carryOn = true) { pos, goal, route, wt ->
+        val g = goal as? NavigationGoal.Destination ?: return@answerWrongTurn goal to rejoin(pos, route, wt.leftAlong, goal.options)
+        val newGoal = if (keepStops) g else g.copy(stops = emptyList())
+        val waypoints = newGoal.stops.map { it.point } + newGoal.destination
+        val heading = lastHeading
+        newGoal to (if (heading != null) offRoute.fromHere(pos, heading, waypoints, g.options) else engine.route(listOf(pos) + waypoints, g.options))
+    }
+
+    /** Wrong-turn answer on a loop or track: join it again further ahead without turning round. */
+    fun rejoinAhead() = answerWrongTurn(R.string.nav_recalculating, carryOn = true) { pos, goal, route, wt ->
+        val heading = lastHeading
+        goal to ((if (heading != null) offRoute.ahead(pos, heading, route, wt.leftAlong, goal.options)?.route else null)
+            ?: rejoin(pos, route, wt.leftAlong, goal.options))
+    }
+
+    private fun answerWrongTurn(message: Int, carryOn: Boolean = false, plan: (LatLon, NavigationGoal, Route, WrongTurn) -> Pair<NavigationGoal, Route>) {
+        val s = _state.value
+        val wt = s.wrongTurn ?: return
+        followUntil = if (carryOn) System.currentTimeMillis() + FOLLOW_MS else 0L
+        val goal = s.goal ?: return
+        val route = s.route ?: return
+        val pos = lastPosition ?: return
+        calcJob?.cancel()
+        _state.value = s.copy(wrongTurn = null, status = RoutingStatus.Calculating(context.getString(message)))
+        calcJob = scope.launch {
+            try {
+                val (newGoal, newRoute) = withContext(Dispatchers.Default) { plan(pos, goal, route, wt) }
+                lastRerouteAt = System.currentTimeMillis()
+                _state.value = _state.value.copy(goal = newGoal)
+                adopt(pos, newRoute)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e))))
+            }
+        }
+    }
+
+    /** Ride [newRoute] from now on, keeping the goal. */
+    private fun adopt(position: LatLon, newRoute: Route) {
+        tracker = newTracker(newRoute)
+        _state.value = _state.value.copy(
+            route = newRoute,
+            progress = tracker!!.update(position),
+            status = RoutingStatus.Idle,
+            wrongTurn = null,
+            stopsAlong = stopsAlong(_state.value.goal ?: return, newRoute)
+        )
+    }
+
+    /**
+     * A new route from where the rider is through [waypoints], carrying on the way they are going
+     * unless turning round is clearly quicker (more than the quiet-rejoin slack in Settings).
+     */
+    private fun routeFromHere(pos: LatLon, waypoints: List<LatLon>, options: RouteOptions): Route {
+        val free = engine.route(listOf(pos) + waypoints, options)
+        val heading = lastHeading ?: return free
+        if (!OffRoutePlanner.turnsBack(free, pos, heading) && !OffRoutePlanner.uTurnsAhead(free)) return free
+        val ahead = offRoute.forwardOnly(pos, heading, waypoints, options).second ?: return free
+        val s = offRouteSettings
+        val slack = maxOf(OffRoutePlanner.ALWAYS_QUICK_S, minOf(s.maxExtraMinutes * 60.0, s.maxExtraPercent / 100.0 * free.durationSeconds))
+        return if (ahead.durationSeconds - free.durationSeconds <= slack) ahead else free
+    }
+
+    /** Drop a stop while riding an A→B trip and re-plan from here. */
+    fun removeStop(index: Int) {
+        val s = _state.value
+        val g = s.goal as? NavigationGoal.Destination ?: return
+        if (index !in g.stops.indices) return
+        val pos = lastPosition ?: return
+        val newGoal = g.copy(stops = g.stops.filterIndexed { i, _ -> i != index })
+        calcJob?.cancel()
+        _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))
+        calcJob = scope.launch {
+            try {
+                val r = withContext(Dispatchers.Default) {
+                    routeFromHere(pos, newGoal.stops.map { it.point } + newGoal.destination, newGoal.options)
+                }
+                activate(newGoal, r)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e))))
             }
         }
     }
@@ -433,6 +654,13 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     companion object {
         private const val REROUTE_COOLDOWN_MS = 10_000L
+        private const val HEADING_BASE_M = 20.0
+        /** Unanswered question: carry on by itself only once the rider has ridden this far on. */
+        private const val AUTO_AFTER_RIDING_M = 150.0
+        /** Unanswered wrong-turn question: carry on by itself after this long. */
+        const val WRONG_TURN_AUTO_MS = 20_000L
+        /** How long after "carry on" further wrong turns are taken without asking. */
+        private const val FOLLOW_MS = 5 * 60_000L
         private const val REJOIN_AHEAD_M = 1_500.0
     }
 }

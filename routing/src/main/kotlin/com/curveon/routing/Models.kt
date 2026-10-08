@@ -2,6 +2,9 @@ package com.curveon.routing
 
 data class LatLon(val lat: Double, val lon: Double)
 
+/** A circle the router may not enter. */
+data class NoGo(val center: LatLon, val radiusMeters: Double)
+
 enum class RoadStyle { FASTEST, CURVY, VERY_CURVY }
 
 enum class SurfacePreference { PAVED, MIXED, GRAVEL }

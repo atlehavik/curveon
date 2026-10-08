@@ -13,8 +13,8 @@ import java.util.Locale
 
 /**
  * Converts between [NavigationGoal]s and the saved_routes table.
- * A→B trips are saved as their stops (re-routed from wherever you are when you ride them);
- * loops and tracks are saved as their exact line so the same ride can be repeated.
+ * Everything is saved as its exact line, so riding it later takes the same roads even if the map
+ * data or the router changes. A→B trips also keep their stops, start and destination.
  */
 object SavedRoutes {
 
@@ -37,7 +37,9 @@ object SavedRoutes {
                     .put("options", optionsJson(o))
                     .put("stops", JSONArray(goal.stops.map { stopJson(it.name, it.point) }))
                     .put("destination", stopJson(goal.name, goal.destination))
-                    .toString()
+                    .apply { goal.start?.let { put("start", stopJson(it.name, it.point)) } }
+                    .toString(),
+                polylineJson = encode(route.points.map { LatLon(it.lat, it.lon) })
             )
             else -> base.copy(
                 subtitle = if (goal is NavigationGoal.Roundtrip) "Loop" else "Track", // shown translated in Where to?
@@ -52,7 +54,7 @@ object SavedRoutes {
         val options = json.optJSONObject("options")?.let(::parseOptions)
             ?: RouteOptions(RoadStyle.valueOf(item.roadType), SurfacePreference.valueOf(item.groundType))
         val dest = json.optJSONObject("destination")
-        return if (dest != null) {
+        return if (dest != null && item.polylineJson.isEmpty()) { // saved before routes kept their line
             val stops = json.optJSONArray("stops")?.let { a -> (0 until a.length()).map { parseStop(a.getJSONObject(it)) } }.orEmpty()
             val d = parseStop(dest)
             NavigationGoal.Destination(d.name, d.point, options, stops)

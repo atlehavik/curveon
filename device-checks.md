@@ -6,6 +6,29 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-08 — Stops, planner, saving, wrong turns
+
+Tried in the emulator with fake GPS (Voss → Bergen, then riding off towards Granvin): the
+question card, Turn back (banner says "Make a U-turn" until you have turned), New route from here
+with Keep/Skip stops, Rejoin further ahead on a saved route, the automatic choice after 20 s,
+quiet rejoins in Voss centre, + Stop / route menu / save name while riding. The decisions were also
+simulated over real roads on the desktop (`WrongTurnSimulationTest`). Still to try on the bike:
+
+- [ ] Ride a planned trip and take a wrong turn on purpose where there is a quick way round
+  (a block, a parallel road): it should re-route quietly, no card. Then one onto a road that
+  leads away: the card should come, and Turn back / New route from here should do what they say.
+- [ ] Ignore the card and keep riding: after ~20 s it should pick "New route from here" itself.
+  Stop at the roadside instead: it should wait for you.
+- [ ] After "New route from here", leave the route again within 5 minutes: no new card, just a
+  new route (follow mode, e.g. riding behind someone).
+- [ ] Is 40 m / 3 min / 10 % (Settings → Navigation) a good default on real roads? Too many or
+  too few cards? Each decision is logged:
+  `adb -s <x7> logcat -s CurveonNav` → "Off route at … m, heading …: rejoin/ask/replan".
+- [ ] Re-routing takes a few seconds on the X7 (several router calls). If "Recalculating…" stays
+  up much longer than ~5 s on long trips, tell me.
+- [ ] Planner at home: long-press the map → Start here, add stops, save; later in Where to?
+  the saved route should follow exactly the same line.
+
 ## 2026-10-08 — Offline search in every country
 
 Tried in the emulator: Norway's search built from the map (~2 min, "basic search"), then replaced by

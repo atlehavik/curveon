@@ -46,6 +46,7 @@ data class SettingsState(
     val obdEnabled: Boolean,
     val autoZoom: Boolean,
     val autoFollowTracks: Boolean,
+    val offRoute: com.curveon.data.routing.OffRouteSettings,
     val isNavigating: Boolean,
     val isDemoRiding: Boolean,
     val maps: List<InstalledMap>,
@@ -65,6 +66,7 @@ class SettingsActions(
     val onObd: (Boolean) -> Unit,
     val onAutoZoom: (Boolean) -> Unit,
     val onAutoFollow: (Boolean) -> Unit,
+    val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
     val onDemoRide: () -> Unit,
     val onDownloadMap: (String) -> Unit,
     val onCancelMapDownload: (String) -> Unit,
@@ -107,6 +109,16 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
+                        }
+                        val o = state.offRoute
+                        Setting(stringResource(R.string.settings_off_route), stringResource(R.string.settings_off_route_hint)) {
+                            Segmented(listOf(25, 40, 60, 100), o.offRouteMeters, { stringResource(R.string.distance_m, it.toDouble()) }, { actions.onOffRoute(o.copy(offRouteMeters = it)) })
+                        }
+                        Setting(stringResource(R.string.settings_rejoin_minutes), stringResource(R.string.settings_rejoin_minutes_hint)) {
+                            Segmented(listOf(1, 3, 5, 10), o.maxExtraMinutes, { stringResource(R.string.minutes_short, it) }, { actions.onOffRoute(o.copy(maxExtraMinutes = it)) })
+                        }
+                        Setting(stringResource(R.string.settings_rejoin_percent), stringResource(R.string.settings_rejoin_percent_hint)) {
+                            Segmented(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
                         }
                         Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
                             OutlinedButton(onClick = actions.onDemoRide, enabled = state.isNavigating || state.isDemoRiding) {

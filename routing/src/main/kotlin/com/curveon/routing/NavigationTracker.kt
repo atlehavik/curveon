@@ -27,7 +27,11 @@ data class NavigationProgress(
  * and detects when the rider has left the route. Only searches a window ahead of the last
  * known position so loops and out-and-back sections don't make it jump.
  */
-class NavigationTracker(val route: Route) {
+class NavigationTracker(
+    val route: Route,
+    /** How far from the line counts as off route (plus some of the GPS inaccuracy). */
+    private val offRouteMeters: Double = OFF_ROUTE_M
+) {
 
     private var lastIndex = 0
     private var offRouteStreak = 0
@@ -62,7 +66,7 @@ class NavigationTracker(val route: Route) {
         val (ba, bb) = if (bestIdx < pts.lastIndex) a to b else pts[maxOf(bestIdx - 1, 0)] to a
         val routeBearing = Geo.bearing(ba.lat, ba.lon, bb.lat, bb.lon)
 
-        val threshold = OFF_ROUTE_M + accuracyMeters.coerceAtMost(50.0)
+        val threshold = offRouteMeters + accuracyMeters.coerceAtMost(50.0)
         offRouteStreak = if (bestDist > threshold) offRouteStreak + 1 else 0
         val offRoute = offRouteStreak >= OFF_ROUTE_FIXES
         if (!offRoute) lastIndex = bestIdx

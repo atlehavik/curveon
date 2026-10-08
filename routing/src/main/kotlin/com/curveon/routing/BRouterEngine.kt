@@ -36,7 +36,11 @@ class BRouterEngine(
         waypoints: List<LatLon>,
         options: RouteOptions,
         viaCatchingRangeMeters: Double? = null,
-        avoidedFerryCost: Int = AVOIDED_FERRY_COST
+        avoidedFerryCost: Int = AVOIDED_FERRY_COST,
+        /** Direction the rider is moving at the start, so turning off ahead costs less than turning round. */
+        startHeadingDeg: Double? = null,
+        /** Small areas the route must not pass through (e.g. the road just behind the rider). */
+        noGo: List<NoGo> = emptyList()
     ): Route {
         require(waypoints.size >= 2) { "Need at least start and destination" }
         val nodes = waypoints.mapIndexed { i, p ->
@@ -51,6 +55,24 @@ class BRouterEngine(
             keyValues = profileParams(options, avoidedFerryCost)
             waypointCatchingRange = viaCatchingRangeMeters ?: DEFAULT_CATCHING_RANGE_M
             memoryclass = memoryClassMb
+            if (startHeadingDeg != null) {
+                startDirection = ((startHeadingDeg.roundToInt() % 360) + 360) % 360
+                forceUseStartDirection = true
+            }
+            if (noGo.isNotEmpty()) {
+                val list = noGo.map { n ->
+                    OsmNodeNamed().apply {
+                        name = "nogo" + n.radiusMeters.roundToInt()
+                        ilat = ((n.center.lat + 90.0) * 1_000_000.0).roundToInt()
+                        ilon = ((n.center.lon + 180.0) * 1_000_000.0).roundToInt()
+                        isNogo = true
+                        nogoWeight = Double.NaN
+                        radius = n.radiusMeters
+                    }
+                }
+                RoutingContext.prepareNogoPoints(list)
+                nogopoints = list
+            }
         }
         val engine = RoutingEngine(null, null, segmentDir, nodes, rc, RoutingEngine.BROUTER_ENGINEMODE_ROUTING)
         engine.quite = true

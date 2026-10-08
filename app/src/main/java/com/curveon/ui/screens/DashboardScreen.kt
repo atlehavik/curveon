@@ -35,6 +35,7 @@ import com.curveon.ui.components.*
 import com.curveon.ui.theme.*
 import com.curveon.ui.viewmodel.DashboardViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -92,6 +93,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
     val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
+    val wrongTurn by viewModel.wrongTurn.collectAsStateWithLifecycle()
+    val navState by viewModel.navigation.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     val importMapLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.importOfflineMap(uri)
@@ -100,7 +104,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         if (uri != null) viewModel.importGpx(uri)
     }
 
-    var showSearch by remember { mutableStateOf(false) }
+    /** The open search and what it is for; null when closed. */
+    var searchPurpose by remember { mutableStateOf<SearchPurpose?>(null) }
+    var showRouteMenu by remember { mutableStateOf(false) }
+    /** Suggested name while the save dialog is open. */
+    var saveName by remember { mutableStateOf<String?>(null) }
+    val askSaveName: () -> Unit = { scope.launch { saveName = viewModel.suggestedRouteName() } }
     var showRoundtrip by remember { mutableStateOf(false) }
     var showGpx by remember { mutableStateOf(false) }
     var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.curveon.data.model.CompassDirection.NORTH), avoidTolls = false)) }
@@ -109,7 +118,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var tracksTab by rememberSaveable { mutableStateOf(TracksTab.GPX) }
     /** The phone app's open tab; null when closed. */
     var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
-    /** A place picked while riding: add it as a stop or make it the destination? */
+    /** A place picked while riding or planning: a stop, the destination, or (planning) the start? */
     var pendingPlace by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
@@ -117,9 +126,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // Fresh call log each time the phone opens (the contacts come along).
     LaunchedEffect(phoneTab != null) { if (phoneTab != null) phone.refreshPhoneBook() }
 
-    // Picking a place: while riding, ask stop-or-destination; otherwise go straight to the preview.
+    // Picking a place: while riding or planning a trip, ask what it is; otherwise go straight to the preview.
+    val planning = preview?.goal is com.curveon.data.routing.NavigationGoal.Destination
     val pickPlace: (GeoPoint, String) -> Unit = { point, name ->
-        if (isNavigating) pendingPlace = point to name else viewModel.previewDestination(point, name)
+        if (isNavigating || planning) pendingPlace = point to name else viewModel.previewDestination(point, name)
     }
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
@@ -138,9 +148,20 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 NavigationSummaryBar(
                     it, onStop = { viewModel.stopNavigation() },
                     fuel = fuelHint,
-                    onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } }
+                    onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } },
+                    onAddStop = { searchPurpose = SearchPurpose.STOP },
+                    onOpen = { showRouteMenu = true }
                 )
             }
+        }
+        if (preview == null) wrongTurn?.let { wt ->
+            WrongTurnCard(
+                wt,
+                onTurnBack = viewModel::turnBack,
+                onCarryOn = { keep -> if (wt.isTrip) viewModel.newRouteFromHere(keep) else viewModel.rejoinAhead() },
+                // Below the turn banner, over the middle of the map.
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp)
+            )
         }
         preview?.let { p ->
             RoutePreviewSheet(
@@ -151,8 +172,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onToggleMotorways = viewModel::togglePreviewAvoidMotorways,
                 onRemoveStop = viewModel::removePreviewStop,
                 onShuffle = viewModel::shuffleRoundtrip,
+                onAddStop = { searchPurpose = SearchPurpose.STOP },
+                onMoveStop = viewModel::movePreviewStop,
+                onEditStart = { searchPurpose = SearchPurpose.START },
                 onReverse = viewModel::reversePreviewTrack,
-                onSave = { viewModel.saveRoute(p.goal.title); toast = context.getString(R.string.toast_saved_to_where_to) },
+                onSave = askSaveName,
                 onGo = viewModel::startPreview,
                 onClose = viewModel::cancelPreview,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).widthIn(max = 640.dp).fillMaxWidth()
@@ -185,7 +209,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             isFullScreenMap = isFullScreenMap,
             phoneState = phoneState,
             unread = notifications.size,
-            onSearch = { showSearch = true },
+            onSearch = { searchPurpose = SearchPurpose.DESTINATION },
             onRoundtrip = { showRoundtrip = true },
             onGpx = { showGpx = true },
             phoneOpen = phoneTab != null,
@@ -213,7 +237,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     markers = markers,
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,
-                    onLongPress = { pickPlace(it, context.getString(R.string.map_point)) },
+                    onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
                     gpxTracks = overlayTracks,
                     gpxPois = overlayPois,
                     trackHint = trackHint.takeIf { preview == null && !isNavigating },
@@ -305,26 +329,60 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
-        if (showSearch) {
+        searchPurpose?.let { purpose ->
             DestinationSearchDialog(
                 searchStatus = remember { viewModel.searchStatus() },
                 onSearch = { viewModel.searchPlaces(it) },
-                onPick = { r -> showSearch = false; pickPlace(GeoPoint(r.lat, r.lon), r.name) },
-                onDismiss = { showSearch = false },
+                onPick = { r ->
+                    searchPurpose = null
+                    val point = GeoPoint(r.lat, r.lon)
+                    when (purpose) {
+                        SearchPurpose.DESTINATION -> pickPlace(point, r.name)
+                        SearchPurpose.STOP -> viewModel.addStop(point, r.name)
+                        SearchPurpose.START -> if (r.kind == KIND_HERE) viewModel.setPreviewStart(null, "") else viewModel.setPreviewStart(point, r.name)
+                    }
+                },
+                onDismiss = { searchPurpose = null },
                 savedRoutes = savedRoutes,
-                recents = remember(showSearch) { viewModel.recents() },
-                onPickSaved = { showSearch = false; viewModel.previewSaved(it) },
+                recents = remember(purpose) { viewModel.recents() },
+                onPickSaved = { searchPurpose = null; viewModel.previewSaved(it) },
                 onDeleteSaved = { viewModel.deleteSavedRoute(it) },
-                onNearest = { viewModel.nearest(it) }
+                onNearest = { viewModel.nearest(it) },
+                purpose = purpose
             )
         }
 
         pendingPlace?.let { (point, name) ->
-            StopOrDestinationDialog(
+            PlaceActionDialog(
                 name = name,
                 onAddStop = { viewModel.addStop(point, name); pendingPlace = null },
-                onNewDestination = { viewModel.previewDestination(point, name); pendingPlace = null },
+                onGoHere = {
+                    if (planning) viewModel.setPreviewDestination(point, name) else viewModel.previewDestination(point, name)
+                    pendingPlace = null
+                },
+                onStartHere = if (planning) ({ viewModel.setPreviewStart(point, name); pendingPlace = null }) else null,
                 onDismiss = { pendingPlace = null }
+            )
+        }
+
+        saveName?.let { suggested ->
+            SaveRouteDialog(
+                initialName = suggested,
+                onSave = { name -> viewModel.saveRoute(name); saveName = null; toast = context.getString(R.string.toast_saved_to_where_to) },
+                onDismiss = { saveName = null }
+            )
+        }
+
+        if (showRouteMenu && isNavigating) {
+            val along = navState.progress?.distanceAlongRoute ?: 0.0
+            RouteMenuDialog(
+                title = navState.goal?.title ?: "",
+                stops = navState.stopsAlong.map { (stop, at) -> stop.name to ((at - along) / 1000).coerceAtLeast(0.0) },
+                onRemoveStop = { i -> showRouteMenu = false; viewModel.removeStop(i) },
+                onAddStop = { showRouteMenu = false; searchPurpose = SearchPurpose.STOP },
+                onSave = { showRouteMenu = false; askSaveName() },
+                onEnd = { showRouteMenu = false; viewModel.stopNavigation() },
+                onDismiss = { showRouteMenu = false }
             )
         }
 
@@ -411,6 +469,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     language = remember { com.curveon.AppLanguage.current(context) },
                     useMph = telemetry.useMph, mapTheme = mapTheme, obdEnabled = telemetry.isObdEnabled,
                     autoZoom = autoZoom, autoFollowTracks = autoFollow,
+                    offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
                     mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
@@ -423,6 +482,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onObd = viewModel::setObd,
                     onAutoZoom = viewModel::setAutoZoom,
                     onAutoFollow = viewModel::setAutoFollow,
+                    onOffRoute = viewModel::setOffRouteSettings,
                     onDemoRide = { viewModel.toggleDemoRide(); showSettings = false },
                     onDownloadMap = viewModel::downloadMap,
                     onCancelMapDownload = viewModel::cancelMapDownload,

@@ -35,6 +35,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.combinedClickable
 
+/** What a search is for: where to go, a stop on the way, or where a planned trip starts. */
+enum class SearchPurpose { DESTINATION, STOP, START }
+
+/** Search result kind for "from my position" in [SearchPurpose.START]. */
+const val KIND_HERE = "here"
+
 /** "Where to?": offline place/address/POI search, with one-tap "nearest fuel / camping / hotel / dining". */
 @Composable
 fun DestinationSearchDialog(
@@ -46,7 +52,8 @@ fun DestinationSearchDialog(
     recents: List<com.curveon.data.routing.Stop> = emptyList(),
     onPickSaved: (com.curveon.data.model.RouteItem) -> Unit = {},
     onDeleteSaved: (com.curveon.data.model.RouteItem) -> Unit = {},
-    onNearest: (suspend (kinds: List<String>) -> List<SearchResult>)? = null
+    onNearest: (suspend (kinds: List<String>) -> List<SearchResult>)? = null,
+    purpose: SearchPurpose = SearchPurpose.DESTINATION
 ) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
@@ -73,8 +80,20 @@ fun DestinationSearchDialog(
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text(stringResource(R.string.search_placeholder)) },
-                leadingIcon = { Icon(Icons.Default.Search, null, tint = ElectricCyan) },
+                placeholder = {
+                    Text(when (purpose) {
+                        SearchPurpose.DESTINATION -> stringResource(R.string.search_placeholder)
+                        SearchPurpose.STOP -> stringResource(R.string.search_add_stop)
+                        SearchPurpose.START -> stringResource(R.string.search_start_from)
+                    })
+                },
+                leadingIcon = {
+                    when (purpose) {
+                        SearchPurpose.DESTINATION -> Icon(Icons.Default.Search, null, tint = ElectricCyan)
+                        SearchPurpose.STOP -> Icon(Icons.Default.AddLocationAlt, null, tint = NeonAmber)
+                        SearchPurpose.START -> Icon(Icons.Default.TripOrigin, null, tint = ElectricCyan)
+                    }
+                },
                 trailingIcon = {
                     if (searching) CircularProgressIndicator(Modifier.size(20.dp), color = ElectricCyan, strokeWidth = 2.dp)
                     else if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, stringResource(R.string.clear), tint = TextSecondary) }
@@ -106,8 +125,13 @@ fun DestinationSearchDialog(
         LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // Nothing typed: what you are most likely to want, without typing on the bike.
             if (query.isEmpty() && nearest == null) {
-                if (savedRoutes.isNotEmpty()) item { SectionLabel(stringResource(R.string.search_saved_routes)) }
-                items(savedRoutes, key = { "saved${it.id}" }) { item ->
+                if (purpose == SearchPurpose.START) item {
+                    val here = stringResource(R.string.from_here)
+                    ListRow(Icons.Default.MyLocation, here, "", null, onClick = { onPick(SearchResult(here, "", KIND_HERE, 0.0, 0.0, 0.0)) })
+                }
+                val saved = if (purpose == SearchPurpose.DESTINATION) savedRoutes else emptyList()
+                if (saved.isNotEmpty()) item { SectionLabel(stringResource(R.string.search_saved_routes)) }
+                items(saved, key = { "saved${it.id}" }) { item ->
                     ListRow(
                         icon = if (item.isRoundtrip) Icons.Default.Loop else Icons.Default.Bookmark,
                         title = item.title,

@@ -51,6 +51,9 @@ fun RoutePreviewSheet(
     onToggleMotorways: () -> Unit,
     onRemoveStop: (Int) -> Unit,
     onShuffle: () -> Unit,
+    onAddStop: () -> Unit = {},
+    onMoveStop: (index: Int, delta: Int) -> Unit = { _, _ -> },
+    onEditStart: () -> Unit = {},
     onReverse: () -> Unit = {},
     onSave: () -> Unit,
     onGo: () -> Unit,
@@ -85,19 +88,35 @@ fun RoutePreviewSheet(
             SmallIcon(Icons.Default.Close, stringResource(R.string.cancel), onClose)
         }
 
-        // Stops (only A→B trips have them); tap × to drop one.
-        if (goal is NavigationGoal.Destination && goal.stops.isNotEmpty()) {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        // A→B: where from (the planner), the stops with how long to each, and "+ Stop".
+        if (goal is NavigationGoal.Destination) {
+            val route = preview.selectedRoute
+            val legs = remember(route, goal.stops) { route?.let { stopTimes(goal.stops, it) } }
+            var stopMenu by remember { mutableStateOf<Int?>(null) }
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PlanChip(
+                    Icons.Default.TripOrigin,
+                    goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
+                    if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
+                )
                 goal.stops.forEachIndexed { i, s ->
-                    Row(
-                        Modifier.clip(RoundedCornerShape(14.dp)).background(NeonAmber.copy(alpha = 0.18f))
-                            .clickable { onRemoveStop(i) }.padding(start = 10.dp, end = 6.dp, top = 5.dp, bottom = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("${i + 1}. ${s.name}", color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                        Icon(Icons.Default.Close, stringResource(R.string.preview_remove_stop), tint = NeonAmber, modifier = Modifier.size(16.dp))
-                    }
+                    val leg = legs?.getOrNull(i)?.let { sec -> " · %d:%02d".format((sec / 3600).toInt(), ((sec % 3600) / 60).toInt()) } ?: ""
+                    PlanChip(null, "${i + 1}. ${s.name}$leg", NeonAmber, "preview_stop_$i", onClick = { stopMenu = i })
                 }
+                PlanChip(Icons.Default.AddLocationAlt, stringResource(R.string.stop_short), NeonAmber, "preview_add_stop", onAddStop, outlined = true)
+            }
+            if (goal.start != null) Text(stringResource(R.string.preview_planned_hint), color = TextMuted, fontSize = 12.sp, maxLines = 1)
+            stopMenu?.let { i ->
+                StopMenuDialog(
+                    name = goal.stops.getOrNull(i)?.name ?: "",
+                    canMoveEarlier = i > 0, canMoveLater = i < goal.stops.lastIndex,
+                    onMove = { d -> stopMenu = null; onMoveStop(i, d) },
+                    onRemove = { stopMenu = null; onRemoveStop(i) },
+                    onDismiss = { stopMenu = null }
+                )
             }
         }
 
@@ -105,7 +124,7 @@ fun RoutePreviewSheet(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             preview.candidates.forEachIndexed { i, c ->
                 CandidateCard(c, selected = i == preview.selected, single = preview.candidates.size == 1,
-                    modifier = Modifier.weight(1f)) { onSelect(i) }
+                    showArrival = (goal as? NavigationGoal.Destination)?.start == null, modifier = Modifier.weight(1f)) { onSelect(i) }
             }
         }
 
@@ -153,7 +172,7 @@ fun RoutePreviewSheet(
 }
 
 @Composable
-private fun CandidateCard(c: RouteCandidate, selected: Boolean, single: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun CandidateCard(c: RouteCandidate, selected: Boolean, single: Boolean, showArrival: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val route = c.route
     Column(
         modifier
@@ -172,6 +191,17 @@ private fun CandidateCard(c: RouteCandidate, selected: Boolean, single: Boolean,
                 val min = (route.durationSeconds / 60).toInt()
                 Text("%d:%02d".format(min / 60, min % 60), color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
                 Text(stringResource(R.string.distance_km_whole, route.distanceMeters / 1000), color = TextSecondary, fontSize = 13.sp)
+                if (showArrival) {
+                    val arriveAt = route.points.last()
+                    // Leaving now: when you get there, and whether it will be dark by then.
+                    val arrival = System.currentTimeMillis() + (route.durationSeconds * 1000).toLong()
+                    val dark = !com.curveon.routing.Sun.isDay(arriveAt.lat, arriveAt.lon, arrival)
+                    val clock = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(arrival))
+                    Text(
+                        stringResource(R.string.preview_arrive, clock) + if (dark) " · " + stringResource(R.string.preview_after_dark) else "",
+                        color = if (dark) NeonAmber else TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Spacer(Modifier.height(6.dp))
                 CurvinessBar(route.curviness)
                 val gravel = stringResource(R.string.preview_km_gravel, route.unpavedMeters / 1000)
@@ -210,4 +240,41 @@ private fun SmallIcon(icon: ImageVector, description: String, onClick: () -> Uni
         Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) { Icon(icon, description, tint = TextSecondary) }
+}
+
+/** Seconds from the start of [route] to each stop (stops in order along it). */
+private fun stopTimes(stops: List<com.curveon.data.routing.Stop>, route: com.curveon.routing.Route): List<Double> =
+    com.curveon.data.routing.alongDistances(stops, route).map { com.curveon.routing.Routes.secondsAt(route, it) }
+
+@Composable
+private fun PlanChip(icon: ImageVector?, text: String, color: Color, tag: String, onClick: () -> Unit, outlined: Boolean = false) {
+    Row(
+        Modifier.height(36.dp).clip(RoundedCornerShape(18.dp))
+            .background(if (outlined) Color.Transparent else color.copy(alpha = 0.16f))
+            .border(1.dp, color.copy(alpha = if (outlined) 1f else 0.4f), RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick).padding(horizontal = 12.dp).testTag(tag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) { Icon(icon, null, tint = color, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)) }
+        Text(text, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}
+
+/** A previewed stop: move it earlier or later in the trip, or drop it. */
+@Composable
+private fun StopMenuDialog(name: String, canMoveEarlier: Boolean, canMoveLater: Boolean, onMove: (Int) -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            Modifier.clip(RoundedCornerShape(20.dp)).background(CockpitSurface).border(1.dp, CockpitBorder, RoundedCornerShape(20.dp))
+                .padding(20.dp).widthIn(max = 760.dp).testTag("stop_menu"),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (canMoveEarlier) PillButton(Icons.Default.ArrowBack, stringResource(R.string.move_earlier), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f)) { onMove(-1) }
+                if (canMoveLater) PillButton(Icons.Default.ArrowForward, stringResource(R.string.move_later), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f)) { onMove(1) }
+                PillButton(Icons.Default.Close, stringResource(R.string.preview_remove_stop), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("stop_menu_remove"), onRemove)
+            }
+        }
+    }
 }
