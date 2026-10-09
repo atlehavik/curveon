@@ -75,6 +75,11 @@ class PhoneCompanionManager(
 ) {
     private val prefs = context.getSharedPreferences("phone_link", Context.MODE_PRIVATE)
 
+    /** This device is its own phone: no companion, no Bluetooth. */
+    private val _thisDevice = MutableStateFlow(prefs.getBoolean(KEY_THIS_DEVICE, false))
+    val thisDevice: StateFlow<Boolean> = _thisDevice.asStateFlow()
+    private val isThisDevice get() = _thisDevice.value
+
     private val _connectionState = MutableStateFlow(CompanionConnectionState.DISCONNECTED)
     val connectionState: StateFlow<CompanionConnectionState> = _connectionState.asStateFlow()
 
@@ -215,10 +220,6 @@ class PhoneCompanionManager(
 
     fun selectedPhoneAddress(): String? = if (isThisDevice) null else prefs.getString(KEY_ADDRESS, null)
 
-    /** This device is its own phone: no companion, no Bluetooth. */
-    private val _thisDevice = MutableStateFlow(prefs.getBoolean(KEY_THIS_DEVICE, false))
-    val thisDevice: StateFlow<Boolean> = _thisDevice.asStateFlow()
-    private val isThisDevice get() = _thisDevice.value
 
     fun useThisDevice() {
         prefs.edit().putBoolean(KEY_THIS_DEVICE, true).putBoolean(KEY_DEMO, false).remove(KEY_INSTALLED_APPS).apply()

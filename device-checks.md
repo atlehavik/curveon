@@ -11,11 +11,13 @@ Commands assume the device is connected over USB. With both connected, pick one 
 Settings → Phone has a new choice, **This device**: Curveon reads messages, calls and music from the
 apps on the same device, with no companion and no Bluetooth (for riders who have only a phone).
 The companion app still works as before and is still installed on its own. Its code moved into a
-shared `:phone` module, so reinstall it on the Pixel when it's reachable:
-`./gradlew :companion:installDebug`. Tried in the emulator (music apps found, a test message
+shared `:phone` module. Tried in the emulator (music apps found, a test message
 showed on the dashboard).
 
-- [ ] Pixel: reinstall the companion; messages, music, contacts and spoken replies still reach the X7.
+- [ ] Pixel (companion reinstalled 2026-10-09, music already reaches the X7): a message, a call and
+      a spoken reply still come through. After this update the companion's notification access had
+      to be turned on again (the listener moved to `com.curveon.phone`; done with
+      `adb shell cmd notification allow_listener com.curveon.companion/com.curveon.phone.CurveonNotificationListener`).
 - [ ] X7: Settings → Phone → *Use* on the Pixel again after trying "This device" (switching back works).
 - [ ] Optional, with Curveon on the Pixel: *This device* → allow access; a WhatsApp message shows on
       Curveon's message card, and the music card controls Spotify.
