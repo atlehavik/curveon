@@ -519,7 +519,7 @@ fun CurveonMapView(
             .testTag("map_container")
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
-        if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, Modifier.matchParentSize()) }
+        if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, Modifier.matchParentSize()) }
 
         if (currentTurnInstruction != null) {
             Box(
@@ -828,10 +828,11 @@ private fun MapButton(
 
 /**
  * The rider is off screen: a glow on the edge in their direction, stronger the closer they are,
- * so it's clear at a glance where "me" went after panning around.
+ * so it's clear at a glance where "me" went after panning around. Cyan alone vanishes into the day
+ * map's light blue water, so there it sits on a dark halo, like the rider arrow's dark outline.
  */
 @Composable
-private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, modifier: Modifier) {
+private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Boolean, modifier: Modifier) {
     androidx.compose.foundation.Canvas(modifier) {
         val w = size.width; val h = size.height
         val margin = 12.dp.toPx()
@@ -848,13 +849,26 @@ private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, modifier: 
         val beyond = d.getDistance() * (1 - t)
         val near = (1f - beyond / (maxOf(w, h) * 3f)).coerceIn(0.35f, 1f)
         val radius = 110.dp.toPx() * (0.7f + 0.3f * near)
-        drawCircle(
+        if (dark) drawCircle(
             androidx.compose.ui.graphics.Brush.radialGradient(
                 listOf(ElectricCyan.copy(alpha = 0.75f * near), ElectricCyan.copy(alpha = 0.3f * near), Color.Transparent),
                 center = edge, radius = radius
             ),
             radius = radius, center = edge
-        )
+        ) else {
+            // A solid cyan centre fading into a dark ring, then out into the map.
+            val r = radius * 0.8f
+            drawCircle(
+                androidx.compose.ui.graphics.Brush.radialGradient(
+                    0f to ElectricCyan.copy(alpha = near),
+                    0.35f to ElectricCyan.copy(alpha = 0.9f * near),
+                    0.55f to CockpitBackground.copy(alpha = 0.75f * near),
+                    1f to Color.Transparent,
+                    center = edge, radius = r
+                ),
+                radius = r, center = edge
+            )
+        }
     }
 }
 
