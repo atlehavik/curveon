@@ -829,7 +829,7 @@ private fun MapButton(
 /**
  * The rider is off screen: a glow on the edge in their direction, stronger the closer they are,
  * so it's clear at a glance where "me" went after panning around. Cyan alone vanishes into the day
- * map's light blue water, so there it sits on a dark halo, like the rider arrow's dark outline.
+ * map's light blue water, so there it sits in a dark ring, like the rider arrow's dark outline.
  */
 @Composable
 private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Boolean, modifier: Modifier) {
@@ -849,28 +849,22 @@ private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Bool
         val beyond = d.getDistance() * (1 - t)
         val near = (1f - beyond / (maxOf(w, h) * 3f)).coerceIn(0.35f, 1f)
         val radius = 110.dp.toPx() * (0.7f + 0.3f * near)
-        if (dark) drawCircle(
-            androidx.compose.ui.graphics.Brush.radialGradient(
-                listOf(ElectricCyan.copy(alpha = 0.75f * near), ElectricCyan.copy(alpha = 0.3f * near), Color.Transparent),
-                center = edge, radius = radius
-            ),
-            radius = radius, center = edge
-        ) else {
-            // A solid cyan centre fading into a dark ring, then out into the map. It sits partly
-            // beyond the edge, so only a small cap of it shows.
-            val r = radius * 0.55f
-            val at = edge + d / d.getDistance() * (r * 0.3f)
-            drawCircle(
-                androidx.compose.ui.graphics.Brush.radialGradient(
-                    0f to ElectricCyan.copy(alpha = near),
-                    0.35f to ElectricCyan.copy(alpha = 0.9f * near),
-                    0.55f to CockpitBackground.copy(alpha = 0.6f * near),
-                    1f to Color.Transparent,
-                    center = at, radius = r
-                ),
-                radius = r, center = at
-            )
-        }
+        // A small cap peeking in from the edge: the circle sits partly beyond it. On the day map the
+        // cyan centre fades into a dark ring, on the night map straight into the map.
+        val r = radius * 0.55f
+        val at = edge + d / d.getDistance() * (r * 0.3f)
+        val stops = if (dark) arrayOf(
+            0f to ElectricCyan.copy(alpha = near),
+            0.35f to ElectricCyan.copy(alpha = 0.8f * near),
+            0.7f to ElectricCyan.copy(alpha = 0.2f * near),
+            1f to Color.Transparent
+        ) else arrayOf(
+            0f to ElectricCyan.copy(alpha = near),
+            0.35f to ElectricCyan.copy(alpha = 0.9f * near),
+            0.55f to CockpitBackground.copy(alpha = 0.6f * near),
+            1f to Color.Transparent
+        )
+        drawCircle(androidx.compose.ui.graphics.Brush.radialGradient(*stops, center = at, radius = r), radius = r, center = at)
     }
 }
 
