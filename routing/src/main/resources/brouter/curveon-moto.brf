@@ -10,7 +10,7 @@
 assign validForCars = true
 
 assign road_style      = 0      # %road_style% | 0 = fastest, 1 = curvy, 2 = very curvy | number
-assign surface_pref    = 0      # %surface_pref% | 0 = paved only, 1 = mixed, 2 = gravel | number
+assign surface_pref    = 0      # %surface_pref% | 0 = paved only, 1 = mixed, 2 = gravel, 3 = offroad | number
 assign avoid_ferries   = false  # %avoid_ferries% | Avoid ferries | boolean
 assign avoid_motorways = false  # %avoid_motorways% | Avoid motorways | boolean
 assign avoid_toll      = false  # %avoid_toll% | Avoid toll roads | boolean
@@ -35,7 +35,8 @@ assign processUnusedTags            = true   # export maxspeed etc. for the spee
 # Search: pass 1 is a quick greedy A* that finds some route; pass 2 then finds the best one but
 # skips anything that cannot beat it. pass2coefficient is the A* estimate of remaining cost per
 # metre of straight-line distance; it must not exceed the cheapest costfactor (1.0 for tarmac,
-# 0.85 for gravel when gravel is preferred) or the result is no longer the best route.
+# 0.85 for gravel when gravel is preferred, 0.55 for a rough track with offroad) or the result is no
+# longer the best route.
 assign pass1coefficient = 1.5
 
 assign fastest    = equal road_style 0
@@ -45,9 +46,10 @@ assign very_curvy = equal road_style 2
 assign paved_only   = equal surface_pref 0
 assign mixed        = equal surface_pref 1
 assign gravel_lover = equal surface_pref 2
+assign offroad      = equal surface_pref 3
 assign no_tracks    = and paved_only ( equal tracks_last_resort 0 )
 
-assign pass2coefficient = if gravel_lover then 0.85 else 1.0
+assign pass2coefficient = if offroad then 0.55 else if gravel_lover then 0.85 else 1.0
 
 ---context:way
 
@@ -98,6 +100,11 @@ assign is_unpaved =
        if surface= then is_track
        else surface=unpaved|gravel|ground|dirt|compacted|fine_gravel|pebblestone|earth|sand|grass|mud|clay|rock
 
+# Softer than gravel: earth, grass, sand, mud, rock, or a rough (grade 3-5) track without a surface tag.
+assign is_soft =
+       if surface= then ( and is_track tracktype=grade3|grade4|grade5 )
+       else surface=ground|dirt|earth|sand|grass|mud|clay|rock
+
 assign turncost = if fastest then 30 else 10
 
 assign initialclassifier = if route=ferry then classifier_ferry else classifier_none
@@ -109,9 +116,10 @@ assign initialcost =
        if route=ferry then ( if avoid_ferries then avoided_ferry_cost else 3000 )
        else 0
 
-# Base cost per metre by road class and riding style
+# Base cost per metre by road class and riding style. Offroad: a track is as good as the best road.
 assign class_cost =
-  if fastest then
+  if and offroad is_track then 1.0
+  else if fastest then
   (
     switch highway=motorway                  1.0
     switch highway=motorway_link             1.3
@@ -165,19 +173,30 @@ assign surface_factor =
   (
     if paved_only then 8.0
     else if mixed then 1.4
+    else if offroad then ( if is_soft then 0.7 else 0.9 )
     else 0.85
   )
   else
   (
-    if gravel_lover then 1.15 else 1.0
+    if offroad then 1.4
+    else if gravel_lover then 1.15 else 1.0
   )
 
 # Any track is a road an adventure bike can ride. With Tarmac it is a last resort (to reach a
 # place that is only on a track), never a short cut; rougher grades cost more, none is forbidden.
+# Offroad seeks the rough grades out; only grade 5 (barely a track) costs a little extra.
 assign track_factor =
   if not is_track then 1.0
   else if no_tracks then 10000
   else if paved_only then 6.0
+  else if offroad then
+  (
+    switch tracktype=grade1 1.0
+    switch tracktype=grade2 0.9
+    switch tracktype=grade3|grade4 0.8
+    switch tracktype=grade5 1.1
+    0.9
+  )
   else switch tracktype=grade1|grade2 1.0
        switch tracktype=grade3 ( if gravel_lover then 1.3 else 3.0 )
        switch tracktype=grade4 ( if gravel_lover then 2.0 else 5.0 )

@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 enum class RoadTypePreference { FASTEST, CURVY, VERY_CURVY }
 
-enum class GroundPreference { PAVED, MIXED, GRAVEL }
+enum class GroundPreference { PAVED, MIXED, GRAVEL, OFFROAD }
 
 /** Clockwise from north, in the order of R.string.compass_points. */
 enum class CompassDirection(val angleDegrees: Float) {

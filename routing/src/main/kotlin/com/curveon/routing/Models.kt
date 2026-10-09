@@ -7,7 +7,7 @@ data class NoGo(val center: LatLon, val radiusMeters: Double)
 
 enum class RoadStyle { FASTEST, CURVY, VERY_CURVY }
 
-enum class SurfacePreference { PAVED, MIXED, GRAVEL }
+enum class SurfacePreference { PAVED, MIXED, GRAVEL, OFFROAD }
 
 data class RouteOptions(
     val roadStyle: RoadStyle = RoadStyle.CURVY,

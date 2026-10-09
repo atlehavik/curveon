@@ -314,6 +314,7 @@ fun CurveonMapView(
     LaunchedEffect(style, routePoints, groundPreference) {
         val s = style ?: return@LaunchedEffect
         val color = when (groundPreference) {
+            GroundPreference.OFFROAD -> "#D500F9"
             GroundPreference.GRAVEL -> "#FF9100"
             GroundPreference.MIXED -> "#00C853"
             GroundPreference.PAVED -> if (dark) "#00E5FF" else "#0091EA"

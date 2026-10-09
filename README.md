@@ -18,7 +18,7 @@ and [dashboard.md](dashboard.md) for the goals.
   Download countries, by continent like DMD2; each country brings its routing data and offline
   search (full from the public curveon-data repo, or built from the map). Several
   countries show together. Dark style, heading-up follow, long-press to navigate somewhere.
-- **Offline routing** with Fastest / Curvy / Super curvy, Tarmac / Mixed / Gravel, avoid
+- **Offline routing** with Fastest / Curvy / Super curvy, Tarmac / Mixed / Gravel / Offroad, avoid
   ferries / motorways; ETA and remaining distance; rerouting when you leave the route.
   Every road a motorcycle may use is routable, tracks of any grade included: with Tarmac a track is
   only a last resort (to reach a place that is on one), never a short cut. Cycle paths and footpaths

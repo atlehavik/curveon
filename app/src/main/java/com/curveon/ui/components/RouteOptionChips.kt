@@ -28,7 +28,7 @@ import com.curveon.ui.theme.*
 
 /**
  * The three route options, the same everywhere routes are planned: one chip cycling
- * Tarmac → Mixed → Gravel, and Ferries / Motorways struck through when avoided.
+ * Tarmac → Mixed → Gravel → Offroad, and Ferries / Motorways struck through when avoided.
  */
 @Composable
 fun RouteOptionChips(
@@ -45,6 +45,7 @@ fun RouteOptionChips(
             SurfacePreference.PAVED -> stringResource(R.string.surface_tarmac)
             SurfacePreference.MIXED -> stringResource(R.string.surface_mixed)
             SurfacePreference.GRAVEL -> stringResource(R.string.surface_gravel)
+            SurfacePreference.OFFROAD -> stringResource(R.string.surface_offroad)
         }
         OptionChip(surfaceLabel, active = surface != SurfacePreference.PAVED, onClick = {
             onSurface(SurfacePreference.entries[(surface.ordinal + 1) % SurfacePreference.entries.size])

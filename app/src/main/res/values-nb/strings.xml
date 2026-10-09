@@ -41,6 +41,7 @@
     <string name="surface_tarmac">Asfalt</string>
     <string name="surface_mixed">Blandet</string>
     <string name="surface_gravel">Grus</string>
+    <string name="surface_offroad">Offroad</string>
     <string name="ferries">Ferjer</string>
     <string name="motorways">Motorveier</string>
 

@@ -61,6 +61,19 @@ class BRouterEngineTest {
     }
 
     @Test
+    fun `offroad rides more tracks than gravel`() {
+        val a = LatLon(60.7945, 11.0680) // Hamar
+        val b = LatLon(61.1153, 10.4662) // Lillehammer
+        val gravel = engine.route(listOf(a, b), RouteOptions(RoadStyle.CURVY, SurfacePreference.GRAVEL))
+        val offroad = engine.route(listOf(a, b), RouteOptions(RoadStyle.CURVY, SurfacePreference.OFFROAD))
+        describe("gravel", gravel)
+        describe("offroad", offroad)
+        fun Route.trackMeters() = points.zipWithNext().sumOf { (p, q) -> if (q.highway == "track") q.distanceFromStart - p.distanceFromStart else 0.0 }
+        println("            tracks: gravel %.1f km, offroad %.1f km".format(gravel.trackMeters() / 1000, offroad.trackMeters() / 1000))
+        assertTrue(offroad.trackMeters() > gravel.trackMeters())
+    }
+
+    @Test
     fun `roundtrip from oslo heading north is about the requested length`() {
         val planner = RoundtripPlanner(engine)
         for (style in listOf(RoadStyle.FASTEST, RoadStyle.VERY_CURVY)) {

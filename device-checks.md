@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-09 — Offroad as a fourth surface choice
+
+The surface chip now cycles Tarmac → Mixed → Gravel → Offroad. Offroad goes looking for tracks
+(rough grades too) and dirt, grass and earth, before gravel; tarmac only where there's nothing else.
+It still keeps to roads and tracks a motorcycle is allowed on (no paths or trails). The route line
+is purple. Hamar–Lillehammer in the tests: Gravel 19 km unpaved and no tracks, Offroad 33 km and
+9 km of tracks.
+
+- [ ] Plan a trip with Offroad near home: the tracks it picks are ones the X7 bike can actually
+      ride (if grade 4–5 tracks turn out too rough, say so and they'll cost more).
+- [ ] The purple route line is easy to see on both the day and the night map.
+
 ## 2026-10-09 — Warning when a tarmac route forces gravel
 
 With Tarmac chosen, a route that still has gravel (100 m or more) shows a framed warning above GO:

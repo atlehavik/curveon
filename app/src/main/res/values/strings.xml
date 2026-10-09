@@ -42,6 +42,7 @@
     <string name="surface_tarmac">Tarmac</string>
     <string name="surface_mixed">Mixed</string>
     <string name="surface_gravel">Gravel</string>
+    <string name="surface_offroad">Offroad</string>
     <string name="ferries">Ferries</string>
     <string name="motorways">Motorways</string>
 
