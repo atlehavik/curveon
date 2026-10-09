@@ -8,14 +8,14 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 ## 2026-10-09 — Gravel and soft roads on the map
 
-From zoom 11 in, roads the routing data knows as unpaved are dashed over the map: brown = gravel or
-compacted, red on black = softer, rough or unknown ground. Read from the routing segments, so it works
+From zoom 11 in, roads the routing data knows as unpaved are dashed over the map: grey = gravel or
+compacted, brown = softer, rough or unknown ground. Read from the routing segments, so it works
 wherever routing data is installed. Tried in the emulator (forest roads east of Elverum).
 
 - [ ] On the X7, zoom to a forest-road area (or ride somewhere with gravel): the dashes appear
   within about a second after the map stops moving, and panning stays smooth.
 - [ ] Spot-check a road you know is gravel and one you know is tarmac: right colour?
-- [ ] Dark map: the brown and red still stand out.
+- [ ] Dark map: the grey and brown still show.
 
 ## 2026-10-08 — Tracks with Tarmac
 

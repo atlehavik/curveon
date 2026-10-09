@@ -611,8 +611,9 @@ private fun arrowBitmap(): android.graphics.Bitmap {
 }
 
 /**
- * Gravel (dashed brown) and softer or unknown ground (dashed red on black) over the map's roads,
- * under the road names. Wider for bigger roads, like the map draws them.
+ * Gravel (dashed grey) and softer or unknown ground (dashed brown) over the map's roads, under
+ * the road names, in quiet colours that sit with the map's own roads. Wider for bigger roads, like
+ * the map draws them.
  */
 private fun addSurfaceLayers(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(SURFACE))
@@ -623,14 +624,11 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
     val gravel = E.eq(E.get("kind"), E.literal("gravel"))
     val soft = E.eq(E.get("kind"), E.literal("soft"))
     val layers = listOf(
-        LineLayer("$SURFACE-soft-base", SURFACE).withProperties(
-            lineColor("#000000"), lineWidth(width(3.2f)), lineOpacity(if (dark) 0.9f else 0.75f), lineJoin(Property.LINE_JOIN_ROUND)
-        ).withFilter(soft),
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
-            lineColor(if (dark) "#FF5252" else "#E53935"), lineWidth(width(3.2f)), lineDasharray(arrayOf(2f, 1.5f))
+            lineColor(if (dark) "#A07850" else "#9C6B3E"), lineWidth(width(2.8f)), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),
         LineLayer("$SURFACE-gravel", SURFACE).withProperties(
-            lineColor(if (dark) "#C8955C" else "#8D5524"), lineWidth(width(3.2f)), lineDasharray(arrayOf(2.5f, 1.5f))
+            lineColor(if (dark) "#8A919C" else "#9AA0A6"), lineWidth(width(2.8f)), lineDasharray(arrayOf(2.5f, 1.5f))
         ).withFilter(gravel)
     )
     // Under the downloaded map's first label layer, so road names stay on top (the online map's
