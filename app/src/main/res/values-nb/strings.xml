@@ -446,6 +446,7 @@
     <string name="from_place">Fra %1$s</string>
     <string name="search_add_stop">Legg til stopp</string>
     <string name="search_start_from">Start fra</string>
+    <string name="search_change_start">Trykk for å starte et annet sted</string>
     <string name="pick_on_map">Velg i kartet</string>
     <string name="pick_hint_destination">Trykk i kartet der du vil kjøre</string>
     <string name="pick_hint_stop">Trykk i kartet der du vil stoppe</string>

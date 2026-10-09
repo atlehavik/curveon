@@ -719,8 +719,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         avoidMotorways = settings.getBoolean("avoidMotorways", false)
     ).also { navigator.preferredStyle = it.roadStyle }
 
-    fun previewDestination(point: GeoPoint, name: String) {
-        navigator.previewDestination(name, LatLon(point.latitude, point.longitude), lastOptions)
+    /** Preview a trip to [point], from [start] (null = from where I am). */
+    fun previewDestination(point: GeoPoint, name: String, start: GeoPoint? = null, startName: String = "") {
+        navigator.previewDestination(name, LatLon(point.latitude, point.longitude), lastOptions,
+            start = start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) })
     }
 
     /** Plan the previewed trip from [point] (null = from where I am). */

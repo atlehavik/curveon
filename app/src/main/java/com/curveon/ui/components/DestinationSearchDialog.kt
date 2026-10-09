@@ -61,7 +61,10 @@ fun DestinationSearchDialog(
     /** "Pick on map": the dialog shrinks onto the map and this is called once it's gone. */
     onPickOnMap: (() -> Unit)? = null,
     /** Coming back from picking on the map: grow out of the map instead of just appearing. */
-    growIn: Boolean = false
+    growIn: Boolean = false,
+    /** A new trip: where it starts (null = my position), shown above the results; tap to change it. */
+    startName: String? = null,
+    onChangeStart: (() -> Unit)? = null
 ) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
@@ -156,6 +159,12 @@ fun DestinationSearchDialog(
         }
 
         LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Where the trip starts: set it first so the route isn't worked out from here for nothing.
+            // A start elsewhere stays in sight while typing.
+            if (onChangeStart != null && (startName != null || query.isEmpty() && nearest == null)) item {
+                ListRow(Icons.Default.TripOrigin, startName?.let { stringResource(R.string.from_place, it) } ?: stringResource(R.string.from_here),
+                    stringResource(R.string.search_change_start), null, onClick = onChangeStart)
+            }
             // Nothing typed: what you are most likely to want, without typing on the bike.
             if (query.isEmpty() && nearest == null) {
                 if (purpose == SearchPurpose.START) item {

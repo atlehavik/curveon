@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-09 — Choose the start before the destination
+
+"Where to?" now has a "From my position" row at the top. Tap it to pick the start first (search, a
+recent place or the map), then search for the destination. The route is then worked out from
+that start straight away, not from where you are first. Tried in the emulator (from Lillehammer to Hamar).
+
+- [ ] Plan a trip that starts far away (another part of the country): the preview comes up quickly
+      and reads "From …".
+- [ ] Choosing the start with "Pick on map" brings you back to "Where to?" with that start.
+
 ## 2026-10-09 — Offroad as a fourth surface choice
 
 The surface chip now cycles Tarmac → Mixed → Gravel → Offroad. Offroad goes looking for tracks

@@ -110,6 +110,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** "Pick on map": what the search was for while the rider taps the map; null when not picking. */
     var mapPick by remember { mutableStateOf<SearchPurpose?>(null) }
     var picked by remember { mutableStateOf<Pair<GeoPoint, String?>?>(null) }
+    /** A new trip set to start elsewhere in "Where to?", before the destination; null = from here. */
+    var planStart by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
+    /** The start search was opened from "Where to?": its pick goes back there. */
+    var startFirst by remember { mutableStateOf(false) }
     /** The search reopens growing out of the pick bar. */
     var searchGrowIn by remember { mutableStateOf(false) }
     /** Editing the previewed trip by dragging it on the map. */
@@ -144,7 +148,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // Picking a place: while riding or planning a trip, ask what it is; otherwise go straight to the preview.
     val planning = preview?.goal is com.curveon.data.routing.NavigationGoal.Destination
     val pickPlace: (GeoPoint, String) -> Unit = { point, name ->
-        if (isNavigating || planning) pendingPlace = point to name else viewModel.previewDestination(point, name)
+        if (isNavigating || planning) pendingPlace = point to name
+        else viewModel.previewDestination(point, name, planStart?.first, planStart?.second ?: "")
     }
 
     // The search result (or picked map point) for each purpose.
@@ -156,7 +161,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 is StopTarget.Before -> viewModel.insertPreviewStop(t.index, point, name)
                 is StopTarget.Instead -> viewModel.replacePreviewStop(t.index, point, name)
             }
-            SearchPurpose.START -> viewModel.setPreviewStart(point, name)
+            SearchPurpose.START -> if (startFirst) {
+                // Back to "Where to?" (out of the map if picked there) to choose the destination.
+                planStart = point to name
+                startFirst = false
+                searchGrowIn = mapPick != null
+                searchPurpose = SearchPurpose.DESTINATION
+            } else viewModel.setPreviewStart(point, name)
         }
     }
     val startMapPick: (SearchPurpose) -> Unit = { purpose ->
@@ -169,11 +180,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         searchPurpose = null
         searchGrowIn = false
         stopTarget = null
+        planStart = null
+        startFirst = false
     }
     val endMapPick: () -> Unit = {
         mapPick = null
         picked = null
         stopTarget = null
+        startFirst = false
+        if (searchPurpose == null) planStart = null // not on the way back to "Where to?"
     }
     // Picking on the map, editing the trip on it, or the search back up from the pick bar: the map
     // goes full-screen, and the dashboard comes back afterwards if that's where the rider was.
@@ -473,16 +488,19 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
-        searchPurpose?.let { purpose ->
+        searchPurpose?.let { purpose -> key(purpose) {
             DestinationSearchDialog(
                 searchStatus = remember { viewModel.searchStatus() },
                 onSearch = { viewModel.searchPlaces(it) },
                 onPick = { r ->
-                    if (purpose == SearchPurpose.START && r.kind == KIND_HERE) viewModel.setPreviewStart(null, "")
-                    else usePlace(purpose, GeoPoint(r.lat, r.lon), r.name)
-                    closeSearch()
+                    if (purpose == SearchPurpose.START && r.kind == KIND_HERE) {
+                        if (startFirst) { planStart = null; startFirst = false; searchPurpose = SearchPurpose.DESTINATION }
+                        else viewModel.setPreviewStart(null, "")
+                    } else usePlace(purpose, GeoPoint(r.lat, r.lon), r.name)
+                    if (searchPurpose == purpose) closeSearch()
                 },
-                onDismiss = closeSearch,
+                // Leaving the start search opened from "Where to?" goes back there.
+                onDismiss = { if (startFirst) { startFirst = false; searchPurpose = SearchPurpose.DESTINATION } else closeSearch() },
                 savedRoutes = savedRoutes,
                 recents = remember(purpose) { viewModel.recents() },
                 onPickSaved = { closeSearch(); viewModel.previewSaved(it) },
@@ -490,9 +508,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onNearest = { viewModel.nearest(it) },
                 purpose = purpose,
                 onPickOnMap = { startMapPick(purpose) },
-                growIn = searchGrowIn
+                growIn = searchGrowIn,
+                startName = planStart?.second,
+                onChangeStart = if (purpose == SearchPurpose.DESTINATION && !isNavigating && !planning) {
+                    { startFirst = true; searchGrowIn = false; searchPurpose = SearchPurpose.START }
+                } else null
             )
-        }
+        } }
 
         pendingPlace?.let { (point, name) ->
             PlaceActionDialog(

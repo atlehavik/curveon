@@ -447,6 +447,7 @@
     <string name="from_place">From %1$s</string>
     <string name="search_add_stop">Add stop</string>
     <string name="search_start_from">Start from</string>
+    <string name="search_change_start">Tap to start somewhere else</string>
     <string name="pick_on_map">Pick on map</string>
     <string name="pick_hint_destination">Tap the map where you want to go</string>
     <string name="pick_hint_stop">Tap the map where you want to stop</string>
