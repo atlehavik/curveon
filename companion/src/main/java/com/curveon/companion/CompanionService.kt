@@ -1,5 +1,6 @@
 package com.curveon.companion
 
+import com.curveon.phone.*
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -44,9 +45,9 @@ class CompanionService : Service() {
         startForegroundCompat()
         if (!running) {
             running = true
-            CompanionHub.voice = VoiceReplier(this)
-            CompanionHub.phoneBook = PhoneBook(this)
-            CompanionHub.update { it.copy(serviceRunning = true, lastEvent = "Waiting for the tablet…") }
+            PhoneHub.voice = VoiceReplier(this)
+            PhoneHub.phoneBook = PhoneBook(this)
+            PhoneHub.update { it.copy(serviceRunning = true, lastEvent = "Waiting for the tablet…") }
             thread(name = "curveon-bt-server", isDaemon = true) { acceptLoop() }
             registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         }
@@ -57,10 +58,10 @@ class CompanionService : Service() {
         running = false
         runCatching { serverSocket?.close() }
         runCatching { unregisterReceiver(batteryReceiver) }
-        CompanionHub.voice = null
-        CompanionHub.phoneBook?.shutdown()
-        CompanionHub.phoneBook = null
-        CompanionHub.update { it.copy(serviceRunning = false, tabletName = null, lastEvent = "Stopped") }
+        PhoneHub.voice = null
+        PhoneHub.phoneBook?.shutdown()
+        PhoneHub.phoneBook = null
+        PhoneHub.update { it.copy(serviceRunning = false, tabletName = null, lastEvent = "Stopped") }
         super.onDestroy()
     }
 
@@ -74,7 +75,7 @@ class CompanionService : Service() {
             val status = phoneStatus(intent)
             if (status == lastStatus) return
             lastStatus = status
-            CompanionHub.broadcast(status)
+            PhoneHub.broadcast(status)
         }
     }
 
@@ -97,7 +98,7 @@ class CompanionService : Service() {
         while (running) {
             try {
                 if (adapter == null || !adapter.isEnabled) {
-                    CompanionHub.update { it.copy(lastEvent = "Bluetooth is off") }
+                    PhoneHub.update { it.copy(lastEvent = "Bluetooth is off") }
                     Thread.sleep(5_000)
                     continue
                 }
@@ -109,7 +110,7 @@ class CompanionService : Service() {
             } catch (e: Exception) {
                 if (running) {
                     Log.w(TAG, "Bluetooth server error", e)
-                    CompanionHub.update { it.copy(lastEvent = "Bluetooth: ${e.message}") }
+                    PhoneHub.update { it.copy(lastEvent = "Bluetooth: ${e.message}") }
                     Thread.sleep(3_000)
                 }
             }
@@ -120,9 +121,10 @@ class CompanionService : Service() {
     private fun serve(socket: BluetoothSocket) {
         val name = runCatching { socket.remoteDevice.name }.getOrNull() ?: "tablet"
         val writer = MessageWriter(socket.outputStream)
+        val sink: (Message) -> Unit = writer::write
         try {
             writer.write(Message.Hello(Build.MODEL))
-            CompanionHub.addTablet(writer, name)
+            PhoneHub.addTablet(sink, name)
             writer.write(phoneStatus().also { lastStatus = it })
             writer.write(MediaApps.installed(this))
             val reader = MessageReader(socket.inputStream)
@@ -131,13 +133,13 @@ class CompanionService : Service() {
                 when (msg) {
                     is Message.Ping -> writer.write(Message.Ping)
                     is Message.Hello -> Unit
-                    else -> CompanionHub.handle(msg)
+                    else -> PhoneHub.handle(msg)
                 }
             }
         } catch (e: Exception) {
             Log.i(TAG, "Tablet connection ended: ${e.message}")
         } finally {
-            CompanionHub.removeTablet(writer)
+            PhoneHub.removeTablet(sink)
             runCatching { socket.close() }
         }
     }

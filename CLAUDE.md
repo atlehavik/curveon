@@ -43,7 +43,9 @@ commands are in [README.md](README.md); goals in [App plan.md](App%20plan.md) an
   word-for-word) and as short as the English so it fits the cockpit cards. Names from data (places,
   roads, tracks) are not translated.
 - **Companion is a background service** (Bluetooth link, notifications, media, voice replies), not a
-  navigation app: keep its UI to setup/status. It stays in this repo so both apps share `:protocol`.
+  navigation app: keep its UI to setup/status. It stays a separately installed app, in this repo so
+  both apps share `:protocol`. What it reads on the phone lives in `:phone`, which Curveon also uses
+  for "This device" (Curveon on a phone being its own companion); changes there affect both.
 - **Device checks.** Whenever the user should test or run something on the real X7 or Pixel
   (e.g. `adb logcat -s PhoneLink` after a call), add it to [device-checks.md](device-checks.md)
   (newest first, checkboxes) in the same change, as well as saying it in chat. Remove items once

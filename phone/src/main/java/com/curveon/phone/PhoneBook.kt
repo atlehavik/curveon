@@ -1,4 +1,4 @@
-package com.curveon.companion
+package com.curveon.phone
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -27,29 +27,29 @@ class PhoneBook(private val context: Context) {
     fun shutdown() = worker.shutdownNow()
 
     fun sendPhoneBook() = worker.execute {
-        runCatching { CompanionHub.broadcast(contacts()) }.onFailure { Log.w(TAG, "Contacts", it) }
-        runCatching { CompanionHub.broadcast(recentCalls()) }.onFailure { Log.w(TAG, "Call log", it) }
+        runCatching { PhoneHub.broadcast(contacts()) }.onFailure { Log.w(TAG, "Contacts", it) }
+        runCatching { PhoneHub.broadcast(recentCalls()) }.onFailure { Log.w(TAG, "Call log", it) }
     }
 
     fun sendPhotos(keys: List<String>) = worker.execute {
         // Small batches: photos show up as they come instead of all at once.
         keys.distinct().chunked(8).forEach { batch ->
-            CompanionHub.broadcast(Message.ContactPhotos(batch.map { Message.Photo(it, runCatching { photo(it) }.getOrNull()) }))
+            PhoneHub.broadcast(Message.ContactPhotos(batch.map { Message.Photo(it, runCatching { photo(it) }.getOrNull()) }))
         }
     }
 
     @SuppressLint("MissingPermission") // checked
     fun placeCall(number: String) {
         if (!has(Manifest.permission.CALL_PHONE)) {
-            CompanionHub.broadcast(Message.PhoneError("Allow calls in the Curveon Companion app"))
+            PhoneHub.broadcast(Message.PhoneError("Allow Curveon to make calls on the phone"))
             return
         }
         runCatching {
             context.getSystemService(TelecomManager::class.java).placeCall(Uri.fromParts("tel", number, null), Bundle())
-            CompanionHub.update { it.copy(lastEvent = "Calling $number") }
+            PhoneHub.update { it.copy(lastEvent = "Calling $number") }
         }.onFailure {
             Log.w(TAG, "Call failed", it)
-            CompanionHub.broadcast(Message.PhoneError("Couldn't call $number"))
+            PhoneHub.broadcast(Message.PhoneError("Couldn't call $number"))
         }
     }
 
@@ -139,7 +139,7 @@ class PhoneBook(private val context: Context) {
         // The full-size photo when there is one (favourite tiles are big); the 96 px thumbnail otherwise.
         val bitmap = ContactsContract.Contacts.openContactPhotoInputStream(context.contentResolver, contact, true)
             ?.use { BitmapFactory.decodeStream(it) } ?: return null
-        return CompanionHub.encodeJpeg(bitmap, PHOTO_PX, 82)
+        return PhoneHub.encodeJpeg(bitmap, PHOTO_PX, 82)
     }
 
     // ---------------------------------------------------------------- helpers

@@ -43,6 +43,16 @@
             android:name=".RideService"
             android:exported="false"
             android:foregroundServiceType="location" />
+        <!-- "This device" as the phone: messages, calls and music from this device's own apps. -->
+        <service
+            android:name="com.curveon.phone.CurveonNotificationListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

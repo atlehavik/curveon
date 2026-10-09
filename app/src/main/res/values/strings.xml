@@ -510,6 +510,12 @@
     <string name="link_other_phones">Other paired phones</string>
     <string name="link_paired_phones">Paired phones</string>
     <string name="link_use">Use</string>
+    <string name="link_this_device">This device</string>
+    <string name="link_this_device_hint">Messages, calls and music from the apps on this device, without Curveon Companion</string>
+    <string name="link_this_no_notification_access">Notification access is off, so no messages or music.</string>
+    <string name="link_this_no_contacts">Contacts, call log, calls or the microphone aren\'t allowed.</string>
+    <string name="link_allow">Allow</string>
+    <string name="link_stop_this_device">Stop</string>
     <string name="link_music_apps">Music apps</string>
     <string name="link_music_apps_hint">Star your favorites: they are always in the music card, and swiping to one starts it on the phone if it isn\'t running.</string>
     <string name="link_music_apps_none">Connect the phone to find its music apps.</string>

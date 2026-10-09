@@ -1,5 +1,6 @@
 package com.curveon.companion
 
+import com.curveon.phone.*
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -43,7 +44,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         // Opening the app is enough to (re)start sharing, e.g. after an update or a reboot.
-        if (!CompanionHub.status.value.serviceRunning && has(Manifest.permission.BLUETOOTH_CONNECT) && !stoppedByUser) {
+        if (!PhoneHub.status.value.serviceRunning && has(Manifest.permission.BLUETOOTH_CONNECT) && !stoppedByUser) {
             CompanionService.start(this)
         }
     }
@@ -55,7 +56,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun Screen() {
-        val status by CompanionHub.status.collectAsStateWithLifecycle()
+        val status by PhoneHub.status.collectAsStateWithLifecycle()
         var refresh by remember { mutableIntStateOf(0) }
         val lifecycle = LocalLifecycleOwner.current.lifecycle
         LaunchedEffect(Unit) { lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { refresh++ } }

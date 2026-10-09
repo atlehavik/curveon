@@ -28,5 +28,6 @@ include(":app")
 include(":routing")
 include(":protocol")
 include(":companion")
+include(":phone")
 include(":pmtiles")
 

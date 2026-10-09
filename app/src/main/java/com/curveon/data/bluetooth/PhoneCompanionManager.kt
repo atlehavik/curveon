@@ -17,6 +17,11 @@ import android.util.Base64
 import android.util.Log
 import com.curveon.data.model.MusicTrack
 import com.curveon.data.model.NotificationItem
+import com.curveon.phone.CurveonNotificationListener
+import com.curveon.phone.MediaApps
+import com.curveon.phone.PhoneBook
+import com.curveon.phone.PhoneHub
+import com.curveon.phone.VoiceReplier
 import com.curveon.protocol.Message
 import com.curveon.protocol.MessageReader
 import com.curveon.protocol.MessageWriter
@@ -60,7 +65,9 @@ data class VoiceReply(
 
 /**
  * Tablet side of the phone link. Connects to the Curveon Companion app on the paired phone over
- * Bluetooth RFCOMM and keeps reconnecting while the app runs.
+ * Bluetooth RFCOMM and keeps reconnecting while the app runs. Or, with "This device" chosen (Curveon
+ * running on the phone itself), reads the same messages, calls and music straight from this
+ * device through [PhoneHub], with no companion and no Bluetooth.
  */
 class PhoneCompanionManager(
     private val context: Context,
@@ -206,7 +213,22 @@ class PhoneCompanionManager(
 
     // ------------------------------------------------------------------ connection
 
-    fun selectedPhoneAddress(): String? = prefs.getString(KEY_ADDRESS, null)
+    fun selectedPhoneAddress(): String? = if (isThisDevice) null else prefs.getString(KEY_ADDRESS, null)
+
+    /** This device is its own phone: no companion, no Bluetooth. */
+    private val _thisDevice = MutableStateFlow(prefs.getBoolean(KEY_THIS_DEVICE, false))
+    val thisDevice: StateFlow<Boolean> = _thisDevice.asStateFlow()
+    private val isThisDevice get() = _thisDevice.value
+
+    fun useThisDevice() {
+        prefs.edit().putBoolean(KEY_THIS_DEVICE, true).putBoolean(KEY_DEMO, false).remove(KEY_INSTALLED_APPS).apply()
+        _thisDevice.value = true
+        _contacts.value = null
+        _recentCalls.value = null
+        _photos.value = emptyMap()
+        synchronized(requestedPhotos) { requestedPhotos.clear() }
+        restart()
+    }
 
     @SuppressLint("MissingPermission")
     fun pairedPhones(): List<PairedPhone> {
@@ -223,7 +245,8 @@ class PhoneCompanionManager(
      * forgotten. It stays paired in Android (unpairing needs Android's Bluetooth settings).
      */
     fun forgetPhone() {
-        prefs.edit().remove(KEY_ADDRESS).remove(KEY_NAME).remove(KEY_INSTALLED_APPS).apply()
+        prefs.edit().remove(KEY_ADDRESS).remove(KEY_NAME).remove(KEY_INSTALLED_APPS).remove(KEY_THIS_DEVICE).apply()
+        _thisDevice.value = false
         _connectedDeviceName.value = ""
         _contacts.value = null
         _recentCalls.value = null
@@ -234,7 +257,11 @@ class PhoneCompanionManager(
     }
 
     fun selectPhone(phone: PairedPhone) {
-        prefs.edit().putString(KEY_ADDRESS, phone.address).putString(KEY_NAME, phone.name).putBoolean(KEY_DEMO, false).apply()
+        val wasThisDevice = isThisDevice
+        prefs.edit().putString(KEY_ADDRESS, phone.address).putString(KEY_NAME, phone.name).putBoolean(KEY_DEMO, false)
+            .remove(KEY_THIS_DEVICE).apply()
+        _thisDevice.value = false
+        if (wasThisDevice) { _contacts.value = null; _recentCalls.value = null; _photos.value = emptyMap(); _installedApps.value = emptyList() }
         _connectedDeviceName.value = phone.name
         restart()
     }
@@ -247,6 +274,7 @@ class PhoneCompanionManager(
     }
 
     private fun start() {
+        if (isThisDevice) return startThisDevice()
         linkJob = scope.launch(Dispatchers.IO) {
             var slowFailures = 0
             var failures = 0
@@ -290,7 +318,46 @@ class PhoneCompanionManager(
         }
     }
 
+    // ------------------------------------------------------------------ this device
+
+    /** Messages from this device's own listener, handled in order on the main thread. */
+    private val localSink: (Message) -> Unit = { msg -> scope.launch(Dispatchers.Main) { handle(msg) } }
+
+    private fun startThisDevice() {
+        PhoneHub.phoneBook = PhoneBook(context)
+        PhoneHub.voice = VoiceReplier(context)
+        _connectionState.value = CompanionConnectionState.CONNECTED
+        _connectedSince.value = System.currentTimeMillis()
+        _connectedDeviceName.value = context.getString(com.curveon.R.string.link_this_device)
+        PhoneHub.addTablet(localSink, Build.MODEL)
+        refreshThisDevice()
+        send(Message.RequestPhoneBook)
+        startTicker()
+    }
+
+    private fun stopThisDevice() {
+        PhoneHub.removeTablet(localSink)
+        PhoneHub.voice?.cancel()
+        PhoneHub.voice = null
+        PhoneHub.phoneBook?.shutdown()
+        PhoneHub.phoneBook = null
+    }
+
+    /**
+     * Access may have just been granted (back from Android's settings): check it again, list the
+     * music apps, and fetch contacts and calls.
+     */
+    fun refreshThisDevice() {
+        if (!isThisDevice || _connectionState.value != CompanionConnectionState.CONNECTED) return
+        scope.launch(Dispatchers.IO) {
+            localSink(Message.PhoneStatus(Build.MODEL, -1, false, CurveonNotificationListener.isEnabled(context), ""))
+            localSink(MediaApps.installed(context))
+            PhoneHub.phoneBook?.sendPhoneBook()
+        }
+    }
+
     private fun stopLink() {
+        stopThisDevice()
         linkJob?.cancel()
         tickerJob?.cancel()
         runCatching { socket?.close() }
@@ -431,6 +498,7 @@ class PhoneCompanionManager(
 
     private fun send(message: Message) {
         if (_connectionState.value == CompanionConnectionState.DEMO) return demoCommand(message)
+        if (isThisDevice) { scope.launch(Dispatchers.IO) { PhoneHub.handle(message) }; return }
         val w = writer ?: return
         scope.launch(Dispatchers.IO) { runCatching { w.write(message) } }
     }
@@ -668,6 +736,7 @@ class PhoneCompanionManager(
         private const val KEY_ADDRESS = "address"
         private const val KEY_NAME = "name"
         private const val KEY_DEMO = "demo"
+        private const val KEY_THIS_DEVICE = "this_device"
         private const val KEY_FAVORITE_APPS = "favorite_media_apps"
         private const val KEY_INSTALLED_APPS = "installed_media_apps"
 

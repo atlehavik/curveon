@@ -1,4 +1,4 @@
-package com.curveon.companion
+package com.curveon.phone
 
 import android.content.Context
 import android.content.Intent
@@ -25,7 +25,7 @@ class VoiceReplier(private val context: Context) {
     fun start(key: String) = main.post {
         cancelInternal()
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            CompanionHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, "Speech recognition not available on the phone"))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, "Speech recognition not available on the phone"))
             return@post
         }
         currentKey = key
@@ -41,7 +41,7 @@ class VoiceReplier(private val context: Context) {
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
         }
         r.startListening(intent)
-        CompanionHub.broadcast(Message.VoiceReplyState(key, VoiceState.LISTENING))
+        PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.LISTENING))
     }
 
     fun cancel() = main.post { cancelInternal() }
@@ -55,12 +55,12 @@ class VoiceReplier(private val context: Context) {
 
     private inner class Listener(private val key: String) : RecognitionListener {
         override fun onPartialResults(partialResults: Bundle?) {
-            best(partialResults)?.let { CompanionHub.broadcast(Message.VoiceReplyState(key, VoiceState.PARTIAL, it)) }
+            best(partialResults)?.let { PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.PARTIAL, it)) }
         }
 
         override fun onResults(results: Bundle?) {
             val text = best(results)
-            CompanionHub.broadcast(
+            PhoneHub.broadcast(
                 if (text.isNullOrBlank()) Message.VoiceReplyState(key, VoiceState.ERROR, "Didn't catch that")
                 else Message.VoiceReplyState(key, VoiceState.RESULT, text)
             )
@@ -74,7 +74,7 @@ class VoiceReplier(private val context: Context) {
                 SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Speech recognition needs a connection"
                 else -> "Speech recognition error ($error)"
             }
-            CompanionHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, reason))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, reason))
             main.post { cancelInternal() }
         }
 

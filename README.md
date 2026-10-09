@@ -7,7 +7,8 @@ and [dashboard.md](dashboard.md) for the goals.
 | Module | What it is |
 |---|---|
 | `app` | The tablet app (`com.curveon.tablet`): map, navigation, dashboard |
-| `companion` | Phone app (`com.curveon.companion`): mirrors messages, calls and music to the tablet over Bluetooth |
+| `companion` | Phone app (`com.curveon.companion`), installed on its own: mirrors messages, calls and music to the tablet over Bluetooth |
+| `phone` | What a phone shares (messages, calls, music, contacts, spoken replies), read on the device itself; used by `companion`, and by `app` when it is its own phone |
 | `routing` | Offline routing on BRouter: motorcycle profile, roundtrips, GPX following, route tracking |
 | `protocol` | Tablet ⇄ phone messages (length-prefixed JSON over RFCOMM) |
 | `tools/map`, `tools/search` | Scripts that build the offline map and search index |
@@ -105,4 +106,8 @@ split of big countries should change.
 1. Pair phone and tablet in Android's Bluetooth settings.
 2. Install the companion app, open it, grant **Notification access** and **Bluetooth,
    microphone, contacts**, tap **Start sharing with tablet**.
-3. On the tablet: Phone link (phone icon in the rail) → pick the phone.
+3. On the tablet: Settings → Phone → pick the phone. Another paired phone can be picked there any
+   time (pair it in Android's Bluetooth settings first).
+
+Curveon running on a phone (or a tablet with its own apps) needs no companion: Settings → Phone →
+**This device**, then allow notification access and contacts/calls/microphone there.

@@ -509,6 +509,12 @@
     <string name="link_other_phones">Andre parede telefoner</string>
     <string name="link_paired_phones">Parede telefoner</string>
     <string name="link_use">Bruk</string>
+    <string name="link_this_device">Denne enheten</string>
+    <string name="link_this_device_hint">Meldinger, anrop og musikk fra appene på denne enheten, uten Curveon Companion</string>
+    <string name="link_this_no_notification_access">Varseltilgang er av, så ingen meldinger eller musikk.</string>
+    <string name="link_this_no_contacts">Kontakter, anropslogg, anrop eller mikrofon er ikke tillatt.</string>
+    <string name="link_allow">Tillat</string>
+    <string name="link_stop_this_device">Slå av</string>
     <string name="link_music_apps">Musikkapper</string>
     <string name="link_music_apps_hint">Stjernemerk favorittene: de er alltid med i musikkortet, og sveiper du til en som ikke kjører, starter telefonen den.</string>
     <string name="link_music_apps_none">Koble til telefonen for å finne musikkappene.</string>

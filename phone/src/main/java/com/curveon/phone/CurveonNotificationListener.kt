@@ -1,4 +1,4 @@
-package com.curveon.companion
+package com.curveon.phone
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -23,7 +23,7 @@ import java.security.MessageDigest
 
 /**
  * Sees every notification and, through the notification-listener permission, the active media
- * sessions. Mirrors messages, calls and "now playing" to the tablet via [CompanionHub].
+ * sessions. Mirrors messages, calls and "now playing" to the tablet via [PhoneHub].
  */
 class CurveonNotificationListener : NotificationListenerService() {
 
@@ -34,18 +34,18 @@ class CurveonNotificationListener : NotificationListenerService() {
     private val sessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { onSessionsChanged(it.orEmpty()) }
 
     override fun onListenerConnected() {
-        CompanionHub.listener = this
+        PhoneHub.listener = this
         activeNotifications?.forEach(::onNotificationPosted)
         sessionManager = getSystemService(MediaSessionManager::class.java)?.also { msm ->
             val me = ComponentName(this, CurveonNotificationListener::class.java)
             msm.addOnActiveSessionsChangedListener(sessionsListener, me, main)
             onSessionsChanged(msm.getActiveSessions(me))
         }
-        CompanionHub.update { it.copy(lastEvent = "Notification access active") }
+        PhoneHub.update { it.copy(lastEvent = "Notification access active") }
     }
 
     override fun onListenerDisconnected() {
-        if (CompanionHub.listener === this) CompanionHub.listener = null
+        if (PhoneHub.listener === this) PhoneHub.listener = null
         sessionManager?.removeOnActiveSessionsChangedListener(sessionsListener)
         controller?.unregisterCallback(mediaCallback)
         watchers.forEach { (c, cb) -> c.unregisterCallback(cb) }
@@ -57,18 +57,18 @@ class CurveonNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val message = runCatching { toMessage(sbn) }.onFailure { Log.w(TAG, "Skipping ${sbn.key}", it) }.getOrNull() ?: return
         synchronized(active) { active[sbn.key] = sbn }
-        CompanionHub.postNotification(message)
+        PhoneHub.postNotification(message)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         synchronized(active) { active.remove(sbn.key) }
-        CompanionHub.removeNotification(sbn.key)
+        PhoneHub.removeNotification(sbn.key)
     }
 
     private fun toMessage(sbn: StatusBarNotification): Message.NotificationPosted? {
         val n = sbn.notification
         // Our own notifications are ignored, except the test scenarios.
-        if (sbn.packageName == packageName && !n.extras.getBoolean(TestScenarios.EXTRA_TEST)) return null
+        if (sbn.packageName == packageName && !n.extras.getBoolean(PhoneHub.EXTRA_TEST)) return null
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return null
         val isCall = n.category == Notification.CATEGORY_CALL
         val replyAction = findReplyAction(n)
@@ -94,8 +94,8 @@ class CurveonNotificationListener : NotificationListenerService() {
         // since dialer notifications often carry only a small thumbnail.
         val px = if (isCall) CALL_PX else AVATAR_PX
         val avatar = (if (isCall) contactPhoto(sender, px) else null)
-            ?: last?.senderPerson?.icon?.loadDrawable(this)?.let { CompanionHub.encodeJpeg(it, px) }
-            ?: n.getLargeIcon()?.loadDrawable(this)?.let { CompanionHub.encodeJpeg(it, px) }
+            ?: last?.senderPerson?.icon?.loadDrawable(this)?.let { PhoneHub.encodeJpeg(it, px) }
+            ?: n.getLargeIcon()?.loadDrawable(this)?.let { PhoneHub.encodeJpeg(it, px) }
             ?: contactPhoto(sender, px)
 
         return Message.NotificationPosted(
@@ -126,7 +126,7 @@ class CurveonNotificationListener : NotificationListenerService() {
         )?.use { c -> if (c.moveToFirst()) (c.getString(0) ?: c.getString(1))?.let(Uri::parse) else null } ?: return null
         return runCatching {
             contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it) }
-        }.getOrNull()?.let { CompanionHub.encodeJpeg(it, px, if (px > AVATAR_PX) 85 else 80) }
+        }.getOrNull()?.let { PhoneHub.encodeJpeg(it, px, if (px > AVATAR_PX) 85 else 80) }
     }
 
     fun dismiss(key: String) = main.post { runCatching { cancelNotification(key) } }
@@ -141,7 +141,7 @@ class CurveonNotificationListener : NotificationListenerService() {
         val sbn = synchronized(active) { active[key] }
         val action = sbn?.let { findReplyAction(it.notification) }
         if (action == null) {
-            CompanionHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "This message can't be replied to"))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "This message can't be replied to"))
             return
         }
         val intent = Intent()
@@ -150,9 +150,9 @@ class CurveonNotificationListener : NotificationListenerService() {
         RemoteInput.addResultsToIntent(action.remoteInputs, intent, results)
         try {
             action.actionIntent.send(this, 0, intent)
-            CompanionHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.SENT, text))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.SENT, text))
         } catch (e: PendingIntent.CanceledException) {
-            CompanionHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Reply failed"))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Reply failed"))
         }
     }
 
@@ -163,7 +163,7 @@ class CurveonNotificationListener : NotificationListenerService() {
         override fun onPlaybackStateChanged(state: PlaybackState?) = pushMedia()
         override fun onSessionDestroyed() {
             controller = null
-            CompanionHub.setMedia(null, null)
+            PhoneHub.setMedia(null, null)
         }
     }
 
@@ -207,13 +207,13 @@ class CurveonNotificationListener : NotificationListenerService() {
             Message.MediaSource(
                 c.packageName, appLabel(c.packageName), c.playbackState?.state == PlaybackState.STATE_PLAYING,
                 icons.getOrPut(c.packageName) {
-                    runCatching { CompanionHub.encodePng(packageManager.getApplicationIcon(c.packageName), ICON_PX) }.getOrNull()
+                    runCatching { PhoneHub.encodePng(packageManager.getApplicationIcon(c.packageName), ICON_PX) }.getOrNull()
                 }
             )
         }
         if (list == lastSources) return
         lastSources = list
-        CompanionHub.setMediaSources(list)
+        PhoneHub.setMediaSources(list)
     }
 
     /**
@@ -241,7 +241,7 @@ class CurveonNotificationListener : NotificationListenerService() {
 
     private fun pushMedia() {
         main.removeCallbacks(periodicPush)
-        val c = controller ?: return CompanionHub.setMedia(null, null)
+        val c = controller ?: return PhoneHub.setMedia(null, null)
         val md = c.metadata
         val ps = c.playbackState
         val playing = ps?.state == PlaybackState.STATE_PLAYING
@@ -252,11 +252,11 @@ class CurveonNotificationListener : NotificationListenerService() {
         val bitmap: Bitmap? = md?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART) ?: md?.getBitmap(MediaMetadata.METADATA_KEY_ART)
             ?: md?.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
         var art: Message.MediaArt? = null
-        val artJpeg = bitmap?.let { CompanionHub.encodeJpeg(it, ART_PX, 85) }
+        val artJpeg = bitmap?.let { PhoneHub.encodeJpeg(it, ART_PX, 85) }
         val artId = artJpeg?.let { sha1(it) }
         if (artJpeg != null && artId != lastArtId) art = Message.MediaArt(artId!!, artJpeg)
         lastArtId = artId
-        CompanionHub.setMedia(
+        PhoneHub.setMedia(
             Message.MediaState(
                 title = md?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: md?.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE) ?: "",
                 artist = md?.getString(MediaMetadata.METADATA_KEY_ARTIST) ?: md?.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST) ?: "",

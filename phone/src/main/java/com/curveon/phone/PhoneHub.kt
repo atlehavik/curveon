@@ -1,4 +1,4 @@
-package com.curveon.companion
+package com.curveon.phone
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -6,7 +6,6 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
 import com.curveon.protocol.Message
-import com.curveon.protocol.MessageWriter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,9 +15,14 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Shared state between the notification listener (which sees notifications and media sessions)
- * and the Bluetooth service (which talks to the tablet).
+ * and whoever shows it: the companion's Bluetooth link to the tablet, or Curveon itself when it
+ * runs on the phone and is its own companion.
  */
-object CompanionHub {
+object PhoneHub {
+
+    /** Marks the companion's test notifications, which are mirrored although they are its own. */
+    const val EXTRA_TEST = "com.curveon.companion.TEST"
+
 
     data class Status(
         val serviceRunning: Boolean = false,
@@ -31,7 +35,8 @@ object CompanionHub {
     private val _status = MutableStateFlow(Status())
     val status: StateFlow<Status> = _status.asStateFlow()
 
-    private val tablets = CopyOnWriteArrayList<MessageWriter>()
+    /** Where messages go: one per connected tablet, or Curveon's own screen. */
+    private val tablets = CopyOnWriteArrayList<(Message) -> Unit>()
     private val notifications = ConcurrentHashMap<String, Message.NotificationPosted>()
 
     @Volatile var media: Message.MediaState? = null
@@ -56,19 +61,20 @@ object CompanionHub {
 
     // ---- connections ----
 
-    fun addTablet(writer: MessageWriter, name: String) {
-        tablets += writer
+    /** Start sending to [sink], beginning with what is showing right now. */
+    fun addTablet(sink: (Message) -> Unit, name: String) {
+        tablets += sink
         update { it.copy(tabletName = name, lastEvent = "Connected to $name") }
-        snapshot().forEach { runCatching { writer.write(it) } }
+        snapshot().forEach { runCatching { sink(it) } }
     }
 
-    fun removeTablet(writer: MessageWriter) {
-        tablets -= writer
+    fun removeTablet(sink: (Message) -> Unit) {
+        tablets -= sink
         if (tablets.isEmpty()) update { it.copy(tabletName = null, lastEvent = "Tablet disconnected") }
     }
 
     fun broadcast(message: Message) {
-        for (t in tablets) runCatching { t.write(message) }.onFailure { tablets -= t }
+        for (t in tablets) runCatching { t(message) }.onFailure { tablets -= t }
     }
 
     private fun snapshot(): List<Message> = buildList {

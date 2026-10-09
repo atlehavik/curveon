@@ -6,6 +6,20 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-09 — "This device" as its own phone
+
+Settings → Phone has a new choice, **This device**: Curveon reads messages, calls and music from the
+apps on the same device, with no companion and no Bluetooth (for riders who have only a phone).
+The companion app still works as before and is still installed on its own. Its code moved into a
+shared `:phone` module, so reinstall it on the Pixel when it's reachable:
+`./gradlew :companion:installDebug`. Tried in the emulator (music apps found, a test message
+showed on the dashboard).
+
+- [ ] Pixel: reinstall the companion; messages, music, contacts and spoken replies still reach the X7.
+- [ ] X7: Settings → Phone → *Use* on the Pixel again after trying "This device" (switching back works).
+- [ ] Optional, with Curveon on the Pixel: *This device* → allow access; a WhatsApp message shows on
+      Curveon's message card, and the music card controls Spotify.
+
 ## 2026-10-09 — Choose the start before the destination
 
 "Where to?" now has a "From my position" row at the top. Tap it to pick the start first (search, a

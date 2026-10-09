@@ -1,4 +1,4 @@
-package com.curveon.companion
+package com.curveon.phone
 
 import android.content.ComponentName
 import android.content.Context
@@ -39,7 +39,7 @@ object MediaApps {
             .map { pkg ->
                 Message.MediaSource(
                     pkg, label(context, pkg), false,
-                    runCatching { CompanionHub.encodePng(pm.getApplicationIcon(pkg), ICON_PX) }.getOrNull()
+                    runCatching { PhoneHub.encodePng(pm.getApplicationIcon(pkg), ICON_PX) }.getOrNull()
                 )
             }
             .sortedBy { it.app.lowercase() }

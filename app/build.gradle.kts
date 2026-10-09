@@ -10,7 +10,7 @@ android {
 
   defaultConfig {
     applicationId = "com.curveon.tablet"
-    minSdk = 24
+    minSdk = 29
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
@@ -63,6 +63,7 @@ android {
 dependencies {
   implementation(project(":routing"))
   implementation(project(":protocol"))
+  implementation(project(":phone"))
   implementation(project(":pmtiles"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)

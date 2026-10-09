@@ -1,5 +1,6 @@
 package com.curveon.companion
 
+import com.curveon.phone.*
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -21,7 +22,7 @@ import android.graphics.drawable.Icon
  */
 object TestScenarios {
 
-    const val EXTRA_TEST = "com.curveon.companion.TEST"
+    const val EXTRA_TEST = PhoneHub.EXTRA_TEST
     private const val CHANNEL = "test"
     private const val KEY_REPLY = "reply"
     private const val ACTION_REPLY = "com.curveon.companion.TEST_REPLY"
@@ -61,7 +62,7 @@ object TestScenarios {
             .addExtras(android.os.Bundle().apply { putBoolean(EXTRA_TEST, true) })
             .build()
         nm.notify(id, n)
-        CompanionHub.update { it.copy(lastEvent = "Test message from $sender sent") }
+        PhoneHub.update { it.copy(lastEvent = "Test message from $sender sent") }
     }
 
     /**
@@ -93,7 +94,7 @@ object TestScenarios {
             .addExtras(android.os.Bundle().apply { putBoolean(EXTRA_TEST, true) })
             .build()
         nm.notify(id, n)
-        CompanionHub.update {
+        PhoneHub.update {
             it.copy(lastEvent = "Test call from $caller ringing" + if (contact == null) " (no \"Pappa\" or favourite in contacts)" else "")
         }
     }
@@ -112,7 +113,7 @@ object TestScenarios {
     fun clear(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java)
         nm.activeNotifications.filter { it.notification.extras.getBoolean(EXTRA_TEST) }.forEach { nm.cancel(it.id) }
-        CompanionHub.update { it.copy(lastEvent = "Test notifications cleared") }
+        PhoneHub.update { it.copy(lastEvent = "Test notifications cleared") }
     }
 
     private fun channel(context: Context): NotificationManager {
@@ -142,11 +143,11 @@ object TestScenarios {
             when (intent.action) {
                 ACTION_REPLY -> {
                     val text = RemoteInput.getResultsFromIntent(intent)?.getCharSequence(KEY_REPLY)
-                    CompanionHub.update { it.copy(lastEvent = "✓ Reply received: \"$text\"") }
+                    PhoneHub.update { it.copy(lastEvent = "✓ Reply received: \"$text\"") }
                 }
                 ACTION_CALL -> {
                     val choice = intent.getStringExtra(EXTRA_CHOICE)
-                    CompanionHub.update { it.copy(lastEvent = "✓ Test call $choice from the tablet") }
+                    PhoneHub.update { it.copy(lastEvent = "✓ Test call $choice from the tablet") }
                 }
             }
             nm.cancel(id)
