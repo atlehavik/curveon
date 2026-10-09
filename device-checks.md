@@ -9,11 +9,13 @@ Commands assume the device is connected over USB. With both connected, pick one 
 ## 2026-10-09 — Curveon on a phone: camera hole, rail, hints
 
 On the Pixel (held sideways) the rail moves clear of the camera hole, the rail buttons are a bit
-smaller so the map toggle fits, the "no offline map" note sits beside the map buttons instead of
-over them, and the music card says how to use the phone itself. Checked on the Pixel 9a with the
+smaller so the map toggle fits, the "no offline map" note only shows when there is no map at all
+(no connection either), and the music card says how to use the phone itself. Checked on the Pixel 9a with the
 hole on the left; the X7 looks as before.
 
 - [ ] Pixel: turn it the other way round (hole on the right): the cards on the right move clear of it.
+- [ ] Curveon on a phone without downloaded countries, wifi and mobile data off: the map shows
+      "No map here without a connection…". With a connection there is no note at all.
 
 ## 2026-10-09 — "This device" as its own phone
 

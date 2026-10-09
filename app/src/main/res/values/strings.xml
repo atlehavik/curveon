@@ -176,7 +176,7 @@
     <string name="map_follow_me">Follow me</string>
     <string name="map_zoom_in">Zoom in</string>
     <string name="map_zoom_out">Zoom out</string>
-    <string name="map_online_only">No offline map installed – showing online map. Import one in Settings.</string>
+    <string name="map_none_offline">No map here without a connection. Download your countries in Settings → Maps &amp; data.</string>
     <string name="distance_km_whole">%.0f km</string>
     <string name="clear">Clear</string>
     <string name="delete_named">Delete %1$s?</string>

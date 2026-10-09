@@ -619,9 +619,10 @@ fun CurveonMapView(
 
         overlays()
 
-        if (!hasOfflineMap) {
+        // Riding on the online map is a fine choice; only say something when that leaves no map.
+        if (!hasOfflineMap && !rememberOnline()) {
             Text(
-                text = stringResource(R.string.map_online_only),
+                text = stringResource(R.string.map_none_offline),
                 color = NeonAmber,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -634,6 +635,24 @@ fun CurveonMapView(
             )
         }
     }
+}
+
+/** Whether the device has a working internet connection right now; follows changes. */
+@Composable
+private fun rememberOnline(): Boolean {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val cm = remember { context.getSystemService(android.net.ConnectivityManager::class.java) }
+    fun now() = cm?.getNetworkCapabilities(cm.activeNetwork)?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+    var online by remember { mutableStateOf(now()) }
+    DisposableEffect(cm) {
+        val callback = object : android.net.ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(network: android.net.Network, caps: android.net.NetworkCapabilities) { online = now() }
+            override fun onLost(network: android.net.Network) { online = now() }
+        }
+        runCatching { cm?.registerDefaultNetworkCallback(callback) }
+        onDispose { runCatching { cm?.unregisterNetworkCallback(callback) } }
+    }
+    return online
 }
 
 private const val AMBIENT_CACHE_BYTES = 300L * 1024 * 1024

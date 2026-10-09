@@ -175,7 +175,7 @@
     <string name="map_follow_me">Følg meg</string>
     <string name="map_zoom_in">Zoom inn</string>
     <string name="map_zoom_out">Zoom ut</string>
-    <string name="map_online_only">Ingen frakoblede kart installert – viser nettkart. Importer et i Innstillinger.</string>
+    <string name="map_none_offline">Ingen kart her uten nett. Last ned land under Innstillinger → Kart og data.</string>
     <string name="distance_km_whole">%.0f km</string>
     <string name="clear">Tøm</string>
     <string name="delete_named">Slette %1$s?</string>
