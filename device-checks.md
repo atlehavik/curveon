@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-09 — Portrait: speed on top, dialogs that fit
+
+Upright, the speed card now sits above the map. The dialogs stack on a phone instead of squeezing:
+Settings, GPX and the map download get their page tabs along the top (only the open one labelled),
+the phone's tabs get a row of their own, Roundtrip puts the compass above the options, and the
+route preview gives GO a full-width row. Checked at Pixel 9a size in the emulator (search, route
+preview, place menu, save, navigation, every rail dialog); the X7 in landscape looks as before.
+
+- [ ] Pixel upright: go through Settings, GPX, Roundtrip, Phone and a route preview; anything cut off?
+
 ## 2026-10-09 — Portrait
 
 Curveon now turns with the device (Android's auto-rotate): held upright, the map is on top, speed and

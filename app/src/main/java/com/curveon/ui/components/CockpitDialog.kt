@@ -3,6 +3,8 @@ package com.curveon.ui.components
 import com.curveon.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -73,7 +75,7 @@ fun CockpitDialog(
                         Icon(icon, null, tint = accent, modifier = Modifier.size(28.dp))
                         Column(Modifier.weight(1f)) {
                             Text(title, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
-                            if (subtitle != null) Text(subtitle, color = TextSecondary, fontSize = 13.sp, maxLines = 1)
+                            if (subtitle != null) Text(subtitle, color = TextSecondary, fontSize = 13.sp, maxLines = if (isNarrowScreen()) 2 else 1)
                         }
                     }
                     actions()
@@ -82,6 +84,11 @@ fun CockpitDialog(
                     }
                 }
                 if (sideBar == null) content()
+                // Narrow (a phone held upright): the page menu becomes a row of tabs on top.
+                else if (isNarrowScreen()) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    sideBar()
+                    Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+                }
                 else Row(Modifier.fillMaxSize()) {
                     sideBar()
                     Column(Modifier.weight(1f).fillMaxHeight().padding(start = 18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
@@ -128,12 +135,43 @@ fun HostDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
     }
 }
 
-/** The left-hand page menu of a dialog (Settings, GPX & rides): icon and label per page. */
+/** Narrower than a 7" tablet held upright: a phone held upright. Dialogs stack instead of sitting side by side. */
+@Composable
+fun isNarrowScreen(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
+
+/**
+ * The left-hand page menu of a dialog (Settings, GPX & rides): icon and label per page. On a narrow
+ * screen a row of tabs instead, which scrolls sideways if they don't fit.
+ */
 @Composable
 fun <T> DialogTabs(
     items: List<T>, selected: T, label: @Composable (T) -> String, icon: (T) -> ImageVector, onSelect: (T) -> Unit,
     width: androidx.compose.ui.unit.Dp = 210.dp
 ) {
+    if (isNarrowScreen()) {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f))
+                .horizontalScroll(rememberScrollState()).padding(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            items.forEach { t ->
+                val on = t == selected
+                Row(
+                    Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                        .clickable { onSelect(t) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Only the open page is labelled, so all of them fit across.
+                    Icon(icon(t), label(t), tint = if (on) OnCyanText else TextSecondary, modifier = Modifier.size(22.dp))
+                    if (on) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(label(t), color = OnCyanText, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                    }
+                }
+            }
+        }
+        return
+    }
     Column(
         Modifier.width(width).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f)).padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)

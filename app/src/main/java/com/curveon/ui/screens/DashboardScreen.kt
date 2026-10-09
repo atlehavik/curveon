@@ -392,9 +392,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 10.dp))
         }
     } }
-    // Speed, then messages or music (one of them gets the free height).
+    // Messages or music (one of them gets the free height), and engine data.
     val cards: @Composable ColumnScope.() -> Unit = {
-        SpeedCard(telemetry, camera = cameraAlert)
 
         val attention = voiceReply != null || notifications.isNotEmpty()
         when {
@@ -429,7 +428,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
         if (telemetry.isObdEnabled && telemetry.isObdConnected) Obd2TelemetryCard(telemetry = telemetry)
     }
-    // Portrait (a phone held upright): map on top, the cards below it, the rail along the bottom.
+    // Portrait (a phone held upright): speed on top, then the map, the cards below it, the rail along the bottom.
     val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
     val rail: @Composable () -> Unit = {
         Rail(
@@ -459,6 +458,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     if (portrait) {
         Column(rootModifier) {
             Column(Modifier.weight(1f).fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!isFullScreenMap) SpeedCard(telemetry, camera = cameraAlert)
                 mapArea(Modifier.weight(1f).fillMaxWidth())
                 // Planning a trip needs the map more than the speed: the preview sheet covers much of it.
                 if (!isFullScreenMap && preview == null) Column(
@@ -476,9 +476,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 mapArea(Modifier.weight(1f).fillMaxHeight())
                 if (!isFullScreenMap) Column(
                     Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    content = cards
-                )
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    SpeedCard(telemetry, camera = cameraAlert)
+                    cards()
+                }
             }
         }
     }
@@ -723,7 +725,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 private val SIDE_COLUMN_WIDTH = 300.dp
 
 /** Upright, the speed and music cards take this much of the height under the map. */
-private const val PORTRAIT_CARDS_SHARE = 0.42f
+private const val PORTRAIT_CARDS_SHARE = 0.34f
 
 /** Room for the full-map speed and limit sign in the top-right corner (about 66 dp tall). */
 private val FULL_MAP_SPEED_CLEARANCE = 80.dp

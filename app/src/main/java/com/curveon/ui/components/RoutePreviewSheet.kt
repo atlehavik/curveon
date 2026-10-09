@@ -197,12 +197,18 @@ fun RoutePreviewSheet(
         // tarmac road there short of a huge detour, and a cruiser can't ride it, so say so loudly.
         preview.selectedRoute?.let { route -> if (options.surface == SurfacePreference.PAVED) ForcedGravelWarning(route) }
 
-        // Options + GO
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Options + GO; upright on a phone GO gets a row of its own, full width.
+        val chips: @Composable (Modifier) -> Unit = { m ->
             RouteOptionChips(
                 surface = options.surface, avoidFerries = options.avoidFerries, avoidMotorways = options.avoidMotorways,
-                onSurface = onSurface, onToggleFerries = onToggleFerries, onToggleMotorways = onToggleMotorways
+                onSurface = onSurface, onToggleFerries = onToggleFerries, onToggleMotorways = onToggleMotorways, modifier = m
             )
+        }
+        if (isNarrowScreen()) {
+            chips(Modifier.horizontalScroll(rememberScrollState()))
+            GoButton(ready = preview.selectedRoute != null, onGo = onGo, modifier = Modifier.fillMaxWidth())
+        } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            chips(Modifier)
             Spacer(Modifier.weight(1f))
             GoButton(ready = preview.selectedRoute != null, onGo = onGo)
         }
@@ -297,9 +303,9 @@ private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo:
 }
 
 @Composable
-private fun GoButton(ready: Boolean, onGo: () -> Unit) {
+private fun GoButton(ready: Boolean, onGo: () -> Unit, modifier: Modifier = Modifier) {
     Row(
-        Modifier.height(56.dp).widthIn(min = 140.dp).clip(RoundedCornerShape(28.dp))
+        modifier.height(56.dp).widthIn(min = 140.dp).clip(RoundedCornerShape(28.dp))
             .background(if (ready) ElectricCyan else CockpitSurfaceVariant)
             .clickable(enabled = ready, onClick = onGo).padding(horizontal = 22.dp).testTag("preview_go_btn"),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center

@@ -3,6 +3,8 @@ package com.curveon.ui.components
 import com.curveon.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -46,35 +48,41 @@ fun RoundtripDialog(
         title = stringResource(R.string.roundtrip), icon = Icons.Default.Explore, accent = NeonAmber, onDismiss = onDismiss,
         tag = "roundtrip_dialog", subtitle = stringResource(R.string.roundtrip_subtitle)
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
-            CompassRose(direction) { config = config.copy(selectedDirections = setOf(it)) }
-
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Label(stringResource(R.string.roundtrip_distance))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(40, 60, 100, 150, 220, 300).forEach { km ->
-                        val on = config.radiusKm == km
-                        Box(
-                            Modifier.clip(RoundedCornerShape(12.dp)).background(if (on) NeonAmber else CockpitSurfaceVariant)
-                                .clickable { config = config.copy(radiusKm = km) }.padding(horizontal = 14.dp, vertical = 10.dp)
-                        ) { Text(stringResource(R.string.distance_km_int, km), color = if (on) Color.Black else TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
-                    }
-                }
-                Label(stringResource(R.string.roundtrip_roads))
-                Segmented(
-                    RoadTypePreference.entries, config.roadType,
-                    label = { stringResource(when (it) { RoadTypePreference.FASTEST -> R.string.style_fastest; RoadTypePreference.CURVY -> R.string.style_curvy; RoadTypePreference.VERY_CURVY -> R.string.style_super_curvy }) },
-                    onSelect = { config = config.copy(roadType = it) }
-                )
-                RouteOptionChips(
-                    surface = SurfacePreference.entries[config.groundPreference.ordinal],
-                    avoidFerries = config.avoidFerries,
-                    avoidMotorways = config.avoidHighways,
-                    onSurface = { config = config.copy(groundPreference = GroundPreference.entries[it.ordinal]) },
-                    onToggleFerries = { config = config.copy(avoidFerries = !config.avoidFerries) },
-                    onToggleMotorways = { config = config.copy(avoidHighways = !config.avoidHighways) }
-                )
+        val options: @Composable ColumnScope.() -> Unit = {
+        Label(stringResource(R.string.roundtrip_distance))
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(40, 60, 100, 150, 220, 300).forEach { km ->
+                val on = config.radiusKm == km
+                Box(
+                    Modifier.clip(RoundedCornerShape(12.dp)).background(if (on) NeonAmber else CockpitSurfaceVariant)
+                        .clickable { config = config.copy(radiusKm = km) }.padding(horizontal = 14.dp, vertical = 10.dp)
+                ) { Text(stringResource(R.string.distance_km_int, km), color = if (on) Color.Black else TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
             }
+        }
+        Label(stringResource(R.string.roundtrip_roads))
+        Segmented(
+            RoadTypePreference.entries, config.roadType,
+            label = { stringResource(when (it) { RoadTypePreference.FASTEST -> R.string.style_fastest; RoadTypePreference.CURVY -> R.string.style_curvy; RoadTypePreference.VERY_CURVY -> R.string.style_super_curvy }) },
+            onSelect = { config = config.copy(roadType = it) }
+        )
+        RouteOptionChips(
+            surface = SurfacePreference.entries[config.groundPreference.ordinal],
+            avoidFerries = config.avoidFerries,
+            avoidMotorways = config.avoidHighways,
+            onSurface = { config = config.copy(groundPreference = GroundPreference.entries[it.ordinal]) },
+            onToggleFerries = { config = config.copy(avoidFerries = !config.avoidFerries) },
+            onToggleMotorways = { config = config.copy(avoidHighways = !config.avoidHighways) },
+            modifier = Modifier.horizontalScroll(rememberScrollState())
+        )
+        }
+        val rose: @Composable () -> Unit = { CompassRose(direction) { config = config.copy(selectedDirections = setOf(it)) } }
+        // Upright on a phone: the compass above the options instead of beside them.
+        if (isNarrowScreen()) Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { rose() }
+            options()
+        } else Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+            rose()
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(14.dp), content = options)
         }
 
         Spacer(Modifier.weight(1f))

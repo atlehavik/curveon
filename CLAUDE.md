@@ -9,7 +9,13 @@ commands are in [README.md](README.md); goals in [App plan.md](App%20plan.md) an
 - JDK 21 lives in `~/.local/share/jdks/jdk-21.0.12.1+1` (set via `org.gradle.java.home` in
   `~/.gradle/gradle.properties`); the system JRE 25 can't build. SDK: `~/Android/Sdk`.
 - Emulators: `~/Android/Sdk/emulator/emulator -avd Hugerock_X7` (main target, 960x540 dp) or
-  `-avd Curveon_Phone` (for `:companion`). The emulator has no Bluetooth: use demo phone data / demo ride.
+  `-avd Curveon_Phone` (for `:companion`, and for Curveon itself at phone size, e.g. portrait). The
+  emulator has no Bluetooth: use demo phone data / demo ride. Curveon_Phone has no maps or routing
+  data; to see a route preview etc. at Pixel 9a size, shrink the X7 AVD instead:
+  `adb shell wm size 1080x2400; adb shell wm density 420` (undo with `wm size reset; wm density reset`).
+  Rotation: `adb shell settings put system user_rotation 0` (portrait) / `1` (landscape).
+- **Layouts** must work on the X7 in landscape and on a phone (Pixel 9a, 411 dp wide) in both
+  orientations: `isNarrowScreen()` (CockpitDialog.kt) stacks what sits side by side on the tablet.
 - Tablet: `./gradlew :app:installDebug`, then
   `adb shell am start -n com.curveon.tablet/com.curveon.MainActivity`.
 - **The X7 is reached over wifi, not USB** (it lives on the handlebars). Before installing, find it:

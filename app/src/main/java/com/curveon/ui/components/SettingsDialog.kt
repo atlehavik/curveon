@@ -86,10 +86,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
     var tab by rememberSaveable { mutableStateOf(SettingsTab.DISPLAY) }
     var confirmDelete by remember { mutableStateOf<InstalledMap?>(null) }
     CockpitDialog(title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
-        Row(Modifier.fillMaxSize()) {
-            DialogTabs(SettingsTab.entries, tab, { stringResource(it.label) }, { it.icon }, { tab = it })
-
-            Box(Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp, end = 6.dp)) {
+        val pages: @Composable () -> Unit = {
                 when (tab) {
                     SettingsTab.DISPLAY -> Page {
                         if (AppLanguage.canChoose) Setting(stringResource(R.string.settings_language)) {
@@ -105,15 +102,15 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             Segmented(listOf(false, true), state.showSurfaces,
                                 { stringResource(if (it) R.string.settings_surfaces_dashed else R.string.settings_surfaces_off) }, actions.onShowSurfaces)
                         }
-                        Setting(stringResource(R.string.settings_obd), stringResource(R.string.settings_obd_hint)) {
+                        Setting(stringResource(R.string.settings_obd), stringResource(R.string.settings_obd_hint), small = true) {
                             CockpitSwitch(state.obdEnabled, actions.onObd)
                         }
                     }
                     SettingsTab.NAVIGATION -> Page {
-                        Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint)) {
+                        Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint), small = true) {
                             CockpitSwitch(state.autoZoom, actions.onAutoZoom)
                         }
-                        Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
+                        Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint), small = true) {
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
                         }
                         val o = state.offRoute
@@ -126,7 +123,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_rejoin_percent), stringResource(R.string.settings_rejoin_percent_hint)) {
                             Segmented(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
                         }
-                        Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
+                        Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint), small = true) {
                             OutlinedButton(onClick = actions.onDemoRide, enabled = state.isNavigating || state.isDemoRiding) {
                                 Text(stringResource(if (state.isDemoRiding) R.string.stop else R.string.start), color = NeonAmber)
                             }
@@ -156,7 +153,15 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Text(state.searchStatus, color = TextSecondary, fontSize = 13.sp)
                     }
                 }
-            }
+        }
+        val tabs: @Composable () -> Unit = { DialogTabs(SettingsTab.entries, tab, { stringResource(it.label) }, { it.icon }, { tab = it }) }
+        // Upright on a phone the page tabs go on top; otherwise down the left, like Android Auto.
+        if (isNarrowScreen()) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            tabs()
+            Box(Modifier.weight(1f).fillMaxWidth()) { pages() }
+        } else Row(Modifier.fillMaxSize()) {
+            tabs()
+            Box(Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp, end = 6.dp)) { pages() }
         }
     }
 
@@ -251,11 +256,17 @@ private fun SectionTitle(text: String) {
 
 /** One setting: title (and an optional one-line hint) on the left, the control on the right. */
 @Composable
-private fun Setting(title: String, hint: String? = null, below: (@Composable () -> Unit)? = null, control: @Composable () -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+private fun Setting(title: String, hint: String? = null, below: (@Composable () -> Unit)? = null, small: Boolean = false, control: @Composable () -> Unit) {
+    // Narrow: a wide choice goes under its title instead of beside it (a switch still fits beside).
+    if (isNarrowScreen() && !small) Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp)
+        below?.invoke()
+        control()
+    } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp, maxLines = 1)
+            if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp, maxLines = if (isNarrowScreen()) 3 else 1)
             below?.invoke()
         }
         control()

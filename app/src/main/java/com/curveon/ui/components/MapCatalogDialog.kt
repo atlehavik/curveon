@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,22 +71,20 @@ fun MapCatalogDialog(
         title = stringResource(R.string.maps_title), icon = Icons.Default.Public, accent = ElectricCyan, onDismiss = onDismiss,
         tag = "map_catalog_dialog", subtitle = stringResource(R.string.maps_free, freeBytes / 1e9)
     ) {
-        Row(Modifier.fillMaxSize()) {
-            Column(
-                Modifier.width(210.dp).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f))
-                    .verticalScroll(rememberScrollState()).padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                MapCatalog.CONTINENTS.forEach { c ->
-                    val on = c == continent
-                    Text(
-                        stringResource(MapCatalog.continentName(c)), color = if (on) OnCyan else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
-                            .clickable { continent = c }.padding(horizontal = 14.dp, vertical = 14.dp)
-                    )
-                }
+        val narrow = isNarrowScreen()
+        val continents: @Composable () -> Unit = {
+            MapCatalog.CONTINENTS.forEach { c ->
+                val on = c == continent
+                Text(
+                    stringResource(MapCatalog.continentName(c)), color = if (on) OnCyan else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                    maxLines = 1, softWrap = false,
+                    modifier = (if (narrow) Modifier else Modifier.fillMaxWidth()).clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                        .clickable { continent = c }.padding(horizontal = 14.dp, vertical = if (narrow) 10.dp else 14.dp)
+                )
             }
-            LazyColumn(Modifier.weight(1f).fillMaxHeight().padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        }
+        val list: @Composable (Modifier) -> Unit = { listModifier ->
+            LazyColumn(listModifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(rows, key = { it.first.id }) { (area, indent) ->
                     val split = catalog.isSplit(area)
                     AreaRow(
@@ -102,6 +101,22 @@ fun MapCatalogDialog(
                 }
                 item { Text(stringResource(R.string.maps_hint), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(8.dp)) }
             }
+        }
+        // Upright on a phone: the continents scroll sideways above the countries.
+        if (narrow) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f))
+                    .horizontalScroll(rememberScrollState()).padding(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) { continents() }
+            list(Modifier.weight(1f).fillMaxWidth())
+        } else Row(Modifier.fillMaxSize()) {
+            Column(
+                Modifier.width(210.dp).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f))
+                    .verticalScroll(rememberScrollState()).padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) { continents() }
+            list(Modifier.weight(1f).fillMaxHeight().padding(start = 16.dp))
         }
     }
 }
