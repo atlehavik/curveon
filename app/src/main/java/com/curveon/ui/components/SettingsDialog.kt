@@ -45,6 +45,7 @@ data class SettingsState(
     val mapTheme: MapTheme,
     val obdEnabled: Boolean,
     val autoZoom: Boolean,
+    val showSurfaces: Boolean,
     val autoFollowTracks: Boolean,
     val offRoute: com.curveon.data.routing.OffRouteSettings,
     val isNavigating: Boolean,
@@ -65,6 +66,7 @@ class SettingsActions(
     val onMapTheme: (MapTheme) -> Unit,
     val onObd: (Boolean) -> Unit,
     val onAutoZoom: (Boolean) -> Unit,
+    val onShowSurfaces: (Boolean) -> Unit,
     val onAutoFollow: (Boolean) -> Unit,
     val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
     val onDemoRide: () -> Unit,
@@ -98,6 +100,10 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_map)) {
                             Segmented(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
+                        }
+                        Setting(stringResource(R.string.settings_surfaces), below = { SurfaceKey() }) {
+                            Segmented(listOf(false, true), state.showSurfaces,
+                                { stringResource(if (it) R.string.settings_surfaces_dashed else R.string.settings_surfaces_off) }, actions.onShowSurfaces)
                         }
                         Setting(stringResource(R.string.settings_obd), stringResource(R.string.settings_obd_hint)) {
                             CockpitSwitch(state.obdEnabled, actions.onObd)
@@ -245,12 +251,36 @@ private fun SectionTitle(text: String) {
 
 /** One setting: title (and an optional one-line hint) on the left, the control on the right. */
 @Composable
-private fun Setting(title: String, hint: String? = null, control: @Composable () -> Unit) {
+private fun Setting(title: String, hint: String? = null, below: (@Composable () -> Unit)? = null, control: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp, maxLines = 1)
+            below?.invoke()
         }
         control()
+    }
+}
+
+/** What the map's dashes mean: a sample of each, as drawn on the dark map. */
+@Composable
+private fun SurfaceKey() {
+    Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        DashSample(SurfaceColors.GRAVEL_DARK)
+        Text(stringResource(R.string.surface_gravel), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, end = 16.dp))
+        DashSample(SurfaceColors.SOFT_DARK)
+        Text(stringResource(R.string.surface_soft), color = TextMuted, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 6.dp))
+    }
+}
+
+@Composable
+private fun DashSample(hex: String) {
+    val color = Color(android.graphics.Color.parseColor(hex))
+    androidx.compose.foundation.Canvas(Modifier.size(width = 30.dp, height = 6.dp)) {
+        drawLine(
+            color, androidx.compose.ui.geometry.Offset(0f, size.height / 2), androidx.compose.ui.geometry.Offset(size.width, size.height / 2),
+            strokeWidth = size.height,
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(size.height * 1.6f, size.height * 1.1f))
+        )
     }
 }

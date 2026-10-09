@@ -178,6 +178,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val autoZoom: StateFlow<Boolean> = _autoZoom.asStateFlow()
     fun setAutoZoom(on: Boolean) { _autoZoom.value = on; settings.edit().putBoolean("autoZoom", on).apply() }
 
+    /** Gravel and soft roads dashed on the map. */
+    private val _showSurfaces = MutableStateFlow(settings.getBoolean("showSurfaces", true))
+    val showSurfaces: StateFlow<Boolean> = _showSurfaces.asStateFlow()
+    fun setShowSurfaces(on: Boolean) { _showSurfaces.value = on; settings.edit().putBoolean("showSurfaces", on).apply() }
+
     fun setUseMph(on: Boolean) { if (_telemetry.value.useMph != on) toggleSpeedUnits() }
     fun setObd(on: Boolean) { if (_telemetry.value.isObdEnabled != on) toggleObd() }
 

@@ -56,6 +56,10 @@
     <string name="map_theme_night">Natt</string>
     <string name="settings_obd">OBD2-data</string>
     <string name="settings_obd_hint">Motordata når en adapter er tilkoblet</string>
+    <string name="settings_surfaces">Veidekke</string>
+    <string name="settings_surfaces_off">Av</string>
+    <string name="settings_surfaces_dashed">Stiplet</string>
+    <string name="surface_soft">Jord, ulendt eller ukjent</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom inn i lav fart, ut på raske veier</string>
     <string name="settings_auto_follow">Følg GPX-spor automatisk</string>

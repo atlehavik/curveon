@@ -75,6 +75,14 @@ private const val ARROW_IMAGE = "curveon-arrow"
 /** GPX waypoints turn from dots into icons from this zoom in (about 30 km across the map). */
 private const val POI_ICON_ZOOM = 11f
 private const val SURFACE = "curveon-surface"
+
+/** The road surface dashes, also shown as the key in Settings. */
+internal object SurfaceColors {
+    const val GRAVEL_LIGHT = "#9AA0A6"
+    const val GRAVEL_DARK = "#8A919C"
+    const val SOFT_LIGHT = "#9C6B3E"
+    const val SOFT_DARK = "#A07850"
+}
 /** Gravel and soft roads from this zoom in (about 10 km across the X7's map); further out they would clutter. */
 private const val SURFACE_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
@@ -130,6 +138,8 @@ fun CurveonMapView(
     previewSheetMinimized: Boolean = false,
     /** Gravel and soft roads in an area (south, west, north, east), drawn dashed when zoomed in. */
     surfaceWays: (suspend (Double, Double, Double, Double) -> List<com.curveon.routing.SurfaceWay>)? = null,
+    /** Settings → Display: draw the road surfaces at all. */
+    showSurfaces: Boolean = true,
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -450,10 +460,15 @@ fun CurveonMapView(
 
     // Gravel and soft roads, dashed over the map's own roads once zoomed in far enough to choose by them.
     var surfaceBounds by remember { mutableStateOf<LatLngBounds?>(null) }
-    LaunchedEffect(style, cameraIdleTick) {
+    LaunchedEffect(style, showSurfaces) {
+        val s = style ?: return@LaunchedEffect
+        val v = if (showSurfaces) Property.VISIBLE else Property.NONE
+        s.layers.filter { it.id.startsWith(SURFACE) }.forEach { it.setProperties(visibility(v)) }
+    }
+    LaunchedEffect(style, cameraIdleTick, showSurfaces) {
         val m = map ?: return@LaunchedEffect
         val s = style ?: return@LaunchedEffect
-        val fetch = surfaceWays ?: return@LaunchedEffect
+        val fetch = surfaceWays?.takeIf { showSurfaces } ?: return@LaunchedEffect
         if (m.cameraPosition.zoom < SURFACE_ZOOM) return@LaunchedEffect
         val b = m.projection.visibleRegion.latLngBounds
         val have = surfaceBounds
@@ -625,10 +640,10 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
     val soft = E.eq(E.get("kind"), E.literal("soft"))
     val layers = listOf(
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
-            lineColor(if (dark) "#A07850" else "#9C6B3E"), lineWidth(width(2.8f)), lineDasharray(arrayOf(2f, 1.5f))
+            lineColor(if (dark) SurfaceColors.SOFT_DARK else SurfaceColors.SOFT_LIGHT), lineWidth(width(2.8f)), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),
         LineLayer("$SURFACE-gravel", SURFACE).withProperties(
-            lineColor(if (dark) "#8A919C" else "#9AA0A6"), lineWidth(width(2.8f)), lineDasharray(arrayOf(2.5f, 1.5f))
+            lineColor(if (dark) SurfaceColors.GRAVEL_DARK else SurfaceColors.GRAVEL_LIGHT), lineWidth(width(2.8f)), lineDasharray(arrayOf(2.5f, 1.5f))
         ).withFilter(gravel)
     )
     // Under the downloaded map's first label layer, so road names stay on top (the online map's

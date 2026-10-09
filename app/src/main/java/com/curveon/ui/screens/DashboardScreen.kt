@@ -78,6 +78,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val poiCategories by viewModel.poiCategories.collectAsStateWithLifecycle()
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
     val mapAutoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
+    val showSurfaces by viewModel.showSurfaces.collectAsStateWithLifecycle()
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
@@ -372,6 +373,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onEditRoute = if (planGoal != null && !editing && mapPick == null) ({ editing = true }) else null,
                     previewSheetMinimized = previewMinimized,
                     surfaceWays = viewModel::surfaceWays,
+                    showSurfaces = showSurfaces,
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,
                     onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
@@ -625,7 +627,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 state = SettingsState(
                     language = remember { com.curveon.AppLanguage.current(context) },
                     useMph = telemetry.useMph, mapTheme = mapTheme, obdEnabled = telemetry.isObdEnabled,
-                    autoZoom = autoZoom, autoFollowTracks = autoFollow,
+                    autoZoom = autoZoom, showSurfaces = showSurfaces, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
@@ -638,6 +640,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onMapTheme = viewModel::setMapTheme,
                     onObd = viewModel::setObd,
                     onAutoZoom = viewModel::setAutoZoom,
+                    onShowSurfaces = viewModel::setShowSurfaces,
                     onAutoFollow = viewModel::setAutoFollow,
                     onOffRoute = viewModel::setOffRouteSettings,
                     onDemoRide = { viewModel.toggleDemoRide(); showSettings = false },

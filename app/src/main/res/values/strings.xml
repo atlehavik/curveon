@@ -57,6 +57,10 @@
     <string name="map_theme_night">Night</string>
     <string name="settings_obd">OBD2 data</string>
     <string name="settings_obd_hint">Engine data card when an adapter is connected</string>
+    <string name="settings_surfaces">Road surfaces</string>
+    <string name="settings_surfaces_off">Off</string>
+    <string name="settings_surfaces_dashed">Dashed</string>
+    <string name="surface_soft">Dirt, rough or unknown</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom in when slow, out on fast roads</string>
     <string name="settings_auto_follow">Auto-follow GPX tracks</string>
