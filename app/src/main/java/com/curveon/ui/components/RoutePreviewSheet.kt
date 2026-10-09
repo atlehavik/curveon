@@ -193,6 +193,10 @@ fun RoutePreviewSheet(
             }
         }
 
+        // Tarmac asked for but the route still has gravel: the router only takes it when there's no
+        // tarmac road there short of a huge detour, and a cruiser can't ride it, so say so loudly.
+        preview.selectedRoute?.let { route -> if (options.surface == SurfacePreference.PAVED) ForcedGravelWarning(route) }
+
         // Options + GO
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             RouteOptionChips(
@@ -203,6 +207,42 @@ fun RoutePreviewSheet(
             GoButton(ready = preview.selectedRoute != null, onGo = onGo)
         }
     }
+}
+
+/** Less than this much gravel on a tarmac route is noise (a bit of yard or an untagged track crossing). */
+private const val FORCED_GRAVEL_MIN_METERS = 100.0
+
+private fun com.curveon.routing.Route.forcedGravel() = unpavedMeters >= FORCED_GRAVEL_MIN_METERS
+
+@Composable
+private fun ForcedGravelWarning(route: com.curveon.routing.Route) {
+    if (!route.forcedGravel()) return
+    val first = route.points.zipWithNext().firstOrNull { it.second.unpaved }?.first?.distanceFromStart ?: 0.0
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(NeonAmber.copy(alpha = 0.22f))
+            .border(2.dp, NeonAmber, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag("preview_gravel_warning"),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.Warning, null, tint = NeonAmber, modifier = Modifier.size(26.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(
+            stringResource(
+                R.string.preview_forced_gravel,
+                shortDistance(route.unpavedMeters),
+                if (first < 500) stringResource(R.string.preview_gravel_from_start) else stringResource(R.string.preview_gravel_after, shortDistance(first))
+            ),
+            color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+/** 300 m, 2.4 km, 35 km. */
+@Composable
+private fun shortDistance(meters: Double): String = when {
+    meters < 1000 -> stringResource(R.string.distance_m_int, (Math.round(meters / 50) * 50).toInt().coerceAtLeast(50))
+    meters < 10_000 -> stringResource(R.string.distance_km, meters / 1000)
+    else -> stringResource(R.string.distance_km_whole, meters / 1000)
 }
 
 /** The sheet folded down: where to and the chosen route's time and distance; tap it to open again. */
@@ -238,10 +278,17 @@ private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo:
             )
             if (route != null) {
                 val min = (route.durationSeconds / 60).toInt()
-                Text(
-                    "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, route.distanceMeters / 1000),
-                    color = TextSecondary, fontSize = 13.sp, maxLines = 1
-                )
+                val gravel = goal.options.surface == SurfacePreference.PAVED && route.forcedGravel()
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, route.distanceMeters / 1000),
+                        color = TextSecondary, fontSize = 13.sp, maxLines = 1
+                    )
+                    if (gravel) {
+                        Icon(Icons.Default.Warning, null, tint = NeonAmber, modifier = Modifier.padding(start = 8.dp).size(16.dp))
+                        Text(" " + stringResource(R.string.preview_gravel_amount, shortDistance(route.unpavedMeters)), color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                }
             }
         }
         Spacer(Modifier.width(8.dp))

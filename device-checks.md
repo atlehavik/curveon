@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-09 — Warning when a tarmac route forces gravel
+
+With Tarmac chosen, a route that still has gravel (100 m or more) shows a framed warning above GO:
+how much gravel and where the first of it starts. The folded bar shows "⚠ 400 m gravel". The router
+only takes gravel on Tarmac when there's no tarmac road short of a huge detour. Tried on the X7
+(Stautland on Bømlo: 400 m gravel at the end; with Mixed the warning goes away).
+
+- [ ] Plan a trip to a cabin or farm on a gravel road: the warning is clear enough before pressing GO.
+- [ ] A normal tarmac trip shows no warning (no false alarms from short untagged bits).
+
 ## 2026-10-09 — No home/recents buttons while typing
 
 Dialogs no longer bring back the back/home/recents bar (it also squeezed the map). The bar that

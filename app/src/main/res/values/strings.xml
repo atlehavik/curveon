@@ -320,6 +320,10 @@
     <string name="preview_ferry_road">There is no road there without one.</string>
     <string name="preview_go">GO</string>
     <string name="preview_km_gravel">%.0f km gravel</string>
+    <string name="preview_forced_gravel">This route forces you onto gravel: %1$s, %2$s. There is no tarmac road there without a big detour.</string>
+    <string name="preview_gravel_from_start">right from the start</string>
+    <string name="preview_gravel_after">the first after %1$s</string>
+    <string name="preview_gravel_amount">%1$s gravel</string>
     <plurals name="preview_ferries">
         <item quantity="one">ferry</item>
         <item quantity="other">%d ferries</item>

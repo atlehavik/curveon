@@ -319,6 +319,10 @@
     <string name="preview_ferry_road">Det finnes ingen vei dit uten.</string>
     <string name="preview_go">KJØR</string>
     <string name="preview_km_gravel">%.0f km grus</string>
+    <string name="preview_forced_gravel">Denne ruten tvinger deg på grus: %1$s, %2$s. Det finnes ingen asfaltvei dit uten en stor omvei.</string>
+    <string name="preview_gravel_from_start">rett fra start</string>
+    <string name="preview_gravel_after">første etter %1$s</string>
+    <string name="preview_gravel_amount">%1$s grus</string>
     <plurals name="preview_ferries">
         <item quantity="one">ferje</item>
         <item quantity="other">%d ferjer</item>

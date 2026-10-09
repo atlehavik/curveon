@@ -362,7 +362,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                     val result = runCatching { calculate(goal, from, style) }
                     android.util.Log.i("Curveon", "Routed ${goal::class.simpleName} ${style ?: ""} in %.1f s: %s".format(
                         (System.nanoTime() - t0) / 1e9,
-                        result.fold({ "%.0f km, %d ferries".format(it.distanceMeters / 1000, it.ferryCount) }, { "failed: ${it.message}" })))
+                        result.fold({ "%.0f km, %d ferries, %.0f m unpaved".format(it.distanceMeters / 1000, it.ferryCount, it.unpavedMeters) }, { "failed: ${it.message}" })))
                     synchronized(this@Navigator) {
                         val p = _state.value.preview ?: return@async
                         if (p.goal != goal) return@async
