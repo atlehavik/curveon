@@ -119,6 +119,39 @@ class TileNames(private val file: File) {
     }
 }
 
+/**
+ * Answers "does this archive have tile z/x/y?" from its directories alone, keeping the ones it has
+ * read; used to tell where a downloaded map ends.
+ */
+class PmtilesIndex(private val file: File) {
+    private val header = RandomAccessFile(file, "r").use { f -> Pmtiles.readHeader(ByteArray(Pmtiles.HEADER_SIZE).also { f.readFully(it) }) }
+    private val dirs = object : LinkedHashMap<Long, Pmtiles.Dir>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, Pmtiles.Dir>) = size > 64
+    }
+
+    val maxZoom: Int get() = header.maxZoom
+
+    @Synchronized
+    fun has(z: Int, x: Int, y: Int): Boolean {
+        val id = Pmtiles.tileId(z, x, y)
+        var d = dir(header.rootOffset, header.rootLength)
+        repeat(4) { // the spec allows at most 3 levels of leaves
+            var lo = 0; var hi = d.size - 1; var i = -1
+            while (lo <= hi) { val mid = (lo + hi) ushr 1; if (d.ids[mid] <= id) { i = mid; lo = mid + 1 } else hi = mid - 1 }
+            if (i < 0) return false
+            if (d.runs[i] > 0) return id < d.ids[i] + d.runs[i]
+            d = dir(header.leafOffset + d.offsets[i], d.lengths[i].toLong())
+        }
+        return false
+    }
+
+    private fun dir(offset: Long, length: Long): Pmtiles.Dir = dirs.getOrPut(offset) {
+        val b = ByteArray(length.toInt())
+        RandomAccessFile(file, "r").use { f -> f.seek(offset); f.readFully(b) }
+        Pmtiles.parseDirectory(Pmtiles.decompress(b, header.internalCompression))
+    }
+}
+
 /** Reads tiles of a local PMTiles archive, each distinct tile content once, in file order. */
 class PmtilesFile(private val file: File) {
 

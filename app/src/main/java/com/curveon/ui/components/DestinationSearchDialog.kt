@@ -34,6 +34,7 @@ import com.curveon.data.model.GeoPoint
 import com.curveon.data.search.SearchResult
 import com.curveon.ui.theme.*
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.combinedClickable
 
@@ -47,7 +48,8 @@ const val KIND_HERE = "here"
 @Composable
 fun DestinationSearchDialog(
     searchStatus: String,
-    onSearch: suspend (String) -> List<SearchResult>,
+    /** Offline results first, then again with online ones worked in when there is a connection. */
+    onSearch: (String) -> Flow<List<SearchResult>>,
     onPick: (SearchResult) -> Unit,
     onDismiss: () -> Unit,
     savedRoutes: List<com.curveon.data.model.RouteItem> = emptyList(),
@@ -74,7 +76,7 @@ fun DestinationSearchDialog(
         if (query.trim().length < 2) { if (nearest == null) results = emptyList(); return@LaunchedEffect }
         delay(250) // debounce typing
         searching = true
-        results = onSearch(query)
+        onSearch(query).collect { results = it }
         searching = false
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -298,6 +300,10 @@ private fun kindIcon(kind: String): ImageVector = when (kind) {
     "motorcycle_shop" -> Icons.Default.TwoWheeler
     "supermarket", "shop" -> Icons.Default.ShoppingCart
     "peak", "pass" -> Icons.Default.Terrain
+    "workshop" -> Icons.Default.Build
+    "business" -> Icons.Default.Store
+    "lake", "bay" -> Icons.Default.Water
+    "farm" -> Icons.Default.Agriculture
     else -> Icons.Default.Place
 }
 
@@ -329,6 +335,12 @@ private fun kindLabel(kind: String): String = when (kind) {
     "peak" -> R.string.kind_peak
     "motorcycle_shop" -> R.string.kind_motorcycle_shop
     "fast_food" -> R.string.kind_fast_food
+    "farm" -> R.string.kind_farm
+    "workshop" -> R.string.kind_workshop
+    "business" -> R.string.kind_business
+    "lake" -> R.string.kind_lake
+    "bay" -> R.string.kind_bay
+    "place" -> R.string.kind_place
     "recent" -> R.string.search_recent
     else -> null
 }?.let { stringResource(it) } ?: kind.replace('_', ' ').replaceFirstChar { it.uppercase() }

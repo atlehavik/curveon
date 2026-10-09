@@ -193,6 +193,12 @@
     <string name="kind_village">Bygd</string>
     <string name="kind_suburb">Bydel</string>
     <string name="kind_hamlet">Grend</string>
+    <string name="kind_workshop">Verksted</string>
+    <string name="kind_business">Bedrift</string>
+    <string name="kind_farm">Gard</string>
+    <string name="kind_lake">Vann</string>
+    <string name="kind_bay">Fjord eller vik</string>
+    <string name="kind_place">Stedsnavn</string>
     <string name="kind_island">Øy</string>
     <string name="kind_street">Gate</string>
     <string name="kind_fuel">Bensin</string>

@@ -7,6 +7,12 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.curveon.routing.Geo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -29,7 +35,7 @@ data class SearchResult(
 
 /**
  * Destination search. Offline first, over the search index of every downloaded country (see
- * [SearchIndexes]); when the tablet is online (phone hotspot) Photon/OpenStreetMap results are added.
+ * [SearchIndexes]); when the tablet is online (phone hotspot) online results are worked in (see [search]).
  */
 class PlaceSearch(private val context: Context) {
 
@@ -58,15 +64,34 @@ class PlaceSearch(private val context: Context) {
         dbs = null
     }
 
-    suspend fun search(query: String, nearLat: Double, nearLon: Double, limit: Int = 30): List<SearchResult> =
-        withContext(Dispatchers.IO) {
-            val q = query.trim()
-            if (q.length < 2) return@withContext emptyList()
-            val offline = runCatching { searchOffline(q, nearLat, nearLon, limit) }.getOrDefault(emptyList())
-            val online = if (offline.size < 5 && isOnline()) runCatching { searchOnline(q, nearLat, nearLon) }.getOrDefault(emptyList()) else emptyList()
-            (offline + online.filter { o -> offline.none { it.name == o.name && Geo.distance(it.lat, it.lon, o.lat, o.lon) < 300 } })
-                .take(limit)
+    /**
+     * Offline results at once, then (when the tablet is online) the same list with online results
+     * worked in: Photon/OpenStreetMap everywhere, plus Kartverket's place names and addresses in Norway.
+     */
+    fun search(query: String, nearLat: Double, nearLon: Double, limit: Int = 30): Flow<List<SearchResult>> = flow {
+        val q = query.trim()
+        if (q.length < 2) { emit(emptyList()); return@flow }
+        val parsed = parseQuery(q)
+        val offline = runCatching { scoredOffline(parsed, nearLat, nearLon) }.getOrDefault(emptyList())
+        emit(offline.map { it.first }.take(limit))
+        if (!isOnline()) return@flow
+        val sources = buildList<() -> List<SearchResult>> {
+            add { searchPhoton(q, nearLat, nearLon) }
+            if (inNorway(nearLat, nearLon)) {
+                add { searchPlaceNames(q, nearLat, nearLon) }
+                // Kartverket's addresses are already offline once Norway is downloaded.
+                if (parsed.houseNumber != null && offline.none { it.first.kind == "street" }) add { searchAddresses(q, nearLat, nearLon) }
+            }
         }
+        val online = coroutineScope { sources.map { async { runCatching(it).getOrDefault(emptyList()) } }.awaitAll() }.flatten()
+        if (online.isEmpty()) return@flow
+        val merged = offline.toMutableList()
+        online.map { it to score(it, onlineRank(it, parsed), parsed) }.sortedByDescending { it.second }.forEach { (o, sc) ->
+            val n = normalise(o.name)
+            if (merged.none { normalise(it.first.name) == n && Geo.distance(it.first.lat, it.first.lon, o.lat, o.lon) < 1000 }) merged += o to sc
+        }
+        emit(merged.sortedByDescending { it.second }.map { it.first }.take(limit))
+    }.flowOn(Dispatchers.IO)
 
     @Synchronized
     private fun openDbs(): List<SQLiteDatabase> {
@@ -76,8 +101,8 @@ class PlaceSearch(private val context: Context) {
         }.also { dbs = it }
     }
 
-    internal fun searchOffline(query: String, nearLat: Double, nearLon: Double, limit: Int): List<SearchResult> {
-        val parsed = parseQuery(query)
+    /** Offline matches, best first, with their scores (so online results can be worked in). */
+    private fun scoredOffline(parsed: ParsedQuery, nearLat: Double, nearLon: Double): List<Pair<SearchResult, Double>> {
         if (parsed.terms.isEmpty()) return emptyList()
         val match = parsed.terms.joinToString(" ") { "$it*" }
         val rows = mutableListOf<Pair<SearchResult, Double>>()
@@ -104,7 +129,7 @@ class PlaceSearch(private val context: Context) {
                 rows += result to score(result, c.getInt(4) + addressBonus, parsed)
             }
         } }
-        return rows.sortedByDescending { it.second }.map { it.first }.distinctBy { "${it.name}|${it.area}" }.take(limit)
+        return rows.sortedByDescending { it.second }.distinctBy { "${it.first.name}|${it.first.area}" }
     }
 
     /** The requested house number, or the numerically closest one on that street. */
@@ -146,29 +171,86 @@ class PlaceSearch(private val context: Context) {
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
-    private fun searchOnline(query: String, nearLat: Double, nearLon: Double): List<SearchResult> {
+    private fun getJson(url: okhttp3.HttpUrl): String? =
+        http.newCall(Request.Builder().url(url).header("User-Agent", "Curveon/1.0").build()).execute()
+            .use { if (it.isSuccessful) it.body?.string() else null }
+
+    private fun searchPhoton(query: String, nearLat: Double, nearLon: Double): List<SearchResult> {
         val url = "https://photon.komoot.io/api/".toHttpUrl().newBuilder()
             .addQueryParameter("q", query)
             .addQueryParameter("lat", nearLat.toString())
             .addQueryParameter("lon", nearLon.toString())
-            .addQueryParameter("limit", "10")
+            .addQueryParameter("limit", "15")
             .build()
-        val body = http.newCall(Request.Builder().url(url).header("User-Agent", "Curveon/1.0").build()).execute()
-            .use { if (it.isSuccessful) it.body?.string() else null } ?: return emptyList()
-        val features = JSONObject(body).optJSONArray("features") ?: return emptyList()
+        val features = JSONObject(getJson(url) ?: return emptyList()).optJSONArray("features") ?: return emptyList()
         return (0 until features.length()).mapNotNull { i ->
             val f = features.getJSONObject(i)
             val coords = f.getJSONObject("geometry").getJSONArray("coordinates")
             val p = f.getJSONObject("properties")
             val street = p.optString("street").takeIf { it.isNotEmpty() }
+            val number = p.optString("housenumber").takeIf { it.isNotEmpty() }
             val name = p.optString("name").takeIf { it.isNotEmpty() }
-                ?: street?.let { s -> p.optString("housenumber").takeIf { it.isNotEmpty() }?.let { "$s $it" } ?: s }
+                ?: street?.let { s -> number?.let { "$s $it" } ?: s }
                 ?: return@mapNotNull null
             val area = listOf(p.optString("city"), p.optString("county")).firstOrNull { it.isNotEmpty() } ?: p.optString("country")
+            val kind = when {
+                p.optString("osm_key") == "place" -> p.optString("osm_value")
+                number != null && p.optString("name").isEmpty() -> "street"
+                p.optString("osm_key") == "highway" && p.optString("type") == "street" -> "street"
+                else -> PHOTON_KINDS[p.optString("osm_value")] ?: p.optString("osm_value", "place")
+            }
             val lat = coords.getDouble(1)
             val lon = coords.getDouble(0)
-            SearchResult(name, area, p.optString("osm_value", "place"), lat, lon, Geo.distance(nearLat, nearLon, lat, lon) / 1000, online = true)
+            SearchResult(name, area, kind, lat, lon, Geo.distance(nearLat, nearLon, lat, lon) / 1000, online = true)
         }
+    }
+
+    /** Kartverket's place names (Sentralt stedsnavnregister): farms, bays, lakes, hills, … that OSM often lacks. */
+    private fun searchPlaceNames(query: String, nearLat: Double, nearLon: Double): List<SearchResult> {
+        val url = "https://ws.geonorge.no/stedsnavn/v1/navn".toHttpUrl().newBuilder()
+            .addQueryParameter("sok", "$query*")
+            .addQueryParameter("treffPerSide", "50")
+            .addQueryParameter("utkoordsys", "4258")
+            .build()
+        val names = JSONObject(getJson(url) ?: return emptyList()).optJSONArray("navn") ?: return emptyList()
+        return (0 until names.length()).mapNotNull { i ->
+            val n = names.getJSONObject(i)
+            val name = n.optString("skrivemåte").takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+            val point = n.optJSONObject("representasjonspunkt") ?: return@mapNotNull null
+            val lat = point.optDouble("nord").takeIf { !it.isNaN() } ?: return@mapNotNull null
+            val lon = point.optDouble("øst").takeIf { !it.isNaN() } ?: return@mapNotNull null
+            val area = n.optJSONArray("kommuner")?.optJSONObject(0)?.optString("kommunenavn").orEmpty()
+            SearchResult(name, area, PLACE_NAME_KINDS[n.optString("navneobjekttype")] ?: "place", lat, lon,
+                Geo.distance(nearLat, nearLon, lat, lon) / 1000, online = true)
+        }
+    }
+
+    /** Kartverket's address register, for a house number when no country index has the street. */
+    private fun searchAddresses(query: String, nearLat: Double, nearLon: Double): List<SearchResult> {
+        val url = "https://ws.geonorge.no/adresser/v1/sok".toHttpUrl().newBuilder()
+            .addQueryParameter("sok", query)
+            .addQueryParameter("treffPerSide", "10")
+            .addQueryParameter("utkoordsys", "4258")
+            .build()
+        val found = JSONObject(getJson(url) ?: return emptyList()).optJSONArray("adresser") ?: return emptyList()
+        return (0 until found.length()).mapNotNull { i ->
+            val a = found.getJSONObject(i)
+            val point = a.optJSONObject("representasjonspunkt") ?: return@mapNotNull null
+            val lat = point.optDouble("lat")
+            val lon = point.optDouble("lon")
+            if (lat.isNaN() || lon.isNaN()) return@mapNotNull null
+            val area = "${a.optString("postnummer")} ${a.optString("poststed").lowercase().replaceFirstChar { it.uppercase() }}".trim()
+            SearchResult(a.optString("adressetekst"), area, "street", lat, lon, Geo.distance(nearLat, nearLon, lat, lon) / 1000, online = true)
+        }
+    }
+
+    /** Rank like the offline index gives the same kind of thing, so online and offline results mix fairly. */
+    private fun onlineRank(r: SearchResult, q: ParsedQuery): Int = when (r.kind) {
+        "street" -> if (q.houseNumber != null && r.name.any { it.isDigit() }) 90 else 10
+        "farm" -> 25
+        "lake", "bay" -> 25
+        "place" -> 15
+        else -> PLACE_RANKS[r.kind] ?: 35
     }
 
     /** A point of interest or camera near the route; [along] is filled in by the caller. */
@@ -229,6 +311,32 @@ class PlaceSearch(private val context: Context) {
     internal data class ParsedQuery(val text: String, val terms: List<String>, val houseNumber: String?)
 
     companion object {
+        private fun inNorway(lat: Double, lon: Double) = lat in 57.5..81.0 && lon in 4.0..31.5
+
+        private val PLACE_RANKS = mapOf(
+            "city" to 100, "town" to 90, "village" to 70, "suburb" to 60, "borough" to 60, "quarter" to 50,
+            "hamlet" to 45, "neighbourhood" to 40, "island" to 40, "locality" to 30, "isolated_dwelling" to 20,
+        )
+
+        /** OSM values the offline index calls something else. */
+        private val PHOTON_KINDS = mapOf(
+            "charging_station" to "charging", "ferry_terminal" to "ferry", "camp_site" to "camp_site",
+            "motel" to "hotel", "guest_house" to "hotel", "hostel" to "hotel", "alpine_hut" to "hut",
+            "wilderness_hut" to "hut", "motorcycle" to "motorcycle_shop", "convenience" to "shop",
+            "car_repair" to "workshop", "tyres" to "workshop",
+        )
+
+        /** Kartverket's place name types → our kinds; anything else is a plain "place". */
+        private val PLACE_NAME_KINDS = mapOf(
+            "By" to "city", "Tettsted" to "town", "Tettbebyggelse" to "village", "Bydel" to "suburb",
+            "Bygdelag (bygd)" to "hamlet", "Grend" to "hamlet", "Gard" to "farm", "Bruk (gardsbruk)" to "farm",
+            "Øy" to "island", "Øy i sjø" to "island", "Holme i sjø" to "island", "Halvøy i sjø" to "island",
+            "Fjell" to "peak", "Topp" to "peak", "Fjellområde" to "peak", "Ås" to "peak", "Haug" to "peak", "Høyde" to "peak",
+            "Innsjø" to "lake", "Vann" to "lake", "Tjern" to "lake", "Vik" to "bay", "Bukt i sjø" to "bay", "Fjord" to "bay",
+            "Fjellovergang" to "pass", "Severdighet" to "attraction", "Utsiktspunkt" to "viewpoint",
+            "Ferjekai" to "ferry", "Kai" to "ferry", "Vegstrekning" to "street", "Adressenavn" to "street",
+        )
+
         private val HOUSE_NUMBER = Regex("^\\d{1,4}[a-z]?$")
 
         /** Same normalisation as the index builder: lowercase, æ→ae, ø→o, å→a, no accents or punctuation. */

@@ -52,6 +52,19 @@ wherever routing data is installed. Tried in the emulator (forest roads east of 
 - [ ] Spot-check a road you know is gravel and one you know is tarmac: right colour?
 - [ ] Dark map: the grey and brown still show.
 
+## 2026-10-09 — Online map and online search
+
+Outside the downloaded countries the map now comes from OpenFreeMap (free, no key) when the tablet is
+online. Search shows offline results first, then mixes in Photon and (in Norway) Kartverket's place
+names/addresses. Tried in the emulator (Arvika in Sweden; "Lyklingv" from Bømlo).
+
+- [ ] On the phone hotspot, pan the X7's map into Sweden: roads and towns appear in the same style.
+  Pan back into Norway: `adb logcat -s CurveonMap` should say "Online map off".
+- [ ] Turn the hotspot off and pan to where you looked before: the map should still be there (cache).
+- [ ] With the hotspot on, search for a farm or bay name near home: an "online" result appears a
+  moment after the offline ones. With it off, search behaves as before.
+- [ ] Riding with the online map shown: does the X7 keep up (smooth scrolling, no lag)?
+
 ## 2026-10-08 — Tracks with Tarmac
 
 Before, Tarmac forbade every `highway=track` (and grade4/5 were forbidden even with Gravel), so a

@@ -18,6 +18,8 @@ and [dashboard.md](dashboard.md) for the goals.
   Download countries, by continent like DMD2; each country brings its routing data and offline
   search (full from the public curveon-data repo, or built from the map). Several
   countries show together. Dark style, heading-up follow, long-press to navigate somewhere.
+  Outside the downloaded countries the map comes from OpenFreeMap's free online tiles (no key) in the
+  same colours, when there is a connection; tiles seen once stay cached (300 MB) for offline use.
 - **Offline routing** with Fastest / Curvy / Super curvy, Tarmac / Mixed / Gravel / Offroad, avoid
   ferries / motorways; ETA and remaining distance; rerouting when you leave the route.
   Every road a motorcycle may use is routable, tracks of any grade included: with Tarmac a track is
@@ -32,7 +34,9 @@ and [dashboard.md](dashboard.md) for the goals.
   Waypoints show as coloured dots when zoomed out and as an icon per kind (camping, fuel, ferry, …)
   when zoomed in; tapping one shows everything the file has on it (address, phone, links, …).
 - **Destination search**, offline (towns, addresses with house numbers, fuel, cafés,
-  viewpoints, campsites, ferries, passes…), plus online results when the tablet has a connection.
+  viewpoints, campsites, ferries, passes…, and businesses from Overture Maps), plus online results
+  when the tablet has a connection: offline hits show at once, then Photon (OSM, worldwide) and in
+  Norway Kartverket's place names (farms, bays, lakes, …) and addresses are mixed in.
 - **Route preview**: Fastest / Curvy / Super curvy side by side (time, km, curviness, gravel and
   ferries) before you ride; surface and avoid options adjust them in place.
 - **Stops**: pick a place while riding → *Add stop* (inserted where it adds least detour) or *Go here*.

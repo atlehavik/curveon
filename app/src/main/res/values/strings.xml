@@ -194,6 +194,12 @@
     <string name="kind_village">Village</string>
     <string name="kind_suburb">District</string>
     <string name="kind_hamlet">Hamlet</string>
+    <string name="kind_workshop">Workshop</string>
+    <string name="kind_business">Business</string>
+    <string name="kind_farm">Farm</string>
+    <string name="kind_lake">Lake</string>
+    <string name="kind_bay">Fjord or bay</string>
+    <string name="kind_place">Place name</string>
     <string name="kind_island">Island</string>
     <string name="kind_street">Street</string>
     <string name="kind_fuel">Fuel</string>

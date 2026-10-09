@@ -4,10 +4,16 @@ Builds the offline destination search index (SQLite + FTS4) for Curveon from an 
 
     python build_search_index.py norway-latest.osm.pbf norway-search.sqlite
     python build_search_index.py a.osm.pbf,b.osm.pbf out.sqlite     # several extracts into one index
+    python build_search_index.py norway-latest.osm.pbf out.sqlite places.parquet   # + Overture places
+
+With a third argument, businesses from Overture Maps' open places dataset (overturemaps.org,
+CDLA-Permissive-2.0) are added: shops, workshops, dealers, lodging, … that OSM often lacks. The
+file is downloaded for the area's bounding box (`pip install overturemaps`) unless it exists.
 
 Contents
   entries      places (towns, villages, …), useful POIs (fuel, cafés, viewpoints, campsites,
-               ferry terminals, mountain passes, …) and streets (one row per street and town)
+               ferry terminals, mountain passes, …), Overture businesses and streets (one row per
+               street and town)
   entries_fts  FTS4 index over a normalised "name + area" string
   housenumbers house numbers per street row, so "Storgata 12 Lillehammer" resolves to a door
   cameras      fixed speed cameras (highway=speed_camera) for warnings while riding
@@ -16,7 +22,9 @@ Text is normalised (lowercase, æ→ae, ø→o, å→a, accents stripped) so the
 FTS4 tokenizer, which every Android SQLite has. The app applies the same normalisation to queries.
 """
 import math
+import os
 import sqlite3
+import subprocess
 import sys
 import time
 import unicodedata
@@ -153,7 +161,77 @@ class NearestPlace:
         return best
 
 
-def main(pbfs, out):
+# Overture category (taxonomy primary or basic_category) → our kind and rank; the rest are "business".
+OVERTURE_KINDS = {
+    "gas_station": ("fuel", 55), "ev_charging_station": ("charging", 30),
+    "restaurant": ("restaurant", 40), "casual_eatery": ("fast_food", 35), "fast_food_restaurant": ("fast_food", 35),
+    "cafe": ("cafe", 45), "coffee_shop": ("cafe", 45), "bakery": ("cafe", 35), "bar": ("pub", 30), "pub": ("pub", 30),
+    "hotel": ("hotel", 45), "motel": ("hotel", 45), "lodging": ("hotel", 40), "bed_and_breakfast": ("hotel", 40),
+    "hostel": ("hotel", 40), "inn": ("hotel", 40), "guest_house": ("hotel", 40), "cottage": ("hotel", 35),
+    "private_lodging": ("hotel", 35), "campground": ("camp_site", 50), "rv_park": ("camp_site", 45),
+    "grocery_store": ("supermarket", 35), "supermarket": ("supermarket", 35), "convenience_store": ("shop", 25),
+    "museum": ("museum", 45), "historic_site": ("attraction", 40), "landmark_and_historical_building": ("attraction", 40),
+    "tourist_attraction": ("attraction", 50), "scenic_viewpoint": ("viewpoint", 55),
+    "automotive_service": ("workshop", 35), "vehicle_service": ("workshop", 35), "auto_repair": ("workshop", 35),
+    "tire_shop": ("workshop", 35), "auto_dealer": ("business", 25), "parking": ("parking", 15),
+}
+OVERTURE_SKIP = {"geographic_entities"}  # islands, lakes, mountains: OSM and the online names cover those
+
+
+def overture_places(path, bbox):
+    """(name, kind, rank, lat, lon) of Overture places in the parquet file, downloading it first."""
+    if not os.path.exists(path):
+        print(f"Downloading Overture places for {bbox} …", flush=True)
+        subprocess.run(["overturemaps", "download", "--bbox=" + ",".join(f"{v:.4f}" for v in bbox),
+                        "-f", "geoparquet", "-t", "place", "-o", path], check=True)
+    import pyarrow.parquet as pq
+    cols = ["names", "confidence", "basic_category", "taxonomy", "operating_status", "bbox"]
+    out = []
+    for r in pq.read_table(path, columns=cols).to_pylist():
+        name = ((r["names"] or {}).get("primary") or "").strip()
+        if not name or (r["confidence"] or 0) < 0.5 or r["operating_status"] in ("permanently_closed", "temporarily_closed"):
+            continue
+        tax = r["taxonomy"] or {}
+        if OVERTURE_SKIP & set(tax.get("hierarchy") or []):
+            continue
+        primary = tax.get("primary") or ""
+        if "motorcycle" in primary:
+            kind, rank = ("motorcycle_shop", 50)
+        else:
+            kind, rank = OVERTURE_KINDS.get(primary) or OVERTURE_KINDS.get(r["basic_category"] or "") or ("business", 20)
+        b = r["bbox"]
+        out.append((name, kind, rank, (b["ymin"] + b["ymax"]) / 2, (b["xmin"] + b["xmax"]) / 2))
+    return out
+
+
+def add_overture(rows, places, path, near):
+    """Adds Overture places that aren't already in [rows] (same name within ~300 m) and lie in the area."""
+    lats = [p[3] for p in places]
+    lons = [p[4] for p in places]
+    if not lats:
+        return
+    found = overture_places(path, (min(lons) - 0.05, min(lats) - 0.05, max(lons) + 0.05, max(lats) + 0.05))
+    seen = defaultdict(list)
+    for name, kind, area, rank, lat, lon, numbers in rows:
+        if numbers is None:
+            seen[normalise(name)].append((lat, lon))
+
+    def known(n, lat, lon):
+        return any(abs(a - lat) < 0.003 and abs(b - lon) < 0.006 for a, b in seen.get(n, ()))
+
+    added = 0
+    for name, kind, rank, lat, lon in found:
+        n = normalise(name)
+        area = near.find(lat, lon)
+        if not area or known(n, lat, lon):  # no town nearby: outside this area (the box is wider)
+            continue
+        rows.append((name, kind, area, rank, lat, lon, None))
+        seen[n].append((lat, lon))
+        added += 1
+    print(f"Overture: {len(found)} places in the box, {added} added", flush=True)
+
+
+def main(pbfs, out, overture=None):
     t0 = time.time()
     c = Collector()
     for pbf in pbfs.split(","):
@@ -188,6 +266,8 @@ def main(pbfs, out):
         town = area if area and not area.isdigit() else near.find(lat, lon)
         label = f"{postcode} {town}".strip() if postcode else town
         rows.append((street, "street", label, 10, lat, lon, numbers))
+    if overture:
+        add_overture(rows, c.places, overture, near)
 
     cur = db.cursor()
     for i, (name, kind, area, rank, lat, lon, numbers) in enumerate(rows, start=1):
@@ -199,7 +279,7 @@ def main(pbfs, out):
     cur.executemany("INSERT INTO cameras VALUES (?,?,?)", [(round(a, 6), round(b, 6), m) for a, b, m in c.cameras])
     cur.execute("INSERT INTO meta VALUES ('built', ?)", (time.strftime("%Y-%m-%d"),))
     cur.execute("INSERT INTO meta VALUES ('schema', '2')")
-    cur.execute("INSERT INTO meta VALUES ('source', ?)", (",".join(p.split("/")[-1] for p in pbfs.split(",")),))
+    cur.execute("INSERT INTO meta VALUES ('source', ?)", (",".join(p.split("/")[-1] for p in pbfs.split(",")) + (",overture" if overture else ""),))
     db.commit()
     print("Indexing …", flush=True)
     db.executescript("""
@@ -214,4 +294,4 @@ def main(pbfs, out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)

@@ -40,8 +40,11 @@ import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GroundPreference
 import com.curveon.data.model.TurnInstruction
 import com.curveon.ui.theme.*
-import org.maplibre.android.MapLibre
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.maplibre.android.style.expressions.Expression as E
+import org.maplibre.android.MapLibre
+import org.maplibre.android.offline.OfflineManager
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -175,6 +178,8 @@ fun CurveonMapView(
 
     val mapView = remember {
         MapLibre.getInstance(context)
+        // Online map tiles seen once stay usable offline (MapLibre's default cache is 50 MB).
+        OfflineManager.getInstance(context).setMaximumAmbientCacheSize(AMBIENT_CACHE_BYTES, null)
         MapView(context).apply { onCreate(null) }
     }
 
@@ -300,7 +305,7 @@ fun CurveonMapView(
     // Style: day or night. Switching style drops our layers, so they are re-added each time.
     LaunchedEffect(map, dark, mapVersion) {
         val m = map ?: return@LaunchedEffect
-        val json = offlineMaps.styleJson(if (dark) "dark" else "light") ?: OfflineMaps.ONLINE_FALLBACK_STYLE
+        val json = offlineMaps.styleJson(if (dark) "dark" else "light")
         style = null
         m.setStyle(Style.Builder().fromJson(json)) { s ->
             addOverlayLayers(s, dark)
@@ -459,6 +464,28 @@ fun CurveonMapView(
         riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y)
     }
 
+    // The online map only where no downloaded map covers the view, so the hotspot isn't used for nothing.
+    LaunchedEffect(style, cameraIdleTick) {
+        val m = map ?: return@LaunchedEffect
+        val s = style ?: return@LaunchedEffect
+        if (!hasOfflineMap) return@LaunchedEffect // shown from the start
+        val b = m.projection.visibleRegion.latLngBounds
+        val zoom = m.cameraPosition.zoom
+        val needed = withContext(Dispatchers.IO) {
+            (0..4).any { i ->
+                (0..4).any { j ->
+                    !offlineMaps.covers(b.latitudeSouth + (b.latitudeNorth - b.latitudeSouth) * i / 4,
+                        b.longitudeWest + (b.longitudeEast - b.longitudeWest) * j / 4, zoom)
+                }
+            }
+        }
+        val visibility = if (needed) Property.VISIBLE else Property.NONE
+        if (s.isFullyLoaded && s.getLayer("online-land")?.visibility?.value != visibility) {
+            android.util.Log.d("CurveonMap", "Online map ${if (needed) "on" else "off"} at zoom ${"%.1f".format(zoom)} $b")
+            s.layers.filter { it.id.startsWith("online-") }.forEach { it.setProperties(visibility(visibility)) }
+        }
+    }
+
     // Gravel and soft roads, dashed over the map's own roads once zoomed in far enough to choose by them.
     var surfaceBounds by remember { mutableStateOf<LatLngBounds?>(null) }
     LaunchedEffect(style, showSurfaces) {
@@ -608,6 +635,8 @@ fun CurveonMapView(
         }
     }
 }
+
+private const val AMBIENT_CACHE_BYTES = 300L * 1024 * 1024
 
 private fun hex(argb: Int) = String.format("#%06X", argb and 0xFFFFFF)
 

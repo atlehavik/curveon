@@ -848,7 +848,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun searchStatus(): String = placeSearch.describe()
 
-    suspend fun searchPlaces(query: String) =
+    fun searchPlaces(query: String) =
         placeSearch.search(query, _currentLocation.value.latitude, _currentLocation.value.longitude)
 
     suspend fun nearest(kinds: List<String>): List<SearchResult> {
