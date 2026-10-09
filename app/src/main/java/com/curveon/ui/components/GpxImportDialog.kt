@@ -181,7 +181,7 @@ fun GpxManagerDialog(
     confirmDelete?.let { t ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(stringResource(R.string.delete_named, t.name)) },
+            title = { HideSystemBars(); Text(stringResource(R.string.delete_named, t.name)) },
             confirmButton = { TextButton(onClick = { actions.onDelete(t); confirmDelete = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } }
         )
@@ -189,7 +189,7 @@ fun GpxManagerDialog(
     confirmDeleteGroup?.let { g ->
         AlertDialog(
             onDismissRequest = { confirmDeleteGroup = null },
-            title = { Text(stringResource(R.string.delete_named, g.name)) },
+            title = { HideSystemBars(); Text(stringResource(R.string.delete_named, g.name)) },
             text = { Text(byGroup[g.id].orEmpty().size.let { pluralStringResource(R.plurals.gpx_delete_group_text, it, it) }) },
             confirmButton = { TextButton(onClick = { actions.onDeleteGroup(g, false); confirmDeleteGroup = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
             dismissButton = { TextButton(onClick = { confirmDeleteGroup = null }) { Text(stringResource(R.string.cancel)) } }

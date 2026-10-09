@@ -163,7 +163,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
     confirmDelete?.let { m ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(stringResource(R.string.settings_delete_map_title, m.displayName())) },
+            title = { HideSystemBars(); Text(stringResource(R.string.settings_delete_map_title, m.displayName())) },
             text = { Text(stringResource(R.string.settings_delete_map_text)) },
             confirmButton = { TextButton(onClick = { actions.onDeleteMap(m.id); confirmDelete = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } }

@@ -181,7 +181,7 @@ fun RideLogDialog(
     confirmDelete?.let { ids ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(pluralStringResource(R.plurals.rides_delete_title, ids.size, ids.size)) },
+            title = { HideSystemBars(); Text(pluralStringResource(R.plurals.rides_delete_title, ids.size, ids.size)) },
             text = { Text(stringResource(R.string.rides_delete_text)) },
             confirmButton = {
                 TextButton(onClick = { onDelete(ids); confirmDelete = null; selection = null }) { Text(stringResource(R.string.delete), color = WarningRed) }

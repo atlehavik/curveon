@@ -92,7 +92,7 @@ fun RenameDialog(title: String, initial: String, onRename: (String) -> Unit, onD
     LaunchedEffect(Unit) { focus.requestFocus() }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        title = { HideSystemBars(); Text(title) },
         text = {
             OutlinedTextField(
                 value = text, onValueChange = { text = it }, singleLine = true,
@@ -121,7 +121,7 @@ fun GroupPickerDialog(
     var newName by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        title = { HideSystemBars(); Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 LazyColumn(Modifier.heightIn(max = 260.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

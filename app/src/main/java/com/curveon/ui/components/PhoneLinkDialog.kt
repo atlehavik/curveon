@@ -127,7 +127,7 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
 
     if (confirmForget) AlertDialog(
         onDismissRequest = { confirmForget = false },
-        title = { Text(stringResource(R.string.link_forget_title, name)) },
+        title = { HideSystemBars(); Text(stringResource(R.string.link_forget_title, name)) },
         text = { Text(stringResource(R.string.link_forget_text)) },
         confirmButton = {
             TextButton(onClick = { manager.forgetPhone(); confirmForget = false; refresh++ }) {

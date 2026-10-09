@@ -25,6 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.LaunchedEffect
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.curveon.ui.theme.*
 
 /**
@@ -91,7 +97,24 @@ fun CockpitDialog(
     }
     // Inside a [HostDialog] the pages swap without closing and reopening the window.
     if (LocalInHostDialog.current) frame()
-    else Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) { frame() }
+    else Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) { HideSystemBars(); frame() }
+}
+
+/**
+ * Call inside every dialog (any slot of an AlertDialog will do). A dialog is its own window and doesn't inherit the activity's hidden status and navigation bars,
+ * so without this the back/home/recents buttons appear (and the map squeezes) whenever one is open,
+ * and the home button sits right under the keyboard while typing an address.
+ */
+@Composable
+fun HideSystemBars() {
+    val view = LocalView.current
+    val window = (view.parent as? DialogWindowProvider)?.window ?: return
+    LaunchedEffect(window) {
+        WindowCompat.getInsetsController(window, view).apply {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars())
+        }
+    }
 }
 
 private val LocalInHostDialog = compositionLocalOf { false }
@@ -100,6 +123,7 @@ private val LocalInHostDialog = compositionLocalOf { false }
 @Composable
 fun HostDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        HideSystemBars()
         CompositionLocalProvider(LocalInHostDialog provides true) { content() }
     }
 }

@@ -143,6 +143,7 @@ fun PlaceActionDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        HideSystemBars()
         Column(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
@@ -175,7 +176,7 @@ fun SaveRouteDialog(initialName: String, onSave: (String) -> Unit, onDismiss: ()
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = CockpitSurface,
-        title = { Text(stringResource(R.string.save_route_title), color = TextPrimary, fontWeight = FontWeight.Black) },
+        title = { HideSystemBars(); Text(stringResource(R.string.save_route_title), color = TextPrimary, fontWeight = FontWeight.Black) },
         text = {
             OutlinedTextField(
                 value = name, onValueChange = { name = it }, singleLine = true,
@@ -208,6 +209,7 @@ fun RouteMenuDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        HideSystemBars()
         Column(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))

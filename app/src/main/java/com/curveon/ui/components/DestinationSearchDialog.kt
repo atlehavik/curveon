@@ -211,7 +211,7 @@ fun DestinationSearchDialog(
     confirmDelete?.let { item ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text(stringResource(R.string.delete_named, item.title)) },
+            title = { HideSystemBars(); Text(stringResource(R.string.delete_named, item.title)) },
             confirmButton = { TextButton(onClick = { onDeleteSaved(item); confirmDelete = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } }
         )

@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-09 — No home/recents buttons while typing
+
+Dialogs no longer bring back the back/home/recents bar (it also squeezed the map). The bar that
+comes with the keyboard can't be hidden by an app, so the X7 was switched to gesture navigation
+(`adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.gestural`):
+with the keyboard up there is only a ▼ (hide keyboard) bottom left and a thin home line that needs a
+swipe up, not a tap. Undo: Settings → System → Gestures → System navigation → 3-button navigation.
+Tried on the X7 (Where to?, Settings).
+
+- [ ] Type an address on the bike: ▼ hides the keyboard, and you no longer land on the home screen by accident.
+- [ ] Elsewhere (Google Maps etc.) back is now a swipe in from the left or right edge: OK with gloves?
+- [ ] A delete confirmation (long-press a saved route in Where to?) also shows no button bar.
+
 ## 2026-10-09 — Gravel and soft roads on the map
 
 From zoom 11 in, roads the routing data knows as unpaved are dashed over the map: grey = gravel or

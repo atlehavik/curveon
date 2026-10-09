@@ -53,6 +53,7 @@ fun PoiDialog(poi: GpxPoi, from: GeoPoint?, onGo: () -> Unit, onCall: ((String) 
     val color = Color(poi.category.color)
     val name = poi.displayName(LocalContext.current)
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        HideSystemBars()
         Column(
             Modifier.padding(24.dp).widthIn(max = 900.dp).clip(RoundedCornerShape(20.dp)).background(CockpitSurface)
                 .border(1.dp, CockpitBorder, RoundedCornerShape(20.dp)).padding(20.dp),
