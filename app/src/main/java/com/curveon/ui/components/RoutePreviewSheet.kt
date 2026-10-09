@@ -20,6 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -71,12 +77,30 @@ fun RoutePreviewSheet(
 ) {
     val goal = preview.goal
     val options = goal.options
+    // Like "Pick on map": the sheet shrinks into the bar, the bar springs up, and the sheet grows back out of it.
+    val scope = rememberCoroutineScope()
+    var growIn by remember { mutableStateOf(false) }
     if (minimized) {
-        MinimizedPreview(preview, onRestore = { onMinimizedChange(false) }, onGo = onGo, modifier = modifier)
+        MinimizedPreview(preview, onRestore = { growIn = true; onMinimizedChange(false) }, onGo = onGo, modifier = modifier)
         return
+    }
+    // 1 = open, 0 = shrunk into the bar.
+    val size = remember { Animatable(if (growIn) 0f else 1f) }
+    LaunchedEffect(Unit) { if (growIn) size.animateTo(1f, tween(260)) }
+    val minimize: () -> Unit = {
+        scope.launch {
+            size.animateTo(0f, tween(280, easing = FastOutLinearInEasing))
+            onMinimizedChange(true)
+        }
     }
     Column(
         modifier = modifier
+            .graphicsLayer {
+                scaleX = 0.2f + 0.8f * size.value
+                scaleY = 0.08f + 0.92f * size.value
+                alpha = (size.value * 1.6f).coerceAtMost(1f)
+                transformOrigin = TransformOrigin(0.5f, 1f)
+            }
             .clip(RoundedCornerShape(22.dp))
             .background(CockpitSurface.copy(alpha = 0.97f))
             .border(1.dp, CockpitBorder, RoundedCornerShape(22.dp))
@@ -99,7 +123,7 @@ fun RoutePreviewSheet(
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
             if (goal is NavigationGoal.Destination && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
-            SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse)) { onMinimizedChange(true) }
+            SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
             SmallIcon(Icons.Default.Close, stringResource(R.string.cancel), onClose)
         }
 
@@ -186,8 +210,14 @@ fun RoutePreviewSheet(
 private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo: () -> Unit, modifier: Modifier) {
     val goal = preview.goal
     val route = preview.selectedRoute
+    val grow = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { grow.animateTo(1f, spring(dampingRatio = 0.7f, stiffness = 500f)) }
     Row(
         modifier
+            .graphicsLayer {
+                scaleX = 0.6f + 0.4f * grow.value; scaleY = 0.6f + 0.4f * grow.value; alpha = grow.value.coerceIn(0f, 1f)
+                transformOrigin = TransformOrigin(0.5f, 1f)
+            }
             .clip(RoundedCornerShape(22.dp))
             .background(CockpitSurface.copy(alpha = 0.97f))
             .border(1.dp, CockpitBorder, RoundedCornerShape(22.dp))
