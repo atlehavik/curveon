@@ -212,6 +212,7 @@ class PhoneCompanionManager(
     fun retryNow() {
         val state = _connectionState.value
         if (state == CompanionConnectionState.CONNECTED || state == CompanionConnectionState.DEMO) return
+        if (isThisDevice) return restart() // nothing to wait for: start over
         retryRequested = true
         if (state == CompanionConnectionState.DISCONNECTED || state == CompanionConnectionState.UNREACHABLE) {
             _connectionState.value = CompanionConnectionState.CONNECTING
@@ -292,9 +293,12 @@ class PhoneCompanionManager(
                     !bluetoothOn() -> _connectionState.value = CompanionConnectionState.BLUETOOTH_OFF
                     else -> {
                         attempted = true
-                        runCatching { connectAndServe(address) }.onFailure { Log.i(TAG, "Phone link: ${it.message}") }
+                        runCatching { connectAndServe(address) { isActive } }.onFailure { Log.i(TAG, "Phone link: ${it.message}") }
                     }
                 }
+                // Stopped while connected (another phone or this device was picked): closing the
+                // socket ends the read above, but what comes next belongs to the new choice.
+                if (!isActive) break
                 clearPhoneState()
                 // A phone that is on but not sharing refuses at once; one whose radio doesn't answer
                 // (or a tablet whose Bluetooth got stuck, seen on the X7) fails after the ~5 s page
@@ -368,7 +372,8 @@ class PhoneCompanionManager(
     }
 
     @SuppressLint("MissingPermission")
-    private fun connectAndServe(address: String) {
+    private fun connectAndServe(address: String, active: () -> Boolean) {
+        if (!active()) return
         // Keep showing "can't reach" while retrying; it clears once a connection works.
         if (_connectionState.value != CompanionConnectionState.UNREACHABLE) _connectionState.value = CompanionConnectionState.CONNECTING
         val adapter = context.getSystemService(BluetoothManager::class.java)!!.adapter
@@ -377,6 +382,7 @@ class PhoneCompanionManager(
         socket = s
         try {
             s.connect()
+            if (!active()) return
             val w = MessageWriter(s.outputStream)
             writer = w
             w.write(Message.Hello(Build.MODEL))
@@ -390,6 +396,7 @@ class PhoneCompanionManager(
             val reader = MessageReader(s.inputStream)
             while (true) {
                 val msg = reader.read() ?: break
+                if (!active()) break
                 handle(msg)
             }
         } finally {
