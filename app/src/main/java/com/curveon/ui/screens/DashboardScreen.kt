@@ -113,6 +113,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var searchGrowIn by remember { mutableStateOf(false) }
     /** Editing the previewed trip by dragging it on the map. */
     var editing by remember { mutableStateOf(false) }
+    // The route preview folded down to a bar so more of the route shows; open again for each new plan.
+    var previewMinimized by remember { mutableStateOf(false) }
+    LaunchedEffect(preview == null) { if (preview == null) previewMinimized = false }
     /** Stop menu opened from its handle while editing (index into the trip's stops). */
     var editStopMenu by remember { mutableStateOf<Int?>(null) }
     /** Where the next stop from the search goes; null = wherever it adds least detour. */
@@ -302,6 +305,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onSave = askSaveName,
                     onGo = viewModel::startPreview,
                     onClose = viewModel::cancelPreview,
+                    minimized = previewMinimized,
+                    onMinimizedChange = { previewMinimized = it },
                     modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).widthIn(max = 640.dp).fillMaxWidth()
                 )
             }
@@ -365,6 +370,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     approachTo = if (preview != null) preview?.selectedRoute?.points?.firstOrNull()?.takeIf { planGoal?.start == null }?.let { GeoPoint(it.lat, it.lon) }
                         else navState.approach?.let { GeoPoint(it.lat, it.lon) },
                     onEditRoute = if (planGoal != null && !editing && mapPick == null) ({ editing = true }) else null,
+                    previewSheetMinimized = previewMinimized,
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,
                     onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },

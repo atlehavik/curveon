@@ -64,10 +64,17 @@ fun RoutePreviewSheet(
     onSave: () -> Unit,
     onGo: () -> Unit,
     onClose: () -> Unit,
+    /** Folded down to one line (name, time, GO) so more of the route shows on the map. */
+    minimized: Boolean = false,
+    onMinimizedChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val goal = preview.goal
     val options = goal.options
+    if (minimized) {
+        MinimizedPreview(preview, onRestore = { onMinimizedChange(false) }, onGo = onGo, modifier = modifier)
+        return
+    }
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(22.dp))
@@ -92,6 +99,7 @@ fun RoutePreviewSheet(
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
             if (goal is NavigationGoal.Destination && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
+            SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse)) { onMinimizedChange(true) }
             SmallIcon(Icons.Default.Close, stringResource(R.string.cancel), onClose)
         }
 
@@ -168,18 +176,60 @@ fun RoutePreviewSheet(
                 onSurface = onSurface, onToggleFerries = onToggleFerries, onToggleMotorways = onToggleMotorways
             )
             Spacer(Modifier.weight(1f))
-            val ready = preview.selectedRoute != null
-            Row(
-                Modifier.height(56.dp).widthIn(min = 140.dp).clip(RoundedCornerShape(28.dp))
-                    .background(if (ready) ElectricCyan else CockpitSurfaceVariant)
-                    .clickable(enabled = ready, onClick = onGo).padding(horizontal = 22.dp).testTag("preview_go_btn"),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
-            ) {
-                Icon(Icons.Default.Navigation, null, tint = if (ready) OnCyan else TextMuted)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.preview_go), color = if (ready) OnCyan else TextMuted, fontSize = 20.sp, fontWeight = FontWeight.Black)
+            GoButton(ready = preview.selectedRoute != null, onGo = onGo)
+        }
+    }
+}
+
+/** The sheet folded down: where to and the chosen route's time and distance; tap it to open again. */
+@Composable
+private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo: () -> Unit, modifier: Modifier) {
+    val goal = preview.goal
+    val route = preview.selectedRoute
+    Row(
+        modifier
+            .clip(RoundedCornerShape(22.dp))
+            .background(CockpitSurface.copy(alpha = 0.97f))
+            .border(1.dp, CockpitBorder, RoundedCornerShape(22.dp))
+            .clickable(onClick = onRestore)
+            .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
+            .testTag("route_preview_minimized"),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.ExpandLess, stringResource(R.string.expand), tint = TextSecondary, modifier = Modifier.padding(horizontal = 8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                when (goal) {
+                    is NavigationGoal.Destination -> goal.name
+                    is NavigationGoal.Roundtrip -> stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
+                    is NavigationGoal.Track -> goal.name
+                },
+                color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis
+            )
+            if (route != null) {
+                val min = (route.durationSeconds / 60).toInt()
+                Text(
+                    "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, route.distanceMeters / 1000),
+                    color = TextSecondary, fontSize = 13.sp, maxLines = 1
+                )
             }
         }
+        Spacer(Modifier.width(8.dp))
+        GoButton(ready = route != null, onGo = onGo)
+    }
+}
+
+@Composable
+private fun GoButton(ready: Boolean, onGo: () -> Unit) {
+    Row(
+        Modifier.height(56.dp).widthIn(min = 140.dp).clip(RoundedCornerShape(28.dp))
+            .background(if (ready) ElectricCyan else CockpitSurfaceVariant)
+            .clickable(enabled = ready, onClick = onGo).padding(horizontal = 22.dp).testTag("preview_go_btn"),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(Icons.Default.Navigation, null, tint = if (ready) OnCyan else TextMuted)
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(R.string.preview_go), color = if (ready) OnCyan else TextMuted, fontSize = 20.sp, fontWeight = FontWeight.Black)
     }
 }
 

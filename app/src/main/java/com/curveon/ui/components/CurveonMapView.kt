@@ -122,6 +122,8 @@ fun CurveonMapView(
     editor: RouteEditor? = null,
     /** Long-press on the previewed route line: start editing it. */
     onEditRoute: (() -> Unit)? = null,
+    /** The preview sheet is folded down to one line: fit the trip into the taller space above it. */
+    previewSheetMinimized: Boolean = false,
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -384,7 +386,7 @@ fun CurveonMapView(
 
     // Preview: show the whole trip. Leaving preview hands the camera back to following.
     val previewPoints = remember(previewRoutes) { previewRoutes.flatMap { it.points } }
-    LaunchedEffect(map, previewPoints.size) {
+    LaunchedEffect(map, previewPoints.size, previewSheetMinimized) {
         val m = map ?: return@LaunchedEffect
         if (previewPoints.size < 2) return@LaunchedEffect
         following = false
@@ -393,9 +395,11 @@ fun CurveonMapView(
         val b = LatLngBounds.Builder()
         previewPoints.forEach { b.include(LatLng(it.latitude, it.longitude)) }
         b.include(LatLng(location.latitude, location.longitude))
-        // Fit the trip into the part of the map above the preview sheet (about half the height).
+        // Fit the trip into the part of the map above the preview sheet (about half the height,
+        // or just its one-line bar when folded down).
         val h = mapView.height.takeIf { it > 0 } ?: 1000
-        m.easeCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 60, 50, 120, (h * 0.52).toInt()), 800)
+        val bottom = if (previewSheetMinimized) (100 * mapView.resources.displayMetrics.density).toInt() else (h * 0.52).toInt()
+        m.easeCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 60, 50, 120, bottom), 800)
     }
     val inPreview = previewRoutes.isNotEmpty()
     LaunchedEffect(inPreview) { if (!inPreview) following = true }
