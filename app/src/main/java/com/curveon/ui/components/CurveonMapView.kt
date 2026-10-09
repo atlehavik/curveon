@@ -41,6 +41,7 @@ import com.curveon.data.model.GroundPreference
 import com.curveon.data.model.TurnInstruction
 import com.curveon.ui.theme.*
 import org.maplibre.android.MapLibre
+import org.maplibre.android.style.expressions.Expression as E
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -73,6 +74,9 @@ private const val HINT = "curveon-track-hint"
 private const val ARROW_IMAGE = "curveon-arrow"
 /** GPX waypoints turn from dots into icons from this zoom in (about 30 km across the map). */
 private const val POI_ICON_ZOOM = 11f
+private const val SURFACE = "curveon-surface"
+/** Gravel and soft roads from this zoom in (about 10 km across the X7's map); further out they would clutter. */
+private const val SURFACE_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
 private const val TILT_3D = 60.0
 
@@ -124,6 +128,8 @@ fun CurveonMapView(
     onEditRoute: (() -> Unit)? = null,
     /** The preview sheet is folded down to one line: fit the trip into the taller space above it. */
     previewSheetMinimized: Boolean = false,
+    /** Gravel and soft roads in an area (south, west, north, east), drawn dashed when zoomed in. */
+    surfaceWays: (suspend (Double, Double, Double, Double) -> List<com.curveon.routing.SurfaceWay>)? = null,
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -442,6 +448,36 @@ fun CurveonMapView(
         riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y)
     }
 
+    // Gravel and soft roads, dashed over the map's own roads once zoomed in far enough to choose by them.
+    var surfaceBounds by remember { mutableStateOf<LatLngBounds?>(null) }
+    LaunchedEffect(style, cameraIdleTick) {
+        val m = map ?: return@LaunchedEffect
+        val s = style ?: return@LaunchedEffect
+        val fetch = surfaceWays ?: return@LaunchedEffect
+        if (m.cameraPosition.zoom < SURFACE_ZOOM) return@LaunchedEffect
+        val b = m.projection.visibleRegion.latLngBounds
+        val have = surfaceBounds
+        if (have != null && have.contains(b.northEast) && have.contains(b.southWest) && s.getSource(SURFACE) != null) return@LaunchedEffect
+        // A margin around the view, so small pans need nothing new.
+        val dLat = (b.latitudeNorth - b.latitudeSouth) * 0.3
+        val dLon = (b.longitudeEast - b.longitudeWest) * 0.3
+        val area = LatLngBounds.from(b.latitudeNorth + dLat, b.longitudeEast + dLon, b.latitudeSouth - dLat, b.longitudeWest - dLon)
+        val ways = runCatching { fetch(area.latitudeSouth, area.longitudeWest, area.latitudeNorth, area.longitudeEast) }
+            .onFailure { android.util.Log.w("CurveonMap", "Surfaces not read", it) }.getOrNull() ?: return@LaunchedEffect
+        val features = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            FeatureCollection.fromFeatures(ways.map { w ->
+                Feature.fromGeometry(LineString.fromLngLats((w.coords.indices step 2).map { Point.fromLngLat(w.coords[it], w.coords[it + 1]) })).apply {
+                    addStringProperty("kind", if (w.kind == com.curveon.routing.SurfaceKind.GRAVEL) "gravel" else "soft")
+                    addNumberProperty("rank", w.rank)
+                }
+            })
+        }
+        if (style !== s || !s.isFullyLoaded) return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(SURFACE)?.setGeoJson(features)
+        surfaceBounds = area
+    }
+    LaunchedEffect(style) { surfaceBounds = null }
+
     // Road name after the next turn, read from the vector tiles once that spot is on screen.
     LaunchedEffect(map, style, roadNameProbe, cameraIdleTick) {
         val m = map ?: return@LaunchedEffect
@@ -574,7 +610,40 @@ private fun arrowBitmap(): android.graphics.Bitmap {
     return bmp
 }
 
+/**
+ * Gravel (dashed brown) and softer or unknown ground (dashed red on black) over the map's roads,
+ * under the road names. Wider for bigger roads, like the map draws them.
+ */
+private fun addSurfaceLayers(s: Style, dark: Boolean) {
+    s.addSource(GeoJsonSource(SURFACE))
+    fun width(base: Float) = E.interpolate(E.linear(), E.zoom(),
+        E.stop(SURFACE_ZOOM, E.product(E.literal(base * 0.6f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
+        E.stop(14, E.product(E.literal(base), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
+        E.stop(18, E.product(E.literal(base * 3f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))))
+    val gravel = E.eq(E.get("kind"), E.literal("gravel"))
+    val soft = E.eq(E.get("kind"), E.literal("soft"))
+    val layers = listOf(
+        LineLayer("$SURFACE-soft-base", SURFACE).withProperties(
+            lineColor("#000000"), lineWidth(width(3.2f)), lineOpacity(if (dark) 0.9f else 0.75f), lineJoin(Property.LINE_JOIN_ROUND)
+        ).withFilter(soft),
+        LineLayer("$SURFACE-soft", SURFACE).withProperties(
+            lineColor(if (dark) "#FF5252" else "#E53935"), lineWidth(width(3.2f)), lineDasharray(arrayOf(2f, 1.5f))
+        ).withFilter(soft),
+        LineLayer("$SURFACE-gravel", SURFACE).withProperties(
+            lineColor(if (dark) "#C8955C" else "#8D5524"), lineWidth(width(3.2f)), lineDasharray(arrayOf(2.5f, 1.5f))
+        ).withFilter(gravel)
+    )
+    // Under the downloaded map's first label layer, so road names stay on top (the online map's
+    // layers, labels included, all lie underneath).
+    val firstLabel = s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer && !it.id.startsWith("online-") }?.id
+    layers.forEach { l ->
+        l.minZoom = SURFACE_ZOOM
+        if (firstLabel != null) s.addLayerBelow(l, firstLabel) else s.addLayer(l)
+    }
+}
+
 private fun addOverlayLayers(s: Style, dark: Boolean) {
+    addSurfaceLayers(s, dark)
     s.addImage(ARROW_IMAGE, arrowBitmap(), true)
     s.addSource(GeoJsonSource(GPX))
     s.addSource(GeoJsonSource(GPX_POIS))

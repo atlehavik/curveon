@@ -591,6 +591,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             .minByOrNull { it.distanceKm - (bonusKm[it.kind] ?: 0.0) }
     }
 
+    /** Gravel and soft roads for the map, read off the main thread. */
+    suspend fun surfaceWays(south: Double, west: Double, north: Double, east: Double) =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { navigator.surfaceWays(south, west, north, east) }
+
     /** A name for a point picked on the map: "Voss", "Near Voss", or "Map point" out in the wild. */
     suspend fun describePoint(point: GeoPoint): String {
         val p = runCatching { nearestPlace(point.latitude, point.longitude) }.getOrNull() ?: return str(R.string.map_point)

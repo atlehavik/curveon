@@ -1,0 +1,48 @@
+package com.curveon.routing
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
+import org.junit.Test
+import java.io.File
+import java.nio.file.Files
+
+class SurfaceReaderTest {
+    private val segments = File(System.getProperty("curveon.segments") ?: "")
+
+    private fun reader() = SurfaceReader(segments, File(ProfileInstaller.install(Files.createTempDirectory("p").toFile()), "lookups.dat"))
+
+    @Test
+    fun `classifies like a rider would`() {
+        assertEquals(SurfaceKind.GRAVEL to 1, SurfaceReader.classify("unclassified", "gravel", null))
+        assertEquals(SurfaceKind.GRAVEL to 0, SurfaceReader.classify("track", null, "grade2"))
+        assertEquals(SurfaceKind.SOFT to 0, SurfaceReader.classify("track", null, null))
+        assertEquals(SurfaceKind.SOFT to 0, SurfaceReader.classify("service", "dirt", null))
+        assertEquals(null, SurfaceReader.classify("track", "asphalt", null))
+        assertEquals(null, SurfaceReader.classify("residential", null, null))
+        assertEquals(null, SurfaceReader.classify("path", "gravel", null))
+    }
+
+    @Test
+    fun `reads the unpaved roads around Bomlo and Bergen`() {
+        assumeTrue(File(segments, "E5_N55.rd5").exists() && File(segments, "E5_N60.rd5").exists())
+        val r = reader()
+        for ((name, box) in listOf(
+            "Bømlo" to doubleArrayOf(59.70, 5.05, 59.85, 5.35),
+            "Bergen" to doubleArrayOf(60.30, 5.20, 60.45, 5.45),
+            "Hardangervidda" to doubleArrayOf(60.10, 7.30, 60.30, 7.70)
+        )) {
+            val t0 = System.nanoTime()
+            val ways = r.ways(box[0], box[1], box[2], box[3])
+            val ms = (System.nanoTime() - t0) / 1e6
+            val t1 = System.nanoTime(); r.ways(box[0], box[1], box[2], box[3]); val cached = (System.nanoTime() - t1) / 1e6
+            val byKind = ways.groupingBy { it.kind }.eachCount()
+            println("$name: ${ways.size} ways $byKind, ${ways.sumOf { it.coords.size / 2 }} points, %.0f ms (cached %.1f ms)".format(ms, cached))
+            assertTrue(ways.isNotEmpty())
+            for (w in ways) for (k in w.coords.indices step 2) {
+                assertTrue(w.coords[k] in box[1] - 0.1..box[3] + 0.1 && w.coords[k + 1] in box[0] - 0.1..box[2] + 0.1)
+            }
+        }
+        assertEquals(0, r.syncErrors)
+    }
+}

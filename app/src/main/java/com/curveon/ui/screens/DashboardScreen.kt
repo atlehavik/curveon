@@ -371,6 +371,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                         else navState.approach?.let { GeoPoint(it.lat, it.lon) },
                     onEditRoute = if (planGoal != null && !editing && mapPick == null) ({ editing = true }) else null,
                     previewSheetMinimized = previewMinimized,
+                    surfaceWays = viewModel::surfaceWays,
                     roadNameProbe = roadNameProbe,
                     onRoadName = viewModel::onRoadName,
                     onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },

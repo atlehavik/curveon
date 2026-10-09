@@ -196,6 +196,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     private val engine by lazy { BRouterEngine(routingData.segmentsDir, ProfileInstaller.install(profileDir)) }
     private val offRoute by lazy { OffRoutePlanner(engine) }
+    private val surfaces by lazy { com.curveon.routing.SurfaceReader(routingData.segmentsDir, java.io.File(ProfileInstaller.install(profileDir), "lookups.dat")) }
+
+    /** Gravel and softer roads in the area, from the routing data (the map tiles don't know surfaces). Blocking. */
+    fun surfaceWays(south: Double, west: Double, north: Double, east: Double) = surfaces.ways(south, west, north, east)
 
     // ------------------------------------------------------------------ preview
 
