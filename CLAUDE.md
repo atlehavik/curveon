@@ -12,6 +12,17 @@ commands are in [README.md](README.md); goals in [App plan.md](App%20plan.md) an
   `-avd Curveon_Phone` (for `:companion`). The emulator has no Bluetooth: use demo phone data / demo ride.
 - Tablet: `./gradlew :app:installDebug`, then
   `adb shell am start -n com.curveon.tablet/com.curveon.MainActivity`.
+- **The X7 is reached over wifi, not USB** (it lives on the handlebars). Before installing, find it:
+  `adb mdns services` lists it as `_adb-tls-connect` once Wireless debugging is on and this PC is
+  paired; `adb connect <ip:port>` from that line (the port changes each time Wireless debugging is
+  switched on). Not paired yet: on the X7, Settings → Developer options → Wireless debugging → Pair
+  device with pairing code, then `adb pair <ip:pairport> <code>` (ask the rider for the code).
+  The X7 is already paired (mDNS name `adb-241181d1-…`, usually 192.168.86.250). Android switches
+  Wireless debugging off by itself whenever the tablet's wifi drops (screen off/sleep, roaming,
+  reboot), so it often has to be turned on again; "Connection refused" or "device offline" means
+  that happened (`adb mdns services` may still show a stale entry). Once connected, run
+  `adb -s <ip:port> tcpip 5555` and use `<ip>:5555` from then on: that survives wifi drops until a
+  reboot. With several devices, pick the X7 with `-s <ip:port>` / `ANDROID_SERIAL`.
 - Phone: `./gradlew :companion:installDebug` (package `com.curveon.companion`).
 - Tests: `./gradlew test`. `:routing:test` routes over real Norway data.
 - Large data (pmtiles, BRouter segments, search index, OSM extracts) lives outside the repo in
@@ -40,7 +51,7 @@ commands are in [README.md](README.md); goals in [App plan.md](App%20plan.md) an
 - Bluetooth, real calls, tunnel dead reckoning and gyro lean can't be verified in the emulator;
   say so rather than claiming they work.
 - Commit messages describe the change from the rider's point of view (see `git log`).
-- Installing a new build on the X7 and/or Pixel is always allowed whenever they are connected
+- Installing a new build on the X7 (over wifi, see above) and/or Pixel is always allowed whenever they are reachable
   (`adb devices`); do it after each change without asking.
 - Committing and pushing are always allowed once a build has been installed on the devices (X7 or
   Pixel); no need to ask first.
