@@ -3,6 +3,7 @@ package com.curveon.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -141,7 +142,7 @@ fun DestinationSearchDialog(
             val dim = w.attributes.dimAmount
             snapshotFlow { size.value }.collect { w.setDimAmount(dim * it) }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        val shortcuts: @Composable () -> Unit = {
             if (onNearest != null) {
                 Text(stringResource(R.string.search_nearest).uppercase(), color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 NearestCategory.entries.forEach { cat ->
@@ -152,10 +153,23 @@ fun DestinationSearchDialog(
                     }
                 }
             }
-            Text(searchStatus, color = TextMuted, fontSize = 11.sp, textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        }
+        val pickOnMap: @Composable () -> Unit = {
             if (onPickOnMap != null) Box(Modifier.testTag("search_pick_on_map")) {
                 Shortcut(Icons.Default.Map, stringResource(R.string.pick_on_map), if (purpose == SearchPurpose.STOP) NeonAmber else ElectricCyan, onClick = minimize)
             }
+        }
+        // Narrow (a phone held upright): the shortcuts scroll sideways, the status gets its own line.
+        if (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 700) {
+            Row(
+                Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically
+            ) { pickOnMap(); shortcuts() }
+            Text(searchStatus, color = TextMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        } else Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            shortcuts()
+            Text(searchStatus, color = TextMuted, fontSize = 11.sp, textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            pickOnMap()
         }
 
         LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -242,7 +256,7 @@ private fun Shortcut(icon: ImageVector, label: String, tint: Color, selected: Bo
     ) {
         Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
-        Text(label, color = tint, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = tint, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
     }
 }
 

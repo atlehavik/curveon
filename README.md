@@ -109,5 +109,7 @@ split of big countries should change.
 3. On the tablet: Settings → Phone → pick the phone. Another paired phone can be picked there any
    time (pair it in Android's Bluetooth settings first).
 
+Curveon turns with the device (landscape or portrait, as Android's auto-rotate says).
+
 Curveon running on a phone (or a tablet with its own apps) needs no companion: Settings → Phone →
 **This device**, then allow notification access and contacts/calls/microphone there.

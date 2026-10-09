@@ -6,6 +6,17 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-09 — Portrait
+
+Curveon now turns with the device (Android's auto-rotate): held upright, the map is on top, speed and
+music/messages below it, and the rail is a row along the bottom; while planning a trip the map
+gets the cards' room too. Landscape is as before. Tried in the emulator (dashboard, full map,
+search, route preview).
+
+- [ ] X7 on the bike: auto-rotate is on, so lock it in landscape (quick settings → Auto-rotate off
+      while the tablet is sideways), or bumps could turn the screen.
+- [ ] Pixel upright: the 411 dp wide screen still fits the route preview's three options and GO.
+
 ## 2026-10-09 — Curveon on a phone: camera hole, rail, hints
 
 On the Pixel (held sideways) the rail moves clear of the camera hole, the rail buttons are a bit

@@ -37,7 +37,8 @@ class MainActivity : ComponentActivity() {
         // The language may just have changed (the screen restarts then): redo texts made earlier.
         dashboardViewModel.refreshTexts()
 
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        // Landscape or portrait as Android's auto-rotate says; on the bike, lock rotation in Android.
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
         enableEdgeToEdge()
         hideSystemBars()
 

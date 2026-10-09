@@ -343,18 +343,97 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
 
-    Row(
-        modifier = modifier
-            .fillMaxSize()
-            .background(CockpitBackground)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            // A phone's camera hole sits on one short edge: keep the rail and cards clear of it,
-            // whichever way round the phone is held.
-            .windowInsetsPadding(WindowInsets.displayCutout)
-            .testTag("dashboard_screen_root")
-    ) {
+    // The map, as big as the layout allows.
+    val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier) {
+        CurveonMapView(
+            location = currentLocation,
+            headingDeg = telemetry.headingDeg,
+            speedKmh = telemetry.speedKmh,
+            speedLimitKmh = telemetry.speedLimitKmh,
+            hasGpsFix = telemetry.hasGpsFix,
+            routePoints = routePoints,
+            groundPreference = groundPreference,
+            currentTurnInstruction = currentTurnInstruction,
+            isFullScreen = isFullScreenMap,
+            dark = mapDark,
+            previewRoutes = if (editor != null) listOf(MapRoute(editLine, true)).filter { it.points.size >= 2 }
+            else preview?.candidates?.mapIndexedNotNull { i, c ->
+                c.route?.let { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, i == preview!!.selected) }
+            }.orEmpty(),
+            markers = if (editor != null) emptyList() else markers,
+            editor = editor,
+            // The route starts on the nearest road the map joins up: show the way to it.
+            approachTo = if (preview != null) preview?.selectedRoute?.points?.firstOrNull()?.takeIf { planGoal?.start == null }?.let { GeoPoint(it.lat, it.lon) }
+                else navState.approach?.let { GeoPoint(it.lat, it.lon) },
+            onEditRoute = if (planGoal != null && !editing && mapPick == null) ({ editing = true }) else null,
+            previewSheetMinimized = previewMinimized,
+            surfaceWays = viewModel::surfaceWays,
+            showSurfaces = showSurfaces,
+            roadNameProbe = roadNameProbe,
+            onRoadName = viewModel::onRoadName,
+            onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
+            onTap = if (mapPick != null) ({ p ->
+                picked = p to null
+                scope.launch { val name = viewModel.describePoint(p); if (picked?.first == p) picked = p to name }
+            }) else null,
+            pickedPoint = picked?.first,
+            gpxTracks = overlayTracks,
+            gpxPois = overlayPois,
+            trackHint = trackHint.takeIf { preview == null && !isNavigating },
+            onPoiClick = { shownPoi = it },
+            autoZoom = mapAutoZoom,
+            mapVersion = mapVersion,
+            overlays = mapOverlays
+        )
+        toast?.let {
+            Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp).clip(RoundedCornerShape(12.dp))
+                    .background(CockpitSurface).border(1.dp, ElectricCyan, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 10.dp))
+        }
+    } }
+    // Speed, then messages or music (one of them gets the free height).
+    val cards: @Composable ColumnScope.() -> Unit = {
+        SpeedCard(telemetry, camera = cameraAlert)
+
+        val attention = voiceReply != null || notifications.isNotEmpty()
+        when {
+            voiceReply != null -> VoiceReplyCard(
+                reply = voiceReply!!,
+                onSend = { phone.confirmVoiceReply() },
+                onRetry = { phone.startVoiceReply(voiceReply!!.notificationKey) },
+                onCancel = { phone.cancelVoiceReply() },
+                modifier = Modifier.weight(1f)
+            )
+            notifications.isNotEmpty() -> NotificationCard(
+                notifications = notifications,
+                onReply = { phone.startVoiceReply(it.id) },
+                onDismiss = { phone.dismissNotification(it.id) },
+                onSwipe = { phone.hideNotification(it.id) },
+                onAction = { n, i -> phone.invokeAction(n.id, i) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // A ringing call gets the whole column; a message shares it with a one-row player.
+        if (attention) {
+            if (ringing == null) track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
+        } else {
+            FullMediaCard(
+                track = track, art = albumArt, phoneState = phoneState, phoneName = phoneName, apps = mediaApps,
+                onPlayPause = { phone.togglePlayPause() }, onNext = { phone.skipNext() }, onPrevious = { phone.skipPrevious() },
+                onPlayApp = phone::playApp, onReconnect = phone::retryNow,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        if (telemetry.isObdEnabled && telemetry.isObdConnected) Obd2TelemetryCard(telemetry = telemetry)
+    }
+    // Portrait (a phone held upright): map on top, the cards below it, the rail along the bottom.
+    val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val rail: @Composable () -> Unit = {
         Rail(
+            vertical = !portrait,
             isFullScreenMap = isFullScreenMap,
             phoneState = phoneState,
             unread = notifications.size,
@@ -366,97 +445,40 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onSettings = { showSettings = true },
             onToggleMap = { viewModel.toggleFullScreenMap() }
         )
+    }
 
-        Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.weight(1f).fillMaxHeight()) {
-                CurveonMapView(
-                    location = currentLocation,
-                    headingDeg = telemetry.headingDeg,
-                    speedKmh = telemetry.speedKmh,
-                    speedLimitKmh = telemetry.speedLimitKmh,
-                    hasGpsFix = telemetry.hasGpsFix,
-                    routePoints = routePoints,
-                    groundPreference = groundPreference,
-                    currentTurnInstruction = currentTurnInstruction,
-                    isFullScreen = isFullScreenMap,
-                    dark = mapDark,
-                    previewRoutes = if (editor != null) listOf(MapRoute(editLine, true)).filter { it.points.size >= 2 }
-                    else preview?.candidates?.mapIndexedNotNull { i, c ->
-                        c.route?.let { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, i == preview!!.selected) }
-                    }.orEmpty(),
-                    markers = if (editor != null) emptyList() else markers,
-                    editor = editor,
-                    // The route starts on the nearest road the map joins up: show the way to it.
-                    approachTo = if (preview != null) preview?.selectedRoute?.points?.firstOrNull()?.takeIf { planGoal?.start == null }?.let { GeoPoint(it.lat, it.lon) }
-                        else navState.approach?.let { GeoPoint(it.lat, it.lon) },
-                    onEditRoute = if (planGoal != null && !editing && mapPick == null) ({ editing = true }) else null,
-                    previewSheetMinimized = previewMinimized,
-                    surfaceWays = viewModel::surfaceWays,
-                    showSurfaces = showSurfaces,
-                    roadNameProbe = roadNameProbe,
-                    onRoadName = viewModel::onRoadName,
-                    onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
-                    onTap = if (mapPick != null) ({ p ->
-                        picked = p to null
-                        scope.launch { val name = viewModel.describePoint(p); if (picked?.first == p) picked = p to name }
-                    }) else null,
-                    pickedPoint = picked?.first,
-                    gpxTracks = overlayTracks,
-                    gpxPois = overlayPois,
-                    trackHint = trackHint.takeIf { preview == null && !isNavigating },
-                    onPoiClick = { shownPoi = it },
-                    autoZoom = mapAutoZoom,
-                    mapVersion = mapVersion,
-                    overlays = mapOverlays
+    val rootModifier = modifier
+        .fillMaxSize()
+        .background(CockpitBackground)
+        .statusBarsPadding()
+        .navigationBarsPadding()
+        // A phone's camera hole sits on one edge: keep the rail and cards clear of it, whichever
+        // way round the phone is held.
+        .windowInsetsPadding(WindowInsets.displayCutout)
+        .testTag("dashboard_screen_root")
+    if (portrait) {
+        Column(rootModifier) {
+            Column(Modifier.weight(1f).fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                mapArea(Modifier.weight(1f).fillMaxWidth())
+                // Planning a trip needs the map more than the speed: the preview sheet covers much of it.
+                if (!isFullScreenMap && preview == null) Column(
+                    Modifier.fillMaxWidth().fillMaxHeight(PORTRAIT_CARDS_SHARE),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    content = cards
                 )
-                toast?.let {
-                    Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp).clip(RoundedCornerShape(12.dp))
-                            .background(CockpitSurface).border(1.dp, ElectricCyan, RoundedCornerShape(12.dp))
-                            .padding(horizontal = 16.dp, vertical = 10.dp))
-                }
             }
-
-            if (!isFullScreenMap) {
-                Column(
+            rail()
+        }
+    } else {
+        Row(rootModifier) {
+            rail()
+            Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                mapArea(Modifier.weight(1f).fillMaxHeight())
+                if (!isFullScreenMap) Column(
                     Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    SpeedCard(telemetry, camera = cameraAlert)
-
-                    val attention = voiceReply != null || notifications.isNotEmpty()
-                    when {
-                        voiceReply != null -> VoiceReplyCard(
-                            reply = voiceReply!!,
-                            onSend = { phone.confirmVoiceReply() },
-                            onRetry = { phone.startVoiceReply(voiceReply!!.notificationKey) },
-                            onCancel = { phone.cancelVoiceReply() },
-                            modifier = Modifier.weight(1f)
-                        )
-                        notifications.isNotEmpty() -> NotificationCard(
-                            notifications = notifications,
-                            onReply = { phone.startVoiceReply(it.id) },
-                            onDismiss = { phone.dismissNotification(it.id) },
-                            onSwipe = { phone.hideNotification(it.id) },
-                            onAction = { n, i -> phone.invokeAction(n.id, i) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    // A ringing call gets the whole column; a message shares it with a one-row player.
-                    if (attention) {
-                        if (ringing == null) track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
-                    } else {
-                        FullMediaCard(
-                            track = track, art = albumArt, phoneState = phoneState, phoneName = phoneName, apps = mediaApps,
-                            onPlayPause = { phone.togglePlayPause() }, onNext = { phone.skipNext() }, onPrevious = { phone.skipPrevious() },
-                            onPlayApp = phone::playApp, onReconnect = phone::retryNow,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    if (telemetry.isObdEnabled && telemetry.isObdConnected) Obd2TelemetryCard(telemetry = telemetry)
-                }
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    content = cards
+                )
             }
         }
     }
@@ -700,11 +722,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
  */
 private val SIDE_COLUMN_WIDTH = 300.dp
 
+/** Upright, the speed and music cards take this much of the height under the map. */
+private const val PORTRAIT_CARDS_SHARE = 0.42f
+
 /** Room for the full-map speed and limit sign in the top-right corner (about 66 dp tall). */
 private val FULL_MAP_SPEED_CLEARANCE = 80.dp
 
 @Composable
 private fun Rail(
+    /** Down the left side (landscape), or along the bottom (portrait). */
+    vertical: Boolean,
     isFullScreenMap: Boolean,
     phoneState: CompanionConnectionState,
     unread: Int,
@@ -718,20 +745,16 @@ private fun Rail(
 ) {
     // A phone held sideways is lower than the X7 (about 410 dp against 540): smaller buttons, so
     // the map toggle at the bottom still fits.
-    val compact = LocalConfiguration.current.screenHeightDp < 480
-    Column(
-        Modifier.width(72.dp).fillMaxHeight().background(CockpitSurface).padding(vertical = if (compact) 6.dp else 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
-    ) {
-        Clock()
+    val compact = vertical && LocalConfiguration.current.screenHeightDp < 480
+    val buttons: @Composable () -> Unit = {
         RailButton(Icons.Default.Search, stringResource(R.string.where_to), ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
         RailButton(Icons.Default.Explore, stringResource(R.string.roundtrip), NeonAmber, NeonAmber, tag = "rail_roundtrip", onClick = onRoundtrip)
         RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
         RailButton(Icons.Default.Phone, stringResource(R.string.phone), EcoGreen, if (phoneOpen) Color.Black else EcoGreen,
             filled = phoneOpen, tag = "rail_phone", onClick = onPhone)
         RailButton(Icons.Default.Settings, stringResource(R.string.settings), TextSecondary, TextPrimary, tag = "rail_settings", onClick = onSettings)
-        Spacer(Modifier.weight(1f))
+    }
+    val mapToggle: @Composable () -> Unit = {
         Box {
             RailButton(
                 if (isFullScreenMap) Icons.Default.Dashboard else Icons.Default.Map,
@@ -747,6 +770,24 @@ private fun Rail(
             }
         }
     }
+    if (vertical) Column(
+        Modifier.width(72.dp).fillMaxHeight().background(CockpitSurface).padding(vertical = if (compact) 6.dp else 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
+    ) {
+        Clock()
+        buttons()
+        Spacer(Modifier.weight(1f))
+        mapToggle()
+    } else Row(
+        Modifier.fillMaxWidth().height(68.dp).background(CockpitSurface).padding(horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Clock()
+        buttons()
+        mapToggle()
+    }
 }
 
 @Composable
@@ -759,7 +800,8 @@ private fun RailButton(
     tag: String,
     onClick: () -> Unit
 ) {
-    val compact = LocalConfiguration.current.screenHeightDp < 480
+    // Smaller on a phone: sideways it is low, upright it is narrow.
+    val compact = LocalConfiguration.current.let { minOf(it.screenHeightDp, it.screenWidthDp) < 480 }
     Box(
         Modifier
             .size(if (compact) 48.dp else 56.dp)
