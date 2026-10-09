@@ -856,17 +856,19 @@ private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Bool
             ),
             radius = radius, center = edge
         ) else {
-            // A solid cyan centre fading into a dark ring, then out into the map.
-            val r = radius * 0.8f
+            // A solid cyan centre fading into a dark ring, then out into the map. It sits partly
+            // beyond the edge, so only a small cap of it shows.
+            val r = radius * 0.55f
+            val at = edge + d / d.getDistance() * (r * 0.3f)
             drawCircle(
                 androidx.compose.ui.graphics.Brush.radialGradient(
                     0f to ElectricCyan.copy(alpha = near),
                     0.35f to ElectricCyan.copy(alpha = 0.9f * near),
-                    0.55f to CockpitBackground.copy(alpha = 0.75f * near),
+                    0.55f to CockpitBackground.copy(alpha = 0.6f * near),
                     1f to Color.Transparent,
-                    center = edge, radius = r
+                    center = at, radius = r
                 ),
-                radius = r, center = edge
+                radius = r, center = at
             )
         }
     }
