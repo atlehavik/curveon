@@ -75,6 +75,9 @@ class PhoneCompanionManager(
 ) {
     private val prefs = context.getSharedPreferences("phone_link", Context.MODE_PRIVATE)
 
+    /** Messages from this device's own listener, handled in order on the main thread. */
+    private val localSink: (Message) -> Unit = { msg -> scope.launch(Dispatchers.Main) { handle(msg) } }
+
     /** This device is its own phone: no companion, no Bluetooth. */
     private val _thisDevice = MutableStateFlow(prefs.getBoolean(KEY_THIS_DEVICE, false))
     val thisDevice: StateFlow<Boolean> = _thisDevice.asStateFlow()
@@ -321,15 +324,12 @@ class PhoneCompanionManager(
 
     // ------------------------------------------------------------------ this device
 
-    /** Messages from this device's own listener, handled in order on the main thread. */
-    private val localSink: (Message) -> Unit = { msg -> scope.launch(Dispatchers.Main) { handle(msg) } }
-
     private fun startThisDevice() {
         PhoneHub.phoneBook = PhoneBook(context)
         PhoneHub.voice = VoiceReplier(context)
         _connectionState.value = CompanionConnectionState.CONNECTED
         _connectedSince.value = System.currentTimeMillis()
-        _connectedDeviceName.value = context.getString(com.curveon.R.string.link_this_device)
+        _connectedDeviceName.value = Build.MODEL // "Nothing playing on Pixel 9a"
         PhoneHub.addTablet(localSink, Build.MODEL)
         refreshThisDevice()
         send(Message.RequestPhoneBook)

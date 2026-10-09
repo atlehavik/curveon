@@ -177,7 +177,7 @@ private fun LinkedPhoneCard(manager: PhoneCompanionManager, onForget: () -> Unit
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Smartphone, null, tint = ElectricCyan, modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(12.dp))
-            Text(name, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(if (thisDevice) stringResource(R.string.link_this_device) else name, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.width(12.dp))
             Box(Modifier.size(9.dp).clip(CircleShape).background(color))
             Spacer(Modifier.width(6.dp))

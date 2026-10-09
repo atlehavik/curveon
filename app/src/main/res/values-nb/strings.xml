@@ -148,6 +148,7 @@
     <string name="media_nothing_pick">Ingenting spilles på %1$s\nVelg hva som skal spilles</string>
     <string name="media_nothing_tap">Ingenting spilles på %1$s\nTrykk for å spille</string>
     <string name="media_no_phone">Ingen telefon koblet til.\nVelg telefonen i Innstillinger → Telefon.</string>
+    <string name="media_no_phone_this">Ingen telefon koblet til.\nFor å bruke denne telefonen: Innstillinger → Telefon → Denne enheten.</string>
     <string name="media_no_permission">Gi tilgang til Bluetooth\nfor å koble til telefonen.</string>
     <string name="bluetooth_off">Bluetooth er av</string>
     <string name="media_disconnected">Telefonen er ikke tilkoblet.\nTrykk for å koble til nå.</string>

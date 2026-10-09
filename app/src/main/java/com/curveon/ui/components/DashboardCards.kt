@@ -274,7 +274,11 @@ private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: 
             when (state) {
                 CompanionConnectionState.CONNECTED -> stringResource(if (choosing) R.string.media_nothing_pick else R.string.media_nothing_tap, phoneName)
                 CompanionConnectionState.CONNECTING -> stringResource(R.string.phone_connecting_to, phoneName)
-                CompanionConnectionState.NO_PHONE_SELECTED -> stringResource(R.string.media_no_phone)
+                // Curveon on a phone: that phone itself is the obvious choice.
+                CompanionConnectionState.NO_PHONE_SELECTED -> stringResource(
+                    if (androidx.compose.ui.platform.LocalContext.current.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_TELEPHONY))
+                        R.string.media_no_phone_this else R.string.media_no_phone
+                )
                 CompanionConnectionState.NO_PERMISSION -> stringResource(R.string.media_no_permission)
                 CompanionConnectionState.BLUETOOTH_OFF -> stringResource(R.string.bluetooth_off)
                 CompanionConnectionState.DISCONNECTED -> stringResource(R.string.media_disconnected)

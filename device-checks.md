@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-09 — Curveon on a phone: camera hole, rail, hints
+
+On the Pixel (held sideways) the rail moves clear of the camera hole, the rail buttons are a bit
+smaller so the map toggle fits, the "no offline map" note sits beside the map buttons instead of
+over them, and the music card says how to use the phone itself. Checked on the Pixel 9a with the
+hole on the left; the X7 looks as before.
+
+- [ ] Pixel: turn it the other way round (hole on the right): the cards on the right move clear of it.
+
 ## 2026-10-09 — "This device" as its own phone
 
 Settings → Phone has a new choice, **This device**: Curveon reads messages, calls and music from the

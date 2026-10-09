@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -348,6 +349,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             .background(CockpitBackground)
             .statusBarsPadding()
             .navigationBarsPadding()
+            // A phone's camera hole sits on one short edge: keep the rail and cards clear of it,
+            // whichever way round the phone is held.
+            .windowInsetsPadding(WindowInsets.displayCutout)
             .testTag("dashboard_screen_root")
     ) {
         Rail(
@@ -712,10 +716,13 @@ private fun Rail(
     onSettings: () -> Unit,
     onToggleMap: () -> Unit
 ) {
+    // A phone held sideways is lower than the X7 (about 410 dp against 540): smaller buttons, so
+    // the map toggle at the bottom still fits.
+    val compact = LocalConfiguration.current.screenHeightDp < 480
     Column(
-        Modifier.width(72.dp).fillMaxHeight().background(CockpitSurface).padding(vertical = 10.dp),
+        Modifier.width(72.dp).fillMaxHeight().background(CockpitSurface).padding(vertical = if (compact) 6.dp else 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
     ) {
         Clock()
         RailButton(Icons.Default.Search, stringResource(R.string.where_to), ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
@@ -752,9 +759,10 @@ private fun RailButton(
     tag: String,
     onClick: () -> Unit
 ) {
+    val compact = LocalConfiguration.current.screenHeightDp < 480
     Box(
         Modifier
-            .size(56.dp)
+            .size(if (compact) 48.dp else 56.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(if (filled) accent else CockpitSurfaceVariant)
             .clickable(onClick = onClick)

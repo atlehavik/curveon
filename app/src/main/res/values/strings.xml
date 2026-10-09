@@ -149,6 +149,7 @@
     <string name="media_nothing_pick">Nothing playing on %1$s\nPick what to play</string>
     <string name="media_nothing_tap">Nothing playing on %1$s\nTap to play</string>
     <string name="media_no_phone">No phone linked.\nPick your phone in Settings → Phone.</string>
+    <string name="media_no_phone_this">No phone linked.\nTo use this phone: Settings → Phone → This device.</string>
     <string name="media_no_permission">Allow Bluetooth access\nto link your phone.</string>
     <string name="bluetooth_off">Bluetooth is off</string>
     <string name="media_disconnected">Phone not connected.\nTap to connect now.</string>

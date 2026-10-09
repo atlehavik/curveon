@@ -627,7 +627,7 @@ fun CurveonMapView(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 80.dp, end = 14.dp)
+                    .padding(top = 14.dp, end = 80.dp) // beside the map buttons, not over them
                     .clip(RoundedCornerShape(8.dp))
                     .background(CockpitBackground.copy(alpha = 0.9f))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
