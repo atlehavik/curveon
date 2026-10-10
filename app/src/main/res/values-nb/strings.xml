@@ -489,6 +489,7 @@
     <string name="near_place">Nær %1$s</string>
     <string name="loop_name_from">Runde fra %1$s, %2$d km</string>
     <string name="loop_name">Runde, %1$d km</string>
+    <string name="adjust_route">Juster ruten</string>
     <string name="stop_short">Stopp</string>
     <string name="start_here">Start her</string>
     <string name="from_here">Fra der jeg er</string>

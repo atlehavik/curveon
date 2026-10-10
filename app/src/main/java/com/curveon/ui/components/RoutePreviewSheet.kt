@@ -137,7 +137,6 @@ fun RoutePreviewSheet(
             )
             if (goal is NavigationGoal.Roundtrip || (goal as? NavigationGoal.Destination)?.loop != null) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
-            if (goal is NavigationGoal.Destination && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
             // A trip on the map may be half an hour of planning: ask before throwing it away.
@@ -181,7 +180,23 @@ fun RoutePreviewSheet(
                         if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
                     )
                     // "+ Stop" next to the start, so it stays in sight however many stops the trip has.
-                    PlanChip(Icons.Default.AddLocationAlt, stringResource(R.string.stop_short), NeonAmber, "preview_add_stop", onAddStop, outlined = true)
+                    // Changing the route: a stop from the search, or on the map (points, dragging the line).
+                    Box {
+                        var adjust by remember { mutableStateOf(false) }
+                        PlanChip(Icons.Default.Tune, stringResource(R.string.adjust_route), NeonAmber, "preview_adjust_route", { adjust = true }, outlined = true)
+                        DropdownMenu(adjust, onDismissRequest = { adjust = false }, modifier = Modifier.background(CockpitSurface)) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.add_stop), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                                leadingIcon = { Icon(Icons.Default.AddLocationAlt, null, tint = NeonAmber) },
+                                onClick = { adjust = false; onAddStop() }, modifier = Modifier.testTag("preview_add_stop")
+                            )
+                            if (preview.selectedRoute != null) DropdownMenuItem(
+                                text = { Text(stringResource(R.string.edit_on_map), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                                leadingIcon = { Icon(Icons.Default.Gesture, null, tint = ElectricCyan) },
+                                onClick = { adjust = false; onEditOnMap() }, modifier = Modifier.testTag("preview_edit_on_map")
+                            )
+                        }
+                    }
                     var number = 0
                     goal.stops.forEachIndexed { i, s ->
                         val leg = legs?.getOrNull(i)?.let { sec -> " · %d:%02d".format((sec / 3600).toInt(), ((sec % 3600) / 60).toInt()) } ?: ""

@@ -490,6 +490,7 @@
     <string name="near_place">Near %1$s</string>
     <string name="loop_name_from">Loop from %1$s, %2$d km</string>
     <string name="loop_name">Loop, %1$d km</string>
+    <string name="adjust_route">Adjust route</string>
     <string name="stop_short">Stop</string>
     <string name="start_here">Start here</string>
     <string name="from_here">From my position</string>
