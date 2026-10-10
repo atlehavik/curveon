@@ -372,9 +372,9 @@ fun WrongTurnCard(
  * Tap the map to drop a pin (tap again to move it); then the bar names the place and offers to
  * use it. The search icon grows the dialog back; ✕ gives up.
  *
- * Point by point (the toggle, offered for a destination or a stop): each tap on the map rides the
- * trip on to there straight away, so a trip is built A → B → C → D without confirming each point;
- * the bar shows the trip so far, Undo takes the last point back and the tick finishes.
+ * Point by point (a destination or stops while planning): each tap on the map rides the trip on
+ * to there straight away, so a trip is built A → B → C → D without confirming each point; the bar
+ * shows the trip so far, Undo takes the last point back and the tick finishes.
  */
 @Composable
 fun MapPickBar(
@@ -384,9 +384,8 @@ fun MapPickBar(
     onBackToSearch: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
-    /** Point by point is on; null when it isn't offered (picking the start). */
-    pointByPoint: Boolean? = null,
-    onPointByPoint: () -> Unit = {},
+    /** Point by point instead of one place (not for the start, a stop while riding, or one put before/instead of another). */
+    pointByPoint: Boolean = false,
     /** Point by point: the trip so far ("0:40 · 38 km"), and whether its route is being found. */
     tripSummary: String? = null,
     busy: Boolean = false,
@@ -396,7 +395,7 @@ fun MapPickBar(
     // Grows out of the shrinking dialog (bottom centre).
     val grow = remember { androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(Unit) { grow.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 500f)) }
-    val chaining = pointByPoint == true
+    val chaining = pointByPoint
     val accent = if (purpose == SearchPurpose.STOP && !chaining) NeonAmber else ElectricCyan
     Row(
         modifier
@@ -411,12 +410,8 @@ fun MapPickBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (!chaining) Box(Modifier.testTag("map_pick_search")) {
+        Box(Modifier.testTag("map_pick_search")) {
             RoundButton(Icons.Default.Search, stringResource(R.string.back_to_search), 48.dp, CockpitSurfaceVariant, accent, onBackToSearch)
-        }
-        if (pointByPoint != null && picked == null) Box(Modifier.testTag("map_pick_point_by_point")) {
-            RoundButton(Icons.Default.Timeline, stringResource(R.string.pick_point_by_point), 48.dp,
-                if (chaining) ElectricCyan else CockpitSurfaceVariant, if (chaining) OnCyanDark else accent, onPointByPoint)
         }
         if (chaining) {
             Row(Modifier.weight(1f, fill = false).widthIn(max = 340.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {

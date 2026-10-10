@@ -460,7 +460,6 @@
     <string name="pick_hint_destination">Trykk i kartet der du vil kjøre</string>
     <string name="pick_hint_stop">Trykk i kartet der du vil stoppe</string>
     <string name="pick_hint_start">Trykk i kartet der turen starter</string>
-    <string name="pick_point_by_point">Punkt for punkt</string>
     <string name="pick_hint_next_point">Trykk i kartet for hvert neste punkt</string>
     <string name="back_to_search">Tilbake til søket</string>
     <string name="edit_on_map">Endre i kartet</string>

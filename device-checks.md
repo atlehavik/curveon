@@ -36,7 +36,8 @@ while building. Checked in the emulator (X7 landscape, Pixel size portrait). Ins
 
 - [ ] Pixel: plan A → B → C → D by tapping; the map stays where you tap (no zooming out between points).
 - [ ] A tap right on the route line also adds the next point (e.g. riding back the same way).
-- [ ] Switching it off again: tapping drops a pin with "Add stop"/"Go here" as before.
+- [ ] Point by point is now always how a destination/stop is picked on the map (no toggle). Picking
+      the start, a stop while riding, or "Change place"/"Add stop before" still picks one place.
 
 ## 2026-10-10 — Mark the part of the route to change
 

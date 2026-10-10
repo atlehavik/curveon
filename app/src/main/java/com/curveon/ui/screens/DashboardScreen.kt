@@ -108,8 +108,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** "Pick on map": what the search was for while the rider taps the map; null when not picking. */
     var mapPick by remember { mutableStateOf<SearchPurpose?>(null) }
     var picked by remember { mutableStateOf<Pair<GeoPoint, String?>?>(null) }
-    /** Picking on the map point by point: each tap rides the trip on to there. Stays on until switched off. */
-    var pointByPoint by remember { mutableStateOf(false) }
     /** A new trip set to start elsewhere in "Where to?", before the destination; null = from here. */
     var planStart by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
     /** The start search was opened from "Where to?": its pick goes back there. */
@@ -187,9 +185,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         planStart = null
         startFirst = false
     }
-    /** Point by point is for building a trip: a destination or stops, not while riding one. */
-    val pointByPointOffered = !isNavigating && (mapPick == SearchPurpose.DESTINATION || mapPick == SearchPurpose.STOP)
-    val chaining = mapPick != null && pointByPoint && pointByPointOffered
+    /** Picking a destination or stops on the map builds the trip point by point: each tap rides it on to there. */
+    // A stop put before or instead of another one, a stop added while riding, or the start: one place.
+    val chaining = !isNavigating && stopTarget == null && (mapPick == SearchPurpose.DESTINATION || mapPick == SearchPurpose.STOP)
     val planPointByPoint: (GeoPoint, String) -> Unit = { p, name ->
         viewModel.planPointByPoint(p, name, planStart?.first, planStart?.second ?: "")
     }
@@ -286,12 +284,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onConfirm = { picked?.let { (p, n) -> if (n != null) { usePlace(pickPurpose, p, n); endMapPick() } } },
                 onBackToSearch = { mapPick = null; picked = null; searchGrowIn = true; searchPurpose = pickPurpose },
                 onCancel = endMapPick,
-                pointByPoint = pointByPoint.takeIf { pointByPointOffered },
-                onPointByPoint = {
-                    pointByPoint = !pointByPoint
-                    // A pin already down is the first point.
-                    if (pointByPoint) picked?.let { (p, n) -> picked = null; if (n != null) planPointByPoint(p, n) }
-                },
+                pointByPoint = chaining,
                 tripSummary = tripSummary.takeIf { planGoal != null },
                 busy = preview?.calculating == true || preview?.fetching != null,
                 canUndo = preview?.canUndo == true,
