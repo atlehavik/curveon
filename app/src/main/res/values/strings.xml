@@ -53,6 +53,11 @@
     <string name="settings_language">Language</string>
     <string name="settings_speed">Speed</string>
     <string name="settings_map">Map</string>
+    <string name="settings_screen_lock">Screen</string>
+    <string name="settings_screen_lock_hint">Locked, it doesn\'t turn with bumps</string>
+    <string name="screen_lock_auto">Turns</string>
+    <string name="screen_lock_landscape">Landscape</string>
+    <string name="screen_lock_portrait">Portrait</string>
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Day</string>
     <string name="map_theme_night">Night</string>

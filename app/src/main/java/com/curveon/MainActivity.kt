@@ -37,8 +37,8 @@ class MainActivity : ComponentActivity() {
         // The language may just have changed (the screen restarts then): redo texts made earlier.
         dashboardViewModel.refreshTexts()
 
-        // Landscape or portrait as Android's auto-rotate says; on the bike, lock rotation in Android.
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
+        // Turns with the device, or locked one way (Settings → Display) so bumps can't turn it.
+        requestedOrientation = dashboardViewModel.screenOrientation.value
         enableEdgeToEdge()
         hideSystemBars()
 
@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         setContent {
+            val orientation by dashboardViewModel.screenOrientation.collectAsState()
+            LaunchedEffect(orientation) { if (requestedOrientation != orientation) requestedOrientation = orientation }
             val isFullScreenMap by dashboardViewModel.isFullScreenMap.collectAsState()
 
             // Back handler: if full screen map, return to dashboard

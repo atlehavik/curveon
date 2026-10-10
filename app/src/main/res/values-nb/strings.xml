@@ -52,6 +52,11 @@
     <string name="settings_language">Språk</string>
     <string name="settings_speed">Fart</string>
     <string name="settings_map">Kart</string>
+    <string name="settings_screen_lock">Skjermretning</string>
+    <string name="settings_screen_lock_hint">Låst snur den seg ikke på humper</string>
+    <string name="screen_lock_auto">Snur seg</string>
+    <string name="screen_lock_landscape">Liggende</string>
+    <string name="screen_lock_portrait">Stående</string>
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Natt</string>

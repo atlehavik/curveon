@@ -676,7 +676,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             SettingsDialog(
                 state = SettingsState(
                     language = remember { com.curveon.AppLanguage.current(context) },
-                    useMph = telemetry.useMph, mapTheme = mapTheme, obdEnabled = telemetry.isObdEnabled,
+                    useMph = telemetry.useMph, mapTheme = mapTheme, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
+                    obdEnabled = telemetry.isObdEnabled,
                     autoZoom = autoZoom, showSurfaces = showSurfaces, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
@@ -688,6 +689,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onLanguage = { com.curveon.AppLanguage.set(context, it) },
                     onUnits = viewModel::setUseMph,
                     onMapTheme = viewModel::setMapTheme,
+                    onScreenLock = viewModel::setScreenLock,
                     onObd = viewModel::setObd,
                     onAutoZoom = viewModel::setAutoZoom,
                     onShowSurfaces = viewModel::setShowSurfaces,

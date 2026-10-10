@@ -375,6 +375,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _mapDark = MutableStateFlow(true)
     val mapDark: StateFlow<Boolean> = _mapDark.asStateFlow()
 
+    private val _screenLock = MutableStateFlow(com.curveon.ScreenLock.valueOf(settings.getString("screenLock", com.curveon.ScreenLock.AUTO.name)!!))
+    val screenLock: StateFlow<com.curveon.ScreenLock> = _screenLock.asStateFlow()
+    /** The exact orientation to ask for (an ActivityInfo constant), worked out when the lock was chosen. */
+    private val _screenOrientation = MutableStateFlow(settings.getInt("screenOrientation", android.content.pm.ActivityInfo.SCREEN_ORIENTATION_USER))
+    val screenOrientation: StateFlow<Int> = _screenOrientation.asStateFlow()
+
+    fun setScreenLock(lock: com.curveon.ScreenLock) {
+        val orientation = com.curveon.ScreenLock.orientationFor(app, lock)
+        _screenLock.value = lock
+        _screenOrientation.value = orientation
+        settings.edit().putString("screenLock", lock.name).putInt("screenOrientation", orientation).apply()
+    }
+
     fun setMapTheme(theme: MapTheme) {
         _mapTheme.value = theme
         settings.edit().putString("mapTheme", theme.name).apply()

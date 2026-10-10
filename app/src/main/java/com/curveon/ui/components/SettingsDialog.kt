@@ -43,6 +43,7 @@ data class SettingsState(
     val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
+    val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
     val autoZoom: Boolean,
     val showSurfaces: Boolean,
@@ -64,6 +65,7 @@ class SettingsActions(
     val onLanguage: (AppLanguage) -> Unit,
     val onUnits: (Boolean) -> Unit,
     val onMapTheme: (MapTheme) -> Unit,
+    val onScreenLock: (com.curveon.ScreenLock) -> Unit,
     val onObd: (Boolean) -> Unit,
     val onAutoZoom: (Boolean) -> Unit,
     val onShowSurfaces: (Boolean) -> Unit,
@@ -94,6 +96,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_speed)) {
                             Segmented(listOf(false, true), state.useMph, { if (it) "mph" else "km/h" }, actions.onUnits)
+                        }
+                        Setting(stringResource(R.string.settings_screen_lock), stringResource(R.string.settings_screen_lock_hint)) {
+                            Segmented(com.curveon.ScreenLock.entries, state.screenLock, { stringResource(it.label) }, actions.onScreenLock)
                         }
                         Setting(stringResource(R.string.settings_map)) {
                             Segmented(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)

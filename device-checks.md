@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Lock the screen landscape or portrait
+
+Settings → Display → Screen: Turns / Landscape / Portrait. Locked, the screen stays exactly the way
+it was held when chosen (not even flipping upside down), whatever Android's auto-rotate says.
+Tried in the emulator.
+
+- [ ] X7: Settings → Display → Screen → Landscape while it sits on the mount; then ride over bumps
+      (or tilt it upright by hand): the screen doesn't turn.
+
 ## 2026-10-09 — Portrait: speed on top, dialogs that fit
 
 Upright, the speed card now sits above the map. The dialogs stack on a phone instead of squeezing:
@@ -23,8 +32,6 @@ music/messages below it, and the rail is a row along the bottom; while planning 
 gets the cards' room too. Landscape is as before. Tried in the emulator (dashboard, full map,
 search, route preview).
 
-- [ ] X7 on the bike: auto-rotate is on, so lock it in landscape (quick settings → Auto-rotate off
-      while the tablet is sideways), or bumps could turn the screen.
 - [ ] Pixel upright: the 411 dp wide screen still fits the route preview's three options and GO.
 
 ## 2026-10-09 — Curveon on a phone: camera hole, rail, hints
