@@ -862,22 +862,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             .putInt("offRouteExtraPct", s.maxExtraPercent).apply()
     }
 
-    /** A loop inside [area] (drawn on the map), from [start] or from here. */
-    fun previewAreaRoundtrip(area: List<GeoPoint>, config: RoundtripConfig, start: GeoPoint? = null, startName: String = "") =
+    /**
+     * A loop inside [area] (drawn on the map), from [start] or from here, with the last route
+     * options; its shape is found on curvy roads (the sheet then offers every style through it).
+     */
+    fun previewAreaRoundtrip(area: List<GeoPoint>, start: GeoPoint? = null, startName: String = "") =
         navigator.previewAreaRoundtrip(
             area.map { LatLon(it.latitude, it.longitude) },
-            routeOptions(config.roadType, config.groundPreference, config.avoidFerries, config.avoidHighways, config.avoidTolls),
+            lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle),
             start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) }
         )
-
-    fun previewRoundtrip(config: RoundtripConfig, start: GeoPoint? = null, startName: String = "") {
-        navigator.previewRoundtrip(
-            distanceKm = config.radiusKm.toDouble(),
-            directionDeg = meanDirection(config.selectedDirections),
-            options = routeOptions(config.roadType, config.groundPreference, config.avoidFerries, config.avoidHighways, config.avoidTolls),
-            start = start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) }
-        )
-    }
 
     /** Preview riding a track, in the direction set for it (or its group); [reverse] flips that. */
     fun previewGpx(track: GpxTrack, reverse: Boolean, ground: GroundPreference) {

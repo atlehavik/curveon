@@ -34,7 +34,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import com.curveon.data.bluetooth.CompanionConnectionState
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GroundPreference
-import com.curveon.data.model.RoundtripConfig
 import com.curveon.ui.components.*
 import com.curveon.ui.theme.*
 import com.curveon.ui.viewmodel.DashboardViewModel
@@ -60,8 +59,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     val context = LocalContext.current
     val phone = viewModel.phoneCompanion
-    val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val track by phone.currentTrack.collectAsStateWithLifecycle()
+    val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val albumArt by phone.albumArt.collectAsStateWithLifecycle()
     val notifications by phone.notifications.collectAsStateWithLifecycle()
     val voiceReply by phone.voiceReply.collectAsStateWithLifecycle()
@@ -141,13 +140,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** Suggested name while the save dialog is open. */
     var saveName by remember { mutableStateOf<String?>(null) }
     val askSaveName: () -> Unit = { scope.launch { saveName = viewModel.suggestedRouteName() } }
-    var showRoundtrip by remember { mutableStateOf(false) }
     /** Where the roundtrip starts when set elsewhere in "Where to?"; null = from here. */
     var roundtripStart by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
     /** Drawing the roundtrip's area on the map. */
     var sketching by remember { mutableStateOf(false) }
+    /** About how long the loop round the area drawn so far gets (its outline); null before drawing. */
+    var sketchKm by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(sketching) { if (sketching) sketchKm = null }
     var showGpx by remember { mutableStateOf(false) }
-    var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.curveon.data.model.CompassDirection.NORTH), avoidTolls = false)) }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
     var showSettings by rememberSaveable { mutableStateOf(false) }
     /** Settings opened from the engine panel: start on its page. */
@@ -324,7 +324,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, r.distanceMeters / 1000)
         }
         if (sketching) {
-            SketchBar(onCancel = { sketching = false }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
+            SketchBar(onCancel = { sketching = false }, km = sketchKm, startName = roundtripStart?.second, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
         } else if (pickPurpose != null) {
             MapPickBar(
                 purpose = pickPurpose,
@@ -468,9 +468,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 is com.curveon.data.routing.NavigationGoal.Destination -> g.loop?.area
                 else -> null
             }?.map { GeoPoint(it.lat, it.lon) }.orEmpty(),
+            onSketchProgress = { stroke ->
+                sketchKm = if (stroke.size < 3) null
+                else ((stroke + stroke.first()).zipWithNext { a, b -> com.curveon.routing.Geo.distance(a.latitude, a.longitude, b.latitude, b.longitude) }.sum() / 1000).toInt()
+            },
             onSketch = if (sketching) ({ stroke ->
                 sketching = false
-                viewModel.previewAreaRoundtrip(stroke, lastRoundtrip, roundtripStart?.first, roundtripStart?.second ?: "")
+                viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "")
             }) else null,
             gpxTracks = overlayTracks,
             gpxPois = overlayPois,
@@ -630,12 +634,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onDismiss = { if (startFirst) { startFirst = false; searchPurpose = SearchPurpose.DESTINATION } else closeSearch() },
                 savedRoutes = savedRoutes,
                 recents = remember(purpose) { viewModel.recents() },
+                favorites = favorites,
+                onDeleteFavorite = viewModel::deleteFavorite,
                 onPickSaved = { closeSearch(); viewModel.previewSaved(it) },
                 onDeleteSaved = { viewModel.deleteSavedRoute(it) },
                 onNearest = { viewModel.nearest(it) },
                 purpose = purpose,
-                favorites = favorites,
-                onDeleteFavorite = viewModel::deleteFavorite,
                 onPickOnMap = { startMapPick(purpose) },
                 growIn = searchGrowIn,
                 startName = planStart?.second,
@@ -644,30 +648,30 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 } else null,
                 // A loop only as a new trip: not while one is planned or ridden.
                 onRoundtrip = if (purpose == SearchPurpose.DESTINATION && !isNavigating && preview == null) {
-                    { roundtripStart = planStart; closeSearch(); showRoundtrip = true }
+                    { roundtripStart = planStart; closeSearch(); sketching = true }
                 } else null
             )
         } }
 
+        val favoriteSaved = stringResource(R.string.favorite_saved)
         pendingPlace?.let { (point, name) ->
             PlaceActionDialog(
                 name = name,
                 onAddStop = if (isNavigating || planning) ({ viewModel.addStop(point, name); pendingPlace = null }) else null,
-        val favoriteSaved = stringResource(R.string.favorite_saved)
                 onGoHere = {
                     if (planning) viewModel.setPreviewDestination(point, name) else viewModel.previewDestination(point, name)
                     pendingPlace = null
                 },
                 onStartHere = if (planning) ({ viewModel.setPreviewStart(point, name); pendingPlace = null }) else null,
-                onDismiss = { pendingPlace = null }
-            )
-        }
-
                 onFavorite = { n, home ->
                     viewModel.saveFavorite(point, n, home)
                     pendingPlace = null
                     toast = favoriteSaved
                 },
+                onDismiss = { pendingPlace = null }
+            )
+        }
+
         editStopMenu?.let { i ->
             val stops = planGoal?.stops.orEmpty()
             val st = stops.getOrNull(i)
@@ -736,24 +740,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onSave = { showRouteMenu = false; askSaveName() },
                 onEnd = { showRouteMenu = false; viewModel.stopNavigation() },
                 onDismiss = { showRouteMenu = false }
-            )
-        }
-
-        if (showRoundtrip) {
-            RoundtripDialog(
-                initialConfig = lastRoundtrip,
-                onDismiss = { showRoundtrip = false },
-                onGenerate = { config ->
-                    lastRoundtrip = config
-                    viewModel.previewRoundtrip(config, roundtripStart?.first, roundtripStart?.second ?: "")
-                    showRoundtrip = false
-                },
-                onDraw = { config ->
-                    lastRoundtrip = config
-                    showRoundtrip = false
-                    sketching = true
-                },
-                startName = roundtripStart?.second
             )
         }
 

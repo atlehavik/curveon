@@ -153,6 +153,8 @@ fun CurveonMapView(
     sketch: List<GeoPoint> = emptyList(),
     /** Drawing an area: one finger draws (two still move the map), and the stroke comes here on letting go. */
     onSketch: ((List<GeoPoint>) -> Unit)? = null,
+    /** The stroke so far while drawing (empty when the finger is lifted without an area). */
+    onSketchProgress: (List<GeoPoint>) -> Unit = {},
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -188,6 +190,7 @@ fun CurveonMapView(
     val onTapState = rememberUpdatedState(onTap)
     val editorState = rememberUpdatedState(editor)
     val onSketchState = rememberUpdatedState(onSketch)
+    val onSketchProgressState = rememberUpdatedState(onSketchProgress)
     val onEditRouteState = rememberUpdatedState(onEditRoute)
     val previewRoutesState = rememberUpdatedState(previewRoutes)
     val onPoiClickState = rememberUpdatedState(onPoiClick)
@@ -301,6 +304,7 @@ fun CurveonMapView(
                             st += at(e.x, e.y)
                             lastX = e.x; lastY = e.y
                             showStroke(st)
+                            onSketchProgressState.value(st.toList())
                         }
                         true
                     }
@@ -308,7 +312,7 @@ fun CurveonMapView(
                         val st = stroke ?: return false
                         stroke = null
                         v.performClick()
-                        if (st.size >= 3) done(st) else showStroke(emptyList())
+                        if (st.size >= 3) done(st) else { showStroke(emptyList()); onSketchProgressState.value(emptyList()) }
                         true
                     }
                     android.view.MotionEvent.ACTION_CANCEL -> { stroke = null; true }

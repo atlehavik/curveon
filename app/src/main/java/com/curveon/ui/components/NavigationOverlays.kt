@@ -529,9 +529,12 @@ fun MapPickBar(
 }
 
 
-/** Drawing the area for a roundtrip: what to do, and a way out. */
+/**
+ * Drawing the area for a roundtrip: what to do, about how long the loop round it gets once a
+ * finger is drawing ([km]), where it starts if not here, and a way out.
+ */
 @Composable
-fun SketchBar(onCancel: () -> Unit, modifier: Modifier = Modifier) {
+fun SketchBar(onCancel: () -> Unit, modifier: Modifier = Modifier, km: Int? = null, startName: String? = null) {
     Row(
         modifier
             .clip(RoundedCornerShape(30.dp)).background(CockpitSurface.copy(alpha = 0.97f))
@@ -542,10 +545,14 @@ fun SketchBar(onCancel: () -> Unit, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Icon(Icons.Default.Gesture, null, tint = NeonAmber)
-        Text(
-            stringResource(R.string.roundtrip_draw_hint), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-            maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).widthIn(max = 420.dp)
-        )
+        Column(Modifier.weight(1f, fill = false).widthIn(max = 420.dp)) {
+            Text(
+                if (km != null) stringResource(R.string.roundtrip_draw_km, km) else stringResource(R.string.roundtrip_draw_hint),
+                color = TextPrimary, fontSize = if (km != null) 20.sp else 15.sp, fontWeight = FontWeight.Bold,
+                maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            if (startName != null) Text(stringResource(R.string.from_place, startName), color = TextSecondary, fontSize = 13.sp, maxLines = 1)
+        }
         Box(Modifier.testTag("sketch_cancel")) {
             RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 48.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
         }

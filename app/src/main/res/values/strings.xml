@@ -327,16 +327,11 @@
 
     <!-- Roundtrip and route preview -->
     <string name="nav_no_area_roundtrip">Could not find a roundtrip in that area. Try drawing it bigger, or round more roads.</string>
-    <string name="roundtrip_subtitle_from">A loop from %1$s, heading roughly that way</string>
-    <string name="roundtrip_draw">Draw area</string>
+    <string name="roundtrip_draw_km">About %1$d km round</string>
     <string name="roundtrip_draw_hint">Draw the area to ride in with one finger. Two fingers move the map.</string>
-    <string name="roundtrip_search_subtitle">By direction and distance, or in an area you draw</string>
+    <string name="roundtrip_search_subtitle">Draw the area to ride in on the map</string>
     <string name="preview_loop_from">Roundtrip from %1$s</string>
     <string name="preview_area_roundtrip_title">Roundtrip in your area</string>
-    <string name="roundtrip_subtitle">A loop from where you are, heading roughly that way</string>
-    <string name="roundtrip_distance">Distance</string>
-    <string name="roundtrip_roads">Roads</string>
-    <string name="roundtrip_plan">Plan %1$d km %2$s</string>
     <string name="style_fastest">Fastest</string>
     <string name="style_curvy">Curvy</string>
     <string name="style_super_curvy">Super curvy</string>

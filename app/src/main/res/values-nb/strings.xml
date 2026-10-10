@@ -326,16 +326,11 @@
 
     <!-- Roundtrip and route preview -->
     <string name="nav_no_area_roundtrip">Fant ingen rundtur i det området. Prøv å tegne det større, eller rundt flere veier.</string>
-    <string name="roundtrip_subtitle_from">En runde fra %1$s, omtrent i den retningen</string>
-    <string name="roundtrip_draw">Tegn område</string>
+    <string name="roundtrip_draw_km">Omtrent %1$d km rundt</string>
     <string name="roundtrip_draw_hint">Tegn området du vil kjøre i med én finger. To fingre flytter kartet.</string>
-    <string name="roundtrip_search_subtitle">Etter retning og lengde, eller i et område du tegner</string>
+    <string name="roundtrip_search_subtitle">Tegn området du vil kjøre i på kartet</string>
     <string name="preview_loop_from">Rundtur fra %1$s</string>
     <string name="preview_area_roundtrip_title">Rundtur i området</string>
-    <string name="roundtrip_subtitle">En runde fra der du er, omtrent i den retningen</string>
-    <string name="roundtrip_distance">Lengde</string>
-    <string name="roundtrip_roads">Veier</string>
-    <string name="roundtrip_plan">Planlegg %1$d km %2$s</string>
     <string name="style_fastest">Raskest</string>
     <string name="style_curvy">Svingete</string>
     <string name="style_super_curvy">Supersvingete</string>
