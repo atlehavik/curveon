@@ -432,7 +432,9 @@ private fun PlanChip(icon: ImageVector?, text: String, color: Color, tag: String
 @Composable
 fun StopMenuDialog(
     name: String, canMoveEarlier: Boolean, canMoveLater: Boolean, onMove: (Int) -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit,
-    onChangePlace: (() -> Unit)? = null, onAddBefore: (() -> Unit)? = null
+    onChangePlace: (() -> Unit)? = null, onAddBefore: (() -> Unit)? = null,
+    /** "Remove point" for a point the route was dragged or tapped through, the start or the destination. */
+    removeLabel: String = stringResource(R.string.preview_remove_stop)
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
@@ -444,7 +446,7 @@ fun StopMenuDialog(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (canMoveEarlier) PillButton(Icons.Default.ArrowBack, stringResource(R.string.move_earlier), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f)) { onMove(-1) }
                 if (canMoveLater) PillButton(Icons.Default.ArrowForward, stringResource(R.string.move_later), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f)) { onMove(1) }
-                PillButton(Icons.Default.Close, stringResource(R.string.preview_remove_stop), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("stop_menu_remove"), onRemove)
+                PillButton(Icons.Default.Close, removeLabel, WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("stop_menu_remove"), onRemove)
             }
             if (onChangePlace != null || onAddBefore != null) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (onChangePlace != null) PillButton(Icons.Default.EditLocationAlt, stringResource(R.string.change_place), CockpitSurfaceVariant, TextPrimary,

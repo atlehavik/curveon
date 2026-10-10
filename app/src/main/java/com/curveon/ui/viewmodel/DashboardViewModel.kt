@@ -837,6 +837,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun cancelPreview() = navigator.cancelPreview()
 
+    /** The previewed trip ends at its last stop instead; with no stops there is no trip left. */
+    fun removePreviewDestination() {
+        val g = navigator.state.value.preview?.goal as? NavigationGoal.Destination ?: return
+        if (g.stops.isEmpty()) navigator.cancelPreview() else navigator.removePreviewDestination()
+    }
+
     fun startPreview() {
         val p = navigator.state.value.preview ?: return
         val style = p.candidates.getOrNull(p.selected)?.style

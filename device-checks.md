@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Hold a point on the map to remove it
+
+While editing a trip on the map or building it point by point, holding a finger still on a point
+(white dot, numbered stop, start or destination) opens its menu with "Remove point" (a stop also
+keeps moving earlier/later). Removing the destination makes the point before it the destination.
+Dragging a point works as before. Checked in the emulator. Installed on both devices.
+
+- [ ] Pixel: a long press on a white dot gives a buzz and the menu; Remove reroutes without it.
+- [ ] A quick drag of a point still moves it (no menu popping up mid-drag).
+
 ## 2026-10-10 — Save a route to Where to?, GPX, or both
 
 The route's save dialog has two ticks: Where to? (saved routes, as before) and GPX track, with

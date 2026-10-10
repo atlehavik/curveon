@@ -326,6 +326,7 @@
     <string name="preview_reverse">Kjør motsatt vei</string>
     <string name="preview_save">Lagre ruten</string>
     <string name="preview_remove_stop">Fjern stopp</string>
+    <string name="remove_point">Fjern punktet</string>
     <plurals name="preview_includes_ferries">
         <item quantity="one">Inkluderer en ferje.</item>
         <item quantity="other">Inkluderer %d ferjer.</item>

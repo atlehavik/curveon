@@ -336,6 +336,12 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         _state.value = _state.value.copy(preview = p.copy(selected = index))
     }
 
+    /** Drop the previewed trip's destination: the last stop becomes the destination (none left: nothing to drop). */
+    fun removePreviewDestination() = editPreview { g ->
+        val last = g.stops.lastOrNull() ?: return@editPreview null
+        g.copy(stops = g.stops.dropLast(1), name = last.name, destination = last.point)
+    }
+
     fun removePreviewStop(index: Int) = editPreview { g ->
         if (index !in g.stops.indices) null else g.copy(stops = g.stops.filterIndexed { i, _ -> i != index })
     }

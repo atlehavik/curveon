@@ -327,6 +327,7 @@
     <string name="preview_reverse">Ride it the other way</string>
     <string name="preview_save">Save route</string>
     <string name="preview_remove_stop">Remove stop</string>
+    <string name="remove_point">Remove point</string>
     <plurals name="preview_includes_ferries">
         <item quantity="one">Includes a ferry.</item>
         <item quantity="other">Includes %d ferries.</item>

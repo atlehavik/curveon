@@ -44,6 +44,8 @@ class RouteEditor(
     val marking: Boolean = false,
     /** A tap (not a drag) on the line: the map's own tap, which the line would otherwise swallow. */
     val onTapLine: ((GeoPoint) -> Unit)? = null,
+    /** A finger held still on a point: its menu, to remove it. */
+    val onLongPressHandle: ((RouteHandle) -> Unit)? = null,
     /** Route through both ends of a marked part, as stops number [fromIndex] and [toIndex] (in the trip as it is now). */
     val onMarkSection: (fromIndex: Int, from: GeoPoint, toIndex: Int, to: GeoPoint) -> Unit = { _, _, _, _ -> }
 )

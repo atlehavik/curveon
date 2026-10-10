@@ -259,6 +259,8 @@ fun CurveonMapView(
             // Marking a part of the route: the line it is on and how far along the finger has slid.
             var grabLine: List<GeoPoint> = emptyList()
             var markedTo: Double? = null
+            var longPress: Runnable? = null
+            fun cancelLongPress(v: android.view.View) { longPress?.let { v.removeCallbacks(it) }; longPress = null }
             fun clearDrag() = m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
             mapView.setOnTouchListener { v, e ->
                 val ed = editorState.value
@@ -273,6 +275,16 @@ fun CurveonMapView(
                         dragAt = null
                         downX = e.x; downY = e.y
                         if (grabbed != null) v.parent?.requestDisallowInterceptTouchEvent(true)
+                        // Held still on a point: its menu (remove it, …).
+                        (grabbed as? EditGrab.Handle)?.let { h ->
+                            longPress = Runnable {
+                                if (grabbed !== h || dragAt != null) return@Runnable
+                                grabbed = null
+                                clearDrag()
+                                v.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                                editorState.value?.onLongPressHandle?.invoke(h.handle)
+                            }.also { v.postDelayed(it, android.view.ViewConfiguration.getLongPressTimeout().toLong()) }
+                        }
                         grabbed != null
                     }
                     android.view.MotionEvent.ACTION_MOVE -> {
@@ -285,6 +297,7 @@ fun CurveonMapView(
                                 m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(sectionFeatures(grabLine, g.at, to))
                             }
                         } else if (dragAt != null || kotlin.math.hypot(e.x - downX, e.y - downY) > slop) {
+                            cancelLongPress(v)
                             val ll = m.projection.fromScreenLocation(android.graphics.PointF(e.x, e.y))
                             val at = GeoPoint(ll.latitude, ll.longitude)
                             dragAt = at
@@ -293,6 +306,7 @@ fun CurveonMapView(
                         true
                     }
                     android.view.MotionEvent.ACTION_UP -> {
+                        cancelLongPress(v)
                         val g = grabbed ?: return@setOnTouchListener false
                         grabbed = null
                         val at = dragAt
@@ -325,6 +339,7 @@ fun CurveonMapView(
                         true
                     }
                     android.view.MotionEvent.ACTION_CANCEL -> {
+                        cancelLongPress(v)
                         val had = grabbed != null
                         grabbed = null
                         if (had) clearDrag()

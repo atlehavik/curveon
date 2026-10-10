@@ -125,6 +125,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     LaunchedEffect(preview == null) { if (preview == null) previewMinimized = false }
     /** Stop menu opened from its handle while editing (index into the trip's stops). */
     var editStopMenu by remember { mutableStateOf<Int?>(null) }
+    /** The start or destination held on the map: its menu (remove it). */
+    var endMenu by remember { mutableStateOf<HandleKind?>(null) }
     /** Where the next stop from the search goes; null = wherever it adds least detour. */
     var stopTarget by remember { mutableStateOf<StopTarget?>(null) }
     var showRouteMenu by remember { mutableStateOf(false) }
@@ -254,6 +256,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
             },
             marking = marking,
+            onLongPressHandle = { h ->
+                when (h.kind) {
+                    HandleKind.STOP, HandleKind.VIA -> editStopMenu = h.stopIndex
+                    else -> endMenu = h.kind
+                }
+            },
             onTapLine = if (chaining) ({ p -> scope.launch { planPointByPoint(p, viewModel.describePoint(p)) } }) else null,
             onMarkSection = { fromIndex, from, toIndex, to ->
                 marking = false
@@ -601,9 +609,25 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 canMoveEarlier = !st.via && i > 0, canMoveLater = !st.via && i < stops.lastIndex,
                 onMove = { d -> editStopMenu = null; viewModel.movePreviewStop(i, d) },
                 onRemove = { editStopMenu = null; viewModel.removePreviewStop(i) },
+                removeLabel = stringResource(if (st.via) R.string.remove_point else R.string.preview_remove_stop),
                 onDismiss = { editStopMenu = null },
-                onChangePlace = { editStopMenu = null; stopTarget = StopTarget.Instead(i); searchPurpose = SearchPurpose.STOP },
-                onAddBefore = { editStopMenu = null; stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP }
+                // Picking on the map point by point: just move or remove (the search would get in the way).
+                onChangePlace = if (chaining) null else ({ editStopMenu = null; stopTarget = StopTarget.Instead(i); searchPurpose = SearchPurpose.STOP }),
+                onAddBefore = if (chaining) null else ({ editStopMenu = null; stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP })
+            )
+        }
+        endMenu?.let { kind ->
+            val g = planGoal
+            if (g == null) endMenu = null
+            else StopMenuDialog(
+                name = if (kind == HandleKind.START) g.start?.name.orEmpty() else g.name,
+                canMoveEarlier = false, canMoveLater = false, onMove = {},
+                onRemove = {
+                    endMenu = null
+                    if (kind == HandleKind.START) viewModel.setPreviewStart(null, "") else viewModel.removePreviewDestination()
+                },
+                onDismiss = { endMenu = null },
+                removeLabel = stringResource(R.string.remove_point)
             )
         }
 
