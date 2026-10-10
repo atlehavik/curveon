@@ -28,6 +28,8 @@ and [dashboard.md](dashboard.md) for the goals.
   are never used (not allowed by law) – except at the very start or end when the map joins the place
   to the roads only through one (the map is wrong, or the place is on a path): then the first/last leg
   uses as little path as there is no road way around, however long that is. Never in the middle.
+  Online with no country downloaded, just the routing tiles a trip needs are fetched as it is planned
+  (and kept).
 - **GoRide-style roundtrip**: pick direction(s) and distance.
 - **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first. Tracks live in
   groups (a multi-track file becomes one) that can show/hide, colour and invert all their tracks at once

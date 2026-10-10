@@ -128,7 +128,9 @@ data class RoutePreview(
     val candidates: List<RouteCandidate>,
     val selected: Int,
     /** There is an earlier version of the trip to go back to. */
-    val canUndo: Boolean = false
+    val canUndo: Boolean = false,
+    /** Routing data being fetched for this trip first, e.g. "Fetching routing data (1 of 2)…". */
+    val fetching: String? = null
 ) {
     val selectedRoute get() = candidates.getOrNull(selected)?.route
     val calculating get() = candidates.any { it.route == null && it.error == null }
@@ -266,12 +268,15 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      */
     fun followTrackNow(name: String, points: List<LatLon>, options: RouteOptions) {
         val from = lastPosition ?: return
-        if (!routingData.isReady()) return fail(routingData.describe())
+        val tiles = tilesAround(points + from)
+        if (!canRoute(tiles)) return fail(routingData.describe())
         calcJob?.cancel()
         _state.value = _state.value.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_following, name)), preview = null)
         val goal = NavigationGoal.Track(name, points, options)
         calcJob = scope.launch {
             try {
+                fetchRoutingData(tiles)
+                _state.value = _state.value.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_following, name)))
                 val route = withContext(Dispatchers.Default) { TrackFollower(engine).route(from, points, options) }
                 activate(goal, route)
             } catch (e: kotlinx.coroutines.CancellationException) {
@@ -347,7 +352,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         // A saved line is joined from where the rider is, like a track.
         val from = (if (planned?.fixedLine != null) lastPosition ?: planned.start?.point else planned?.start?.point ?: lastPosition)
             ?: return fail(context.getString(R.string.nav_waiting_gps))
-        if (!routingData.isReady()) return fail(routingData.describe())
+        val tiles = tilesAround(goalPoints(goal, from))
+        if (!canRoute(tiles)) return fail(routingData.describe())
         previewJob?.cancel()
         val styles: List<RoadStyle?> = if (planned != null && planned.fixedLine == null) RoadStyle.entries else listOf(null)
         val selected = (keepSelection ?: styles.indexOf(preferredStyle)).coerceIn(0, styles.lastIndex)
@@ -356,6 +362,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             status = RoutingStatus.Idle
         )
         previewJob = scope.launch {
+            // Planning online somewhere no country was downloaded: fetch just the routing data first.
+            try { fetchRoutingData(tiles) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
+                android.util.Log.w("Curveon", "Fetching routing data failed", e)
+            }
             styles.mapIndexed { i, style ->
                 async(Dispatchers.Default) {
                     val t0 = System.nanoTime()
@@ -376,6 +386,41 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             // If the pre-selected style failed, fall back to one that worked.
             val p = _state.value.preview ?: return@launch
             if (p.selectedRoute == null) p.candidates.indexOfFirst { it.route != null }.takeIf { it >= 0 }?.let { selectCandidate(it) }
+        }
+    }
+
+    // ------------------------------------------------------------------ routing data on demand
+
+    /** Where a trip may go: its places, or for a loop the circle it can reach. */
+    private fun goalPoints(goal: NavigationGoal, from: LatLon): List<LatLon> = when (goal) {
+        is NavigationGoal.Destination -> listOf(from) + listOfNotNull(goal.start?.point) + goal.stops.map { it.point } + goal.destination + goal.fixedLine.orEmpty()
+        is NavigationGoal.Track -> goal.points + from
+        is NavigationGoal.Roundtrip -> {
+            val r = goal.distanceKm / (2 * Math.PI) * 1.4 / 111.0 // degrees of latitude
+            val rLon = r / kotlin.math.cos(Math.toRadians(from.lat)).coerceAtLeast(0.2)
+            listOf(LatLon(from.lat - r, from.lon - rLon), LatLon(from.lat + r, from.lon + rLon))
+        }
+    }
+
+    private fun tilesAround(points: List<LatLon>): List<String> =
+        RoutingData.tilesFor(points.minOf { it.lat }, points.minOf { it.lon }, points.maxOf { it.lat }, points.maxOf { it.lon })
+
+    /** Routing data is here for [tiles], or can be fetched (online), or at least something is installed to try with. */
+    private fun canRoute(tiles: List<String>) = routingData.isReady() || (routingData.toFetch(tiles).isNotEmpty() && routingData.online())
+
+    /** Fetches the missing routing tiles when online, showing it as the status meanwhile. */
+    private suspend fun fetchRoutingData(tiles: List<String>) {
+        if (routingData.toFetch(tiles).isEmpty() || !routingData.online()) return
+        try {
+            routingData.fetch(tiles) { done, total ->
+                val text = context.getString(R.string.nav_fetching_routing, done + 1, total)
+                val s = _state.value
+                // In a preview the sheet says it; otherwise the status line does.
+                _state.value = if (s.preview != null) s.copy(preview = s.preview.copy(fetching = text)) else s.copy(status = RoutingStatus.Calculating(text))
+            }
+        } finally {
+            val s = _state.value
+            _state.value = if (s.preview != null) s.copy(preview = s.preview.copy(fetching = null)) else s.copy(status = RoutingStatus.Idle)
         }
     }
 

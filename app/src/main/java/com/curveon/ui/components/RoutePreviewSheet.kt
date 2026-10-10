@@ -196,6 +196,7 @@ fun RoutePreviewSheet(
         // Tarmac asked for but the route still has gravel: the router only takes it when there's no
         // tarmac road there short of a huge detour, and a cruiser can't ride it, so say so loudly.
         preview.selectedRoute?.let { route -> if (options.surface == SurfacePreference.PAVED) ForcedGravelWarning(route) }
+        preview.fetching?.let { Text(it, color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
 
         // Options + GO; upright on a phone GO gets a row of its own, full width.
         val chips: @Composable (Modifier) -> Unit = { m ->

@@ -104,7 +104,7 @@
     <string name="routing_downloading">Downloading routing data %1$s (%2$d/%3$d)…</string>
     <string name="routing_download_failed">Download failed: %1$s. Connect to the phone\'s hotspot and retry.</string>
     <string name="routing_installed">Routing data installed (%1$d tiles, %2$.0f MB)</string>
-    <string name="routing_none">No routing data yet. It comes with each country you download, or copy .rd5 files to %1$s</string>
+    <string name="routing_none">No routing data yet. It comes with each country you download, and online just the part a trip needs is fetched when you plan it (or copy .rd5 files to %1$s)</string>
     <string name="offline_map_none">No offline map installed. Copy a .pmtiles file to %1$s or import one.</string>
     <string name="offline_map_line">%1$s – %2$.0f MB</string>
     <string name="offline_map_restart">(restart the app after changing maps)</string>
@@ -138,6 +138,7 @@
     <string name="nav_adding_stop">Adding %1$s…</string>
     <string name="nav_add_stop_failed">Couldn\'t add %1$s: %2$s</string>
     <string name="nav_recalculating">Recalculating…</string>
+    <string name="nav_fetching_routing">Fetching routing data (%1$d of %2$d)…</string>
     <string name="nav_no_roundtrip">Could not find a roundtrip in that direction. Try another direction or distance.</string>
     <string name="nav_no_road">No road found there</string>
 

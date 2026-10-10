@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Routing online without downloading the country
+
+Planning a trip somewhere with no routing data (e.g. Curveon on the Pixel, no countries downloaded)
+now fetches just the routing tiles the trip needs from brouter.de when online (5x5 degrees, about
+5–65 MB each), shown as "Fetching routing data (1 of 2)…" in the preview. They stay for next time,
+so that area then works offline too. No map or search is downloaded. Tried in the phone emulator
+(Oslo → Hamar: two tiles, ~93 MB, then the three routes in ~8 s).
+
+- [ ] Pixel, online, no countries: plan a trip; it fetches routing data, then shows the routes and GO works.
+
 ## 2026-10-10 — Lock the screen landscape or portrait
 
 Settings → Display → Screen: Turns / Landscape / Portrait. Locked, the screen stays exactly the way

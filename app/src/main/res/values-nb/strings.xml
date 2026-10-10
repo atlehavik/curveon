@@ -103,7 +103,7 @@
     <string name="routing_downloading">Laster ned rutedata %1$s (%2$d/%3$d)…</string>
     <string name="routing_download_failed">Nedlasting mislyktes: %1$s. Koble til telefonens delte nett og prøv igjen.</string>
     <string name="routing_installed">Rutedata installert (%1$d ruter, %2$.0f MB)</string>
-    <string name="routing_none">Ingen rutedata ennå. De følger med hvert land du laster ned, eller kopier .rd5-filer til %1$s</string>
+    <string name="routing_none">Ingen rutedata ennå. De følger med hvert land du laster ned, og på nett hentes bare det turen trenger når du planlegger den (eller kopier .rd5-filer til %1$s)</string>
     <string name="offline_map_none">Ingen frakoblede kart installert. Kopier en .pmtiles-fil til %1$s eller importer en.</string>
     <string name="offline_map_line">%1$s – %2$.0f MB</string>
     <string name="offline_map_restart">(start appen på nytt etter å ha byttet kart)</string>
@@ -137,6 +137,7 @@
     <string name="nav_adding_stop">Legger til %1$s…</string>
     <string name="nav_add_stop_failed">Kunne ikke legge til %1$s: %2$s</string>
     <string name="nav_recalculating">Beregner på nytt…</string>
+    <string name="nav_fetching_routing">Henter rutedata (%1$d av %2$d) …</string>
     <string name="nav_no_roundtrip">Fant ingen rundtur i den retningen. Prøv en annen retning eller lengde.</string>
     <string name="nav_no_road">Fant ingen vei der</string>
 
