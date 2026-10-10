@@ -106,8 +106,9 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
     private fun append(fix: GpsFix, startMs: Long) {
         if (track.isNotEmpty()) track.append(';')
         track.append(
-            String.format(Locale.ROOT, "%.5f,%.5f,%.0f,%d", fix.latitude, fix.longitude, fix.altitudeMeters ?: 0.0,
-                ((fix.timeMillis - startMs) / 1000).coerceAtLeast(0))
+            // Tenths of a second, so a GPX of the ride lines up with a video of it.
+            String.format(Locale.ROOT, "%.5f,%.5f,%.0f,%.1f", fix.latitude, fix.longitude, fix.altitudeMeters ?: 0.0,
+                ((fix.timeMillis - startMs) / 1000.0).coerceAtLeast(0.0))
         )
         lastPoint = fix
     }
@@ -120,11 +121,12 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         const val POINT_SPACING_M = 20.0
         const val SAVE_EVERY_MS = 60_000L
 
-        data class TrackPoint(val lat: Double, val lon: Double, val ele: Double, val secondsFromStart: Long)
+        data class TrackPoint(val lat: Double, val lon: Double, val ele: Double, val secondsFromStart: Double)
 
+        /** Rides recorded before 2026-10-11 have whole seconds, later ones tenths. */
         fun parseTrack(s: String): List<TrackPoint> = s.split(';').mapNotNull { p ->
             val f = p.split(',')
-            if (f.size < 4) null else TrackPoint(f[0].toDouble(), f[1].toDouble(), f[2].toDouble(), f[3].toLong())
+            if (f.size < 4) null else TrackPoint(f[0].toDouble(), f[1].toDouble(), f[2].toDouble(), f[3].toDouble())
         }
     }
 }

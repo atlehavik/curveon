@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Rides keep their times in GPX (for lining up with video)
+
+A ride saved to the GPX collection now keeps when each point was ridden, and exported GPX files
+have `<time>` (UTC, tenths of a second) on every track point and in the metadata, so video tools
+can line the track up with a film. Rides are recorded to a tenth of a second from now on (older
+rides have whole seconds; saving one of those to GPX again gives it times too). Times in imported
+GPX files are kept and written back out; a track exported reversed gets none. Unit tested; installed on the X7.
+
+- [ ] Save a ride to GPX, export it, open in a video/GPX tool (e.g. GoPro Quik, Telemetry Overlay): the times match the ride.
+
 ## 2026-10-10 — Altitude (m a.s.l.) under the speed, optional
 
 Settings → Display → **Altitude** shows the height above sea level under the speed (off by

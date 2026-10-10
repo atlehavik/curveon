@@ -68,6 +68,7 @@ object GpxParser {
         var ptSym = ""
         var ptCmt = ""
         var ptTime = ""
+        var trkTime: Long? = null
         var ptType = ""
         var ptPhone = ""
         var ptHasEle = false
@@ -87,6 +88,7 @@ object GpxParser {
                             lat = parser.getAttributeValue(null, "lat")?.toDoubleOrNull() ?: Double.NaN
                             lon = parser.getAttributeValue(null, "lon")?.toDoubleOrNull() ?: Double.NaN
                             ele = 0.0
+                            trkTime = null
                             ptName = ""
                             ptDesc = ""
                             ptSym = ""
@@ -106,7 +108,7 @@ object GpxParser {
                             "sym" -> if (parent == "wpt") ptSym = text
                             "desc" -> if (parent == "wpt") ptDesc = text
                             "cmt" -> if (parent == "wpt") ptCmt = text
-                            "time" -> if (parent == "wpt") ptTime = text
+                            "time" -> if (parent == "wpt") ptTime = text else if (parent == "trkpt" || parent == "rtept") trkTime = parseTime(text)
                             "type" -> if (parent == "wpt") ptType = text
                             "text" -> if (parent == "link" && inWpt && ptLinks.isNotEmpty()) ptLinks[ptLinks.size - 1] = ptLinks.last().first to text
                             // Garmin gpxx/wptx1 extensions repeat the same fields: keep the first.
@@ -126,7 +128,7 @@ object GpxParser {
                     val tag = stack.removeLastOrNull()
                     when (tag) {
                         "trk", "rte" -> current?.let { if (it.size >= 2) tracks += currentName to it }.also { current = null }
-                        "trkpt", "rtept" -> if (!lat.isNaN() && !lon.isNaN()) current?.add(GeoPoint(lat, lon, ele))
+                        "trkpt", "rtept" -> if (!lat.isNaN() && !lon.isNaN()) current?.add(GeoPoint(lat, lon, ele, trkTime))
                         "wpt" -> if (!lat.isNaN() && !lon.isNaN()) {
                             val desc = ptDesc.ifEmpty { ptCmt }
                             waypoints += GpxWaypoint(
@@ -173,17 +175,23 @@ object GpxParser {
         return ParsedGpxResult(name, points, totalDist.toFloat(), eleGain.toInt(), maxEle.toInt(), waypoints)
     }
 
-    /** Compact "lat,lon,ele;lat,lon,ele" encoding used to store tracks in Room. */
+    /** Compact "lat,lon,ele[,epoch ms];…" encoding used to store tracks in Room (the time when known). */
     fun encodePoints(points: List<GeoPoint>): String =
-        points.joinToString(";") { "%.6f,%.6f,%.0f".format(java.util.Locale.ROOT, it.latitude, it.longitude, it.altitudeMeters) }
+        points.joinToString(";") {
+            "%.6f,%.6f,%.0f".format(java.util.Locale.ROOT, it.latitude, it.longitude, it.altitudeMeters) + (it.timeMillis?.let { t -> ",$t" } ?: "")
+        }
 
     fun decodePoints(s: String): List<GeoPoint> =
         if (s.isBlank() || s == "[]") emptyList()
         else s.split(';').mapNotNull { p ->
             val parts = p.split(',')
             if (parts.size < 2) null
-            else GeoPoint(parts[0].toDouble(), parts[1].toDouble(), parts.getOrNull(2)?.toDoubleOrNull() ?: 0.0)
+            else GeoPoint(parts[0].toDouble(), parts[1].toDouble(), parts.getOrNull(2)?.toDoubleOrNull() ?: 0.0, parts.getOrNull(3)?.toLongOrNull())
         }
+
+    /** A GPX <time> ("2026-10-11T09:30:12Z", "…12.5Z", "…12+02:00") as epoch ms; null if unreadable. */
+    fun parseTime(s: String): Long? = runCatching { java.time.OffsetDateTime.parse(s).toInstant().toEpochMilli() }
+        .recoverCatching { java.time.Instant.parse(s).toEpochMilli() }.getOrNull()
 
     fun haversineDistanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6371.0 // Earth radius in km

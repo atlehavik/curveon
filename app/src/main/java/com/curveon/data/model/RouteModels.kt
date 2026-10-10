@@ -36,7 +36,9 @@ enum class TurnType {
 data class GeoPoint(
     val latitude: Double,
     val longitude: Double,
-    val altitudeMeters: Double = 0.0
+    val altitudeMeters: Double = 0.0,
+    /** When it was ridden (epoch ms), for recorded rides and GPX files with times; null otherwise. */
+    val timeMillis: Long? = null
 )
 
 data class TurnInstruction(

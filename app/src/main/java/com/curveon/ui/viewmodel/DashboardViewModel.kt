@@ -738,7 +738,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun storeRideAsGpx(ride: Ride, group: Long?) {
-        val pts = RideRecorder.parseTrack(ride.track).map { GeoPoint(it.lat, it.lon, it.ele) }
+        // Each point keeps when it was ridden, so the GPX lines up with a video of the ride.
+        val pts = RideRecorder.parseTrack(ride.track).map { GeoPoint(it.lat, it.lon, it.ele, ride.startMs + (it.secondsFromStart * 1000).toLong()) }
         if (pts.size < 2) return
         val name = ride.title.ifEmpty { str(R.string.ride) } + " · " +
             java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ride.startMs))

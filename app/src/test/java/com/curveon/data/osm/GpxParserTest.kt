@@ -79,4 +79,24 @@ class GpxParserTest {
         assertEquals(PoiKind.FERRY, PoiKind.of("Information", "INFO_Ferry to Geiranger"))
         assertEquals(PoiKind.RESTAURANT, PoiKind.of("Restaurant", "EAT_Pizza"))
     }
+
+    @Test
+    fun `track point times survive storing and export`() {
+        val gpx = """
+            <gpx version="1.1"><trk><name>Ride</name><trkseg>
+              <trkpt lat="59.79" lon="5.14"><ele>12</ele><time>2026-10-11T09:30:12Z</time></trkpt>
+              <trkpt lat="59.80" lon="5.15"><ele>14</ele><time>2026-10-11T11:30:13.4+02:00</time></trkpt>
+            </trkseg></trk></gpx>""".trimIndent()
+        val pts = GpxParser.parseAll(gpx.byteInputStream()).single().points
+        assertEquals(listOf(1_791_711_012_000L, 1_791_711_013_400L), pts.map { it.timeMillis })
+        // Stored in Room and back.
+        val stored = GpxParser.decodePoints(GpxParser.encodePoints(pts))
+        assertEquals(pts.map { it.timeMillis }, stored.map { it.timeMillis })
+        // Written out: UTC, tenths kept.
+        val xml = com.curveon.data.gpx.GpxWriter.write("Ride", listOf(com.curveon.data.model.GpxTrack(name = "Ride", totalDistanceKm = 1f,
+            elevationGainMeters = 0, maxElevationMeters = 0, pointCount = 2, trackPointsJson = GpxParser.encodePoints(pts))))
+        assertTrue(xml, "<time>2026-10-11T09:30:12Z</time></trkpt>" in xml)
+        assertTrue(xml, "<time>2026-10-11T09:30:13.4Z</time></trkpt>" in xml)
+        assertTrue(xml, "<metadata><name>Ride</name><time>2026-10-11T09:30:12Z</time></metadata>" in xml)
+    }
 }
