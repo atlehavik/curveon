@@ -394,7 +394,12 @@ fun MapPickBar(
     /** Point by point from "+ Stop" on a planned trip: the first point tapped, asking stop on the way or new end. */
     asking: String? = null,
     onAlongTheWay: () -> Unit = {},
-    onNewEnd: () -> Unit = {}
+    onNewEnd: () -> Unit = {},
+    /** Why the trip's route couldn't be found, instead of the hint. */
+    error: String? = null,
+    /** Marking a part of the route to change (on a long trip, so the rest stays as it is); null = no trip to mark on yet. */
+    marking: Boolean? = null,
+    onMark: () -> Unit = {}
 ) {
     // Grows out of the shrinking dialog (bottom centre).
     val grow = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -408,7 +413,7 @@ fun MapPickBar(
                 transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
             }
             .clip(RoundedCornerShape(30.dp)).background(CockpitSurface.copy(alpha = 0.97f))
-            .border(2.dp, accent, RoundedCornerShape(30.dp))
+            .border(2.dp, if (error != null && chaining) WarningRed else accent, RoundedCornerShape(30.dp))
             .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
             .testTag("map_pick_bar"),
         verticalAlignment = Alignment.CenterVertically,
@@ -432,10 +437,17 @@ fun MapPickBar(
             Row(Modifier.weight(1f, fill = false).widthIn(max = 340.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (busy) CircularProgressIndicator(color = ElectricCyan, strokeWidth = 3.dp, modifier = Modifier.padding(end = 10.dp).size(20.dp))
                 Column {
-                    Text(stringResource(R.string.pick_hint_next_point), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                        maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                    if (tripSummary != null) Text(tripSummary, color = TextSecondary, fontSize = 13.sp, maxLines = 1)
+                    Text(
+                        error ?: stringResource(if (marking == true) R.string.edit_route_mark_hint else R.string.pick_hint_next_point),
+                        color = if (error != null) WarningRed else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    if (tripSummary != null && error == null) Text(tripSummary, color = TextSecondary, fontSize = 13.sp, maxLines = 1)
                 }
+            }
+            if (marking != null) Box(Modifier.testTag("route_edit_mark")) {
+                RoundButton(Icons.Default.LinearScale, stringResource(R.string.edit_route_mark), 48.dp,
+                    if (marking) ElectricCyan else CockpitSurfaceVariant, if (marking) OnCyanDark else TextPrimary, onMark)
             }
             Box(Modifier.testTag("map_pick_undo").graphicsLayer { alpha = if (canUndo) 1f else 0.35f }) {
                 RoundButton(Icons.Default.Undo, stringResource(R.string.undo), 48.dp, CockpitSurfaceVariant, TextPrimary) { if (canUndo) onUndo() }
@@ -471,65 +483,3 @@ fun MapPickBar(
     }
 }
 
-/**
- * Editing a trip on the map: what to do (or that the new route is being found, or why it
- * couldn't be), the selected route's time and length, marking a part of the route to change
- * (on a long trip, so the rest stays as it is), Undo and Done.
- */
-@Composable
-fun RouteEditBar(
-    summary: String?,
-    busy: Boolean,
-    error: String?,
-    canUndo: Boolean,
-    marking: Boolean,
-    onMark: () -> Unit,
-    onUndo: () -> Unit,
-    onDone: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val grow = remember { androidx.compose.animation.core.Animatable(0f) }
-    LaunchedEffect(Unit) { grow.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 500f)) }
-    Row(
-        modifier
-            .graphicsLayer {
-                scaleX = 0.6f + 0.4f * grow.value; scaleY = 0.6f + 0.4f * grow.value; alpha = grow.value.coerceIn(0f, 1f)
-                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
-            }
-            .clip(RoundedCornerShape(30.dp)).background(CockpitSurface.copy(alpha = 0.97f))
-            .border(2.dp, if (error != null) WarningRed else ElectricCyan, RoundedCornerShape(30.dp))
-            .padding(6.dp)
-            .testTag("route_edit_bar"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-            if (busy) CircularProgressIndicator(color = ElectricCyan, strokeWidth = 3.dp, modifier = Modifier.size(26.dp))
-            else Icon(Icons.Default.Gesture, null, tint = if (error != null) WarningRed else ElectricCyan)
-        }
-        // The text gives way to the buttons (a phone held upright), never the other way round.
-        Column(Modifier.weight(1f, fill = false).widthIn(max = 380.dp)) {
-            Text(
-                error ?: stringResource(when {
-                    busy -> R.string.edit_route_working
-                    marking -> R.string.edit_route_mark_hint
-                    else -> R.string.edit_route_hint
-                }),
-                color = if (error != null) WarningRed else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
-            if (summary != null && !busy && error == null) Text(summary, color = TextSecondary, fontSize = 13.sp, maxLines = 1)
-        }
-        Box(Modifier.testTag("route_edit_mark")) {
-            RoundButton(Icons.Default.LinearScale, stringResource(R.string.edit_route_mark), 48.dp,
-                if (marking) ElectricCyan else CockpitSurfaceVariant, if (marking) OnCyanDark else TextPrimary, onMark)
-        }
-        Box(Modifier.testTag("route_edit_undo").graphicsLayer { alpha = if (canUndo) 1f else 0.35f }) {
-            RoundButton(Icons.Default.Undo, stringResource(R.string.undo), 48.dp, CockpitSurfaceVariant, TextPrimary) { if (canUndo) onUndo() }
-        }
-        // Narrow: just the tick, so the text keeps some room.
-        if (isNarrowScreen()) Box(Modifier.testTag("route_edit_done")) {
-            RoundButton(Icons.Default.Check, stringResource(R.string.done), 56.dp, ElectricCyan, OnCyanDark, onDone)
-        } else PillButton(Icons.Default.Check, stringResource(R.string.done), ElectricCyan, OnCyanDark, Modifier.testTag("route_edit_done"), onDone)
-    }
-}

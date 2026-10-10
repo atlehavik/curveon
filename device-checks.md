@@ -6,6 +6,22 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Stops down a side street are ridden to, and one map editor
+
+Two changes, installed on the X7 (the Pixel was offline: `./gradlew :app:installDebug` with it as
+`ANDROID_SERIAL` once Wireless debugging is back on).
+
+- Stops: a stop just off the way (e.g. a side street in Haugesund) is now ridden to; before, the
+  route rode past it ~200 m away (BRouter cut the out-and-back to it). `:routing:test`
+  StopsVisitedTest covers it.
+- The edit-on-map button (and a long press on the route) opens the same editor as "+ Stop" → Pick
+  on map: tap to add a point, drag the line to bend the route, tap/hold a point for its menu
+  (remove, move, change place, add stop before), the dotted-line button marks a part of the route.
+
+- [ ] X7: add a stop in a side street near the route: the blue line goes into the street to it.
+- [ ] Edit button on the route preview → drag the line → a detour; marking button → two pins.
+- [ ] Tap a stop on the map → menu → Change place opens the search and comes back to the trip.
+
 ## 2026-10-10 — Two fingers on the map zoom, never drag the route
 
 While editing or building a trip, a pinch whose first finger lands on the route line or a point no

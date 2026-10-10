@@ -461,14 +461,12 @@
     <string name="pick_hint_destination">Tap the map where you want to go</string>
     <string name="pick_hint_stop">Tap the map where you want to stop</string>
     <string name="pick_hint_start">Tap the map where the trip starts</string>
-    <string name="pick_hint_next_point">Tap the map for each next point</string>
+    <string name="pick_hint_next_point">Tap to add a point, drag to bend the route</string>
     <string name="pick_ask_stop_or_end">A stop on the way, or the new end?</string>
     <string name="pick_along_the_way">On the way</string>
     <string name="pick_new_end">New end</string>
     <string name="back_to_search">Back to search</string>
     <string name="edit_on_map">Edit on map</string>
-    <string name="edit_route_hint">Drag the line or a stop</string>
-    <string name="edit_route_working">Finding the way…</string>
     <string name="edit_route_mark">Mark the part to change</string>
     <string name="edit_route_mark_hint">Drag along the part to change</string>
     <string name="undo">Undo</string>

@@ -119,9 +119,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var startFirst by remember { mutableStateOf(false) }
     /** The search reopens growing out of the pick bar. */
     var searchGrowIn by remember { mutableStateOf(false) }
-    /** Editing the previewed trip by dragging it on the map. */
-    var editing by remember { mutableStateOf(false) }
-    /** While editing: the next drag along the line marks the part of the route to change. */
+    /** Editing on the map: the next drag along the line marks the part of the route to change. */
     var marking by remember { mutableStateOf(false) }
     // The route preview folded down to a bar so more of the route shows; open again for each new plan.
     var previewMinimized by remember { mutableStateOf(false) }
@@ -182,6 +180,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         searchPurpose = null
         picked = null
         alongTheWay = null
+        marking = false
         mapPick = purpose
     }
     val closeSearch: () -> Unit = {
@@ -191,8 +190,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         planStart = null
         startFirst = false
     }
-    /** Picking a destination or stops on the map builds the trip point by point: each tap rides it on to there. */
-    // A stop put before or instead of another one, a stop added while riding, or the start: one place.
+    /**
+     * Picking a destination or stops on the map is also where the trip is edited on the map: each tap
+     * adds a point, the line and points can be dragged, a part of the route marked, points removed.
+     * A stop put before or instead of another one, a stop added while riding, or the start: one place.
+     */
     val chaining = !isNavigating && stopTarget == null && (mapPick == SearchPurpose.DESTINATION || mapPick == SearchPurpose.STOP)
     val planPointByPoint: (GeoPoint, String) -> Unit = { p, name ->
         when {
@@ -202,7 +204,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             else -> viewModel.planPointByPoint(p, name, planStart?.first, planStart?.second ?: "")
         }
     }
-    /** A tap point by point: from "+ Stop" on a planned trip, the first one asks where it goes. */
+    /** A tap point by point: adding stops to a planned trip, the first one asks where it goes. */
     val chainTap: (GeoPoint) -> Unit = { p ->
         if (mapPick == SearchPurpose.STOP && planning && alongTheWay == null) {
             picked = p to null
@@ -216,13 +218,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         mapPick = null
         picked = null
         alongTheWay = null
+        marking = false
         stopTarget = null
         startFirst = false
         if (searchPurpose == null) planStart = null // not on the way back to "Where to?"
     }
-    // Picking on the map, editing the trip on it, or the search back up from the pick bar: the map
+    // Picking on (and editing the trip on) the map, or the search back up from the pick bar: the map
     // goes full-screen, and the dashboard comes back afterwards if that's where the rider was.
-    val mapMode = mapPick != null || editing || searchGrowIn
+    val mapMode = mapPick != null || searchGrowIn
     var dashboardBefore by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(mapMode) {
         if (mapMode) {
@@ -231,9 +234,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         } else dashboardBefore?.let { if (it) viewModel.setFullScreenMap(false); dashboardBefore = null }
     }
     val planGoal = preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination
-    LaunchedEffect(planGoal == null) { if (planGoal == null) { editing = false; editStopMenu = null } }
-    LaunchedEffect(editing) { if (!editing) marking = false }
-    androidx.activity.compose.BackHandler(enabled = editing && mapPick == null) { editing = false }
+    LaunchedEffect(planGoal == null) { if (planGoal == null) editStopMenu = null }
+    /** Edit the planned trip on the map: the same as picking stops there. */
+    val editOnMap: () -> Unit = { startMapPick(SearchPurpose.STOP) }
     androidx.activity.compose.BackHandler(enabled = mapPick != null) { endMapPick() }
 
     // Editing on the map: the trip's places as handles, and the last route found, kept on screen
@@ -244,7 +247,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val selectedCandidate = preview?.candidates?.getOrNull(preview!!.selected)
     // Point by point shows the trip's points the same way, so they can be dragged while building it
     // (and the map stays where the rider is tapping instead of fitting the whole trip each time).
-    val editor = if ((!editing && !chaining) || planGoal == null) null else remember(planGoal, selectedCandidate, marking, chaining) {
+    val editor = if (!chaining || planGoal == null) null else remember(planGoal, selectedCandidate, marking) {
         var number = 0
         val handles = buildList {
             planGoal.start?.let { add(RouteHandle(GeoPoint(it.point.lat, it.point.lon), HandleKind.START)) }
@@ -268,11 +271,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
             },
             onInsert = { i, at -> scope.launch { viewModel.insertPreviewStop(i, at, viewModel.describePoint(at), via = true) } },
+            // A tap or a long press on a point: its menu (move, remove, …).
             onTapHandle = { h ->
-                if (!chaining) when (h.kind) {
+                when (h.kind) {
                     HandleKind.STOP, HandleKind.VIA -> editStopMenu = h.stopIndex
-                    HandleKind.START -> searchPurpose = SearchPurpose.START
-                    HandleKind.DESTINATION -> searchPurpose = SearchPurpose.DESTINATION
+                    else -> endMenu = h.kind
                 }
             },
             marking = marking,
@@ -314,18 +317,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 busy = preview?.calculating == true || preview?.fetching != null,
                 canUndo = preview?.canUndo == true,
                 onUndo = viewModel::undoPreviewEdit,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
-            )
-        } else if (editing) {
-            RouteEditBar(
-                summary = tripSummary,
-                busy = editor?.busy == true,
-                error = selectedCandidate?.error,
-                canUndo = preview?.canUndo == true,
-                marking = marking,
+                error = selectedCandidate?.error.takeIf { planGoal != null },
+                marking = marking.takeIf { planGoal != null },
                 onMark = { marking = !marking },
-                onUndo = viewModel::undoPreviewEdit,
-                onDone = { editing = false },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
             )
         } else if (!searchGrowIn) { // nor while the search is back up over the map
@@ -373,7 +367,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onEditStart = { searchPurpose = SearchPurpose.START },
                 onChangeStop = { i -> stopTarget = StopTarget.Instead(i); searchPurpose = SearchPurpose.STOP },
                 onAddStopBefore = { i -> stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP },
-                onEditOnMap = { editing = true },
+                onEditOnMap = editOnMap,
                     onReverse = viewModel::reversePreviewTrack,
                     onSave = askSaveName,
                     onGo = viewModel::startPreview,
@@ -421,7 +415,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             // The route starts on the nearest road the map joins up: show the way to it.
             approachTo = if (preview != null) preview?.selectedRoute?.points?.firstOrNull()?.takeIf { planGoal?.start == null }?.let { GeoPoint(it.lat, it.lon) }
                 else navState.approach?.let { GeoPoint(it.lat, it.lon) },
-            onEditRoute = if (planGoal != null && !editing && mapPick == null) ({ editing = true }) else null,
+            onEditRoute = if (planGoal != null && mapPick == null) editOnMap else null,
             previewSheetMinimized = previewMinimized,
             surfaceWays = viewModel::surfaceWays,
             showSurfaces = showSurfaces,
@@ -626,9 +620,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onRemove = { editStopMenu = null; viewModel.removePreviewStop(i) },
                 removeLabel = stringResource(if (st.via) R.string.remove_point else R.string.preview_remove_stop),
                 onDismiss = { editStopMenu = null },
-                // Picking on the map point by point: just move or remove (the search would get in the way).
-                onChangePlace = if (chaining) null else ({ editStopMenu = null; stopTarget = StopTarget.Instead(i); searchPurpose = SearchPurpose.STOP }),
-                onAddBefore = if (chaining) null else ({ editStopMenu = null; stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP })
+                // From the map: the search takes over (and the point goes in where asked, then back to the trip).
+                onChangePlace = { editStopMenu = null; mapPick = null; picked = null; stopTarget = StopTarget.Instead(i); searchPurpose = SearchPurpose.STOP },
+                onAddBefore = { editStopMenu = null; mapPick = null; picked = null; stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP }
             )
         }
         endMenu?.let { kind ->
@@ -642,7 +636,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     if (kind == HandleKind.START) viewModel.setPreviewStart(null, "") else viewModel.removePreviewDestination()
                 },
                 onDismiss = { endMenu = null },
-                removeLabel = stringResource(R.string.remove_point)
+                removeLabel = stringResource(R.string.remove_point),
+                onChangePlace = {
+                    endMenu = null; mapPick = null; picked = null
+                    searchPurpose = if (kind == HandleKind.START) SearchPurpose.START else SearchPurpose.DESTINATION
+                }
             )
         }
 
