@@ -6,6 +6,24 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Rider glides on the map, quicker off the line after a wrong turn, new 3D, ride trace
+
+The arrow and the map now move every frame (carried forward between the once-a-second GPS fixes,
+plus ~0.25 s for the receiver's delay) instead of easing to each fix a second late. Taking another
+road lets go of the route line after ~7 m when heading away from it (before: only once the
+navigator called it off route, 40 m+ for 3 fixes). 3D: tilt 50° (was 60°), rider ~3/4 down the
+map, zoom 17.2 at 20 km/h → 15.6 at 90, in a bit when a turn is under 300 m away. Installed on the
+X7 (the Pixel was offline: `ANDROID_SERIAL=<pixel> ./gradlew :app:installDebug`).
+
+Every app start writes a trace to `Android/data/com.curveon.tablet/files/navtrace/trace-*.csv`
+(raw GPS fixes, route matching, where the arrow was drawn, routes, OBD values; kept 14 days).
+
+- [ ] Ride a route, including a junction where you deliberately go the wrong way, in heading-up
+      and in 3D. Does the arrow glide, keep up with the bike at junctions, leave the line at once?
+- [ ] Then pull the traces and tell me roughly when/where (time of day, which junction):
+      `adb -s <X7> pull /sdcard/Android/data/com.curveon.tablet/files/navtrace/ ~/develop/Curveon-data/navtrace/`
+      (Pixel: same path with its own serial).
+
 ## 2026-10-10 — Speed on the map, engine panel (OBD2)
 
 Speed, limit, clock (and speed camera / GPS lines) are always on the map now, top right. Settings →
@@ -13,11 +31,12 @@ Engine: engine panel on/off, the OBD2 adapter (paired Bluetooth devices, or Demo
 (fuel, RPM, coolant, battery). Tablet: panel above the music; phone upright: music bottom left,
 panel bottom right, map up to the top. Checked in the emulator with Demo. Installed on both devices.
 
-- [ ] Pair the ELM327 adapter in Android's Bluetooth settings on the X7, pick it in Settings →
-      Engine, ignition on: status says Connected and RPM moves. `adb logcat -s CurveonObd`
-      shows "Connected to …" or why not.
-- [ ] Fuel: many bikes don't report fuel level over OBD2 (PID 012F); if it stays "–" with RPM
-      working, the bike doesn't send it. Tell me the bike model and adapter.
+- [x] Adapter connects on the Ténéré 700 (2020): RPM, coolant and battery come through.
+- [ ] Fuel: the T7 doesn't answer PID 012F. On the first connection after each app start the
+      tablet now notes what the ECU supports plus 20 s of raw bus traffic in
+      `files/navtrace/obd-*.txt` (the readings show up ~30 s later than usual that one time).
+      Connect once with a full tank and once with it low (ignition on, engine idling is fine),
+      then pull the navtrace folder as above, so we can look for the fuel gauge on the bus.
 - [ ] Riding with a turn banner: it sits top left and doesn't cover the speed (phone upright too).
 
 ## 2026-10-10 — Stops down a side street are ridden to, and one map editor
