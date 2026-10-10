@@ -36,8 +36,8 @@ class AreaRoundtripTest {
             val t0 = System.nanoTime()
             val r = RoundtripPlanner(engine) { println(it) }.planArea(home, stroke, RouteOptions(RoadStyle.CURVY), variant)
             val outside = SketchArea(stroke).outsideShare(r)
-            println("%s v%d -> %.1f km curvy=%d ferries=%d outside=%.0f%% (%.1f s)".format(name, variant, r.distanceMeters / 1000,
-                r.curviness, r.ferryCount, outside * 100, (System.nanoTime() - t0) / 1e9))
+            println("%s v%d -> %.1f km curvy=%d ferries=%d outside=%.0f%% twice=%.0f%% (%.1f s)".format(name, variant, r.distanceMeters / 1000,
+                r.curviness, r.ferryCount, outside * 100, RoundtripPlanner.overlapFraction(r) * 100, (System.nanoTime() - t0) / 1e9))
             assertTrue("$name v$variant rides outside the area", outside < 0.25)
         }
     }

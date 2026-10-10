@@ -100,7 +100,7 @@ class BRouterEngine(
                         ilat = ((n.center.lat + 90.0) * 1_000_000.0).roundToInt()
                         ilon = ((n.center.lon + 180.0) * 1_000_000.0).roundToInt()
                         isNogo = true
-                        nogoWeight = Double.NaN
+                        nogoWeight = n.weight ?: Double.NaN
                         radius = n.radiusMeters
                     }
                 }

@@ -6,6 +6,41 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Roundtrip is drawn straight away; loops ride less road twice
+
+"Roundtrip" in Where to? now goes straight to drawing on the map (the direction/distance dialog is
+gone): the bar shows "About N km round" while drawing, and "From …" when a start elsewhere was set.
+The loop is planned curvy with the last route options; the sheet then offers every style, ferries
+and motorways as for any trip. Loops now steer clear of road they already rode: where the best loop
+still rides a stretch twice, those legs are routed again with that road made expensive (allowed
+when it's the only way, e.g. off an island). On test loops round Bremnes/Haugesund the share ridden
+twice went from 12% to 5% on average; drawn areas on Bømlo/Stord from ~30% to 7–17%. Checked in the
+emulator.
+
+- [ ] Roundtrip from home: does it still ride stretches twice? Where (screenshot)?
+- [ ] How long a drawn loop takes on the X7 now.
+
+## 2026-10-10 — Route options say what they do
+
+The option chips under a route (and in Roundtrip) were hard to read: a struck-through
+"~~Motorways~~" didn't say clearly whether motorways were on or off. They now say it in words:
+"Motorways OK" (grey) or "No motorways" (amber, icon crossed out in red); the same for ferries;
+the surface chip says "Tarmac only" (then Mixed, Gravel, Offroad). Checked in the emulator.
+
+- [ ] Ask Øystein whether the chips are clear now.
+
+## 2026-10-10 — Favourites: hold a place on the map, keep it as Home or by name
+
+Holding a finger on the map (no trip) now asks: **Go here** (the trip preview as before) or **Save
+as favourite** – Home with one tap (a new Home replaces the old), or a name (the place's, to
+change). Riding or planning, the same hold also offers it next to stop / destination / start.
+Favourites come first in Where to? (Home leads) for the destination, a stop or the start; hold
+one to delete it. Checked in the emulator; installed on the X7 and the Pixel.
+
+- [ ] Save Home on the X7, then Where to? → Home plans the way home.
+- [ ] A named favourite as a stop while riding (+ Stop → the favourite).
+- [ ] Hold a favourite in Where to? → delete.
+
 ## 2026-10-10 — Music pill no longer covers the trip bar; no crash turning the phone
 
 In the full-screen map with music playing, the music pill sat on top of the trip bar (arrival,

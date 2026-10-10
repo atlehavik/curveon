@@ -2,8 +2,11 @@ package com.curveon.routing
 
 data class LatLon(val lat: Double, val lon: Double)
 
-/** A circle the router may not enter. */
-data class NoGo(val center: LatLon, val radiusMeters: Double)
+/**
+ * A circle the router may not enter – or, with a [weight], may enter at a price (BRouter adds
+ * weight × metres ridden inside it to the cost): a road to avoid unless there's no other.
+ */
+data class NoGo(val center: LatLon, val radiusMeters: Double, val weight: Double? = null)
 
 enum class RoadStyle { FASTEST, CURVY, VERY_CURVY }
 

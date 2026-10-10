@@ -63,7 +63,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     ): Route {
         val targetM = distanceKm * 1000
         // Per plan: legs, flags and pools belong to one request.
-        legs.clear(); ferryLoops.clear(); goodFound = false
+        legs.clear(); ferryLoops.clear(); loopVias.clear(); goodFound = false
         legPool = Executors.newFixedThreadPool(legThreads)
         val pool = Executors.newFixedThreadPool(rotationsDeg.size)
         try {
@@ -86,7 +86,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
                 }).successes
                 best = (retries + best).maxBy { score(it.route, targetM, options) }
             }
-            return best.route
+            return polish(start, best.route, options)
         } finally {
             pool.shutdownNow()
             legPool.shutdownNow()
@@ -103,7 +103,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     fun planArea(start: LatLon, stroke: List<LatLon>, options: RouteOptions, variant: Int = 0): Route {
         val area = SketchArea(stroke)
         if (area.outline.size < 3 || area.perimeterM < MIN_AREA_PERIMETER_M) throw noAreaRoundtrip(null)
-        legs.clear(); ferryLoops.clear(); goodFound = false
+        legs.clear(); ferryLoops.clear(); loopVias.clear(); goodFound = false
         legPool = Executors.newFixedThreadPool(legThreads)
         val tries = AREA_INSETS.flatMap { inset -> AREA_SHIFTS.map { shift -> inset to shift } }
         val pool = Executors.newFixedThreadPool(tries.size)
@@ -129,7 +129,8 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
                 log("  area -> %.0f km (expected %.0f) ferries=%d outside=%.0f%% score=%.0f".format(r.distanceMeters / 1000, expected / 1000,
                     r.ferryCount, area.outsideShare(r) * 100, areaScore(r, area, expected, options)))
             }
-            return usable.maxBy { (expected, r) -> areaScore(r, area, expected, options) }.second
+            val best = usable.maxBy { (expected, r) -> areaScore(r, area, expected, options) }.second
+            return polish(start, best, options)
         } finally {
             pool.shutdownNow()
             legPool.shutdownNow()
@@ -210,8 +211,28 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
         start: LatLon, firstVias: List<LatLon>, options: RouteOptions, catchingRange: Double,
         withFerry: (Route) -> Unit, onEach: (Route) -> Unit = {}
     ): Route {
+        val record: (Route) -> Unit = { onEach(it) }
+        return mendedLoop(start, firstVias, options, catchingRange, withFerry, record).third
+    }
+
+    /** The vias and catching range each loop was routed with, so the winner can be polished ([lessTwice]). */
+    private val loopVias = java.util.Collections.synchronizedMap(java.util.IdentityHashMap<Route, Pair<List<LatLon>, Double>>())
+
+    /** The chosen loop, riding less road twice where it can. */
+    private fun polish(start: LatLon, route: Route, options: RouteOptions): Route {
+        val (vias, catching) = loopVias[route] ?: return route
+        return lessTwice(start, vias, catching, options, route)
+    }
+
+    /** The loop through [firstVias], with vias moved off islands and out of dead ends; also the vias and catching range it ended with. */
+    private fun mendedLoop(
+        start: LatLon, firstVias: List<LatLon>, options: RouteOptions, catchingRange: Double,
+        withFerry: (Route) -> Unit, onEach: (Route) -> Unit
+    ): Triple<List<LatLon>, Double, Route> {
         var vias = firstVias
-        var route = routeVias(start, vias, options, catchingRange).also(onEach)
+        var catching = catchingRange
+        fun stage(r: Route) { loopVias[r] = vias to catching; onEach(r) }
+        var route = routeVias(start, vias, options, catchingRange).also(::stage)
         // Along the coast a via can snap onto an island; the router then has to take a ferry out and
         // back whatever the options say. Replace such a via by the quay on the near side: the loop then
         // stays on land, and the dead-end fix below moves it off the quay road onto the junction.
@@ -224,33 +245,75 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
             if (moved.isEmpty()) throw RoutingException("Every point of this loop needs a ferry")
             if (moved == vias) return@repeat
             vias = moved
-            route = routeVias(start, vias, options, catchingRange).also(onEach)
+            route = routeVias(start, vias, options, catchingRange).also(::stage)
         }
         // A via that snapped onto a dead end makes the route ride in and turn back. Move such vias to
         // the junction where the dead end starts, so the loop rides past it instead.
         repeat(SPUR_FIX_PASSES) {
             val spurs = Spurs.find(route)
-            if (spurs.isEmpty()) return route
+            if (spurs.isEmpty()) return Triple(vias, catching, route)
             var changed = false
-            vias = vias.map { via ->
+            val moved = vias.map { via ->
                 val spur = spurs.minByOrNull { Geo.distance(it.turnaround, via) }
-                if (spur != null && Geo.distance(spur.turnaround, via) < catchingRange + 500) {
+                if (spur != null && Geo.distance(spur.turnaround, via) < catching + 500) {
                     changed = true
                     spur.base
                 } else via
             }.filter { Geo.distance(it, start) > 500 }
-            if (!changed || vias.isEmpty()) return route
+            if (!changed || moved.isEmpty()) return Triple(vias, catching, route)
             val fixed = try {
-                routeVias(start, vias, options, FIXED_VIA_CATCHING_RANGE_M)
+                routeVias(start, moved, options, FIXED_VIA_CATCHING_RANGE_M)
             } catch (e: RoutingException) {
-                return route
+                return Triple(vias, catching, route)
             }
             // Keep the fix only if it rides past the dead end rather than off somewhere else.
             val withoutSpurs = route.distanceMeters - spurs.sumOf { it.halfLength * 2 }
-            if (fixed.distanceMeters > withoutSpurs * 1.4 + 3_000) return route
-            route = fixed.also(onEach)
+            if (fixed.distanceMeters > withoutSpurs * 1.4 + 3_000) return Triple(vias, catching, route)
+            vias = moved
+            catching = FIXED_VIA_CATCHING_RANGE_M
+            route = fixed.also(::stage)
         }
-        return route
+        return Triple(vias, catching, route)
+    }
+
+    /**
+     * Riding the same road twice is what a loop should avoid most. Where this one does (beyond the
+     * dead ends already dealt with), the legs that ride it again are routed once more with that
+     * road made expensive – not forbidden: sometimes it is the only way, from an island or a valley.
+     * A leg is kept when the loop then rides less road twice and doesn't get much longer.
+     */
+    private fun lessTwice(start: LatLon, vias: List<LatLon>, catching: Double, options: RouteOptions, route: Route): Route {
+        val twice = repeats(route)
+        if (twice.size * TWICE_SAMPLE_M < MIN_TWICE_M) return route
+        val ends = listOf(start) + vias + start
+        val legs = runCatching { ends.zipWithNext { a, b -> leg(a, b, options, catching).get() }.toMutableList() }.getOrNull() ?: return route
+        val legStart = legs.runningFold(0.0) { acc, l -> acc + l.distanceMeters }
+        fun legAt(along: Double) = (legStart.indexOfLast { it <= along }).coerceIn(0, legs.lastIndex)
+        // The leg riding it the second time first, then the one riding it the first time.
+        val tryLegs = (twice.map { legAt(it.second) } + twice.map { legAt(it.third) }).distinct()
+        var best = route
+        var bestTwice = overlapFraction(route)
+        val t0 = System.nanoTime()
+        for (i in tryLegs) {
+            // Long legs take the router long with circles to weigh; they are the rarer case.
+            if (legs[i].distanceMeters > TWICE_MAX_LEG_M) continue
+            val noGo = twice.map { it.first }
+                .filter { Geo.distance(it, ends[i]) > TWICE_NOGO_CLEAR_M && Geo.distance(it, ends[i + 1]) > TWICE_NOGO_CLEAR_M }
+                .map { NoGo(it, TWICE_NOGO_RADIUS_M, TWICE_WEIGHT) }
+            if (noGo.isEmpty()) continue
+            val alt = runCatching {
+                engine.route(listOf(ends[i], ends[i + 1]), options, catching, PLANNING_FERRY_COST, noGo = noGo)
+            }.getOrNull() ?: continue
+            val tried = legs.toMutableList().also { it[i] = alt }
+            val joined = Routes.joinLegs(tried)
+            val o = overlapFraction(joined)
+            if (o < bestTwice - 0.01 && joined.distanceMeters < best.distanceMeters * 1.3 + 3_000 &&
+                (!options.avoidFerries || joined.ferryCount <= best.ferryCount)) {
+                legs[i] = alt; best = joined; bestTwice = o
+            }
+        }
+        log("    twice %.0f%% -> %.0f%% (%d legs tried, %.1f s)".format(overlapFraction(route) * 100, bestTwice * 100, tryLegs.size, (System.nanoTime() - t0) / 1e9))
+        return best
     }
 
     private fun routeVias(start: LatLon, vias: List<LatLon>, options: RouteOptions, catchingRange: Double): Route {
@@ -334,7 +397,8 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     /** What makes a loop nice to ride, whatever its length. */
     private fun quality(route: Route, options: RouteOptions): Double {
         // Some riding the same road twice is unavoidable on islands and peninsulas (one road out).
-        val overlapPenalty = overlapFraction(route) * 100                          // 20% same road twice = -20
+        // Riding the same road twice is what a loop should avoid most, after the length.
+        val overlapPenalty = overlapFraction(route) * 300                          // 20% same road twice = -60
         val curveBonus = if (options.roadStyle == RoadStyle.FASTEST) 0.0 else route.curviness.toDouble()
         val gravelPenalty = if (options.surface == SurfacePreference.PAVED) route.unpavedShare() * 600 else 0.0
         // Riding into a dead end and back is the most annoying thing a loop can do.
@@ -372,6 +436,40 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
          * then handled by moving the via (see [quayBefore]) and by the score.
          */
         private const val PLANNING_FERRY_COST = 50_000
+
+        private const val TWICE_SAMPLE_M = 100.0
+        /** Less than this ridden twice isn't worth routing legs again for. */
+        private const val MIN_TWICE_M = 1_000.0
+        private const val TWICE_NOGO_RADIUS_M = 80.0
+        /** Cost per metre ridden inside one of the circles on a road already ridden (they overlap: about 15× a normal road). */
+        private const val TWICE_WEIGHT = 8.0
+        /** The leg's own ends stay reachable. */
+        private const val TWICE_NOGO_CLEAR_M = 400.0
+        private const val TWICE_MAX_LEG_M = 60_000.0
+
+        /**
+         * Where [route] rides road it rode before: (point, how far along the second time, how far
+         * along the first time), about every [TWICE_SAMPLE_M].
+         */
+        internal fun repeats(route: Route): List<Triple<LatLon, Double, Double>> {
+            val cell = 0.0004 // ~40 m in latitude
+            val seen = HashMap<Long, Double>()
+            val out = ArrayList<Triple<LatLon, Double, Double>>()
+            var nextSampleAt = 0.0
+            var nextOutAt = 0.0
+            for (p in route.points) {
+                if (p.distanceFromStart < nextSampleAt) continue
+                nextSampleAt = p.distanceFromStart + 40.0
+                val key = (floor(p.lat / cell).toLong() shl 32) xor floor(p.lon / (cell * 2)).toLong()
+                val first = seen[key]
+                if (first == null) seen[key] = p.distanceFromStart
+                else if (p.distanceFromStart - first > 500.0 && p.distanceFromStart >= nextOutAt) {
+                    out += Triple(LatLon(p.lat, p.lon), p.distanceFromStart, first)
+                    nextOutAt = p.distanceFromStart + TWICE_SAMPLE_M
+                }
+            }
+            return out
+        }
 
         /** Share of the route (by sample) that runs within ~40 m of an earlier, non-adjacent part of itself. */
         fun overlapFraction(route: Route): Double {
