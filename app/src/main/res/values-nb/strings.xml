@@ -39,6 +39,11 @@
     <string name="size_mb">%.0f MB</string>
 
     <!-- Route options -->
+    <string name="surface_tarmac_only">Kun asfalt</string>
+    <string name="ferries_ok">Ferjer OK</string>
+    <string name="no_ferries">Ingen ferjer</string>
+    <string name="motorways_ok">Motorvei OK</string>
+    <string name="no_motorways">Ingen motorvei</string>
     <string name="surface_tarmac">Asfalt</string>
     <string name="surface_mixed">Blandet</string>
     <string name="surface_gravel">Grus</string>
