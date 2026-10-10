@@ -138,6 +138,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var saveName by remember { mutableStateOf<String?>(null) }
     val askSaveName: () -> Unit = { scope.launch { saveName = viewModel.suggestedRouteName() } }
     var showRoundtrip by remember { mutableStateOf(false) }
+    /** Where the roundtrip starts when set elsewhere in "Where to?"; null = from here. */
+    var roundtripStart by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
+    /** Drawing the roundtrip's area on the map. */
+    var sketching by remember { mutableStateOf(false) }
     var showGpx by remember { mutableStateOf(false) }
     var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.curveon.data.model.CompassDirection.NORTH), avoidTolls = false)) }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
@@ -231,7 +235,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     // Picking on (and editing the trip on) the map, or the search back up from the pick bar: the map
     // goes full-screen, and the dashboard comes back afterwards if that's where the rider was.
-    val mapMode = mapPick != null || searchGrowIn
+    val mapMode = mapPick != null || searchGrowIn || sketching
     var dashboardBefore by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(mapMode) {
         if (mapMode) {
@@ -242,8 +246,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val planGoal = preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination
     LaunchedEffect(planGoal == null) { if (planGoal == null) editStopMenu = null }
     /** Edit the planned trip on the map: the same as picking stops there. */
-    val editOnMap: () -> Unit = { startMapPick(SearchPurpose.STOP) }
+    val editOnMap: () -> Unit = {
+        // A loop becomes an ordinary trip through points along it first.
+        if (preview?.goal is com.curveon.data.routing.NavigationGoal.Roundtrip) scope.launch {
+            viewModel.roundtripToTrip().join()
+            startMapPick(SearchPurpose.STOP)
+        } else startMapPick(SearchPurpose.STOP)
+    }
     androidx.activity.compose.BackHandler(enabled = mapPick != null) { endMapPick() }
+    androidx.activity.compose.BackHandler(enabled = sketching) { sketching = false }
 
     // Editing on the map: the trip's places as handles, and the last route found, kept on screen
     // (with the dashed guess) while the next one is worked out.
@@ -310,7 +321,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             val min = (r.durationSeconds / 60).toInt()
             "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, r.distanceMeters / 1000)
         }
-        if (pickPurpose != null) {
+        if (sketching) {
+            SketchBar(onCancel = { sketching = false }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
+        } else if (pickPurpose != null) {
             MapPickBar(
                 purpose = pickPurpose,
                 picked = picked?.let { it.second ?: "…" },
@@ -394,7 +407,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     // Never over the speed (top-right): the limit matters during a call too.
                     modifier = Modifier.align(Alignment.BottomEnd).padding(top = FULL_MAP_SPEED_CLEARANCE).padding(14.dp)
                         .width(SIDE_COLUMN_WIDTH).heightIn(max = 360.dp).fillMaxHeight())
-            } else if (preview == null && mapPick == null) track?.let { t ->
+            } else if (preview == null && mapPick == null && !sketching) track?.let { t ->
                 MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
                     Modifier.align(Alignment.BottomEnd).padding(14.dp).width(300.dp))
             }
@@ -438,6 +451,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
             }) else null,
             pickedPoint = picked?.first,
+            sketch = (preview?.goal as? com.curveon.data.routing.NavigationGoal.Roundtrip)?.area?.map { GeoPoint(it.lat, it.lon) }.orEmpty(),
+            onSketch = if (sketching) ({ stroke ->
+                sketching = false
+                viewModel.previewAreaRoundtrip(stroke, lastRoundtrip, roundtripStart?.first, roundtripStart?.second ?: "")
+            }) else null,
             gpxTracks = overlayTracks,
             gpxPois = overlayPois,
             trackHint = trackHint.takeIf { preview == null && !isNavigating },
@@ -501,7 +519,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             phoneState = phoneState,
             unread = notifications.size,
             onSearch = { searchPurpose = SearchPurpose.DESTINATION },
-            onRoundtrip = { showRoundtrip = true },
             onGpx = { showGpx = true },
             phoneOpen = phoneTab != null,
             onPhone = { phoneTab = if (phoneTab == null) PhoneTab.FAVORITES else null },
@@ -606,6 +623,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 startName = planStart?.second,
                 onChangeStart = if (purpose == SearchPurpose.DESTINATION && !isNavigating && !planning) {
                     { startFirst = true; searchGrowIn = false; searchPurpose = SearchPurpose.START }
+                } else null,
+                // A loop only as a new trip: not while one is planned or ridden.
+                onRoundtrip = if (purpose == SearchPurpose.DESTINATION && !isNavigating && preview == null) {
+                    { roundtripStart = planStart; closeSearch(); showRoundtrip = true }
                 } else null
             )
         } }
@@ -700,9 +721,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onDismiss = { showRoundtrip = false },
                 onGenerate = { config ->
                     lastRoundtrip = config
-                    viewModel.previewRoundtrip(config)
+                    viewModel.previewRoundtrip(config, roundtripStart?.first, roundtripStart?.second ?: "")
                     showRoundtrip = false
-                }
+                },
+                onDraw = { config ->
+                    lastRoundtrip = config
+                    showRoundtrip = false
+                    sketching = true
+                },
+                startName = roundtripStart?.second
             )
         }
 
@@ -844,7 +871,6 @@ private fun Rail(
     phoneState: CompanionConnectionState,
     unread: Int,
     onSearch: () -> Unit,
-    onRoundtrip: () -> Unit,
     onGpx: () -> Unit,
     phoneOpen: Boolean,
     onPhone: () -> Unit,
@@ -856,7 +882,6 @@ private fun Rail(
     val compact = vertical && LocalConfiguration.current.screenHeightDp < 480
     val buttons: @Composable () -> Unit = {
         RailButton(Icons.Default.Search, stringResource(R.string.where_to), ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
-        RailButton(Icons.Default.Explore, stringResource(R.string.roundtrip), NeonAmber, NeonAmber, tag = "rail_roundtrip", onClick = onRoundtrip)
         RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
         RailButton(Icons.Default.Phone, stringResource(R.string.phone), EcoGreen, if (phoneOpen) Color.Black else EcoGreen,
             filled = phoneOpen, tag = "rail_phone", onClick = onPhone)

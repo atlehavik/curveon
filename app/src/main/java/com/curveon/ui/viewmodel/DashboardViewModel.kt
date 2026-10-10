@@ -843,11 +843,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             .putInt("offRouteExtraPct", s.maxExtraPercent).apply()
     }
 
-    fun previewRoundtrip(config: RoundtripConfig) {
+    /** A loop inside [area] (drawn on the map), from [start] or from here. */
+    fun previewAreaRoundtrip(area: List<GeoPoint>, config: RoundtripConfig, start: GeoPoint? = null, startName: String = "") =
+        navigator.previewAreaRoundtrip(
+            area.map { LatLon(it.latitude, it.longitude) },
+            routeOptions(config.roadType, config.groundPreference, config.avoidFerries, config.avoidHighways, config.avoidTolls),
+            start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) }
+        )
+
+    /** The previewed loop as an ordinary trip with via points, to change on the map like any other. */
+    fun roundtripToTrip() = viewModelScope.launch {
+        navigator.roundtripToTrip { describePoint(GeoPoint(it.lat, it.lon)) }
+    }
+
+    fun previewRoundtrip(config: RoundtripConfig, start: GeoPoint? = null, startName: String = "") {
         navigator.previewRoundtrip(
             distanceKm = config.radiusKm.toDouble(),
             directionDeg = meanDirection(config.selectedDirections),
-            options = routeOptions(config.roadType, config.groundPreference, config.avoidFerries, config.avoidHighways, config.avoidTolls)
+            options = routeOptions(config.roadType, config.groundPreference, config.avoidFerries, config.avoidHighways, config.avoidTolls),
+            start = start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) }
         )
     }
 

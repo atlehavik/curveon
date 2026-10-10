@@ -483,3 +483,26 @@ fun MapPickBar(
     }
 }
 
+
+/** Drawing the area for a roundtrip: what to do, and a way out. */
+@Composable
+fun SketchBar(onCancel: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .clip(RoundedCornerShape(30.dp)).background(CockpitSurface.copy(alpha = 0.97f))
+            .border(2.dp, NeonAmber, RoundedCornerShape(30.dp))
+            .padding(start = 18.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
+            .testTag("sketch_bar"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(Icons.Default.Gesture, null, tint = NeonAmber)
+        Text(
+            stringResource(R.string.roundtrip_draw_hint), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+            maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).widthIn(max = 420.dp)
+        )
+        Box(Modifier.testTag("sketch_cancel")) {
+            RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 48.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
+        }
+    }
+}

@@ -30,7 +30,7 @@ and [dashboard.md](dashboard.md) for the goals.
   uses as little path as there is no road way around, however long that is. Never in the middle.
   Online with no country downloaded, just the routing tiles a trip needs are fetched as it is planned
   (and kept).
-- **GoRide-style roundtrip**: pick direction(s) and distance.
+- **Roundtrip** (from "Where to?" when no trip is planned): pick a direction and distance, or draw the area to ride in on the map with a finger. Can start elsewhere than where you are, and "Edit on map" turns the loop into an ordinary trip through via points.
 - **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first. Tracks live in
   groups (a multi-track file becomes one) that can show/hide, colour and invert all their tracks at once
   while keeping each track's own settings; tracks and groups can be renamed and exported as GPX.

@@ -6,6 +6,21 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Roundtrip in "Where to?": draw the area, start elsewhere, edit the loop
+
+The Roundtrip button on the rail is gone: Roundtrip is now a row in "Where to?", shown only when
+no trip is planned or being ridden. Its dialog has **Draw area**: the map goes flat and zooms out,
+one finger draws the area to ride in (two fingers still move the map), and on letting go a loop
+inside it is worked out (Shuffle gives another). "From my position" in "Where to?" (or the start
+chip on the loop's sheet) starts the loop somewhere else. The pen icon on a loop's sheet turns it
+into an ordinary trip with via points about every 8 km, to drag and change like any other.
+Checked in the emulator (Haugesund, Leirvik); installed on the X7.
+
+- [ ] Draw an area with a finger on the X7: the stroke follows the finger, two fingers pan/zoom.
+- [ ] How long a drawn loop takes on the X7 (`adb logcat -s Curveon CurveonPlan` → "Routed Roundtrip in … s"; 1–15 s on the PC).
+- [ ] Draw round Bømlo/Stord from home: does the loop use the area and stay off dead ends?
+- [ ] Pen icon on a loop → trip with points; drag one, the rest of the loop stays.
+
 ## 2026-10-10 — The map stays put while planning; a button shows the whole trip
 
 Planning a trip no longer zooms the map out by itself each time the route changes (picking places,

@@ -63,4 +63,5 @@ data class Route(
 open class RoutingException(message: String) : Exception(message)
 
 /** No loop could be routed in the asked direction; the app tells the rider in their language. */
-class NoRoundtripException(message: String) : RoutingException(message)
+/** [inArea]: the loop was asked for in an area the rider drew, not by direction and length. */
+class NoRoundtripException(message: String, val inArea: Boolean = false) : RoutingException(message)

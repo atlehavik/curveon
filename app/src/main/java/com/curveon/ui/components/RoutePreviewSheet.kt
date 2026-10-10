@@ -118,7 +118,8 @@ fun RoutePreviewSheet(
             Text(
                 when (goal) {
                     is NavigationGoal.Destination -> goal.name
-                    is NavigationGoal.Roundtrip -> stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
+                    is NavigationGoal.Roundtrip -> if (goal.area != null) stringResource(R.string.preview_area_roundtrip_title)
+                        else stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
                     is NavigationGoal.Track -> goal.name
                 },
                 color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black,
@@ -126,7 +127,8 @@ fun RoutePreviewSheet(
             )
             if (goal is NavigationGoal.Roundtrip) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
-            if (goal is NavigationGoal.Destination && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
+            // A loop too: it becomes an ordinary trip through points along it, to change like one.
+            if (goal !is NavigationGoal.Track && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
             // A trip on the map may be half an hour of planning: ask before throwing it away.
@@ -144,6 +146,12 @@ fun RoutePreviewSheet(
             Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // A loop: where it starts (here, or elsewhere to plan one away from home).
+            if (goal is NavigationGoal.Roundtrip) PlanChip(
+                Icons.Default.TripOrigin,
+                goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
+                if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
+            )
             // A→B: where from (the planner), "+ Stop", and the stops with how long to each.
             if (goal is NavigationGoal.Destination) {
                 val route = preview.selectedRoute
@@ -297,7 +305,8 @@ private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo:
             Text(
                 when (goal) {
                     is NavigationGoal.Destination -> goal.name
-                    is NavigationGoal.Roundtrip -> stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
+                    is NavigationGoal.Roundtrip -> if (goal.area != null) stringResource(R.string.preview_area_roundtrip_title)
+                        else stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
                     is NavigationGoal.Track -> goal.name
                 },
                 color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis

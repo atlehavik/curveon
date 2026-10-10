@@ -109,7 +109,11 @@ sealed interface NavigationGoal {
         val directionDeg: Double,
         override val options: RouteOptions,
         val variant: Int = 0,
-        val name: String = ""
+        val name: String = "",
+        /** An area drawn on the map to ride in (instead of the direction and distance); null = not drawn. */
+        val area: List<LatLon>? = null,
+        /** Starting somewhere else than where the rider is; null = from here. */
+        val start: Stop? = null
     ) : NavigationGoal {
         override val title get() = name
     }
@@ -234,7 +238,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     /** Plan the previewed trip from [start] instead of from here (null = from here again). */
-    fun setPreviewStart(start: Stop?) = editPreview { it.copy(start = start) }
+    fun setPreviewStart(start: Stop?) {
+        val loop = _state.value.preview?.goal as? NavigationGoal.Roundtrip
+        if (loop != null) preview(loop.copy(start = start)) else editPreview { it.copy(start = start) }
+    }
 
     /** Make [stop] the previewed trip's destination, keeping its stops and start. */
     fun setPreviewDestination(stop: Stop) = editPreview { it.copy(name = stop.name, destination = stop.point) }
@@ -277,8 +284,38 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         if (index !in g.stops.indices) null else g.copy(stops = g.stops.toMutableList().also { it[index] = stop })
     }
 
-    fun previewRoundtrip(distanceKm: Double, directionDeg: Double, options: RouteOptions, variant: Int = 0) =
-        preview(NavigationGoal.Roundtrip(distanceKm, directionDeg, options, variant, context.getString(R.string.roundtrip)))
+    fun previewRoundtrip(distanceKm: Double, directionDeg: Double, options: RouteOptions, start: Stop? = null) =
+        preview(NavigationGoal.Roundtrip(distanceKm, directionDeg, options, name = context.getString(R.string.roundtrip), start = start))
+
+    /** A loop inside [area], drawn on the map with a finger. */
+    fun previewAreaRoundtrip(area: List<LatLon>, options: RouteOptions, start: Stop? = null) =
+        preview(NavigationGoal.Roundtrip(0.0, 0.0, options, name = context.getString(R.string.roundtrip), area = area, start = start))
+
+    /**
+     * The previewed loop as an ordinary trip, to change it like one: points along it become via
+     * points (about one every 8 km), ridden back to where it starts. Another loop is no longer offered.
+     */
+    suspend fun roundtripToTrip(describe: suspend (LatLon) -> String) {
+        val p = _state.value.preview ?: return
+        val g = p.goal as? NavigationGoal.Roundtrip ?: return
+        val route = p.selectedRoute ?: return
+        val first = LatLon(route.points.first().lat, route.points.first().lon)
+        val home = g.start ?: Stop(describe(first), first)
+        val count = (route.distanceMeters / LOOP_VIA_SPACING_M).toInt().coerceIn(4, 12)
+        var next = 0
+        val points = buildList {
+            for (pt in route.points) if (next < count && pt.distanceFromStart >= route.distanceMeters * (next + 1) / (count + 1)) {
+                add(LatLon(pt.lat, pt.lon)); next++
+            }
+        }
+        val vias = points.map { Stop(describe(it), it, via = true) }
+        // Still the same loop on screen?
+        if (_state.value.preview?.goal != g) return
+        previewHistory.clear()
+        // The loop's road style stays picked.
+        preview(NavigationGoal.Destination(home.name, home.point, g.options, vias, g.start),
+            keepSelection = RoadStyle.entries.indexOf(g.options.roadStyle), keepHistory = true)
+    }
 
     fun previewTrack(name: String, points: List<LatLon>, options: RouteOptions) =
         preview(NavigationGoal.Track(name, points, options))
@@ -359,6 +396,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val route = candidate.route ?: return
         candidate.style?.let { preferredStyle = it }
         val planned = p.goal as? NavigationGoal.Destination
+        (p.goal as? NavigationGoal.Roundtrip)?.takeIf { it.start != null }?.let { loop ->
+            // A loop from elsewhere: ride to it and round it.
+            return followTrackNow(loop.title, route.points.map { LatLon(it.lat, it.lon) }, loop.options)
+        }
         // An unchanged saved route: ride its line, rejoining it after a wrong turn as before.
         if (planned?.fixedLine != null) return activate(NavigationGoal.Track(planned.saved?.title ?: planned.name, planned.fixedLine, planned.options), route)
         if (planned?.start != null) {
@@ -377,7 +418,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         if (!keepHistory) previewHistory.clear()
         val planned = goal as? NavigationGoal.Destination
         // A saved line is joined from where the rider is, like a track.
-        val from = (if (planned?.fixedLine != null) lastPosition ?: planned.start?.point else planned?.start?.point ?: lastPosition)
+        val from = (if (planned?.fixedLine != null) lastPosition ?: planned.start?.point
+            else planned?.start?.point ?: (goal as? NavigationGoal.Roundtrip)?.start?.point ?: lastPosition)
             ?: return fail(context.getString(R.string.nav_waiting_gps))
         val tiles = tilesAround(goalPoints(goal, from))
         if (!canRoute(tiles)) return fail(routingData.describe())
@@ -422,7 +464,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private fun goalPoints(goal: NavigationGoal, from: LatLon): List<LatLon> = when (goal) {
         is NavigationGoal.Destination -> listOf(from) + listOfNotNull(goal.start?.point) + goal.stops.map { it.point } + goal.destination + goal.fixedLine.orEmpty()
         is NavigationGoal.Track -> goal.points + from
-        is NavigationGoal.Roundtrip -> {
+        is NavigationGoal.Roundtrip -> if (goal.area != null) goal.area + from else {
             val r = goal.distanceKm / (2 * Math.PI) * 1.4 / 111.0 // degrees of latitude
             val rLon = r / kotlin.math.cos(Math.toRadians(from.lat)).coerceAtLeast(0.2)
             listOf(LatLon(from.lat - r, from.lon - rLon), LatLon(from.lat + r, from.lon + rLon))
@@ -457,10 +499,13 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             goal.options.copy(roadStyle = style ?: goal.options.roadStyle),
             visitEveryVia = true
         )
-        is NavigationGoal.Roundtrip -> RoundtripPlanner(engine) { android.util.Log.d("CurveonPlan", it) }.plan(
-            from, goal.distanceKm, goal.directionDeg, goal.options,
-            rotationsDeg = listOf(0.0, -30.0, 30.0).map { it + goal.variant * 17.0 }
-        )
+        is NavigationGoal.Roundtrip -> RoundtripPlanner(engine) { android.util.Log.d("CurveonPlan", it) }.let { planner ->
+            if (goal.area != null) planner.planArea(from, goal.area, goal.options, goal.variant)
+            else planner.plan(
+                from, goal.distanceKm, goal.directionDeg, goal.options,
+                rotationsDeg = listOf(0.0, -30.0, 30.0).map { it + goal.variant * 17.0 }
+            )
+        }
         is NavigationGoal.Track -> TrackFollower(engine).route(from, goal.points, goal.options)
     }
 
@@ -784,7 +829,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     private fun message(e: Throwable): String = when {
-        e is NoRoundtripException -> context.getString(R.string.nav_no_roundtrip)
+        e is NoRoundtripException -> context.getString(if (e.inArea) R.string.nav_no_area_roundtrip else R.string.nav_no_roundtrip)
         e.message?.contains("not mapped", true) == true || e.message?.contains("no track", true) == true ->
             context.getString(R.string.nav_no_road)
         else -> e.message ?: e.toString()
@@ -792,6 +837,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     companion object {
         private const val REROUTE_COOLDOWN_MS = 10_000L
+        /** A loop made into a trip gets about one via point this far apart (close enough to keep its shape). */
+        private const val LOOP_VIA_SPACING_M = 8_000.0
         /** A route starting further away than this isn't "your road missing from the map" any more. */
         private const val MAX_APPROACH_M = 1_500.0
         /** Ridden this much further from the route's start than you began: you went elsewhere. */

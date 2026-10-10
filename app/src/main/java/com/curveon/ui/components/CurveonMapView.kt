@@ -70,6 +70,8 @@ private const val APPROACH = "curveon-approach"
 private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val HINT = "curveon-track-hint"
+private const val SKETCH = "curveon-sketch"
+private const val SKETCH_ZOOM = 9.0
 private const val ARROW_IMAGE = "curveon-arrow"
 /** GPX waypoints turn from dots into icons from this zoom in (about 30 km across the map). */
 private const val POI_ICON_ZOOM = 11f
@@ -147,6 +149,10 @@ fun CurveonMapView(
     surfaceWays: (suspend (Double, Double, Double, Double) -> List<com.curveon.routing.SurfaceWay>)? = null,
     /** Settings → Display: draw the road surfaces at all. */
     showSurfaces: Boolean = true,
+    /** An area drawn with a finger (closed back to its start), shown dashed. */
+    sketch: List<GeoPoint> = emptyList(),
+    /** Drawing an area: one finger draws (two still move the map), and the stroke comes here on letting go. */
+    onSketch: ((List<GeoPoint>) -> Unit)? = null,
     overlays: @Composable BoxScope.() -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -176,6 +182,7 @@ fun CurveonMapView(
     val onLongPressState = rememberUpdatedState(onLongPress)
     val onTapState = rememberUpdatedState(onTap)
     val editorState = rememberUpdatedState(editor)
+    val onSketchState = rememberUpdatedState(onSketch)
     val onEditRouteState = rememberUpdatedState(onEditRoute)
     val previewRoutesState = rememberUpdatedState(previewRoutes)
     val onPoiClickState = rememberUpdatedState(onPoiClick)
@@ -266,7 +273,54 @@ fun CurveonMapView(
             var longPress: Runnable? = null
             fun cancelLongPress(v: android.view.View) { longPress?.let { v.removeCallbacks(it) }; longPress = null }
             fun clearDrag() = m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
+            // Drawing an area: the stroke so far, null when no finger is drawing.
+            var stroke: MutableList<GeoPoint>? = null
+            var lastX = 0f
+            var lastY = 0f
+            fun showStroke(pts: List<GeoPoint>) = m.style?.getSourceAs<GeoJsonSource>(SKETCH)?.setGeoJson(lineFeatures(listOf(pts)))
+            fun sketchTouch(v: android.view.View, e: android.view.MotionEvent, done: (List<GeoPoint>) -> Unit): Boolean {
+                fun at(x: Float, y: Float) = m.projection.fromScreenLocation(android.graphics.PointF(x, y)).let { GeoPoint(it.latitude, it.longitude) }
+                return when (e.actionMasked) {
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        stroke = mutableListOf(at(e.x, e.y))
+                        lastX = e.x; lastY = e.y
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_MOVE -> {
+                        val st = stroke ?: return false
+                        if (kotlin.math.hypot(e.x - lastX, e.y - lastY) > 6 * v.resources.displayMetrics.density) {
+                            st += at(e.x, e.y)
+                            lastX = e.x; lastY = e.y
+                            showStroke(st)
+                        }
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_UP -> {
+                        val st = stroke ?: return false
+                        stroke = null
+                        v.performClick()
+                        if (st.size >= 3) done(st) else showStroke(emptyList())
+                        true
+                    }
+                    android.view.MotionEvent.ACTION_CANCEL -> { stroke = null; true }
+                    // A second finger: moving or zooming the map, not drawing (as when editing below).
+                    android.view.MotionEvent.ACTION_POINTER_DOWN -> {
+                        if (stroke == null) return false
+                        stroke = null
+                        showStroke(emptyList())
+                        val down = android.view.MotionEvent.obtain(e.downTime, e.eventTime, android.view.MotionEvent.ACTION_DOWN,
+                            e.getX(0), e.getY(0), e.metaState)
+                        v.onTouchEvent(down)
+                        down.recycle()
+                        false
+                    }
+                    else -> stroke != null
+                }
+            }
             mapView.setOnTouchListener { v, e ->
+                onSketchState.value?.let { return@setOnTouchListener sketchTouch(v, e, it) }
+                stroke = null
                 val ed = editorState.value
                 if (ed == null) { grabbed = null; return@setOnTouchListener false }
                 when (e.actionMasked) {
@@ -449,6 +503,11 @@ fun CurveonMapView(
         )
     }
 
+    LaunchedEffect(style, sketch) {
+        val s = style ?: return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(SKETCH)?.setGeoJson(lineFeatures(listOf(if (sketch.size >= 3) sketch + sketch.first() else emptyList())))
+    }
+
     LaunchedEffect(style, pickedPoint) {
         val s = style ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(PICK)?.setGeoJson(
@@ -522,7 +581,17 @@ fun CurveonMapView(
     // Back to following once the preview is really gone: not while picking places or editing, and
     // not for the moment the trip is empty while it is being worked out again (that flew the map
     // to the rider and back in the middle of planning).
-    val picking = onTap != null || editor != null
+    // A drawn area stays in view while its loop is worked out.
+    val picking = onTap != null || editor != null || onSketch != null || sketch.isNotEmpty()
+    // Drawing an area: flat, north up and zoomed out to about a day's ride round the rider.
+    LaunchedEffect(map, onSketch != null) {
+        val m = map ?: return@LaunchedEffect
+        if (onSketch == null) return@LaunchedEffect
+        following = false
+        m.easeCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+            .target(LatLng(location.latitude, location.longitude)).zoom(minOf(m.cameraPosition.zoom, SKETCH_ZOOM))
+            .bearing(0.0).tilt(0.0).padding(0.0, 0.0, 0.0, 0.0).build()), 800)
+    }
     LaunchedEffect(inPreview, picking) {
         if (inPreview || picking) return@LaunchedEffect
         kotlinx.coroutines.delay(700)
@@ -945,6 +1014,13 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
         )
     )
     addEditLayers(s, dark)
+    s.addSource(GeoJsonSource(SKETCH))
+    s.addLayer(
+        LineLayer("$SKETCH-line", SKETCH).withProperties(
+            lineColor("#FF9100"), lineWidth(5f), lineOpacity(0.9f),
+            lineDasharray(arrayOf(1.2f, 1.2f)), lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
+        )
+    )
     s.addSource(GeoJsonSource(PICK))
     s.addLayer(
         CircleLayer("$PICK-dot", PICK).withProperties(

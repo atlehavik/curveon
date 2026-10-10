@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,21 +33,26 @@ import com.curveon.ui.theme.*
 private val OnCyan = Color(0xFF00363D)
 
 /**
- * GoRide-style roundtrip: pick a direction on the compass and a rough distance. Route options
- * are the same chips as in the route preview.
+ * GoRide-style roundtrip: pick a direction on the compass and a rough distance – or draw the area
+ * to ride in on the map. Route options are the same chips as in the route preview.
  */
 @Composable
 fun RoundtripDialog(
     initialConfig: RoundtripConfig,
     onDismiss: () -> Unit,
-    onGenerate: (RoundtripConfig) -> Unit
+    onGenerate: (RoundtripConfig) -> Unit,
+    /** Draw the area on the map instead (the road options still apply). */
+    onDraw: (RoundtripConfig) -> Unit,
+    /** Starting elsewhere (set in "Where to?"); null = from here. */
+    startName: String? = null
 ) {
     var config by remember { mutableStateOf(initialConfig.copy(avoidTolls = false)) }
     val direction = config.selectedDirections.singleOrNull() ?: CompassDirection.NORTH
 
     CockpitDialog(
         title = stringResource(R.string.roundtrip), icon = Icons.Default.Explore, accent = NeonAmber, onDismiss = onDismiss,
-        tag = "roundtrip_dialog", subtitle = stringResource(R.string.roundtrip_subtitle)
+        tag = "roundtrip_dialog",
+        subtitle = startName?.let { stringResource(R.string.roundtrip_subtitle_from, it) } ?: stringResource(R.string.roundtrip_subtitle)
     ) {
         val options: @Composable ColumnScope.() -> Unit = {
         Label(stringResource(R.string.roundtrip_distance))
@@ -86,9 +92,11 @@ fun RoundtripDialog(
         }
 
         Spacer(Modifier.weight(1f))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End)) {
+            PillButton(Icons.Default.Gesture, stringResource(R.string.roundtrip_draw), CockpitSurfaceVariant, NeonAmber,
+                Modifier.testTag("roundtrip_draw_btn")) { onDraw(config) }
             PillButton(Icons.Default.Explore, stringResource(R.string.roundtrip_plan, config.radiusKm, compassPoint(direction)), NeonAmber, Color.Black,
-                Modifier.widthIn(min = 260.dp).testTag("roundtrip_plan_btn")) {
+                Modifier.weight(1f, fill = false).widthIn(min = 200.dp).testTag("roundtrip_plan_btn")) {
                 onGenerate(config.copy(selectedDirections = setOf(direction)))
             }
         }

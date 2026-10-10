@@ -65,7 +65,9 @@ fun DestinationSearchDialog(
     growIn: Boolean = false,
     /** A new trip: where it starts (null = my position), shown above the results; tap to change it. */
     startName: String? = null,
-    onChangeStart: (() -> Unit)? = null
+    onChangeStart: (() -> Unit)? = null,
+    /** A loop instead (only offered for a new trip, nothing planned or ridden). */
+    onRoundtrip: (() -> Unit)? = null
 ) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
@@ -178,6 +180,11 @@ fun DestinationSearchDialog(
             if (onChangeStart != null && (startName != null || query.isEmpty() && nearest == null)) item {
                 ListRow(Icons.Default.TripOrigin, startName?.let { stringResource(R.string.from_place, it) } ?: stringResource(R.string.from_here),
                     stringResource(R.string.search_change_start), null, onClick = onChangeStart)
+            }
+            if (onRoundtrip != null && query.isEmpty() && nearest == null) item {
+                Box(Modifier.testTag("search_roundtrip")) {
+                    ListRow(Icons.Default.Explore, stringResource(R.string.roundtrip), stringResource(R.string.roundtrip_search_subtitle), null, onClick = onRoundtrip)
+                }
             }
             // Nothing typed: what you are most likely to want, without typing on the bike.
             if (query.isEmpty() && nearest == null) {

@@ -94,6 +94,49 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     }
 
     /**
+     * A loop inside an area the rider drew on the map. Via points go round its outline, drawn in a
+     * little so the roads they snap to lie inside, and are ridden in the order drawn from the one
+     * nearest the start. A few spreads and insets are tried in parallel; the winner stays inside,
+     * rides little road twice and – for curvy styles – has the most curves. Each [variant] spreads
+     * the points differently and goes round the other way.
+     */
+    fun planArea(start: LatLon, stroke: List<LatLon>, options: RouteOptions, variant: Int = 0): Route {
+        val area = SketchArea(stroke)
+        if (area.outline.size < 3 || area.perimeterM < MIN_AREA_PERIMETER_M) throw noAreaRoundtrip(null)
+        legs.clear(); ferryLoops.clear(); goodFound = false
+        legPool = Executors.newFixedThreadPool(legThreads)
+        val tries = AREA_INSETS.flatMap { inset -> AREA_SHIFTS.map { shift -> inset to shift } }
+        val pool = Executors.newFixedThreadPool(tries.size)
+        try {
+            val count = (area.perimeterM * AREA_INSETS.first() / AREA_VIA_SPACING_M).toInt().coerceIn(4, 8)
+            // Small areas need the vias on roads close by, not snapped out of them.
+            val catching = (area.perimeterM / count / 4).coerceIn(1500.0, VIA_CATCHING_RANGE_M)
+            // Every loop on the way competes: in an archipelago, moving vias out of dead ends can
+            // shrink a loop round the area to a few kilometres near the start.
+            val loops = ConcurrentLinkedQueue<Pair<Double, Route>>()
+            val tried = parallel(pool, tries.map { (inset, shift) ->
+                {
+                    val vias = reachableVias(start, area.vias(count, inset, shift + variant * 0.37, start, reverse = variant % 2 == 1), options, catching)
+                    // About the way round what was drawn: roads wind (longer), the vias sit inside (shorter).
+                    val expected = area.perimeterM + 2 * maxOf(0.0, Geo.distance(start, vias.first()) - area.perimeterM / 8)
+                    routeLoop(start, vias, options, catching, withFerry = {}, onEach = { loops += expected to it })
+                }
+            })
+            if (loops.isEmpty()) throw noAreaRoundtrip(tried.firstError)
+            val onLand = loops.filter { it.second.ferryCount == 0 }
+            val usable = if (options.avoidFerries && onLand.isNotEmpty()) onLand else loops
+            loops.forEach { (expected, r) ->
+                log("  area -> %.0f km (expected %.0f) ferries=%d outside=%.0f%% score=%.0f".format(r.distanceMeters / 1000, expected / 1000,
+                    r.ferryCount, area.outsideShare(r) * 100, areaScore(r, area, expected, options)))
+            }
+            return usable.maxBy { (expected, r) -> areaScore(r, area, expected, options) }.second
+        } finally {
+            pool.shutdownNow()
+            legPool.shutdownNow()
+        }
+    }
+
+    /**
      * Loops in one direction: the first guess, then up to [MAX_CORRECTIONS] more with the radius
      * adjusted towards the asked length. Returns every loop that routed.
      */
@@ -137,6 +180,9 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
         return Results(outcomes.mapNotNull { it.getOrNull() }, outcomes.firstNotNullOfOrNull { it.exceptionOrNull() })
     }
 
+    private fun noAreaRoundtrip(cause: Throwable?) =
+        NoRoundtripException("Could not find a roundtrip in that area (${cause?.message}).", inArea = true)
+
     private fun noRoundtrip(cause: Throwable?) =
         NoRoundtripException("Could not find a roundtrip in that direction (${cause?.message}). Try another direction or distance.")
 
@@ -151,12 +197,25 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     private fun routeCircle(start: LatLon, radius: Double, directionDeg: Double, options: RouteOptions): Route {
         val center = Geo.destination(start, directionDeg, radius)
         val startAngle = directionDeg + 180.0
-        var vias = (1..VIA_POINTS).map { k -> Geo.destination(center, startAngle + k * 360.0 / (VIA_POINTS + 1), radius) }
-        var route = routeVias(start, vias, options, VIA_CATCHING_RANGE_M)
+        val vias = (1..VIA_POINTS).map { k -> Geo.destination(center, startAngle + k * 360.0 / (VIA_POINTS + 1), radius) }
+        return routeLoop(start, vias, options, VIA_CATCHING_RANGE_M, withFerry = { ferryLoops += Loop(radius, directionDeg, it) })
+    }
+
+    /**
+     * Routes start → [vias] → start, then mends it: vias on islands move to the quay, vias in dead
+     * ends to where the dead end starts. [withFerry] gets the first try when it needed a ferry that
+     * the options rule out; [onEach] every loop on the way (a mend can also spoil a loop).
+     */
+    private fun routeLoop(
+        start: LatLon, firstVias: List<LatLon>, options: RouteOptions, catchingRange: Double,
+        withFerry: (Route) -> Unit, onEach: (Route) -> Unit = {}
+    ): Route {
+        var vias = firstVias
+        var route = routeVias(start, vias, options, catchingRange).also(onEach)
         // Along the coast a via can snap onto an island; the router then has to take a ferry out and
         // back whatever the options say. Replace such a via by the quay on the near side: the loop then
         // stays on land, and the dead-end fix below moves it off the quay road onto the junction.
-        if (options.avoidFerries && route.ferryCount > 0) ferryLoops += Loop(radius, directionDeg, route)
+        if (options.avoidFerries && route.ferryCount > 0) withFerry(route)
         repeat(2) {
             if (!options.avoidFerries || route.ferryCount == 0) return@repeat
             val at = viaIndices(route, vias)
@@ -165,7 +224,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
             if (moved.isEmpty()) throw RoutingException("Every point of this loop needs a ferry")
             if (moved == vias) return@repeat
             vias = moved
-            route = routeVias(start, vias, options, VIA_CATCHING_RANGE_M)
+            route = routeVias(start, vias, options, catchingRange).also(onEach)
         }
         // A via that snapped onto a dead end makes the route ride in and turn back. Move such vias to
         // the junction where the dead end starts, so the loop rides past it instead.
@@ -175,7 +234,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
             var changed = false
             vias = vias.map { via ->
                 val spur = spurs.minByOrNull { Geo.distance(it.turnaround, via) }
-                if (spur != null && Geo.distance(spur.turnaround, via) < VIA_CATCHING_RANGE_M + 500) {
+                if (spur != null && Geo.distance(spur.turnaround, via) < catchingRange + 500) {
                     changed = true
                     spur.base
                 } else via
@@ -189,18 +248,14 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
             // Keep the fix only if it rides past the dead end rather than off somewhere else.
             val withoutSpurs = route.distanceMeters - spurs.sumOf { it.halfLength * 2 }
             if (fixed.distanceMeters > withoutSpurs * 1.4 + 3_000) return route
-            route = fixed
+            route = fixed.also(onEach)
         }
         return route
     }
 
     private fun routeVias(start: LatLon, vias: List<LatLon>, options: RouteOptions, catchingRange: Double): Route {
         val t0 = System.nanoTime()
-        val futures = (listOf(start) + vias + start).zipWithNext { a, b ->
-            legs.computeIfAbsent(Leg(a, b, catchingRange, options)) { leg ->
-                legPool.submit(Callable { engine.route(listOf(leg.from, leg.to), leg.options, leg.catchingRange, PLANNING_FERRY_COST) })
-            }
-        }
+        val futures = (listOf(start) + vias + start).zipWithNext { a, b -> leg(a, b, options, catchingRange) }
         val route = Routes.joinLegs(futures.map {
             try {
                 it.get()
@@ -210,6 +265,28 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
         })
         log("    loop %d vias -> %.0f km ferries=%d (%.1f s)".format(vias.size, route.distanceMeters / 1000, route.ferryCount, (System.nanoTime() - t0) / 1e9))
         return route
+    }
+
+    private fun leg(a: LatLon, b: LatLon, options: RouteOptions, catchingRange: Double): Future<Route> =
+        legs.computeIfAbsent(Leg(a, b, catchingRange, options)) { leg ->
+            legPool.submit(Callable { engine.route(listOf(leg.from, leg.to), leg.options, leg.catchingRange, PLANNING_FERRY_COST) })
+        }
+
+    /**
+     * Drops vias that can't be reached sensibly: both legs touching one fail, or go far round
+     * (a road on an island, or one cut off from the rest, only reached by a long way and ferries).
+     * Keeps at least two.
+     */
+    private fun reachableVias(start: LatLon, vias: List<LatLon>, options: RouteOptions, catchingRange: Double): List<LatLon> {
+        val pts = listOf(start) + vias + start
+        val bad = pts.zipWithNext { a, b ->
+            val r = runCatching { leg(a, b, options, catchingRange).get() }.getOrNull()
+            r == null || (r.distanceMeters > 30_000 && r.distanceMeters > Geo.distance(a, b) * 4) ||
+                (options.avoidFerries && r.ferryCount > 0)
+        }
+        val keep = vias.filterIndexed { i, _ -> !(bad[i] && bad[i + 1]) }
+        if (keep.size < vias.size) log("    dropped ${vias.size - keep.size} unreachable vias")
+        return if (keep.size >= 2) keep else vias
     }
 
     /** The last point on land before the route's first ferry on the way to [viaIndex]. */
@@ -244,6 +321,18 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     internal fun score(route: Route, targetM: Double, options: RouteOptions): Double {
         // Length first: half or double the asked distance are equally wrong (-170), 10% off is -24.
         val lengthPenalty = abs(ln(route.distanceMeters / targetM)) * 250
+        return quality(route, options) - lengthPenalty
+    }
+
+    /**
+     * A drawn area sets the length only roughly (the way round it), so it weighs less than an asked
+     * distance; staying inside counts instead (a third of the loop outside: -67, as half the length -104).
+     */
+    private fun areaScore(route: Route, area: SketchArea, expectedM: Double, options: RouteOptions): Double =
+        quality(route, options) - abs(ln(route.distanceMeters / expectedM)) * 150 - area.outsideShare(route) * 200
+
+    /** What makes a loop nice to ride, whatever its length. */
+    private fun quality(route: Route, options: RouteOptions): Double {
         // Some riding the same road twice is unavoidable on islands and peninsulas (one road out).
         val overlapPenalty = overlapFraction(route) * 100                          // 20% same road twice = -20
         val curveBonus = if (options.roadStyle == RoadStyle.FASTEST) 0.0 else route.curviness.toDouble()
@@ -253,7 +342,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
         // Ferries switched off: loops with one only compete when nothing on land fits (see plan),
         // and even then each ferry weighs as much as a loop 27% off the asked length.
         val ferryPenalty = if (options.avoidFerries) route.ferryCount * 60.0 else 0.0
-        return curveBonus - lengthPenalty - overlapPenalty - gravelPenalty - spurPenalty - ferryPenalty
+        return curveBonus - overlapPenalty - gravelPenalty - spurPenalty - ferryPenalty
     }
 
     private fun Route.unpavedShare() = if (distanceMeters > 0) unpavedMeters / distanceMeters else 0.0
@@ -261,6 +350,12 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     companion object {
         private const val ROAD_DETOUR_FACTOR = 1.3
         private const val VIA_POINTS = 3
+        /** A drawn area: about one via this far apart round it, shrunk towards the middle by each inset. */
+        private const val AREA_VIA_SPACING_M = 15_000.0
+        private val AREA_INSETS = listOf(0.85, 0.65)
+        private val AREA_SHIFTS = listOf(0.0, 0.5)
+        /** Smaller than this round (a tap or a scribble) is no area to ride in. */
+        private const val MIN_AREA_PERIMETER_M = 8_000.0
         private const val VIA_CATCHING_RANGE_M = 5000.0
         /** Vias moved onto a junction are already on the road. */
         private const val FIXED_VIA_CATCHING_RANGE_M = 100.0
