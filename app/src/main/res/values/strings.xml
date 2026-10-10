@@ -71,6 +71,10 @@
     <string name="map_theme_night">Night</string>
     <string name="settings_obd">OBD2 data</string>
     <string name="settings_obd_hint">Engine data card when an adapter is connected</string>
+    <string name="settings_altitude">Altitude</string>
+    <string name="settings_altitude_hint">Height above sea level under the speed</string>
+    <string name="altitude_m">%1$d m a.s.l.</string>
+    <string name="altitude_ft">%1$d ft</string>
     <string name="settings_surfaces">Road surfaces</string>
     <string name="settings_surfaces_off">Off</string>
     <string name="settings_surfaces_dashed">Dashed</string>

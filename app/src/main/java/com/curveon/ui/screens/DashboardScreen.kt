@@ -81,6 +81,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
     val mapAutoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
     val showSurfaces by viewModel.showSurfaces.collectAsStateWithLifecycle()
+    val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
@@ -319,7 +320,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         var tripInfoBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
         Box(Modifier.matchParentSize().onGloballyPositioned { mapBox = it.boundsInRoot() })
         // Speed, limit and clock: always on the map now (the dashboard's side has the engine panel).
-        MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp))
+        MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp), showAltitude = showAltitude)
         // Picking a place: just the map and the little bar; the rest waits.
         val pickPurpose = mapPick
         val tripSummary = preview?.selectedRoute?.let { r ->
@@ -835,7 +836,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obdEnabled = telemetry.isObdEnabled,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
-                    autoZoom = autoZoom, showSurfaces = showSurfaces, autoFollowTracks = autoFollow,
+                    autoZoom = autoZoom, showSurfaces = showSurfaces, showAltitude = showAltitude, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
@@ -852,6 +853,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onObdValue = viewModel::toggleObdValue,
                     onAutoZoom = viewModel::setAutoZoom,
                     onShowSurfaces = viewModel::setShowSurfaces,
+                    onShowAltitude = viewModel::setShowAltitude,
                     onAutoFollow = viewModel::setAutoFollow,
                     onOffRoute = viewModel::setOffRouteSettings,
                     onDemoRide = { viewModel.toggleDemoRide(); showSettings = false },

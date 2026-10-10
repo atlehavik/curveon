@@ -70,6 +70,10 @@
     <string name="map_theme_night">Natt</string>
     <string name="settings_obd">OBD2-data</string>
     <string name="settings_obd_hint">Motordata når en adapter er tilkoblet</string>
+    <string name="settings_altitude">Høyde</string>
+    <string name="settings_altitude_hint">Høyde over havet under farten</string>
+    <string name="altitude_m">%1$d moh.</string>
+    <string name="altitude_ft">%1$d fot</string>
     <string name="settings_surfaces">Veidekke</string>
     <string name="settings_surfaces_off">Av</string>
     <string name="settings_surfaces_dashed">Stiplet</string>

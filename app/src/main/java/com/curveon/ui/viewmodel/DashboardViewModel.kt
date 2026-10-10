@@ -199,6 +199,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _showSurfaces = MutableStateFlow(settings.getBoolean("showSurfaces", true))
     val showSurfaces: StateFlow<Boolean> = _showSurfaces.asStateFlow()
     fun setShowSurfaces(on: Boolean) { _showSurfaces.value = on; settings.edit().putBoolean("showSurfaces", on).apply() }
+    /** Settings → Display: the height above sea level under the speed. */
+    private val _showAltitude = MutableStateFlow(settings.getBoolean("showAltitude", false))
+    val showAltitude: StateFlow<Boolean> = _showAltitude.asStateFlow()
+    fun setShowAltitude(on: Boolean) { _showAltitude.value = on; settings.edit().putBoolean("showAltitude", on).apply() }
 
     fun setUseMph(on: Boolean) { if (_telemetry.value.useMph != on) toggleSpeedUnits() }
     fun setObd(on: Boolean) { if (_telemetry.value.isObdEnabled != on) toggleObd() }

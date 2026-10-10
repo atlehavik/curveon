@@ -79,7 +79,9 @@ private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorde
 fun MapSpeedCluster(
     telemetry: TelemetryData,
     camera: com.curveon.data.routing.CameraAlert?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Settings → Display: the height above sea level under the speed. */
+    showAltitude: Boolean = false
 ) {
     val limit = camera?.maxSpeedKmh ?: telemetry.speedLimitKmh
     val over = limit > 0 && telemetry.speedKmh > limit + 3
@@ -114,6 +116,15 @@ fun MapSpeedCluster(
             }
             telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
             !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
+        }
+        if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
+            Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(5.dp))
+            Text(
+                if (telemetry.useMph) stringResource(R.string.altitude_ft, (telemetry.altitudeMeters * 3.28084).toInt())
+                else stringResource(R.string.altitude_m, telemetry.altitudeMeters),
+                color = TextSecondary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1
+            )
         }
     }
 }

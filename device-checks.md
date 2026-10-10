@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Altitude (m a.s.l.) under the speed, optional
+
+Settings → Display → **Altitude** shows the height above sea level under the speed (off by
+default). It comes from the GPS receiver's own NMEA (GGA, height above sea level); Android's
+altitude is above the ellipsoid, ~40 m higher in Norway, and is only used (or Android 14's sea-level
+height) when the receiver sends no NMEA. Recorded rides now get sea-level heights too. Checked in
+the emulator; installed on the X7 (the Pixel wasn't reachable).
+
+- [ ] Compare with a known height (a summit sign, or the sea: ~0–5 m at the quay) on the X7 and the Pixel.
+
 ## 2026-10-10 — Gravel within reach of the route; the route line coloured by surface
 
 With Gravel or Offroad picked, a chip next to it says how far off the ordinary route gravel may take

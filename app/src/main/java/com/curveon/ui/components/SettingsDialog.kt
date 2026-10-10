@@ -53,6 +53,7 @@ data class SettingsState(
     val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
     val showSurfaces: Boolean,
+    val showAltitude: Boolean,
     val autoFollowTracks: Boolean,
     val offRoute: com.curveon.data.routing.OffRouteSettings,
     val isNavigating: Boolean,
@@ -77,6 +78,7 @@ class SettingsActions(
     val onObdValue: (com.curveon.data.obd.ObdValue) -> Unit,
     val onAutoZoom: (Boolean) -> Unit,
     val onShowSurfaces: (Boolean) -> Unit,
+    val onShowAltitude: (Boolean) -> Unit,
     val onAutoFollow: (Boolean) -> Unit,
     val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
     val onDemoRide: () -> Unit,
@@ -114,6 +116,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_surfaces), below = { SurfaceKey() }) {
                             Segmented(listOf(false, true), state.showSurfaces,
                                 { stringResource(if (it) R.string.settings_surfaces_dashed else R.string.settings_surfaces_off) }, actions.onShowSurfaces)
+                        }
+                        Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint), small = true) {
+                            CockpitSwitch(state.showAltitude, actions.onShowAltitude)
                         }
                     }
                     SettingsTab.NAVIGATION -> Page {

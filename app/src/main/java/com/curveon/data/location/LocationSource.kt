@@ -25,10 +25,16 @@ data class GpsFix(
     val bearingAccuracyDeg: Float? = null
 )
 
+/**
+ * [Location.getAltitude] is height above the WGS84 ellipsoid, some 40 m above sea level in Norway.
+ * Height above sea level comes from the receiver's own NMEA (GGA), see [LocationSource], or – from
+ * Android 14 – from the platform when it adds it.
+ */
 fun Location.toGpsFix() = GpsFix(
     latitude = latitude,
     longitude = longitude,
-    altitudeMeters = if (hasAltitude()) altitude else null,
+    altitudeMeters = if (android.os.Build.VERSION.SDK_INT >= 34 && hasMslAltitude()) mslAltitudeMeters
+        else if (hasAltitude()) altitude else null,
     speedMps = if (hasSpeed()) speed else null,
     bearingDeg = if (hasBearing()) bearing else null,
     accuracyMeters = if (hasAccuracy()) accuracy else null,
@@ -55,9 +61,24 @@ class LocationSource(context: Context) {
     @Volatile var satellitesUsed = -1
         private set
 
+    /** Height above sea level from the receiver's last GGA sentence, and when it came. */
+    @Volatile private var mslAltitude: Double? = null
+    @Volatile private var mslAt = 0L
+
+    private fun onNmea(sentence: String) {
+        Nmea.ggaAltitude(sentence)?.let { mslAltitude = it; mslAt = System.currentTimeMillis() }
+    }
+
+    /** A fix with the sea-level height when the receiver gave one in the last few seconds. */
+    private fun withSeaLevel(fix: GpsFix): GpsFix {
+        val msl = mslAltitude?.takeIf { System.currentTimeMillis() - mslAt < 5_000 } ?: return fix
+        return fix.copy(altitudeMeters = msl)
+    }
+
     @SuppressLint("MissingPermission") // callers check permission first
     fun fixes(intervalMillis: Long = 1000L): Flow<GpsFix> = callbackFlow {
-        val listener = LocationListener { location -> trySend(location.toGpsFix()) }
+        val listener = LocationListener { location -> trySend(withSeaLevel(location.toGpsFix())) }
+        val nmea = android.location.OnNmeaMessageListener { message, _ -> onNmea(message) }
         val gnss = object : android.location.GnssStatus.Callback() {
             override fun onSatelliteStatusChanged(status: android.location.GnssStatus) {
                 satellitesUsed = (0 until status.satelliteCount).count { status.usedInFix(it) }
@@ -71,9 +92,25 @@ class LocationSource(context: Context) {
             Looper.getMainLooper()
         )
         runCatching { locationManager.registerGnssStatusCallback(gnss, android.os.Handler(Looper.getMainLooper())) }
+        runCatching { locationManager.addNmeaListener(nmea, android.os.Handler(Looper.getMainLooper())) }
         awaitClose {
             locationManager.removeUpdates(listener)
+            runCatching { locationManager.removeNmeaListener(nmea) }
             runCatching { locationManager.unregisterGnssStatusCallback(gnss) }
         }
+    }
+}
+
+/** The bits of NMEA sentences Curveon reads. */
+object Nmea {
+    /**
+     * Height above sea level (metres) from a GGA sentence ("$GPGGA,…" or "$GNGGA,…"): field 9, in
+     * metres when field 10 is "M"; null without a fix (field 6 = 0) or a height.
+     */
+    fun ggaAltitude(sentence: String): Double? {
+        if (sentence.length < 7 || !sentence.startsWith("$") || sentence.substring(3, 6) != "GGA") return null
+        val f = sentence.substringBefore('*').split(',')
+        if (f.size < 11 || f[6].isEmpty() || f[6] == "0" || f[10] != "M") return null
+        return f[9].toDoubleOrNull()
     }
 }
