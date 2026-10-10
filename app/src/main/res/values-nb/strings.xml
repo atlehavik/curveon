@@ -553,4 +553,8 @@
     <string name="link_app_running">Kjører</string>
     <string name="media_starting">Starter …</string>
     <string name="media_start_failed">%1$s vil ikke starte herfra. Spill noe i den på telefonen én gang, så kan du bytte til den her etterpå.</string>
+    <string name="preview_discard_title">Forkaste turen?</string>
+    <string name="preview_discard_text">Ruten og stoppene blir borte.</string>
+    <string name="preview_discard">Forkast</string>
+    <string name="preview_keep">Behold</string>
 </resources>

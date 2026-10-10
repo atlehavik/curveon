@@ -16,6 +16,7 @@ you. Checked in the emulator; installed on the X7.
 
 - [ ] Plan a trip far from where you are, pick places on the map: the map doesn't jump.
 - [ ] The four-arrow button shows the whole trip above the sheet.
+- [ ] The X on a planned trip asks first: Keep / Save / Discard.
 
 ## 2026-10-10 — Rider glides on the map, quicker off the line after a wrong turn, new 3D, ride trace
 

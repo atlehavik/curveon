@@ -554,4 +554,8 @@
     <string name="link_app_running">Running</string>
     <string name="media_starting">Starting…</string>
     <string name="media_start_failed">%1$s won\'t start from here. Play something in it on the phone once; after that you can switch to it here.</string>
+    <string name="preview_discard_title">Discard this trip?</string>
+    <string name="preview_discard_text">The route and its stops will be gone.</string>
+    <string name="preview_discard">Discard</string>
+    <string name="preview_keep">Keep</string>
 </resources>

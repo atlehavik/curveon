@@ -81,6 +81,7 @@ fun RoutePreviewSheet(
 ) {
     val goal = preview.goal
     val options = goal.options
+    var askDiscard by remember { mutableStateOf(false) }
     // Like "Pick on map": the sheet shrinks into the bar, the bar springs up, and the sheet grows back out of it.
     val scope = rememberCoroutineScope()
     var growIn by remember { mutableStateOf(false) }
@@ -128,8 +129,14 @@ fun RoutePreviewSheet(
             if (goal is NavigationGoal.Destination && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
-            SmallIcon(Icons.Default.Close, stringResource(R.string.cancel), onClose)
+            // A trip on the map may be half an hour of planning: ask before throwing it away.
+            SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { if (preview.selectedRoute != null) askDiscard = true else onClose() }
         }
+        if (askDiscard) DiscardTripDialog(
+            onDiscard = { askDiscard = false; onClose() },
+            onSave = { askDiscard = false; onSave() },
+            onKeep = { askDiscard = false }
+        )
 
         // Everything between the title and GO scrolls when the sheet runs out of height (a phone
         // held sideways with a gravel warning), so the options and GO always stay on screen.
@@ -457,4 +464,30 @@ fun StopMenuDialog(
             }
         }
     }
+}
+
+/** Closing a planned trip: throw it away, save it first, or carry on with it. */
+@Composable
+private fun DiscardTripDialog(onDiscard: () -> Unit, onSave: () -> Unit, onKeep: () -> Unit) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onKeep,
+        containerColor = CockpitSurface,
+        title = { HideSystemBars(); Text(stringResource(R.string.preview_discard_title), color = TextPrimary, fontWeight = FontWeight.Black) },
+        text = { Text(stringResource(R.string.preview_discard_text), color = TextSecondary) },
+        confirmButton = {
+            Row {
+                androidx.compose.material3.TextButton(onClick = onSave, modifier = Modifier.testTag("discard_trip_save")) {
+                    Text(stringResource(R.string.save), color = ElectricCyan, fontWeight = FontWeight.Bold)
+                }
+                androidx.compose.material3.TextButton(onClick = onDiscard, modifier = Modifier.testTag("discard_trip_confirm")) {
+                    Text(stringResource(R.string.preview_discard), color = WarningRed, fontWeight = FontWeight.Bold)
+                }
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onKeep, modifier = Modifier.testTag("discard_trip_keep")) {
+                Text(stringResource(R.string.preview_keep), color = TextSecondary)
+            }
+        }
+    )
 }
