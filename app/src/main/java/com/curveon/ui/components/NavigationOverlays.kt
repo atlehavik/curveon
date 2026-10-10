@@ -169,32 +169,98 @@ fun PlaceActionDialog(
 
 private val OnCyanDark = Color(0xFF00363D)
 
-/** Name the route before saving it; [initialName] is a suggestion from the places it passes. */
+/** Where a route is saved: Where to? (to plan and ride again), the GPX collection (in [gpxGroup] or a new group [newGroup]), or both. */
+data class RouteSaveTargets(val toRoutes: Boolean, val toGpx: Boolean, val gpxGroup: Long?, val newGroup: String? = null)
+
+/**
+ * Name the route before saving it; [initialName] is a suggestion from the places it passes. It can
+ * go to Where to? and/or the GPX collection (picking the group as when saving a ride), starting
+ * from where the last route went ([initial]).
+ */
 @Composable
-fun SaveRouteDialog(initialName: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+fun SaveRouteDialog(
+    initialName: String,
+    initial: RouteSaveTargets,
+    gpxGroups: List<com.curveon.data.model.GpxGroup>,
+    onSave: (String, RouteSaveTargets) -> Unit,
+    onDismiss: () -> Unit
+) {
     var name by remember(initialName) { mutableStateOf(initialName) }
+    // A remembered group that has been deleted since: no group.
+    var targets by remember { mutableStateOf(initial.copy(gpxGroup = initial.gpxGroup?.takeIf { id -> gpxGroups.any { it.id == id } })) }
+    var pickingGroup by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = CockpitSurface,
         title = { HideSystemBars(); Text(stringResource(R.string.save_route_title), color = TextPrimary, fontWeight = FontWeight.Black) },
         text = {
-            OutlinedTextField(
-                value = name, onValueChange = { name = it }, singleLine = true,
-                label = { Text(stringResource(R.string.save_route_name)) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
-                    focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder, cursorColor = ElectricCyan
-                ),
-                modifier = Modifier.fillMaxWidth().testTag("save_route_name")
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = name, onValueChange = { name = it }, singleLine = true,
+                    label = { Text(stringResource(R.string.save_route_name)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
+                        focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder, cursorColor = ElectricCyan
+                    ),
+                    modifier = Modifier.fillMaxWidth().testTag("save_route_name")
+                )
+                SaveTargetRow(Icons.Default.Bookmark, stringResource(R.string.save_route_to_routes), null, targets.toRoutes,
+                    Modifier.testTag("save_route_to_routes")) { targets = targets.copy(toRoutes = !targets.toRoutes) }
+                val groupName = targets.newGroup ?: gpxGroups.firstOrNull { it.id == targets.gpxGroup }?.name ?: stringResource(R.string.gpx_no_group)
+                SaveTargetRow(Icons.Default.Route, stringResource(R.string.save_route_to_gpx), groupName.takeIf { targets.toGpx }, targets.toGpx,
+                    Modifier.testTag("save_route_to_gpx"), onDetail = { pickingGroup = true }) { targets = targets.copy(toGpx = !targets.toGpx) }
+            }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank(), modifier = Modifier.testTag("save_route_confirm")) {
-                Text(stringResource(R.string.save), color = ElectricCyan, fontWeight = FontWeight.Bold)
+            val can = name.isNotBlank() && (targets.toRoutes || targets.toGpx)
+            TextButton(onClick = { onSave(name.trim(), targets) }, enabled = can, modifier = Modifier.testTag("save_route_confirm")) {
+                Text(stringResource(R.string.save), color = if (can) ElectricCyan else TextMuted, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = TextSecondary) } }
     )
+    if (pickingGroup) {
+        GroupPickerDialog(stringResource(R.string.rides_save_to_group), gpxGroups, current = targets.gpxGroup.takeIf { targets.newGroup == null },
+            onPick = { id, newName -> targets = targets.copy(gpxGroup = id, newGroup = newName) }, onDismiss = { pickingGroup = false })
+    }
+}
+
+/** One place to save to, ticked or not; [detail] (the GPX group) opens its own choice with [onDetail]. */
+@Composable
+private fun SaveTargetRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    detail: String?,
+    on: Boolean,
+    modifier: Modifier = Modifier,
+    onDetail: () -> Unit = {},
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+            .background(if (on) ElectricCyan.copy(alpha = 0.12f) else CockpitSurfaceVariant)
+            .clickable(onClick = onToggle).padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp).heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, null, tint = if (on) ElectricCyan else TextMuted, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(label, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f),
+            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        if (detail != null) {
+            Row(
+                Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onDetail).padding(horizontal = 8.dp, vertical = 8.dp)
+                    .testTag("save_route_gpx_group"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.FolderOpen, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(detail, color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 140.dp))
+            }
+        }
+        Checkbox(checked = on, onCheckedChange = { onToggle() },
+            colors = CheckboxDefaults.colors(checkedColor = ElectricCyan, checkmarkColor = OnCyanDark, uncheckedColor = TextMuted))
+    }
 }
 
 /** The active route: its stops (remove one), add a stop, save it, end navigation. */

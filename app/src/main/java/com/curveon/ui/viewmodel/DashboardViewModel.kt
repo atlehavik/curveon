@@ -864,6 +864,54 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch { repository.saveRoute(item) }
     }
 
+    /**
+     * Saves the previewed (or active) route's line as a GPX track under [name], in an existing
+     * group, a new one ([newGroup]) or none; its stops and destination come along as waypoints.
+     */
+    fun saveRouteToGpx(name: String, groupId: Long?, newGroup: String?) {
+        val s = navigator.state.value
+        val route = s.preview?.selectedRoute ?: s.route ?: return
+        val goal = s.preview?.goal ?: s.goal
+        val pts = route.points.map { GeoPoint(it.lat, it.lon, it.elevation) }
+        if (pts.size < 2) return
+        val places = (goal as? NavigationGoal.Destination)?.let { g ->
+            g.stops.filter { !it.via }.map { it.name to it.point } + (g.name to g.destination)
+        }.orEmpty()
+        viewModelScope.launch {
+            val created = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) }
+            // A group made here is where the next route goes too.
+            created?.let { settings.edit().putLong("saveRouteGpxGroup", it).apply() }
+            val group = created ?: groupId
+            repository.saveGpxTrack(
+                GpxTrack(
+                    name = name,
+                    totalDistanceKm = (route.distanceMeters / 1000).toFloat(),
+                    elevationGainMeters = route.ascentMeters.roundToInt(),
+                    maxElevationMeters = pts.maxOf { it.altitudeMeters }.roundToInt(),
+                    pointCount = pts.size,
+                    trackPointsJson = com.curveon.data.osm.GpxParser.encodePoints(pts),
+                    waypointsJson = com.curveon.data.gpx.GpxOverlay.encodePois(places.map { (n, p) ->
+                        com.curveon.data.osm.GpxParser.GpxWaypoint(n, GeoPoint(p.lat, p.lon))
+                    }),
+                    category = "Route",
+                    groupId = group
+                )
+            )
+        }
+    }
+
+    /** Where routes were saved last time (Where to?, GPX, the GPX group), so the save dialog starts there. */
+    val saveRouteTargets: Triple<Boolean, Boolean, Long?>
+        get() = Triple(
+            settings.getBoolean("saveRouteToRoutes", true),
+            settings.getBoolean("saveRouteToGpx", false),
+            settings.getLong("saveRouteGpxGroup", -1L).takeIf { it >= 0 }
+        )
+
+    fun rememberSaveRouteTargets(toRoutes: Boolean, toGpx: Boolean, groupId: Long?) = settings.edit()
+        .putBoolean("saveRouteToRoutes", toRoutes).putBoolean("saveRouteToGpx", toGpx)
+        .putLong("saveRouteGpxGroup", groupId ?: -1L).apply()
+
     fun deleteSavedRoute(item: RouteItem) = viewModelScope.launch { repository.deleteRoute(item.id) }
 
     fun recents(): List<Stop> = recentDestinations.all()

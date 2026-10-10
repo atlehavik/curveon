@@ -608,9 +608,22 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
 
         saveName?.let { suggested ->
+            val (toRoutes, toGpx, gpxGroup) = viewModel.saveRouteTargets
             SaveRouteDialog(
                 initialName = suggested,
-                onSave = { name -> viewModel.saveRoute(name); saveName = null; toast = context.getString(R.string.toast_saved_to_where_to) },
+                initial = RouteSaveTargets(toRoutes, toGpx, gpxGroup),
+                gpxGroups = gpxGroups,
+                onSave = { name, t ->
+                    if (t.toRoutes) viewModel.saveRoute(name)
+                    if (t.toGpx) viewModel.saveRouteToGpx(name, t.gpxGroup, t.newGroup)
+                    viewModel.rememberSaveRouteTargets(t.toRoutes, t.toGpx, t.gpxGroup)
+                    saveName = null
+                    toast = context.getString(when {
+                        t.toRoutes && t.toGpx -> R.string.toast_saved_to_both
+                        t.toGpx -> R.string.toast_saved_to_gpx
+                        else -> R.string.toast_saved_to_where_to
+                    })
+                },
                 onDismiss = { saveName = null }
             )
         }

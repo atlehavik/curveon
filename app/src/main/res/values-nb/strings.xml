@@ -27,6 +27,7 @@
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Lagret i Hvor skal du?</string>
     <string name="toast_saved_to_gpx">Lagret i GPX-spor</string>
+    <string name="toast_saved_to_both">Lagret i Hvor skal du? og GPX-spor</string>
     <string name="toast_calling">Ringer %1$s…</string>
     <string name="toast_phone_not_connected">Telefonen er ikke tilkoblet</string>
     <string name="toast_connect_phone_to_call">Koble til telefonen for å ringe</string>
@@ -474,6 +475,8 @@
     <string name="move_later">Etter</string>
     <string name="save_route_title">Lagre ruten</string>
     <string name="save_route_name">Navn</string>
+    <string name="save_route_to_routes">Hvor skal du? (lagrede ruter)</string>
+    <string name="save_route_to_gpx">GPX-spor</string>
     <string name="preview_arrive">Fremme %1$s</string>
     <string name="preview_after_dark">i mørket</string>
     <string name="preview_planned_hint">Planlagt fra et annet sted: KJØR tar deg til ruten, så langs den</string>

@@ -28,6 +28,7 @@
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Saved to Where to?</string>
     <string name="toast_saved_to_gpx">Saved to GPX</string>
+    <string name="toast_saved_to_both">Saved to Where to? and GPX</string>
     <string name="toast_calling">Calling %1$s…</string>
     <string name="toast_phone_not_connected">Phone not connected</string>
     <string name="toast_connect_phone_to_call">Connect the phone to call</string>
@@ -475,6 +476,8 @@
     <string name="move_later">Later</string>
     <string name="save_route_title">Save route</string>
     <string name="save_route_name">Name</string>
+    <string name="save_route_to_routes">Where to? (saved routes)</string>
+    <string name="save_route_to_gpx">GPX track</string>
     <string name="preview_arrive">Arrive %1$s</string>
     <string name="preview_after_dark">after dark</string>
     <string name="preview_planned_hint">Planned from elsewhere: GO rides to the line, then along it</string>

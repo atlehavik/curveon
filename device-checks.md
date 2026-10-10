@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Save a route to Where to?, GPX, or both
+
+The route's save dialog has two ticks: Where to? (saved routes, as before) and GPX track, with
+the GPX group to put it in (an existing one, no group, or a new one, as when saving a ride). The
+choice is remembered for next time. The GPX copy has the route's line and its stops as waypoints.
+Checked in the emulator (saved to both, the track shows up in its GPX group). Installed on both.
+
+- [ ] Pixel portrait: the dialog fits, the group name doesn't push the tick off the row.
+- [ ] Export the saved GPX track from the GPX tab and open it elsewhere: line and stops are there.
+
 ## 2026-10-10 — Build a trip point by point on the map
 
 "Pick on map" (for a destination or a stop) has a new button (a zigzag line) next to the search
