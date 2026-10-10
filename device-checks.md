@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — GO is just an arrow
+
+The route preview's GO button shows only the navigation arrow (no "GO"/"KJØR"), since the word
+spilled out of the button on the Pixel in landscape. Installed on both devices.
+
+- [ ] Pixel landscape (dashboard): plan a trip; the arrow button sits inside its pill, also folded down.
+- [ ] X7: the arrow alone reads clearly enough as "start" at a glance.
+
 ## 2026-10-10 — Routing online without downloading the country
 
 Planning a trip somewhere with no routing data (e.g. Curveon on the Pixel, no countries downloaded)

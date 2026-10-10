@@ -303,17 +303,17 @@ private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo:
     }
 }
 
+/** Starts the ride on the chosen route. */
 @Composable
 private fun GoButton(ready: Boolean, onGo: () -> Unit, modifier: Modifier = Modifier) {
     Row(
-        modifier.height(56.dp).widthIn(min = 140.dp).clip(RoundedCornerShape(28.dp))
+        modifier.height(56.dp).widthIn(min = 96.dp).clip(RoundedCornerShape(28.dp))
             .background(if (ready) ElectricCyan else CockpitSurfaceVariant)
             .clickable(enabled = ready, onClick = onGo).padding(horizontal = 22.dp).testTag("preview_go_btn"),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
     ) {
-        Icon(Icons.Default.Navigation, null, tint = if (ready) OnCyan else TextMuted)
-        Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.preview_go), color = if (ready) OnCyan else TextMuted, fontSize = 20.sp, fontWeight = FontWeight.Black)
+        // Just the arrow: a word doesn't fit everywhere (phone landscape, Norwegian "KJØR").
+        Icon(Icons.Default.Navigation, stringResource(R.string.preview_go), tint = if (ready) OnCyan else TextMuted, modifier = Modifier.size(32.dp))
     }
 }
 
