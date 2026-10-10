@@ -18,7 +18,11 @@ data class GpsFix(
     val speedMps: Float?,
     val bearingDeg: Float?,
     val accuracyMeters: Float?,
-    val timeMillis: Long
+    val timeMillis: Long,
+    /** When the position was measured, on the System.nanoTime() clock (for drawing between fixes). */
+    val atNanos: Long = System.nanoTime(),
+    val speedAccuracyMps: Float? = null,
+    val bearingAccuracyDeg: Float? = null
 )
 
 fun Location.toGpsFix() = GpsFix(
@@ -28,7 +32,11 @@ fun Location.toGpsFix() = GpsFix(
     speedMps = if (hasSpeed()) speed else null,
     bearingDeg = if (hasBearing()) bearing else null,
     accuracyMeters = if (hasAccuracy()) accuracy else null,
-    timeMillis = time
+    timeMillis = time,
+    // Location's own timestamp is on the elapsedRealtime clock; carry its age over to nanoTime.
+    atNanos = System.nanoTime() - (android.os.SystemClock.elapsedRealtimeNanos() - elapsedRealtimeNanos).coerceIn(0L, 10_000_000_000L),
+    speedAccuracyMps = if (hasSpeedAccuracy()) speedAccuracyMetersPerSecond else null,
+    bearingAccuracyDeg = if (hasBearingAccuracy()) bearingAccuracyDegrees else null
 )
 
 /**
@@ -43,9 +51,18 @@ class LocationSource(context: Context) {
     fun lastKnown(): GpsFix? =
         runCatching { locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.toGpsFix() }.getOrNull()
 
+    /** Satellites used in the last fix (for the ride trace); -1 until the receiver says. */
+    @Volatile var satellitesUsed = -1
+        private set
+
     @SuppressLint("MissingPermission") // callers check permission first
     fun fixes(intervalMillis: Long = 1000L): Flow<GpsFix> = callbackFlow {
         val listener = LocationListener { location -> trySend(location.toGpsFix()) }
+        val gnss = object : android.location.GnssStatus.Callback() {
+            override fun onSatelliteStatusChanged(status: android.location.GnssStatus) {
+                satellitesUsed = (0 until status.satelliteCount).count { status.usedInFix(it) }
+            }
+        }
         locationManager.requestLocationUpdates(
             LocationManager.GPS_PROVIDER,
             intervalMillis,
@@ -53,6 +70,10 @@ class LocationSource(context: Context) {
             listener,
             Looper.getMainLooper()
         )
-        awaitClose { locationManager.removeUpdates(listener) }
+        runCatching { locationManager.registerGnssStatusCallback(gnss, android.os.Handler(Looper.getMainLooper())) }
+        awaitClose {
+            locationManager.removeUpdates(listener)
+            runCatching { locationManager.unregisterGnssStatusCallback(gnss) }
+        }
     }
 }

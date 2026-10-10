@@ -30,7 +30,7 @@ object DemoRide {
                     latitude = a.lat + (b.lat - a.lat) * f,
                     longitude = a.lon + (b.lon - a.lon) * f,
                     altitudeMeters = a.elevation + (b.elevation - a.elevation) * f,
-                    speedMps = speedMps.toFloat(),
+                    speedMps = (speedMps * speedFactor).toFloat(), // fast-forwarded: the map carries the rider forward at this speed
                     bearingDeg = Geo.bearing(a.lat, a.lon, b.lat, b.lon).toFloat(),
                     accuracyMeters = 4f,
                     timeMillis = System.currentTimeMillis()

@@ -2,9 +2,8 @@ package com.curveon.ui.components
 
 import com.curveon.R
 import androidx.compose.ui.res.stringResource
-import android.annotation.SuppressLint
+import androidx.compose.ui.graphics.graphicsLayer
 import android.graphics.RectF
-import android.location.Location
 import android.view.Gravity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -49,10 +48,6 @@ import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
-import org.maplibre.android.location.LocationComponentActivationOptions
-import org.maplibre.android.location.LocationComponentOptions
-import org.maplibre.android.location.modes.CameraMode
-import org.maplibre.android.location.modes.RenderMode
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
@@ -91,7 +86,11 @@ internal object SurfaceColors {
 /** Gravel and soft roads from this zoom in (about 10 km across the X7's map); further out they would clutter. */
 private const val SURFACE_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
-private const val TILT_3D = 60.0
+/** 3D tilt; car navigators sit around 45–50 (Mapbox's navigation camera: 45). */
+private const val TILT_3D = 50.0
+/** Rider position below the middle, as a share of the map's height, given as top padding (×2 lower). */
+private const val RIDER_LOW_3D = 0.5 // rider ~3/4 down the map
+private const val RIDER_LOW_2D = 0.3
 
 /** How the camera turns while following the rider; the rider picks it with the compass button. */
 private enum class Orientation { NORTH_UP, HEADING_UP, THREE_D }
@@ -106,6 +105,8 @@ data class MapRoute(val points: List<GeoPoint>, val selected: Boolean)
 @Composable
 fun CurveonMapView(
     location: GeoPoint,
+    /** The latest fix, carried forward frame by frame so the rider glides instead of hopping. */
+    riderFix: com.curveon.data.location.RiderMotion.Fix?,
     headingDeg: Float,
     speedKmh: Float,
     speedLimitKmh: Int,
@@ -166,6 +167,8 @@ fun CurveonMapView(
     var zoomBias by remember { mutableDoubleStateOf(0.0) }
     var cameraBearing by remember { mutableFloatStateOf(0f) }
     var cameraIdleTick by remember { mutableIntStateOf(0) }
+    /** Where and how to draw the rider arrow this frame. */
+    var puck by remember { mutableStateOf<Puck?>(null) }
 
     // Map listeners are registered once, so read changing values through State holders.
     val locationState = rememberUpdatedState(location)
@@ -373,7 +376,6 @@ fun CurveonMapView(
         m.setStyle(Style.Builder().fromJson(json)) { s ->
             addOverlayLayers(s, dark)
             poiBadges.forEach { (name, bmp) -> s.addImage(name, bmp) }
-            activatePuck(m, s, context)
             style = s
         }
     }
@@ -494,41 +496,85 @@ fun CurveonMapView(
     val hasRoute = routePoints.isNotEmpty()
     LaunchedEffect(hasRoute) { if (hasRoute) following = true }
 
-    // Rider position + camera follow
-    LaunchedEffect(map, style, location, headingDeg, following, orientation, zoomBias, hasGpsFix) {
+    // Rider position + camera follow. Every frame, not every fix: the rider is carried forward
+    // between the once-a-second fixes (RiderMotion) and the camera moves with them, so the map
+    // glides along the road. Zoom, tilt and where the rider sits on screen ease towards their
+    // targets, so changing speed or mode doesn't jolt the view.
+    val motion = remember { com.curveon.data.location.RiderMotion() }
+    LaunchedEffect(riderFix) { riderFix?.let { motion.onFix(it, System.nanoTime()) } }
+    val speedState = rememberUpdatedState(speedKmh)
+    val headingState = rememberUpdatedState(headingDeg)
+    val turnState = rememberUpdatedState(currentTurnInstruction)
+    LaunchedEffect(map, style, following, inPreview, orientation, zoomBias, hasGpsFix, autoZoom) {
         val m = map ?: return@LaunchedEffect
         if (style == null) return@LaunchedEffect
-        if (hasGpsFix && m.locationComponent.isLocationComponentActivated) {
-            m.locationComponent.forceLocationUpdate(Location("gps").apply {
-                latitude = location.latitude
-                longitude = location.longitude
-                bearing = headingDeg
-                speed = speedKmh / 3.6f
-            })
-        }
-        if (following && !inPreview) {
-            val moving = speedKmh >= 5f
-            val threeD = orientation == Orientation.THREE_D
-            m.easeCamera(
-                CameraUpdateFactory.newCameraPosition(
+        val follow = following && !inPreview
+        val threeD = orientation == Orientation.THREE_D
+        // Start from where the camera is, so coming back to following is a glide too.
+        var zoom = m.cameraPosition.zoom
+        var tilt = m.cameraPosition.tilt
+        var lift = m.cameraPosition.padding?.getOrNull(1) ?: 0.0
+        var camBearing = m.cameraPosition.bearing
+        var last = 0L
+        var lastPose: com.curveon.data.location.RiderMotion.Pose? = null
+        var lastTrace = 0L
+        while (true) {
+            val now = withFrameNanos { it }
+            val dt = if (last == 0L) 0.016 else ((now - last) / 1e9).coerceIn(0.0, 0.5)
+            last = now
+            val pose = (if (hasGpsFix) motion.sample(System.nanoTime()) else null)
+            val target = pose?.let { LatLng(it.lat, it.lon) } ?: locationState.value.let { LatLng(it.latitude, it.longitude) }
+            if (follow) {
+                val speed = speedState.value
+                val moving = speed >= 5f
+                val h = mapView.height.toDouble()
+                val wantZoom = if (autoZoom) (followZoom(speed, turnState.value?.distanceMeters, threeD) + zoomBias).coerceIn(10.0, 18.5) else zoom
+                val wantTilt = if (threeD) TILT_3D else 0.0
+                // Heading up and 3D: the rider low on screen to see more road ahead. North up: centred.
+                val wantLift = when {
+                    threeD -> RIDER_LOW_3D * h
+                    orientation == Orientation.HEADING_UP && moving -> RIDER_LOW_2D * h
+                    else -> 0.0
+                }
+                zoom = ease(zoom, wantZoom, dt, 1.2)
+                tilt = ease(tilt, wantTilt, dt, 0.4)
+                lift = ease(lift, wantLift, dt, 0.6)
+                val wantBearing = when {
+                    orientation == Orientation.NORTH_UP -> 0.0
+                    pose != null && moving -> pose.bearingDeg
+                    else -> camBearing
+                }
+                camBearing = (camBearing + com.curveon.routing.Geo.angleDiff(camBearing, wantBearing) * (1 - kotlin.math.exp(-dt / 0.25)) + 360.0) % 360.0
+                val cam = m.cameraPosition
+                val changed = cam.target?.let { kotlin.math.abs(it.latitude - target.latitude) > 1e-8 || kotlin.math.abs(it.longitude - target.longitude) > 1e-8 } != false ||
+                    kotlin.math.abs(cam.zoom - zoom) > 1e-3 || kotlin.math.abs(cam.tilt - tilt) > 0.05 ||
+                    kotlin.math.abs(com.curveon.routing.Geo.angleDiff(cam.bearing, camBearing)) > 0.05 ||
+                    kotlin.math.abs((cam.padding?.getOrNull(1) ?: 0.0) - lift) > 0.5
+                if (changed) m.moveCamera(CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
-                        .target(LatLng(location.latitude, location.longitude))
-                        // 3D looks further ahead, so it can sit a little closer.
-                        .zoom(if (autoZoom) (navigationZoom(speedKmh) + zoomBias + if (threeD) 0.5 else 0.0).coerceIn(10.0, 18.5) else m.cameraPosition.zoom)
-                        .bearing(if (orientation == Orientation.NORTH_UP) 0.0 else if (moving) headingDeg.toDouble() else m.cameraPosition.bearing)
-                        .tilt(if (threeD) TILT_3D else 0.0)
-                        // Heading up and 3D: rider low on screen to see more road ahead. North up: centred.
-                        .padding(0.0, if (threeD) 0.3 * mapView.height else if (orientation == Orientation.HEADING_UP && moving) 250.0 else 0.0, 0.0, 0.0)
+                        .target(target)
+                        .zoom(zoom)
+                        .bearing(camBearing)
+                        .tilt(tilt)
+                        .padding(0.0, lift, 0.0, 0.0)
                         .build()
-                ),
-                900
-            )
+                ))
+            }
+            // The arrow is drawn over the map (RiderArrow), placed from the camera just set, so it
+            // moves in step with the map. MapLibre's own location puck animates on its own clock
+            // and can't take a new position every frame.
+            val p = m.projection.toScreenLocation(target)
+            riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y)
+            val cam = m.cameraPosition
+            puck = Puck(p.x, p.y, ((pose?.bearingDeg ?: headingState.value.toDouble()) - cam.bearing).toFloat(), cam.tilt.toFloat())
+            if (pose != null && now - lastTrace > 200_000_000L) {
+                lastTrace = now
+                com.curveon.data.location.NavTrace.drawn(pose.lat, pose.lon, pose.bearingDeg, m.cameraPosition.zoom, m.cameraPosition.tilt, follow)
+            }
+            lastPose = pose
         }
-        val p = m.projection.toScreenLocation(LatLng(location.latitude, location.longitude))
-        riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y)
     }
 
-    // The online map only where no downloaded map covers the view, so the hotspot isn't used for nothing.
     LaunchedEffect(style, cameraIdleTick) {
         val m = map ?: return@LaunchedEffect
         val s = style ?: return@LaunchedEffect
@@ -611,6 +657,7 @@ fun CurveonMapView(
             .testTag("map_container")
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
+        if (hasGpsFix && style != null) RiderArrow { puck }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, Modifier.matchParentSize()) }
 
         if (currentTurnInstruction != null) {
@@ -885,33 +932,55 @@ internal fun roadLabel(features: List<Feature>): String? {
     return listOfNotNull(ref, name?.takeIf { it != ref }).joinToString(" ").ifEmpty { null }
 }
 
-/** Zoom in for slow, twisty riding and out on fast roads so what's ahead stays in view. */
-private fun navigationZoom(speedKmh: Float): Double = when {
-    speedKmh < 8f -> 16.0 // standing still: a bit of overview
-    speedKmh < 30f -> 16.5
-    speedKmh < 60f -> 16.0
-    speedKmh < 85f -> 15.3
-    else -> 14.6
+/**
+ * How close to follow the rider. Like the usual car navigators (Google Maps, Mapbox's navigation
+ * camera): in close when slow and twisty, out on fast roads so what's ahead stays in view, and in
+ * again approaching a turn so the junction is big enough to read. Smooth in speed, so riding
+ * around a threshold doesn't pump the zoom.
+ */
+private fun followZoom(speedKmh: Float, toTurnMeters: Int?, threeD: Boolean): Double {
+    val bySpeed = when {
+        speedKmh < 8f -> 16.5 // standing still: a bit of overview
+        else -> 17.2 - ((speedKmh - 20f) / 70f).coerceIn(0f, 1f) * 1.6 // 17.2 at 20 km/h → 15.6 at 90
+    }
+    val nearTurn = toTurnMeters != null && toTurnMeters in 1..300 && speedKmh >= 8f
+    val zoom = if (nearTurn) maxOf(bySpeed, 16.8) else bySpeed
+    // Tilted, the road ahead runs off into the distance: a touch closer keeps the rider's
+    // surroundings at about the same scale as the flat view.
+    return zoom + if (threeD) 0.3 else 0.0
 }
 
-@SuppressLint("MissingPermission") // we only push locations manually, the component never reads GPS itself
-private fun activatePuck(map: MapLibreMap, style: Style, context: android.content.Context) {
-    val options = LocationComponentOptions.builder(context)
-        .gpsDrawable(com.curveon.R.drawable.ic_nav_arrow)
-        .accuracyAlpha(0f)
-        .elevation(0f)
-        .build()
-    map.locationComponent.apply {
-        activateLocationComponent(
-            LocationComponentActivationOptions.builder(context, style)
-                .locationComponentOptions(options)
-                .useDefaultLocationEngine(false)
-                .build()
-        )
-        isLocationComponentEnabled = true
-        cameraMode = CameraMode.NONE
-        renderMode = RenderMode.GPS
-    }
+/** Moves [from] towards [to], [tau] seconds being roughly how long it takes to get two thirds there. */
+private fun ease(from: Double, to: Double, dt: Double, tau: Double) = from + (to - from) * (1 - kotlin.math.exp(-dt / tau))
+
+/** The rider arrow on screen: position in px, rotation from screen-up, and the map's tilt. */
+private data class Puck(val x: Float, val y: Float, val rotation: Float, val tilt: Float)
+
+/**
+ * The rider arrow, drawn over the map. Read through [puck] inside the layer block, so moving it
+ * every frame only redraws the arrow. Tilted with the map in 3D so it lies on the road.
+ */
+@Composable
+private fun RiderArrow(puck: () -> Puck?) {
+    val size = 44.dp
+    val half = with(androidx.compose.ui.platform.LocalDensity.current) { size.toPx() / 2 }
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(com.curveon.R.drawable.ic_nav_arrow),
+        contentDescription = null,
+        modifier = Modifier
+            .size(size)
+            .graphicsLayer {
+                val p = puck()
+                alpha = if (p == null) 0f else 1f
+                if (p != null) {
+                    translationX = p.x - half
+                    translationY = p.y - half
+                    rotationX = p.tilt * 0.8f
+                    cameraDistance = 12f * density
+                }
+            }
+            .graphicsLayer { rotationZ = puck()?.rotation ?: 0f }
+    )
 }
 
 @Composable

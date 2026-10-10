@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier) {
     val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
     val currentLocation by viewModel.currentLocation.collectAsStateWithLifecycle()
+    val riderFix by viewModel.riderFix.collectAsStateWithLifecycle()
     val routePoints by viewModel.activeRoutePoints.collectAsStateWithLifecycle()
     val groundPreference by viewModel.groundPreference.collectAsStateWithLifecycle()
     val currentTurnInstruction by viewModel.currentTurnInstruction.collectAsStateWithLifecycle()
@@ -404,6 +405,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier) {
         CurveonMapView(
             location = currentLocation,
+            riderFix = riderFix,
             headingDeg = telemetry.headingDeg,
             speedKmh = telemetry.speedKmh,
             speedLimitKmh = telemetry.speedLimitKmh,
