@@ -53,7 +53,14 @@ class BRouterEngine(
          */
         visitEveryVia: Boolean = false
     ): Route {
-        val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false, visitEveryVia)
+        if (visitEveryVia && waypoints.size > 2) {
+            // Leg by leg: each stop is a leg's end, so it can't be cut out. (BRouter's allowSamewayback
+            // would keep it too, but turns a plain A→B trip into there and back.)
+            return Routes.joinLegs(waypoints.zipWithNext().mapIndexed { i, (a, b) ->
+                route(listOf(a, b), options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg.takeIf { i == 0 }, noGo, tracksAsLastResort)
+            })
+        }
+        val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false)
         // Start and end on the rider's own road even where the map doesn't join it to the network.
         return OwnRoad { pts, look -> routeOnce(pts, options, null, avoidedFerryCost, null, emptyList(), tracksAsLastResort, look) }.join(waypoints, r)
     }
@@ -67,8 +74,7 @@ class BRouterEngine(
         noGo: List<NoGo>,
         tracksAsLastResort: Boolean,
         /** Paths count as roads: only to find where the rider's own road meets one (see [OwnRoad]). */
-        lookPastPaths: Boolean,
-        visitEveryVia: Boolean = false
+        lookPastPaths: Boolean
     ): Route {
         require(waypoints.size >= 2) { "Need at least start and destination" }
         val nodes = waypoints.mapIndexed { i, p ->
@@ -82,7 +88,6 @@ class BRouterEngine(
             localFunction = File(profileDir, PROFILE_FILE).absolutePath
             keyValues = profileParams(options, avoidedFerryCost, tracksAsLastResort, lookPastPaths)
             waypointCatchingRange = viaCatchingRangeMeters ?: DEFAULT_CATCHING_RANGE_M
-            allowSamewayback = visitEveryVia
             memoryclass = memoryClassMb
             if (startHeadingDeg != null) {
                 startDirection = ((startHeadingDeg.roundToInt() % 360) + 360) % 360

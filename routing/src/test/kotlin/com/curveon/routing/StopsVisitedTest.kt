@@ -29,4 +29,19 @@ class StopsVisitedTest {
             assertTrue("route rides past the stop at $stop (%.0f m away)".format(gap), gap < 15)
         }
     }
+
+    @Test
+    fun `a trip without stops is one way, not there and back`() {
+        assumeTrue(File(segments, "E5_N55.rd5").exists())
+        val engine = BRouterEngine(segments, ProfileInstaller.install(Files.createTempDirectory("p").toFile()))
+        val from = LatLon(59.7790, 5.2050) // Bømlo
+        val to = LatLon(59.413807, 5.268125) // Haugesund centre
+        val o = RouteOptions(RoadStyle.FASTEST, SurfacePreference.PAVED)
+        val plain = engine.route(listOf(from, to), o)
+        val r = engine.route(listOf(from, to), o, visitEveryVia = true)
+        println("Bømlo-Haugesund %.0f km, with stops visited %.0f km".format(plain.distanceMeters / 1000, r.distanceMeters / 1000))
+        assertTrue("there and back: %.0f km".format(r.distanceMeters / 1000), r.distanceMeters < plain.distanceMeters * 1.05)
+        val end = r.points.last()
+        assertTrue("ends back at the start", Geo.distance(to, LatLon(end.lat, end.lon)) < 500)
+    }
 }

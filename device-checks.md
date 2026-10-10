@@ -12,12 +12,14 @@ Two changes, installed on the X7 (the Pixel was offline: `./gradlew :app:install
 `ANDROID_SERIAL` once Wireless debugging is back on).
 
 - Stops: a stop just off the way (e.g. a side street in Haugesund) is now ridden to; before, the
-  route rode past it ~200 m away (BRouter cut the out-and-back to it). `:routing:test`
-  StopsVisitedTest covers it.
+  route rode past it ~200 m away (BRouter cut the out-and-back to it). Trips with stops are now
+  routed leg by leg. (The first try, 7e75557, turned plain A→B trips into there and back; fixed.)
+  `:routing:test` StopsVisitedTest covers both.
 - The edit-on-map button (and a long press on the route) opens the same editor as "+ Stop" → Pick
   on map: tap to add a point, drag the line to bend the route, tap/hold a point for its menu
   (remove, move, change place, add stop before), the dotted-line button marks a part of the route.
 
+- [ ] X7: Bømlo → Haugesund without stops is one way (~67 km), not there and back.
 - [ ] X7: add a stop in a side street near the route: the blue line goes into the street to it.
 - [ ] Edit button on the route preview → drag the line → a detour; marking button → two pins.
 - [ ] Tap a stop on the map → menu → Change place opens the search and comes back to the trip.
