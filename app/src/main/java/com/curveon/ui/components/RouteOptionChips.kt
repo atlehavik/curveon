@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.AltRoute
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,10 +42,14 @@ fun RouteOptionChips(
     onSurface: (SurfacePreference) -> Unit,
     onToggleFerries: () -> Unit,
     onToggleMotorways: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Gravel/Offroad: how far (km) off the ordinary route for gravel; null = any distance. Shown next to the surface. */
+    gravelReachKm: Int? = null,
+    onGravelReach: ((Int?) -> Unit)? = null
 ) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         SurfaceChip(surface, onSurface)
+        if (onGravelReach != null && surface >= SurfacePreference.GRAVEL) GravelReachChip(gravelReachKm, onGravelReach)
         OptionChip(stringResource(if (avoidFerries) R.string.no_ferries else R.string.ferries_ok), active = avoidFerries, avoid = true, onClick = onToggleFerries) {
             Icon(Icons.Default.DirectionsBoat, null, tint = if (avoidFerries) NeonAmber else TextSecondary)
         }
@@ -150,5 +155,28 @@ fun SurfaceChip(surface: SurfacePreference, onSurface: (SurfacePreference) -> Un
         onSurface(SurfacePreference.entries[(surface.ordinal + 1) % SurfacePreference.entries.size])
     }) {
         Icon(Icons.Default.Landscape, null, tint = if (surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
+    }
+}
+
+/** How far off the ordinary route gravel may take the trip; null = as far as it likes. */
+val GRAVEL_REACH_KM = listOf(1, 3, 5, 10, 20, null)
+
+/** "Gravel within 5 km of the route" / "Gravel anywhere"; tap for the list. */
+@Composable
+fun GravelReachChip(reachKm: Int?, onPick: (Int?) -> Unit) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    @Composable fun label(km: Int?) = if (km == null) stringResource(R.string.gravel_reach_any) else stringResource(R.string.gravel_reach_km, km)
+    Box {
+        OptionChip(label(reachKm), active = true, onClick = { open = true }) {
+            Icon(Icons.Default.AltRoute, null, tint = NeonAmber)
+        }
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+            GRAVEL_REACH_KM.forEach { km ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(label(km), color = if (km == reachKm) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                    onClick = { open = false; onPick(km) }
+                )
+            }
+        }
     }
 }

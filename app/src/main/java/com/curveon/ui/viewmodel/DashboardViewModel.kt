@@ -811,7 +811,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         RoadStyle.valueOf(settings.getString("style", RoadStyle.CURVY.name)!!),
         SurfacePreference.valueOf(settings.getString("surface", SurfacePreference.PAVED.name)!!),
         avoidFerries = settings.getBoolean("avoidFerries", false),
-        avoidMotorways = settings.getBoolean("avoidMotorways", false)
+        avoidMotorways = settings.getBoolean("avoidMotorways", false),
+        gravelReachKm = settings.getInt("gravelReachKm", 0).takeIf { it > 0 }
     ).also { navigator.preferredStyle = it.roadStyle }
 
     /** Preview a trip to [point], from [start] (null = from where I am). */
@@ -902,6 +903,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setPreviewSurface(surface: SurfacePreference) = navigator.updatePreviewOptions { it.copy(surface = surface) }
 
+    /** Gravel/Offroad: how far off the ordinary route for gravel (null = any distance). */
+    fun setPreviewGravelReach(km: Int?) = navigator.updatePreviewOptions { it.copy(gravelReachKm = km) }
+
     fun togglePreviewAvoidFerries() = navigator.updatePreviewOptions { it.copy(avoidFerries = !it.avoidFerries) }
 
     fun togglePreviewAvoidMotorways() = navigator.updatePreviewOptions { it.copy(avoidMotorways = !it.avoidMotorways) }
@@ -944,6 +948,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         settings.edit()
             .putString("style", lastOptions.roadStyle.name).putString("surface", lastOptions.surface.name)
             .putBoolean("avoidFerries", lastOptions.avoidFerries).putBoolean("avoidMotorways", lastOptions.avoidMotorways)
+            .putInt("gravelReachKm", lastOptions.gravelReachKm ?: 0)
             .apply()
         (p.goal as? NavigationGoal.Destination)?.let { recentDestinations.add(Stop(it.name, it.destination)) }
         navigator.startPreview()

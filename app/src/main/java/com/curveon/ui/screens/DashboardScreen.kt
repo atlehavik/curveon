@@ -397,6 +397,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onAddStopBefore = { i -> stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP },
                 onEditOnMap = editOnMap,
                 onLoopMax = viewModel::setLoopMax,
+                onGravelReach = viewModel::setPreviewGravelReach,
                 onRedraw = {
                     // Same start, max and surface as the loop on screen.
                     (preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.loop?.let { loop ->

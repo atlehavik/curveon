@@ -17,6 +17,7 @@ assign avoid_toll      = false  # %avoid_toll% | Avoid toll roads | boolean
 assign tracks_last_resort = 1    # %tracks_last_resort% | With Tarmac, tracks may still be used to reach a place on one (0 = never) | number
 assign look_past_paths = 0       # %look_past_paths% | Only for the first/last leg when the map cuts the place off: paths as a last resort | number
 assign avoided_ferry_cost = 1000000 # %avoided_ferry_cost% | Cost of one ferry when avoiding them (~1 per metre of detour) | number
+assign gravel_pull = 100         # %gravel_pull% | Gravel/Offroad: how strongly unpaved roads are sought, 0-100 (0 = like any other road) | number
 
 assign downhillcost = 0
 assign uphillcost   = 0
@@ -49,7 +50,11 @@ assign gravel_lover = equal surface_pref 2
 assign offroad      = equal surface_pref 3
 assign no_tracks    = and paved_only ( equal tracks_last_resort 0 )
 
-assign pass2coefficient = if offroad then 0.55 else if gravel_lover then 0.85 else 1.0
+# Gravel and Offroad pull towards unpaved roads by gravel_pull percent: a factor below 1 (unpaved
+# cheaper) or above 1 (tarmac dearer) moves towards 1 as the pull weakens.
+assign pull = multiply gravel_pull 0.01
+
+assign pass2coefficient = if offroad then 0.55 else if gravel_lover then max 0.55 add 1.0 multiply -0.4 pull else 1.0
 
 ---context:way
 
@@ -173,13 +178,13 @@ assign surface_factor =
   (
     if paved_only then 8.0
     else if mixed then 1.4
-    else if offroad then ( if is_soft then 0.7 else 0.9 )
-    else 0.85
+    else if offroad then ( if is_soft then add 1.0 multiply -0.4 pull else add 1.0 multiply -0.35 pull )
+    else add 1.0 multiply -0.4 pull
   )
   else
   (
-    if offroad then 1.4
-    else if gravel_lover then 1.15 else 1.0
+    if offroad then add 1.0 multiply 0.4 pull
+    else if gravel_lover then add 1.0 multiply 0.25 pull else 1.0
   )
 
 # Any track is a road an adventure bike can ride. With Tarmac it is a last resort (to reach a

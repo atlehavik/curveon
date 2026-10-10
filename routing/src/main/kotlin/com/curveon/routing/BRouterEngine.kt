@@ -53,6 +53,20 @@ class BRouterEngine(
          */
         visitEveryVia: Boolean = false
     ): Route {
+        val reach = options.gravelReachKm
+        if (reach != null && options.surface >= SurfacePreference.GRAVEL) {
+            // Gravel, but not too far off: the ordinary route first, then the gravel one with less and
+            // less pull towards gravel until it stays within reach of it.
+            fun plan(o: RouteOptions) = route(waypoints, o.copy(gravelReachKm = null), viaCatchingRangeMeters, avoidedFerryCost,
+                startHeadingDeg, noGo, tracksAsLastResort, visitEveryVia)
+            // No gravel within reach: the ordinary route (with what gravel it has).
+            val ordinary = plan(options.copy(surface = SurfacePreference.MIXED))
+            for (pull in GRAVEL_PULLS) {
+                val r = runCatching { plan(options.copy(gravelPull = pull)) }.getOrNull() ?: continue
+                if (Routes.farthestFrom(r, ordinary) <= reach * 1000.0) return r
+            }
+            return ordinary
+        }
         if (visitEveryVia && waypoints.size > 2) {
             // Leg by leg: each stop is a leg's end, so it can't be cut out. (BRouter's allowSamewayback
             // would keep it too, but turns a plain A→B trip into there and back.)
@@ -125,7 +139,8 @@ class BRouterEngine(
             "avoid_toll" to o.avoidToll.flag(),
             "avoided_ferry_cost" to avoidedFerryCost.toString(),
             "tracks_last_resort" to tracksAsLastResort.flag(),
-            "look_past_paths" to lookPastPaths.flag()
+            "look_past_paths" to lookPastPaths.flag(),
+            "gravel_pull" to o.gravelPull.toString()
         )
         // BRouter caches parsed profiles keyed by the *sum* of the parameters' hash codes, so
         // "curvy, no ferries" (1 + 1) is the same profile to it as "very curvy, ferries" (2 + 0) and
@@ -207,6 +222,8 @@ class BRouterEngine(
 
     companion object {
         const val PROFILE_FILE = "curveon-moto.brf"
+        /** Gravel pull tried in turn while a gravel route strays too far: full, then weaker. */
+        private val GRAVEL_PULLS = listOf(100, 50, 20)
 
         private const val CACHE_KEY = "curveon_params"
 

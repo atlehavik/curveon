@@ -1,6 +1,22 @@
 package com.curveon.routing
 
 object Routes {
+
+    /** The farthest [route] gets from [other] (metres), sampled every ~200 m. */
+    fun farthestFrom(route: Route, other: Route): Double {
+        fun samples(r: Route, step: Double): List<LatLon> {
+            val out = ArrayList<LatLon>()
+            var next = 0.0
+            for (p in r.points) if (p.distanceFromStart >= next) { out += LatLon(p.lat, p.lon); next = p.distanceFromStart + step }
+            return out
+        }
+        val ref = samples(other, 150.0)
+        if (ref.isEmpty()) return 0.0
+        val kx = Math.cos(Math.toRadians(ref[0].lat)) * 111_320.0
+        return samples(route, 200.0).maxOfOrNull { p ->
+            ref.minOf { q -> val dx = (p.lon - q.lon) * kx; val dy = (p.lat - q.lat) * 110_574.0; dx * dx + dy * dy }
+        }?.let { Math.sqrt(it) } ?: 0.0
+    }
     /** Position and travel bearing at [distance] metres along [route] (clamped to its ends). */
     fun pointAt(route: Route, distance: Double): Pair<LatLon, Double> {
         val pts = route.points

@@ -40,6 +40,8 @@
     <string name="size_mb">%.0f MB</string>
 
     <!-- Route options -->
+    <string name="gravel_reach_km">Gravel within %1$d km</string>
+    <string name="gravel_reach_any">Gravel anywhere</string>
     <string name="surface_tarmac_only">Tarmac only</string>
     <string name="ferries_ok">Ferries OK</string>
     <string name="no_ferries">No ferries</string>

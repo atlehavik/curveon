@@ -17,7 +17,14 @@ data class RouteOptions(
     val surface: SurfacePreference = SurfacePreference.PAVED,
     val avoidFerries: Boolean = false,
     val avoidMotorways: Boolean = false,
-    val avoidToll: Boolean = false
+    val avoidToll: Boolean = false,
+    /**
+     * Gravel/Offroad: how far (km) the route may stray from the ordinary one to ride unpaved roads;
+     * null = as far as it likes.
+     */
+    val gravelReachKm: Int? = null,
+    /** How strongly Gravel/Offroad seek unpaved roads, 0–100 (set while keeping to [gravelReachKm]). */
+    val gravelPull: Int = 100
 )
 
 enum class ManeuverType {

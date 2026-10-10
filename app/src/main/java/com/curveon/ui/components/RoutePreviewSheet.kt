@@ -75,6 +75,8 @@ fun RoutePreviewSheet(
     onLoopMax: (Int?) -> Unit = {},
     /** A drawn loop: draw the area again. */
     onRedraw: () -> Unit = {},
+    /** Gravel/Offroad: how far off the ordinary route it may go for gravel (null = any distance). */
+    onGravelReach: (Int?) -> Unit = {},
     onSave: () -> Unit,
     onGo: () -> Unit,
     onClose: () -> Unit,
@@ -241,15 +243,15 @@ fun RoutePreviewSheet(
         val chips: @Composable (Modifier) -> Unit = { m ->
             RouteOptionChips(
                 surface = options.surface, avoidFerries = options.avoidFerries, avoidMotorways = options.avoidMotorways,
-                onSurface = onSurface, onToggleFerries = onToggleFerries, onToggleMotorways = onToggleMotorways, modifier = m
+                onSurface = onSurface, onToggleFerries = onToggleFerries, onToggleMotorways = onToggleMotorways, modifier = m,
+                gravelReachKm = options.gravelReachKm, onGravelReach = onGravelReach
             )
         }
         if (isNarrowScreen()) {
             chips(Modifier.horizontalScroll(rememberScrollState()))
             GoButton(ready = preview.selectedRoute != null, onGo = onGo, modifier = Modifier.fillMaxWidth())
         } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            chips(Modifier)
-            Spacer(Modifier.weight(1f))
+            chips(Modifier.weight(1f).horizontalScroll(rememberScrollState()))
             GoButton(ready = preview.selectedRoute != null, onGo = onGo)
         }
     }
