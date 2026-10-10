@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        current = java.lang.ref.WeakReference(this)
 
         // The language may just have changed (the screen restarts then): redo texts made earlier.
         dashboardViewModel.refreshTexts()
@@ -104,6 +105,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        RideService.shown(this)
+    }
+
+    // Out of sight: after a while without a trip, the service warns that GPS is still on.
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) RideService.hidden(this, dashboardViewModel.isNavigating.value)
+    }
+
     override fun onResume() {
         super.onResume()
         dashboardViewModel.phoneCompanion.reconnectSoon() // the rider is looking: don't wait out a back-off
@@ -112,6 +124,11 @@ class MainActivity : ComponentActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) hideSystemBars()
+    }
+
+    companion object {
+        /** The screen, so "Close Curveon" in the notification can close it. */
+        @Volatile var current: java.lang.ref.WeakReference<MainActivity>? = null
     }
 
     private fun hasLocationPermission() =

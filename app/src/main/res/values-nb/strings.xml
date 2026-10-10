@@ -432,6 +432,10 @@
     <string name="map_reading_index">Leser kartindeksen</string>
     <string name="map_reading_index_parts">Leser kartindeksen (%1$d av %2$d deler)</string>
     <string name="map_downloading">Laster ned kart – %1$.0f av %2$.0f MB</string>
+    <string name="quit_app">Lukk Curveon</string>
+    <string name="background_channel">Kjører i bakgrunnen</string>
+    <string name="background_title">Curveon kjører fortsatt</string>
+    <string name="background_text">Den har brukt GPS og batteri i %1$d minutter uten å være i bruk. Lukk den hvis du ikke trenger den.</string>
     <string name="service_channel">Kjøring</string>
     <string name="service_running">GPS og navigasjon kjører</string>
     <string name="gpx_no_track_in">Ingen spor eller rute i %1$s</string>

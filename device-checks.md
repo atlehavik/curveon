@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Close Curveon from the notification; warning when it idles in the background
+
+The "GPS and navigation are running" notification now has **Close Curveon**: it closes the screen,
+GPS, the phone link and OBD and ends the app (Android keeps only its small notification reader).
+When Curveon has been out of sight for 10 minutes without a trip being navigated, a second
+notification with a sound says it is still using GPS and battery, with the same button; opening
+Curveon takes it away. Checked in the emulator (with the wait shortened): GPS off after closing.
+
+- [ ] On the Pixel: leave Curveon for another app for 10 min (no trip): the warning sounds.
+- [ ] "Close Curveon" from the notification: Curveon is gone; opening it again starts normally.
+- [ ] Navigating with another app in front: no warning.
+
 ## 2026-10-10 — Roundtrip is drawn straight away; loops ride less road twice
 
 "Roundtrip" in Where to? now goes straight to drawing on the map (the direction/distance dialog is
