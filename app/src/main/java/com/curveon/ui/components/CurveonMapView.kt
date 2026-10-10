@@ -939,6 +939,7 @@ private fun FullMapSpeedCluster(speedKmh: Float, speedLimitKmh: Int, modifier: M
             lineHeight = 32.sp
         )
         if (speedLimitKmh > 0) SpeedLimitSign(speedLimitKmh, 36.dp)
+        Clock(17.sp)
     }
 }
 

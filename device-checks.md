@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — The clock sits by the speed
+
+The clock moved from the rail to the right end of the speed card (and of the speed box on the
+full-screen map), so the rail's buttons get the room. Checked in the emulator on the X7 (both
+layouts) and phone upright. Installed on both devices.
+
+- [ ] Pixel upright: the six buttons along the bottom have room now.
+- [ ] Riding with a speed limit sign showing: speed, sign and clock all fit on the X7 and Pixel.
+
 ## 2026-10-10 — GO drops its word when squeezed
 
 The route preview's GO button shows arrow and "GO"/"KJØR" when it has room, and just a bigger arrow

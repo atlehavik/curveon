@@ -25,7 +25,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -36,6 +40,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.curveon.data.bluetooth.CompanionConnectionState
@@ -115,8 +120,27 @@ fun SpeedCard(
                 )
             }
             if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, 64.dp)
+            Spacer(Modifier.width(12.dp))
+            Clock(20.sp)
         }
     }
+}
+
+/** HH:mm, next to the speed (so it doesn't take room from the rail's buttons). */
+@Composable
+fun Clock(fontSize: TextUnit, modifier: Modifier = Modifier) {
+    var now by remember { mutableStateOf(Date()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = Date()
+            delay(10_000)
+        }
+    }
+    Text(
+        SimpleDateFormat("HH:mm", Locale.getDefault()).format(now),
+        color = TextSecondary, fontSize = fontSize, fontWeight = FontWeight.Bold, maxLines = 1,
+        modifier = modifier.testTag("clock")
+    )
 }
 
 @Composable

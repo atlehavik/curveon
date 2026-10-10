@@ -37,9 +37,6 @@ import com.curveon.ui.theme.*
 import com.curveon.ui.viewmodel.DashboardViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Android Auto-inspired cockpit: a slim rail on the left, the map, and an adaptive column with
@@ -779,7 +776,6 @@ private fun Rail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
     ) {
-        Clock()
         buttons()
         Spacer(Modifier.weight(1f))
         mapToggle()
@@ -788,7 +784,6 @@ private fun Rail(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Clock()
         buttons()
         mapToggle()
     }
@@ -815,21 +810,6 @@ private fun RailButton(
             .testTag(tag),
         contentAlignment = Alignment.Center
     ) { Icon(icon, description, tint = tint, modifier = Modifier.size(28.dp)) }
-}
-
-@Composable
-private fun Clock() {
-    var now by remember { mutableStateOf(Date()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            now = Date()
-            delay(10_000)
-        }
-    }
-    Text(
-        SimpleDateFormat("HH:mm", Locale.getDefault()).format(now),
-        color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold
-    )
 }
 
 /**
