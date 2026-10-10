@@ -11,8 +11,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 Speed, limit, clock (and speed camera / GPS lines) are always on the map now, top right. Settings →
 Engine: engine panel on/off, the OBD2 adapter (paired Bluetooth devices, or Demo), and which values
 (fuel, RPM, coolant, battery). Tablet: panel above the music; phone upright: music bottom left,
-panel bottom right, map up to the top. Checked in the emulator with Demo. Installed on the X7;
-the Pixel was not connected at the time.
+panel bottom right, map up to the top. Checked in the emulator with Demo. Installed on both devices.
 
 - [ ] Pair the ELM327 adapter in Android's Bluetooth settings on the X7, pick it in Settings →
       Engine, ignition on: status says Connected and RPM moves. `adb logcat -s CurveonObd`
