@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Two fingers on the map zoom, never drag the route
+
+While editing or building a trip, a pinch whose first finger lands on the route line or a point no
+longer starts a detour: as soon as the second finger touches, the drag is dropped and the map
+zooms/turns. Checked in the emulator with a scripted two-finger pinch starting on the line (route
+unchanged, map zoomed). Installed on the Pixel; the X7 still needs the install from the entry below.
+
+- [ ] Pixel/X7: pinch-zoom with one finger starting on the blue line: no dashed detour, no new point.
+
 ## 2026-10-10 — "+ Stop" on the map asks: on the way, or the new end?
 
 Picking stops on the map from "+ Stop" on a trip that already has an end: the first tap asks "A

@@ -345,6 +345,19 @@ fun CurveonMapView(
                         if (had) clearDrag()
                         had
                     }
+                    // A second finger: zooming or turning the map, not editing. Let go of the line or
+                    // point and hand the gesture to the map, which never saw the first finger go down.
+                    android.view.MotionEvent.ACTION_POINTER_DOWN -> {
+                        cancelLongPress(v)
+                        if (grabbed == null) return@setOnTouchListener false
+                        grabbed = null
+                        clearDrag()
+                        val down = android.view.MotionEvent.obtain(e.downTime, e.eventTime, android.view.MotionEvent.ACTION_DOWN,
+                            e.getX(0), e.getY(0), e.metaState)
+                        v.onTouchEvent(down)
+                        down.recycle()
+                        false
+                    }
                     else -> grabbed != null
                 }
             }
