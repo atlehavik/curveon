@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -130,76 +131,83 @@ fun RoutePreviewSheet(
             SmallIcon(Icons.Default.Close, stringResource(R.string.cancel), onClose)
         }
 
-        // A→B: where from (the planner), the stops with how long to each, and "+ Stop".
-        if (goal is NavigationGoal.Destination) {
-            val route = preview.selectedRoute
-            val legs = remember(route, goal.stops) { route?.let { stopTimes(goal.stops, it) } }
-            var stopMenu by remember { mutableStateOf<Int?>(null) }
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PlanChip(
-                    Icons.Default.TripOrigin,
-                    goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
-                    if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
-                )
-                var number = 0
-                goal.stops.forEachIndexed { i, s ->
-                    val leg = legs?.getOrNull(i)?.let { sec -> " · %d:%02d".format((sec / 3600).toInt(), ((sec % 3600) / 60).toInt()) } ?: ""
-                    // Points the route was dragged through: a quieter chip, no number.
-                    if (s.via) PlanChip(Icons.Default.Gesture, s.name, TextSecondary, "preview_stop_$i", onClick = { stopMenu = i })
-                    else PlanChip(null, "${++number}. ${s.name}$leg", NeonAmber, "preview_stop_$i", onClick = { stopMenu = i })
+        // Everything between the title and GO scrolls when the sheet runs out of height (a phone
+        // held sideways with a gravel warning), so the options and GO always stay on screen.
+        Column(
+            Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // A→B: where from (the planner), the stops with how long to each, and "+ Stop".
+            if (goal is NavigationGoal.Destination) {
+                val route = preview.selectedRoute
+                val legs = remember(route, goal.stops) { route?.let { stopTimes(goal.stops, it) } }
+                var stopMenu by remember { mutableStateOf<Int?>(null) }
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    PlanChip(
+                        Icons.Default.TripOrigin,
+                        goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
+                        if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
+                    )
+                    var number = 0
+                    goal.stops.forEachIndexed { i, s ->
+                        val leg = legs?.getOrNull(i)?.let { sec -> " · %d:%02d".format((sec / 3600).toInt(), ((sec % 3600) / 60).toInt()) } ?: ""
+                        // Points the route was dragged through: a quieter chip, no number.
+                        if (s.via) PlanChip(Icons.Default.Gesture, s.name, TextSecondary, "preview_stop_$i", onClick = { stopMenu = i })
+                        else PlanChip(null, "${++number}. ${s.name}$leg", NeonAmber, "preview_stop_$i", onClick = { stopMenu = i })
+                    }
+                    PlanChip(Icons.Default.AddLocationAlt, stringResource(R.string.stop_short), NeonAmber, "preview_add_stop", onAddStop, outlined = true)
                 }
-                PlanChip(Icons.Default.AddLocationAlt, stringResource(R.string.stop_short), NeonAmber, "preview_add_stop", onAddStop, outlined = true)
+                if (goal.start != null) Text(stringResource(R.string.preview_planned_hint), color = TextMuted, fontSize = 12.sp, maxLines = 1)
+                stopMenu?.let { i ->
+                    StopMenuDialog(
+                        name = goal.stops.getOrNull(i)?.name ?: "",
+                        canMoveEarlier = i > 0, canMoveLater = i < goal.stops.lastIndex,
+                        onMove = { d -> stopMenu = null; onMoveStop(i, d) },
+                        onRemove = { stopMenu = null; onRemoveStop(i) },
+                        onDismiss = { stopMenu = null },
+                        onChangePlace = { stopMenu = null; onChangeStop(i) },
+                        onAddBefore = { stopMenu = null; onAddStopBefore(i) }
+                    )
+                }
             }
-            if (goal.start != null) Text(stringResource(R.string.preview_planned_hint), color = TextMuted, fontSize = 12.sp, maxLines = 1)
-            stopMenu?.let { i ->
-                StopMenuDialog(
-                    name = goal.stops.getOrNull(i)?.name ?: "",
-                    canMoveEarlier = i > 0, canMoveLater = i < goal.stops.lastIndex,
-                    onMove = { d -> stopMenu = null; onMoveStop(i, d) },
-                    onRemove = { stopMenu = null; onRemoveStop(i) },
-                    onDismiss = { stopMenu = null },
-                    onChangePlace = { stopMenu = null; onChangeStop(i) },
-                    onAddBefore = { stopMenu = null; onAddStopBefore(i) }
-                )
-            }
-        }
 
-        // The alternatives
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            preview.candidates.forEachIndexed { i, c ->
-                CandidateCard(c, selected = i == preview.selected, single = preview.candidates.size == 1,
-                    showArrival = (goal as? NavigationGoal.Destination)?.start == null, modifier = Modifier.weight(1f)) { onSelect(i) }
+            // The alternatives
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                preview.candidates.forEachIndexed { i, c ->
+                    CandidateCard(c, selected = i == preview.selected, single = preview.candidates.size == 1,
+                        showArrival = (goal as? NavigationGoal.Destination)?.start == null, modifier = Modifier.weight(1f)) { onSelect(i) }
+                }
             }
-        }
 
-        // Ferries switched off but the route still has one: say so plainly, and why.
-        val ferries = preview.selectedRoute?.ferryCount ?: 0
-        if (options.avoidFerries && ferries > 0) {
-            Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(NeonAmber.copy(alpha = 0.16f))
-                    .border(1.dp, NeonAmber, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp)
-                    .testTag("preview_ferry_warning"),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.DirectionsBoat, null, tint = NeonAmber, modifier = Modifier.size(22.dp))
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    pluralStringResource(R.plurals.preview_includes_ferries, ferries, ferries) + " " + when (goal) {
-                        is NavigationGoal.Roundtrip -> stringResource(R.string.preview_ferry_loop)
-                        else -> stringResource(R.string.preview_ferry_road)
-                    },
-                    color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold
-                )
+            // Ferries switched off but the route still has one: say so plainly, and why.
+            val ferries = preview.selectedRoute?.ferryCount ?: 0
+            if (options.avoidFerries && ferries > 0) {
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(NeonAmber.copy(alpha = 0.16f))
+                        .border(1.dp, NeonAmber, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp)
+                        .testTag("preview_ferry_warning"),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.DirectionsBoat, null, tint = NeonAmber, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        pluralStringResource(R.plurals.preview_includes_ferries, ferries, ferries) + " " + when (goal) {
+                            is NavigationGoal.Roundtrip -> stringResource(R.string.preview_ferry_loop)
+                            else -> stringResource(R.string.preview_ferry_road)
+                        },
+                        color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold
+                    )
+                }
             }
-        }
 
-        // Tarmac asked for but the route still has gravel: the router only takes it when there's no
-        // tarmac road there short of a huge detour, and a cruiser can't ride it, so say so loudly.
-        preview.selectedRoute?.let { route -> if (options.surface == SurfacePreference.PAVED) ForcedGravelWarning(route) }
-        preview.fetching?.let { Text(it, color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+            // Tarmac asked for but the route still has gravel: the router only takes it when there's no
+            // tarmac road there short of a huge detour, and a cruiser can't ride it, so say so loudly.
+            preview.selectedRoute?.let { route -> if (options.surface == SurfacePreference.PAVED) ForcedGravelWarning(route) }
+            preview.fetching?.let { Text(it, color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+        }
 
         // Options + GO; upright on a phone GO gets a row of its own, full width.
         val chips: @Composable (Modifier) -> Unit = { m ->

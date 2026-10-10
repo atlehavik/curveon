@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — The route preview scrolls instead of losing GO
+
+When the route preview runs out of height (the Pixel in landscape with a gravel warning), the part
+between the title and the options scrolls; the options and GO always stay at the bottom. Checked in
+the emulator at Pixel size, landscape. Installed on both devices.
+
+- [ ] Pixel landscape: the trip with the gravel warning shows Tarmac/Ferries/Motorways and GO;
+  swipe the cards up to read the whole warning.
+
 ## 2026-10-10 — The clock sits by the speed
 
 The clock moved from the rail to the right end of the speed card (and of the speed box on the
