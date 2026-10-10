@@ -987,15 +987,24 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )
+    // The line to follow: thick when riding zoomed in, thinner zoomed out so the map still shows.
+    fun routeWidth(z10: Float, z14: Float, z17: Float) = lineWidth(
+        org.maplibre.android.style.expressions.Expression.interpolate(
+            org.maplibre.android.style.expressions.Expression.linear(), org.maplibre.android.style.expressions.Expression.zoom(),
+            org.maplibre.android.style.expressions.Expression.stop(10, z10),
+            org.maplibre.android.style.expressions.Expression.stop(14, z14),
+            org.maplibre.android.style.expressions.Expression.stop(17, z17)
+        )
+    )
     s.addLayer(
         LineLayer("$ROUTE-casing", ROUTE).withProperties(
-            lineColor(if (dark) "#00363D" else "#FFFFFF"), lineWidth(11f),
+            lineColor(if (dark) "#00363D" else "#FFFFFF"), routeWidth(10f, 16f, 23f),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )
     s.addLayer(
         LineLayer("$ROUTE-line", ROUTE).withProperties(
-            lineColor(if (dark) "#00E5FF" else "#0091EA"), lineWidth(7f),
+            lineColor(if (dark) "#00E5FF" else "#0091EA"), routeWidth(6.5f, 11f, 17f),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )

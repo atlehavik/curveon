@@ -6,6 +6,17 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Music pill no longer covers the trip bar; no crash turning the phone
+
+In the full-screen map with music playing, the music pill sat on top of the trip bar (arrival,
+km and time left) where both don't fit side by side (the phone, upright): it now moves up above
+it. Turning the phone while navigating crashed the app (the map read road names before it had
+drawn after the turn); it now waits. Checked in the emulator at Pixel size; installed on the X7 and the Pixel.
+
+- [ ] Phone upright, navigating, full map, music playing: the pill sits above the trip bar.
+- [ ] Turn the phone while navigating: no crash, the road name after the next turn still shows.
+- [ ] The blue route line is thicker when riding (about twice as wide zoomed in, as before zoomed out): easy to follow, not hiding the road names?
+
 ## 2026-10-10 — Roundtrip in "Where to?": draw the area, start elsewhere, edit the loop
 
 The Roundtrip button on the rail is gone: Roundtrip is now a row in "Where to?", shown only when
@@ -14,12 +25,16 @@ one finger draws the area to ride in (two fingers still move the map), and on le
 inside it is worked out (Shuffle gives another). "From my position" in "Where to?" (or the start
 chip on the loop's sheet) starts the loop somewhere else. The pen icon on a loop's sheet turns it
 into an ordinary trip with via points about every 8 km, to drag and change like any other.
-Checked in the emulator (Haugesund, Leirvik); installed on the X7.
+Update: a found loop now *is* such a trip straight away – the same sheet as "Where to?" (start,
++ Stop, the via points, Fastest/Curvy/Super curvy, edit on map), titled "Roundtrip from …", with
+Shuffle for another loop; changing the start plans a new loop from there.
+Checked in the emulator (Haugesund, Leirvik); installed on the X7 and the Pixel.
 
 - [ ] Draw an area with a finger on the X7: the stroke follows the finger, two fingers pan/zoom.
 - [ ] How long a drawn loop takes on the X7 (`adb logcat -s Curveon CurveonPlan` → "Routed Roundtrip in … s"; 1–15 s on the PC).
 - [ ] Draw round Bømlo/Stord from home: does the loop use the area and stay off dead ends?
-- [ ] Pen icon on a loop → trip with points; drag one, the rest of the loop stays.
+- [ ] A loop's sheet looks like a planned trip; drag a point on the map, the rest of the loop stays.
+- [ ] Shuffle on a loop (also after changing road style) gives another loop.
 
 ## 2026-10-10 — The map stays put while planning; a button shows the whole trip
 
