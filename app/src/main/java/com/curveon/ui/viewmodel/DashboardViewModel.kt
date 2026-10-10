@@ -693,6 +693,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         return when (goal) {
             is NavigationGoal.Destination -> {
                 goal.saved?.let { return it.title }
+                if (goal.loop != null) {
+                    val km = ((route?.distanceMeters ?: 0.0) / 1000).roundToInt()
+                    return named(Stop(goal.name, goal.destination))?.let { str(R.string.loop_name_from, it, km) } ?: str(R.string.loop_name, km)
+                }
                 val from = goal.start?.let { named(it) } ?: route?.points?.firstOrNull()?.let { placeName(it.lat, it.lon) }
                     ?: placeName(here.latitude, here.longitude)
                 val to = named(Stop(goal.name, goal.destination)) ?: goal.name
@@ -850,11 +854,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             routeOptions(config.roadType, config.groundPreference, config.avoidFerries, config.avoidHighways, config.avoidTolls),
             start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) }
         )
-
-    /** The previewed loop as an ordinary trip with via points, to change on the map like any other. */
-    fun roundtripToTrip() = viewModelScope.launch {
-        navigator.roundtripToTrip { describePoint(GeoPoint(it.lat, it.lon)) }
-    }
 
     fun previewRoundtrip(config: RoundtripConfig, start: GeoPoint? = null, startName: String = "") {
         navigator.previewRoundtrip(
@@ -1035,7 +1034,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     // Declared after gpxImporter and _gpxMessage so they exist when this runs.
-    init { importGpxInbox(); connectObd() }
+    init {
+        importGpxInbox(); connectObd()
+        navigator.describePlace = { describePoint(GeoPoint(it.lat, it.lon)) }
+    }
 
     /** GPX files copied over USB into the gpx/ folder are imported at startup. */
     private fun importGpxInbox() = viewModelScope.launch {

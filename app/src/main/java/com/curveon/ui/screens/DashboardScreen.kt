@@ -246,13 +246,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val planGoal = preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination
     LaunchedEffect(planGoal == null) { if (planGoal == null) editStopMenu = null }
     /** Edit the planned trip on the map: the same as picking stops there. */
-    val editOnMap: () -> Unit = {
-        // A loop becomes an ordinary trip through points along it first.
-        if (preview?.goal is com.curveon.data.routing.NavigationGoal.Roundtrip) scope.launch {
-            viewModel.roundtripToTrip().join()
-            startMapPick(SearchPurpose.STOP)
-        } else startMapPick(SearchPurpose.STOP)
-    }
+    val editOnMap: () -> Unit = { startMapPick(SearchPurpose.STOP) }
     androidx.activity.compose.BackHandler(enabled = mapPick != null) { endMapPick() }
     androidx.activity.compose.BackHandler(enabled = sketching) { sketching = false }
 
@@ -451,7 +445,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
             }) else null,
             pickedPoint = picked?.first,
-            sketch = (preview?.goal as? com.curveon.data.routing.NavigationGoal.Roundtrip)?.area?.map { GeoPoint(it.lat, it.lon) }.orEmpty(),
+            sketch = when (val g = preview?.goal) {
+                is com.curveon.data.routing.NavigationGoal.Roundtrip -> g.area
+                is com.curveon.data.routing.NavigationGoal.Destination -> g.loop?.area
+                else -> null
+            }?.map { GeoPoint(it.lat, it.lon) }.orEmpty(),
             onSketch = if (sketching) ({ stroke ->
                 sketching = false
                 viewModel.previewAreaRoundtrip(stroke, lastRoundtrip, roundtripStart?.first, roundtripStart?.second ?: "")

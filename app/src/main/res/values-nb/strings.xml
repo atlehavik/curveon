@@ -320,6 +320,7 @@
     <string name="roundtrip_draw">Tegn område</string>
     <string name="roundtrip_draw_hint">Tegn området du vil kjøre i med én finger. To fingre flytter kartet.</string>
     <string name="roundtrip_search_subtitle">Etter retning og lengde, eller i et område du tegner</string>
+    <string name="preview_loop_from">Rundtur fra %1$s</string>
     <string name="preview_area_roundtrip_title">Rundtur i området</string>
     <string name="roundtrip_subtitle">En runde fra der du er, omtrent i den retningen</string>
     <string name="roundtrip_distance">Lengde</string>

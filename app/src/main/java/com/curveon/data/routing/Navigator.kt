@@ -99,7 +99,9 @@ sealed interface NavigationGoal {
         val start: Stop? = null,
         /** A saved route's exact line: ridden as it is until the trip is changed. */
         val fixedLine: List<LatLon>? = null,
-        val saved: SavedRef? = null
+        val saved: SavedRef? = null,
+        /** A loop made into this trip once found (its stops are points along it): Shuffle plans another. */
+        val loop: Roundtrip? = null
     ) : NavigationGoal {
         override val title get() = name
     }
@@ -239,8 +241,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     /** Plan the previewed trip from [start] instead of from here (null = from here again). */
     fun setPreviewStart(start: Stop?) {
-        val loop = _state.value.preview?.goal as? NavigationGoal.Roundtrip
-        if (loop != null) preview(loop.copy(start = start)) else editPreview { it.copy(start = start) }
+        // A loop from somewhere else is another loop.
+        val goal = _state.value.preview?.goal
+        val loop = goal as? NavigationGoal.Roundtrip ?: (goal as? NavigationGoal.Destination)?.loop
+        if (loop != null) preview(loop.copy(start = start, options = goal!!.options)) else editPreview { it.copy(start = start) }
     }
 
     /** Make [stop] the previewed trip's destination, keeping its stops and start. */
@@ -291,16 +295,17 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     fun previewAreaRoundtrip(area: List<LatLon>, options: RouteOptions, start: Stop? = null) =
         preview(NavigationGoal.Roundtrip(0.0, 0.0, options, name = context.getString(R.string.roundtrip), area = area, start = start))
 
+    /** Names places (for the via points of a loop made into a trip); set by whoever has the search. */
+    var describePlace: suspend (LatLon) -> String = { "" }
+
     /**
-     * The previewed loop as an ordinary trip, to change it like one: points along it become via
-     * points (about one every 8 km), ridden back to where it starts. Another loop is no longer offered.
+     * A loop as soon as it is found becomes an ordinary trip, to change like one (stops, road style,
+     * on the map): points along it become via points (about one every 8 km), ridden back to where
+     * it starts. It remembers the loop, so Shuffle can plan another.
      */
-    suspend fun roundtripToTrip(describe: suspend (LatLon) -> String) {
-        val p = _state.value.preview ?: return
-        val g = p.goal as? NavigationGoal.Roundtrip ?: return
-        val route = p.selectedRoute ?: return
+    private suspend fun tripFromLoop(g: NavigationGoal.Roundtrip, route: Route) {
         val first = LatLon(route.points.first().lat, route.points.first().lon)
-        val home = g.start ?: Stop(describe(first), first)
+        val home = g.start ?: Stop(describePlace(first), first)
         val count = (route.distanceMeters / LOOP_VIA_SPACING_M).toInt().coerceIn(4, 12)
         var next = 0
         val points = buildList {
@@ -308,13 +313,19 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 add(LatLon(pt.lat, pt.lon)); next++
             }
         }
-        val vias = points.map { Stop(describe(it), it, via = true) }
+        val vias = points.map { Stop(describePlace(it), it, via = true) }
         // Still the same loop on screen?
         if (_state.value.preview?.goal != g) return
         previewHistory.clear()
         // The loop's road style stays picked.
-        preview(NavigationGoal.Destination(home.name, home.point, g.options, vias, g.start),
-            keepSelection = RoadStyle.entries.indexOf(g.options.roadStyle), keepHistory = true)
+        val style = RoadStyle.entries.indexOf(g.options.roadStyle)
+        preview(NavigationGoal.Destination(home.name, home.point, g.options, vias, g.start, loop = g), keepSelection = style, keepHistory = true)
+        // The loop stays on the map until its own style's route through the points is in.
+        synchronized(this) {
+            val p = _state.value.preview ?: return
+            if (p.candidates[style].route == null && p.candidates[style].error == null) _state.value = _state.value.copy(
+                preview = p.copy(candidates = p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) }))
+        }
     }
 
     fun previewTrack(name: String, points: List<LatLon>, options: RouteOptions) =
@@ -353,8 +364,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     /** Another loop in the same direction and length. */
     fun shuffleRoundtrip() {
-        val g = _state.value.preview?.goal as? NavigationGoal.Roundtrip ?: return
-        preview(g.copy(variant = g.variant + 1))
+        val goal = _state.value.preview?.goal
+        val g = goal as? NavigationGoal.Roundtrip ?: (goal as? NavigationGoal.Destination)?.loop ?: return
+        preview(g.copy(variant = g.variant + 1, options = goal!!.options))
     }
 
     fun updatePreviewOptions(transform: (RouteOptions) -> RouteOptions) {
@@ -452,6 +464,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                     }
                 }
             }.awaitAll()
+            // A loop found: on as an ordinary trip.
+            val found = _state.value.preview?.takeIf { it.goal == goal }?.selectedRoute
+            if (goal is NavigationGoal.Roundtrip && found != null) return@launch tripFromLoop(goal, found)
             // If the pre-selected style failed, fall back to one that worked.
             val p = _state.value.preview ?: return@launch
             if (p.selectedRoute == null) p.candidates.indexOfFirst { it.route != null }.takeIf { it >= 0 }?.let { selectCandidate(it) }

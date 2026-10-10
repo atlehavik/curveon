@@ -28,7 +28,7 @@ object SavedRoutes {
             groundType = o.surface.name,
             curvinessScore = route.curviness,
             elevationGainMeters = route.ascentMeters.toInt(),
-            isRoundtrip = goal is NavigationGoal.Roundtrip
+            isRoundtrip = goal is NavigationGoal.Roundtrip || (goal as? NavigationGoal.Destination)?.loop != null
         )
         return when (goal) {
             is NavigationGoal.Destination -> base.copy(

@@ -117,7 +117,11 @@ fun RoutePreviewSheet(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 when (goal) {
-                    is NavigationGoal.Destination -> goal.name
+                    is NavigationGoal.Destination -> when {
+                        goal.loop?.area != null -> stringResource(R.string.preview_area_roundtrip_title)
+                        goal.loop != null -> stringResource(R.string.preview_loop_from, goal.name)
+                        else -> goal.name
+                    }
                     is NavigationGoal.Roundtrip -> if (goal.area != null) stringResource(R.string.preview_area_roundtrip_title)
                         else stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
                     is NavigationGoal.Track -> goal.name
@@ -125,10 +129,9 @@ fun RoutePreviewSheet(
                 color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
             )
-            if (goal is NavigationGoal.Roundtrip) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
+            if (goal is NavigationGoal.Roundtrip || (goal as? NavigationGoal.Destination)?.loop != null) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
-            // A loop too: it becomes an ordinary trip through points along it, to change like one.
-            if (goal !is NavigationGoal.Track && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
+            if (goal is NavigationGoal.Destination && preview.selectedRoute != null) SmallIcon(Icons.Default.Gesture, stringResource(R.string.edit_on_map), onEditOnMap)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
             // A trip on the map may be half an hour of planning: ask before throwing it away.
@@ -304,7 +307,11 @@ private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo:
         Column(Modifier.weight(1f)) {
             Text(
                 when (goal) {
-                    is NavigationGoal.Destination -> goal.name
+                    is NavigationGoal.Destination -> when {
+                        goal.loop?.area != null -> stringResource(R.string.preview_area_roundtrip_title)
+                        goal.loop != null -> stringResource(R.string.preview_loop_from, goal.name)
+                        else -> goal.name
+                    }
                     is NavigationGoal.Roundtrip -> if (goal.area != null) stringResource(R.string.preview_area_roundtrip_title)
                         else stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
                     is NavigationGoal.Track -> goal.name
