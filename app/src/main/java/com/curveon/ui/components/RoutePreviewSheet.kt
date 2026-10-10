@@ -28,7 +28,10 @@ import androidx.compose.animation.core.tween
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
@@ -303,17 +306,25 @@ private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo:
     }
 }
 
-/** Starts the ride on the chosen route. */
+/** Starts the ride on the chosen route: arrow and "GO" when there's room, just the arrow when squeezed. */
 @Composable
 private fun GoButton(ready: Boolean, onGo: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
+    val label = stringResource(R.string.preview_go)
+    val labelStyle = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Black)
+    val labelWidth = rememberTextMeasurer().measure(label, labelStyle, maxLines = 1).size.width
+    val tint = if (ready) OnCyan else TextMuted
+    BoxWithConstraints(
         modifier.height(56.dp).widthIn(min = 96.dp).clip(RoundedCornerShape(28.dp))
             .background(if (ready) ElectricCyan else CockpitSurfaceVariant)
             .clickable(enabled = ready, onClick = onGo).padding(horizontal = 22.dp).testTag("preview_go_btn"),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center
+        contentAlignment = Alignment.Center
     ) {
-        // Just the arrow: a word doesn't fit everywhere (phone landscape, Norwegian "KJØR").
-        Icon(Icons.Default.Navigation, stringResource(R.string.preview_go), tint = if (ready) OnCyan else TextMuted, modifier = Modifier.size(32.dp))
+        val fits = constraints.maxWidth >= labelWidth + with(LocalDensity.current) { (24 + 8).dp.roundToPx() }
+        if (fits) Row(Modifier.widthIn(min = 96.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            Icon(Icons.Default.Navigation, null, tint = tint)
+            Spacer(Modifier.width(8.dp))
+            Text(label, color = tint, style = labelStyle, maxLines = 1)
+        } else Icon(Icons.Default.Navigation, label, tint = tint, modifier = Modifier.size(32.dp))
     }
 }
 
