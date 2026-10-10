@@ -30,8 +30,8 @@ import com.curveon.routing.SurfacePreference
 import com.curveon.ui.theme.*
 
 /**
- * The three route options, the same everywhere routes are planned: one chip cycling
- * Tarmac only → Mixed → Gravel → Offroad, and Ferries / Motorways saying in words whether they
+ * The three route options, the same everywhere routes are planned: a surface list
+ * (Tarmac only, Mixed, Gravel, Offroad), and Ferries / Motorways saying in words whether they
  * are used ("Motorways OK") or avoided ("No motorways", amber, icon crossed out).
  */
 @Composable
@@ -142,19 +142,28 @@ fun LoopMaxChip(maxKm: Int?, onPick: (Int?) -> Unit) {
     }
 }
 
-/** The surface chip on its own (Tarmac only → Mixed → Gravel → Offroad), as in [RouteOptionChips]. */
+/** The surface: tap for the list (Tarmac only, Mixed, Gravel, Offroad); the route is only worked out again once one is picked. */
 @Composable
 fun SurfaceChip(surface: SurfacePreference, onSurface: (SurfacePreference) -> Unit) {
-    val label = when (surface) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    @Composable fun label(s: SurfacePreference) = when (s) {
         SurfacePreference.PAVED -> stringResource(R.string.surface_tarmac_only)
         SurfacePreference.MIXED -> stringResource(R.string.surface_mixed)
         SurfacePreference.GRAVEL -> stringResource(R.string.surface_gravel)
         SurfacePreference.OFFROAD -> stringResource(R.string.surface_offroad)
     }
-    OptionChip(label, active = surface != SurfacePreference.PAVED, onClick = {
-        onSurface(SurfacePreference.entries[(surface.ordinal + 1) % SurfacePreference.entries.size])
-    }) {
-        Icon(Icons.Default.Landscape, null, tint = if (surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
+    Box {
+        OptionChip(label(surface), active = surface != SurfacePreference.PAVED, onClick = { open = true }) {
+            Icon(Icons.Default.Landscape, null, tint = if (surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
+        }
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+            SurfacePreference.entries.forEach { s ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(label(s), color = if (s == surface) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                    onClick = { open = false; if (s != surface) onSurface(s) }
+                )
+            }
+        }
     }
 }
 
