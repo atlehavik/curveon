@@ -161,6 +161,11 @@ fun CurveonMapView(
     val hasOfflineMap = remember(mapVersion) { offlineMaps.installedMaps().isNotEmpty() }
 
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
+    /**
+     * The map has drawn a frame and isn't destroyed: only then may rendered features be read
+     * (before, e.g. just after turning the phone, MapLibre's renderer isn't there and it crashes).
+     */
+    var canQuery by remember { mutableStateOf(false) }
     var style by remember { mutableStateOf<Style?>(null) }
     // Camera: follows the rider (north up, heading up or 3D) until the rider pans the map.
     val prefs = remember { context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE) }
@@ -211,11 +216,13 @@ fun CurveonMapView(
             lifecycleOwner.lifecycle.removeObserver(observer)
             mapView.onPause()
             mapView.onStop()
+            canQuery = false
             mapView.onDestroy()
         }
     }
 
     LaunchedEffect(mapView) {
+        mapView.addOnDidFinishRenderingFrameListener { _, _, _ -> if (!canQuery) canQuery = true }
         mapView.getMapAsync { m ->
             m.uiSettings.apply {
                 isAttributionEnabled = true
@@ -241,6 +248,7 @@ fun CurveonMapView(
                 onTapState.value?.let { tap -> tap(GeoPoint(p.latitude, p.longitude)); return@addOnMapClickListener true }
                 // A tap on a GPX waypoint shows it. Only the rail button switches map/dashboard,
                 // so a stray tap on the map never takes the dashboard away.
+                if (!canQuery) return@addOnMapClickListener false
                 val pt = m.projection.toScreenLocation(p)
                 val hit = m.queryRenderedFeatures(RectF(pt.x - 24, pt.y - 24, pt.x + 24, pt.y + 24), "$GPX_POIS-dots", "$GPX_POIS-icons").firstOrNull()
                 val poi = hit?.getNumberProperty("i")?.toInt()?.let { poisState.value.getOrNull(it) }
@@ -738,7 +746,8 @@ fun CurveonMapView(
     LaunchedEffect(style) { surfaceBounds = null }
 
     // Road name after the next turn, read from the vector tiles once that spot is on screen.
-    LaunchedEffect(map, style, roadNameProbe, cameraIdleTick) {
+    LaunchedEffect(map, style, roadNameProbe, cameraIdleTick, canQuery) {
+        if (!canQuery) return@LaunchedEffect
         val m = map ?: return@LaunchedEffect
         val s = style ?: return@LaunchedEffect
         val (index, point) = roadNameProbe ?: return@LaunchedEffect
