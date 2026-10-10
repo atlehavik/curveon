@@ -454,7 +454,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private fun calculate(goal: NavigationGoal, from: LatLon, style: RoadStyle?): Route = when (goal) {
         is NavigationGoal.Destination -> if (goal.fixedLine != null) TrackFollower(engine).route(from, goal.fixedLine, goal.options) else engine.route(
             listOf(from) + goal.stops.map { it.point } + goal.destination,
-            goal.options.copy(roadStyle = style ?: goal.options.roadStyle)
+            goal.options.copy(roadStyle = style ?: goal.options.roadStyle),
+            visitEveryVia = true
         )
         is NavigationGoal.Roundtrip -> RoundtripPlanner(engine) { android.util.Log.d("CurveonPlan", it) }.plan(
             from, goal.distanceKm, goal.directionDeg, goal.options,
@@ -678,7 +679,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val newGoal = if (keepStops) g else g.copy(stops = emptyList())
         val waypoints = newGoal.stops.map { it.point } + newGoal.destination
         val heading = lastHeading
-        newGoal to (if (heading != null) offRoute.fromHere(pos, heading, waypoints, g.options) else engine.route(listOf(pos) + waypoints, g.options))
+        newGoal to (if (heading != null) offRoute.fromHere(pos, heading, waypoints, g.options) else engine.route(listOf(pos) + waypoints, g.options, visitEveryVia = true))
     }
 
     /** Wrong-turn answer on a loop or track: join it again further ahead without turning round. */
@@ -729,7 +730,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      * unless turning round is clearly quicker (more than the quiet-rejoin slack in Settings).
      */
     private fun routeFromHere(pos: LatLon, waypoints: List<LatLon>, options: RouteOptions): Route {
-        val free = engine.route(listOf(pos) + waypoints, options)
+        val free = engine.route(listOf(pos) + waypoints, options, visitEveryVia = true)
         val heading = lastHeading ?: return free
         if (!OffRoutePlanner.turnsBack(free, pos, heading) && !OffRoutePlanner.uTurnsAhead(free)) return free
         val ahead = offRoute.forwardOnly(pos, heading, waypoints, options).second ?: return free

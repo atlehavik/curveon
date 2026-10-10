@@ -45,9 +45,15 @@ class BRouterEngine(
          * With Tarmac, tracks may still be ridden when they are the only way to a place (a farm,
          * a cabin, a forest road home). Off false for ways back to a route: those should be roads.
          */
-        tracksAsLastResort: Boolean = true
+        tracksAsLastResort: Boolean = true,
+        /**
+         * The via points are stops to ride to: reach each one even down a dead end and back. Without
+         * it BRouter cuts such an out-and-back short and rides past the stop (fine for points that
+         * only shape the route, like a track's).
+         */
+        visitEveryVia: Boolean = false
     ): Route {
-        val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false)
+        val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false, visitEveryVia)
         // Start and end on the rider's own road even where the map doesn't join it to the network.
         return OwnRoad { pts, look -> routeOnce(pts, options, null, avoidedFerryCost, null, emptyList(), tracksAsLastResort, look) }.join(waypoints, r)
     }
@@ -61,7 +67,8 @@ class BRouterEngine(
         noGo: List<NoGo>,
         tracksAsLastResort: Boolean,
         /** Paths count as roads: only to find where the rider's own road meets one (see [OwnRoad]). */
-        lookPastPaths: Boolean
+        lookPastPaths: Boolean,
+        visitEveryVia: Boolean = false
     ): Route {
         require(waypoints.size >= 2) { "Need at least start and destination" }
         val nodes = waypoints.mapIndexed { i, p ->
@@ -75,6 +82,7 @@ class BRouterEngine(
             localFunction = File(profileDir, PROFILE_FILE).absolutePath
             keyValues = profileParams(options, avoidedFerryCost, tracksAsLastResort, lookPastPaths)
             waypointCatchingRange = viaCatchingRangeMeters ?: DEFAULT_CATCHING_RANGE_M
+            allowSamewayback = visitEveryVia
             memoryclass = memoryClassMb
             if (startHeadingDeg != null) {
                 startDirection = ((startHeadingDeg.roundToInt() % 360) + 360) % 360
