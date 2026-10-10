@@ -6,6 +6,17 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — The map stays put while planning; a button shows the whole trip
+
+Planning a trip no longer zooms the map out by itself each time the route changes (picking places,
+stops, detours, route options): it stays where you put it. The new button top right (four arrows,
+under the speed) fits the whole trip, like zoom extents. Only when a trip first appears and isn't
+already in view is it fitted once; your own position is only included when the trip starts near
+you. Checked in the emulator; installed on the X7.
+
+- [ ] Plan a trip far from where you are, pick places on the map: the map doesn't jump.
+- [ ] The four-arrow button shows the whole trip above the sheet.
+
 ## 2026-10-10 — Rider glides on the map, quicker off the line after a wrong turn, new 3D, ride trace
 
 The arrow and the map now move every frame (carried forward between the once-a-second GPS fixes,

@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
@@ -471,26 +472,62 @@ fun CurveonMapView(
         if (editor?.busy != true) s.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
     }
 
-    // Preview: show the whole trip. Leaving preview hands the camera back to following.
+    // Preview: the camera stays where the rider puts it while they build or change the trip; the
+    // fit button (zoom to extents) shows the whole of it. Only when a trip first appears and isn't
+    // already in view is it fitted by itself. Leaving preview hands the camera back to following.
     val previewPoints = remember(previewRoutes) { previewRoutes.flatMap { it.points } }
-    LaunchedEffect(map, previewPoints.size, previewSheetMinimized, editor == null) {
-        val m = map ?: return@LaunchedEffect
-        if (previewPoints.size < 2) return@LaunchedEffect
-        following = false
-        // Editing (or building point by point): the rider has zoomed in on the part they're changing;
-        // leave the camera there until they are done.
-        if (editorState.value != null) return@LaunchedEffect
-        val b = LatLngBounds.Builder()
-        previewPoints.forEach { b.include(LatLng(it.latitude, it.longitude)) }
-        b.include(LatLng(location.latitude, location.longitude))
-        // Fit the trip into the part of the map above the preview sheet (about half the height,
-        // or just its one-line bar when folded down).
+    var fitTick by remember { mutableIntStateOf(0) }
+    val fitTrip: (Boolean) -> Unit = fit@{ onlyIfOutOfView ->
+        val m = map ?: return@fit
+        val pts = previewPoints
+        if (pts.size < 2) return@fit
         val h = mapView.height.takeIf { it > 0 } ?: 1000
-        val bottom = if (previewSheetMinimized) (100 * mapView.resources.displayMetrics.density).toInt() else (h * 0.52).toInt()
-        m.easeCamera(CameraUpdateFactory.newLatLngBounds(b.build(), 60, 50, 120, bottom), 800)
+        val w = mapView.width.takeIf { it > 0 } ?: 1000
+        // The part of the map above the preview sheet (about two thirds of the height, or just its
+        // one-line bar when folded down); while editing there is no sheet.
+        val bottom = when {
+            editorState.value != null -> (90 * mapView.resources.displayMetrics.density).toInt()
+            previewSheetMinimized -> (100 * mapView.resources.displayMetrics.density).toInt()
+            else -> (h * 0.68).toInt()
+        }
+        if (onlyIfOutOfView && pts.all { p ->
+                val s = m.projection.toScreenLocation(LatLng(p.latitude, p.longitude))
+                s.x in 0f..w.toFloat() && s.y in 0f..(h - bottom).toFloat()
+            }) return@fit
+        val b = LatLngBounds.Builder()
+        pts.forEach { b.include(LatLng(it.latitude, it.longitude)) }
+        // The rider too, but only when the trip starts near them: planning far away is about the trip.
+        val first = pts.first()
+        if (haversine(location, first) < 2_000) b.include(LatLng(location.latitude, location.longitude))
+        // The zoom that fits, then the trip's middle in the middle of the free area, by an explicit
+        // camera padding (following leaves its own top padding on the camera, and bounds updates
+        // don't reliably keep the part under the sheet free).
+        val bounds = b.build()
+        val pad = intArrayOf(60, 50, 120, bottom)
+        val zoom = m.getCameraForLatLngBounds(bounds, pad, 0.0, 0.0)?.zoom ?: return@fit
+        android.util.Log.d("CurveonMap", "Fit trip ${pts.size} points (only if out of view: $onlyIfOutOfView)")
+        m.easeCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
+            .target(bounds.center).zoom(zoom).bearing(0.0).tilt(0.0)
+            .padding(pad[0].toDouble(), pad[1].toDouble(), pad[2].toDouble(), pad[3].toDouble())
+            .build()), 800)
     }
+    val hasPreviewTrip = previewPoints.size >= 2
+    LaunchedEffect(map, hasPreviewTrip) {
+        if (map == null || !hasPreviewTrip) return@LaunchedEffect
+        following = false
+        if (editorState.value == null) fitTrip(true)
+    }
+    LaunchedEffect(fitTick) { if (fitTick > 0) fitTrip(false) }
     val inPreview = previewRoutes.isNotEmpty()
-    LaunchedEffect(inPreview) { if (!inPreview) following = true }
+    // Back to following once the preview is really gone: not while picking places or editing, and
+    // not for the moment the trip is empty while it is being worked out again (that flew the map
+    // to the rider and back in the middle of planning).
+    val picking = onTap != null || editor != null
+    LaunchedEffect(inPreview, picking) {
+        if (inPreview || picking) return@LaunchedEffect
+        kotlinx.coroutines.delay(700)
+        following = true
+    }
 
     // Starting a route always brings the camera back to the rider.
     val hasRoute = routePoints.isNotEmpty()
@@ -718,6 +755,13 @@ fun CurveonMapView(
                 if (!following) MapButton(onClick = { following = true }, highlighted = true, tag = "map_recenter_btn") {
                     Icon(Icons.Default.MyLocation, stringResource(R.string.map_follow_me), tint = Color(0xFF00363D), modifier = Modifier.size(24.dp))
                 }
+            }
+        }
+
+        // Zoom to extents: the whole trip being planned, at a tap.
+        if (inPreview && hasPreviewTrip) Box(Modifier.align(Alignment.TopEnd).padding(top = 92.dp, end = 14.dp)) {
+            MapButton(onClick = { fitTick++ }, tag = "map_fit_trip_btn") {
+                Icon(Icons.Default.ZoomOutMap, stringResource(R.string.map_fit_trip), tint = TextPrimary, modifier = Modifier.size(24.dp))
             }
         }
 

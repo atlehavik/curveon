@@ -179,6 +179,7 @@
     <string name="map_heading_up">Kjøreretning opp – trykk for 3D</string>
     <string name="map_north_up">Nord opp – trykk for kjøreretning opp</string>
     <string name="map_3d">3D – trykk for nord opp</string>
+    <string name="map_fit_trip">Vis hele turen</string>
     <string name="map_follow_me">Følg meg</string>
     <string name="map_zoom_in">Zoom inn</string>
     <string name="map_zoom_out">Zoom ut</string>
