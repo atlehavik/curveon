@@ -71,6 +71,7 @@ private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val HINT = "curveon-track-hint"
 private const val SKETCH = "curveon-sketch"
+private const val ROUTE_SURFACE = "curveon-route-surface"
 private const val SKETCH_ZOOM = 9.0
 private const val ARROW_IMAGE = "curveon-arrow"
 /** GPX waypoints turn from dots into icons from this zoom in (about 30 km across the map). */
@@ -99,7 +100,15 @@ private const val RIDER_LOW_2D = 0.3
 private enum class Orientation { NORTH_UP, HEADING_UP, THREE_D }
 
 /** A route drawn during preview; [selected] is the one that will be ridden. */
-data class MapRoute(val points: List<GeoPoint>, val selected: Boolean)
+/**
+ * A route to draw; [surfaces] (one per point: [SURFACE_PAVED], [SURFACE_GRAVEL], [SURFACE_TRACK])
+ * colours the selected one by what is underfoot, so the gravel in a planned trip shows at a glance.
+ */
+data class MapRoute(val points: List<GeoPoint>, val selected: Boolean, val surfaces: List<Int>? = null)
+
+const val SURFACE_PAVED = 0
+const val SURFACE_GRAVEL = 1
+const val SURFACE_TRACK = 2
 
 /**
  * The main map: MapLibre rendering the offline Norway vector map (day or night style), the
@@ -462,9 +471,11 @@ fun CurveonMapView(
         }
     }
 
-    // Previewed alternatives: all of them dim, the selected one bright on top.
+    // Previewed alternatives: all of them dim, the selected one bright on top, its gravel and
+    // tracks coloured over it.
     LaunchedEffect(style, previewRoutes) {
         val s = style ?: return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(ROUTE_SURFACE)?.setGeoJson(surfaceRuns(previewRoutes.firstOrNull { it.selected }))
         val selected = previewRoutes.filter { it.selected }.map { it.points }
         val others = previewRoutes.filter { !it.selected }.map { it.points }
         s.getSourceAs<GeoJsonSource>(ALT)?.setGeoJson(lineFeatures(others))
@@ -1006,10 +1017,20 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )
+    s.addSource(GeoJsonSource(ROUTE_SURFACE))
     s.addLayer(
         LineLayer("$ROUTE-line", ROUTE).withProperties(
             lineColor(if (dark) "#00E5FF" else "#0091EA"), routeWidth(6.5f, 11f, 17f),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
+        )
+    )
+    s.addLayer(
+        LineLayer("$ROUTE_SURFACE-line", ROUTE_SURFACE).withProperties(
+            lineColor(org.maplibre.android.style.expressions.Expression.match(
+                org.maplibre.android.style.expressions.Expression.get("kind"),
+                org.maplibre.android.style.expressions.Expression.literal(GRAVEL_COLOR),
+                org.maplibre.android.style.expressions.Expression.stop(SURFACE_TRACK, TRACK_COLOR))),
+            routeWidth(6.5f, 11f, 17f), lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )
     // Zoomed out: small dots in the category colour (many waypoints stay readable). Zoomed in:
@@ -1049,6 +1070,27 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             circleRadius(13f), circleColor(if (dark) "#00E5FF" else "#0091EA"), circleStrokeColor("#FFFFFF"), circleStrokeWidth(4f)
         )
     )
+}
+
+/** Orange for gravel, purple for tracks: as the gravel and offroad route colours. */
+const val GRAVEL_COLOR = "#FF9100"
+const val TRACK_COLOR = "#D500F9"
+
+/** The unpaved stretches of [route], one line per run of the same kind. */
+private fun surfaceRuns(route: MapRoute?): FeatureCollection {
+    val kinds = route?.surfaces ?: return FeatureCollection.fromFeatures(emptyList())
+    val pts = route.points
+    val out = ArrayList<Feature>()
+    var i = 0
+    while (i < pts.size - 1) {
+        val kind = kinds.getOrElse(i + 1) { SURFACE_PAVED }
+        var j = i + 1
+        while (j < pts.size - 1 && kinds.getOrElse(j + 1) { SURFACE_PAVED } == kind) j++
+        if (kind != SURFACE_PAVED) out += Feature.fromGeometry(LineString.fromLngLats(pts.subList(i, j + 1).map { Point.fromLngLat(it.longitude, it.latitude) }))
+            .also { it.addNumberProperty("kind", kind) }
+        i = j
+    }
+    return FeatureCollection.fromFeatures(out)
 }
 
 private fun lineFeatures(lines: List<List<GeoPoint>>): FeatureCollection =

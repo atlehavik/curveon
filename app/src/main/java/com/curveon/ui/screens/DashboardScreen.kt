@@ -456,7 +456,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             dark = mapDark,
             previewRoutes = if (editor != null) listOf(MapRoute(editLine, true)).filter { it.points.size >= 2 }
             else preview?.candidates?.mapIndexedNotNull { i, c ->
-                c.route?.let { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, i == preview!!.selected) }
+                c.route?.let { r ->
+                    val selected = i == preview!!.selected
+                    MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, selected,
+                        surfaces = if (selected) r.points.map { p -> if (p.highway == "track") SURFACE_TRACK else if (p.unpaved) SURFACE_GRAVEL else SURFACE_PAVED } else null)
+                }
             }.orEmpty(),
             markers = if (editor != null) emptyList() else markers,
             editor = editor,

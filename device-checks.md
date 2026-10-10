@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Gravel within reach of the route; the route line coloured by surface
+
+With Gravel or Offroad picked, a chip next to it says how far off the ordinary route gravel may take
+the trip: within 1/3/5/10/20 km, or anywhere. The ordinary route is planned first, then the gravel
+one with less and less pull towards gravel until it stays that close; failing that, the ordinary
+route. Gravel itself pulls harder now (before, Gravel barely changed a route): Kongsberg–Notodden
+curvy gets 17 km gravel (33 → 43 km, 6 km off); within 3 km it stays on the ordinary road. On the
+west coast few gravel roads are tagged in OpenStreetMap, so there it changes less. The previewed
+route is drawn orange where it is gravel and purple on tracks. Checked in the emulator; installed on the X7.
+
+- [ ] Gravel near home: does it find any? Does "within N km" behave?
+- [ ] Are the orange/purple stretches readable on the X7 in sunlight?
+
 ## 2026-10-10 — Max length and surface when drawing a loop; draw again
 
 The drawing bar has **Whole area / Max N km** (50–300) and the surface chip; with a max, the loop is
