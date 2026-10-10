@@ -461,6 +461,9 @@
     <string name="pick_hint_stop">Trykk i kartet der du vil stoppe</string>
     <string name="pick_hint_start">Trykk i kartet der turen starter</string>
     <string name="pick_hint_next_point">Trykk i kartet for hvert neste punkt</string>
+    <string name="pick_ask_stop_or_end">Stopp på veien, eller nytt mål?</string>
+    <string name="pick_along_the_way">På veien</string>
+    <string name="pick_new_end">Nytt mål</string>
     <string name="back_to_search">Tilbake til søket</string>
     <string name="edit_on_map">Endre i kartet</string>
     <string name="edit_route_hint">Dra linja eller et stopp</string>

@@ -108,6 +108,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** "Pick on map": what the search was for while the rider taps the map; null when not picking. */
     var mapPick by remember { mutableStateOf<SearchPurpose?>(null) }
     var picked by remember { mutableStateOf<Pair<GeoPoint, String?>?>(null) }
+    /**
+     * Point by point from "+ Stop" on a trip that already has an end: whether the points tapped are
+     * stops on the way (true) or ride the trip on past its end (false); null = not asked yet.
+     */
+    var alongTheWay by remember { mutableStateOf<Boolean?>(null) }
     /** A new trip set to start elsewhere in "Where to?", before the destination; null = from here. */
     var planStart by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
     /** The start search was opened from "Where to?": its pick goes back there. */
@@ -176,6 +181,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         searchGrowIn = false
         searchPurpose = null
         picked = null
+        alongTheWay = null
         mapPick = purpose
     }
     val closeSearch: () -> Unit = {
@@ -189,11 +195,27 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // A stop put before or instead of another one, a stop added while riding, or the start: one place.
     val chaining = !isNavigating && stopTarget == null && (mapPick == SearchPurpose.DESTINATION || mapPick == SearchPurpose.STOP)
     val planPointByPoint: (GeoPoint, String) -> Unit = { p, name ->
-        viewModel.planPointByPoint(p, name, planStart?.first, planStart?.second ?: "")
+        when {
+            alongTheWay == true -> viewModel.addStop(p, name)
+            // The trip's end was a place it was planned to: it stays a stop.
+            alongTheWay == false -> viewModel.planPointByPoint(p, name, keepEndAsStop = true)
+            else -> viewModel.planPointByPoint(p, name, planStart?.first, planStart?.second ?: "")
+        }
+    }
+    /** A tap point by point: from "+ Stop" on a planned trip, the first one asks where it goes. */
+    val chainTap: (GeoPoint) -> Unit = { p ->
+        if (mapPick == SearchPurpose.STOP && planning && alongTheWay == null) {
+            picked = p to null
+            scope.launch { val name = viewModel.describePoint(p); if (picked?.first == p) picked = p to name }
+        } else {
+            picked = null
+            scope.launch { planPointByPoint(p, viewModel.describePoint(p)) }
+        }
     }
     val endMapPick: () -> Unit = {
         mapPick = null
         picked = null
+        alongTheWay = null
         stopTarget = null
         startFirst = false
         if (searchPurpose == null) planStart = null // not on the way back to "Where to?"
@@ -260,7 +282,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     else -> endMenu = h.kind
                 }
             },
-            onTapLine = if (chaining) ({ p -> scope.launch { planPointByPoint(p, viewModel.describePoint(p)) } }) else null,
+            onTapLine = if (chaining) chainTap else null,
             onMarkSection = { fromIndex, from, toIndex, to ->
                 marking = false
                 scope.launch {
@@ -285,6 +307,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onBackToSearch = { mapPick = null; picked = null; searchGrowIn = true; searchPurpose = pickPurpose },
                 onCancel = endMapPick,
                 pointByPoint = chaining,
+                asking = picked?.takeIf { chaining }?.let { it.second ?: "…" },
+                onAlongTheWay = { picked?.let { (p, n) -> alongTheWay = true; picked = null; planPointByPoint(p, n ?: "") } },
+                onNewEnd = { picked?.let { (p, n) -> alongTheWay = false; picked = null; planPointByPoint(p, n ?: "") } },
                 tripSummary = tripSummary.takeIf { planGoal != null },
                 busy = preview?.calculating == true || preview?.fetching != null,
                 canUndo = preview?.canUndo == true,
@@ -404,10 +429,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onRoadName = viewModel::onRoadName,
             onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
             onTap = if (mapPick != null) ({ p ->
-                if (chaining) {
-                    picked = null
-                    scope.launch { planPointByPoint(p, viewModel.describePoint(p)) }
-                } else {
+                if (chaining) chainTap(p) else {
                     picked = p to null
                     scope.launch { val name = viewModel.describePoint(p); if (picked?.first == p) picked = p to name }
                 }

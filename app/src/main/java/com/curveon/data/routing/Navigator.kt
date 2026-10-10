@@ -265,10 +265,11 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     /**
      * Ride on from the previewed trip's end to [next]: the old destination becomes a point the route
-     * goes through, [next] the new destination (building a trip point by point on the map).
+     * goes through (or a real stop, [keepEndAsStop]: a place the trip was planned to), [next] the new
+     * destination (building a trip point by point on the map).
      */
-    fun extendPreview(next: Stop) = editPreview { g ->
-        g.copy(stops = g.stops + Stop(g.name, g.destination, via = true), name = next.name, destination = next.point)
+    fun extendPreview(next: Stop, keepEndAsStop: Boolean = false) = editPreview { g ->
+        g.copy(stops = g.stops + Stop(g.name, g.destination, via = !keepEndAsStop), name = next.name, destination = next.point)
     }
 
     /** Replace the previewed stop at [index] with [stop] (a wrong place moved or picked again). */

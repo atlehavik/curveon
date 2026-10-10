@@ -6,6 +6,17 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — "+ Stop" on the map asks: on the way, or the new end?
+
+Picking stops on the map from "+ Stop" on a trip that already has an end: the first tap asks "A
+stop on the way, or the new end?". On the way: that point and the next ones become numbered stops
+where they fit along the route; New end: the trip rides on to them (the old end stays a stop).
+Asked once per round of picking. Checked in the emulator. Installed on the Pixel; **not yet on the
+X7** (it had a trip being planned, and installing restarts the app): `./gradlew :app:installDebug`
+with the X7 as `ANDROID_SERIAL` when it's free.
+
+- [ ] X7: install, then "+ Stop" → Pick on map → tap a point beside the route → On the way.
+
 ## 2026-10-10 — Hold a point on the map to remove it
 
 While editing a trip on the map or building it point by point, holding a finger still on a point

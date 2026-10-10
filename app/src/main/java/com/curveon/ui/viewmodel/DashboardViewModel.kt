@@ -746,8 +746,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
      * Point by point on the map: the planned trip rides on to [point], its end so far becoming a
      * point on the way; with no trip planned yet, a trip to [point] (from [start], or from here).
      */
-    fun planPointByPoint(point: GeoPoint, name: String, start: GeoPoint? = null, startName: String = "") {
-        if (navigator.state.value.preview?.goal is NavigationGoal.Destination) navigator.extendPreview(Stop(name, LatLon(point.latitude, point.longitude)))
+    fun planPointByPoint(point: GeoPoint, name: String, start: GeoPoint? = null, startName: String = "", keepEndAsStop: Boolean = false) {
+        if (navigator.state.value.preview?.goal is NavigationGoal.Destination) navigator.extendPreview(Stop(name, LatLon(point.latitude, point.longitude)), keepEndAsStop)
         else previewDestination(point, name, start, startName)
     }
 

@@ -390,7 +390,11 @@ fun MapPickBar(
     tripSummary: String? = null,
     busy: Boolean = false,
     canUndo: Boolean = false,
-    onUndo: () -> Unit = {}
+    onUndo: () -> Unit = {},
+    /** Point by point from "+ Stop" on a planned trip: the first point tapped, asking stop on the way or new end. */
+    asking: String? = null,
+    onAlongTheWay: () -> Unit = {},
+    onNewEnd: () -> Unit = {}
 ) {
     // Grows out of the shrinking dialog (bottom centre).
     val grow = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -413,7 +417,18 @@ fun MapPickBar(
         Box(Modifier.testTag("map_pick_search")) {
             RoundButton(Icons.Default.Search, stringResource(R.string.back_to_search), 48.dp, CockpitSurfaceVariant, accent, onBackToSearch)
         }
-        if (chaining) {
+        if (chaining && asking != null) {
+            Column(Modifier.weight(1f, fill = false).widthIn(max = 300.dp).padding(horizontal = 4.dp)) {
+                Text(asking, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                Text(stringResource(R.string.pick_ask_stop_or_end), color = TextSecondary, fontSize = 13.sp, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            }
+            PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.pick_along_the_way), NeonAmber, Color.Black,
+                Modifier.testTag("map_pick_along"), onAlongTheWay)
+            PillButton(Icons.Default.Flag, stringResource(R.string.pick_new_end), ElectricCyan, OnCyanDark,
+                Modifier.testTag("map_pick_new_end"), onNewEnd)
+        } else if (chaining) {
             Row(Modifier.weight(1f, fill = false).widthIn(max = 340.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (busy) CircularProgressIndicator(color = ElectricCyan, strokeWidth = 3.dp, modifier = Modifier.padding(end = 10.dp).size(20.dp))
                 Column {
