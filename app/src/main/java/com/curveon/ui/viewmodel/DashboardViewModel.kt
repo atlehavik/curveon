@@ -866,12 +866,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
      * A loop inside [area] (drawn on the map), from [start] or from here, with the last route
      * options; its shape is found on curvy roads (the sheet then offers every style through it).
      */
-    fun previewAreaRoundtrip(area: List<GeoPoint>, start: GeoPoint? = null, startName: String = "") =
-        navigator.previewAreaRoundtrip(
-            area.map { LatLon(it.latitude, it.longitude) },
-            lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle),
-            start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) }
-        )
+    fun previewAreaRoundtrip(
+        area: List<GeoPoint>, start: GeoPoint? = null, startName: String = "",
+        maxKm: Int? = null, surface: SurfacePreference = lastOptions.surface
+    ) = navigator.previewAreaRoundtrip(
+        area.map { LatLon(it.latitude, it.longitude) },
+        lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle, surface = surface),
+        start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) },
+        maxKm
+    )
+
+    /** The surface last planned with: what a new loop starts with. */
+    fun lastSurface(): SurfacePreference = lastOptions.surface
+
+    /** The previewed loop again, no longer than [maxKm] (null = round the whole area). */
+    fun setLoopMax(maxKm: Int?) = navigator.setLoopMax(maxKm)
 
     /** Preview riding a track, in the direction set for it (or its group); [reverse] flips that. */
     fun previewGpx(track: GpxTrack, reverse: Boolean, ground: GroundPreference) {

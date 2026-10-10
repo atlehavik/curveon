@@ -12,6 +12,9 @@ import androidx.compose.material.icons.filled.Landscape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,17 +44,7 @@ fun RouteOptionChips(
     modifier: Modifier = Modifier
 ) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        val surfaceLabel = when (surface) {
-            SurfacePreference.PAVED -> stringResource(R.string.surface_tarmac_only)
-            SurfacePreference.MIXED -> stringResource(R.string.surface_mixed)
-            SurfacePreference.GRAVEL -> stringResource(R.string.surface_gravel)
-            SurfacePreference.OFFROAD -> stringResource(R.string.surface_offroad)
-        }
-        OptionChip(surfaceLabel, active = surface != SurfacePreference.PAVED, onClick = {
-            onSurface(SurfacePreference.entries[(surface.ordinal + 1) % SurfacePreference.entries.size])
-        }) {
-            Icon(Icons.Default.Landscape, null, tint = if (surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
-        }
+        SurfaceChip(surface, onSurface)
         OptionChip(stringResource(if (avoidFerries) R.string.no_ferries else R.string.ferries_ok), active = avoidFerries, avoid = true, onClick = onToggleFerries) {
             Icon(Icons.Default.DirectionsBoat, null, tint = if (avoidFerries) NeonAmber else TextSecondary)
         }
@@ -113,5 +106,49 @@ fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> Strin
                     fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+}
+
+/** The lengths a drawn loop can be held to; null = the way round the whole area. */
+val LOOP_MAX_KM = listOf(null, 50, 80, 100, 150, 200, 300)
+
+/** How long a drawn loop may be: "Whole area" or "Max 100 km"; tap for the list. */
+@Composable
+fun LoopMaxChip(maxKm: Int?, onPick: (Int?) -> Unit) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    Box {
+        OptionChip(
+            if (maxKm == null) stringResource(R.string.loop_max_any) else stringResource(R.string.loop_max_km, maxKm),
+            active = maxKm != null, onClick = { open = true }
+        ) {
+            Icon(Icons.Default.Straighten, null, tint = if (maxKm != null) NeonAmber else TextSecondary)
+        }
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+            LOOP_MAX_KM.forEach { km ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = {
+                        Text(if (km == null) stringResource(R.string.loop_max_any) else stringResource(R.string.loop_max_km, km),
+                            color = if (km == maxKm) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    },
+                    onClick = { open = false; onPick(km) }
+                )
+            }
+        }
+    }
+}
+
+/** The surface chip on its own (Tarmac only → Mixed → Gravel → Offroad), as in [RouteOptionChips]. */
+@Composable
+fun SurfaceChip(surface: SurfacePreference, onSurface: (SurfacePreference) -> Unit) {
+    val label = when (surface) {
+        SurfacePreference.PAVED -> stringResource(R.string.surface_tarmac_only)
+        SurfacePreference.MIXED -> stringResource(R.string.surface_mixed)
+        SurfacePreference.GRAVEL -> stringResource(R.string.surface_gravel)
+        SurfacePreference.OFFROAD -> stringResource(R.string.surface_offroad)
+    }
+    OptionChip(label, active = surface != SurfacePreference.PAVED, onClick = {
+        onSurface(SurfacePreference.entries[(surface.ordinal + 1) % SurfacePreference.entries.size])
+    }) {
+        Icon(Icons.Default.Landscape, null, tint = if (surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
     }
 }

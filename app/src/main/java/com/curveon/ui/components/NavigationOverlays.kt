@@ -534,16 +534,22 @@ fun MapPickBar(
  * finger is drawing ([km]), where it starts if not here, and a way out.
  */
 @Composable
-fun SketchBar(onCancel: () -> Unit, modifier: Modifier = Modifier, km: Int? = null, startName: String? = null) {
-    Row(
+fun SketchBar(
+    onCancel: () -> Unit, modifier: Modifier = Modifier, km: Int? = null, startName: String? = null,
+    /** Chosen before drawing: how long the loop may be, and on what surface. */
+    maxKm: Int? = null, onMaxKm: (Int?) -> Unit = {},
+    surface: com.curveon.routing.SurfacePreference = com.curveon.routing.SurfacePreference.PAVED,
+    onSurface: (com.curveon.routing.SurfacePreference) -> Unit = {}
+) {
+    Column(
         modifier
-            .clip(RoundedCornerShape(30.dp)).background(CockpitSurface.copy(alpha = 0.97f))
-            .border(2.dp, NeonAmber, RoundedCornerShape(30.dp))
-            .padding(start = 18.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
+            .clip(RoundedCornerShape(26.dp)).background(CockpitSurface.copy(alpha = 0.97f))
+            .border(2.dp, NeonAmber, RoundedCornerShape(26.dp))
+            .padding(start = 18.dp, end = 6.dp, top = 6.dp, bottom = 10.dp)
             .testTag("sketch_bar"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Icon(Icons.Default.Gesture, null, tint = NeonAmber)
         Column(Modifier.weight(1f, fill = false).widthIn(max = 420.dp)) {
             Text(
@@ -556,5 +562,10 @@ fun SketchBar(onCancel: () -> Unit, modifier: Modifier = Modifier, km: Int? = nu
         Box(Modifier.testTag("sketch_cancel")) {
             RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 48.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
         }
+    }
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LoopMaxChip(maxKm, onMaxKm)
+        SurfaceChip(surface, onSurface)
+    }
     }
 }

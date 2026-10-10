@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Max length and surface when drawing a loop; draw again
+
+The drawing bar has **Whole area / Max N km** (50–300) and the surface chip; with a max, the loop is
+planned round the area shrunk towards the start, so it stays about that long (tests: max 50 → 48
+km, max 80 → 55 km from Bømlo in a big area). The loop's sheet has the same max chip (plans the loop
+again, on the road style picked there) and **Draw again** (same start, max and surface). Austevoll
+in a drawn area: it is reachable (ferry Sandvikvåg–Hufthamar) but only that way in and out, so a
+loop over it rides the ferry and Stord roads twice and loses to loops that don't. Checked in the
+emulator; installed on the X7 (the Pixel wasn't reachable).
+
+- [ ] Draw with Max 80 km on the X7: about 80 km or less?
+- [ ] Change the max on the sheet, and Draw again.
+
 ## 2026-10-10 — Close Curveon from the notification; warning when it idles in the background
 
 The "GPS and navigation are running" notification now has **Close Curveon**: it closes the screen,

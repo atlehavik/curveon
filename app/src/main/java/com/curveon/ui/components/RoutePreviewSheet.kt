@@ -71,6 +71,10 @@ fun RoutePreviewSheet(
     onAddStopBefore: (Int) -> Unit = {},
     /** Edit the trip by dragging it on the map. */
     onEditOnMap: () -> Unit = {},
+    /** A drawn loop: plan it again no longer than this (null = the whole area). */
+    onLoopMax: (Int?) -> Unit = {},
+    /** A drawn loop: draw the area again. */
+    onRedraw: () -> Unit = {},
     onSave: () -> Unit,
     onGo: () -> Unit,
     onClose: () -> Unit,
@@ -164,6 +168,11 @@ fun RoutePreviewSheet(
                     Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // A drawn loop: how long it may be, and drawing it again, first.
+                    goal.loop?.takeIf { it.area != null }?.let { loop ->
+                        LoopMaxChip(loop.maxKm, onLoopMax)
+                        PlanChip(Icons.Default.Gesture, stringResource(R.string.loop_redraw), NeonAmber, "preview_redraw", onRedraw, outlined = true)
+                    }
                     PlanChip(
                         Icons.Default.TripOrigin,
                         goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),

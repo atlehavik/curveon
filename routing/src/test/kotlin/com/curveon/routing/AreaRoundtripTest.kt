@@ -41,4 +41,18 @@ class AreaRoundtripTest {
             assertTrue("$name v$variant rides outside the area", outside < 0.25)
         }
     }
+
+    @Test
+    fun `a max length keeps a big area's loop short`() {
+        val segments = File(System.getProperty("curveon.segments") ?: "")
+        assumeTrue(File(segments, "E5_N55.rd5").exists())
+        val engine = BRouterEngine(segments, ProfileInstaller.install(Files.createTempDirectory("p").toFile()))
+        val big = listOf(LatLon(60.13, 5.15), LatLon(60.13, 5.30), LatLon(60.05, 5.33), LatLon(59.95, 5.40), LatLon(59.85, 5.45),
+            LatLon(59.75, 5.45), LatLon(59.72, 5.33), LatLon(59.74, 5.22), LatLon(59.80, 5.16), LatLon(59.92, 5.10), LatLon(60.05, 5.08))
+        for (max in listOf(50.0, 80.0)) {
+            val r = RoundtripPlanner(engine).planArea(LatLon(59.765, 5.235), big, RouteOptions(RoadStyle.CURVY), maxKm = max)
+            println("max %.0f -> %.1f km twice=%.0f%%".format(max, r.distanceMeters / 1000, RoundtripPlanner.overlapFraction(r) * 100))
+            assertTrue("max $max gave ${r.distanceMeters / 1000} km", r.distanceMeters / 1000 < max * 1.15)
+        }
+    }
 }

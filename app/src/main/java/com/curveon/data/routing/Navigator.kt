@@ -115,7 +115,9 @@ sealed interface NavigationGoal {
         /** An area drawn on the map to ride in (instead of the direction and distance); null = not drawn. */
         val area: List<LatLon>? = null,
         /** Starting somewhere else than where the rider is; null = from here. */
-        val start: Stop? = null
+        val start: Stop? = null,
+        /** A drawn area's loop no longer than this; null = the way round the whole area. */
+        val maxKm: Int? = null
     ) : NavigationGoal {
         override val title get() = name
     }
@@ -292,8 +294,22 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         preview(NavigationGoal.Roundtrip(distanceKm, directionDeg, options, name = context.getString(R.string.roundtrip), start = start))
 
     /** A loop inside [area], drawn on the map with a finger. */
-    fun previewAreaRoundtrip(area: List<LatLon>, options: RouteOptions, start: Stop? = null) =
-        preview(NavigationGoal.Roundtrip(0.0, 0.0, options, name = context.getString(R.string.roundtrip), area = area, start = start))
+    fun previewAreaRoundtrip(area: List<LatLon>, options: RouteOptions, start: Stop? = null, maxKm: Int? = null) =
+        preview(NavigationGoal.Roundtrip(0.0, 0.0, options, name = context.getString(R.string.roundtrip), area = area, start = start, maxKm = maxKm))
+
+    /** The previewed loop again with another max length (null = the whole area), on the road style picked now. */
+    fun setLoopMax(maxKm: Int?) = replanLoop { it.copy(maxKm = maxKm, variant = 0) }
+
+    /**
+     * Plans the previewed loop again, changed by [change]: with the trip's current options, and the
+     * road style picked in the sheet (Fastest still finds the loop on curvy roads).
+     */
+    private fun replanLoop(change: (NavigationGoal.Roundtrip) -> NavigationGoal.Roundtrip) {
+        val p = _state.value.preview ?: return
+        val loop = p.goal as? NavigationGoal.Roundtrip ?: (p.goal as? NavigationGoal.Destination)?.loop ?: return
+        val style = p.candidates.getOrNull(p.selected)?.style?.takeIf { it != RoadStyle.FASTEST } ?: loop.options.roadStyle
+        preview(change(loop.copy(options = p.goal.options.copy(roadStyle = style))))
+    }
 
     /** Names places (for the via points of a loop made into a trip); set by whoever has the search. */
     var describePlace: suspend (LatLon) -> String = { "" }
@@ -363,11 +379,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     /** Another loop in the same direction and length. */
-    fun shuffleRoundtrip() {
-        val goal = _state.value.preview?.goal
-        val g = goal as? NavigationGoal.Roundtrip ?: (goal as? NavigationGoal.Destination)?.loop ?: return
-        preview(g.copy(variant = g.variant + 1, options = goal!!.options))
-    }
+    fun shuffleRoundtrip() = replanLoop { it.copy(variant = it.variant + 1) }
 
     fun updatePreviewOptions(transform: (RouteOptions) -> RouteOptions) {
         val p = _state.value.preview ?: return
@@ -515,7 +527,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             visitEveryVia = true
         )
         is NavigationGoal.Roundtrip -> RoundtripPlanner(engine) { android.util.Log.d("CurveonPlan", it) }.let { planner ->
-            if (goal.area != null) planner.planArea(from, goal.area, goal.options, goal.variant)
+            if (goal.area != null) planner.planArea(from, goal.area, goal.options, goal.variant, goal.maxKm?.toDouble())
             else planner.plan(
                 from, goal.distanceKm, goal.directionDeg, goal.options,
                 rotationsDeg = listOf(0.0, -30.0, 30.0).map { it + goal.variant * 17.0 }

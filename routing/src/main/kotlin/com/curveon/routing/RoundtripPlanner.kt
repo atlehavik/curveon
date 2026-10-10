@@ -99,10 +99,16 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
      * nearest the start. A few spreads and insets are tried in parallel; the winner stays inside,
      * rides little road twice and – for curvy styles – has the most curves. Each [variant] spreads
      * the points differently and goes round the other way.
+     *
+     * With [maxKm] shorter than the way round the area, the vias go round the area shrunk towards
+     * the start (or, from outside it, towards its nearest edge), so the loop stays about that long.
      */
-    fun planArea(start: LatLon, stroke: List<LatLon>, options: RouteOptions, variant: Int = 0): Route {
-        val area = SketchArea(stroke)
-        if (area.outline.size < 3 || area.perimeterM < MIN_AREA_PERIMETER_M) throw noAreaRoundtrip(null)
+    fun planArea(start: LatLon, stroke: List<LatLon>, options: RouteOptions, variant: Int = 0, maxKm: Double? = null): Route {
+        val drawn = SketchArea(stroke)
+        if (drawn.outline.size < 3 || drawn.perimeterM < MIN_AREA_PERIMETER_M) throw noAreaRoundtrip(null)
+        val maxM = maxKm?.times(1000)
+        val area = if (maxM == null || maxM >= drawn.perimeterM) drawn else
+            drawn.shrunkTowards(if (drawn.contains(start)) start else drawn.nearestOnEdge(start), (maxM / drawn.perimeterM).coerceIn(0.15, 1.0))
         legs.clear(); ferryLoops.clear(); loopVias.clear(); goodFound = false
         legPool = Executors.newFixedThreadPool(legThreads)
         val tries = AREA_INSETS.flatMap { inset -> AREA_SHIFTS.map { shift -> inset to shift } }
@@ -117,7 +123,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
             val tried = parallel(pool, tries.map { (inset, shift) ->
                 {
                     val vias = reachableVias(start, area.vias(count, inset, shift + variant * 0.37, start, reverse = variant % 2 == 1), options, catching)
-                    // About the way round what was drawn: roads wind (longer), the vias sit inside (shorter).
+                    // About the way round what was drawn (or the max): roads wind (longer), the vias sit inside (shorter).
                     val expected = area.perimeterM + 2 * maxOf(0.0, Geo.distance(start, vias.first()) - area.perimeterM / 8)
                     routeLoop(start, vias, options, catching, withFerry = {}, onEach = { loops += expected to it })
                 }
@@ -125,11 +131,14 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
             if (loops.isEmpty()) throw noAreaRoundtrip(tried.firstError)
             val onLand = loops.filter { it.second.ferryCount == 0 }
             val usable = if (options.avoidFerries && onLand.isNotEmpty()) onLand else loops
+            // Longer than the max: as bad as being half the length again for every 10% over.
+            fun score(expected: Double, r: Route) = areaScore(r, drawn, expected, options) -
+                if (maxM != null && r.distanceMeters > maxM * 1.05) ln(r.distanceMeters / maxM) * 700 else 0.0
             loops.forEach { (expected, r) ->
                 log("  area -> %.0f km (expected %.0f) ferries=%d outside=%.0f%% score=%.0f".format(r.distanceMeters / 1000, expected / 1000,
-                    r.ferryCount, area.outsideShare(r) * 100, areaScore(r, area, expected, options)))
+                    r.ferryCount, drawn.outsideShare(r) * 100, score(expected, r)))
             }
-            val best = usable.maxBy { (expected, r) -> areaScore(r, area, expected, options) }.second
+            val best = usable.maxBy { (expected, r) -> score(expected, r) }.second
             return polish(start, best, options)
         } finally {
             pool.shutdownNow()

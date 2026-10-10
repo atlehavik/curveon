@@ -146,6 +146,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var sketching by remember { mutableStateOf(false) }
     /** About how long the loop round the area drawn so far gets (its outline); null before drawing. */
     var sketchKm by remember { mutableStateOf<Int?>(null) }
+    /** Chosen in the drawing bar: how long the loop may be (null = round the whole area), and its surface. */
+    var sketchMaxKm by remember { mutableStateOf<Int?>(null) }
+    var sketchSurface by remember { mutableStateOf(viewModel.lastSurface()) }
     LaunchedEffect(sketching) { if (sketching) sketchKm = null }
     var showGpx by remember { mutableStateOf(false) }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
@@ -324,7 +327,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, r.distanceMeters / 1000)
         }
         if (sketching) {
-            SketchBar(onCancel = { sketching = false }, km = sketchKm, startName = roundtripStart?.second, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
+            SketchBar(onCancel = { sketching = false }, km = sketchKm?.let { k -> sketchMaxKm?.let { minOf(it, k) } ?: k }, startName = roundtripStart?.second,
+                maxKm = sketchMaxKm, onMaxKm = { sketchMaxKm = it }, surface = sketchSurface, onSurface = { sketchSurface = it }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
         } else if (pickPurpose != null) {
             MapPickBar(
                 purpose = pickPurpose,
@@ -392,6 +396,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onChangeStop = { i -> stopTarget = StopTarget.Instead(i); searchPurpose = SearchPurpose.STOP },
                 onAddStopBefore = { i -> stopTarget = StopTarget.Before(i); searchPurpose = SearchPurpose.STOP },
                 onEditOnMap = editOnMap,
+                onLoopMax = viewModel::setLoopMax,
+                onRedraw = {
+                    // Same start, max and surface as the loop on screen.
+                    (preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.loop?.let { loop ->
+                        roundtripStart = loop.start?.let { GeoPoint(it.point.lat, it.point.lon) to it.name }
+                        sketchMaxKm = loop.maxKm
+                        sketchSurface = loop.options.surface
+                    }
+                    sketching = true
+                },
                     onReverse = viewModel::reversePreviewTrack,
                     onSave = askSaveName,
                     onGo = viewModel::startPreview,
@@ -474,7 +488,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             },
             onSketch = if (sketching) ({ stroke ->
                 sketching = false
-                viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "")
+                viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "", sketchMaxKm, sketchSurface)
             }) else null,
             gpxTracks = overlayTracks,
             gpxPois = overlayPois,

@@ -58,6 +58,26 @@ class SketchArea(stroke: List<LatLon>) {
         }.min()
     }
 
+    /**
+     * The area shrunk towards [anchor] to [factor] of its size (for a loop shorter than the way
+     * round all of it): the anchor stays where it is, everything else moves in towards it.
+     */
+    fun shrunkTowards(anchor: LatLon, factor: Double): SketchArea {
+        val ax = x(anchor); val ay = y(anchor)
+        return SketchArea(outline.map { at(ax + (x(it) - ax) * factor, ay + (y(it) - ay) * factor) })
+    }
+
+    /** The point on the outline nearest [p]. */
+    fun nearestOnEdge(p: LatLon): LatLon {
+        val px = x(p); val py = y(p)
+        return (outline + outline.first()).zipWithNext { a, b ->
+            val ax = x(a); val ay = y(a); val dx = x(b) - ax; val dy = y(b) - ay
+            val len2 = dx * dx + dy * dy
+            val t = if (len2 == 0.0) 0.0 else (((px - ax) * dx + (py - ay) * dy) / len2).coerceIn(0.0, 1.0)
+            at(ax + t * dx, ay + t * dy)
+        }.minBy { Geo.distance(it, p) }
+    }
+
     /** The point [fraction] (0..1) of the way round the outline from where it was started. */
     fun pointAround(fraction: Double): LatLon {
         var left = ((fraction % 1.0 + 1.0) % 1.0) * perimeterM

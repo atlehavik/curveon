@@ -326,6 +326,9 @@
 
     <!-- Roundtrip and route preview -->
     <string name="nav_no_area_roundtrip">Fant ingen rundtur i det området. Prøv å tegne det større, eller rundt flere veier.</string>
+    <string name="loop_max_any">Hele området</string>
+    <string name="loop_max_km">Maks %1$d km</string>
+    <string name="loop_redraw">Tegn på nytt</string>
     <string name="roundtrip_draw_km">Omtrent %1$d km rundt</string>
     <string name="roundtrip_draw_hint">Tegn området du vil kjøre i med én finger. To fingre flytter kartet.</string>
     <string name="roundtrip_search_subtitle">Tegn området du vil kjøre i på kartet</string>
