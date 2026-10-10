@@ -137,7 +137,7 @@ fun RoutePreviewSheet(
             Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // A→B: where from (the planner), the stops with how long to each, and "+ Stop".
+            // A→B: where from (the planner), "+ Stop", and the stops with how long to each.
             if (goal is NavigationGoal.Destination) {
                 val route = preview.selectedRoute
                 val legs = remember(route, goal.stops) { route?.let { stopTimes(goal.stops, it) } }
@@ -151,6 +151,8 @@ fun RoutePreviewSheet(
                         goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
                         if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
                     )
+                    // "+ Stop" next to the start, so it stays in sight however many stops the trip has.
+                    PlanChip(Icons.Default.AddLocationAlt, stringResource(R.string.stop_short), NeonAmber, "preview_add_stop", onAddStop, outlined = true)
                     var number = 0
                     goal.stops.forEachIndexed { i, s ->
                         val leg = legs?.getOrNull(i)?.let { sec -> " · %d:%02d".format((sec / 3600).toInt(), ((sec % 3600) / 60).toInt()) } ?: ""
@@ -158,7 +160,6 @@ fun RoutePreviewSheet(
                         if (s.via) PlanChip(Icons.Default.Gesture, s.name, TextSecondary, "preview_stop_$i", onClick = { stopMenu = i })
                         else PlanChip(null, "${++number}. ${s.name}$leg", NeonAmber, "preview_stop_$i", onClick = { stopMenu = i })
                     }
-                    PlanChip(Icons.Default.AddLocationAlt, stringResource(R.string.stop_short), NeonAmber, "preview_add_stop", onAddStop, outlined = true)
                 }
                 if (goal.start != null) Text(stringResource(R.string.preview_planned_hint), color = TextMuted, fontSize = 12.sp, maxLines = 1)
                 stopMenu?.let { i ->
