@@ -11,7 +11,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 While editing or building a trip, a pinch whose first finger lands on the route line or a point no
 longer starts a detour: as soon as the second finger touches, the drag is dropped and the map
 zooms/turns. Checked in the emulator with a scripted two-finger pinch starting on the line (route
-unchanged, map zoomed). Installed on the Pixel; the X7 still needs the install from the entry below.
+unchanged, map zoomed). Installed on both devices.
 
 - [ ] Pixel/X7: pinch-zoom with one finger starting on the blue line: no dashed detour, no new point.
 
@@ -20,9 +20,7 @@ unchanged, map zoomed). Installed on the Pixel; the X7 still needs the install f
 Picking stops on the map from "+ Stop" on a trip that already has an end: the first tap asks "A
 stop on the way, or the new end?". On the way: that point and the next ones become numbered stops
 where they fit along the route; New end: the trip rides on to them (the old end stays a stop).
-Asked once per round of picking. Checked in the emulator. Installed on the Pixel; **not yet on the
-X7** (it had a trip being planned, and installing restarts the app): `./gradlew :app:installDebug`
-with the X7 as `ANDROID_SERIAL` when it's free.
+Asked once per round of picking. Checked in the emulator. Installed on both devices.
 
 - [ ] X7: install, then "+ Stop" → Pick on map → tap a point beside the route → On the way.
 
