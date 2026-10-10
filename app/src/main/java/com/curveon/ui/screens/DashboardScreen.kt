@@ -28,6 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.curveon.R
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import com.curveon.data.bluetooth.CompanionConnectionState
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GroundPreference
@@ -307,6 +310,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
+        // Where the map and the trip info (time left, distance…) are, so the media pill can keep clear of it.
+        var mapBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+        var tripInfoBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+        Box(Modifier.matchParentSize().onGloballyPositioned { mapBox = it.boundsInRoot() })
         // Speed, limit and clock: always on the map now (the dashboard's side has the engine panel).
         MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp))
         // Picking a place: just the map and the little bar; the rest waits.
@@ -340,8 +347,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         } else if (!searchGrowIn) { // nor while the search is back up over the map
             Column(
                 // In full-screen the media pill takes the bottom-right corner, so keep trip info left.
-                modifier = if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 14.dp)
-                else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
+                modifier = (if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 14.dp)
+                else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp))
+                    .onGloballyPositioned { tripInfoBox = it.boundsInRoot() },
                 horizontalAlignment = if (isFullScreenMap) Alignment.Start else Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -402,8 +410,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     modifier = Modifier.align(Alignment.BottomEnd).padding(top = FULL_MAP_SPEED_CLEARANCE).padding(14.dp)
                         .width(SIDE_COLUMN_WIDTH).heightIn(max = 360.dp).fillMaxHeight())
             } else if (preview == null && mapPick == null && !sketching) track?.let { t ->
+                // Too narrow for both side by side (a phone, or a wide trip bar): the pill sits above the trip info.
+                val density = LocalDensity.current
+                val lift = with(density) {
+                    val map = mapBox; val info = tripInfoBox
+                    if (map == null || info == null || info.height <= 0f || searchGrowIn ||
+                        info.right + 8.dp.toPx() <= map.right - (300 + 14).dp.toPx()) 0.dp
+                    else (map.bottom - info.top).toDp() - 14.dp + 8.dp
+                }
                 MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
-                    Modifier.align(Alignment.BottomEnd).padding(14.dp).width(300.dp))
+                    Modifier.align(Alignment.BottomEnd).padding(14.dp).padding(bottom = lift).width(300.dp))
             }
         }
     }
