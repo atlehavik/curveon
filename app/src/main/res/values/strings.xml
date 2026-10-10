@@ -459,6 +459,8 @@
     <string name="pick_hint_destination">Tap the map where you want to go</string>
     <string name="pick_hint_stop">Tap the map where you want to stop</string>
     <string name="pick_hint_start">Tap the map where the trip starts</string>
+    <string name="pick_point_by_point">Point by point</string>
+    <string name="pick_hint_next_point">Tap the map for each next point</string>
     <string name="back_to_search">Back to search</string>
     <string name="edit_on_map">Edit on map</string>
     <string name="edit_route_hint">Drag the line or a stop</string>

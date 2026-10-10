@@ -305,6 +305,10 @@ fun WrongTurnCard(
  * What the search dialog shrinks into for "Pick on map": a small bar at the bottom of the map.
  * Tap the map to drop a pin (tap again to move it); then the bar names the place and offers to
  * use it. The search icon grows the dialog back; ✕ gives up.
+ *
+ * Point by point (the toggle, offered for a destination or a stop): each tap on the map rides the
+ * trip on to there straight away, so a trip is built A → B → C → D without confirming each point;
+ * the bar shows the trip so far, Undo takes the last point back and the tick finishes.
  */
 @Composable
 fun MapPickBar(
@@ -313,12 +317,21 @@ fun MapPickBar(
     onConfirm: () -> Unit,
     onBackToSearch: () -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Point by point is on; null when it isn't offered (picking the start). */
+    pointByPoint: Boolean? = null,
+    onPointByPoint: () -> Unit = {},
+    /** Point by point: the trip so far ("0:40 · 38 km"), and whether its route is being found. */
+    tripSummary: String? = null,
+    busy: Boolean = false,
+    canUndo: Boolean = false,
+    onUndo: () -> Unit = {}
 ) {
     // Grows out of the shrinking dialog (bottom centre).
     val grow = remember { androidx.compose.animation.core.Animatable(0f) }
     LaunchedEffect(Unit) { grow.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.7f, stiffness = 500f)) }
-    val accent = if (purpose == SearchPurpose.STOP) NeonAmber else ElectricCyan
+    val chaining = pointByPoint == true
+    val accent = if (purpose == SearchPurpose.STOP && !chaining) NeonAmber else ElectricCyan
     Row(
         modifier
             .graphicsLayer {
@@ -332,31 +345,52 @@ fun MapPickBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Box(Modifier.testTag("map_pick_search")) {
+        if (!chaining) Box(Modifier.testTag("map_pick_search")) {
             RoundButton(Icons.Default.Search, stringResource(R.string.back_to_search), 48.dp, CockpitSurfaceVariant, accent, onBackToSearch)
         }
-        Text(
-            picked ?: stringResource(when (purpose) {
-                SearchPurpose.DESTINATION -> R.string.pick_hint_destination
-                SearchPurpose.STOP -> R.string.pick_hint_stop
-                SearchPurpose.START -> R.string.pick_hint_start
-            }),
-            color = if (picked != null) TextPrimary else TextSecondary,
-            fontSize = if (picked != null) 17.sp else 15.sp, fontWeight = if (picked != null) FontWeight.Black else FontWeight.Bold,
-            maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 340.dp).padding(horizontal = 4.dp)
-        )
-        if (picked != null) {
-            val (icon, label) = when (purpose) {
-                SearchPurpose.DESTINATION -> Icons.Default.Flag to R.string.go_here
-                SearchPurpose.STOP -> Icons.Default.AddLocationAlt to R.string.add_stop
-                SearchPurpose.START -> Icons.Default.TripOrigin to R.string.start_here
-            }
-            PillButton(icon, stringResource(label), accent, if (purpose == SearchPurpose.STOP) Color.Black else OnCyanDark,
-                Modifier.testTag("map_pick_confirm"), onConfirm)
+        if (pointByPoint != null && picked == null) Box(Modifier.testTag("map_pick_point_by_point")) {
+            RoundButton(Icons.Default.Timeline, stringResource(R.string.pick_point_by_point), 48.dp,
+                if (chaining) ElectricCyan else CockpitSurfaceVariant, if (chaining) OnCyanDark else accent, onPointByPoint)
         }
-        Box(Modifier.testTag("map_pick_cancel")) {
-            RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 48.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
+        if (chaining) {
+            Row(Modifier.weight(1f, fill = false).widthIn(max = 340.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (busy) CircularProgressIndicator(color = ElectricCyan, strokeWidth = 3.dp, modifier = Modifier.padding(end = 10.dp).size(20.dp))
+                Column {
+                    Text(stringResource(R.string.pick_hint_next_point), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    if (tripSummary != null) Text(tripSummary, color = TextSecondary, fontSize = 13.sp, maxLines = 1)
+                }
+            }
+            Box(Modifier.testTag("map_pick_undo").graphicsLayer { alpha = if (canUndo) 1f else 0.35f }) {
+                RoundButton(Icons.Default.Undo, stringResource(R.string.undo), 48.dp, CockpitSurfaceVariant, TextPrimary) { if (canUndo) onUndo() }
+            }
+            Box(Modifier.testTag("map_pick_done")) {
+                RoundButton(Icons.Default.Check, stringResource(R.string.done), 56.dp, ElectricCyan, OnCyanDark, onCancel)
+            }
+        } else {
+            Text(
+                picked ?: stringResource(when (purpose) {
+                    SearchPurpose.DESTINATION -> R.string.pick_hint_destination
+                    SearchPurpose.STOP -> R.string.pick_hint_stop
+                    SearchPurpose.START -> R.string.pick_hint_start
+                }),
+                color = if (picked != null) TextPrimary else TextSecondary,
+                fontSize = if (picked != null) 17.sp else 15.sp, fontWeight = if (picked != null) FontWeight.Black else FontWeight.Bold,
+                maxLines = if (picked != null) 1 else 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false).widthIn(max = 340.dp).padding(horizontal = 4.dp)
+            )
+            if (picked != null) {
+                val (icon, label) = when (purpose) {
+                    SearchPurpose.DESTINATION -> Icons.Default.Flag to R.string.go_here
+                    SearchPurpose.STOP -> Icons.Default.AddLocationAlt to R.string.add_stop
+                    SearchPurpose.START -> Icons.Default.TripOrigin to R.string.start_here
+                }
+                PillButton(icon, stringResource(label), accent, if (purpose == SearchPurpose.STOP) Color.Black else OnCyanDark,
+                    Modifier.testTag("map_pick_confirm"), onConfirm)
+            }
+            Box(Modifier.testTag("map_pick_cancel")) {
+                RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 48.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
+            }
         }
     }
 }

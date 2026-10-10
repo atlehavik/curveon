@@ -742,6 +742,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun setPreviewStart(point: GeoPoint?, name: String) =
         navigator.setPreviewStart(point?.let { Stop(name, LatLon(it.latitude, it.longitude)) })
 
+    /**
+     * Point by point on the map: the planned trip rides on to [point], its end so far becoming a
+     * point on the way; with no trip planned yet, a trip to [point] (from [start], or from here).
+     */
+    fun planPointByPoint(point: GeoPoint, name: String, start: GeoPoint? = null, startName: String = "") {
+        if (navigator.state.value.preview?.goal is NavigationGoal.Destination) navigator.extendPreview(Stop(name, LatLon(point.latitude, point.longitude)))
+        else previewDestination(point, name, start, startName)
+    }
+
     fun setPreviewDestination(point: GeoPoint, name: String) = navigator.setPreviewDestination(Stop(name, LatLon(point.latitude, point.longitude)))
 
     fun movePreviewStop(index: Int, delta: Int) = navigator.movePreviewStop(index, delta)

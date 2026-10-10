@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Build a trip point by point on the map
+
+"Pick on map" (for a destination or a stop) has a new button (a zigzag line) next to the search
+icon. Switched on, each tap on the map rides the trip on to there right away (the old end becomes
+a point on the way); the bar shows the trip's time and length, Undo takes the last point back and
+the tick finishes into the route preview. It stays on until switched off. Points can be dragged
+while building. Checked in the emulator (X7 landscape, Pixel size portrait). Installed on both.
+
+- [ ] Pixel: plan A → B → C → D by tapping; the map stays where you tap (no zooming out between points).
+- [ ] A tap right on the route line also adds the next point (e.g. riding back the same way).
+- [ ] Switching it off again: tapping drops a pin with "Add stop"/"Go here" as before.
+
 ## 2026-10-10 — Mark the part of the route to change
 
 While editing a trip on the map, the new button (a line with dots) left of Undo marks a part of

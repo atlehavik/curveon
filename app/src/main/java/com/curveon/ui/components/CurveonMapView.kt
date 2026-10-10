@@ -311,7 +311,13 @@ fun CurveonMapView(
                             return@setOnTouchListener true
                         }
                         when {
-                            at == null -> { clearDrag(); if (g is EditGrab.Handle) ed.onTapHandle(g.handle) }
+                            at == null -> {
+                                clearDrag()
+                                when (g) {
+                                    is EditGrab.Handle -> ed.onTapHandle(g.handle)
+                                    else -> ed.onTapLine?.invoke(m.projection.fromScreenLocation(android.graphics.PointF(downX, downY)).let { GeoPoint(it.latitude, it.longitude) })
+                                }
+                            }
                             g is EditGrab.Handle -> ed.onMoveHandle(g.handle, at)
                             g is EditGrab.Line -> ed.onInsert(g.insertAt, at)
                         }
@@ -437,11 +443,12 @@ fun CurveonMapView(
 
     // Preview: show the whole trip. Leaving preview hands the camera back to following.
     val previewPoints = remember(previewRoutes) { previewRoutes.flatMap { it.points } }
-    LaunchedEffect(map, previewPoints.size, previewSheetMinimized) {
+    LaunchedEffect(map, previewPoints.size, previewSheetMinimized, editor == null) {
         val m = map ?: return@LaunchedEffect
         if (previewPoints.size < 2) return@LaunchedEffect
         following = false
-        // Editing: the rider has zoomed in on the part they're changing; leave the camera there.
+        // Editing (or building point by point): the rider has zoomed in on the part they're changing;
+        // leave the camera there until they are done.
         if (editorState.value != null) return@LaunchedEffect
         val b = LatLngBounds.Builder()
         previewPoints.forEach { b.include(LatLng(it.latitude, it.longitude)) }

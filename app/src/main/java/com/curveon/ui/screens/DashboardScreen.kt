@@ -108,6 +108,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** "Pick on map": what the search was for while the rider taps the map; null when not picking. */
     var mapPick by remember { mutableStateOf<SearchPurpose?>(null) }
     var picked by remember { mutableStateOf<Pair<GeoPoint, String?>?>(null) }
+    /** Picking on the map point by point: each tap rides the trip on to there. Stays on until switched off. */
+    var pointByPoint by remember { mutableStateOf(false) }
     /** A new trip set to start elsewhere in "Where to?", before the destination; null = from here. */
     var planStart by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
     /** The start search was opened from "Where to?": its pick goes back there. */
@@ -183,6 +185,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         planStart = null
         startFirst = false
     }
+    /** Point by point is for building a trip: a destination or stops, not while riding one. */
+    val pointByPointOffered = !isNavigating && (mapPick == SearchPurpose.DESTINATION || mapPick == SearchPurpose.STOP)
+    val chaining = mapPick != null && pointByPoint && pointByPointOffered
+    val planPointByPoint: (GeoPoint, String) -> Unit = { p, name ->
+        viewModel.planPointByPoint(p, name, planStart?.first, planStart?.second ?: "")
+    }
     val endMapPick: () -> Unit = {
         mapPick = null
         picked = null
@@ -212,7 +220,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var editLine by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
     LaunchedEffect(selectedLine) { if (selectedLine != null) editLine = selectedLine }
     val selectedCandidate = preview?.candidates?.getOrNull(preview!!.selected)
-    val editor = if (!editing || planGoal == null) null else remember(planGoal, selectedCandidate, marking) {
+    // Point by point shows the trip's points the same way, so they can be dragged while building it
+    // (and the map stays where the rider is tapping instead of fitting the whole trip each time).
+    val editor = if ((!editing && !chaining) || planGoal == null) null else remember(planGoal, selectedCandidate, marking, chaining) {
         var number = 0
         val handles = buildList {
             planGoal.start?.let { add(RouteHandle(GeoPoint(it.point.lat, it.point.lon), HandleKind.START)) }
@@ -237,13 +247,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             },
             onInsert = { i, at -> scope.launch { viewModel.insertPreviewStop(i, at, viewModel.describePoint(at), via = true) } },
             onTapHandle = { h ->
-                when (h.kind) {
+                if (!chaining) when (h.kind) {
                     HandleKind.STOP, HandleKind.VIA -> editStopMenu = h.stopIndex
                     HandleKind.START -> searchPurpose = SearchPurpose.START
                     HandleKind.DESTINATION -> searchPurpose = SearchPurpose.DESTINATION
                 }
             },
             marking = marking,
+            onTapLine = if (chaining) ({ p -> scope.launch { planPointByPoint(p, viewModel.describePoint(p)) } }) else null,
             onMarkSection = { fromIndex, from, toIndex, to ->
                 marking = false
                 scope.launch {
@@ -256,6 +267,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val mapOverlays: @Composable BoxScope.() -> Unit = {
         // Picking a place: just the map and the little bar; the rest waits.
         val pickPurpose = mapPick
+        val tripSummary = preview?.selectedRoute?.let { r ->
+            val min = (r.durationSeconds / 60).toInt()
+            "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, r.distanceMeters / 1000)
+        }
         if (pickPurpose != null) {
             MapPickBar(
                 purpose = pickPurpose,
@@ -263,15 +278,21 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onConfirm = { picked?.let { (p, n) -> if (n != null) { usePlace(pickPurpose, p, n); endMapPick() } } },
                 onBackToSearch = { mapPick = null; picked = null; searchGrowIn = true; searchPurpose = pickPurpose },
                 onCancel = endMapPick,
+                pointByPoint = pointByPoint.takeIf { pointByPointOffered },
+                onPointByPoint = {
+                    pointByPoint = !pointByPoint
+                    // A pin already down is the first point.
+                    if (pointByPoint) picked?.let { (p, n) -> picked = null; if (n != null) planPointByPoint(p, n) }
+                },
+                tripSummary = tripSummary.takeIf { planGoal != null },
+                busy = preview?.calculating == true || preview?.fetching != null,
+                canUndo = preview?.canUndo == true,
+                onUndo = viewModel::undoPreviewEdit,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
             )
         } else if (editing) {
-            val route = preview?.selectedRoute
             RouteEditBar(
-                summary = route?.let { r ->
-                    val min = (r.durationSeconds / 60).toInt()
-                    "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, r.distanceMeters / 1000)
-                },
+                summary = tripSummary,
                 busy = editor?.busy == true,
                 error = selectedCandidate?.error,
                 canUndo = preview?.canUndo == true,
@@ -382,8 +403,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onRoadName = viewModel::onRoadName,
             onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
             onTap = if (mapPick != null) ({ p ->
-                picked = p to null
-                scope.launch { val name = viewModel.describePoint(p); if (picked?.first == p) picked = p to name }
+                if (chaining) {
+                    picked = null
+                    scope.launch { planPointByPoint(p, viewModel.describePoint(p)) }
+                } else {
+                    picked = p to null
+                    scope.launch { val name = viewModel.describePoint(p); if (picked?.first == p) picked = p to name }
+                }
             }) else null,
             pickedPoint = picked?.first,
             gpxTracks = overlayTracks,

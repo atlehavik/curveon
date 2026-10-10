@@ -263,6 +263,14 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         g.copy(stops = list)
     }
 
+    /**
+     * Ride on from the previewed trip's end to [next]: the old destination becomes a point the route
+     * goes through, [next] the new destination (building a trip point by point on the map).
+     */
+    fun extendPreview(next: Stop) = editPreview { g ->
+        g.copy(stops = g.stops + Stop(g.name, g.destination, via = true), name = next.name, destination = next.point)
+    }
+
     /** Replace the previewed stop at [index] with [stop] (a wrong place moved or picked again). */
     fun replacePreviewStop(index: Int, stop: Stop) = editPreview { g ->
         if (index !in g.stops.indices) null else g.copy(stops = g.stops.toMutableList().also { it[index] = stop })
