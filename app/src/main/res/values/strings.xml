@@ -198,6 +198,11 @@
     <string name="search_placeholder">Where to? Town, address, fuel, viewpoint…</string>
     <string name="search_nearest">Nearest</string>
     <string name="search_saved_routes">Saved routes</string>
+    <string name="favorites">Favourites</string>
+    <string name="favorite_home">Home</string>
+    <string name="favorite_name">Name</string>
+    <string name="save_favorite">Save as favourite</string>
+    <string name="favorite_saved">Saved as favourite</string>
     <string name="search_recent">Recent</string>
     <string name="search_online">online</string>
     <string name="search_no_matches">No matches</string>

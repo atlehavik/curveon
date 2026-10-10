@@ -78,6 +78,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val placeSearch = PlaceSearch(application)
     private val hazards = RouteHazards(placeSearch)
     private val recentDestinations = RecentDestinations(application)
+    private val favoritePlaces = com.curveon.data.routing.FavoritePlaces(application)
+    private val _favorites = MutableStateFlow(favoritePlaces.all())
+    /** Places kept to go to again (Home first), shown at the top of Where to?. */
+    val favorites: StateFlow<List<com.curveon.data.routing.Favorite>> = _favorites
+
+    /** Keep [point] as a favourite: Home (replacing the old one) or under [name]. */
+    fun saveFavorite(point: GeoPoint, name: String, home: Boolean) {
+        favoritePlaces.save(com.curveon.data.routing.Favorite(name, LatLon(point.latitude, point.longitude), home))
+        _favorites.value = favoritePlaces.all()
+    }
+
+    fun deleteFavorite(fav: com.curveon.data.routing.Favorite) {
+        favoritePlaces.remove(fav)
+        _favorites.value = favoritePlaces.all()
+    }
     private val settings = application.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
 
     /** Text in the language the rider chose (the app context follows it). */

@@ -197,6 +197,11 @@
     <string name="search_placeholder">Hvor skal du? Sted, adresse, bensin, utsiktspunkt…</string>
     <string name="search_nearest">Nærmeste</string>
     <string name="search_saved_routes">Lagrede ruter</string>
+    <string name="favorites">Favoritter</string>
+    <string name="favorite_home">Hjem</string>
+    <string name="favorite_name">Navn</string>
+    <string name="save_favorite">Lagre som favoritt</string>
+    <string name="favorite_saved">Lagret som favoritt</string>
     <string name="search_recent">Nylige</string>
     <string name="search_online">på nett</string>
     <string name="search_no_matches">Ingen treff</string>

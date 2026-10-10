@@ -60,6 +60,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     val context = LocalContext.current
     val phone = viewModel.phoneCompanion
+    val favorites by viewModel.favorites.collectAsStateWithLifecycle()
     val track by phone.currentTrack.collectAsStateWithLifecycle()
     val albumArt by phone.albumArt.collectAsStateWithLifecycle()
     val notifications by phone.notifications.collectAsStateWithLifecycle()
@@ -453,7 +454,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             showSurfaces = showSurfaces,
             roadNameProbe = roadNameProbe,
             onRoadName = viewModel::onRoadName,
-            onLongPress = { p -> scope.launch { pickPlace(p, viewModel.describePoint(p)) } },
+            // Held on the map: go there or keep it as a favourite (riding or planning: also a stop or the start).
+            onLongPress = { p -> scope.launch { pendingPlace = p to viewModel.describePoint(p) } },
             onTap = if (mapPick != null) ({ p ->
                 if (chaining) chainTap(p) else {
                     picked = p to null
@@ -632,6 +634,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onDeleteSaved = { viewModel.deleteSavedRoute(it) },
                 onNearest = { viewModel.nearest(it) },
                 purpose = purpose,
+                favorites = favorites,
+                onDeleteFavorite = viewModel::deleteFavorite,
                 onPickOnMap = { startMapPick(purpose) },
                 growIn = searchGrowIn,
                 startName = planStart?.second,
@@ -648,7 +652,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         pendingPlace?.let { (point, name) ->
             PlaceActionDialog(
                 name = name,
-                onAddStop = { viewModel.addStop(point, name); pendingPlace = null },
+                onAddStop = if (isNavigating || planning) ({ viewModel.addStop(point, name); pendingPlace = null }) else null,
+        val favoriteSaved = stringResource(R.string.favorite_saved)
                 onGoHere = {
                     if (planning) viewModel.setPreviewDestination(point, name) else viewModel.previewDestination(point, name)
                     pendingPlace = null
@@ -658,6 +663,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
+                onFavorite = { n, home ->
+                    viewModel.saveFavorite(point, n, home)
+                    pendingPlace = null
+                    toast = favoriteSaved
+                },
         editStopMenu?.let { i ->
             val stops = planGoal?.stops.orEmpty()
             val st = stops.getOrNull(i)

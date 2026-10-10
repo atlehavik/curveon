@@ -122,3 +122,35 @@ class RecentDestinations(private val context: Context) {
         private const val MAX = 8
     }
 }
+
+/** A place kept to go to again: Home (one at most), or one the rider named. */
+data class Favorite(val name: String, val point: LatLon, val home: Boolean = false)
+
+/** Favourite places, shown first in Where to?; Home leads. */
+class FavoritePlaces(context: Context) {
+    private val prefs = context.getSharedPreferences("favorites", Context.MODE_PRIVATE)
+
+    fun all(): List<Favorite> = runCatching {
+        val a = JSONArray(prefs.getString(KEY, "[]"))
+        (0 until a.length()).map { a.getJSONObject(it) }
+            .map { Favorite(it.getString("name"), LatLon(it.getDouble("lat"), it.getDouble("lon")), it.optBoolean("home")) }
+    }.getOrDefault(emptyList()).sortedByDescending { it.home }
+
+    /** Adds [fav]; a new Home replaces the old one, and the same name or spot is kept once. */
+    fun save(fav: Favorite) = write(listOf(fav) + all().filterNot {
+        (fav.home && it.home) || (!it.home && it.name == fav.name) || com.curveon.routing.Geo.distance(it.point, fav.point) < 50
+    })
+
+    fun remove(fav: Favorite) = write(all().filterNot { it == fav })
+
+    private fun write(list: List<Favorite>) {
+        val a = JSONArray(list.sortedByDescending { it.home }.map {
+            JSONObject().put("name", it.name).put("lat", it.point.lat).put("lon", it.point.lon).put("home", it.home)
+        })
+        prefs.edit().putString(KEY, a.toString()).apply()
+    }
+
+    private companion object {
+        const val KEY = "list"
+    }
+}

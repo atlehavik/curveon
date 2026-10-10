@@ -55,6 +55,9 @@ fun DestinationSearchDialog(
     onDismiss: () -> Unit,
     savedRoutes: List<com.curveon.data.model.RouteItem> = emptyList(),
     recents: List<com.curveon.data.routing.Stop> = emptyList(),
+    /** Favourite places (Home first): for any purpose, long-press to delete. */
+    favorites: List<com.curveon.data.routing.Favorite> = emptyList(),
+    onDeleteFavorite: (com.curveon.data.routing.Favorite) -> Unit = {},
     onPickSaved: (com.curveon.data.model.RouteItem) -> Unit = {},
     onDeleteSaved: (com.curveon.data.model.RouteItem) -> Unit = {},
     onNearest: (suspend (kinds: List<String>) -> List<SearchResult>)? = null,
@@ -74,6 +77,7 @@ fun DestinationSearchDialog(
     var searching by remember { mutableStateOf(false) }
     var nearest by remember { mutableStateOf<NearestCategory?>(null) }
     var confirmDelete by remember { mutableStateOf<com.curveon.data.model.RouteItem?>(null) }
+    var confirmDeleteFavorite by remember { mutableStateOf<com.curveon.data.routing.Favorite?>(null) }
     val focus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
 
@@ -192,6 +196,18 @@ fun DestinationSearchDialog(
                     val here = stringResource(R.string.from_here)
                     ListRow(Icons.Default.MyLocation, here, "", null, onClick = { onPick(SearchResult(here, "", KIND_HERE, 0.0, 0.0, 0.0)) })
                 }
+                if (favorites.isNotEmpty()) item { SectionLabel(stringResource(R.string.favorites)) }
+                items(favorites, key = { "fav${it.name}${it.point.lat}${it.point.lon}" }) { fav ->
+                    val home = stringResource(R.string.favorite_home)
+                    ListRow(
+                        icon = if (fav.home) Icons.Default.Home else Icons.Default.Star,
+                        title = if (fav.home) home else fav.name,
+                        subtitle = if (fav.home) fav.name else "",
+                        trailing = null,
+                        onClick = { onPick(SearchResult(if (fav.home) home else fav.name, "", "favorite", fav.point.lat, fav.point.lon, 0.0)) },
+                        onLongClick = { confirmDeleteFavorite = fav }
+                    )
+                }
                 val saved = if (purpose == SearchPurpose.DESTINATION) savedRoutes else emptyList()
                 if (saved.isNotEmpty()) item { SectionLabel(stringResource(R.string.search_saved_routes)) }
                 items(saved, key = { "saved${it.id}" }) { item ->
@@ -205,6 +221,8 @@ fun DestinationSearchDialog(
                         onLongClick = { confirmDelete = item }
                     )
                 }
+                // Places already among the favourites aren't repeated as recent.
+                val recents = recents.filterNot { r -> favorites.any { com.curveon.routing.Geo.distance(it.point, r.point) < 100 } }
                 if (recents.isNotEmpty()) item { SectionLabel(stringResource(R.string.search_recent)) }
                 items(recents, key = { "recent${it.name}${it.point.lat}" }) { stop ->
                     ListRow(Icons.Default.History, stop.name, "", null, onClick = {
@@ -240,6 +258,14 @@ fun DestinationSearchDialog(
         }
     }
 
+    confirmDeleteFavorite?.let { fav ->
+        AlertDialog(
+            onDismissRequest = { confirmDeleteFavorite = null },
+            title = { HideSystemBars(); Text(stringResource(R.string.delete_named, if (fav.home) stringResource(R.string.favorite_home) else fav.name)) },
+            confirmButton = { TextButton(onClick = { onDeleteFavorite(fav); confirmDeleteFavorite = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
+            dismissButton = { TextButton(onClick = { confirmDeleteFavorite = null }) { Text(stringResource(R.string.cancel)) } }
+        )
+    }
     confirmDelete?.let { item ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },

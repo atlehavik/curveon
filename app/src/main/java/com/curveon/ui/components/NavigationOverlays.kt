@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -137,11 +139,16 @@ fun RoutingStatusCard(status: RoutingStatus, onDismiss: () -> Unit, modifier: Mo
 @Composable
 fun PlaceActionDialog(
     name: String,
-    onAddStop: () -> Unit,
+    /** Null when there is no trip to add it to. */
+    onAddStop: (() -> Unit)?,
     onGoHere: () -> Unit,
     onStartHere: (() -> Unit)?,
+    /** Keep the place as a favourite: as Home, or under the name given. */
+    onFavorite: (name: String, home: Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var naming by remember { mutableStateOf(false) }
+    if (naming) return FavoriteDialog(name, onSave = onFavorite, onDismiss = onDismiss)
     Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         HideSystemBars()
         Column(
@@ -155,13 +162,51 @@ fun PlaceActionDialog(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black,
-                    Modifier.weight(1f).testTag("add_stop_btn"), onAddStop)
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (onAddStop != null) PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black,
+                    Modifier.testTag("add_stop_btn"), onAddStop)
                 PillButton(Icons.Default.Flag, stringResource(R.string.go_here), ElectricCyan, OnCyanDark,
-                    Modifier.weight(1f).testTag("go_here_btn"), onGoHere)
+                    Modifier.testTag("go_here_btn"), onGoHere)
                 if (onStartHere != null) PillButton(Icons.Default.TripOrigin, stringResource(R.string.start_here), CockpitSurfaceVariant, TextPrimary,
-                    Modifier.weight(1f).testTag("start_here_btn"), onStartHere)
+                    Modifier.testTag("start_here_btn"), onStartHere)
+                PillButton(Icons.Default.StarBorder, stringResource(R.string.save_favorite), CockpitSurfaceVariant, NeonAmber,
+                    Modifier.testTag("favorite_btn")) { naming = true }
+            }
+        }
+    }
+}
+
+/** Save a place as a favourite: Home with one tap, or under a name (the place's, to change). */
+@Composable
+private fun FavoriteDialog(placeName: String, onSave: (name: String, home: Boolean) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf(placeName) }
+    Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        HideSystemBars()
+        Column(
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(CockpitSurface)
+                .border(1.dp, CockpitBorder, RoundedCornerShape(20.dp))
+                .padding(20.dp)
+                .widthIn(max = 640.dp)
+                .testTag("favorite_dialog"),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Text(stringResource(R.string.save_favorite), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
+            PillButton(Icons.Default.Home, stringResource(R.string.favorite_home), NeonAmber, Color.Black,
+                Modifier.fillMaxWidth().testTag("favorite_home_btn")) { onSave(placeName, true) }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = name, onValueChange = { name = it }, singleLine = true,
+                    label = { Text(stringResource(R.string.favorite_name)) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
+                        focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder, cursorColor = ElectricCyan
+                    ),
+                    modifier = Modifier.weight(1f).testTag("favorite_name_field")
+                )
+                PillButton(Icons.Default.Star, stringResource(R.string.save), ElectricCyan, OnCyanDark,
+                    Modifier.testTag("favorite_save_btn")) { if (name.isNotBlank()) onSave(name.trim(), false) }
             }
         }
     }
