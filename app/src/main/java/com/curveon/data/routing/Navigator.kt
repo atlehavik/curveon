@@ -251,6 +251,18 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         g.copy(stops = g.stops.toMutableList().also { it.add(index.coerceIn(0, g.stops.size), stop) })
     }
 
+    /**
+     * Put several stops in the previewed trip in one change (one Undo), each at its index in the
+     * trip as it is now, e.g. both ends of a part of the route marked for changing.
+     */
+    fun insertPreviewStops(stops: List<Pair<Int, Stop>>) = editPreview { g ->
+        val list = g.stops.toMutableList()
+        // Later ones first, so the earlier indexes still point where they did.
+        stops.withIndex().sortedWith(compareByDescending<IndexedValue<Pair<Int, Stop>>> { it.value.first }.thenByDescending { it.index })
+            .forEach { (_, s) -> list.add(s.first.coerceIn(0, list.size), s.second) }
+        g.copy(stops = list)
+    }
+
     /** Replace the previewed stop at [index] with [stop] (a wrong place moved or picked again). */
     fun replacePreviewStop(index: Int, stop: Stop) = editPreview { g ->
         if (index !in g.stops.indices) null else g.copy(stops = g.stops.toMutableList().also { it[index] = stop })

@@ -36,7 +36,14 @@ class RouteEditor(
     val onMoveHandle: (RouteHandle, GeoPoint) -> Unit,
     /** Route through [at], as stop number [stopIndex] (0 = first). */
     val onInsert: (stopIndex: Int, at: GeoPoint) -> Unit,
-    val onTapHandle: (RouteHandle) -> Unit
+    val onTapHandle: (RouteHandle) -> Unit,
+    /**
+     * Marking a part of the route to change: a finger dragged along the line marks it, and on
+     * letting go [onMarkSection] pins its two ends (so the rest of a long trip stays as it is).
+     */
+    val marking: Boolean = false,
+    /** Route through both ends of a marked part, as stops number [fromIndex] and [toIndex] (in the trip as it is now). */
+    val onMarkSection: (fromIndex: Int, from: GeoPoint, toIndex: Int, to: GeoPoint) -> Unit = { _, _, _, _ -> }
 )
 
 internal const val EDIT_HANDLES = "curveon-edit-handles"
@@ -49,6 +56,9 @@ internal sealed interface EditGrab {
 
     data class Handle(val handle: RouteHandle, override val prev: GeoPoint?, override val next: GeoPoint?) : EditGrab
     data class Line(val insertAt: Int, override val prev: GeoPoint?, override val next: GeoPoint?) : EditGrab
+
+    /** Marking a part of the line: where along it ([at] = segment index + fraction) the finger went down. */
+    data class Section(val at: Double, override val prev: GeoPoint? = null, override val next: GeoPoint? = null) : EditGrab
 }
 
 /** Handles win over the line; null when the finger is on neither (the map pans as usual). */
@@ -72,12 +82,55 @@ internal fun grabEdit(editor: RouteEditor, line: List<GeoPoint>, m: MapLibreMap,
     if (line.size < 2) return null
     val at = m.projection.fromScreenLocation(PointF(x, y))
     val reach = LINE_GRAB_DP * density * m.projection.getMetersPerPixelAtLatitude(at.latitude)
-    val segment = nearestSegment(line, at.latitude, at.longitude, reach) ?: return null
-    // Which leg of the trip that is: count the stops that come before it along the line.
+    val along = nearestAlong(line, at.latitude, at.longitude, reach) ?: return null
+    val insertAt = legAt(editor, line, along)
+    return EditGrab.Line(insertAt, between.getOrNull(insertAt - 1)?.point ?: start, between.getOrNull(insertAt)?.point ?: dest)
+}
+
+/** Marking a part of the line: the finger has to go down on it (handles don't count). */
+internal fun grabSection(line: List<GeoPoint>, m: MapLibreMap, x: Float, y: Float, density: Float): EditGrab.Section? {
+    if (line.size < 2) return null
+    val at = m.projection.fromScreenLocation(PointF(x, y))
+    val reach = LINE_GRAB_DP * density * m.projection.getMetersPerPixelAtLatitude(at.latitude)
+    return nearestAlong(line, at.latitude, at.longitude, reach)?.let { EditGrab.Section(it) }
+}
+
+/** Where along [line] the finger at screen (x, y) is, wherever it is on the screen (it slides along the line). */
+internal fun alongAt(line: List<GeoPoint>, m: MapLibreMap, x: Float, y: Float): Double? {
+    val at = m.projection.fromScreenLocation(PointF(x, y))
+    return nearestAlong(line, at.latitude, at.longitude, Double.MAX_VALUE)
+}
+
+/** Which leg of the trip [along] is in, as the stop number a point put there gets: the stops that come before it. */
+internal fun legAt(editor: RouteEditor, line: List<GeoPoint>, along: Double): Int {
+    val between = editor.handles.filter { it.kind == HandleKind.STOP || it.kind == HandleKind.VIA }
     var from = 0
     val stopAt = between.map { h -> nearestIndex(line, h.point, from).also { from = it } }
-    val insertAt = stopAt.count { it <= segment }
-    return EditGrab.Line(insertAt, between.getOrNull(insertAt - 1)?.point ?: start, between.getOrNull(insertAt)?.point ?: dest)
+    return stopAt.count { it <= along.toInt() }
+}
+
+/** The point [along] the line (segment index + fraction). */
+internal fun pointAlong(line: List<GeoPoint>, along: Double): GeoPoint {
+    val i = along.toInt().coerceIn(0, line.size - 2)
+    val t = (along - i).coerceIn(0.0, 1.0)
+    val a = line[i]; val b = line[i + 1]
+    return GeoPoint(a.latitude + (b.latitude - a.latitude) * t, a.longitude + (b.longitude - a.longitude) * t)
+}
+
+/** The marked part of the line, drawn over the route while marking and until the new route is in. */
+internal fun sectionFeatures(line: List<GeoPoint>, a: Double, b: Double): FeatureCollection {
+    val from = minOf(a, b); val to = maxOf(a, b)
+    val pts = buildList {
+        add(pointAlong(line, from))
+        for (i in (from.toInt() + 1)..to.toInt().coerceAtMost(line.size - 1)) add(line[i])
+        add(pointAlong(line, to))
+    }.map { Point.fromLngLat(it.longitude, it.latitude) }
+    val ends = listOf(pts.first(), pts.last()).map { p ->
+        Feature.fromGeometry(p).also { it.addStringProperty("kind", "section") }
+    }
+    return FeatureCollection.fromFeatures(
+        listOf(Feature.fromGeometry(LineString.fromLngLats(pts)).also { it.addStringProperty("kind", "section") }) + ends
+    )
 }
 
 /** The dashed guess while dragging: from the place before, through the finger, to the place after. */
@@ -109,13 +162,25 @@ internal fun handleFeatures(handles: List<RouteHandle>, dark: Boolean): FeatureC
 internal fun addEditLayers(s: Style, dark: Boolean) {
     val cyan = if (dark) "#00E5FF" else "#0091EA"
     val isPoint = Expression.eq(Expression.geometryType(), Expression.literal("Point"))
+    val isSection = Expression.eq(Expression.get("kind"), Expression.literal("section"))
     s.addSource(GeoJsonSource(EDIT_DRAG))
     s.addSource(GeoJsonSource(EDIT_HANDLES))
+    s.addLayer(
+        LineLayer("$EDIT_DRAG-section", EDIT_DRAG).withProperties(
+            lineColor("#FF9100"), lineWidth(11f), lineOpacity(0.85f),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
+        ).withFilter(Expression.all(isSection, Expression.not(isPoint)))
+    )
+    s.addLayer(
+        CircleLayer("$EDIT_DRAG-section-ends", EDIT_DRAG).withProperties(
+            circleRadius(9f), circleColor("#FFFFFF"), circleStrokeColor("#FF9100"), circleStrokeWidth(4f)
+        ).withFilter(Expression.all(isSection, isPoint))
+    )
     s.addLayer(
         LineLayer("$EDIT_DRAG-line", EDIT_DRAG).withProperties(
             lineColor(cyan), lineWidth(5f), lineOpacity(0.9f), lineDasharray(arrayOf(1.2f, 1.2f)),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
-        ).withFilter(Expression.not(isPoint))
+        ).withFilter(Expression.all(Expression.not(isPoint), Expression.not(isSection)))
     )
     s.addLayer(
         CircleLayer("$EDIT_HANDLES-dots", EDIT_HANDLES).withProperties(
@@ -132,16 +197,16 @@ internal fun addEditLayers(s: Style, dark: Boolean) {
     s.addLayer(
         CircleLayer("$EDIT_DRAG-dot", EDIT_DRAG).withProperties(
             circleRadius(13f), circleColor(cyan), circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f)
-        ).withFilter(isPoint)
+        ).withFilter(Expression.all(isPoint, Expression.not(isSection)))
     )
 }
 
-/** Index of the segment of [line] nearest to (lat, lon), if it is within [reachMeters]. */
-private fun nearestSegment(line: List<GeoPoint>, lat: Double, lon: Double, reachMeters: Double): Int? {
+/** Where along [line] (segment index + fraction) is nearest to (lat, lon), if it is within [reachMeters]. */
+private fun nearestAlong(line: List<GeoPoint>, lat: Double, lon: Double, reachMeters: Double): Double? {
     // Flat metres around the finger: plenty accurate over a few hundred metres.
     val kx = cos(Math.toRadians(lat)) * 111_320.0
     val ky = 110_540.0
-    var best = -1
+    var best = -1.0
     var bestD = reachMeters
     for (i in 0 until line.size - 1) {
         val ax = (line[i].longitude - lon) * kx; val ay = (line[i].latitude - lat) * ky
@@ -150,7 +215,7 @@ private fun nearestSegment(line: List<GeoPoint>, lat: Double, lon: Double, reach
         val len = dx * dx + dy * dy
         val t = if (len == 0.0) 0.0 else (-(ax * dx + ay * dy) / len).coerceIn(0.0, 1.0)
         val d = hypot(ax + t * dx, ay + t * dy)
-        if (d < bestD) { bestD = d; best = i }
+        if (d < bestD) { bestD = d; best = i + t }
     }
     return best.takeIf { it >= 0 }
 }

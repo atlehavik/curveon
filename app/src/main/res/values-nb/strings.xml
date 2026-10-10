@@ -460,8 +460,10 @@
     <string name="pick_hint_start">Trykk i kartet der turen starter</string>
     <string name="back_to_search">Tilbake til søket</string>
     <string name="edit_on_map">Endre i kartet</string>
-    <string name="edit_route_hint">Dra linja eller et stopp for å endre ruta</string>
+    <string name="edit_route_hint">Dra linja eller et stopp</string>
     <string name="edit_route_working">Finner veien…</string>
+    <string name="edit_route_mark">Marker delen som skal endres</string>
+    <string name="edit_route_mark_hint">Dra langs delen du vil endre</string>
     <string name="undo">Angre</string>
     <string name="done">Ferdig</string>
     <string name="change_place">Bytt sted</string>

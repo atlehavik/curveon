@@ -116,6 +116,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var searchGrowIn by remember { mutableStateOf(false) }
     /** Editing the previewed trip by dragging it on the map. */
     var editing by remember { mutableStateOf(false) }
+    /** While editing: the next drag along the line marks the part of the route to change. */
+    var marking by remember { mutableStateOf(false) }
     // The route preview folded down to a bar so more of the route shows; open again for each new plan.
     var previewMinimized by remember { mutableStateOf(false) }
     LaunchedEffect(preview == null) { if (preview == null) previewMinimized = false }
@@ -200,6 +202,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     val planGoal = preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination
     LaunchedEffect(planGoal == null) { if (planGoal == null) { editing = false; editStopMenu = null } }
+    LaunchedEffect(editing) { if (!editing) marking = false }
     androidx.activity.compose.BackHandler(enabled = editing && mapPick == null) { editing = false }
     androidx.activity.compose.BackHandler(enabled = mapPick != null) { endMapPick() }
 
@@ -209,7 +212,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var editLine by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
     LaunchedEffect(selectedLine) { if (selectedLine != null) editLine = selectedLine }
     val selectedCandidate = preview?.candidates?.getOrNull(preview!!.selected)
-    val editor = if (!editing || planGoal == null) null else remember(planGoal, selectedCandidate) {
+    val editor = if (!editing || planGoal == null) null else remember(planGoal, selectedCandidate, marking) {
         var number = 0
         val handles = buildList {
             planGoal.start?.let { add(RouteHandle(GeoPoint(it.point.lat, it.point.lon), HandleKind.START)) }
@@ -239,6 +242,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     HandleKind.START -> searchPurpose = SearchPurpose.START
                     HandleKind.DESTINATION -> searchPurpose = SearchPurpose.DESTINATION
                 }
+            },
+            marking = marking,
+            onMarkSection = { fromIndex, from, toIndex, to ->
+                marking = false
+                scope.launch {
+                    viewModel.pinPreviewSection(fromIndex, from, viewModel.describePoint(from), toIndex, to, viewModel.describePoint(to))
+                }
             }
         )
     }
@@ -265,6 +275,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 busy = editor?.busy == true,
                 error = selectedCandidate?.error,
                 canUndo = preview?.canUndo == true,
+                marking = marking,
+                onMark = { marking = !marking },
                 onUndo = viewModel::undoPreviewEdit,
                 onDone = { editing = false },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)

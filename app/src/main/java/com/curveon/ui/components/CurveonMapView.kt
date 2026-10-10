@@ -77,6 +77,8 @@ private const val HINT = "curveon-track-hint"
 private const val ARROW_IMAGE = "curveon-arrow"
 /** GPX waypoints turn from dots into icons from this zoom in (about 30 km across the map). */
 private const val POI_ICON_ZOOM = 11f
+/** A marked part of the route shorter than this on screen is a tap, not a part. */
+private const val MIN_SECTION_DP = 24f
 private const val SURFACE = "curveon-surface"
 
 /** The road surface dashes, also shown as the key in Settings. */
@@ -254,6 +256,9 @@ fun CurveonMapView(
             var downX = 0f
             var downY = 0f
             var dragAt: GeoPoint? = null
+            // Marking a part of the route: the line it is on and how far along the finger has slid.
+            var grabLine: List<GeoPoint> = emptyList()
+            var markedTo: Double? = null
             fun clearDrag() = m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
             mapView.setOnTouchListener { v, e ->
                 val ed = editorState.value
@@ -261,7 +266,10 @@ fun CurveonMapView(
                 when (e.actionMasked) {
                     android.view.MotionEvent.ACTION_DOWN -> {
                         val line = previewRoutesState.value.firstOrNull { it.selected }?.points.orEmpty()
-                        grabbed = grabEdit(ed, line, m, e.x, e.y, v.resources.displayMetrics.density)
+                        val density = v.resources.displayMetrics.density
+                        grabbed = if (ed.marking) grabSection(line, m, e.x, e.y, density) else grabEdit(ed, line, m, e.x, e.y, density)
+                        grabLine = line
+                        markedTo = null
                         dragAt = null
                         downX = e.x; downY = e.y
                         if (grabbed != null) v.parent?.requestDisallowInterceptTouchEvent(true)
@@ -269,7 +277,14 @@ fun CurveonMapView(
                     }
                     android.view.MotionEvent.ACTION_MOVE -> {
                         val g = grabbed ?: return@setOnTouchListener false
-                        if (dragAt != null || kotlin.math.hypot(e.x - downX, e.y - downY) > slop) {
+                        if (g is EditGrab.Section) {
+                            // Marking: the finger slides along the line, wherever it is on the screen.
+                            if (markedTo != null || kotlin.math.hypot(e.x - downX, e.y - downY) > slop) {
+                                val to = alongAt(grabLine, m, e.x, e.y) ?: return@setOnTouchListener true
+                                markedTo = to
+                                m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(sectionFeatures(grabLine, g.at, to))
+                            }
+                        } else if (dragAt != null || kotlin.math.hypot(e.x - downX, e.y - downY) > slop) {
                             val ll = m.projection.fromScreenLocation(android.graphics.PointF(e.x, e.y))
                             val at = GeoPoint(ll.latitude, ll.longitude)
                             dragAt = at
@@ -281,6 +296,20 @@ fun CurveonMapView(
                         val g = grabbed ?: return@setOnTouchListener false
                         grabbed = null
                         val at = dragAt
+                        if (g is EditGrab.Section) {
+                            val to = markedTo
+                            val line = grabLine
+                            // Too short to be a part of the route (a tap): nothing marked.
+                            val a = m.projection.toScreenLocation(pointAlong(line, g.at).let { LatLng(it.latitude, it.longitude) })
+                            val b = to?.let { m.projection.toScreenLocation(pointAlong(line, it).let { p -> LatLng(p.latitude, p.longitude) }) }
+                            if (b == null || kotlin.math.hypot(a.x - b.x, a.y - b.y) < MIN_SECTION_DP * v.resources.displayMetrics.density) clearDrag()
+                            else {
+                                val from = minOf(g.at, to); val until = maxOf(g.at, to)
+                                ed.onMarkSection(legAt(ed, line, from), pointAlong(line, from), legAt(ed, line, until), pointAlong(line, until))
+                            }
+                            v.performClick()
+                            return@setOnTouchListener true
+                        }
                         when {
                             at == null -> { clearDrag(); if (g is EditGrab.Handle) ed.onTapHandle(g.handle) }
                             g is EditGrab.Handle -> ed.onMoveHandle(g.handle, at)

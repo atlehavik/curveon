@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Mark the part of the route to change
+
+While editing a trip on the map, the new button (a line with dots) left of Undo marks a part of
+the route: drag along the line, and its two ends get pinned as small white points, so dragging the
+line between them only changes that part. Done is a round tick on a phone. Checked in the
+emulator (X7 landscape, Pixel size portrait). Installed on both devices.
+
+- [ ] Pixel portrait: editing shows the tick (Done) at the right of the bar.
+- [ ] Long trip (e.g. Bømlo → Oslo): mark a part at Haukeli, drag the line out to a side road;
+      the route outside the marked part stays as it was, and Undo takes the marking away in one go.
+- [ ] Marking with a finger that drifts off the line still slides the orange part along the route.
+
 ## 2026-10-10 — The route preview scrolls instead of losing GO
 
 When the route preview runs out of height (the Pixel in landscape with a gravel warning), the part

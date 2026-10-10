@@ -811,6 +811,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun insertPreviewStop(index: Int, point: GeoPoint, name: String, via: Boolean = false) =
         navigator.insertPreviewStop(index, Stop(name, LatLon(point.latitude, point.longitude), via))
 
+    /** Route through both ends of a part of the previewed trip marked for changing, so only that part moves. */
+    fun pinPreviewSection(fromIndex: Int, from: GeoPoint, fromName: String, toIndex: Int, to: GeoPoint, toName: String) =
+        navigator.insertPreviewStops(listOf(
+            fromIndex to Stop(fromName, LatLon(from.latitude, from.longitude), via = true),
+            toIndex to Stop(toName, LatLon(to.latitude, to.longitude), via = true)
+        ))
+
     /** Move the previewed stop at [index] to [point] (keeps being a via point if it was one). */
     fun replacePreviewStop(index: Int, point: GeoPoint, name: String, via: Boolean = false) =
         navigator.replacePreviewStop(index, Stop(name, LatLon(point.latitude, point.longitude), via))
