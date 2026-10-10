@@ -60,15 +60,17 @@ and [dashboard.md](dashboard.md) for the goals.
 - **Ride log**: rides record automatically (distance, time, speeds, climb, gyro lean angle);
   find them under Rides in the GPX & rides dialog (rail), save one to the GPX collection or ride one again.
 - **Speed limit sign** from OSM data, while navigating and while free riding.
-- **Dashboard** (Android Auto-like): speed + limit, newest message with Reply/Dismiss, calls
-  with Answer/Decline, music with full cover art when nothing else needs the space.
+- **Dashboard** (Android Auto-like): speed, limit and clock on the map; newest message with
+  Reply/Dismiss, calls with Answer/Decline, music with full cover art when nothing else needs the space.
+- **Engine panel** (Settings → Engine, optional): fuel, RPM, coolant and battery from an ELM327
+  OBD2 adapter paired over Bluetooth (classic serial profile); readings the bike doesn't report stay "–".
+  "Demo" makes up values. Above the music on the tablet; beside it, bottom right, on a phone held upright.
 - **Spoken replies**: Reply → the phone listens through the headset → the tablet shows what was
   heard → Send.
 - **Demo ride** (Settings) drives the active route without GPS; **demo phone data** (Phone link)
   shows the dashboard without a phone.
 
-Not done yet: OBD2 adapter support (the card only shows once an adapter is connected, which
-isn't implemented), voice guidance (deliberately not planned).
+Not done: voice guidance (deliberately not planned). The OBD2 link is untested with a real adapter.
 
 ## Build
 

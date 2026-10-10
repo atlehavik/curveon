@@ -34,6 +34,7 @@ private val OnCyan = Color(0xFF00363D)
 private enum class SettingsTab(val label: Int, val icon: ImageVector) {
     DISPLAY(R.string.settings_display, Icons.Default.Tune),
     NAVIGATION(R.string.settings_navigation, Icons.Default.Navigation),
+    ENGINE(R.string.settings_engine, Icons.Default.Speed),
     PHONE(R.string.phone, Icons.Default.PhoneAndroid),
     DATA(R.string.settings_maps_data, Icons.Default.Map)
 }
@@ -45,6 +46,11 @@ data class SettingsState(
     val mapTheme: MapTheme,
     val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
+    val obd: com.curveon.data.obd.ObdState,
+    /** The chosen adapter's address, [com.curveon.data.obd.ObdLink.DEMO], or null. */
+    val obdDevice: String?,
+    val obdValues: List<com.curveon.data.obd.ObdValue>,
+    val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
     val showSurfaces: Boolean,
     val autoFollowTracks: Boolean,
@@ -67,6 +73,8 @@ class SettingsActions(
     val onMapTheme: (MapTheme) -> Unit,
     val onScreenLock: (com.curveon.ScreenLock) -> Unit,
     val onObd: (Boolean) -> Unit,
+    val onObdDevice: (String?) -> Unit,
+    val onObdValue: (com.curveon.data.obd.ObdValue) -> Unit,
     val onAutoZoom: (Boolean) -> Unit,
     val onShowSurfaces: (Boolean) -> Unit,
     val onAutoFollow: (Boolean) -> Unit,
@@ -84,8 +92,8 @@ class SettingsActions(
  * there is room for more.
  */
 @Composable
-fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, onDismiss: () -> Unit) {
-    var tab by rememberSaveable { mutableStateOf(SettingsTab.DISPLAY) }
+fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, openEngine: Boolean = false, onDismiss: () -> Unit) {
+    var tab by rememberSaveable { mutableStateOf(if (openEngine) SettingsTab.ENGINE else SettingsTab.DISPLAY) }
     var confirmDelete by remember { mutableStateOf<InstalledMap?>(null) }
     CockpitDialog(title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
         val pages: @Composable () -> Unit = {
@@ -106,9 +114,6 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_surfaces), below = { SurfaceKey() }) {
                             Segmented(listOf(false, true), state.showSurfaces,
                                 { stringResource(if (it) R.string.settings_surfaces_dashed else R.string.settings_surfaces_off) }, actions.onShowSurfaces)
-                        }
-                        Setting(stringResource(R.string.settings_obd), stringResource(R.string.settings_obd_hint), small = true) {
-                            CockpitSwitch(state.obdEnabled, actions.onObd)
                         }
                     }
                     SettingsTab.NAVIGATION -> Page {
@@ -134,6 +139,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             }
                         }
                     }
+                    SettingsTab.ENGINE -> Page { EngineSettings(state, actions) }
                     SettingsTab.PHONE -> PhoneLinkContent(phone, Modifier.fillMaxSize())
                     SettingsTab.DATA -> Page {
                         SectionTitle(stringResource(R.string.settings_offline_maps))
@@ -246,6 +252,59 @@ private fun PendingRow(id: String, name: String, download: MapDownloadState, act
             OutlinedButton(onClick = { actions.onCancelMapDownload(id) }) { Text(stringResource(R.string.cancel), color = WarningRed) }
         }
         if (running != null) DownloadProgress(running)
+    }
+}
+
+/** Settings → Engine: the dashboard's engine panel on or off, the OBD2 adapter, and what it shows. */
+@Composable
+private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsActions) {
+    Setting(stringResource(R.string.settings_obd_show), stringResource(R.string.settings_obd_show_hint), small = true) {
+        CockpitSwitch(state.obdEnabled, actions.onObd)
+    }
+    if (!state.obdEnabled) return
+    SectionTitle(stringResource(R.string.settings_obd_adapter))
+    Text(stringResource(R.string.settings_obd_adapter_hint), color = TextSecondary, fontSize = 13.sp)
+    val paired = remember { state.pairedDevices() }
+    val choices = paired.map { it.address to it.name } + (com.curveon.data.obd.ObdLink.DEMO to stringResource(R.string.settings_obd_demo))
+    if (paired.isEmpty()) Text(stringResource(R.string.settings_obd_none_paired), color = NeonAmber, fontSize = 13.sp)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        choices.forEach { (address, name) ->
+            val chosen = address == state.obdDevice
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                    .background(if (chosen) ElectricCyan.copy(alpha = 0.15f) else CockpitSurfaceVariant)
+                    .clickable { actions.onObdDevice(if (chosen) null else address) }
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(if (chosen) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, null,
+                    tint = if (chosen) ElectricCyan else TextMuted, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(name, color = TextPrimary, fontSize = 15.sp, fontWeight = if (chosen) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier.weight(1f), maxLines = 1)
+                if (chosen) Text(
+                    stringResource(when (state.obd.status) {
+                        com.curveon.data.obd.ObdState.Status.CONNECTED -> R.string.settings_obd_status_connected
+                        com.curveon.data.obd.ObdState.Status.CONNECTING -> R.string.obd_connecting
+                        com.curveon.data.obd.ObdState.Status.NO_ADAPTER -> R.string.obd_bluetooth_off
+                        else -> R.string.obd_not_answering
+                    }),
+                    color = if (state.obd.status == com.curveon.data.obd.ObdState.Status.CONNECTED) EcoGreen else NeonAmber,
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.widthIn(max = 220.dp)
+                )
+            }
+        }
+    }
+    SectionTitle(stringResource(R.string.settings_obd_values))
+    com.curveon.data.obd.ObdValue.entries.forEach { v ->
+        Setting(stringResource(when (v) {
+            com.curveon.data.obd.ObdValue.FUEL -> R.string.poi_fuel
+            com.curveon.data.obd.ObdValue.RPM -> R.string.obd_rpm
+            com.curveon.data.obd.ObdValue.COOLANT -> R.string.obd_coolant
+            com.curveon.data.obd.ObdValue.VOLTAGE -> R.string.obd_battery
+        }), small = true) {
+            CockpitSwitch(v in state.obdValues, { actions.onObdValue(v) })
+        }
     }
 }
 

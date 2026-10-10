@@ -71,14 +71,15 @@ private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorde
 // ---------------------------------------------------------------------------------- speed
 
 /**
- * Big speed, the signed limit when known, and trip/GPS (or RPM with OBD2) underneath. A speed
- * camera ahead takes over the bottom line. Tap for the ride log.
+ * Speed, the signed limit when known and the clock, in the map's top-right corner (always, not
+ * only in full screen: the dashboard's side has the engine panel and music). A speed camera ahead
+ * adds a line underneath, as does a lost GPS fix.
  */
 @Composable
-fun SpeedCard(
+fun MapSpeedCluster(
     telemetry: TelemetryData,
-    modifier: Modifier = Modifier,
-    camera: com.curveon.data.routing.CameraAlert? = null
+    camera: com.curveon.data.routing.CameraAlert?,
+    modifier: Modifier = Modifier
 ) {
     val limit = camera?.maxSpeedKmh ?: telemetry.speedLimitKmh
     val over = limit > 0 && telemetry.speedKmh > limit + 3
@@ -88,40 +89,31 @@ fun SpeedCard(
         camera != null -> NeonAmber
         else -> CockpitBorder
     }
-    DashCard(modifier.fillMaxWidth().testTag("speed_card"), border = border) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        telemetry.displaySpeed.toString(), color = speedColor,
-                        fontSize = 54.sp, lineHeight = 54.sp, fontWeight = FontWeight.Black
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(telemetry.speedUnit.lowercase(), color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp))
-                }
-                if (camera != null) Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.PhotoCamera, stringResource(R.string.speed_camera), tint = NeonAmber, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.speed_camera_in, (camera.distanceMeters / 10).toInt() * 10),
-                        color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                } else Text(
-                    when {
-                        telemetry.isDeadReckoning -> stringResource(R.string.gps_estimating)
-                        telemetry.isObdConnected -> stringResource(R.string.rpm_and, telemetry.rpm, tripText(telemetry))
-                        telemetry.hasGpsFix -> tripText(telemetry)
-                        else -> stringResource(R.string.gps_searching)
-                    },
-                    color = if (telemetry.hasGpsFix) TextSecondary else NeonAmber,
-                    fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1
-                )
+    Column(
+        modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(CockpitSurface.copy(alpha = 0.92f))
+            .border(1.dp, border, RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .testTag("full_map_speed_cluster"),
+        horizontalAlignment = Alignment.End
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(telemetry.displaySpeed.toString(), color = speedColor, fontSize = 32.sp, lineHeight = 32.sp,
+                fontWeight = FontWeight.Black, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                modifier = Modifier.testTag("map_speed"))
+            if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, 36.dp)
+            Clock(17.sp)
+        }
+        when {
+            camera != null -> Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.PhotoCamera, stringResource(R.string.speed_camera), tint = NeonAmber, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(stringResource(R.string.speed_camera_in, (camera.distanceMeters / 10).toInt() * 10),
+                    color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             }
-            if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, 64.dp)
-            Spacer(Modifier.width(12.dp))
-            Clock(20.sp)
+            telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
+            !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
         }
     }
 }
@@ -142,10 +134,6 @@ fun Clock(fontSize: TextUnit, modifier: Modifier = Modifier) {
         modifier = modifier.testTag("clock")
     )
 }
-
-@Composable
-private fun tripText(t: TelemetryData) =
-    stringResource(R.string.trip_summary, t.tripDistanceKm, t.tripDurationMinutes / 60, t.tripDurationMinutes % 60)
 
 @Composable
 fun SpeedLimitSign(limit: Int, size: Dp) {

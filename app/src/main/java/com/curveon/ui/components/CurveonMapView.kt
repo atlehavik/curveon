@@ -616,20 +616,13 @@ fun CurveonMapView(
         if (currentTurnInstruction != null) {
             Box(
                 modifier = Modifier
-                    .align(if (isFullScreen) Alignment.TopStart else Alignment.TopCenter)
+                    // Top-left: the speed has the top-right corner.
+                    .align(Alignment.TopStart)
                     .padding(14.dp)
-                    .fillMaxWidth(if (isFullScreen) 0.55f else 0.95f)
+                    .fillMaxWidth(0.55f)
             ) {
                 TurnByTurnBanner(instruction = currentTurnInstruction)
             }
-        }
-
-        if (isFullScreen) {
-            FullMapSpeedCluster(
-                speedKmh = speedKmh,
-                speedLimitKmh = speedLimitKmh,
-                modifier = Modifier.align(Alignment.TopEnd).padding(14.dp)
-            )
         }
 
         // Compass button: north up → heading up → 3D. Once the rider pans the map away, a second
@@ -692,7 +685,7 @@ fun CurveonMapView(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 14.dp, end = 80.dp) // beside the map buttons, not over them
+                    .padding(top = 80.dp, end = 14.dp) // under the speed
                     .clip(RoundedCornerShape(8.dp))
                     .background(CockpitBackground.copy(alpha = 0.9f))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -978,32 +971,6 @@ private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Bool
             1f to Color.Transparent
         )
         drawCircle(androidx.compose.ui.graphics.Brush.radialGradient(*stops, center = at, radius = r), radius = r, center = at)
-    }
-}
-
-@Composable
-private fun FullMapSpeedCluster(speedKmh: Float, speedLimitKmh: Int, modifier: Modifier = Modifier) {
-    val isOverLimit = speedLimitKmh > 0 && speedKmh.toInt() > speedLimitKmh
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(CockpitSurface.copy(alpha = 0.92f))
-            .border(1.dp, if (isOverLimit) WarningRed else CockpitBorder, RoundedCornerShape(16.dp))
-            .padding(horizontal = 14.dp, vertical = 8.dp)
-            .testTag("full_map_speed_cluster"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Text(
-            text = speedKmh.toInt().toString(),
-            color = if (isOverLimit) WarningRed else TextPrimary,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Black,
-            fontFamily = FontFamily.Monospace,
-            lineHeight = 32.sp
-        )
-        if (speedLimitKmh > 0) SpeedLimitSign(speedLimitKmh, 36.dp)
-        Clock(17.sp)
     }
 }
 

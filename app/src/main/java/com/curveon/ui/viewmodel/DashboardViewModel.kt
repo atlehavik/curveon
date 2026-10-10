@@ -186,6 +186,34 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun setUseMph(on: Boolean) { if (_telemetry.value.useMph != on) toggleSpeedUnits() }
     fun setObd(on: Boolean) { if (_telemetry.value.isObdEnabled != on) toggleObd() }
 
+    // ---------------------------------------------------------------- engine (OBD2)
+
+    val obd = com.curveon.data.obd.ObdLink(application, viewModelScope)
+
+    /** The OBD adapter's Bluetooth address ([com.curveon.data.obd.ObdLink.DEMO] for made-up data), or null. */
+    private val _obdDevice = MutableStateFlow(settings.getString("obdDevice", null))
+    val obdDevice: StateFlow<String?> = _obdDevice.asStateFlow()
+    fun setObdDevice(address: String?) {
+        _obdDevice.value = address
+        settings.edit().putString("obdDevice", address).apply()
+        connectObd()
+    }
+
+    /** Which readings the engine panel shows, in this order. */
+    private val _obdValues = MutableStateFlow(
+        settings.getString("obdValues", null)?.split(',')?.mapNotNull { n -> com.curveon.data.obd.ObdValue.entries.firstOrNull { it.name == n } }
+            ?: listOf(com.curveon.data.obd.ObdValue.FUEL, com.curveon.data.obd.ObdValue.RPM)
+    )
+    val obdValues: StateFlow<List<com.curveon.data.obd.ObdValue>> = _obdValues.asStateFlow()
+    fun toggleObdValue(v: com.curveon.data.obd.ObdValue) {
+        val now = _obdValues.value
+        _obdValues.value = if (v in now) now - v else com.curveon.data.obd.ObdValue.entries.filter { it in now || it == v }
+        settings.edit().putString("obdValues", _obdValues.value.joinToString(",") { it.name }).apply()
+    }
+
+    /** The adapter is only talked to while the engine panel is on. */
+    private fun connectObd() = obd.use(_obdDevice.value.takeIf { _telemetry.value.isObdEnabled })
+
     private val _offlineMapStatus = MutableStateFlow(describeOfflineMaps())
     val offlineMapStatus: StateFlow<String> = _offlineMapStatus.asStateFlow()
 
@@ -457,6 +485,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     override fun onCleared() {
+        obd.use(null)
         leanSensor.stop()
         saveRide(finish = true)
         super.onCleared()
@@ -720,6 +749,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun toggleObd() {
         _telemetry.value = _telemetry.value.copy(isObdEnabled = !_telemetry.value.isObdEnabled)
         settings.edit().putBoolean("obd", _telemetry.value.isObdEnabled).apply()
+        connectObd()
     }
 
     // ---------------------------------------------------------------- planning
@@ -958,7 +988,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     // Declared after gpxImporter and _gpxMessage so they exist when this runs.
-    init { importGpxInbox() }
+    init { importGpxInbox(); connectObd() }
 
     /** GPX files copied over USB into the gpx/ folder are imported at startup. */
     private fun importGpxInbox() = viewModelScope.launch {

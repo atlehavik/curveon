@@ -6,6 +6,21 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-10 — Speed on the map, engine panel (OBD2)
+
+Speed, limit, clock (and speed camera / GPS lines) are always on the map now, top right. Settings →
+Engine: engine panel on/off, the OBD2 adapter (paired Bluetooth devices, or Demo), and which values
+(fuel, RPM, coolant, battery). Tablet: panel above the music; phone upright: music bottom left,
+panel bottom right, map up to the top. Checked in the emulator with Demo. Installed on the X7;
+the Pixel was not connected at the time.
+
+- [ ] Pair the ELM327 adapter in Android's Bluetooth settings on the X7, pick it in Settings →
+      Engine, ignition on: status says Connected and RPM moves. `adb logcat -s CurveonObd`
+      shows "Connected to …" or why not.
+- [ ] Fuel: many bikes don't report fuel level over OBD2 (PID 012F); if it stays "–" with RPM
+      working, the bike doesn't send it. Tell me the bike model and adapter.
+- [ ] Riding with a turn banner: it sits top left and doesn't cover the speed (phone upright too).
+
 ## 2026-10-10 — Stops down a side street are ridden to, and one map editor
 
 Two changes, installed on the X7 (the Pixel was offline: `./gradlew :app:installDebug` with it as

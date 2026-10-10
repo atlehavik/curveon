@@ -400,6 +400,20 @@
     <string name="obd_coolant">Coolant</string>
     <string name="obd_battery">Battery</string>
     <string name="obd_altitude">Altitude</string>
+    <string name="obd_rpm">RPM</string>
+    <string name="obd_choose_adapter">Choose the OBD2 adapter in Settings → Engine</string>
+    <string name="obd_bluetooth_off">Bluetooth is off (or not allowed)</string>
+    <string name="obd_connecting">Connecting to the OBD2 adapter…</string>
+    <string name="obd_not_answering">The OBD2 adapter isn\'t answering (is the ignition on?)</string>
+    <string name="settings_engine">Engine</string>
+    <string name="settings_obd_show">Engine panel on the dashboard</string>
+    <string name="settings_obd_show_hint">Fuel, RPM and more from an OBD2 adapter on the bike</string>
+    <string name="settings_obd_adapter">OBD2 adapter</string>
+    <string name="settings_obd_adapter_hint">An ELM327 adapter paired in Android\'s Bluetooth settings</string>
+    <string name="settings_obd_none_paired">No paired Bluetooth devices. Pair the adapter in Android\'s Bluetooth settings first.</string>
+    <string name="settings_obd_demo">Demo (made-up values)</string>
+    <string name="settings_obd_values">Show</string>
+    <string name="settings_obd_status_connected">Connected</string>
 
     <!-- Maps download, service, import -->
     <string name="map_no_space">Not enough free space: about %1$.1f GB needed, %2$.1f GB free</string>

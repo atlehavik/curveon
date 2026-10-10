@@ -399,6 +399,20 @@
     <string name="obd_coolant">Kjølevæske</string>
     <string name="obd_battery">Batteri</string>
     <string name="obd_altitude">Høyde</string>
+    <string name="obd_rpm">Turtall</string>
+    <string name="obd_choose_adapter">Velg OBD2-adapter i Innstillinger → Motor</string>
+    <string name="obd_bluetooth_off">Bluetooth er av (eller ikke tillatt)</string>
+    <string name="obd_connecting">Kobler til OBD2-adapteren…</string>
+    <string name="obd_not_answering">OBD2-adapteren svarer ikke (er tenningen på?)</string>
+    <string name="settings_engine">Motor</string>
+    <string name="settings_obd_show">Motorpanel på dashbordet</string>
+    <string name="settings_obd_show_hint">Drivstoff, turtall og mer fra en OBD2-adapter på sykkelen</string>
+    <string name="settings_obd_adapter">OBD2-adapter</string>
+    <string name="settings_obd_adapter_hint">En ELM327-adapter paret i Androids Bluetooth-innstillinger</string>
+    <string name="settings_obd_none_paired">Ingen parede Bluetooth-enheter. Par adapteren i Androids Bluetooth-innstillinger først.</string>
+    <string name="settings_obd_demo">Demo (oppdiktede verdier)</string>
+    <string name="settings_obd_values">Vis</string>
+    <string name="settings_obd_status_connected">Tilkoblet</string>
 
     <!-- Maps download, service, import -->
     <string name="map_no_space">Ikke nok ledig plass: trenger omtrent %1$.1f GB, %2$.1f GB ledig</string>

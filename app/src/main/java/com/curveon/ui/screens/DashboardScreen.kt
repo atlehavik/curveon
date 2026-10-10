@@ -88,6 +88,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val mapTheme by viewModel.mapTheme.collectAsStateWithLifecycle()
     val fuelHint by viewModel.fuelHint.collectAsStateWithLifecycle()
     val cameraAlert by viewModel.cameraAlert.collectAsStateWithLifecycle()
+    val obdState by viewModel.obd.state.collectAsStateWithLifecycle()
+    val obdValues by viewModel.obdValues.collectAsStateWithLifecycle()
     val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
@@ -139,6 +141,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var lastRoundtrip by remember { mutableStateOf(RoundtripConfig(radiusKm = 100, selectedDirections = setOf(com.curveon.data.model.CompassDirection.NORTH), avoidTolls = false)) }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    /** Settings opened from the engine panel: start on its page. */
+    var settingsOnEngine by remember { mutableStateOf(false) }
+    LaunchedEffect(showSettings) { if (!showSettings) settingsOnEngine = false }
     var tracksTab by rememberSaveable { mutableStateOf(TracksTab.GPX) }
     /** The phone app's open tab; null when closed. */
     var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
@@ -296,6 +301,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
+        // Speed, limit and clock: always on the map now (the dashboard's side has the engine panel).
+        MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp))
         // Picking a place: just the map and the little bar; the rest waits.
         val pickPurpose = mapPick
         val tripSummary = preview?.selectedRoute?.let { r ->
@@ -477,8 +484,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 modifier = Modifier.weight(1f)
             )
         }
-
-        if (telemetry.isObdEnabled && telemetry.isObdConnected) Obd2TelemetryCard(telemetry = telemetry)
+    }
+    // The engine panel (Settings → Engine), where the speed used to be.
+    val showEngine = telemetry.isObdEnabled && obdValues.isNotEmpty()
+    val enginePanel: @Composable (Modifier) -> Unit = { m ->
+        EnginePanel(obdState, obdValues, onOpenSettings = { settingsOnEngine = true; showSettings = true }, modifier = m)
     }
     // Portrait (a phone held upright): speed on top, then the map, the cards below it, the rail along the bottom.
     val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
@@ -510,14 +520,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     if (portrait) {
         Column(rootModifier) {
             Column(Modifier.weight(1f).fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (!isFullScreenMap) SpeedCard(telemetry, camera = cameraAlert)
+                // The map from the top (the speed is on it); music and the engine panel share the bottom.
                 mapArea(Modifier.weight(1f).fillMaxWidth())
-                // Planning a trip needs the map more than the speed: the preview sheet covers much of it.
-                if (!isFullScreenMap && preview == null) Column(
+                // Planning a trip needs the map: the preview sheet covers much of it.
+                if (!isFullScreenMap && preview == null) Row(
                     Modifier.fillMaxWidth().fillMaxHeight(PORTRAIT_CARDS_SHARE),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    content = cards
-                )
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), content = cards)
+                    if (showEngine) enginePanel(Modifier.weight(1f).fillMaxHeight())
+                }
             }
             rail()
         }
@@ -530,7 +542,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    SpeedCard(telemetry, camera = cameraAlert)
+                    if (showEngine) enginePanel(Modifier)
                     cards()
                 }
             }
@@ -763,6 +775,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     language = remember { com.curveon.AppLanguage.current(context) },
                     useMph = telemetry.useMph, mapTheme = mapTheme, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
                     obdEnabled = telemetry.isObdEnabled,
+                    obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
+                    pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, showSurfaces = showSurfaces, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
@@ -776,6 +790,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onMapTheme = viewModel::setMapTheme,
                     onScreenLock = viewModel::setScreenLock,
                     onObd = viewModel::setObd,
+                    onObdDevice = viewModel::setObdDevice,
+                    onObdValue = viewModel::toggleObdValue,
                     onAutoZoom = viewModel::setAutoZoom,
                     onShowSurfaces = viewModel::setShowSurfaces,
                     onAutoFollow = viewModel::setAutoFollow,
@@ -788,6 +804,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onBrowseMaps = { showMapCatalog = true }
                 ),
                 phone = phone,
+                openEngine = settingsOnEngine,
                 onDismiss = { showSettings = false }
             )
             if (showMapCatalog) {
