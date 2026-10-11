@@ -31,6 +31,7 @@ import com.curveon.R
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import com.curveon.data.bluetooth.CompanionConnectionState
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GroundPreference
@@ -142,6 +143,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** Where the next stop from the search goes; null = wherever it adds least detour. */
     var stopTarget by remember { mutableStateOf<StopTarget?>(null) }
     var showRouteMenu by remember { mutableStateOf(false) }
+    /** How high the next turn (and media) card at the map's bottom reaches: the rider is kept clear of it. */
+    var bottomClearance by remember { mutableStateOf(0.dp) }
     /** Suggested name while the save dialog is open. */
     var saveName by remember { mutableStateOf<String?>(null) }
     val askSaveName: () -> Unit = { scope.launch { saveName = viewModel.suggestedRouteName() } }
@@ -328,12 +331,50 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
-        // Where the map and the trip info (time left, distance…) are, so the media pill can keep clear of it.
+        // Where the map is, so the bottom cards know how much room there is for the turn card.
         var mapBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
-        var tripInfoBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
         Box(Modifier.matchParentSize().onGloballyPositioned { mapBox = it.boundsInRoot() })
-        // Speed, limit and clock: always on the map now (the dashboard's side has the engine panel).
-        MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED), showAltitude = showAltitude)
+        val density = LocalDensity.current
+        // Planning, picking and drawing have the bottom (and the bar's middle); the trip bar waits.
+        val showTripBar = preview == null && !sketching && mapPick == null && !searchGrowIn
+        // Speed, limit and clock top right (the dashboard's side has the engine panel); the trip bar
+        // beside it, as high as the speed, folding out downwards.
+        var speedHeight by remember { mutableStateOf(0.dp) }
+        Row(Modifier.align(Alignment.TopEnd).padding(14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (showTripBar) navigationSummary?.let {
+                NavigationSummaryBar(
+                    it, onStop = { viewModel.stopNavigation() },
+                    modifier = Modifier.weight(1f, fill = false),
+                    foldedHeight = speedHeight,
+                    fuel = fuelHint,
+                    onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } },
+                    onAddStop = { searchPurpose = SearchPurpose.STOP },
+                    onOpen = { showRouteMenu = true }
+                )
+            }
+            MapSpeedCluster(telemetry, cameraAlert, Modifier.tourTarget(TourTarget.SPEED)
+                .onSizeChanged { speedHeight = with(density) { it.height.toDp() } }, showAltitude = showAltitude)
+        }
+        // The next turn sits at the bottom right (beside the media player in full screen), as high
+        // as the player. While planning or picking, the bottom is busy: it stays top left.
+        val turn = currentTurnInstruction
+        val bottomTurn = turn != null && showTripBar
+        val ringingCall = isFullScreenMap && ringing != null
+        val showMedia = isFullScreenMap && ringing == null && preview == null && mapPick == null && !sketching && track != null
+        if (turn != null && !bottomTurn) {
+            TurnByTurnBanner(turn, modifier = Modifier.align(Alignment.TopStart).padding(14.dp).fillMaxWidth(0.55f))
+        }
+        val mapWidth = mapBox?.width?.let { with(density) { it.toDp() } } ?: 0.dp
+        // Beside the call card or media pill when there is room, else the pill above the turn card.
+        val sideBySide = mapWidth >= 14.dp * 2 + 8.dp + BOTTOM_TURN_MIN_WIDTH + SIDE_COLUMN_WIDTH
+        val turnWidth = (if (sideBySide && (showMedia || ringingCall)) minOf(BOTTOM_TURN_WIDTH, mapWidth - 28.dp - 8.dp - SIDE_COLUMN_WIDTH)
+            else minOf(BOTTOM_TURN_WIDTH, mapWidth - 28.dp)).coerceAtLeast(0.dp)
+        val turnEndPad = if (ringingCall && sideBySide) SIDE_COLUMN_WIDTH + 8.dp else 0.dp
+        if (bottomTurn && !showMedia) {
+            TurnByTurnBanner(turn!!, modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp).padding(end = turnEndPad).width(turnWidth)
+                .height(BOTTOM_CARD_HEIGHT).onSizeChanged { bottomClearance = with(density) { it.height.toDp() } + 14.dp })
+        }
+        LaunchedEffect(bottomTurn, showMedia) { if (!bottomTurn && !showMedia) bottomClearance = 0.dp }
         // Picking a place: just the map and the little bar; the rest waits.
         val pickPurpose = mapPick
         val tripSummary = preview?.selectedRoute?.let { r ->
@@ -366,25 +407,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         } else if (!searchGrowIn) { // nor while the search is back up over the map
             Column(
-                // In full-screen the media pill takes the bottom-right corner, so keep trip info left.
-                modifier = (if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 14.dp)
-                else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp))
-                    .onGloballyPositioned { tripInfoBox = it.boundsInRoot() },
+                // In full-screen the bottom right has the media pill and the turn card, so keep this left.
+                modifier = (if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 14.dp + bottomClearance)
+                else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp + bottomClearance)),
                 horizontalAlignment = if (isFullScreenMap) Alignment.Start else Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 RoutingStatusCard(routingStatus, onDismiss = { viewModel.dismissRoutingError() })
                 if (preview == null && !isNavigating) trackHint?.let { h ->
                     TrackChip(h, onClick = { viewModel.followOverlayTrack(h.trackId, h.onTrack && h.reverse) })
-                }
-                if (preview == null) navigationSummary?.let {
-                    NavigationSummaryBar(
-                        it, onStop = { viewModel.stopNavigation() },
-                        fuel = fuelHint,
-                        onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } },
-                        onAddStop = { searchPurpose = SearchPurpose.STOP },
-                        onOpen = { showRouteMenu = true }
-                    )
                 }
             }
             if (preview == null) wrongTurn?.let { wt ->
@@ -441,17 +472,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     // Never over the speed (top-right): the limit matters during a call too.
                     modifier = Modifier.align(Alignment.BottomEnd).padding(top = FULL_MAP_SPEED_CLEARANCE).padding(14.dp)
                         .width(SIDE_COLUMN_WIDTH).heightIn(max = 360.dp).fillMaxHeight())
-            } else if (preview == null && mapPick == null && !sketching) track?.let { t ->
-                // Too narrow for both side by side (a phone, or a wide trip bar): the pill sits above the trip info.
-                val density = LocalDensity.current
-                val lift = with(density) {
-                    val map = mapBox; val info = tripInfoBox
-                    if (map == null || info == null || info.height <= 0f || searchGrowIn ||
-                        info.right + 8.dp.toPx() <= map.right - (300 + 14).dp.toPx()) 0.dp
-                    else (map.bottom - info.top).toDp() - 14.dp + 8.dp
+            } else if (showMedia) track?.let { t ->
+                val bottomTurnHere = turn != null && bottomTurn
+                // Side by side: the turn card to the left of the player, both as high.
+                Row(Modifier.align(Alignment.BottomEnd).padding(14.dp).onSizeChanged { bottomClearance = with(density) { it.height.toDp() } + 14.dp },
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+                    if (bottomTurnHere && sideBySide) TurnByTurnBanner(turn!!, modifier = Modifier.width(turnWidth).height(BOTTOM_CARD_HEIGHT))
+                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }, Modifier.width(SIDE_COLUMN_WIDTH).height(BOTTOM_CARD_HEIGHT))
+                        if (bottomTurnHere && !sideBySide) TurnByTurnBanner(turn!!, modifier = Modifier.width(turnWidth).height(BOTTOM_CARD_HEIGHT))
+                    }
                 }
-                MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
-                    Modifier.align(Alignment.BottomEnd).padding(14.dp).padding(bottom = lift).width(300.dp))
             }
         }
     }
@@ -469,6 +500,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             groundPreference = groundPreference,
             currentTurnInstruction = currentTurnInstruction,
             isFullScreen = isFullScreenMap,
+            bottomClearance = bottomClearance,
             dark = mapDark,
             previewRoutes = if (editor != null) listOf(MapRoute(editLine, true)).filter { it.points.size >= 2 }
             else preview?.candidates?.mapIndexedNotNull { i, c ->
@@ -917,6 +949,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
  * at a glance; the map still gets ~55% of the screen and goes full width with one tap.
  */
 private val SIDE_COLUMN_WIDTH = 300.dp
+/** The turn card at the bottom right and the media player beside it are this high. */
+private val BOTTOM_CARD_HEIGHT = 72.dp
+private val BOTTOM_TURN_WIDTH = 320.dp
+private val BOTTOM_TURN_MIN_WIDTH = 220.dp
 
 /** Upright, the speed and music cards take this much of the height under the map. */
 private const val PORTRAIT_CARDS_SHARE = 0.34f

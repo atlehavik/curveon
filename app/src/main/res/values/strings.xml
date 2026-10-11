@@ -348,6 +348,7 @@
     <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
     <string name="selected">Selected</string>
+    <string name="nav_route">Route</string>
     <string name="add_stop">Add stop</string>
     <string name="go_here">Go here</string>
 

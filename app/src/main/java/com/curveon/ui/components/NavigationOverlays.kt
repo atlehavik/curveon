@@ -32,15 +32,17 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Remaining distance / arrival time with add-stop and stop buttons, shown at the bottom of the map.
- * Next stop and fuel appear only when there is something worth knowing; tapping fuel adds it as a
- * stop. Tapping the bar opens the route menu (stops, save).
+ * Arrival time and what is left with the end button, at the top of the map beside the speed. Tapping
+ * it folds out a second line: next stop (opens the route menu: stops, save), fuel when worth
+ * knowing (tapping it adds it as a stop) and add stop.
  */
 @Composable
 fun NavigationSummaryBar(
     summary: NavigationSummary,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The height of the speed card it sits next to: the folded bar is as high as that. */
+    foldedHeight: androidx.compose.ui.unit.Dp = 0.dp,
     fuel: com.curveon.data.routing.FuelHint? = null,
     onFuel: () -> Unit = {},
     onAddStop: () -> Unit = {},
@@ -49,50 +51,72 @@ fun NavigationSummaryBar(
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
     }
-    Row(
+    // Folded: arrival, what is left and the end button, small enough to sit beside the speed.
+    // A tap opens a second line below with the next stop, fuel and add stop.
+    var open by remember { mutableStateOf(false) }
+    Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(CockpitSurface.copy(alpha = 0.95f))
             .border(1.dp, CockpitBorder, RoundedCornerShape(16.dp))
-            .clickable(onClick = onOpen)
-            .padding(start = 16.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
-            .testTag("nav_summary_bar"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+            .clickable { open = !open }
+            .testTag("nav_summary_bar")
     ) {
-        Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
-        Text(
-            stringResource(R.string.distance_km_whole, summary.remainingKm) + " · %d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
-            color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold
-        )
-        summary.nextStop?.let { (name, km) ->
-            Text(name.take(14) + " " + stringResource(R.string.distance_km_whole, km), color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-        }
-        if (fuel != null && (fuel.isLongGap || fuel.distanceMeters < 60_000)) {
-            val color = if (fuel.isLongGap) NeonAmber else EcoGreen
-            Row(
-                Modifier.clip(RoundedCornerShape(14.dp)).background(color.copy(alpha = 0.15f))
-                    .clickable(enabled = fuel.point.lat != 0.0, onClick = onFuel).padding(horizontal = 8.dp, vertical = 4.dp)
-                    .testTag("fuel_chip"),
-                verticalAlignment = Alignment.CenterVertically
+        Row(
+            Modifier.heightIn(min = foldedHeight).padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Text(
+                stringResource(R.string.distance_km_whole, summary.remainingKm) + " · %d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
+                color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false)
+            )
+            IconButton(
+                onClick = onStop,
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
             ) {
-                Icon(Icons.Default.LocalGasStation, fuel.name.ifEmpty { stringResource(R.string.fuel_none_on_route) }, tint = color, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(if (fuel.point.lat == 0.0) stringResource(R.string.fuel_none_ahead) else stringResource(R.string.distance_km_whole, fuel.distanceMeters / 1000),
-                    color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
             }
         }
-        IconButton(
-            onClick = onAddStop,
-            modifier = Modifier.size(44.dp).clip(CircleShape).background(NeonAmber.copy(alpha = 0.2f)).testTag("nav_add_stop_btn")
+        if (open) Row(
+            Modifier.padding(start = 14.dp, end = 6.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Icon(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), tint = NeonAmber)
-        }
-        IconButton(
-            onClick = onStop,
-            modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
-        ) {
-            Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
+            // The next stop (or just "Route") opens the route's menu: stops, save, end.
+            Row(
+                Modifier.weight(1f, fill = false).clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp)
+                    .testTag("nav_route_menu_btn"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val next = summary.nextStop
+                Text(
+                    if (next != null) next.first.take(14) + " " + stringResource(R.string.distance_km_whole, next.second) else stringResource(R.string.nav_route),
+                    color = if (next != null) NeonAmber else TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1
+                )
+            }
+            if (fuel != null && (fuel.isLongGap || fuel.distanceMeters < 60_000)) {
+                val color = if (fuel.isLongGap) NeonAmber else EcoGreen
+                Row(
+                    Modifier.clip(RoundedCornerShape(14.dp)).background(color.copy(alpha = 0.15f))
+                        .clickable(enabled = fuel.point.lat != 0.0, onClick = onFuel).padding(horizontal = 8.dp, vertical = 4.dp)
+                        .testTag("fuel_chip"),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.LocalGasStation, fuel.name.ifEmpty { stringResource(R.string.fuel_none_on_route) }, tint = color, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(if (fuel.point.lat == 0.0) stringResource(R.string.fuel_none_ahead) else stringResource(R.string.distance_km_whole, fuel.distanceMeters / 1000),
+                        color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            IconButton(
+                onClick = onAddStop,
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(NeonAmber.copy(alpha = 0.2f)).testTag("nav_add_stop_btn")
+            ) {
+                Icon(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), tint = NeonAmber)
+            }
         }
     }
 }

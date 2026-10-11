@@ -127,6 +127,8 @@ fun CurveonMapView(
     groundPreference: GroundPreference,
     currentTurnInstruction: TurnInstruction?,
     isFullScreen: Boolean,
+    /** How far up from the bottom the cards over the map reach: the rider is lifted to keep clear of them. */
+    bottomClearance: androidx.compose.ui.unit.Dp = 0.dp,
     modifier: Modifier = Modifier,
     dark: Boolean = true,
     previewRoutes: List<MapRoute> = emptyList(),
@@ -669,6 +671,7 @@ fun CurveonMapView(
     val speedState = rememberUpdatedState(speedKmh)
     val headingState = rememberUpdatedState(headingDeg)
     val turnState = rememberUpdatedState(currentTurnInstruction)
+    val clearanceState = rememberUpdatedState(bottomClearance)
     LaunchedEffect(map, style, following, inPreview, orientation, zoomBias, hasGpsFix, autoZoom) {
         val m = map ?: return@LaunchedEffect
         if (style == null) return@LaunchedEffect
@@ -695,11 +698,14 @@ fun CurveonMapView(
                 val wantZoom = if (autoZoom) (followZoom(speed, turnState.value?.distanceMeters, threeD) + zoomBias).coerceIn(10.0, 18.5) else zoom
                 val wantTilt = if (threeD) TILT_3D else 0.0
                 // Heading up and 3D: the rider low on screen to see more road ahead. North up: centred.
-                val wantLift = when {
+                var wantLift = when {
                     threeD -> RIDER_LOW_3D * h
                     orientation == Orientation.HEADING_UP && moving -> RIDER_LOW_2D * h
                     else -> 0.0
                 }
+                // The rider sits at (height + lift) / 2: not so low that the arrow runs into the cards below.
+                val clear = clearanceState.value.value * mapView.resources.displayMetrics.density
+                if (clear > 0) wantLift = minOf(wantLift, (h - 2 * (clear + 40 * mapView.resources.displayMetrics.density)).coerceAtLeast(0.0))
                 zoom = ease(zoom, wantZoom, dt, 1.2)
                 tilt = ease(tilt, wantTilt, dt, 0.4)
                 lift = ease(lift, wantLift, dt, 0.6)
@@ -824,18 +830,6 @@ fun CurveonMapView(
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
         if (hasGpsFix && style != null) RiderArrow { puck }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, Modifier.matchParentSize()) }
-
-        if (currentTurnInstruction != null) {
-            Box(
-                modifier = Modifier
-                    // Top-left: the speed has the top-right corner.
-                    .align(Alignment.TopStart)
-                    .padding(14.dp)
-                    .fillMaxWidth(0.55f)
-            ) {
-                TurnByTurnBanner(instruction = currentTurnInstruction)
-            }
-        }
 
         // Compass button: north up → heading up → 3D. Once the rider pans the map away, a second
         // button brings the camera back to them; it hides again while following. +/- are always

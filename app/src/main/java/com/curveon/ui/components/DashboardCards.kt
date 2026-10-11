@@ -251,7 +251,7 @@ fun FullMediaCard(
 @Composable
 fun MiniMediaCard(track: MusicTrack, art: Bitmap?, onPlayPause: () -> Unit, onNext: () -> Unit, modifier: Modifier = Modifier) {
     DashCard(modifier.fillMaxWidth().testTag("media_card_mini")) {
-        Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().align(Alignment.Center).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
                 if (art != null) Image(art.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
                 else Icon(Icons.Default.MusicNote, null, tint = TextMuted)

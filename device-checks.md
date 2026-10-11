@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — New layout of the cards over the map
+
+- [ ] While navigating, full map: the next-turn card sits bottom right beside the music player, both
+      the same height and not overlapping; the time-left bar is top, beside the speed and as high.
+- [ ] Dashboard: the same top bar (arrival, km · time, X); tap it and a second line folds out below
+      with next stop (tap: route menu), fuel and add stop. The turn card is bottom right of the map.
+- [ ] 3D / heading up: the arrow stays clear of the turn card (it sits a bit higher than before).
+- [ ] Phone (portrait and landscape): bar and speed fit side by side; player goes above the turn card.
+
 ## 2026-10-11 — No U-turn on E39 at Heiane (Stord)
 
 - [ ] Plan a trip to McDonald's Stord from the south-west (say from Føyno): the route should take the
