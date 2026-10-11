@@ -126,3 +126,8 @@ Curveon turns with the device (landscape or portrait, as Android's auto-rotate s
 
 Curveon running on a phone (or a tablet with its own apps) needs no companion: Settings → Phone →
 **This device**, then allow notification access and contacts/calls/microphone there.
+
+## License
+
+Curveon is released under the [MIT License](LICENSE).  
+Third-party components are listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
