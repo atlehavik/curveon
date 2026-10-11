@@ -283,6 +283,44 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         tracks.flatMap { it.pois }.filter { it.category in cats }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    private val _mapLayers = MutableStateFlow(
+        settings.getStringSet("mapLayers", emptySet())!!.mapNotNull { runCatching { com.curveon.data.search.MapLayer.valueOf(it) }.getOrNull() }.toSet()
+    )
+    /** Settings → Display → On the map: kinds of place always shown on the map. */
+    val mapLayers: StateFlow<Set<com.curveon.data.search.MapLayer>> = _mapLayers.asStateFlow()
+    fun setMapLayer(layer: com.curveon.data.search.MapLayer, on: Boolean) {
+        _mapLayers.value = if (on) _mapLayers.value + layer else _mapLayers.value - layer
+        settings.edit().putStringSet("mapLayers", _mapLayers.value.map { it.name }.toSet()).apply()
+    }
+
+    private class Viewport(val south: Double, val north: Double, val west: Double, val east: Double, val zoom: Double)
+    private val _viewport = MutableStateFlow<Viewport?>(null)
+    fun setViewport(south: Double, north: Double, west: Double, east: Double, zoom: Double) { _viewport.value = Viewport(south, north, west, east, zoom) }
+
+    /** The chosen kinds of place in the part of the map in view, from the offline search of the downloaded countries. */
+    @OptIn(kotlinx.coroutines.FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val mapPois: StateFlow<List<com.curveon.data.gpx.GpxPoi>> = combine(_mapLayers, _viewport) { layers, v -> layers to v }
+        .debounce(250)
+        .mapLatest { (layers, v) ->
+            if (v == null || layers.isEmpty()) return@mapLatest emptyList()
+            val app = getApplication<Application>()
+            val widthKm = com.curveon.routing.Geo.distance((v.south + v.north) / 2, v.west, (v.south + v.north) / 2, v.east) / 1000
+            val now = layers.filter { widthKm <= it.maxWidthKm }
+            val found = mutableListOf<com.curveon.data.gpx.GpxPoi>()
+            val kinds = now.flatMap { it.kinds }
+            placeSearch.poisInBox(kinds, v.south, v.north, v.west, v.east).forEach { p ->
+                val kind = com.curveon.data.search.MapLayer.poiKind(p.kind)
+                found += com.curveon.data.gpx.GpxPoi(name = p.name, description = "", category = kind.category, lat = p.lat, lon = p.lon, kind = kind)
+            }
+            if (com.curveon.data.search.MapLayer.CAMERAS in now) placeSearch.camerasInBox(v.south, v.north, v.west, v.east).take(400).forEach { p ->
+                val name = p.name + (p.maxSpeed?.let { " $it" } ?: "")
+                found += com.curveon.data.gpx.GpxPoi(name = name, description = "", category = com.curveon.data.gpx.PoiKind.CAMERA.category, lat = p.lat, lon = p.lon,
+                    kind = com.curveon.data.gpx.PoiKind.CAMERA)
+            }
+            found
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     private val _trackHint = MutableStateFlow<com.curveon.data.gpx.TrackHint?>(null)
     /** Nearest visible track (line from the rider to it); null while navigating. */
     val trackHint: StateFlow<com.curveon.data.gpx.TrackHint?> = _trackHint.asStateFlow()

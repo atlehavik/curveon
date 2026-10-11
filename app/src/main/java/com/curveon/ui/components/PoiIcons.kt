@@ -40,6 +40,9 @@ val PoiKind.icon: ImageVector
         PoiKind.TOWN -> Icons.Default.LocationCity
         PoiKind.INFO -> Icons.Default.Info
         PoiKind.ALERT -> Icons.Default.Warning
+        PoiKind.CAMERA -> Icons.Default.Videocam
+        PoiKind.PASS -> Icons.Default.Landscape
+        PoiKind.WORKSHOP -> Icons.Default.Build
     }
 
 /** Map image name for a kind's badge. */

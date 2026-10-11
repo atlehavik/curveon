@@ -55,7 +55,10 @@ enum class PoiKind(val label: Int, val category: PoiCategory) {
     PARKING(R.string.kind_parking, PoiCategory.INFO),
     TOWN(R.string.kind_town, PoiCategory.INFO),
     INFO(R.string.poi_info, PoiCategory.INFO),
-    ALERT(R.string.poi_alert, PoiCategory.ALERT);
+    ALERT(R.string.poi_alert, PoiCategory.ALERT),
+    CAMERA(R.string.kind_camera, PoiCategory.ALERT),
+    PASS(R.string.kind_pass, PoiCategory.SCENIC),
+    WORKSHOP(R.string.kind_workshop, PoiCategory.INFO);
 
     companion object {
         fun of(symbol: String, name: String): PoiKind {

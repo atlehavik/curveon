@@ -278,6 +278,22 @@ class PlaceSearch(private val context: Context) {
         }.getOrDefault(emptyList()) }.distinctBy { "${(it.lat * 5000).toInt()}|${(it.lon * 2500).toInt()}" }
     }
 
+    /** Places of these [kinds] inside a bounding box, the more notable first, at most [limit]. */
+    suspend fun poisInBox(kinds: List<String>, minLat: Double, maxLat: Double, minLon: Double, maxLon: Double, limit: Int = 400): List<MapPlace> =
+        withContext(Dispatchers.IO) {
+            if (kinds.isEmpty()) return@withContext emptyList()
+            val kindSql = kinds.joinToString(",") { "?" }
+            openDbs().flatMap { db -> runCatching {
+                db.rawQuery(
+                    "SELECT name, kind, lat, lon FROM entries WHERE kind IN ($kindSql) AND lat BETWEEN ? AND ? AND lon BETWEEN ? AND ? ORDER BY rank DESC LIMIT $limit",
+                    (kinds + listOf(minLat, maxLat, minLon, maxLon).map { it.toString() }).toTypedArray()
+                ).use { c -> buildList { while (c.moveToNext()) add(MapPlace(c.getString(0), c.getString(1), c.getDouble(2), c.getDouble(3))) } }
+            }.getOrDefault(emptyList()) }.distinctBy { "${it.kind}|${it.name}|${(it.lat * 2000).toInt()}|${(it.lon * 1000).toInt()}" }.take(limit)
+        }
+
+    /** A place of the index shown on the map. */
+    data class MapPlace(val name: String, val kind: String, val lat: Double, val lon: Double)
+
     /** Closest places of one kind, e.g. the nearest fuel stations. */
     suspend fun nearest(kind: String, lat: Double, lon: Double, limit: Int = 10): List<SearchResult> =
         nearest(listOf(kind), lat, lon, limit)

@@ -617,7 +617,7 @@
     <string name="tour_search_body">Search places, addresses, fuel and cafés, offline. Saved routes and recent places wait in the empty search, and from there you can pick a point on the map or draw a roundtrip with a finger.</string>
     <string name="tour_gpx_body">Import GPX tracks, show them on the map and ride them. Every ride is recorded by itself and kept here too.</string>
     <string name="tour_phone_body">Call favourites, recent calls and contacts. The phone links up through the Curveon Companion app (Curveon on a phone is its own).</string>
-    <string name="tour_settings_body">Language, units, the map\'s look, maps of more countries, the phone link and the engine panel.</string>
+    <string name="tour_settings_body">Language, units, the map\'s look and which places it shows, maps of more countries, the phone link and the engine panel.</string>
     <string name="tour_toggle_title">Map or dashboard</string>
     <string name="tour_toggle_body">Switches between the map alone and the map with music and messages beside it. While the map is full, a number here tells you about unread messages.</string>
     <string name="tour_map_title">The map</string>
@@ -687,4 +687,13 @@
     <string name="tour_setup_body">Curveon on the tablet shows the map. Curveon Companion runs quietly on your phone and passes messages, calls and music on over Bluetooth. It is the phone that talks to your intercom, so calls and music are heard in your helmet while the tablet stays on the handlebars. Install the Companion on the phone and pick it in Settings → Phone.</string>
     <string name="tour_solo_title">Just a phone</string>
     <string name="tour_solo_body">No tablet? Curveon also runs straight on a phone, and is then its own companion: messages, calls and music come from the same phone, and no second one is needed. Choose This device in Settings → Phone.</string>
+    <string name="settings_map_layers">On the map</string>
+    <string name="settings_map_layers_hint">Always show these places, from the offline search of the downloaded countries. They appear as you zoom in.</string>
+    <string name="layer_cameras">Speed cameras</string>
+    <string name="layer_viewpoints">Viewpoints</string>
+    <string name="layer_passes">Mountain passes</string>
+    <string name="layer_food">Food and coffee</string>
+    <string name="layer_ferries">Ferries</string>
+    <string name="layer_motorcycle">Motorcycle shops and workshops</string>
+    <string name="kind_camera">Speed camera</string>
 </resources>

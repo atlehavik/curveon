@@ -1,6 +1,7 @@
 package com.curveon.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -66,7 +67,8 @@ data class SettingsState(
     val mapName: (String) -> String,
     val routingDataStatus: String,
     val searchStatus: String,
-    val speedLimitsStatus: String = ""
+    val speedLimitsStatus: String = "",
+    val mapLayers: Set<com.curveon.data.search.MapLayer> = emptySet()
 )
 
 /** What the Settings screen can change. */
@@ -90,8 +92,33 @@ class SettingsActions(
     val onImportMap: () -> Unit,
     val onBrowseMaps: () -> Unit,
     /** Settings → Help: the welcome tour again. */
-    val onTour: () -> Unit = {}
+    val onTour: () -> Unit = {},
+    val onMapLayer: (com.curveon.data.search.MapLayer, Boolean) -> Unit = { _, _ -> }
 )
+
+/** The kinds of place to keep on the map: one chip each, lit when on. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MapLayerChips(on: Set<com.curveon.data.search.MapLayer>, onToggle: (com.curveon.data.search.MapLayer, Boolean) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        com.curveon.data.search.MapLayer.entries.forEach { layer ->
+            val selected = layer in on
+            val color = Color(layer.icon.category.color)
+            Row(
+                Modifier.clip(RoundedCornerShape(22.dp))
+                    .background(if (selected) color.copy(alpha = 0.22f) else CockpitSurfaceVariant)
+                    .border(1.5.dp, if (selected) color else CockpitBorder, RoundedCornerShape(22.dp))
+                    .clickable { onToggle(layer, !selected) }.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(layer.icon.icon, null, tint = if (selected) color else TextSecondary, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(layer.label), color = if (selected) TextPrimary else TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
 
 /**
  * Full-screen settings with tabs on the left (like Android Auto), so each page stays short and
@@ -124,6 +151,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint), small = true) {
                             CockpitSwitch(state.showAltitude, actions.onShowAltitude)
                         }
+                        SectionTitle(stringResource(R.string.settings_map_layers))
+                        Text(stringResource(R.string.settings_map_layers_hint), color = TextMuted, fontSize = 13.sp)
+                        MapLayerChips(state.mapLayers, actions.onMapLayer)
                     }
                     SettingsTab.NAVIGATION -> Page {
                         Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint), small = true) {

@@ -616,7 +616,7 @@
     <string name="tour_search_body">Søk etter steder, adresser, drivstoff og kafeer, uten nett. Lagrede ruter og nylige steder ligger klare i det tomme søket, og derfra kan du velge et punkt i kartet eller tegne en rundtur med fingeren.</string>
     <string name="tour_gpx_body">Hent inn GPX-spor, vis dem i kartet og kjør dem. Hver tur du kjører, tas opp av seg selv og ligger her også.</string>
     <string name="tour_phone_body">Ring favoritter, siste anrop og kontakter. Telefonen kobles til med appen Curveon Companion (Curveon på en telefon er sin egen).</string>
-    <string name="tour_settings_body">Språk, enheter, kartets utseende, kart over flere land, telefonkoblingen og motorpanelet.</string>
+    <string name="tour_settings_body">Språk, enheter, kartets utseende og hvilke steder det viser, kart over flere land, telefonkoblingen og motorpanelet.</string>
     <string name="tour_toggle_title">Kart eller dashbord</string>
     <string name="tour_toggle_body">Bytter mellom bare kartet og kartet med musikk og meldinger ved siden av. Når kartet fyller skjermen, viser et tall her uleste meldinger.</string>
     <string name="tour_map_title">Kartet</string>
@@ -686,4 +686,13 @@
     <string name="tour_setup_body">Curveon på nettbrettet viser kartet. Curveon Companion går stille på telefonen og sender meldinger, anrop og musikk videre over Bluetooth. Det er telefonen som snakker med intercomen din, så anrop og musikk høres i hjelmen mens nettbrettet blir sittende på styret. Installer Companion på telefonen og velg den i Innstillinger → Telefon.</string>
     <string name="tour_solo_title">Bare en telefon</string>
     <string name="tour_solo_body">Uten nettbrett? Curveon kjører også rett på en telefon, og er da sin egen følgesvenn: meldinger, anrop og musikk kommer fra den samme telefonen, og du trenger ingen til. Velg Denne enheten i Innstillinger → Telefon.</string>
+    <string name="settings_map_layers">På kartet</string>
+    <string name="settings_map_layers_hint">Vis alltid disse stedene, fra det frakoblede søket i landene du har lastet ned. De dukker opp når du zoomer inn.</string>
+    <string name="layer_cameras">Fotobokser</string>
+    <string name="layer_viewpoints">Utsiktspunkt</string>
+    <string name="layer_passes">Fjelloverganger</string>
+    <string name="layer_food">Mat og kaffe</string>
+    <string name="layer_ferries">Ferjer</string>
+    <string name="layer_motorcycle">MC-butikker og verksteder</string>
+    <string name="kind_camera">Fotoboks</string>
 </resources>

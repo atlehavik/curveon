@@ -75,7 +75,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
     val gpxGroups by viewModel.gpxGroups.collectAsStateWithLifecycle()
     val overlayTracks by viewModel.overlayTracks.collectAsStateWithLifecycle()
-    val overlayPois by viewModel.overlayPois.collectAsStateWithLifecycle()
+    val trackPois by viewModel.overlayPois.collectAsStateWithLifecycle()
+    val layerPois by viewModel.mapPois.collectAsStateWithLifecycle()
+    val mapLayers by viewModel.mapLayers.collectAsStateWithLifecycle()
+    // Waypoints of visible tracks, and the kinds of place the rider keeps on the map.
+    val overlayPois = remember(trackPois, layerPois) { trackPois + layerPois }
     val trackHint by viewModel.trackHint.collectAsStateWithLifecycle()
     val poiCategories by viewModel.poiCategories.collectAsStateWithLifecycle()
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
@@ -515,6 +519,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             gpxPois = overlayPois,
             trackHint = trackHint.takeIf { preview == null && !isNavigating },
             onPoiClick = { shownPoi = it },
+            onViewport = viewModel::setViewport,
             autoZoom = mapAutoZoom,
             mapVersion = mapVersion,
             overlays = mapOverlays
@@ -859,6 +864,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
+                    mapLayers = mapLayers,
                     mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
                     routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() },
                     speedLimitsStatus = remember { viewModel.speedLimitsStatus() }
@@ -882,7 +888,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onDeleteMap = viewModel::deleteMap,
                     onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
                     onBrowseMaps = { showMapCatalog = true },
-                    onTour = { showSettings = false; tourIsFirst = false; showTour = true }
+                    onTour = { showSettings = false; tourIsFirst = false; showTour = true },
+                    onMapLayer = viewModel::setMapLayer
                 ),
                 phone = phone,
                 openEngine = settingsOnEngine,

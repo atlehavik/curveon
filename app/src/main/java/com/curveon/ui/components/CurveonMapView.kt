@@ -137,6 +137,8 @@ fun CurveonMapView(
     gpxPois: List<com.curveon.data.gpx.GpxPoi> = emptyList(),
     trackHint: com.curveon.data.gpx.TrackHint? = null,
     onPoiClick: (com.curveon.data.gpx.GpxPoi) -> Unit = {},
+    /** Where the map is looking once it settles: south, north, west, east, and the zoom. */
+    onViewport: (south: Double, north: Double, west: Double, east: Double, zoom: Double) -> Unit = { _, _, _, _, _ -> },
     /** Zoom follows speed (in when slow and twisty, out on fast roads). */
     autoZoom: Boolean = true,
     /** Changes when the offline map file was downloaded/replaced/deleted: reload the style. */
@@ -204,6 +206,7 @@ fun CurveonMapView(
     val onEditRouteState = rememberUpdatedState(onEditRoute)
     val previewRoutesState = rememberUpdatedState(previewRoutes)
     val onPoiClickState = rememberUpdatedState(onPoiClick)
+    val onViewportState = rememberUpdatedState(onViewport)
     val poisState = rememberUpdatedState(gpxPois)
     val poiBadges = rememberPoiBadges()
 
@@ -500,6 +503,25 @@ fun CurveonMapView(
                 it.addStringProperty("color", hex(t.color))
             }
         }))
+    }
+    // Where the map is looking, for the places kept on it. The following camera moves without ever
+    // settling, so look now and then and report when the view has moved or zoomed enough to matter.
+    LaunchedEffect(map, style) {
+        val m = map ?: return@LaunchedEffect
+        if (style == null) return@LaunchedEffect
+        var last: org.maplibre.android.geometry.LatLngBounds? = null
+        while (true) {
+            val b = m.projection.visibleRegion.latLngBounds
+            val was = last
+            val width = b.longitudeEast - b.longitudeWest
+            if (was == null || kotlin.math.abs(width / (was.longitudeEast - was.longitudeWest) - 1) > 0.05 ||
+                kotlin.math.abs(b.center.longitude - was.center.longitude) > width * 0.1 ||
+                kotlin.math.abs(b.center.latitude - was.center.latitude) > (b.latitudeNorth - b.latitudeSouth) * 0.1) {
+                last = b
+                onViewportState.value(b.latitudeSouth, b.latitudeNorth, b.longitudeWest, b.longitudeEast, m.cameraPosition.zoom)
+            }
+            kotlinx.coroutines.delay(800)
+        }
     }
     LaunchedEffect(style, gpxPois) {
         val s = style ?: return@LaunchedEffect
