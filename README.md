@@ -1,8 +1,8 @@
 # Curveon
 
 Offline motorcycle dashboard for a handlebar-mounted Android tablet (target: Hugerock X7, 7"
-1920x1080, Android 13), with a companion app on the rider's phone. See [App plan.md](App%20plan.md)
-and [dashboard.md](dashboard.md) for the goals.
+1920x1080, Android 13), with a companion app on the rider's phone. See [dashboard.md](dashboard.md)
+for the goals.
 
 | Module | What it is |
 |---|---|

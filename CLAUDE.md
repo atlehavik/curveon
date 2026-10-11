@@ -2,7 +2,7 @@
 
 Offline motorcycle dashboard for a Hugerock X7 tablet (7", 1920x1080 landscape, Android 13) on the
 handlebars, plus a companion app on the rider's Pixel 9a. Module overview, features and build
-commands are in [README.md](README.md); goals in [App plan.md](App%20plan.md) and [dashboard.md](dashboard.md).
+commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
 
 ## Build and run
 
