@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Brighter roads on the dark map
+
+Roads on the night map were barely lighter than the land (#333–#474 on #1f1f1f). They are now
+clear greys, brightest for the biggest roads (small #4b–#5f, main #6f, motorway #8a), tunnels a
+step darker, edges darker than the land; background, water and buildings unchanged. Checked in
+the emulator.
+
+- [ ] Riding at night: are the roads easy to tell from the land now, without glare? The blue route still the brightest?
+
 ## 2026-10-11 — No motorways or E-roads
 
 The motorway chip is a list: Motorways OK / No motorways / **No motorways or E-roads**. The routing
