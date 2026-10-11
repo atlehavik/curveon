@@ -814,7 +814,7 @@ fun CurveonMapView(
         // button brings the camera back to them; it hides again while following. +/- are always
         // there: while following with auto-zoom they nudge the speed-based zoom, otherwise they zoom.
         if (!inPreview) Column(
-            modifier = Modifier.align(Alignment.CenterEnd).padding(14.dp),
+            modifier = Modifier.align(Alignment.CenterEnd).padding(14.dp).tourTarget(TourTarget.MAP_BUTTONS),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             MapButton(

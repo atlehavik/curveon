@@ -36,7 +36,8 @@ private enum class SettingsTab(val label: Int, val icon: ImageVector) {
     NAVIGATION(R.string.settings_navigation, Icons.Default.Navigation),
     ENGINE(R.string.settings_engine, Icons.Default.Speed),
     PHONE(R.string.phone, Icons.Default.PhoneAndroid),
-    DATA(R.string.settings_maps_data, Icons.Default.Map)
+    DATA(R.string.settings_maps_data, Icons.Default.Map),
+    HELP(R.string.settings_help, Icons.Default.HelpOutline)
 }
 
 /** Everything the Settings screen shows. */
@@ -87,7 +88,9 @@ class SettingsActions(
     val onCancelMapDownload: (String) -> Unit,
     val onDeleteMap: (String) -> Unit,
     val onImportMap: () -> Unit,
-    val onBrowseMaps: () -> Unit
+    val onBrowseMaps: () -> Unit,
+    /** Settings → Help: the welcome tour again. */
+    val onTour: () -> Unit = {}
 )
 
 /**
@@ -171,6 +174,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         SectionTitle(stringResource(R.string.settings_speed_limits))
                         Text(state.speedLimitsStatus, color = TextSecondary, fontSize = 13.sp)
                     }
+                    SettingsTab.HELP -> Page { HelpPage(actions.onTour) }
                 }
         }
         val tabs: @Composable () -> Unit = { DialogTabs(SettingsTab.entries, tab, { stringResource(it.label) }, { it.icon }, { tab = it }) }
@@ -314,6 +318,41 @@ private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsAc
             CockpitSwitch(v in state.obdValues, { actions.onObdValue(v) })
         }
     }
+}
+
+/** Settings → Help: the welcome tour, and what every symbol in the app means. */
+@Composable
+private fun ColumnScope.HelpPage(onTour: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
+            .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(ElectricCyan.copy(alpha = 0.16f), CockpitSurfaceVariant)))
+            .clickable(onClick = onTour).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.TwoWheeler, null, tint = ElectricCyan, modifier = Modifier.size(32.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(stringResource(R.string.help_tour_title), color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.help_tour_hint), color = TextSecondary, fontSize = 13.sp)
+        }
+        Button(onClick = onTour, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
+            Text(stringResource(R.string.help_tour_start), color = OnCyan, fontWeight = FontWeight.Bold)
+        }
+    }
+    // Two columns on the tablet, one on a phone held upright.
+    val columns = if (isNarrowScreen()) 1 else 2
+    HELP_GROUPS.forEach { (title, symbols) ->
+        SectionTitle(stringResource(title))
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            symbols.chunked(columns).forEach { row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    row.forEach { HelpSymbolRow(it, Modifier.weight(1f)) }
+                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(8.dp))
 }
 
 @Composable

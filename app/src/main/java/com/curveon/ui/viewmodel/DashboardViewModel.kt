@@ -204,6 +204,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Settings → Display: the height above sea level under the speed. */
     private val _showAltitude = MutableStateFlow(settings.getBoolean("showAltitude", false))
     val showAltitude: StateFlow<Boolean> = _showAltitude.asStateFlow()
+    /** The welcome tour has been shown (or skipped) once; Settings → Help brings it back. */
+    val tourSeen: Boolean get() = settings.getBoolean("tourSeen", false)
+    fun markTourSeen() = settings.edit().putBoolean("tourSeen", true).apply()
+
     fun setShowAltitude(on: Boolean) { _showAltitude.value = on; settings.edit().putBoolean("showAltitude", on).apply() }
 
     fun setUseMph(on: Boolean) { if (_telemetry.value.useMph != on) toggleSpeedUnits() }

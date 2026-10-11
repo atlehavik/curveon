@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Welcome tour
+
+- [ ] Start Curveon on the X7: the welcome tour opens by itself (once). Walk through it: the lit
+      ring should sit neatly round each rail button, the map buttons, the speed and the cards, and
+      every card should fit on screen (also the long "Planning a trip" one).
+- [ ] Settings → Help → Start the tour: it starts again; the symbol list below reads well.
+- [ ] On the Pixel held upright: the tour turns the screen to landscape while it is open, and back
+      to upright when it closes.
+
 ## 2026-10-11 — Official speed limits; road info when holding a finger on a road
 
 **Official speed limits.** Where a country publishes them freely, the speed sign now shows the

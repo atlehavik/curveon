@@ -159,6 +159,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var settingsOnEngine by remember { mutableStateOf(false) }
     LaunchedEffect(showSettings) { if (!showSettings) settingsOnEngine = false }
     var tracksTab by rememberSaveable { mutableStateOf(TracksTab.GPX) }
+    // The welcome tour: once on the first start (when the screen has settled), and from Settings → Help.
+    val tourTargets = remember { TourTargets() }
+    var showTour by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) { if (!viewModel.tourSeen) { delay(900); showTour = true } }
     /** The phone app's open tab; null when closed. */
     var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
     /** A place picked while riding or planning: a stop, the destination, or (planning) the start? */
@@ -323,7 +327,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         var tripInfoBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
         Box(Modifier.matchParentSize().onGloballyPositioned { mapBox = it.boundsInRoot() })
         // Speed, limit and clock: always on the map now (the dashboard's side has the engine panel).
-        MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp), showAltitude = showAltitude)
+        MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED), showAltitude = showAltitude)
         // Picking a place: just the map and the little bar; the rest waits.
         val pickPurpose = mapPick
         val tripSummary = preview?.selectedRoute?.let { r ->
@@ -447,7 +451,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
 
     // The map, as big as the layout allows.
-    val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier) {
+    val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier.tourTarget(TourTarget.MAP)) {
         CurveonMapView(
             location = currentLocation,
             riderFix = riderFix,
@@ -576,7 +580,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         )
     }
 
-    val rootModifier = modifier
+    val rootModifier = Modifier
         .fillMaxSize()
         .background(CockpitBackground)
         .statusBarsPadding()
@@ -585,6 +589,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         // way round the phone is held.
         .windowInsetsPadding(WindowInsets.displayCutout)
         .testTag("dashboard_screen_root")
+    CompositionLocalProvider(LocalTourTargets provides tourTargets) { Box(modifier.fillMaxSize()) {
     if (portrait) {
         Column(rootModifier) {
             Column(Modifier.weight(1f).fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -592,7 +597,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 mapArea(Modifier.weight(1f).fillMaxWidth())
                 // Planning a trip needs the map: the preview sheet covers much of it.
                 if (!isFullScreenMap && preview == null) Row(
-                    Modifier.fillMaxWidth().fillMaxHeight(PORTRAIT_CARDS_SHARE),
+                    Modifier.fillMaxWidth().fillMaxHeight(PORTRAIT_CARDS_SHARE).tourTarget(TourTarget.CARDS),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), content = cards)
@@ -607,7 +612,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 mapArea(Modifier.weight(1f).fillMaxHeight())
                 if (!isFullScreenMap) Column(
-                    Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight(),
+                    Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight().tourTarget(TourTarget.CARDS),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (showEngine) enginePanel(Modifier)
@@ -616,6 +621,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             }
         }
     }
+    if (showTour) WelcomeTour(tourTargets, onFinish = { showTour = false; viewModel.markTourSeen() })
+    } }
 
     // ------------------------------------------------------------------ dialogs
 
@@ -872,7 +879,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onCancelMapDownload = viewModel::cancelMapDownload,
                     onDeleteMap = viewModel::deleteMap,
                     onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
-                    onBrowseMaps = { showMapCatalog = true }
+                    onBrowseMaps = { showMapCatalog = true },
+                    onTour = { showSettings = false; showTour = true }
                 ),
                 phone = phone,
                 openEngine = settingsOnEngine,
@@ -923,11 +931,11 @@ private fun Rail(
     // the map toggle at the bottom still fits.
     val compact = vertical && LocalConfiguration.current.screenHeightDp < 480
     val buttons: @Composable () -> Unit = {
-        RailButton(Icons.Default.Search, stringResource(R.string.where_to), ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", onClick = onSearch)
-        RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, tag = "rail_gpx", onClick = onGpx)
+        RailButton(Icons.Default.Search, stringResource(R.string.where_to), ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", target = TourTarget.SEARCH, onClick = onSearch)
+        RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, tag = "rail_gpx", target = TourTarget.GPX, onClick = onGpx)
         RailButton(Icons.Default.Phone, stringResource(R.string.phone), EcoGreen, if (phoneOpen) Color.Black else EcoGreen,
-            filled = phoneOpen, tag = "rail_phone", onClick = onPhone)
-        RailButton(Icons.Default.Settings, stringResource(R.string.settings), TextSecondary, TextPrimary, tag = "rail_settings", onClick = onSettings)
+            filled = phoneOpen, tag = "rail_phone", target = TourTarget.PHONE, onClick = onPhone)
+        RailButton(Icons.Default.Settings, stringResource(R.string.settings), TextSecondary, TextPrimary, tag = "rail_settings", target = TourTarget.SETTINGS, onClick = onSettings)
     }
     val mapToggle: @Composable () -> Unit = {
         Box {
@@ -935,7 +943,7 @@ private fun Rail(
                 if (isFullScreenMap) Icons.Default.Dashboard else Icons.Default.Map,
                 stringResource(if (isFullScreenMap) R.string.dashboard else R.string.full_map),
                 ElectricCyan, if (isFullScreenMap) Color(0xFF00363D) else ElectricCyan,
-                filled = isFullScreenMap, tag = "rail_toggle_map", onClick = onToggleMap
+                filled = isFullScreenMap, tag = "rail_toggle_map", target = TourTarget.MAP_TOGGLE, onClick = onToggleMap
             )
             if (isFullScreenMap && unread > 0) {
                 Box(
@@ -971,6 +979,7 @@ private fun RailButton(
     tint: Color,
     filled: Boolean = false,
     tag: String,
+    target: TourTarget,
     onClick: () -> Unit
 ) {
     // Smaller on a phone: sideways it is low, upright it is narrow.
@@ -978,6 +987,7 @@ private fun RailButton(
     Box(
         Modifier
             .size(if (compact) 48.dp else 56.dp)
+            .tourTarget(target)
             .clip(RoundedCornerShape(16.dp))
             .background(if (filled) accent else CockpitSurfaceVariant)
             .clickable(onClick = onClick)
