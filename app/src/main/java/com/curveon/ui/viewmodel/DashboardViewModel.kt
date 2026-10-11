@@ -870,8 +870,20 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _telemetry.value = _telemetry.value.copy(tripDistanceKm = 0f, tripDurationMinutes = 0)
     }
 
+    private var portraitNow = false
+
+    /** Full map or dashboard is remembered per orientation: [restore] takes the one last used in this orientation. */
+    fun setOrientation(portrait: Boolean, restore: Boolean = true) {
+        portraitNow = portrait
+        if (restore) _isFullScreenMap.value = settings.getBoolean(fullMapKey(), false)
+    }
+
+    private fun fullMapKey() = if (portraitNow) "fullMapPortrait" else "fullMapLandscape"
+
+    /** The rider's own choice (the rail button) is what is remembered. */
     fun toggleFullScreenMap() {
         _isFullScreenMap.value = !_isFullScreenMap.value
+        settings.edit().putBoolean(fullMapKey(), _isFullScreenMap.value).apply()
     }
 
     fun setFullScreenMap(on: Boolean) { _isFullScreenMap.value = on }

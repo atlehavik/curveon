@@ -6,6 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Full map or dashboard per orientation
+
+- [ ] On the phone: in portrait pick the full map, in landscape the dashboard. Rotate back and
+      forth: each orientation returns to what it last had. Restart Curveon: same again.
+
 ## 2026-10-11 — Map view remembered per mode
 
 - [ ] Fresh (or after clearing settings): the map without a trip is north up; start a trip and it

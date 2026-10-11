@@ -572,6 +572,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     // Portrait (a phone held upright): speed on top, then the map, the cards below it, the rail along the bottom.
     val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    // Turning the phone: the view last used in that orientation (not while the map is taken over for picking).
+    LaunchedEffect(portrait) { viewModel.setOrientation(portrait, restore = !mapMode) }
     val rail: @Composable () -> Unit = {
         Rail(
             vertical = !portrait,
