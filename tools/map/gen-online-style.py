@@ -18,7 +18,7 @@ FLAVORS = {
     "light": dict(
         land="#e2dfda", water="#80deea", wood="#a0d9a0", grass="#99d2bb", park="#9cd3b4", ice="#ffffff",
         farmland="#d8efd2", sand="#e2e0d7", residential="#e6e6e6", building="#cccccc",
-        casing="#e0e0e0", highway="#ffffff", major="#ffffff", minor="#ffffff", other="#ebebeb",
+        casing="#a3a3a3", casing_major="#858585", casing_highway="#6b6b6b", highway="#ffffff", major="#ffffff", minor="#ffffff", other="#c2c2c2",
         tunnel="#d5d5d5", rail="#a7b1b3", boundary="#adadad",
         road_text="#91888b", road_halo="#ffffff", place_text="#5c5c5c", place_halo="#e0e0e0",
         water_text="#728dd4", water_halo="#80deea", country_text="#a3a3a3",
@@ -26,7 +26,7 @@ FLAVORS = {
     "dark": dict(
         land="#1f1f1f", water="#31353f", wood="#202121", grass="#222323", park="#192a24", ice="#2b2b2b",
         farmland="#1f2420", sand="#212123", residential="#1c1c1c", building="#111111",
-        casing="#1f1f1f", highway="#474747", major="#3d3d3d", minor="#333333", other="#333333",
+        casing="#1f1f1f", casing_major="#1f1f1f", casing_highway="#1f1f1f", highway="#474747", major="#3d3d3d", minor="#333333", other="#333333",
         tunnel="#292929", rail="#000000", boundary="#5b6374",
         road_text="#525252", road_halo="#1f1f1f", place_text="#7a7a7a", place_halo="#212121",
         water_text="#717784", water_halo="#31353f", country_text="#5c5c5c",
@@ -79,7 +79,7 @@ def layers(c):
     for name, classes, width, minzoom in (("minor", MINOR, W_MINOR, 12), ("major", MAJOR, W_MAJOR, 9), ("highway", HIGHWAY, W_HIGHWAY, 7)):
         out.append({"id": f"roads_{name}_casing", "type": "line", "source-layer": "transportation", "minzoom": minzoom,
                     "filter": road_filter(classes), "layout": {"line-cap": "round", "line-join": "round"},
-                    "paint": {"line-color": c["casing"], "line-gap-width": width, "line-width": 1}})
+                    "paint": {"line-color": c["casing" if name == "minor" else f"casing_{name}"], "line-gap-width": width, "line-width": 1}})
     for name, classes, width in (("minor", MINOR, W_MINOR), ("major", MAJOR, W_MAJOR), ("highway", HIGHWAY, W_HIGHWAY)):
         out.append({"id": f"roads_{name}", "type": "line", "source-layer": "transportation",
                     "filter": road_filter(classes), "layout": {"line-cap": "round", "line-join": "round"},
