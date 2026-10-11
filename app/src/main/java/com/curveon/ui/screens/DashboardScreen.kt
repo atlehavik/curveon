@@ -162,7 +162,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // The welcome tour: once on the first start (when the screen has settled), and from Settings → Help.
     val tourTargets = remember { TourTargets() }
     var showTour by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(Unit) { if (!viewModel.tourSeen) { delay(900); showTour = true } }
+    // The very first one starts with the choice of language.
+    var tourIsFirst by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) { if (!viewModel.tourSeen) { delay(900); tourIsFirst = true; showTour = true } }
     /** The phone app's open tab; null when closed. */
     var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
     /** A place picked while riding or planning: a stop, the destination, or (planning) the start? */
@@ -621,7 +623,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             }
         }
     }
-    if (showTour) WelcomeTour(tourTargets, onFinish = { showTour = false; viewModel.markTourSeen() })
+    if (showTour) WelcomeTour(tourTargets, firstStart = tourIsFirst, onFinish = { showTour = false; tourIsFirst = false; viewModel.markTourSeen() })
     } }
 
     // ------------------------------------------------------------------ dialogs
@@ -880,7 +882,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onDeleteMap = viewModel::deleteMap,
                     onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
                     onBrowseMaps = { showMapCatalog = true },
-                    onTour = { showSettings = false; showTour = true }
+                    onTour = { showSettings = false; tourIsFirst = false; showTour = true }
                 ),
                 phone = phone,
                 openEngine = settingsOnEngine,

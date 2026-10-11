@@ -70,7 +70,7 @@ and [dashboard.md](dashboard.md) for the goals.
   "Demo" makes up values. Above the music on the tablet; beside it, bottom right, on a phone held upright.
 - **Spoken replies**: Reply → the phone listens through the headset → the tablet shows what was
   heard → Send.
-- **Welcome tour** on the first start: the screen dims and a lit ring walks over the buttons and
+- **Welcome tour** on the first start (language first, then three animated how-tos: planning, editing a trip on the map, drawing a roundtrip): the screen dims and a lit ring walks over the buttons and
   gestures with a card for each; again any time from Settings → Help, which also lists every symbol.
 - **Demo ride** (Settings) drives the active route without GPS; **demo phone data** (Phone link)
   shows the dashboard without a phone.

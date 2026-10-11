@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.curveon.AppLanguage
 import com.curveon.R
 import com.curveon.ui.theme.*
 import kotlin.math.roundToInt
@@ -135,10 +136,14 @@ private class TourStep(
     @StringRes val title: Int,
     @StringRes val body: Int,
     val symbols: List<HelpSymbol> = emptyList(),
-    val welcome: Boolean = false
+    val welcome: Boolean = false,
+    /** First start only: the language comes first, so the rest is read in it. */
+    val language: Boolean = false,
+    val art: TourArt? = null
 )
 
 private val STEPS = listOf(
+    TourStep(null, Icons.Default.Public, ElectricCyan, R.string.settings_language, R.string.settings_language, language = true),
     TourStep(null, Icons.Default.TwoWheeler, ElectricCyan, R.string.tour_welcome_title, R.string.tour_welcome_body, welcome = true),
     TourStep(TourTarget.SEARCH, Icons.Default.Search, ElectricCyan, R.string.where_to, R.string.tour_search_body),
     TourStep(TourTarget.GPX, Icons.Default.Route, ElectricCyan, R.string.gpx_manager, R.string.tour_gpx_body),
@@ -151,6 +156,9 @@ private val STEPS = listOf(
         MAP_SYMBOLS.take(6)),
     TourStep(TourTarget.SPEED, Icons.Default.Speed, NeonAmber, R.string.tour_speed_title, R.string.tour_speed_body),
     TourStep(TourTarget.CARDS, Icons.Default.MusicNote, ElectricCyan, R.string.tour_cards_title, R.string.tour_cards_body),
+    TourStep(null, Icons.Default.Search, ElectricCyan, R.string.tour_trip_title, R.string.tour_trip_body, art = TourArt.PLAN),
+    TourStep(null, Icons.Default.Gesture, NeonAmber, R.string.tour_edit_title, R.string.tour_edit_body, art = TourArt.EDIT),
+    TourStep(null, Icons.Default.Draw, NeonAmber, R.string.tour_loop_title, R.string.tour_loop_body, art = TourArt.LOOP),
     TourStep(null, Icons.Default.AltRoute, NeonAmber, R.string.help_group_plan, R.string.tour_plan_body, PLAN_SYMBOLS),
     TourStep(null, Icons.Default.Navigation, EcoGreen, R.string.help_group_ride, R.string.tour_ride_body, RIDE_SYMBOLS),
     TourStep(TourTarget.SETTINGS, Icons.Default.HelpOutline, ElectricCyan, R.string.tour_done_title, R.string.tour_done_body)
@@ -162,7 +170,8 @@ private val STEPS = listOf(
  * out. Shown once on the first start, and again from Settings → Help.
  */
 @Composable
-fun WelcomeTour(targets: TourTargets, onFinish: () -> Unit) {
+fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     // Always shown lying down, so the parts it points at stay put (a phone held upright turns once);
     // back to the rider's own choice afterwards.
     val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
@@ -174,14 +183,19 @@ fun WelcomeTour(targets: TourTargets, onFinish: () -> Unit) {
     // The parts on screen once the (maybe just turned) dashboard is laid out; then fixed, so the
     // step count doesn't jump.
     var found by remember { mutableStateOf<List<TourStep>?>(null) }
+    // Picking a language restarts the screen: the tour carries on from the welcome, in that language.
+    var languageChosen by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.withTimeoutOrNull(1500) { snapshotFlow { targets.bounds.size }.first { it >= 6 } }
-        found = STEPS.filter { it.target == null || it.target in targets.bounds }
+        val askLanguage = firstStart && AppLanguage.canChoose && !languageChosen
+        found = STEPS.filter { (!it.language || askLanguage) && (it.target == null || it.target in targets.bounds) }
     }
     val steps = found ?: return
     var index by rememberSaveable { mutableIntStateOf(0) }
     val step = steps[index.coerceIn(steps.indices)]
     val last = index == steps.lastIndex
+    // Steps before the first numbered one: the language, and the welcome.
+    val lead = steps.indexOfFirst { !it.welcome && !it.language }.coerceAtLeast(1)
     val next: () -> Unit = { if (last) onFinish() else index++ }
     androidx.activity.compose.BackHandler { if (index > 0) index-- else onFinish() }
 
@@ -235,7 +249,7 @@ fun WelcomeTour(targets: TourTargets, onFinish: () -> Unit) {
         val margin = with(density) { 16.dp.toPx() }
         val gap = with(density) { 14.dp.toPx() }
         // A long list of symbols gets a wider card with two columns, so it fits the height.
-        val maxCard = with(density) { (if (step.welcome) 460.dp else if (step.symbols.size > 4) 660.dp else 400.dp).toPx() }
+        val maxCard = with(density) { (if (step.welcome || step.language || step.art != null) 460.dp else if (step.symbols.size > 4) 660.dp else 400.dp).toPx() }
         val maxHeight = with(density) { (screen.height - 2 * margin).coerceAtLeast(0f).toDp() }
         val cardWidth = with(density) { minOf(maxCard, screen.width - 2 * margin).coerceAtLeast(0f).toDp() }
         val place = cardPlacement(targetRect, screen, cardSize, margin, gap)
@@ -263,18 +277,27 @@ fun WelcomeTour(targets: TourTargets, onFinish: () -> Unit) {
                 modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())
             ) { i ->
                 val s = steps[i.coerceIn(steps.indices)]
-                if (s.welcome) WelcomeContent(s) else StepContent(s, i, steps.size, columns = if (cardWidth >= 560.dp) 2 else 1)
+                when {
+                    s.language -> LanguageContent(AppLanguage.current(context)) { picked ->
+                        if (picked == AppLanguage.current(context)) index++
+                        else { languageChosen = true; AppLanguage.set(context, picked) }
+                    }
+                    s.welcome -> WelcomeContent(s)
+                    else -> StepContent(s, i - lead + 1, steps.size - lead, columns = if (cardWidth >= 560.dp) 2 else 1)
+                }
             }
             Spacer(Modifier.height(18.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (step.welcome) {
+                if (step.language) {
+                    // The two languages are the buttons.
+                } else if (step.welcome) {
                     TourTextButton(stringResource(R.string.tour_not_now), TextMuted, onFinish)
                     Spacer(Modifier.weight(1f))
                     TourPrimaryButton(stringResource(R.string.tour_start), next)
                 } else {
-                    StepDots(steps.size, index, Modifier.weight(1f))
+                    StepDots(steps.size - lead, index - lead + 1, Modifier.weight(1f))
                     if (!last) TourTextButton(stringResource(R.string.tour_skip), TextMuted, onFinish)
-                    if (index > 1) TourTextButton(stringResource(R.string.tour_back), TextSecondary) { index-- }
+                    if (index > lead) TourTextButton(stringResource(R.string.tour_back), TextSecondary) { index-- }
                     Spacer(Modifier.width(6.dp))
                     TourPrimaryButton(stringResource(if (last) R.string.tour_done else R.string.tour_next), next)
                 }
@@ -316,11 +339,46 @@ private fun WelcomeContent(step: TourStep) {
         Spacer(Modifier.height(10.dp))
         Text(stringResource(step.body), color = TextSecondary, fontSize = 15.sp, lineHeight = 22.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        // A teaser: drawing a loop is the feature that is easy to miss.
+        Spacer(Modifier.height(14.dp))
+        Row(
+            Modifier.clip(RoundedCornerShape(14.dp)).background(NeonAmber.copy(alpha = 0.12f)).padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Draw, null, tint = NeonAmber, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(stringResource(R.string.tour_welcome_tip), color = TextPrimary, fontSize = 14.sp, lineHeight = 19.sp)
+        }
+    }
+}
+
+/** Shown before anything else on the first start: each language in its own words. */
+@Composable
+private fun LanguageContent(current: AppLanguage, onPick: (AppLanguage) -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        Icon(Icons.Default.Public, null, tint = ElectricCyan, modifier = Modifier.size(40.dp))
+        Spacer(Modifier.height(10.dp))
+        Text("Language · Språk", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
+        Spacer(Modifier.height(18.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            AppLanguage.entries.forEach { lang ->
+                val on = lang == current
+                Box(
+                    Modifier.weight(1f).height(56.dp).clip(RoundedCornerShape(28.dp))
+                        .background(if (on) ElectricCyan else CockpitBackground.copy(alpha = 0.7f))
+                        .border(1.dp, if (on) ElectricCyan else CockpitBorder, RoundedCornerShape(28.dp))
+                        .clickable { onPick(lang) }.testTag("tour_lang_${lang.tag}"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(lang.label, color = if (on) Color(0xFF00363D) else TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun StepContent(step: TourStep, index: Int, count: Int, columns: Int) {
+private fun StepContent(step: TourStep, number: Int, count: Int, columns: Int) {
     Column(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -330,11 +388,14 @@ private fun StepContent(step: TourStep, index: Int, count: Int, columns: Int) {
             ) { Icon(step.icon, null, tint = step.accent, modifier = Modifier.size(24.dp)) }
             Spacer(Modifier.width(14.dp))
             Column {
-                // The welcome isn't counted: "1 of 11" is the first part of the screen.
-                Text(stringResource(R.string.tour_step, index, count - 1).uppercase(), color = TextMuted, fontSize = 11.sp,
+                Text(stringResource(R.string.tour_step, number, count).uppercase(), color = TextMuted, fontSize = 11.sp,
                     fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
                 Text(stringResource(step.title), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
             }
+        }
+        if (step.art != null) {
+            Spacer(Modifier.height(12.dp))
+            TourArtView(step.art)
         }
         Spacer(Modifier.height(12.dp))
         Text(stringResource(step.body), color = TextSecondary, fontSize = 15.sp, lineHeight = 21.sp)
@@ -375,8 +436,7 @@ fun HelpSymbolRow(symbol: HelpSymbol, modifier: Modifier = Modifier, compact: Bo
 @Composable
 private fun StepDots(count: Int, index: Int, modifier: Modifier = Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        // The welcome has no dot of its own.
-        for (i in 1 until count) {
+        for (i in 1..count) {
             val on = i == index
             val width by animateDpAsState(if (on) 18.dp else 6.dp, spring(stiffness = Spring.StiffnessMediumLow), label = "dot")
             val color by animateColorAsState(if (on) ElectricCyan else if (i < index) TextSecondary else CockpitBorder, label = "dotColor")

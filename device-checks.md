@@ -11,6 +11,9 @@ Commands assume the device is connected over USB. With both connected, pick one 
 - [ ] Start Curveon on the X7: the welcome tour opens by itself (once). Walk through it: the lit
       ring should sit neatly round each rail button, the map buttons, the speed and the cards, and
       every card should fit on screen (also the long "Planning a trip" one).
+- [ ] First start (clear the app's data to see it again): the tour opens with Language · Språk, and
+      carries on in the language you tap. Three small animations (plan, edit on the map, draw a
+      roundtrip) loop without text.
 - [ ] Settings → Help → Start the tour: it starts again; the symbol list below reads well.
 - [ ] On the Pixel held upright: the tour turns the screen to landscape while it is open, and back
       to upright when it closes.

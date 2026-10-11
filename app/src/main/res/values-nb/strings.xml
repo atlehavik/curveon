@@ -669,4 +669,11 @@
     <string name="help_draw">Tegn et område med fingeren for en rundtur gjennom det (Hvor skal du? → Rundtur)</string>
     <string name="help_swipe_message">Sveip en melding til siden for å skjule den</string>
     <string name="help_swipe_music">Sveip musikkortet for å bytte musikkapp</string>
+    <string name="tour_welcome_tip">Prøv å tegne en rundtur med fingeren: du markerer et område, så finner Curveon runden.</string>
+    <string name="tour_trip_title">Planlegg en tur</string>
+    <string name="tour_trip_body">Velg et sted i Hvor skal du?, så vises Raskest, Svingete og Supersvingete side om side med tid og avstand. Legg til stopp underveis, eller start et annet sted enn der du er. Ser det bra ut, trykker du KJØR.</string>
+    <string name="tour_edit_title">Endre i kartet</string>
+    <string name="tour_edit_body">Hold fingeren på rutelinjen, eller velg Juster ruten → Endre i kartet. Dra start, mål eller et stopp for å flytte det. Dra i selve linjen, så bøyer ruten seg gjennom punktet der du slipper. Et trykk på et punkt gir en meny; Angre tar tilbake siste endring, Ferdig beholder alt.</string>
+    <string name="tour_loop_title">Rundtur, tegnet for hånd</string>
+    <string name="tour_loop_body">Hvor skal du? → Rundtur: tegn området du vil kjøre i med én finger, så lager Curveon en runde gjennom det uten å kjøre samme vei to ganger. Velg hvor lang den får bli, og asfalt eller grus. En annen runde gir et nytt forslag.</string>
 </resources>
