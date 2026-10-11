@@ -82,7 +82,8 @@ def phone_layer(screen_img, frame_rgba):
 # Screen is 28 x 42 dp: the art 34 dp wide at the bottom (sides cropped), sky repeated above it
 w, h = 28 * PX, 42 * PX; aw = 34 * PX
 a = np.asarray(art.resize((aw, aw), Image.LANCZOS))
-scr = np.pad(a, ((h - aw, 0), (0, 0), (0, 0)), mode="edge")[:, (aw - w) // 2:(aw - w) // 2 + w]
+x0 = (aw - w) // 2 - PX  # a bit left of centre: keeps the left mirror, the road can run off the right
+scr = np.pad(a, ((h - aw, 0), (0, 0), (0, 0)), mode="edge")[:, x0:x0 + w]
 screen = Image.new("RGBA", (C, C), (0, 0, 0, 0)); screen.paste(Image.fromarray(scr).convert("RGBA"), (40 * PX, 33 * PX))
 save(phone_layer(screen, (0, 229, 255, 255)), "companion/src/main/res/drawable-nodpi/ic_launcher_phone.png")
 mscreen = Image.new("RGBA", (C, C), (0, 0, 0, 0)); mscreen.paste(mono(Image.fromarray(scr)), (40 * PX, 33 * PX))
