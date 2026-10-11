@@ -670,7 +670,6 @@
     <string name="help_draw">Draw an area with a finger for a roundtrip through it (Where to? → Roundtrip)</string>
     <string name="help_swipe_message">Swipe a message sideways to hide it</string>
     <string name="help_swipe_music">Swipe the music card to change music app</string>
-    <string name="tour_welcome_tip">Try drawing a roundtrip with your finger: you mark an area, Curveon finds the loop.</string>
     <string name="tour_trip_title">Plan a trip</string>
     <string name="tour_trip_body">Pick a place in Where to?, and Fastest, Curvy and Super curvy appear side by side with time and distance. Add stops along the way, or start somewhere other than here. When it looks right, press GO.</string>
     <string name="tour_edit_title">Edit on the map</string>

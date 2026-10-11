@@ -350,16 +350,6 @@ private fun WelcomeContent(step: TourStep) {
         Spacer(Modifier.height(10.dp))
         Text(stringResource(step.body), color = TextSecondary, fontSize = 15.sp, lineHeight = 22.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        // A teaser: drawing a loop is the feature that is easy to miss.
-        Spacer(Modifier.height(14.dp))
-        Row(
-            Modifier.clip(RoundedCornerShape(14.dp)).background(NeonAmber.copy(alpha = 0.12f)).padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.Draw, null, tint = NeonAmber, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(10.dp))
-            Text(stringResource(R.string.tour_welcome_tip), color = TextPrimary, fontSize = 14.sp, lineHeight = 19.sp)
-        }
     }
 }
 
