@@ -14,6 +14,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
 import com.curveon.ui.theme.*
 import kotlin.math.PI
@@ -21,7 +25,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** The little animated drawings in the welcome tour. They carry no text, so they read the same in every language. */
-enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), MARK(11), LOOP(9), SETUP(10), SOLO(10) }
+enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), MARK(11), LOOP(9), SETUP(10), SOLO(10), CARDS(16) }
 
 /** One looping animation of [art] on a dark scrap of map. */
 @Composable
@@ -33,7 +37,7 @@ fun TourArtView(art: TourArt, modifier: Modifier = Modifier) {
         modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(18.dp))
             .border(1.dp, CockpitBorder, RoundedCornerShape(18.dp))
     ) {
-        if (art == TourArt.SETUP || art == TourArt.SOLO) drawRect(Color(0xFF0D131B)) else drawBackdrop()
+        if (art == TourArt.SETUP || art == TourArt.SOLO || art == TourArt.CARDS) drawRect(Color(0xFF0D131B)) else drawBackdrop()
         // Everything fades out at the end of a round, so the next one starts from a clean map.
         val fade = 1f - phase(t, 0.93f, 1f)
         val appear = phase(t, 0f, 0.04f)
@@ -44,6 +48,7 @@ fun TourArtView(art: TourArt, modifier: Modifier = Modifier) {
             TourArt.LOOP -> drawLoop(t, fade * appear)
             TourArt.SETUP -> drawSetup(t, fade * appear)
             TourArt.SOLO -> drawSolo(t, fade * appear)
+            TourArt.CARDS -> drawCards(t, fade * appear)
         }
     }
 }
@@ -495,4 +500,177 @@ private fun DrawScope.drawSolo(t: Float, alpha: Float) {
         pulses(Offset(a.x, a.y - 6.dp.toPx()), Offset(b.x, b.y - 6.dp.toPx()), tt, listOf(MusicCyan, CallGreen), flow)
         pulses(Offset(b.x, b.y + 6.dp.toPx()), Offset(a.x, a.y + 6.dp.toPx()), tt + 0.3f, listOf(CallGreen), flow)
     }
+}
+
+// ---------------------------------------------------------------------------------- CARDS
+
+private val CardFill = Color(0xFF16212D)
+private val OtherMusic = Color(0xFFB388FF)
+private val DeclineRed = Color(0xFFFF5252)
+
+private fun DrawScope.cardBar(x: Float, y: Float, w: Float, color: Color, alpha: Float, h: Float = 6.dp.toPx()) {
+    if (alpha <= 0f || w <= 0f) return
+    drawRoundRect(color.copy(alpha = alpha), Offset(x, y - h / 2), androidx.compose.ui.geometry.Size(w, h), androidx.compose.ui.geometry.CornerRadius(h / 2))
+}
+
+private fun DrawScope.cardFrame(cw: Float, ch: Float, accent: Color, alpha: Float) {
+    val r = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx())
+    drawRoundRect(CardFill.copy(alpha = alpha), Offset.Zero, androidx.compose.ui.geometry.Size(cw, ch), r)
+    drawRoundRect(accent.copy(alpha = 0.5f * alpha), Offset.Zero, androidx.compose.ui.geometry.Size(cw, ch), r, style = Stroke(1.5.dp.toPx()))
+}
+
+/** A music card at the origin: a disc, two lines of text, a bouncing equaliser and a progress bar. */
+private fun DrawScope.musicCard(t: Float, cw: Float, ch: Float, accent: Color, alpha: Float) {
+    if (alpha <= 0f) return
+    cardFrame(cw, ch, accent, alpha)
+    val c = Offset(14.dp.toPx() + 25.dp.toPx(), ch * 0.4f)
+    drawCircle(accent.copy(alpha = 0.9f * alpha), 25.dp.toPx(), c)
+    drawCircle(Color.White.copy(alpha = 0.25f * alpha), 17.dp.toPx(), c, style = Stroke(1.5.dp.toPx()))
+    drawCircle(CardFill.copy(alpha = alpha), 6.dp.toPx(), c)
+    val x = 80.dp.toPx()
+    cardBar(x, ch * 0.28f, cw * 0.36f, TextPrimary, 0.85f * alpha)
+    cardBar(x, ch * 0.28f + 16.dp.toPx(), cw * 0.22f, TextMuted, 0.7f * alpha)
+    for (i in 0 until 4) {
+        val h = (6f + 18f * kotlin.math.abs(sin(t * 60f + i * 1.7f))).dp.toPx()
+        val bx = cw - 70.dp.toPx() + i * 11.dp.toPx()
+        drawLine(accent.copy(alpha = alpha), Offset(bx, ch * 0.4f + h / 2), Offset(bx, ch * 0.4f - h / 2), 4.dp.toPx(), StrokeCap.Round)
+    }
+    val y = ch - 18.dp.toPx()
+    cardBar(14.dp.toPx(), y, cw - 28.dp.toPx(), Color.White, 0.12f * alpha, 4.dp.toPx())
+    cardBar(14.dp.toPx(), y, (cw - 28.dp.toPx()) * (0.3f + 0.4f * ((t * 4f) % 1f)), accent, alpha, 4.dp.toPx())
+}
+
+/** Sound bars: a voice, [amount] 0..1 of full height. */
+private fun DrawScope.voice(t: Float, x0: Float, x1: Float, y: Float, color: Color, alpha: Float) {
+    if (alpha <= 0f) return
+    val n = ((x1 - x0) / 9.dp.toPx()).toInt().coerceAtLeast(2)
+    for (i in 0 until n) {
+        val h = (4f + 16f * kotlin.math.abs(sin(t * 70f + i * 0.9f) * cos(i * 0.5f))).dp.toPx()
+        val x = x0 + i * (x1 - x0) / (n - 1)
+        drawLine(color.copy(alpha = alpha), Offset(x, y - h / 2), Offset(x, y + h / 2), 3.dp.toPx(), StrokeCap.Round)
+    }
+}
+
+private fun DrawScope.messageCard(t: Float, cw: Float, ch: Float, alpha: Float, pills: Float, dictate: Float, fill: Float, check: Float) {
+    if (alpha <= 0f) return
+    cardFrame(cw, ch, MessageAmber, alpha)
+    val bx = 14.dp.toPx(); val by = 14.dp.toPx()
+    drawRoundRect(MessageAmber.copy(alpha = alpha), Offset(bx, by), androidx.compose.ui.geometry.Size(46.dp.toPx(), 34.dp.toPx()), androidx.compose.ui.geometry.CornerRadius(9.dp.toPx()))
+    val tail = Path().apply { moveTo(bx + 8.dp.toPx(), by + 32.dp.toPx()); lineTo(bx + 6.dp.toPx(), by + 44.dp.toPx()); lineTo(bx + 20.dp.toPx(), by + 33.dp.toPx()); close() }
+    drawPath(tail, MessageAmber.copy(alpha = alpha))
+    cardBar(bx + 9.dp.toPx(), by + 12.dp.toPx(), 28.dp.toPx(), CardFill, alpha, 4.dp.toPx())
+    cardBar(bx + 9.dp.toPx(), by + 22.dp.toPx(), 18.dp.toPx(), CardFill, alpha, 4.dp.toPx())
+    val x = 78.dp.toPx()
+    cardBar(x, ch * 0.28f, cw * 0.44f, TextPrimary, 0.85f * alpha)
+    cardBar(x, ch * 0.28f + 16.dp.toPx(), cw * 0.3f, TextMuted, 0.7f * alpha)
+    val py = ch - 20.dp.toPx()
+    if (pills > 0f) {
+        val h = 22.dp.toPx()
+        val reply = Offset(cw - 14.dp.toPx() - 64.dp.toPx(), py - h / 2)
+        drawRoundRect(ElectricCyan.copy(alpha = alpha * pills), reply, androidx.compose.ui.geometry.Size(64.dp.toPx(), h), androidx.compose.ui.geometry.CornerRadius(h / 2))
+        drawRoundRect(TextMuted.copy(alpha = alpha * pills), Offset(reply.x - 8.dp.toPx() - 56.dp.toPx(), reply.y), androidx.compose.ui.geometry.Size(56.dp.toPx(), h),
+            androidx.compose.ui.geometry.CornerRadius(h / 2), style = Stroke(1.5.dp.toPx()))
+    }
+    // Reply: the rider speaks, the words fill in as a line of text.
+    voice(t, 14.dp.toPx(), 90.dp.toPx(), py, MessageAmber, alpha * dictate)
+    cardBar(100.dp.toPx(), py, (cw - 150.dp.toPx()) * fill, TextPrimary, 0.8f * alpha * (if (dictate > 0f || check > 0f) 1f else 0f), 6.dp.toPx())
+    if (check > 0f) {
+        val c = Offset(cw - 30.dp.toPx(), py)
+        drawCircle(CallGreen.copy(alpha = alpha * check), 11.dp.toPx() * check, c)
+        val tick = Path().apply { moveTo(c.x - 4.5.dp.toPx(), c.y); lineTo(c.x - 1.dp.toPx(), c.y + 3.5.dp.toPx()); lineTo(c.x + 5.dp.toPx(), c.y - 3.5.dp.toPx()) }
+        drawPath(tick, CardFill.copy(alpha = alpha * check), style = Stroke(2.2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+    }
+}
+
+private fun DrawScope.callCard(t: Float, cw: Float, ch: Float, alpha: Float, ringing: Boolean, answered: Float) {
+    if (alpha <= 0f) return
+    cardFrame(cw, ch, CallGreen, alpha)
+    val c = Offset(14.dp.toPx() + 24.dp.toPx(), ch / 2)
+    if (ringing && answered < 1f) {
+        for (k in 0..1) {
+            val x = (t * 9f + k * 0.5f) % 1f
+            drawCircle(CallGreen.copy(alpha = 0.45f * (1f - x) * alpha * (1f - answered)), lerp(24f, 44f, x).dp.toPx(), c, style = Stroke(2.dp.toPx()))
+        }
+    }
+    drawCircle(CallGreen.copy(alpha = alpha), 24.dp.toPx(), c)
+    rotate(-40f, c) {
+        drawRoundRect(CardFill.copy(alpha = alpha), Offset(c.x - 4.dp.toPx(), c.y - 12.dp.toPx()), androidx.compose.ui.geometry.Size(8.dp.toPx(), 24.dp.toPx()), androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()))
+    }
+    val x = 80.dp.toPx()
+    cardBar(x, ch * 0.3f, cw * 0.3f, TextPrimary, 0.85f * alpha)
+    cardBar(x, ch * 0.3f + 16.dp.toPx(), cw * 0.18f, TextMuted, 0.7f * alpha)
+    val ry = ch * 0.7f
+    val before = 1f - answered
+    if (before > 0f) {
+        drawCircle(DeclineRed.copy(alpha = alpha * before), 13.dp.toPx(), Offset(cw - 66.dp.toPx(), ch / 2))
+        drawCircle(CallGreen.copy(alpha = alpha * before), 13.dp.toPx(), Offset(cw - 30.dp.toPx(), ch / 2))
+    }
+    // Answered: both of them talking.
+    voice(t, 80.dp.toPx(), cw - 18.dp.toPx(), ry + 4.dp.toPx(), CallGreen, alpha * answered)
+}
+
+/** The dashboard: the map on the left, the cards on the right. Music plays, the rider flips between music apps,
+ *  a message comes in and is answered by voice, a call is taken. */
+private fun DrawScope.drawCards(t: Float, alpha: Float) {
+    // The map, with the route and the rider on it.
+    val mapW = size.width * 0.56f
+    val mapR = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx())
+    val mapTL = Offset(size.width * 0.03f, size.height * 0.1f)
+    val mapSize = androidx.compose.ui.geometry.Size(mapW, size.height * 0.8f)
+    drawRoundRect(Water.copy(alpha = alpha), mapTL, mapSize, mapR)
+    withTransform({ clipRect(mapTL.x, mapTL.y, mapTL.x + mapW, mapTL.y + mapSize.height) }) {
+        listOf(0f to 0.3f, 0.2f to 0.62f, 0.7f to 0.2f).forEach { (a, b) ->
+            drawLine(Road.copy(alpha = alpha), Offset(mapTL.x, mapTL.y + mapSize.height * (a + 0.1f)), Offset(mapTL.x + mapW, mapTL.y + mapSize.height * b), 3.dp.toPx(), StrokeCap.Round)
+        }
+        val r = Path().apply {
+            moveTo(mapTL.x + mapW * 0.06f, mapTL.y + mapSize.height * 0.85f)
+            cubicTo(mapTL.x + mapW * 0.3f, mapTL.y + mapSize.height * 0.2f, mapTL.x + mapW * 0.5f, mapTL.y + mapSize.height * 1.0f, mapTL.x + mapW * 0.95f, mapTL.y + mapSize.height * 0.25f)
+        }
+        route(r, ElectricCyan, alpha)
+    }
+    drawRoundRect(CardFill.copy(alpha = 0.9f * alpha), Offset(mapTL.x + 6.dp.toPx(), mapTL.y + 6.dp.toPx()),
+        androidx.compose.ui.geometry.Size(34.dp.toPx(), 16.dp.toPx()), androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()))
+    cardBar(mapTL.x + 12.dp.toPx(), mapTL.y + 14.dp.toPx(), 22.dp.toPx(), TextPrimary, 0.8f * alpha, 4.dp.toPx())
+
+    // The card column, drawn at design size and scaled to fit.
+    val colLeft = size.width * 0.62f
+    val colW = size.width * 0.35f
+    val clipLeft = colLeft - 2.dp.toPx()
+    val cwD = 250.dp.toPx(); val chD = 92.dp.toPx()
+    val sc = colW / cwD
+    val cw = colW; val ch = chD * sc
+    val top = (size.height - ch) / 2 - 6.dp.toPx()
+    val swipe = phase(t, 0.20f, 0.30f)
+    val msgIn = phase(t, 0.40f, 0.47f)
+    val msgOut = phase(t, 0.70f, 0.76f)
+    val callIn = phase(t, 0.70f, 0.76f)
+    val answered = phase(t, 0.84f, 0.87f)
+    fun DrawScope.card(dx: Float, dy: Float, body: DrawScope.() -> Unit) =
+        translate(colLeft + dx, top + dy) { scale(sc, sc, Offset.Zero) { body() } }
+    withTransform({ clipRect(clipLeft, 0f, size.width, size.height) }) {
+        card(-swipe * cw, 0f) { musicCard(t, cwD, chD, MusicCyan, alpha) }
+        card((1f - swipe) * cw, msgIn * ch * 0.5f) { musicCard(t, cwD, chD, OtherMusic, alpha * (1f - msgIn) * phase(t, 0.19f, 0.2f)) }
+        val pills = 1f - phase(t, 0.54f, 0.57f)
+        val dictate = phase(t, 0.54f, 0.57f) * (1f - phase(t, 0.66f, 0.69f))
+        card(0f, -(1f - msgIn) * ch - msgOut * ch) {
+            messageCard(t, cwD, chD, alpha * msgIn * (1f - msgOut), pills, dictate, phase(t, 0.57f, 0.66f), phase(t, 0.67f, 0.71f))
+        }
+        card(0f, (1f - callIn) * ch * 0.5f) { callCard(t, cwD, chD, alpha * callIn, t > 0.72f, answered) }
+    }
+    // Which music app is showing.
+    val dotsA = alpha * (1f - msgIn)
+    val dy = top + ch + 12.dp.toPx()
+    drawCircle((if (swipe < 0.5f) MusicCyan else OtherMusic).copy(alpha = dotsA), 3.dp.toPx(), Offset(colLeft + cw / 2 - 7.dp.toPx(), dy))
+    drawCircle(TextMuted.copy(alpha = 0.5f * dotsA), 3.dp.toPx(), Offset(colLeft + cw / 2 + 7.dp.toPx(), dy))
+    // Fingers: the swipe, the tap on Reply, the tap on Answer.
+    val y = top + ch * 0.5f
+    finger(Offset(lerp(colLeft + cw * 0.8f, colLeft + cw * 0.2f, swipe), y), alpha * phase(t, 0.18f, 0.2f) * (1f - phase(t, 0.3f, 0.32f)))
+    val replyAt = Offset(colLeft + (cwD - 46.dp.toPx()) * sc, top + (chD - 20.dp.toPx()) * sc)
+    val move = phase(t, 0.46f, 0.51f)
+    finger(Offset(lerp(colLeft + cw * 0.55f, replyAt.x, move), lerp(top + ch * 0.8f, replyAt.y, move)),
+        alpha * phase(t, 0.45f, 0.47f) * (1f - phase(t, 0.55f, 0.58f)), ((t - 0.51f) / 0.05f).coerceIn(0f, 1f))
+    val answerAt = Offset(colLeft + (cwD - 30.dp.toPx()) * sc, top + ch / 2)
+    val move3 = phase(t, 0.78f, 0.82f)
+    finger(Offset(lerp(colLeft + cw * 0.55f, answerAt.x, move3), lerp(top + ch * 0.9f, answerAt.y, move3)),
+        alpha * phase(t, 0.77f, 0.79f) * (1f - phase(t, 0.88f, 0.91f)), ((t - 0.82f) / 0.05f).coerceIn(0f, 1f))
 }

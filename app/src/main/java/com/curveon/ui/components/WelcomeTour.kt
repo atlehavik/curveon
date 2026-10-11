@@ -163,7 +163,7 @@ private val STEPS = listOf(
     TourStep(TourTarget.MAP_BUTTONS, Icons.Default.Explore, ElectricCyan, R.string.tour_buttons_title, R.string.tour_buttons_body,
         MAP_SYMBOLS.take(6)),
     TourStep(TourTarget.SPEED, Icons.Default.Speed, NeonAmber, R.string.tour_speed_title, R.string.tour_speed_body),
-    TourStep(TourTarget.CARDS, Icons.Default.MusicNote, ElectricCyan, R.string.tour_cards_title, R.string.tour_cards_body),
+    TourStep(TourTarget.CARDS, Icons.Default.MusicNote, ElectricCyan, R.string.tour_cards_title, R.string.tour_cards_body, art = TourArt.CARDS),
     TourStep(null, Icons.Default.Bluetooth, BluetoothAccent, R.string.tour_setup_title, R.string.tour_setup_body, art = TourArt.SETUP),
     TourStep(null, Icons.Default.PhoneAndroid, EcoGreen, R.string.tour_solo_title, R.string.tour_solo_body, art = TourArt.SOLO),
     TourStep(null, Icons.Default.Search, ElectricCyan, R.string.tour_trip_title, R.string.tour_trip_body, art = TourArt.PLAN),
