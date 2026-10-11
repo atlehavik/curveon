@@ -875,16 +875,20 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
      */
     fun previewAreaRoundtrip(
         area: List<GeoPoint>, start: GeoPoint? = null, startName: String = "",
-        maxKm: Int? = null, surface: SurfacePreference = lastOptions.surface
+        maxKm: Int? = null, surface: SurfacePreference = lastOptions.surface, gravelReachKm: Int? = lastOptions.gravelReachKm
     ) = navigator.previewAreaRoundtrip(
         area.map { LatLon(it.latitude, it.longitude) },
-        lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle, surface = surface),
+        lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle,
+            surface = surface, gravelReachKm = gravelReachKm),
         start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) },
         maxKm
     )
 
     /** The surface last planned with: what a new loop starts with. */
     fun lastSurface(): SurfacePreference = lastOptions.surface
+
+    /** How far off the ordinary road gravel was last allowed to go (null = any distance). */
+    fun lastGravelReach(): Int? = lastOptions.gravelReachKm
 
     /** The previewed loop again, no longer than [maxKm] (null = round the whole area). */
     fun setLoopMax(maxKm: Int?) = navigator.setLoopMax(maxKm)

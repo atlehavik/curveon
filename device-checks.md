@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Gravel reach when drawing a loop
+
+With Gravel or Offroad in the drawing bar, the "Gravel within N km / anywhere" chip is there too.
+The loop's shape is found with gravel's full pull; the reach applies when it is ridden as a trip
+through its points (each stretch between two points keeps that close to the ordinary road), and
+can be changed on the sheet afterwards. Checked in the emulator.
+
+- [ ] Draw a gravel loop inland with "within 3 km": less gravel than "anywhere", but some?
+
 ## 2026-10-11 — Brighter roads on the dark map
 
 Roads on the night map were barely lighter than the land (#333–#474 on #1f1f1f). They are now

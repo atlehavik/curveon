@@ -150,6 +150,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** Chosen in the drawing bar: how long the loop may be (null = round the whole area), and its surface. */
     var sketchMaxKm by remember { mutableStateOf<Int?>(null) }
     var sketchSurface by remember { mutableStateOf(viewModel.lastSurface()) }
+    var sketchGravelReach by remember { mutableStateOf(viewModel.lastGravelReach()) }
     LaunchedEffect(sketching) { if (sketching) sketchKm = null }
     var showGpx by remember { mutableStateOf(false) }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
@@ -329,7 +330,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
         if (sketching) {
             SketchBar(onCancel = { sketching = false }, km = sketchKm?.let { k -> sketchMaxKm?.let { minOf(it, k) } ?: k }, startName = roundtripStart?.second,
-                maxKm = sketchMaxKm, onMaxKm = { sketchMaxKm = it }, surface = sketchSurface, onSurface = { sketchSurface = it }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
+                maxKm = sketchMaxKm, onMaxKm = { sketchMaxKm = it }, surface = sketchSurface, onSurface = { sketchSurface = it },
+                gravelReachKm = sketchGravelReach, onGravelReach = { sketchGravelReach = it }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
         } else if (pickPurpose != null) {
             MapPickBar(
                 purpose = pickPurpose,
@@ -405,6 +407,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                         roundtripStart = loop.start?.let { GeoPoint(it.point.lat, it.point.lon) to it.name }
                         sketchMaxKm = loop.maxKm
                         sketchSurface = loop.options.surface
+                        sketchGravelReach = loop.options.gravelReachKm
                     }
                     sketching = true
                 },
@@ -494,7 +497,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             },
             onSketch = if (sketching) ({ stroke ->
                 sketching = false
-                viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "", sketchMaxKm, sketchSurface)
+                viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "", sketchMaxKm, sketchSurface, sketchGravelReach)
             }) else null,
             gpxTracks = overlayTracks,
             gpxPois = overlayPois,

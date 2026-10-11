@@ -539,7 +539,10 @@ fun SketchBar(
     /** Chosen before drawing: how long the loop may be, and on what surface. */
     maxKm: Int? = null, onMaxKm: (Int?) -> Unit = {},
     surface: com.curveon.routing.SurfacePreference = com.curveon.routing.SurfacePreference.PAVED,
-    onSurface: (com.curveon.routing.SurfacePreference) -> Unit = {}
+    onSurface: (com.curveon.routing.SurfacePreference) -> Unit = {},
+    /** Gravel/Offroad: how far off the ordinary road for gravel (null = any distance). */
+    gravelReachKm: Int? = null,
+    onGravelReach: (Int?) -> Unit = {}
 ) {
     Column(
         modifier
@@ -566,6 +569,7 @@ fun SketchBar(
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         LoopMaxChip(maxKm, onMaxKm)
         SurfaceChip(surface, onSurface)
+        if (surface >= com.curveon.routing.SurfacePreference.GRAVEL) GravelReachChip(gravelReachKm, onGravelReach)
     }
     }
 }

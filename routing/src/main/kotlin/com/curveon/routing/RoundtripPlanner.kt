@@ -341,7 +341,9 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
 
     private fun leg(a: LatLon, b: LatLon, options: RouteOptions, catchingRange: Double): Future<Route> =
         legs.computeIfAbsent(Leg(a, b, catchingRange, options)) { leg ->
-            legPool.submit(Callable { engine.route(listOf(leg.from, leg.to), leg.options, leg.catchingRange, PLANNING_FERRY_COST) })
+            // The loop's shape is found with gravel's full pull; how far it may stray for gravel is
+            // kept to once the loop is ridden as a trip through its points.
+            legPool.submit(Callable { engine.route(listOf(leg.from, leg.to), leg.options.copy(gravelReachKm = null), leg.catchingRange, PLANNING_FERRY_COST) })
         }
 
     /**
