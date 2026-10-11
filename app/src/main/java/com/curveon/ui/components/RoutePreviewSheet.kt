@@ -58,7 +58,8 @@ fun RoutePreviewSheet(
     onSelect: (Int) -> Unit,
     onSurface: (SurfacePreference) -> Unit,
     onToggleFerries: () -> Unit,
-    onToggleMotorways: () -> Unit,
+    /** (avoid motorways, avoid trunk roads too). */
+    onMotorways: (Boolean, Boolean) -> Unit,
     onRemoveStop: (Int) -> Unit,
     onShuffle: () -> Unit,
     onAddStop: () -> Unit = {},
@@ -258,7 +259,7 @@ fun RoutePreviewSheet(
         val chips: @Composable (Modifier) -> Unit = { m ->
             RouteOptionChips(
                 surface = options.surface, avoidFerries = options.avoidFerries, avoidMotorways = options.avoidMotorways,
-                onSurface = onSurface, onToggleFerries = onToggleFerries, onToggleMotorways = onToggleMotorways, modifier = m,
+                onSurface = onSurface, onToggleFerries = onToggleFerries, onMotorways = onMotorways, avoidTrunk = options.avoidTrunk, modifier = m,
                 gravelReachKm = options.gravelReachKm, onGravelReach = onGravelReach
             )
         }

@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — No motorways or E-roads
+
+The motorway chip is a list: Motorways OK / No motorways / **No motorways or E-roads**. The routing
+data has road classes, not numbers, so "E-roads" means trunk roads: in Norway the E-roads and the
+biggest national roads (Rv 7, Rv 13 where tagged trunk); still ridden where there is no other way.
+Haugesund–Bergen fastest: 61 km on trunk → 6 km (139 → 165 km). Checked in the emulator.
+
+- [ ] A trip you'd normally get E39/E134 on: does it keep off them, and is the detour sensible?
+
 ## 2026-10-11 — Rides keep their times in GPX (for lining up with video)
 
 A ride saved to the GPX collection now keeps when each point was ridden, and exported GPX files

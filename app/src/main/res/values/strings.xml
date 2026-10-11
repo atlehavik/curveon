@@ -46,6 +46,7 @@
     <string name="ferries_ok">Ferries OK</string>
     <string name="no_ferries">No ferries</string>
     <string name="motorways_ok">Motorways OK</string>
+    <string name="no_motorways_e_roads">No motorways or E-roads</string>
     <string name="no_motorways">No motorways</string>
     <string name="surface_tarmac">Tarmac</string>
     <string name="surface_mixed">Mixed</string>

@@ -39,9 +39,11 @@ fun RouteOptionChips(
     surface: SurfacePreference,
     avoidFerries: Boolean,
     avoidMotorways: Boolean,
+    avoidTrunk: Boolean = false,
     onSurface: (SurfacePreference) -> Unit,
     onToggleFerries: () -> Unit,
-    onToggleMotorways: () -> Unit,
+    /** Motorways OK / No motorways / No motorways or E-roads: (avoid motorways, avoid trunk roads). */
+    onMotorways: (Boolean, Boolean) -> Unit,
     modifier: Modifier = Modifier,
     /** Gravel/Offroad: how far (km) off the ordinary route for gravel; null = any distance. Shown next to the surface. */
     gravelReachKm: Int? = null,
@@ -53,9 +55,7 @@ fun RouteOptionChips(
         OptionChip(stringResource(if (avoidFerries) R.string.no_ferries else R.string.ferries_ok), active = avoidFerries, avoid = true, onClick = onToggleFerries) {
             Icon(Icons.Default.DirectionsBoat, null, tint = if (avoidFerries) NeonAmber else TextSecondary)
         }
-        OptionChip(stringResource(if (avoidMotorways) R.string.no_motorways else R.string.motorways_ok), active = avoidMotorways, avoid = true, onClick = onToggleMotorways) {
-            Image(painterResource(com.curveon.R.drawable.ic_motorway), null, modifier = Modifier.size(22.dp))
-        }
+        MotorwayChip(avoidMotorways, avoidTrunk, onMotorways)
     }
 }
 
@@ -184,6 +184,32 @@ fun GravelReachChip(reachKm: Int?, onPick: (Int?) -> Unit) {
                 androidx.compose.material3.DropdownMenuItem(
                     text = { Text(label(km), color = if (km == reachKm) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
                     onClick = { open = false; onPick(km) }
+                )
+            }
+        }
+    }
+}
+
+/** Motorways OK, No motorways, or No motorways or E-roads (trunk roads); a list, so the route is worked out once. */
+@Composable
+fun MotorwayChip(avoidMotorways: Boolean, avoidTrunk: Boolean, onPick: (Boolean, Boolean) -> Unit) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val choices = listOf(false to false, true to false, true to true)
+    val current = avoidMotorways to (avoidMotorways && avoidTrunk)
+    @Composable fun label(c: Pair<Boolean, Boolean>) = stringResource(when {
+        c.second -> R.string.no_motorways_e_roads
+        c.first -> R.string.no_motorways
+        else -> R.string.motorways_ok
+    })
+    Box {
+        OptionChip(label(current), active = avoidMotorways, avoid = true, onClick = { open = true }) {
+            Image(painterResource(com.curveon.R.drawable.ic_motorway), null, modifier = Modifier.size(22.dp))
+        }
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+            choices.forEach { c ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(label(c), color = if (c == current) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                    onClick = { open = false; if (c != current) onPick(c.first, c.second) }
                 )
             }
         }

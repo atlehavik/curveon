@@ -388,7 +388,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onSelect = viewModel::selectCandidate,
                     onSurface = viewModel::setPreviewSurface,
                     onToggleFerries = viewModel::togglePreviewAvoidFerries,
-                    onToggleMotorways = viewModel::togglePreviewAvoidMotorways,
+                    onMotorways = viewModel::setPreviewMotorways,
                     onRemoveStop = viewModel::removePreviewStop,
                     onShuffle = viewModel::shuffleRoundtrip,
                     onAddStop = { searchPurpose = SearchPurpose.STOP },

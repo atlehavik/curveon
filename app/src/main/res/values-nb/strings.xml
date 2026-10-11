@@ -45,6 +45,7 @@
     <string name="ferries_ok">Ferjer OK</string>
     <string name="no_ferries">Ingen ferjer</string>
     <string name="motorways_ok">Motorvei OK</string>
+    <string name="no_motorways_e_roads">Ingen motorvei eller E-vei</string>
     <string name="no_motorways">Ingen motorvei</string>
     <string name="surface_tarmac">Asfalt</string>
     <string name="surface_mixed">Blandet</string>

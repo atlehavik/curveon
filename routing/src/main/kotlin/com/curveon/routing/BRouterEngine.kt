@@ -136,6 +136,7 @@ class BRouterEngine(
             "surface_pref" to o.surface.ordinal.toString(),
             "avoid_ferries" to o.avoidFerries.flag(),
             "avoid_motorways" to o.avoidMotorways.flag(),
+            "avoid_trunk" to o.avoidTrunk.flag(),
             "avoid_toll" to o.avoidToll.flag(),
             "avoided_ferry_cost" to avoidedFerryCost.toString(),
             "tracks_last_resort" to tracksAsLastResort.flag(),

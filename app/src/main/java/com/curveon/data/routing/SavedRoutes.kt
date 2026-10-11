@@ -72,12 +72,13 @@ object SavedRoutes {
 
     private fun optionsJson(o: RouteOptions) = JSONObject()
         .put("style", o.roadStyle.name).put("surface", o.surface.name)
-        .put("ferries", o.avoidFerries).put("motorways", o.avoidMotorways).put("toll", o.avoidToll)
+        .put("ferries", o.avoidFerries).put("motorways", o.avoidMotorways).put("trunk", o.avoidTrunk).put("toll", o.avoidToll)
 
     private fun parseOptions(j: JSONObject) = RouteOptions(
         RoadStyle.valueOf(j.optString("style", "CURVY")),
         SurfacePreference.valueOf(j.optString("surface", "PAVED")),
-        j.optBoolean("ferries"), j.optBoolean("motorways"), j.optBoolean("toll")
+        avoidFerries = j.optBoolean("ferries"), avoidMotorways = j.optBoolean("motorways"),
+        avoidTrunk = j.optBoolean("trunk"), avoidToll = j.optBoolean("toll")
     )
 
     private fun stopJson(name: String, p: LatLon) = JSONObject().put("name", name).put("lat", p.lat).put("lon", p.lon)

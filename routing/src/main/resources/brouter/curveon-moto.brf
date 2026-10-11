@@ -13,6 +13,7 @@ assign road_style      = 0      # %road_style% | 0 = fastest, 1 = curvy, 2 = ver
 assign surface_pref    = 0      # %surface_pref% | 0 = paved only, 1 = mixed, 2 = gravel, 3 = offroad | number
 assign avoid_ferries   = false  # %avoid_ferries% | Avoid ferries | boolean
 assign avoid_motorways = false  # %avoid_motorways% | Avoid motorways | boolean
+assign avoid_trunk     = false  # %avoid_trunk% | Avoid trunk roads too (E-roads and the biggest national roads in Norway) | boolean
 assign avoid_toll      = false  # %avoid_toll% | Avoid toll roads | boolean
 assign tracks_last_resort = 1    # %tracks_last_resort% | With Tarmac, tracks may still be used to reach a place on one (0 = never) | number
 assign look_past_paths = 0       # %look_past_paths% | Only for the first/last leg when the map cuts the place off: paths as a last resort | number
@@ -210,6 +211,7 @@ assign track_factor =
 
 assign avoid_factor =
   multiply ( if and avoid_motorways highway=motorway|motorway_link then 8.0 else 1.0 )
+  multiply ( if and avoid_trunk highway=trunk|trunk_link then 5.0 else 1.0 )
            ( if and avoid_toll toll=yes then 5.0 else 1.0 )
 
 assign road_cost = multiply class_cost multiply surface_factor multiply track_factor avoid_factor

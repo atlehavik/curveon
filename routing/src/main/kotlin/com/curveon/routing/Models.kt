@@ -17,6 +17,11 @@ data class RouteOptions(
     val surface: SurfacePreference = SurfacePreference.PAVED,
     val avoidFerries: Boolean = false,
     val avoidMotorways: Boolean = false,
+    /**
+     * Also keep off trunk roads: in Norway the E-roads and the biggest national roads (the routing
+     * data has road classes, not numbers). Still ridden where there is no other way.
+     */
+    val avoidTrunk: Boolean = false,
     val avoidToll: Boolean = false,
     /**
      * Gravel/Offroad: how far (km) the route may stray from the ordinary one to ride unpaved roads;
