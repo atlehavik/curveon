@@ -832,11 +832,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             startGps()
             return
         }
-        val route = navigator.state.value.route ?: return
+        val nav = navigator.state.value
+        val route = nav.route ?: return
+        // A trip planned from its own start: ride it from there, not from where the tablet is.
+        val startAt = (nav.goal as? NavigationGoal.Track)?.points?.firstOrNull()
         gpsJob?.cancel()
         _isDemoRiding.value = true
         demoJob = viewModelScope.launch {
-            DemoRide.fixes(route, speedFactor).collect(::onGpsFix)
+            DemoRide.fixes(route, speedFactor, startAt = startAt).collect(::onGpsFix)
             _isDemoRiding.value = false
             startGps()
         }

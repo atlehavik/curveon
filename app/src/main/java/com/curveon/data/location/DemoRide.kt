@@ -1,6 +1,7 @@
 package com.curveon.data.location
 
 import com.curveon.routing.Geo
+import com.curveon.routing.LatLon
 import com.curveon.routing.Route
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -12,11 +13,19 @@ import kotlinx.coroutines.flow.flow
  */
 object DemoRide {
 
-    fun fixes(route: Route, speedFactor: Double = 1.0, intervalMillis: Long = 1000L): Flow<GpsFix> = flow {
+    /** [startAt]: begin at the route point nearest it instead of at the route's start (skips the way to a planned start). */
+    fun fixes(route: Route, speedFactor: Double = 1.0, intervalMillis: Long = 1000L, startAt: LatLon? = null): Flow<GpsFix> = flow {
         val pts = route.points
         if (pts.size < 2) return@flow
-        var t = 0.0
         var i = 0
+        if (startAt != null) {
+            var best = Double.MAX_VALUE
+            for (k in 0 until pts.lastIndex) {
+                val d = Geo.distance(startAt, LatLon(pts[k].lat, pts[k].lon))
+                if (d < best - 1.0) { best = d; i = k }
+            }
+        }
+        var t = pts[i].secondsFromStart
         while (t <= route.durationSeconds) {
             while (i < pts.lastIndex - 1 && pts[i + 1].secondsFromStart < t) i++
             val a = pts[i]
