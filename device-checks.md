@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — No U-turn on E39 at Heiane (Stord)
+
+- [ ] Plan a trip to McDonald's Stord from the south-west (say from Føyno): the route should take the
+      exit to the right off E39, the roundabout and the bridge, with no U-turn on E39. Worth a
+      look at other motorway exits too: they should look as before.
+
 ## 2026-10-11 — Welcome tour texts and drawings
 
 - [ ] Settings → Help → Start the tour (the Pixel needs the newest install first): the phone step

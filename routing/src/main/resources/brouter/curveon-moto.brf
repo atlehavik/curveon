@@ -111,7 +111,10 @@ assign is_soft =
        if surface= then ( and is_track tracktype=grade3|grade4|grade5 )
        else surface=ground|dirt|earth|sand|grass|mud|clay|rock
 
-assign turncost = if fastest then 30 else 10
+# Turning onto a ramp costs by angle, so a hairpin (reversing off the road onto the ramp that
+# leaves it the other way, which BRouter would otherwise do for a few metres of cost) is very
+# dear, while a normal exit at a shallow angle costs almost nothing.
+assign turncost = if islinktype then 400 else if fastest then 30 else 10
 
 assign initialclassifier = if route=ferry then classifier_ferry else classifier_none
 
