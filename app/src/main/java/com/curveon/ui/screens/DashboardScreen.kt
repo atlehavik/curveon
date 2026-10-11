@@ -939,11 +939,17 @@ private fun Rail(
     // A phone held sideways is lower than the X7 (about 410 dp against 540): smaller buttons, so
     // the map toggle at the bottom still fits.
     val compact = vertical && LocalConfiguration.current.screenHeightDp < 480
-    val buttons: @Composable () -> Unit = {
+    val search: @Composable () -> Unit = {
         RailButton(Icons.Default.Search, stringResource(R.string.where_to), ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", target = TourTarget.SEARCH, onClick = onSearch)
+    }
+    val gpx: @Composable () -> Unit = {
         RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, tag = "rail_gpx", target = TourTarget.GPX, onClick = onGpx)
+    }
+    val phone: @Composable () -> Unit = {
         RailButton(Icons.Default.Phone, stringResource(R.string.phone), EcoGreen, if (phoneOpen) Color.Black else EcoGreen,
             filled = phoneOpen, tag = "rail_phone", target = TourTarget.PHONE, onClick = onPhone)
+    }
+    val settings: @Composable () -> Unit = {
         RailButton(Icons.Default.Settings, stringResource(R.string.settings), TextSecondary, TextPrimary, tag = "rail_settings", target = TourTarget.SETTINGS, onClick = onSettings)
     }
     val mapToggle: @Composable () -> Unit = {
@@ -967,7 +973,7 @@ private fun Rail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
     ) {
-        buttons()
+        search(); gpx(); phone(); settings()
         Spacer(Modifier.weight(1f))
         mapToggle()
     } else Row(
@@ -975,8 +981,8 @@ private fun Rail(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        buttons()
-        mapToggle()
+        // The landscape rail turned a quarter: its bottom (the map toggle) ends up at the left.
+        mapToggle(); settings(); phone(); gpx(); search()
     }
 }
 
