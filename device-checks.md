@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Welcome tour texts and drawings
+
+- [ ] Settings → Help → Start the tour (the Pixel needs the newest install first): the phone step
+      says a tablet that can't call needs Curveon Companion on the phone; Settings says offline
+      maps, phone link and more; the map step only mentions holding a place; after music and
+      messages comes an engine-data drawing; "Change just one part" ends with a dashed line being
+      pulled out, as when editing on the map.
+
 ## 2026-10-11 — Full map or dashboard per orientation
 
 - [ ] On the phone: in portrait pick the full map, in landscape the dashboard. Rotate back and

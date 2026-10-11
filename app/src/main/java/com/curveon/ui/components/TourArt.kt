@@ -25,7 +25,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** The little animated drawings in the welcome tour. They carry no text, so they read the same in every language. */
-enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), MARK(11), LOOP(9), SETUP(10), SOLO(10), CARDS(16) }
+enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), MARK(14), LOOP(9), SETUP(10), SOLO(10), CARDS(16), ENGINE(10) }
 
 /** One looping animation of [art] on a dark scrap of map. */
 @Composable
@@ -37,7 +37,7 @@ fun TourArtView(art: TourArt, modifier: Modifier = Modifier) {
         modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(18.dp))
             .border(1.dp, CockpitBorder, RoundedCornerShape(18.dp))
     ) {
-        if (art == TourArt.SETUP || art == TourArt.SOLO || art == TourArt.CARDS) drawRect(Color(0xFF0D131B)) else drawBackdrop()
+        if (art == TourArt.SETUP || art == TourArt.SOLO || art == TourArt.CARDS || art == TourArt.ENGINE) drawRect(Color(0xFF0D131B)) else drawBackdrop()
         // Everything fades out at the end of a round, so the next one starts from a clean map.
         val fade = 1f - phase(t, 0.93f, 1f)
         val appear = phase(t, 0f, 0.04f)
@@ -49,6 +49,7 @@ fun TourArtView(art: TourArt, modifier: Modifier = Modifier) {
             TourArt.SETUP -> drawSetup(t, fade * appear)
             TourArt.SOLO -> drawSolo(t, fade * appear)
             TourArt.CARDS -> drawCards(t, fade * appear)
+            TourArt.ENGINE -> drawEngine(t, fade * appear)
         }
     }
 }
@@ -307,44 +308,66 @@ private fun DrawScope.drawMark(t: Float, alpha: Float) {
     // What the part becomes: a longer way round, lower down.
     val detour = Path().apply {
         moveTo(p1.x, p1.y)
-        cubicTo(p1.x + size.width * 0.17f, p1.y + size.height * 0.46f, p2.x - size.width * 0.17f, p2.y + size.height * 0.46f, p2.x, p2.y)
+        cubicTo(p1.x + size.width * 0.17f, p1.y + size.height * 0.36f, p2.x - size.width * 0.17f, p2.y + size.height * 0.36f, p2.x, p2.y)
     }
     val press = phase(t, 0.10f, 0.20f)
     val marking = t in 0.18f..0.66f
     val toStart = phase(t, 0.24f, 0.34f)
     val drag = phase(t, 0.36f, 0.58f)
-    val release = phase(t, 0.60f, 0.66f)
-    val replan = phase(t, 0.68f, 0.86f)
+    // Once the part is marked it is changed as on the map: a handle on it is dragged out, a dashed line follows.
+    val toMid = phase(t, 0.62f, 0.70f)
+    val grab = phase(t, 0.70f, 0.74f)
+    val pull = phase(t, 0.74f, 0.86f)
+    val replan = phase(t, 0.88f, 0.92f)
+    val mid = pointOn(route, (from + to) / 2)
+    val low = Offset(mid.x, mid.y + size.height * 0.27f)
+    val handle = Offset(mid.x, lerp(mid.y, low.y, pull))
 
     // The route in three pieces: the middle one is the part that changes.
     route(segmentOf(route, 0f, from), ElectricCyan, alpha)
     route(segmentOf(route, to, 1f), ElectricCyan, alpha)
-    route(segmentOf(route, from, to), ElectricCyan, alpha * (1f - replan))
-    if (replan > 0f) route(partOf(detour, replan), ElectricCyan, alpha)
+    route(segmentOf(route, from, to), ElectricCyan, alpha * (1f - replan) * (if (pull > 0f) 0.55f else 1f))
+    route(detour, ElectricCyan, alpha * replan)
+    if (pull > 0f && replan < 1f) {
+        val guess = Path().apply { moveTo(p1.x, p1.y); lineTo(handle.x, handle.y); lineTo(p2.x, p2.y) }
+        drawPath(guess, NeonAmber.copy(alpha = alpha * (1f - replan)), style = Stroke(
+            3.dp.toPx(), cap = StrokeCap.Round, pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 7.dp.toPx()))
+        ))
+    }
     startDot(a, alpha)
     endDot(b, alpha)
 
     // The part marked by the finger, with a ring at each end.
     val reach = from + (to - from) * drag
     if (drag > 0f) {
-        drawPath(segmentOf(route, from, reach), NeonAmber.copy(alpha = 0.85f * alpha * (1f - replan)),
+        drawPath(segmentOf(route, from, reach), NeonAmber.copy(alpha = 0.85f * alpha * (1f - phase(t, 0.68f, 0.74f))),
             style = Stroke(9.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
-        val ringAlpha = alpha * (1f - phase(t, 0.84f, 0.9f))
+        val ringAlpha = alpha * (1f - phase(t, 0.86f, 0.92f))
         listOf(p1, pointOn(route, reach)).forEach { e ->
             drawCircle(Color.White.copy(alpha = ringAlpha), 7.dp.toPx(), e)
             drawCircle(NeonAmber.copy(alpha = ringAlpha), 7.dp.toPx(), e, style = Stroke(3.dp.toPx()))
         }
     }
+    // The handle on the marked part, where it is held and dragged.
+    if (t >= 0.70f) {
+        val h = if (replan > 0f) low else handle
+        drawCircle(CockpitBackground.copy(alpha = alpha), 9.dp.toPx(), h)
+        drawCircle(NeonAmber.copy(alpha = alpha), 6.dp.toPx(), h, style = Stroke(3.dp.toPx()))
+    }
     val button = drawEditBar(alpha, marking)
 
-    // The finger: onto the button, then along the route.
-    val on = t in 0.08f..0.70f
+    // The finger: onto the button, along the route, then to the handle and down with it.
+    val on = t in 0.08f..0.92f
     val at = when {
         t < 0.24f -> button
         t < 0.36f -> Offset(lerp(button.x, p1.x, toStart), lerp(button.y, p1.y, toStart))
-        else -> pointOn(route, reach)
+        t < 0.62f -> pointOn(route, reach)
+        t < 0.70f -> Offset(lerp(p2.x, mid.x, toMid), lerp(p2.y, mid.y, toMid))
+        else -> handle
     }
-    if (on) finger(at, alpha * phase(t, 0.08f, 0.12f) * (1f - phase(t, 0.64f, 0.70f)), press = if (t < 0.24f) press else 1f)
+    val pressNow = when { t < 0.24f -> press; t in 0.70f..0.74f -> grab; else -> 1f }
+    if (on) finger(Offset(at.x + (if (t >= 0.70f) 2.dp.toPx() else 0f), at.y + (if (t >= 0.70f) 6.dp.toPx() else 0f)),
+        alpha * phase(t, 0.08f, 0.12f) * (1f - phase(t, 0.88f, 0.92f)), press = pressNow)
 }
 
 // ---------------------------------------------------------------------------------- SETUP / SOLO
@@ -500,6 +523,86 @@ private fun DrawScope.drawSolo(t: Float, alpha: Float) {
         pulses(Offset(a.x, a.y - 6.dp.toPx()), Offset(b.x, b.y - 6.dp.toPx()), tt, listOf(MusicCyan, CallGreen), flow)
         pulses(Offset(b.x, b.y + 6.dp.toPx()), Offset(a.x, a.y + 6.dp.toPx()), tt + 0.3f, listOf(CallGreen), flow)
     }
+}
+
+// ---------------------------------------------------------------------------------- ENGINE
+
+/** An OBD2 adapter: a small box with its plug on one side and a blinking light. */
+private fun DrawScope.drawObd(c: Offset, alpha: Float, pop: Float, t: Float) {
+    if (pop <= 0f) return
+    val w = 46.dp.toPx() * pop
+    val h = 28.dp.toPx() * pop
+    val a = alpha * pop
+    drawRoundRect(Body.copy(alpha = a), Offset(c.x - w / 2, c.y - h / 2), androidx.compose.ui.geometry.Size(w, h), androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()))
+    // The plug.
+    drawRoundRect(TextMuted.copy(alpha = a), Offset(c.x - w / 2 - 7.dp.toPx() * pop, c.y - h * 0.3f), androidx.compose.ui.geometry.Size(9.dp.toPx() * pop, h * 0.6f),
+        androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()))
+    drawRoundRect(TextSecondary.copy(alpha = 0.6f * a), Offset(c.x - w * 0.28f, c.y - h * 0.18f), androidx.compose.ui.geometry.Size(w * 0.5f, 4.dp.toPx()),
+        androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()))
+    val blink = if ((t * 8f) % 1f < 0.5f) 1f else 0.35f
+    drawCircle(NeonAmber.copy(alpha = a * blink), 3.dp.toPx(), Offset(c.x + w * 0.3f, c.y + h * 0.18f))
+}
+
+/** A needle gauge: an arc with a mark at [value] (0..1). */
+private fun DrawScope.gauge(c: Offset, r: Float, value: Float, color: Color, alpha: Float) {
+    val tl = Offset(c.x - r, c.y - r)
+    val sz = androidx.compose.ui.geometry.Size(2 * r, 2 * r)
+    drawArc(CockpitSurfaceVariant.copy(alpha = alpha), 150f, 240f, false, tl, sz, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+    drawArc(color.copy(alpha = alpha), 150f, 240f * value, false, tl, sz, style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+}
+
+/** The adapter in the bike talks to Curveon over Bluetooth; an engine panel with gauges appears beside the map. */
+private fun DrawScope.drawEngine(t: Float, alpha: Float) {
+    val obd = p(0.16f, 0.50f)
+    val tablet = p(0.66f, 0.50f)
+    drawObd(obd, alpha, phase(t, 0.02f, 0.12f), t)
+    val pop = phase(t, 0.10f, 0.20f)
+    if (pop > 0f) {
+        val w = 150.dp.toPx() * pop
+        val h = 94.dp.toPx() * pop
+        val a = alpha * pop
+        val left = tablet.x - w / 2
+        val top = tablet.y - h / 2
+        drawRoundRect(Body.copy(alpha = a), Offset(left, top), androidx.compose.ui.geometry.Size(w, h), androidx.compose.ui.geometry.CornerRadius(9.dp.toPx()))
+        val inset = 4.dp.toPx() * pop
+        drawRoundRect(Screen.copy(alpha = a), Offset(left + inset, top + inset), androidx.compose.ui.geometry.Size(w - 2 * inset, h - 2 * inset),
+            androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()))
+        // The map on the left of the screen.
+        val route = Path().apply {
+            moveTo(left + w * 0.10f, top + h * 0.78f)
+            cubicTo(left + w * 0.2f, top + h * 0.2f, left + w * 0.42f, top + h * 0.9f, left + w * 0.56f, top + h * 0.26f)
+        }
+        drawPath(route, ElectricCyan.copy(alpha = a), style = Stroke(2.4.dp.toPx(), cap = StrokeCap.Round))
+        // The engine panel slides in on the right once data arrives.
+        val show = phase(t, 0.52f, 0.62f)
+        if (show > 0f) {
+            val pw = w * 0.34f
+            val px = left + w - inset - pw - 3.dp.toPx() + (1f - show) * 14.dp.toPx()
+            val py = top + inset + 4.dp.toPx()
+            val ph = h - 2 * inset - 8.dp.toPx()
+            val ca = a * show
+            drawRoundRect(CardFill.copy(alpha = ca), Offset(px, py), androidx.compose.ui.geometry.Size(pw, ph), androidx.compose.ui.geometry.CornerRadius(5.dp.toPx()))
+            val live = t * 6f * PI.toFloat()
+            val rpm = 0.45f + 0.3f * sin(live) * sin(live * 0.37f + 1f)
+            gauge(Offset(px + pw / 2, py + ph * 0.38f), pw * 0.3f, rpm.coerceIn(0.1f, 0.95f), ElectricCyan, ca)
+            // Coolant temperature creeping up, and a second reading.
+            val temp = (0.3f + 0.5f * phase(t, 0.6f, 0.9f))
+            drawRoundRect(CockpitSurfaceVariant.copy(alpha = ca), Offset(px + 5.dp.toPx(), py + ph * 0.74f), androidx.compose.ui.geometry.Size(pw - 10.dp.toPx(), 4.dp.toPx()),
+                androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()))
+            drawRoundRect(NeonAmber.copy(alpha = ca), Offset(px + 5.dp.toPx(), py + ph * 0.74f), androidx.compose.ui.geometry.Size((pw - 10.dp.toPx()) * temp, 4.dp.toPx()),
+                androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()))
+            drawRoundRect(CockpitSurfaceVariant.copy(alpha = ca), Offset(px + 5.dp.toPx(), py + ph * 0.88f), androidx.compose.ui.geometry.Size(pw - 10.dp.toPx(), 4.dp.toPx()),
+                androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()))
+            drawRoundRect(EcoGreen.copy(alpha = ca), Offset(px + 5.dp.toPx(), py + ph * 0.88f), androidx.compose.ui.geometry.Size((pw - 10.dp.toPx()) * 0.8f, 4.dp.toPx()),
+                androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()))
+        }
+    }
+    val a = Offset(obd.x + 30.dp.toPx(), obd.y)
+    val b = Offset(tablet.x - 82.dp.toPx(), tablet.y)
+    link(a, b, phase(t, 0.26f, 0.40f), alpha)
+    bluetoothBadge(Offset((a.x + b.x) / 2, a.y), alpha, phase(t, 0.40f, 0.48f))
+    val flow = phase(t, 0.48f, 0.54f) * alpha
+    if (flow > 0f) pulses(Offset(a.x, a.y - 6.dp.toPx()), Offset(b.x, b.y - 6.dp.toPx()), t - 0.48f, listOf(NeonAmber, ElectricCyan, EcoGreen), flow)
 }
 
 // ---------------------------------------------------------------------------------- CARDS
