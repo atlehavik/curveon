@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Map view remembered per mode
+
+- [ ] Fresh (or after clearing settings): the map without a trip is north up; start a trip and it
+      goes to 3D. Stop the trip: back to north up.
+- [ ] Press the compass button during navigation (say to heading up), stop and start another trip:
+      heading up again. The choice made while browsing the map is kept separately.
+
 ## 2026-10-11 — Demo mode
 
 - [ ] Settings → Display → Demo ride: switch it on, plan a trip and press Go: the ride starts by

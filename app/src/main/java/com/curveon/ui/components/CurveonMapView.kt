@@ -183,9 +183,14 @@ fun CurveonMapView(
     var style by remember { mutableStateOf<Style?>(null) }
     // Camera: follows the rider (north up, heading up or 3D) until the rider pans the map.
     val prefs = remember { context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE) }
-    var orientation by remember {
-        mutableStateOf(runCatching { Orientation.valueOf(prefs.getString("mapOrientation", null)!!) }.getOrDefault(Orientation.HEADING_UP))
-    }
+    // Remembered separately for browsing the map (north up unless chosen otherwise) and for navigating (3D),
+    // and switched when a trip starts or ends.
+    val navigating = routePoints.size >= 2
+    fun savedOrientation(nav: Boolean) = runCatching { Orientation.valueOf(prefs.getString(if (nav) "orientationNav" else "orientationBrowse", null)!!) }
+        .getOrDefault(if (nav) Orientation.THREE_D else Orientation.NORTH_UP)
+    var orientation by remember { mutableStateOf(savedOrientation(navigating)) }
+    var orientationFor by remember { mutableStateOf(navigating) }
+    if (orientationFor != navigating) { orientationFor = navigating; orientation = savedOrientation(navigating) }
     var following by remember { mutableStateOf(true) }
     /** Where the rider is on screen (px), to hint at them from the edge once they're out of view. */
     var riderScreen by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
@@ -842,7 +847,7 @@ fun CurveonMapView(
             MapButton(
                 onClick = {
                     orientation = Orientation.entries[(orientation.ordinal + 1) % Orientation.entries.size]
-                    prefs.edit().putString("mapOrientation", orientation.name).apply()
+                    prefs.edit().putString(if (navigating) "orientationNav" else "orientationBrowse", orientation.name).apply()
                     // Not following: turn the map where it is; following picks it up by itself.
                     if (!following) map?.let { m ->
                         m.animateCamera(CameraUpdateFactory.newCameraPosition(
