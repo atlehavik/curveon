@@ -682,4 +682,8 @@
     <string name="help_mark">Marker delen av ruten som skal endres: dra langs den, resten blir</string>
     <string name="help_undo">Angre siste endring</string>
     <string name="help_done">Ferdig: behold turen som den er</string>
+    <string name="tour_setup_title">Nettbrett, telefon og intercom</string>
+    <string name="tour_setup_body">Curveon på nettbrettet viser kartet. Curveon Companion går stille på telefonen og sender meldinger, anrop og musikk videre over Bluetooth. Det er telefonen som snakker med intercomen din, så anrop og musikk høres i hjelmen mens nettbrettet blir sittende på styret. Installer Companion på telefonen og velg den i Innstillinger → Telefon.</string>
+    <string name="tour_solo_title">Bare en telefon</string>
+    <string name="tour_solo_body">Uten nettbrett? Curveon kjører også rett på en telefon, og er da sin egen følgesvenn: meldinger, anrop og musikk kommer fra den samme telefonen, og du trenger ingen til. Velg Denne enheten i Innstillinger → Telefon.</string>
 </resources>

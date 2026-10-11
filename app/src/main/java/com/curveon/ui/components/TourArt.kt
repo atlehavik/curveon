@@ -21,7 +21,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** The little animated drawings in the welcome tour. They carry no text, so they read the same in every language. */
-enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), MARK(11), LOOP(9) }
+enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), MARK(11), LOOP(9), SETUP(10), SOLO(10) }
 
 /** One looping animation of [art] on a dark scrap of map. */
 @Composable
@@ -33,7 +33,7 @@ fun TourArtView(art: TourArt, modifier: Modifier = Modifier) {
         modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(18.dp))
             .border(1.dp, CockpitBorder, RoundedCornerShape(18.dp))
     ) {
-        drawBackdrop()
+        if (art == TourArt.SETUP || art == TourArt.SOLO) drawRect(Color(0xFF0D131B)) else drawBackdrop()
         // Everything fades out at the end of a round, so the next one starts from a clean map.
         val fade = 1f - phase(t, 0.93f, 1f)
         val appear = phase(t, 0f, 0.04f)
@@ -42,6 +42,8 @@ fun TourArtView(art: TourArt, modifier: Modifier = Modifier) {
             TourArt.EDIT -> drawEdit(t, fade * appear)
             TourArt.MARK -> drawMark(t, fade * appear)
             TourArt.LOOP -> drawLoop(t, fade * appear)
+            TourArt.SETUP -> drawSetup(t, fade * appear)
+            TourArt.SOLO -> drawSolo(t, fade * appear)
         }
     }
 }
@@ -338,4 +340,159 @@ private fun DrawScope.drawMark(t: Float, alpha: Float) {
         else -> pointOn(route, reach)
     }
     if (on) finger(at, alpha * phase(t, 0.08f, 0.12f) * (1f - phase(t, 0.64f, 0.70f)), press = if (t < 0.24f) press else 1f)
+}
+
+// ---------------------------------------------------------------------------------- SETUP / SOLO
+
+private val Body = Color(0xFF2A3644)
+private val Screen = Color(0xFF0D131B)
+private val BluetoothBlue = Color(0xFF2979FF)
+private val MessageAmber = NeonAmber
+private val MusicCyan = ElectricCyan
+private val CallGreen = EcoGreen
+
+private fun DrawScope.drawTablet(c: Offset, alpha: Float, pop: Float) {
+    if (pop <= 0f) return
+    val w = 72.dp.toPx() * pop
+    val h = 48.dp.toPx() * pop
+    val a = alpha * pop
+    drawRoundRect(Body.copy(alpha = a), Offset(c.x - w / 2, c.y - h / 2), androidx.compose.ui.geometry.Size(w, h), androidx.compose.ui.geometry.CornerRadius(7.dp.toPx()))
+    val inset = 3.dp.toPx() * pop
+    drawRoundRect(Screen.copy(alpha = a), Offset(c.x - w / 2 + inset, c.y - h / 2 + inset),
+        androidx.compose.ui.geometry.Size(w - 2 * inset, h - 2 * inset), androidx.compose.ui.geometry.CornerRadius(5.dp.toPx()))
+    // A map with a route on the screen.
+    val route = Path().apply {
+        moveTo(c.x - w * 0.36f, c.y + h * 0.22f)
+        cubicTo(c.x - w * 0.2f, c.y - h * 0.4f, c.x, c.y + h * 0.4f, c.x + w * 0.34f, c.y - h * 0.2f)
+    }
+    drawPath(route, ElectricCyan.copy(alpha = a), style = Stroke(2.2.dp.toPx(), cap = StrokeCap.Round))
+}
+
+private fun DrawScope.drawPhone(c: Offset, alpha: Float, pop: Float, big: Boolean = false, showMap: Boolean = false) {
+    if (pop <= 0f) return
+    val s = if (big) 1.7f else 1f
+    val w = 32.dp.toPx() * s * pop
+    val h = 58.dp.toPx() * s * pop
+    val a = alpha * pop
+    drawRoundRect(Body.copy(alpha = a), Offset(c.x - w / 2, c.y - h / 2), androidx.compose.ui.geometry.Size(w, h), androidx.compose.ui.geometry.CornerRadius(7.dp.toPx() * s))
+    val inset = 2.5.dp.toPx() * s * pop
+    drawRoundRect(Screen.copy(alpha = a), Offset(c.x - w / 2 + inset, c.y - h / 2 + inset * 1.8f),
+        androidx.compose.ui.geometry.Size(w - 2 * inset, h - 3.6f * inset), androidx.compose.ui.geometry.CornerRadius(5.dp.toPx() * s))
+    if (showMap) {
+        val route = Path().apply {
+            moveTo(c.x - w * 0.3f, c.y + h * 0.3f)
+            cubicTo(c.x - w * 0.3f, c.y - h * 0.1f, c.x + w * 0.3f, c.y + h * 0.1f, c.x + w * 0.28f, c.y - h * 0.3f)
+        }
+        drawPath(route, ElectricCyan.copy(alpha = a), style = Stroke(2.4.dp.toPx(), cap = StrokeCap.Round))
+        drawCircle(TextPrimary.copy(alpha = a), 2.6.dp.toPx(), Offset(c.x - w * 0.3f, c.y + h * 0.3f))
+    } else {
+        // Three notifications: message, music, call.
+        listOf(MessageAmber, MusicCyan, CallGreen).forEachIndexed { i, col ->
+            val y = c.y - h * 0.24f + i * h * 0.22f
+            drawRoundRect(col.copy(alpha = 0.85f * a), Offset(c.x - w * 0.34f, y - 3.dp.toPx()), androidx.compose.ui.geometry.Size(w * 0.68f, 6.dp.toPx()),
+                androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()))
+        }
+    }
+}
+
+/** A helmet with the intercom on its side. */
+private fun DrawScope.drawHelmet(c: Offset, alpha: Float, pop: Float) {
+    if (pop <= 0f) return
+    val s = 58.dp.toPx() * pop
+    val a = alpha * pop
+    drawRoundRect(Body.copy(alpha = a), Offset(c.x - s / 2, c.y - s * 0.46f), androidx.compose.ui.geometry.Size(s, s * 0.92f),
+        androidx.compose.ui.geometry.CornerRadius(s * 0.46f))
+    drawRoundRect(Screen.copy(alpha = a), Offset(c.x - s * 0.02f, c.y - s * 0.14f), androidx.compose.ui.geometry.Size(s * 0.5f, s * 0.3f),
+        androidx.compose.ui.geometry.CornerRadius(s * 0.14f))
+    drawRoundRect(ElectricCyan.copy(alpha = 0.6f * a), Offset(c.x - s * 0.02f, c.y - s * 0.14f), androidx.compose.ui.geometry.Size(s * 0.5f, s * 0.3f),
+        androidx.compose.ui.geometry.CornerRadius(s * 0.14f), style = Stroke(1.5.dp.toPx()))
+    drawCircle(NeonAmber.copy(alpha = a), s * 0.1f, Offset(c.x - s * 0.18f, c.y + s * 0.1f))
+}
+
+private fun DrawScope.bluetoothBadge(at: Offset, alpha: Float, pop: Float) {
+    if (pop <= 0f) return
+    val r = 9.dp.toPx() * pop
+    drawCircle(BluetoothBlue.copy(alpha = alpha), r, at)
+    val k = r * 0.5f
+    val rune = Path().apply {
+        moveTo(at.x - k * 0.7f, at.y - k * 0.6f); lineTo(at.x + k * 0.7f, at.y + k * 0.6f); lineTo(at.x, at.y + k * 1.2f)
+        lineTo(at.x, at.y - k * 1.2f); lineTo(at.x + k * 0.7f, at.y - k * 0.6f); lineTo(at.x - k * 0.7f, at.y + k * 0.6f)
+    }
+    drawPath(rune, Color.White.copy(alpha = alpha), style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+}
+
+/** A dashed link between two things, drawn in by [grow] (0..1). */
+private fun DrawScope.link(a: Offset, b: Offset, grow: Float, alpha: Float) {
+    if (grow <= 0f) return
+    val end = Offset(lerp(a.x, b.x, grow), lerp(a.y, b.y, grow))
+    drawLine(BluetoothBlue.copy(alpha = 0.8f * alpha), a, end, 2.dp.toPx(), StrokeCap.Round,
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 5.dp.toPx())))
+}
+
+/** Little dots travelling from [a] to [b]: messages, music and calls on their way. */
+private fun DrawScope.pulses(a: Offset, b: Offset, t: Float, colors: List<Color>, alpha: Float) {
+    colors.forEachIndexed { i, col ->
+        val x = (t * 3f + i / colors.size.toFloat()) % 1f
+        val at = Offset(lerp(a.x, b.x, x), lerp(a.y, b.y, x))
+        val edge = sin(PI.toFloat() * x)
+        drawCircle(col.copy(alpha = 0.3f * edge * alpha), 7.dp.toPx(), at)
+        drawCircle(col.copy(alpha = edge * alpha), 3.6.dp.toPx(), at)
+    }
+}
+
+/** The tablet shows, the phone passes things on, the phone talks to the intercom in the helmet. */
+private fun DrawScope.drawSetup(t: Float, alpha: Float) {
+    val tablet = p(0.17f, 0.47f)
+    val phone = p(0.50f, 0.47f)
+    val helmet = p(0.83f, 0.47f)
+    drawTablet(tablet, alpha, phase(t, 0.02f, 0.12f))
+    drawPhone(phone, alpha, phase(t, 0.10f, 0.20f))
+    drawHelmet(helmet, alpha, phase(t, 0.18f, 0.28f))
+    val gap = 40.dp.toPx()
+    val l1a = Offset(tablet.x + gap, tablet.y); val l1b = Offset(phone.x - 24.dp.toPx(), phone.y)
+    val l2a = Offset(phone.x + 24.dp.toPx(), phone.y); val l2b = Offset(helmet.x - 30.dp.toPx(), helmet.y)
+    link(l1a, l1b, phase(t, 0.30f, 0.44f), alpha)
+    link(l2a, l2b, phase(t, 0.38f, 0.52f), alpha)
+    val mid1 = Offset((l1a.x + l1b.x) / 2, l1a.y)
+    val mid2 = Offset((l2a.x + l2b.x) / 2, l2a.y)
+    bluetoothBadge(mid1, alpha, phase(t, 0.44f, 0.52f))
+    bluetoothBadge(mid2, alpha, phase(t, 0.50f, 0.58f))
+    val flow = phase(t, 0.58f, 0.64f) * alpha
+    if (flow > 0f) {
+        val tt = (t - 0.58f)
+        // Messages, music and calls go to the tablet; music and calls go on to the helmet, the rider's voice comes back.
+        pulses(Offset(l1b.x, l1b.y - 6.dp.toPx()), Offset(l1a.x, l1a.y - 6.dp.toPx()), tt, listOf(MessageAmber, MusicCyan, CallGreen), flow)
+        pulses(Offset(l2a.x, l2a.y - 6.dp.toPx()), Offset(l2b.x, l2b.y - 6.dp.toPx()), tt, listOf(MusicCyan, CallGreen), flow)
+        pulses(Offset(l2b.x, l2b.y + 6.dp.toPx()), Offset(l2a.x, l2a.y + 6.dp.toPx()), tt + 0.3f, listOf(CallGreen), flow)
+    }
+}
+
+/** Curveon on a phone is its own companion: everything stays on the one phone, which talks to the intercom. */
+private fun DrawScope.drawSolo(t: Float, alpha: Float) {
+    val phone = p(0.30f, 0.50f)
+    val helmet = p(0.80f, 0.50f)
+    drawPhone(phone, alpha, phase(t, 0.02f, 0.14f), big = true, showMap = true)
+    drawHelmet(helmet, alpha, phase(t, 0.14f, 0.26f))
+    // Messages, music and calls go round on the phone itself.
+    val orbit = phase(t, 0.2f, 0.3f) * alpha
+    if (orbit > 0f) {
+        val rx = 40.dp.toPx(); val ry = 62.dp.toPx()
+        drawOval(Color.White.copy(alpha = 0.12f * orbit), Offset(phone.x - rx, phone.y - ry), androidx.compose.ui.geometry.Size(2 * rx, 2 * ry),
+            style = Stroke(1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 5.dp.toPx()))))
+        listOf(MessageAmber, MusicCyan, CallGreen).forEachIndexed { i, col ->
+            val ang = (t * 2.5f + i / 3f) * 2f * PI.toFloat()
+            val at = Offset(phone.x + rx * cos(ang), phone.y + ry * sin(ang))
+            drawCircle(col.copy(alpha = 0.3f * orbit), 7.dp.toPx(), at)
+            drawCircle(col.copy(alpha = orbit), 3.6.dp.toPx(), at)
+        }
+    }
+    val a = Offset(phone.x + 56.dp.toPx(), phone.y); val b = Offset(helmet.x - 32.dp.toPx(), helmet.y)
+    link(a, b, phase(t, 0.34f, 0.48f), alpha)
+    bluetoothBadge(Offset((a.x + b.x) / 2, a.y), alpha, phase(t, 0.48f, 0.56f))
+    val flow = phase(t, 0.58f, 0.64f) * alpha
+    if (flow > 0f) {
+        val tt = t - 0.58f
+        pulses(Offset(a.x, a.y - 6.dp.toPx()), Offset(b.x, b.y - 6.dp.toPx()), tt, listOf(MusicCyan, CallGreen), flow)
+        pulses(Offset(b.x, b.y + 6.dp.toPx()), Offset(a.x, a.y + 6.dp.toPx()), tt + 0.3f, listOf(CallGreen), flow)
+    }
 }

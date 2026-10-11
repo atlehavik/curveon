@@ -683,4 +683,8 @@
     <string name="help_mark">Mark the part of the route to change: drag along it, the rest stays</string>
     <string name="help_undo">Undo the last change</string>
     <string name="help_done">Done: keep the trip as it is</string>
+    <string name="tour_setup_title">Tablet, phone and intercom</string>
+    <string name="tour_setup_body">Curveon on the tablet shows the map. Curveon Companion runs quietly on your phone and passes messages, calls and music on over Bluetooth. It is the phone that talks to your intercom, so calls and music are heard in your helmet while the tablet stays on the handlebars. Install the Companion on the phone and pick it in Settings → Phone.</string>
+    <string name="tour_solo_title">Just a phone</string>
+    <string name="tour_solo_body">No tablet? Curveon also runs straight on a phone, and is then its own companion: messages, calls and music come from the same phone, and no second one is needed. Choose This device in Settings → Phone.</string>
 </resources>

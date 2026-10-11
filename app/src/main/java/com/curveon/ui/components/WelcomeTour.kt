@@ -135,6 +135,8 @@ val HELP_GROUPS: List<Pair<Int, List<HelpSymbol>>> = listOf(
     R.string.help_group_gestures to GESTURE_SYMBOLS
 )
 
+private val BluetoothAccent = Color(0xFF5C9DFF)
+
 private class TourStep(
     val target: TourTarget?,
     val icon: ImageVector,
@@ -162,6 +164,8 @@ private val STEPS = listOf(
         MAP_SYMBOLS.take(6)),
     TourStep(TourTarget.SPEED, Icons.Default.Speed, NeonAmber, R.string.tour_speed_title, R.string.tour_speed_body),
     TourStep(TourTarget.CARDS, Icons.Default.MusicNote, ElectricCyan, R.string.tour_cards_title, R.string.tour_cards_body),
+    TourStep(null, Icons.Default.Bluetooth, BluetoothAccent, R.string.tour_setup_title, R.string.tour_setup_body, art = TourArt.SETUP),
+    TourStep(null, Icons.Default.PhoneAndroid, EcoGreen, R.string.tour_solo_title, R.string.tour_solo_body, art = TourArt.SOLO),
     TourStep(null, Icons.Default.Search, ElectricCyan, R.string.tour_trip_title, R.string.tour_trip_body, art = TourArt.PLAN),
     TourStep(null, Icons.Default.Gesture, NeonAmber, R.string.tour_edit_title, R.string.tour_edit_body, art = TourArt.EDIT),
     TourStep(null, Icons.Default.LinearScale, NeonAmber, R.string.tour_mark_title, R.string.tour_mark_body, art = TourArt.MARK),
