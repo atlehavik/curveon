@@ -62,7 +62,7 @@ and [dashboard.md](dashboard.md) for the goals.
 - **Speed limit sign**, while navigating and while free riding: the official limit where a country
   publishes them freely (Norway: Statens vegvesen NVDB; Finland: Digiroad; the Netherlands: NDW/RWS;
   Flanders: AWV), built monthly by the curveon-data repo (`tools/speedlimits/`); OSM's maxspeed elsewhere.
-- **Places on the map** (Settings → Display → On the map): fuel, speed cameras, viewpoints, mountain
+- **Places on the map** (Settings → Display → On the map; only fuel until the rider chooses): fuel, speed cameras, viewpoints, mountain
   passes, camping, food and coffee, ferries, motorcycle shops and workshops can be kept on the map at all
   times, from the offline search index of the downloaded countries; each appears when the map is zoomed in
   enough for it to be readable, and a tap opens it like a GPX waypoint.

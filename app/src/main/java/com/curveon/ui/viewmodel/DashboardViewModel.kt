@@ -284,7 +284,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _mapLayers = MutableStateFlow(
-        settings.getStringSet("mapLayers", emptySet())!!.mapNotNull { runCatching { com.curveon.data.search.MapLayer.valueOf(it) }.getOrNull() }.toSet()
+        // Until the rider chooses, only fuel: the first look at the map stays calm.
+        settings.getStringSet("mapLayers", null)?.mapNotNull { runCatching { com.curveon.data.search.MapLayer.valueOf(it) }.getOrNull() }?.toSet()
+            ?: setOf(com.curveon.data.search.MapLayer.FUEL)
     )
     /** Settings → Display → On the map: kinds of place always shown on the map. */
     val mapLayers: StateFlow<Set<com.curveon.data.search.MapLayer>> = _mapLayers.asStateFlow()
