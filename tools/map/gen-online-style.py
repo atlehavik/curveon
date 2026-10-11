@@ -26,8 +26,8 @@ FLAVORS = {
     "dark": dict(
         land="#1f1f1f", water="#31353f", wood="#202121", grass="#222323", park="#192a24", ice="#2b2b2b",
         farmland="#1f2420", sand="#212123", residential="#1c1c1c", building="#111111",
-        casing="#1f1f1f", casing_major="#1f1f1f", casing_highway="#1f1f1f", highway="#474747", major="#3d3d3d", minor="#333333", other="#333333",
-        tunnel="#292929", rail="#000000", boundary="#5b6374",
+        casing="#a3a3a3", casing_major="#858585", casing_highway="#6b6b6b", highway="#f2cf6e", major="#f7e29a", minor="#ffffff", other="#d4d4d4",
+        tunnel="#d5d5d5", rail="#000000", boundary="#5b6374",
         road_text="#525252", road_halo="#1f1f1f", place_text="#7a7a7a", place_halo="#212121",
         water_text="#717784", water_halo="#31353f", country_text="#5c5c5c",
     ),
