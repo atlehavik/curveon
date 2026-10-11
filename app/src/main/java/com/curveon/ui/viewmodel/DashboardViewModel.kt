@@ -529,10 +529,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 if (navigator.state.value.isNavigating) _telemetry.value = _telemetry.value.copy(speedLimitKmh = limit)
             }
         }
-        // Speed limits of the countries we have maps of: new ones once a month, when online.
+        // Speed limits of the countries we have maps of and the one we are in (maps or not), as soon
+        // as we are online; new versions are looked for every few hours.
         viewModelScope.launch {
             delay(20_000)
-            speedLimits.update(offlineMaps.installedMaps().map { it.nameWithoutExtension }, speedLimits.available())
+            var lastIds = emptySet<String>()
+            var lastCheck = 0L
+            while (true) {
+                val here = if (_telemetry.value.hasGpsFix) _currentLocation.value.let { mapCatalog.areaAt(it.latitude, it.longitude)?.id } else null
+                val ids = offlineMaps.installedMaps().map { it.nameWithoutExtension }.toSet() + listOfNotNull(here)
+                val now = System.currentTimeMillis()
+                if (ids.isNotEmpty() && (ids != lastIds || now - lastCheck > 6 * 3_600_000L)) {
+                    speedLimits.available()?.let { online ->
+                        speedLimits.update(ids, online)
+                        lastIds = ids
+                        lastCheck = now
+                    }
+                }
+                delay(60_000)
+            }
         }
         // Free riding: probe the road we're on for its limit and look for cameras ahead.
         viewModelScope.launch {

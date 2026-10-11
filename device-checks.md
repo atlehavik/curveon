@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Speed limits without a map
+
+- [ ] Pixel (no maps installed), online and with a GPS fix: within a couple of minutes
+      `adb -s <pixel> shell ls /sdcard/Android/data/com.curveon.tablet/files/speedlimits/` shows
+      `norway.sqlite` (the country it is in); the limit sign then shows on roads, e.g. in the demo ride
+      or "Hold a finger on a road".
+
 ## 2026-10-11 — New layout of the cards over the map
 
 - [ ] While navigating, full map: the next-turn card sits bottom right beside the music player, both
