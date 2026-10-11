@@ -553,6 +553,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             navigator.state.map { it.route }.distinctUntilChanged().collect { route ->
                 if (route != null) NavTrace.route(route.points.map { LatLon(it.lat, it.lon) }) else NavTrace.event("route cleared")
                 hazards.load(route)
+                if (route == null) stopDemoRide()
+                else if (_demoMode.value) {
+                    // A re-plan of the trip being ridden carries on from here; another trip begins at its start.
+                    val title = navigator.state.value.goal?.title
+                    startDemoRide(newTrip = !_isDemoRiding.value || title != demoTrip)
+                    demoTrip = title
+                }
                 if (route == null) { _fuelHint.value = null; _cameraAlert.value = null }
             }
         }
@@ -821,21 +828,34 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     // ---------------------------------------------------------------- demo ride
 
     private var demoJob: Job? = null
+    private var demoTrip: String? = null
     private val _isDemoRiding = MutableStateFlow(false)
     val isDemoRiding: StateFlow<Boolean> = _isDemoRiding.asStateFlow()
 
-    /** Replaces real GPS with a simulated ride along the active route (or back to GPS). */
-    fun toggleDemoRide(speedFactor: Double = 1.0) {
-        if (demoJob?.isActive == true) {
-            demoJob?.cancel()
-            _isDemoRiding.value = false
-            startGps()
-            return
-        }
+    /** Demo mode (Settings): every trip that starts is ridden as a simulation instead of on GPS. */
+    private val _demoMode = MutableStateFlow(settings.getBoolean("demoMode", false))
+    val demoMode: StateFlow<Boolean> = _demoMode.asStateFlow()
+
+    fun setDemoMode(on: Boolean) {
+        _demoMode.value = on
+        settings.edit().putBoolean("demoMode", on).apply()
+        if (on) { if (navigator.state.value.route != null) { demoTrip = navigator.state.value.goal?.title; startDemoRide(newTrip = true) } } else stopDemoRide()
+    }
+
+    private fun stopDemoRide() {
+        if (demoJob?.isActive != true) return
+        demoJob?.cancel()
+        _isDemoRiding.value = false
+        startGps()
+    }
+
+    /** Replaces real GPS with a simulated ride along the active route; [newTrip] begins at the trip's own start. */
+    private fun startDemoRide(newTrip: Boolean, speedFactor: Double = 1.0) {
+        demoJob?.cancel()
         val nav = navigator.state.value
         val route = nav.route ?: return
         // A trip planned from its own start: ride it from there, not from where the tablet is.
-        val startAt = (nav.goal as? NavigationGoal.Track)?.points?.firstOrNull()
+        val startAt = if (newTrip) (nav.goal as? NavigationGoal.Track)?.points?.firstOrNull() else LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
         gpsJob?.cancel()
         _isDemoRiding.value = true
         demoJob = viewModelScope.launch {

@@ -6,11 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
-## 2026-10-11 — Demo ride from the planned start
+## 2026-10-11 — Demo mode
 
-- [ ] Plan a trip with a start point set somewhere other than where the X7 is, ride it, then
-      Settings → Display → Demo ride → Start: the demo begins at the planned start, not at the
-      tablet's own position. Without a start point it behaves as before.
+- [ ] Settings → Display → Demo ride: switch it on, plan a trip and press Go: the ride starts by
+      itself as a simulation, from the trip's own start point if you set one (not from where the
+      tablet is). Switch it off: back to real GPS. Switched on during a trip: that trip is
+      simulated from here.
 
 ## 2026-10-11 — Places on the map
 

@@ -85,7 +85,7 @@
     <string name="settings_auto_follow">Auto-follow GPX tracks</string>
     <string name="settings_auto_follow_hint">Navigate when riding along a track shown on the map</string>
     <string name="settings_demo_ride">Demo ride</string>
-    <string name="settings_demo_ride_hint">Drive the current route without GPS</string>
+    <string name="settings_demo_ride_hint">Every trip you start is ridden as a simulation instead of on GPS</string>
     <string name="settings_offline_maps">Offline maps</string>
     <string name="settings_map_attribution">Map data © OpenStreetMap contributors, via the Protomaps daily build. Download over Wi-Fi or the phone\'s hotspot.</string>
     <string name="settings_import_pmtiles">Import a .pmtiles file instead…</string>

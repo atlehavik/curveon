@@ -84,7 +84,7 @@
     <string name="settings_auto_follow">Følg GPX-spor automatisk</string>
     <string name="settings_auto_follow_hint">Naviger når du kjører langs et spor på kartet</string>
     <string name="settings_demo_ride">Demotur</string>
-    <string name="settings_demo_ride_hint">Kjør gjeldende rute uten GPS</string>
+    <string name="settings_demo_ride_hint">Hver tur du starter kjøres som simulering i stedet for med GPS</string>
     <string name="settings_offline_maps">Frakoblede kart</string>
     <string name="settings_map_attribution">Kartdata © OpenStreetMap-bidragsytere, via Protomaps sitt daglige bygg. Last ned over Wi-Fi eller telefonens delte nett.</string>
     <string name="settings_import_pmtiles">Importer en .pmtiles-fil i stedet…</string>

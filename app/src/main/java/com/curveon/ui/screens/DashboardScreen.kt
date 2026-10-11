@@ -71,7 +71,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     val offlineMapStatus by viewModel.offlineMapStatus.collectAsStateWithLifecycle()
     val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
-    val isDemoRiding by viewModel.isDemoRiding.collectAsStateWithLifecycle()
+    val demoMode by viewModel.demoMode.collectAsStateWithLifecycle()
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
     val gpxGroups by viewModel.gpxGroups.collectAsStateWithLifecycle()
     val overlayTracks by viewModel.overlayTracks.collectAsStateWithLifecycle()
@@ -862,7 +862,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, showSurfaces = showSurfaces, showAltitude = showAltitude, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
-                    isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
+                    isNavigating = navigationSummary != null, demoMode = demoMode,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
                     mapLayers = mapLayers,
                     mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
@@ -882,7 +882,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onShowAltitude = viewModel::setShowAltitude,
                     onAutoFollow = viewModel::setAutoFollow,
                     onOffRoute = viewModel::setOffRouteSettings,
-                    onDemoRide = { viewModel.toggleDemoRide(); showSettings = false },
+                    onDemoMode = viewModel::setDemoMode,
                     onDownloadMap = viewModel::downloadMap,
                     onCancelMapDownload = viewModel::cancelMapDownload,
                     onDeleteMap = viewModel::deleteMap,

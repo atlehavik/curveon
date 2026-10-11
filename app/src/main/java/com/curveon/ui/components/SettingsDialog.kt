@@ -59,7 +59,7 @@ data class SettingsState(
     val autoFollowTracks: Boolean,
     val offRoute: com.curveon.data.routing.OffRouteSettings,
     val isNavigating: Boolean,
-    val isDemoRiding: Boolean,
+    val demoMode: Boolean,
     val maps: List<InstalledMap>,
     val mapDownload: MapDownloadState,
     val mapQueue: List<String>,
@@ -85,7 +85,7 @@ class SettingsActions(
     val onShowAltitude: (Boolean) -> Unit,
     val onAutoFollow: (Boolean) -> Unit,
     val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
-    val onDemoRide: () -> Unit,
+    val onDemoMode: (Boolean) -> Unit,
     val onDownloadMap: (String) -> Unit,
     val onCancelMapDownload: (String) -> Unit,
     val onDeleteMap: (String) -> Unit,
@@ -173,9 +173,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             Segmented(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
                         }
                         Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint), small = true) {
-                            OutlinedButton(onClick = actions.onDemoRide, enabled = state.isNavigating || state.isDemoRiding) {
-                                Text(stringResource(if (state.isDemoRiding) R.string.stop else R.string.start), color = NeonAmber)
-                            }
+                            CockpitSwitch(state.demoMode, actions.onDemoMode, accent = NeonAmber)
                         }
                     }
                     SettingsTab.ENGINE -> Page { EngineSettings(state, actions) }
