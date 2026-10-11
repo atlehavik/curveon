@@ -28,7 +28,7 @@ FLAVORS = {
         farmland="#1f2420", sand="#212123", residential="#1c1c1c", building="#111111",
         casing="#a3a3a3", casing_major="#858585", casing_highway="#6b6b6b", highway="#f2cf6e", major="#f7e29a", minor="#ffffff", other="#d4d4d4",
         tunnel="#d5d5d5", rail="#000000", boundary="#5b6374",
-        road_text="#91888b", road_halo="#ffffff", place_text="#7a7a7a", place_halo="#212121",
+        road_text="#1b2430", road_halo="#ffffff", place_text="#7a7a7a", place_halo="#212121",
         water_text="#717784", water_halo="#31353f", country_text="#5c5c5c",
     ),
 }
@@ -91,7 +91,7 @@ def layers(c):
         {"id": "roads_labels", "type": "symbol", "source-layer": "transportation_name", "minzoom": 12,
          "layout": {"symbol-placement": "line", "text-field": NAME, "text-font": ["Noto Sans Regular"],
                     "text-size": ["interpolate", ["linear"], ["zoom"], 12, 10, 16, 13]},
-         "paint": {"text-color": c["road_text"], "text-halo-color": c["road_halo"], "text-halo-width": 1}},
+         "paint": {"text-color": c["road_text"], "text-halo-color": c["road_halo"], "text-halo-width": 1.5}},
         {"id": "places", "type": "symbol", "source-layer": "place",
          "filter": ["in", ["get", "class"], ["literal", ["city", "town", "village", "hamlet", "suburb", "island"]]],
          "layout": {"text-field": NAME, "symbol-sort-key": ["get", "rank"], "text-max-width": 8,
