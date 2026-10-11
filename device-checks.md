@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Day road colours on the night map
+
+- [ ] Night map: roads have the day map's colours (white streets, yellow main roads and motorways)
+      with the same outlines. Too bright to ride by at night? Then say so; the old night colours are
+      in git (`app/src/main/assets/map/styles/dark.json` before this commit).
+
 ## 2026-10-11 — Speed limits without a map
 
 - [ ] Pixel (no maps installed), online and with a GPS fix: within a couple of minutes
