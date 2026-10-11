@@ -84,8 +84,8 @@ private const val SURFACE = "curveon-surface"
 internal object SurfaceColors {
     const val GRAVEL_LIGHT = "#9AA0A6"
     const val GRAVEL_DARK = "#8A919C"
-    const val SOFT_LIGHT = "#9C6B3E"
-    const val SOFT_DARK = "#A07850"
+    const val SOFT_LIGHT = "#B39A82"
+    const val SOFT_DARK = "#8F7458"
 }
 /** Gravel and soft roads from this zoom in (about 10 km across the X7's map); further out they would clutter. */
 private const val SURFACE_ZOOM = 11f
@@ -960,7 +960,7 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
     val soft = E.eq(E.get("kind"), E.literal("soft"))
     val layers = listOf(
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
-            lineColor(if (dark) SurfaceColors.SOFT_DARK else SurfaceColors.SOFT_LIGHT), lineWidth(width(2.8f)), lineDasharray(arrayOf(2f, 1.5f))
+            lineColor(if (dark) SurfaceColors.SOFT_DARK else SurfaceColors.SOFT_LIGHT), lineWidth(width(2.2f)), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),
         LineLayer("$SURFACE-gravel", SURFACE).withProperties(
             lineColor(if (dark) SurfaceColors.GRAVEL_DARK else SurfaceColors.GRAVEL_LIGHT), lineWidth(width(2.8f)), lineDasharray(arrayOf(2.5f, 1.5f))

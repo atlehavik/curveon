@@ -18,7 +18,7 @@ FLAVORS = {
     "light": dict(
         land="#e2dfda", water="#80deea", wood="#a0d9a0", grass="#99d2bb", park="#9cd3b4", ice="#ffffff",
         farmland="#d8efd2", sand="#e2e0d7", residential="#e6e6e6", building="#cccccc",
-        casing="#a3a3a3", casing_major="#858585", casing_highway="#6b6b6b", highway="#ffffff", major="#ffffff", minor="#ffffff", other="#7a7a7a",
+        casing="#a3a3a3", casing_major="#858585", casing_highway="#6b6b6b", highway="#f2cf6e", major="#f7e29a", minor="#ffffff", other="#d4d4d4",
         tunnel="#d5d5d5", rail="#a7b1b3", boundary="#adadad",
         road_text="#91888b", road_halo="#ffffff", place_text="#5c5c5c", place_halo="#e0e0e0",
         water_text="#728dd4", water_halo="#80deea", country_text="#a3a3a3",
@@ -71,7 +71,7 @@ def layers(c):
          "paint": {"line-color": c["boundary"], "line-width": ["interpolate", ["linear"], ["zoom"], 3, 0.6, 10, 1.5],
                    "line-dasharray": [3, 2]}},
         {"id": "roads_other", "type": "line", "source-layer": "transportation", "minzoom": 12, "filter": road_filter(OTHER),
-         "paint": {"line-color": c["other"], "line-width": W_OTHER, "line-dasharray": [2, 1.5]}},
+         "paint": {"line-color": c["other"], "line-width": W_OTHER, **({"line-dasharray": [2, 1]} if c["land"] == "#1f1f1f" else {})}},
         {"id": "roads_rail", "type": "line", "source-layer": "transportation", "minzoom": 10,
          "filter": road_filter(["rail"]), "paint": {"line-color": c["rail"], "line-width": 1}},
     ]
