@@ -1,3 +1,5 @@
+# Status bar icon (mode "notification" -> companion/src/main/res/drawable/ic_companion.xml). The launcher
+# icons now come from the painted artwork via tools/icon/raster.py; the other modes are the old vector icon.
 import math, sys
 # Centre line of the road: a winding S climbing into the distance (108x108 adaptive canvas)
 P = [((18,150),(22,96),(82,90),(76,64)), ((76,64),(72,46),(40,52),(46,34))]

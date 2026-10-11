@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — New app icons (motorcycle on the curve)
+
+- [ ] Pixel: Curveon and Curveon Companion (the cyan phone with the new art on its screen) show
+      the new icon in the app drawer; the round mask keeps both mirrors. With Themed icons on
+      (wallpaper settings), both show a clean one-colour version.
+- [ ] X7: install Curveon there too (it wasn't reachable) and check the icon on its launcher.
+
 ## 2026-10-11 — Day road colours on the night map
 
 - [ ] Night map: roads have the day map's colours (white streets, yellow main roads and motorways)
