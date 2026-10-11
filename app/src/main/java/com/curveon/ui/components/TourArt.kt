@@ -21,7 +21,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** The little animated drawings in the welcome tour. They carry no text, so they read the same in every language. */
-enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), LOOP(9) }
+enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), MARK(11), LOOP(9) }
 
 /** One looping animation of [art] on a dark scrap of map. */
 @Composable
@@ -40,6 +40,7 @@ fun TourArtView(art: TourArt, modifier: Modifier = Modifier) {
         when (art) {
             TourArt.PLAN -> drawPlan(t, fade * appear)
             TourArt.EDIT -> drawEdit(t, fade * appear)
+            TourArt.MARK -> drawMark(t, fade * appear)
             TourArt.LOOP -> drawLoop(t, fade * appear)
         }
     }
@@ -235,4 +236,106 @@ private fun DrawScope.drawLoop(t: Float, alpha: Float) {
         route(partOf(roads, build), ElectricCyan, alpha)
         startDot(loop[0], alpha * phase(t, 0.54f, 0.6f))
     }
+}
+
+// ---------------------------------------------------------------------------------- MARK
+
+private fun segmentOf(path: Path, from: Float, to: Float): Path {
+    val m = PathMeasure().apply { setPath(path, false) }
+    return Path().also { m.getSegment(m.length * from, m.length * to, it, true) }
+}
+
+private fun pointOn(path: Path, at: Float): Offset {
+    val m = PathMeasure().apply { setPath(path, false) }
+    return m.getPosition(m.length * at)
+}
+
+/** The bar at the bottom while editing on the map; returns where its three-dots button is. */
+private fun DrawScope.drawEditBar(alpha: Float, marking: Boolean): Offset {
+    val h = 32.dp.toPx()
+    val left = size.width * 0.07f
+    val right = size.width * 0.93f
+    val top = size.height - h - 9.dp.toPx()
+    val cy = top + h / 2
+    drawRoundRect(CockpitSurface.copy(alpha = alpha), Offset(left, top), androidx.compose.ui.geometry.Size(right - left, h), androidx.compose.ui.geometry.CornerRadius(h / 2))
+    drawRoundRect(ElectricCyan.copy(alpha = 0.8f * alpha), Offset(left, top), androidx.compose.ui.geometry.Size(right - left, h),
+        androidx.compose.ui.geometry.CornerRadius(h / 2), style = Stroke(1.5.dp.toPx()))
+    // The hint, as two grey lines.
+    drawRoundRect(TextSecondary.copy(alpha = 0.7f * alpha), Offset(left + 16.dp.toPx(), cy - 6.dp.toPx()), androidx.compose.ui.geometry.Size(size.width * 0.30f, 4.dp.toPx()),
+        androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()))
+    drawRoundRect(TextMuted.copy(alpha = 0.6f * alpha), Offset(left + 16.dp.toPx(), cy + 2.dp.toPx()), androidx.compose.ui.geometry.Size(size.width * 0.16f, 3.dp.toPx()),
+        androidx.compose.ui.geometry.CornerRadius(1.5.dp.toPx()))
+    // Done, undo and the three dots, right to left.
+    val done = Offset(right - 20.dp.toPx(), cy)
+    drawCircle(ElectricCyan.copy(alpha = alpha), 12.dp.toPx(), done)
+    val tick = Path().apply {
+        moveTo(done.x - 5.dp.toPx(), done.y); lineTo(done.x - 1.5.dp.toPx(), done.y + 3.5.dp.toPx()); lineTo(done.x + 5.dp.toPx(), done.y - 3.5.dp.toPx())
+    }
+    drawPath(tick, Color(0xFF00363D).copy(alpha = alpha), style = Stroke(2.2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+    val undo = Offset(done.x - 36.dp.toPx(), cy)
+    drawCircle(CockpitSurfaceVariant.copy(alpha = alpha), 10.dp.toPx(), undo)
+    drawArc(TextMuted.copy(alpha = alpha), 200f, 250f, false, Offset(undo.x - 4.dp.toPx(), undo.y - 4.dp.toPx()),
+        androidx.compose.ui.geometry.Size(8.dp.toPx(), 8.dp.toPx()), style = Stroke(1.6.dp.toPx(), cap = StrokeCap.Round))
+    val dots = Offset(undo.x - 34.dp.toPx(), cy)
+    drawCircle((if (marking) ElectricCyan else CockpitSurfaceVariant).copy(alpha = alpha), 12.dp.toPx(), dots)
+    val ink = (if (marking) Color(0xFF00363D) else TextPrimary).copy(alpha = alpha)
+    drawLine(ink, Offset(dots.x - 6.dp.toPx(), dots.y), Offset(dots.x + 6.dp.toPx(), dots.y), 1.6.dp.toPx(), StrokeCap.Round)
+    listOf(-6f, 0f, 6f).forEach { dx -> drawCircle(ink, 2.2.dp.toPx(), Offset(dots.x + dx.dp.toPx(), dots.y)) }
+    return dots
+}
+
+/** Press the three dots, drag a finger along part of the route: only that part is planned again. */
+private fun DrawScope.drawMark(t: Float, alpha: Float) {
+    val a = p(0.08f, 0.50f)
+    val b = p(0.92f, 0.26f)
+    val route = Path().apply {
+        moveTo(a.x, a.y)
+        cubicTo(size.width * 0.22f, size.height * 0.10f, size.width * 0.38f, size.height * 0.10f, size.width * 0.50f, size.height * 0.34f)
+        cubicTo(size.width * 0.62f, size.height * 0.56f, size.width * 0.78f, size.height * 0.56f, b.x, b.y)
+    }
+    val from = 0.30f
+    val to = 0.70f
+    val p1 = pointOn(route, from)
+    val p2 = pointOn(route, to)
+    // What the part becomes: a longer way round, lower down.
+    val detour = Path().apply {
+        moveTo(p1.x, p1.y)
+        cubicTo(p1.x + size.width * 0.17f, p1.y + size.height * 0.46f, p2.x - size.width * 0.17f, p2.y + size.height * 0.46f, p2.x, p2.y)
+    }
+    val press = phase(t, 0.10f, 0.20f)
+    val marking = t in 0.18f..0.66f
+    val toStart = phase(t, 0.24f, 0.34f)
+    val drag = phase(t, 0.36f, 0.58f)
+    val release = phase(t, 0.60f, 0.66f)
+    val replan = phase(t, 0.68f, 0.86f)
+
+    // The route in three pieces: the middle one is the part that changes.
+    route(segmentOf(route, 0f, from), ElectricCyan, alpha)
+    route(segmentOf(route, to, 1f), ElectricCyan, alpha)
+    route(segmentOf(route, from, to), ElectricCyan, alpha * (1f - replan))
+    if (replan > 0f) route(partOf(detour, replan), ElectricCyan, alpha)
+    startDot(a, alpha)
+    endDot(b, alpha)
+
+    // The part marked by the finger, with a ring at each end.
+    val reach = from + (to - from) * drag
+    if (drag > 0f) {
+        drawPath(segmentOf(route, from, reach), NeonAmber.copy(alpha = 0.85f * alpha * (1f - replan)),
+            style = Stroke(9.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+        val ringAlpha = alpha * (1f - phase(t, 0.84f, 0.9f))
+        listOf(p1, pointOn(route, reach)).forEach { e ->
+            drawCircle(Color.White.copy(alpha = ringAlpha), 7.dp.toPx(), e)
+            drawCircle(NeonAmber.copy(alpha = ringAlpha), 7.dp.toPx(), e, style = Stroke(3.dp.toPx()))
+        }
+    }
+    val button = drawEditBar(alpha, marking)
+
+    // The finger: onto the button, then along the route.
+    val on = t in 0.08f..0.70f
+    val at = when {
+        t < 0.24f -> button
+        t < 0.36f -> Offset(lerp(button.x, p1.x, toStart), lerp(button.y, p1.y, toStart))
+        else -> pointOn(route, reach)
+    }
+    if (on) finger(at, alpha * phase(t, 0.08f, 0.12f) * (1f - phase(t, 0.64f, 0.70f)), press = if (t < 0.24f) press else 1f)
 }

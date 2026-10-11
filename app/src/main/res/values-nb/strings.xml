@@ -676,4 +676,10 @@
     <string name="tour_edit_body">Hold fingeren på rutelinjen, eller velg Juster ruten → Endre i kartet. Dra start, mål eller et stopp for å flytte det. Dra i selve linjen, så bøyer ruten seg gjennom punktet der du slipper. Et trykk på et punkt gir en meny; Angre tar tilbake siste endring, Ferdig beholder alt.</string>
     <string name="tour_loop_title">Rundtur, tegnet for hånd</string>
     <string name="tour_loop_body">Hvor skal du? → Rundtur: tegn området du vil kjøre i med én finger, så lager Curveon en runde gjennom det uten å kjøre samme vei to ganger. Velg hvor lang den får bli, og asfalt eller grus. En annen runde gir et nytt forslag.</string>
+    <string name="tour_mark_title">Endre bare en del</string>
+    <string name="tour_mark_body">På en lang tur trykker du på de tre prikkene i linjen nederst, og drar så fingeren langs delen du vil endre. Bare den delen planlegges på nytt, resten av ruten blir som den er. Trykk på knappen igjen for å gå tilbake til å dra i punkter.</string>
+    <string name="help_group_edit">Endre i kartet</string>
+    <string name="help_mark">Marker delen av ruten som skal endres: dra langs den, resten blir</string>
+    <string name="help_undo">Angre siste endring</string>
+    <string name="help_done">Ferdig: behold turen som den er</string>
 </resources>

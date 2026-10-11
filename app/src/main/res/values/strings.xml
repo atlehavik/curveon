@@ -677,4 +677,10 @@
     <string name="tour_edit_body">Hold a finger on the route line, or choose Adjust route → Edit on map. Drag the start, the destination or a stop to move it. Drag the line itself and the route bends through the point where you let go. A tap on a point gives a menu; Undo takes back the last change, Done keeps it all.</string>
     <string name="tour_loop_title">A roundtrip, drawn by hand</string>
     <string name="tour_loop_body">Where to? → Roundtrip: draw the area you want to ride in with one finger, and Curveon builds a loop through it without riding the same road twice. Choose how long it may be, and tarmac or gravel. Another loop gives a new suggestion.</string>
+    <string name="tour_mark_title">Change just one part</string>
+    <string name="tour_mark_body">On a long trip, press the three dots in the bar at the bottom, then drag a finger along the part you want to change. Only that part is planned again; the rest of the route stays as it is. Press the button again to go back to dragging points.</string>
+    <string name="help_group_edit">Editing on the map</string>
+    <string name="help_mark">Mark the part of the route to change: drag along it, the rest stays</string>
+    <string name="help_undo">Undo the last change</string>
+    <string name="help_done">Done: keep the trip as it is</string>
 </resources>

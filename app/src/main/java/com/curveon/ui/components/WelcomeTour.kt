@@ -106,6 +106,11 @@ private val PLAN_SYMBOLS = listOf(
     sym(Icons.Default.ExpandMore, TextPrimary, R.string.help_collapse),
     sym(Icons.Default.Close, TextPrimary, R.string.help_close_plan)
 )
+private val EDIT_SYMBOLS = listOf(
+    sym(Icons.Default.LinearScale, TextPrimary, R.string.help_mark),
+    sym(Icons.Default.Undo, TextPrimary, R.string.help_undo),
+    sym(Icons.Default.Check, ElectricCyan, R.string.help_done, filled = true)
+)
 private val RIDE_SYMBOLS = listOf(
     sym(Icons.Default.AddLocationAlt, NeonAmber, R.string.help_add_stop),
     sym(Icons.Default.Close, WarningRed, R.string.help_end_trip),
@@ -125,6 +130,7 @@ val HELP_GROUPS: List<Pair<Int, List<HelpSymbol>>> = listOf(
     R.string.help_group_rail to RAIL_SYMBOLS,
     R.string.help_group_map to MAP_SYMBOLS,
     R.string.help_group_plan to PLAN_SYMBOLS,
+    R.string.help_group_edit to EDIT_SYMBOLS,
     R.string.help_group_ride to RIDE_SYMBOLS,
     R.string.help_group_gestures to GESTURE_SYMBOLS
 )
@@ -158,6 +164,7 @@ private val STEPS = listOf(
     TourStep(TourTarget.CARDS, Icons.Default.MusicNote, ElectricCyan, R.string.tour_cards_title, R.string.tour_cards_body),
     TourStep(null, Icons.Default.Search, ElectricCyan, R.string.tour_trip_title, R.string.tour_trip_body, art = TourArt.PLAN),
     TourStep(null, Icons.Default.Gesture, NeonAmber, R.string.tour_edit_title, R.string.tour_edit_body, art = TourArt.EDIT),
+    TourStep(null, Icons.Default.LinearScale, NeonAmber, R.string.tour_mark_title, R.string.tour_mark_body, art = TourArt.MARK),
     TourStep(null, Icons.Default.Draw, NeonAmber, R.string.tour_loop_title, R.string.tour_loop_body, art = TourArt.LOOP),
     TourStep(null, Icons.Default.AltRoute, NeonAmber, R.string.help_group_plan, R.string.tour_plan_body, PLAN_SYMBOLS),
     TourStep(null, Icons.Default.Navigation, EcoGreen, R.string.help_group_ride, R.string.tour_ride_body, RIDE_SYMBOLS),
