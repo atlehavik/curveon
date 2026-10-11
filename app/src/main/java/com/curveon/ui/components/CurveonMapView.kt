@@ -141,7 +141,8 @@ fun CurveonMapView(
     autoZoom: Boolean = true,
     /** Changes when the offline map file was downloaded/replaced/deleted: reload the style. */
     mapVersion: Int = 0,
-    onLongPress: (GeoPoint) -> Unit = {},
+    /** A finger held on the map: the place, and the road there as the map names it (null if none). */
+    onLongPress: (GeoPoint, String?) -> Unit = { _, _ -> },
     /** Picking a place on the map: a tap goes here instead of opening waypoints. */
     onTap: ((GeoPoint) -> Unit)? = null,
     /** The place picked so far, shown as a pin. */
@@ -276,7 +277,14 @@ fun CurveonMapView(
                     onTapState.value != null -> onTapState.value?.invoke(at)
                     editRoute != null && editorState.value == null && line.size >= 2 &&
                         grabEdit(RouteEditor(emptyList(), false, { _, _ -> }, { _, _ -> }, {}), line, m, pt.x, pt.y, mapView.resources.displayMetrics.density) != null -> editRoute()
-                    else -> onLongPressState.value(at)
+                    else -> {
+                        // The road under the finger, by name or number, as the map labels it.
+                        val name = if (!canQuery) null else runCatching {
+                            val roadLayers = m.style?.layers?.map { it.id }?.filter { it.startsWith("roads_") }.orEmpty().toTypedArray()
+                            roadLabel(m.queryRenderedFeatures(RectF(pt.x - 20, pt.y - 20, pt.x + 20, pt.y + 20), *roadLayers))
+                        }.getOrNull()
+                        onLongPressState.value(at, name)
+                    }
                 }
                 true
             }

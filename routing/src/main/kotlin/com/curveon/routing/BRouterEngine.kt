@@ -179,7 +179,7 @@ class BRouterEngine(
                 lat = p.lat, lon = p.lon, elevation = p.ele,
                 distanceFromStart = dist, secondsFromStart = secs,
                 highway = tags.highway, maxSpeedKmh = tags.maxSpeed,
-                unpaved = tags.unpaved, ferry = tags.ferry
+                unpaved = tags.unpaved, ferry = tags.ferry, surface = tags.surface, tracktype = tags.tracktype
             )
         }
         val maneuvers = buildManeuvers(CurveonBridge.hints(track), points)
@@ -241,7 +241,9 @@ internal data class WayTags(
     val highway: String?,
     val maxSpeed: Int?,
     val unpaved: Boolean,
-    val ferry: Boolean
+    val ferry: Boolean,
+    val surface: String? = null,
+    val tracktype: String? = null
 ) {
     companion object {
         private val UNPAVED = setOf(
@@ -261,7 +263,9 @@ internal data class WayTags(
                 highway = highway,
                 maxSpeed = map["maxspeed"]?.toIntOrNull(),
                 unpaved = surface in UNPAVED || (surface == null && highway == "track"),
-                ferry = map["route"] == "ferry"
+                ferry = map["route"] == "ferry",
+                surface = surface,
+                tracktype = map["tracktype"]
             )
         }
     }

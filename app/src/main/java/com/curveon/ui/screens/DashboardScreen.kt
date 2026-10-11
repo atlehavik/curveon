@@ -163,6 +163,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var phoneTab by remember { mutableStateOf<PhoneTab?>(null) }
     /** A place picked while riding or planning: a stop, the destination, or (planning) the start? */
     var pendingPlace by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
+    /** The road at the place held on the map (name, surface, speed limit), once looked up. */
+    var roadInfo by remember { mutableStateOf<com.curveon.data.routing.RoadInfo?>(null) }
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
     LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
@@ -172,7 +174,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // Picking a place: while riding or planning a trip, ask what it is; otherwise go straight to the preview.
     val planning = preview?.goal is com.curveon.data.routing.NavigationGoal.Destination
     val pickPlace: (GeoPoint, String) -> Unit = { point, name ->
-        if (isNavigating || planning) pendingPlace = point to name
+        if (isNavigating || planning) { roadInfo = null; pendingPlace = point to name }
         else viewModel.previewDestination(point, name, planStart?.first, planStart?.second ?: "")
     }
 
@@ -478,7 +480,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             roadNameProbe = roadNameProbe,
             onRoadName = viewModel::onRoadName,
             // Held on the map: go there or keep it as a favourite (riding or planning: also a stop or the start).
-            onLongPress = { p -> scope.launch { pendingPlace = p to viewModel.describePoint(p) } },
+            onLongPress = { p, roadName ->
+                roadInfo = null
+                scope.launch { pendingPlace = p to viewModel.describePoint(p) }
+                scope.launch { val r = viewModel.roadAt(p, roadName); if (pendingPlace?.first == p || pendingPlace == null) roadInfo = r }
+            },
             onTap = if (mapPick != null) ({ p ->
                 if (chaining) chainTap(p) else {
                     picked = p to null
@@ -680,6 +686,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         pendingPlace?.let { (point, name) ->
             PlaceActionDialog(
                 name = name,
+                road = roadInfo,
                 onAddStop = if (isNavigating || planning) ({ viewModel.addStop(point, name); pendingPlace = null }) else null,
                 onGoHere = {
                     if (planning) viewModel.setPreviewDestination(point, name) else viewModel.previewDestination(point, name)

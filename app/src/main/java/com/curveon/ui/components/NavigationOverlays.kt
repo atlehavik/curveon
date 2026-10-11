@@ -139,6 +139,8 @@ fun RoutingStatusCard(status: RoutingStatus, onDismiss: () -> Unit, modifier: Mo
 @Composable
 fun PlaceActionDialog(
     name: String,
+    /** The road there (held on the map): shown under the name; null while looked up, or none. */
+    road: com.curveon.data.routing.RoadInfo? = null,
     /** Null when there is no trip to add it to. */
     onAddStop: (() -> Unit)?,
     onGoHere: () -> Unit,
@@ -162,6 +164,7 @@ fun PlaceActionDialog(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
+            road?.let { RoadInfoRow(it) }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (onAddStop != null) PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black,
                     Modifier.testTag("add_stop_btn"), onAddStop)
@@ -573,3 +576,49 @@ fun SketchBar(
     }
     }
 }
+
+/** The road under a held finger: its speed limit sign, name, class and surface. Information only. */
+@Composable
+fun RoadInfoRow(road: com.curveon.data.routing.RoadInfo) {
+    val kind = road.highway?.let { roadKind(it) }
+    val surface = roadSurface(road)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.testTag("road_info")) {
+        road.speedKmh?.let { SpeedLimitSign(it, 44.dp) }
+        Column {
+            Text(road.name ?: kind ?: "", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            val details = listOfNotNull(kind.takeIf { road.name != null }, surface).joinToString(" · ")
+            if (details.isNotEmpty()) Text(details, color = if (road.unpaved) NeonAmber else TextSecondary, fontSize = 14.sp, maxLines = 1)
+            if (road.speedKmh != null) Text(
+                stringResource(if (road.officialSpeed) R.string.road_speed_official else R.string.road_speed_osm),
+                color = TextMuted, fontSize = 12.sp, maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun roadKind(highway: String): String? = when (highway.removeSuffix("_link")) {
+    "motorway" -> stringResource(R.string.road_kind_motorway)
+    "trunk", "primary" -> stringResource(R.string.road_kind_main)
+    "secondary", "tertiary", "unclassified" -> stringResource(R.string.road_kind_country)
+    "residential", "living_street" -> stringResource(R.string.road_kind_residential)
+    "service" -> stringResource(R.string.road_kind_service)
+    "track" -> stringResource(R.string.road_kind_track)
+    "path", "footway", "cycleway", "bridleway", "pedestrian" -> stringResource(R.string.road_kind_path)
+    else -> null
+}
+
+@Composable
+private fun roadSurface(road: com.curveon.data.routing.RoadInfo): String? = when (road.surface) {
+    "asphalt", "paved", "concrete", "concrete:plates", "paving_stones", "chipseal" -> stringResource(R.string.road_surface_asphalt)
+    "sett", "cobblestone", "unhewn_cobblestone" -> stringResource(R.string.road_surface_cobbles)
+    "gravel", "fine_gravel", "compacted", "pebblestone", "unpaved" -> stringResource(R.string.road_surface_gravel)
+    "dirt", "ground", "earth", "soil", "mud", "sand", "grass", "clay" -> stringResource(R.string.road_surface_dirt)
+    null -> when {
+        road.highway == null -> null
+        road.highway == "track" -> stringResource(R.string.road_surface_unknown_track)
+        else -> stringResource(R.string.road_surface_unknown)
+    }
+    else -> road.surface
+}?.let { s -> road.tracktype?.removePrefix("grade")?.let { g -> stringResource(R.string.road_track_grade, s, g) } ?: s }

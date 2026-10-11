@@ -846,6 +846,21 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      * Speed limit of the road the rider is on when not navigating: route a few metres ahead along
      * the current heading and read the first segment's maxspeed. Null when unknown/unsigned.
      */
+    /**
+     * What the routing data knows of the road nearest [point] (within ~40 m): its class, surface and
+     * OSM speed limit, as the first stretch of a few metres' route from there. Null if none.
+     */
+    suspend fun roadAt(point: LatLon): com.curveon.routing.RoutePoint? = withContext(Dispatchers.Default) {
+        if (!routingData.isReady()) return@withContext null
+        runCatching {
+            val r = engine.route(listOf(point, Geo.destination(point, 90.0, 20.0)),
+                RouteOptions(RoadStyle.FASTEST, com.curveon.routing.SurfacePreference.MIXED), viaCatchingRangeMeters = 40.0)
+            val first = r.points.firstOrNull() ?: return@runCatching null
+            if (Geo.distance(first.lat, first.lon, point.lat, point.lon) > 45) null
+            else r.points.drop(1).firstOrNull { it.highway != null }
+        }.getOrNull()
+    }
+
     suspend fun probeSpeedLimit(position: LatLon, headingDeg: Double): Int? = withContext(Dispatchers.Default) {
         if (!routingData.isReady()) return@withContext null
         val ahead = Geo.destination(position, headingDeg, 60.0)

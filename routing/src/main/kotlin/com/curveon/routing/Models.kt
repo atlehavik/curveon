@@ -51,7 +51,10 @@ data class RoutePoint(
     val highway: String?,
     val maxSpeedKmh: Int?,
     val unpaved: Boolean,
-    val ferry: Boolean
+    val ferry: Boolean,
+    /** OSM surface ("asphalt", "gravel", …) and, on tracks, tracktype ("grade2"); null when not tagged. */
+    val surface: String? = null,
+    val tracktype: String? = null
 )
 
 data class Maneuver(
