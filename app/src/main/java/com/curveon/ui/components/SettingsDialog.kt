@@ -64,7 +64,8 @@ data class SettingsState(
     /** Name of a catalog country/region by id, in the rider's language. */
     val mapName: (String) -> String,
     val routingDataStatus: String,
-    val searchStatus: String
+    val searchStatus: String,
+    val speedLimitsStatus: String = ""
 )
 
 /** What the Settings screen can change. */
@@ -167,6 +168,8 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Text(state.routingDataStatus, color = TextSecondary, fontSize = 13.sp)
                         SectionTitle(stringResource(R.string.settings_search_index))
                         Text(state.searchStatus, color = TextSecondary, fontSize = 13.sp)
+                        SectionTitle(stringResource(R.string.settings_speed_limits))
+                        Text(state.speedLimitsStatus, color = TextSecondary, fontSize = 13.sp)
                     }
                 }
         }

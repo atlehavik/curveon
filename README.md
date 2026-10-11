@@ -59,7 +59,10 @@ and [dashboard.md](dashboard.md) for the goals.
 - **Tunnels**: position keeps moving along the route at your speed when GPS drops out.
 - **Ride log**: rides record automatically (distance, time, speeds, climb, gyro lean angle);
   find them under Rides in the GPX & rides dialog (rail), save one to the GPX collection or ride one again.
-- **Speed limit sign** from OSM data, while navigating and while free riding.
+- **Speed limit sign**, while navigating and while free riding: the official limit where a country
+  publishes them freely (Norway: Statens vegvesen NVDB; Finland: Digiroad; the Netherlands: NDW/RWS;
+  Flanders: AWV), built monthly by the curveon-data repo (`tools/speedlimits/`); OSM's maxspeed elsewhere.
+- **Road info**: hold a finger on a road to see its speed limit, name or number, kind and surface.
 - **Dashboard** (Android Auto-like): speed, limit and clock on the map; newest message with
   Reply/Dismiss, calls with Answer/Decline, music with full cover art when nothing else needs the space.
 - **Engine panel** (Settings → Engine, optional): fuel, RPM, coolant and battery from an ELM327

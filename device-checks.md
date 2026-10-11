@@ -6,6 +6,25 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-11 — Official speed limits; road info when holding a finger on a road
+
+**Official speed limits.** Where a country publishes them freely, the speed sign now shows the
+official limit of the road you're on and falls back to OpenStreetMap elsewhere: Norway (Statens
+vegvesen NVDB, public roads), Finland (Digiroad), the Netherlands (NDW/RWS WKD), Flanders (AWV).
+Built monthly by the curveon-data repo (`speedlimits` release, ~7 MB for Norway); the tablet
+fetches the file for each country it has a map of, with the map, or by itself ~20 s after
+starting when online. Credits under Settings → Maps & data → Speed limits. Around Bømlo/Stord/
+Fitjar OSM has no limit on 47 % of kommunal veg and differs on ~5 % of main roads; the official
+file gave the right limit at all 1 497 test points.
+
+**Road info.** Holding a finger on a road shows, in the card that opens, its speed limit sign,
+name/number, kind (main road, country road, track…) and surface, and whether the limit is
+official or from OpenStreetMap. Information only.
+
+- [ ] X7/Pixel online: after a start, Settings → Maps & data → Speed limits says "Norge: Statens vegvesen, NVDB …".
+- [ ] Riding on a kommunal veg that showed no sign before: does it show one now, and is it right?
+- [ ] Hold a finger on a few roads (main road, gravel road, track): is the info right?
+
 ## 2026-10-11 — Gravel reach when drawing a loop
 
 With Gravel or Offroad in the drawing bar, the "Gravel within N km / anywhere" chip is there too.

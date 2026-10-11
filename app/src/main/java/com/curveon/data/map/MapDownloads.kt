@@ -49,7 +49,8 @@ class MapDownloads(
     private val context: Context,
     private val maps: OfflineMaps,
     private val routing: RoutingData,
-    private val search: SearchIndexes
+    private val search: SearchIndexes,
+    private val speedLimits: com.curveon.data.speed.SpeedLimits
 ) {
 
     /** Full search indexes online (area id to bytes), once [refreshSearch] has reached the server. */
@@ -132,6 +133,8 @@ class MapDownloads(
         if (src == SearchIndexes.Source.NONE || (src == SearchIndexes.Source.MAP && searchAvailable?.containsKey(area.id) == true)) {
             search.install(area.id, file(area), searchAvailable, { msg, f -> onProgress(msg, 0.85f + 0.15f * f) }, isCancelled)
         }
+        // Official speed limits, for the countries that publish them freely (small: no progress of its own).
+        speedLimits.update(listOf(area.id), speedLimits.available())
     }
 
     fun cleanupPartial(id: String) {
@@ -146,6 +149,7 @@ class MapDownloads(
         cleanupPartial(id)
         prefs.edit().remove("build_$id").apply()
         search.delete(id)
+        speedLimits.delete(id)
         val area = catalog.byId[id] ?: return
         val stillNeeded = maps.installedMaps().mapNotNull { catalog.byId[it.nameWithoutExtension] }.flatMap { it.routing }.toSet()
         routing.delete(area.routing.filterNot { it in stillNeeded })

@@ -100,7 +100,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ---------------------------------------------------------------- map downloads
 
-    private val mapDownloads = com.curveon.data.map.MapDownloads(application, offlineMaps, navigator.routingData, placeSearch.indexes)
+    /** Official speed limits (Norway: NVDB) where a country publishes them; OSM's maxspeed elsewhere. */
+    private val speedLimits = com.curveon.data.speed.SpeedLimits(application)
+    private val mapDownloads = com.curveon.data.map.MapDownloads(application, offlineMaps, navigator.routingData, placeSearch.indexes, speedLimits)
     val mapCatalog get() = mapDownloads.catalog
     private var latestMapBuild: String? = null
     private val _installedMaps = MutableStateFlow(mapDownloads.installed(null))
@@ -474,11 +476,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
         viewModelScope.launch { while (true) { delay(60_000); updateMapDark() } }
 
-        // Speed limit while navigating comes from the route.
+        // Speed limit while navigating: the official one of the road the route is on, else the route's (OSM).
         viewModelScope.launch {
-            navigator.state.map { it.progress?.speedLimitKmh ?: 0 }.distinctUntilChanged().collect { limit ->
+            navigator.state.map { s ->
+                val p = s.progress ?: return@map 0
+                withContext(Dispatchers.IO) { speedLimits.at(p.snapped.lat, p.snapped.lon, p.routeBearingDeg) } ?: p.speedLimitKmh ?: 0
+            }.distinctUntilChanged().collect { limit ->
                 if (navigator.state.value.isNavigating) _telemetry.value = _telemetry.value.copy(speedLimitKmh = limit)
             }
+        }
+        // Speed limits of the countries we have maps of: new ones once a month, when online.
+        viewModelScope.launch {
+            delay(20_000)
+            speedLimits.update(offlineMaps.installedMaps().map { it.nameWithoutExtension }, speedLimits.available())
         }
         // Free riding: probe the road we're on for its limit and look for cameras ahead.
         viewModelScope.launch {
@@ -488,7 +498,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 if (navigator.state.value.isNavigating || !t.hasGpsFix) continue
                 val here = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
                 val limit = if (t.speedKmh < 8f) t.speedLimitKmh // standing still: heading is unreliable, keep last
-                else navigator.probeSpeedLimit(here, t.headingDeg.toDouble()) ?: 0
+                else withContext(Dispatchers.IO) { speedLimits.at(here.lat, here.lon, t.headingDeg.toDouble()) }
+                    ?: navigator.probeSpeedLimit(here, t.headingDeg.toDouble()) ?: 0
                 _telemetry.value = _telemetry.value.copy(speedLimitKmh = limit)
                 _cameraAlert.value = if (t.speedKmh < 15f) null else hazards.cameraAheadFreeRide(here, t.headingDeg.toDouble())
             }
@@ -1043,6 +1054,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     // ---------------------------------------------------------------- search
 
     fun searchStatus(): String = placeSearch.describe()
+
+    /** The road at [point] (a finger held on the map): name from the map ([mapName]), the rest from the routing and speed data. */
+    suspend fun roadAt(point: GeoPoint, mapName: String?): com.curveon.data.routing.RoadInfo? {
+        val p = LatLon(point.latitude, point.longitude)
+        val road = navigator.roadAt(p)
+        val official = withContext(Dispatchers.IO) { speedLimits.at(p.lat, p.lon, null) }
+        if (road == null && official == null && mapName == null) return null
+        return com.curveon.data.routing.RoadInfo(mapName, road?.highway, road?.surface, road?.tracktype, road?.unpaved ?: false,
+            official ?: road?.maxSpeedKmh, official != null)
+    }
+
+    /** Settings → Maps & data: where the speed limits come from, per country (credits the licences ask for). */
+    fun speedLimitsStatus(): String = speedLimits.sources().let { s ->
+        if (s.isEmpty()) str(R.string.speed_limits_osm)
+        else s.joinToString("\n") { (id, src) -> "${mapDownloads.catalog.byId[id]?.displayName(java.util.Locale.getDefault()) ?: id}: $src" } + "\n" + str(R.string.speed_limits_elsewhere)
+    }
 
     fun searchPlaces(query: String) =
         placeSearch.search(query, _currentLocation.value.latitude, _currentLocation.value.longitude)

@@ -844,7 +844,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     isNavigating = navigationSummary != null, isDemoRiding = isDemoRiding,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
                     mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
-                    routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() }
+                    routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() },
+                    speedLimitsStatus = remember { viewModel.speedLimitsStatus() }
                 ),
                 actions = SettingsActions(
                     onLanguage = { com.curveon.AppLanguage.set(context, it) },
