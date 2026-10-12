@@ -328,11 +328,6 @@ fun NotificationCard(
     onAction: (NotificationItem, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // A ringing call always comes first and gets its own full card.
-    notifications.firstOrNull { it.isIncomingCall }?.let { call ->
-        CallCard(call, onAction = { i -> onAction(call, i) }, onDismiss = { onSwipe(call) }, modifier = modifier)
-        return
-    }
     var index by remember(notifications.size) { mutableIntStateOf(0) }
     val n = notifications.getOrNull(index) ?: notifications.firstOrNull() ?: return
     DashCard(modifier.fillMaxWidth().swipeAway(n.id) { onSwipe(n) }.testTag("notification_card"), border = if (n.isIncomingCall) EcoGreen else NeonAmber.copy(alpha = 0.6f)) {
@@ -369,49 +364,6 @@ fun NotificationCard(
                     if (n.canReply) PillButton(Icons.Default.Mic, stringResource(R.string.reply), ElectricCyan, OnCyan, Modifier.weight(1f).testTag("notification_reply_btn")) { onReply(n) }
                     PillButton(Icons.Default.Close, stringResource(R.string.dismiss), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("notification_dismiss_btn")) { onDismiss(n) }
                 }
-            }
-        }
-    }
-}
-
-/**
- * Incoming call. With a contact photo the photo fills the card (like cover art) with the name on
- * top; without one, big initials. Decline / Answer are the only buttons.
- */
-@Composable
-fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    val pulse by rememberInfiniteTransition(label = "ring").animateColor(
-        EcoGreen, EcoGreen.copy(alpha = 0.25f), infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "border"
-    )
-    val declineIndex = call.actions.indexOfFirst { isDecline(it) }.takeIf { it >= 0 }
-    val answerIndex = call.actions.indices.firstOrNull { it != declineIndex }
-    Box(
-        modifier.fillMaxWidth().clip(CardShape).background(CockpitSurface).border(3.dp, pulse, CardShape).testTag("call_card")
-    ) {
-        if (call.avatar != null) {
-            Image(call.avatar.asImageBitmap(), call.senderName, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
-            Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF2000000))))
-        } else {
-            Box(Modifier.matchParentSize().padding(bottom = 140.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.heightIn(max = 140.dp).fillMaxHeight(0.85f).aspectRatio(1f).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
-                    Text(call.initials, color = EcoGreen, fontSize = 52.sp, fontWeight = FontWeight.Black)
-                }
-            }
-        }
-        Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.PhoneInTalk, null, tint = EcoGreen, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("${call.message} · ${call.appName}", color = Color(0xFFD0D7E0), fontSize = 13.sp, maxLines = 1)
-            }
-            Text(call.senderName, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black,
-                maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 32.sp)
-            Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PillButton(Icons.Default.CallEnd, call.actions.getOrNull(declineIndex ?: -1) ?: stringResource(R.string.decline), WarningRed, Color.White,
-                    Modifier.weight(1f).height(64.dp)) { if (declineIndex != null) onAction(declineIndex) else onDismiss() }
-                if (answerIndex != null) PillButton(Icons.Default.Call, call.actions[answerIndex], EcoGreen, Color.Black,
-                    Modifier.weight(1f).height(64.dp)) { onAction(answerIndex) }
             }
         }
     }
@@ -497,8 +449,6 @@ private fun Modifier.swipeAway(key: Any, onSwiped: () -> Unit): Modifier = compo
             }
         }
 }
-
-private fun isDecline(title: String) = listOf("decline", "avvis", "hang", "legg på", "reject").any { title.contains(it, ignoreCase = true) }
 
 /** Android Auto-style spoken reply: listen on the phone, show what was heard, send on confirm. */
 @Composable

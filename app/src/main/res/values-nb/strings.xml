@@ -195,6 +195,7 @@
     <string name="reply">Svar</string>
     <string name="dismiss">Avvis</string>
     <string name="decline">Avvis</string>
+    <string name="call_in_progress">Pågående samtale</string>
     <string name="reply_to">Svar til %1$s</string>
     <string name="speak_now">Snakk nå…</string>
     <string name="something_went_wrong">Noe gikk galt</string>

@@ -196,6 +196,7 @@
     <string name="reply">Reply</string>
     <string name="dismiss">Dismiss</string>
     <string name="decline">Decline</string>
+    <string name="call_in_progress">Call in progress</string>
     <string name="reply_to">Reply to %1$s</string>
     <string name="speak_now">Speak now…</string>
     <string name="something_went_wrong">Something went wrong</string>

@@ -1,6 +1,7 @@
 package com.curveon.phone
 
 import android.app.Notification
+import android.os.Build
 import android.app.PendingIntent
 import android.app.RemoteInput
 import android.content.ComponentName
@@ -107,8 +108,16 @@ class CurveonNotificationListener : NotificationListenerService() {
             avatarJpegBase64 = avatar,
             canReply = replyAction != null,
             isCall = isCall,
-            actions = if (isCall) n.actions?.map { it.title.toString() }.orEmpty() else emptyList()
+            actions = if (isCall) n.actions?.map { it.title.toString() }.orEmpty() else emptyList(),
+            callOngoing = isCall && callAnswered(n)
         )
+    }
+
+    /** An answered call: the notification's call type says so (Android 12+), else it counts up the call time. */
+    private fun callAnswered(n: Notification): Boolean {
+        val type = if (Build.VERSION.SDK_INT >= 31) n.extras.getInt(Notification.EXTRA_CALL_TYPE, 0) else 0
+        return if (type != 0) type == Notification.CallStyle.CALL_TYPE_ONGOING
+        else n.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER)
     }
 
     private fun findReplyAction(n: Notification): Notification.Action? =

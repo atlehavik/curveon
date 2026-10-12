@@ -6,6 +6,21 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-13 — Calls as a slim card and a floating icon
+
+Needs the new Curveon Companion on the Pixel (it now says whether a call has been answered) and the
+new Curveon on the X7. Both were installed; the X7 and the Pixel were never connected to each other
+while testing, so none of this has been seen with a real call.
+
+- [ ] Ring the Pixel with the X7 on the full map: a slim card (small picture, name, red Decline,
+      green Answer) in the bottom right, not the big photo. In the dashboard view the same slim card
+      sits on top of the right-hand column, with music or messages below it.
+- [ ] Answer: on the full map the card becomes a green phone icon. Drag it: it settles on the left edge
+      or just left of the map's buttons, and sits there for the next call. Tap it: name, Hang up and
+      Speaker open for a few seconds. It stays visible with Settings, GPX or Phone open.
+- [ ] Call placed from the X7's Phone screen: same icon once it connects.
+- [ ] Android below 12 on the phone (if any): an answered call may still show as ringing; say so.
+
 ## 2026-10-12 — Corners, panels over the map, swipe, new menu icons
 
 - [ ] X7 riding (not the demo ride): the trip bar sits top left, the speed top right, the next turn

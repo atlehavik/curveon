@@ -98,11 +98,13 @@ sealed interface Message {
         val canReply: Boolean,
         val isCall: Boolean,
         /** Titles of the notification's own actions (e.g. "Answer", "Decline" for calls). */
-        val actions: List<String>
+        val actions: List<String>,
+        /** A call that has been answered (as opposed to one that is ringing). An older phone app leaves it out. */
+        val callOngoing: Boolean = false
     ) : Message {
         override fun toJson() = obj("notification").put("key", key).put("app", app).put("sender", sender)
             .put("text", text).put("time", timeMs).put("avatar", avatarJpegBase64 ?: JSONObject.NULL)
-            .put("canReply", canReply).put("isCall", isCall).put("actions", JSONArray(actions))
+            .put("canReply", canReply).put("isCall", isCall).put("actions", JSONArray(actions)).put("ongoing", callOngoing)
     }
 
     data class NotificationRemoved(val key: String) : Message {
@@ -252,7 +254,8 @@ sealed interface Message {
                 o.getString("key"), o.optString("app"), o.optString("sender"), o.optString("text"), o.optLong("time"),
                 o.optString("avatar").takeIf { it.isNotEmpty() && !o.isNull("avatar") },
                 o.optBoolean("canReply"), o.optBoolean("isCall"),
-                o.optJSONArray("actions")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty()
+                o.optJSONArray("actions")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty(),
+                o.optBoolean("ongoing")
             )
             "notification_removed" -> NotificationRemoved(o.getString("key"))
             "voice_state" -> VoiceReplyState(o.getString("key"), VoiceState.valueOf(o.getString("state")), o.optString("text"))

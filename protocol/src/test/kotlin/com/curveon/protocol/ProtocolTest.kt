@@ -26,6 +26,7 @@ class ProtocolTest {
         Message.PhoneStatus("Pixel 9a", 78, true, true, "1.0"),
         Message.NotificationPosted("k1", "WhatsApp", "Kari", "Ses på Dombås? 🏍️", 1L, null, true, false, emptyList()),
         Message.NotificationPosted("k2", "Phone", "Ola", "Incoming call", 2L, "AAAA", false, true, listOf("Answer", "Decline")),
+        Message.NotificationPosted("k3", "Phone", "Ola", "Ongoing call", 3L, null, false, true, listOf("Hang up", "Speaker"), callOngoing = true),
         Message.NotificationRemoved("k1"),
         Message.VoiceReplyState("k1", Message.VoiceState.RESULT, "Ja, 20 minutter"),
         Message.MediaCommand(Message.MediaAction.NEXT),

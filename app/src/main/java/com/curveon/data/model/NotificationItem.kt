@@ -11,7 +11,10 @@ data class NotificationItem(
     val timestampMs: Long = System.currentTimeMillis(),
     val avatar: Bitmap? = null,
     val canReply: Boolean = false,
+    /** Any call: ringing or going on ([isOngoingCall]). */
     val isIncomingCall: Boolean = false,
+    /** A call that has been answered. */
+    val isOngoingCall: Boolean = false,
     /** The notification's own buttons, e.g. "Answer"/"Decline" for calls. */
     val actions: List<String> = emptyList()
 ) {

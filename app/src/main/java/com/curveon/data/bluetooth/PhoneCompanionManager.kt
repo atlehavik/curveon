@@ -448,7 +448,7 @@ class PhoneCompanionManager(
                 val item = NotificationItem(
                     id = msg.key, appName = msg.app, senderName = msg.sender, message = msg.text,
                     timestampMs = msg.timeMs, avatar = msg.avatarJpegBase64?.let(::decode),
-                    canReply = msg.canReply, isIncomingCall = msg.isCall, actions = msg.actions
+                    canReply = msg.canReply, isIncomingCall = msg.isCall, isOngoingCall = msg.callOngoing, actions = msg.actions
                 )
                 _notifications.value = listOf(item) + _notifications.value.filterNot { it.id == msg.key }
             }
@@ -705,7 +705,7 @@ class PhoneCompanionManager(
             }
             is Message.PlaceCall -> {
                 val name = _contacts.value?.firstOrNull { c -> c.numbers.any { it.number == message.number } }?.name ?: message.number
-                _notifications.value = listOf(NotificationItem("democall", "Phone", name, "Calling…", isIncomingCall = true,
+                _notifications.value = listOf(NotificationItem("democall", "Phone", name, "Calling…", isIncomingCall = true, isOngoingCall = true,
                     actions = listOf("Hang up"))) + _notifications.value
             }
             is Message.InvokeAction -> if (message.key == "democall") {

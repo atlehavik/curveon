@@ -72,7 +72,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val phoneState by phone.connectionState.collectAsStateWithLifecycle()
     val phoneName by phone.connectedDeviceName.collectAsStateWithLifecycle()
     val mediaApps by phone.mediaApps.collectAsStateWithLifecycle()
+    /** The call, ringing or answered. */
     val ringing = notifications.firstOrNull { it.isIncomingCall }
+    val callOngoing = ringing?.isOngoingCall == true
 
     val offlineMapStatus by viewModel.offlineMapStatus.collectAsStateWithLifecycle()
     val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
@@ -345,7 +347,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val showTripBar = preview == null && !sketching && mapPick == null && !searchGrowIn
     val turn = currentTurnInstruction
     val showTurn = turn != null && showTripBar
-    val ringingCall = isFullScreenMap && ringing != null
+    // A ringing call is a card in the bottom right corner; once answered it is a floating icon.
+    val ringingCall = isFullScreenMap && ringing != null && !callOngoing
     val showMedia = isFullScreenMap && ringing == null && preview == null && mapPick == null && !sketching && track != null
     // The music beside the turn card when there is room, else above it.
     val sideBySide = mapWidth - 14.dp - 8.dp - SIDE_COLUMN_WIDTH - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
@@ -353,12 +356,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val buttonsTopInset = 14.dp + speedSize.height + 8.dp
     // The music keeps the corner if the buttons still fit above it; otherwise it moves left of them.
     val buttonsFitAboveMedia = mapHeight - buttonsTopInset - (bottomRightHeight + 14.dp + 8.dp) >= MAP_BUTTONS_HEIGHT
-    val buttonsBottomInset = if (showMedia && buttonsFitAboveMedia) bottomRightHeight + 14.dp + 8.dp else 0.dp
-    val rightCardEnd = if (ringingCall || (showMedia && !buttonsFitAboveMedia)) MAP_BUTTONS_RESERVE else 14.dp
+    val buttonsBottomInset = if ((showMedia || ringingCall) && buttonsFitAboveMedia) bottomRightHeight + 14.dp + 8.dp else 0.dp
+    val rightCardEnd = if ((showMedia || ringingCall) && !buttonsFitAboveMedia) MAP_BUTTONS_RESERVE else 14.dp
     val turnWidth = (if (sideBySide && (showMedia || ringingCall)) minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - 8.dp - SIDE_COLUMN_WIDTH - MAP_BUTTONS_RESERVE)
         else minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - MAP_BUTTONS_RESERVE)).coerceAtLeast(0.dp)
     /** How far up from the bottom the cards reach: the rider is lifted to keep clear of them. */
-    val bottomClearance = maxOf(if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp, if (showMedia) bottomRightHeight + 14.dp else 0.dp)
+    val bottomClearance = maxOf(if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp, if (showMedia || ringingCall) bottomRightHeight + 14.dp else 0.dp)
     /** What the status chips (and a wrong turn) must stay above on the left. */
     val leftClearance = if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp
 
@@ -473,16 +476,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 )
             }
         }
-        // In full-screen map a ringing call takes the bottom right corner (left of the map's buttons);
-        // otherwise keep music reachable, like Android Auto's media pill – except while a route
-        // preview needs the bottom (its Go button).
+        // In full-screen map a ringing call is a slim card in the bottom right corner (an answered one
+        // floats, see [callBubble]); otherwise keep music reachable, like Android Auto's media pill –
+        // except while a route preview needs the bottom (its Go button).
         if (isFullScreenMap) {
-            if (ringing != null) {
-                CallCard(ringing, onAction = { i -> phone.invokeAction(ringing.id, i) }, onDismiss = { phone.hideNotification(ringing.id) },
-                    // Never over the speed (top-right): the limit matters during a call too.
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(top = FULL_MAP_SPEED_CLEARANCE)
-                        .padding(start = 14.dp, top = 14.dp, end = rightCardEnd, bottom = 14.dp + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp)
-                        .width(minOf(SIDE_COLUMN_WIDTH, (mapWidth - 14.dp - rightCardEnd).coerceAtLeast(0.dp))).heightIn(max = 360.dp).fillMaxHeight())
+            if (ringingCall) {
+                CallCard(ringing!!, onAction = { i -> phone.invokeAction(ringing.id, i) }, onDismiss = { phone.hideNotification(ringing.id) },
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                        .padding(start = 14.dp, end = rightCardEnd, bottom = 14.dp + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp)
+                        .width(minOf(SIDE_COLUMN_WIDTH, (mapWidth - 14.dp - rightCardEnd).coerceAtLeast(0.dp))))
             } else if (showMedia) track?.let { t ->
                 MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
                     Modifier.align(Alignment.BottomEnd)
@@ -573,7 +575,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // Messages or music (one of them gets the free height), and engine data.
     val cards: @Composable ColumnScope.() -> Unit = {
 
-        val attention = voiceReply != null || notifications.isNotEmpty()
+        // A call is a slim card on top (a message or music goes on below it).
+        ringing?.let { call ->
+            CallCard(call, onAction = { i -> phone.invokeAction(call.id, i) }, onDismiss = { phone.hideNotification(call.id) })
+        }
+        val messages = notifications.filterNot { it.isIncomingCall }
+        val attention = voiceReply != null || messages.isNotEmpty()
         when {
             voiceReply != null -> VoiceReplyCard(
                 reply = voiceReply!!,
@@ -582,8 +589,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onCancel = { phone.cancelVoiceReply() },
                 modifier = Modifier.weight(1f)
             )
-            notifications.isNotEmpty() -> NotificationCard(
-                notifications = notifications,
+            messages.isNotEmpty() -> NotificationCard(
+                notifications = messages,
                 onReply = { phone.startVoiceReply(it.id) },
                 onDismiss = { phone.dismissNotification(it.id) },
                 onSwipe = { phone.hideNotification(it.id) },
@@ -592,7 +599,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
-        // A ringing call gets the whole column; a message shares it with a one-row player.
+        // A message shares the column with a one-row player.
         if (attention) {
             if (ringing == null) track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
         } else {
@@ -843,6 +850,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
 
+    // An answered call on the full map floats over everything (even an open screen), so it can be ended.
+    val callBubble: @Composable BoxScope.() -> Unit = {
+        if (isFullScreenMap && callOngoing) FloatingCallBubble(
+            ringing!!, onAction = { i -> phone.invokeAction(ringing.id, i) }, onDismiss = { phone.hideNotification(ringing.id) },
+            modifier = Modifier.matchParentSize().padding(8.dp)
+        )
+    }
+
     val rootModifier = Modifier
         .fillMaxSize()
         .background(CockpitBackground)
@@ -869,6 +884,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
             }
             panelLayer()
+            callBubble()
             }
             rail()
         }
@@ -887,6 +903,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     }
                 }
                 panelLayer()
+                callBubble()
             }
         }
     }
