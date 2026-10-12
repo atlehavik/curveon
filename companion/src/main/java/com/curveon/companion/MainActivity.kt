@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            Card("Test") {
+            if (BuildConfig.DEV) Card("Test") {
                 Text("Send a fake message or call through the real chain to the tablet. " +
                     "What the tablet sends back (reply, answer, decline) shows up under Status.", color = Muted, fontSize = 13.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

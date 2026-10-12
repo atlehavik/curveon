@@ -172,7 +172,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_rejoin_percent), stringResource(R.string.settings_rejoin_percent_hint)) {
                             Segmented(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
                         }
-                        Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint), small = true) {
+                        if (com.curveon.BuildConfig.DEV) Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint), small = true) {
                             CockpitSwitch(state.demoMode, actions.onDemoMode, accent = NeonAmber)
                         }
                     }
@@ -305,7 +305,7 @@ private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsAc
     SectionTitle(stringResource(R.string.settings_obd_adapter))
     Text(stringResource(R.string.settings_obd_adapter_hint), color = TextSecondary, fontSize = 13.sp)
     val paired = remember { state.pairedDevices() }
-    val choices = paired.map { it.address to it.name } + (com.curveon.data.obd.ObdLink.DEMO to stringResource(R.string.settings_obd_demo))
+    val choices = paired.map { it.address to it.name } + (if (com.curveon.BuildConfig.DEV) listOf(com.curveon.data.obd.ObdLink.DEMO to stringResource(R.string.settings_obd_demo)) else emptyList())
     if (paired.isEmpty()) Text(stringResource(R.string.settings_obd_none_paired), color = NeonAmber, fontSize = 13.sp)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         choices.forEach { (address, name) ->

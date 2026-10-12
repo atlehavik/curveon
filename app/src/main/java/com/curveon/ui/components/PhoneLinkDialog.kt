@@ -110,7 +110,7 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
             runCatching { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         }) { Text(stringResource(R.string.link_bluetooth_settings), color = ElectricCyan) }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        if (com.curveon.BuildConfig.DEV || demo) Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.link_demo_data), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Text(stringResource(R.string.link_demo_data_hint), color = TextMuted, fontSize = 12.sp)

@@ -29,14 +29,18 @@ android {
   }
 
   buildTypes {
+    // DEV: developer aids (demo ride, demo data, fake OBD values) that public releases leave out.
+    debug { buildConfigField("boolean", "DEV", "true") }
     // Like release (not debuggable, so ART runs routing at full speed) but signed with the debug
     // key, so it installs over a debug build and keeps the app's data. For the bike tablet.
     create("ride") {
       initWith(getByName("debug"))
       isDebuggable = false
       matchingFallbacks += "release"
+      buildConfigField("boolean", "DEV", "true")
     }
     release {
+      buildConfigField("boolean", "DEV", "false")
       isCrunchPngs = false
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

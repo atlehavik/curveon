@@ -26,7 +26,9 @@ android {
   }
 
   buildTypes {
+    debug { buildConfigField("boolean", "DEV", "true") }
     release {
+      buildConfigField("boolean", "DEV", "false")
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
       signingConfig = signingConfigs.getByName("release")
@@ -36,7 +38,10 @@ android {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
-  buildFeatures { compose = true }
+  buildFeatures {
+    compose = true
+    buildConfig = true
+  }
 }
 
 dependencies {
