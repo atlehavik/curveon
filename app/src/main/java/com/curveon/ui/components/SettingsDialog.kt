@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -129,8 +131,8 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
     var tab by rememberSaveable { mutableStateOf(if (openEngine) SettingsTab.ENGINE else SettingsTab.DISPLAY) }
     var confirmDelete by remember { mutableStateOf<InstalledMap?>(null) }
     CockpitDialog(title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
-        val pages: @Composable () -> Unit = {
-                when (tab) {
+        val pageFor: @Composable (SettingsTab) -> Unit = { which ->
+                when (which) {
                     SettingsTab.DISPLAY -> Page {
                         if (AppLanguage.canChoose) Setting(stringResource(R.string.settings_language)) {
                             Segmented(AppLanguage.entries, state.language, { it.label }, actions.onLanguage)
@@ -163,9 +165,11 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
                         }
                         val o = state.offRoute
+                        SectionTitle(stringResource(R.string.settings_wrong_turn_title))
                         Setting(stringResource(R.string.settings_off_route), stringResource(R.string.settings_off_route_hint)) {
                             Segmented(listOf(25, 40, 60, 100), o.offRouteMeters, { stringResource(R.string.distance_m, it.toDouble()) }, { actions.onOffRoute(o.copy(offRouteMeters = it)) })
                         }
+                        Text(stringResource(R.string.settings_rejoin_explain), color = TextMuted, fontSize = 13.sp)
                         Setting(stringResource(R.string.settings_rejoin_minutes), stringResource(R.string.settings_rejoin_minutes_hint)) {
                             Segmented(listOf(1, 3, 5, 10), o.maxExtraMinutes, { stringResource(R.string.minutes_short, it) }, { actions.onOffRoute(o.copy(maxExtraMinutes = it)) })
                         }
@@ -206,13 +210,18 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                 }
         }
         val tabs: @Composable () -> Unit = { DialogTabs(SettingsTab.entries, tab, { stringResource(it.label) }, { it.icon }, { tab = it }) }
-        // Upright on a phone the page tabs go on top; otherwise down the left, like Android Auto.
+        // Upright on a phone the page tabs go on top, and the pages can be swiped between; otherwise
+        // the tabs go down the left, like Android Auto.
         if (isNarrowScreen()) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             tabs()
-            Box(Modifier.weight(1f).fillMaxWidth()) { pages() }
+            val pager = rememberPagerState(initialPage = tab.ordinal) { SettingsTab.entries.size }
+            // A tap on a tab scrolls to its page; a swipe lights its tab once it has settled.
+            LaunchedEffect(tab) { if (pager.currentPage != tab.ordinal) pager.animateScrollToPage(tab.ordinal) }
+            LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { tab = SettingsTab.entries[it] } }
+            HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), pageSpacing = 12.dp, verticalAlignment = Alignment.Top) { pageFor(SettingsTab.entries[it]) }
         } else Row(Modifier.fillMaxSize()) {
             tabs()
-            Box(Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp, end = 6.dp)) { pages() }
+            Box(Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp, end = 6.dp)) { pageFor(tab) }
         }
     }
 

@@ -565,10 +565,12 @@
     <!-- Settings: off route -->
     <string name="settings_off_route">Utenfor ruten etter</string>
     <string name="settings_off_route_hint">Avstand fra ruten før navigasjonen reagerer</string>
-    <string name="settings_rejoin_minutes">Stille omkjøring: ekstra tid</string>
-    <string name="settings_rejoin_minutes_hint">Kjør videre stille hvis høyst så mye tregere</string>
-    <string name="settings_rejoin_percent">Stille omkjøring: ekstra andel</string>
-    <string name="settings_rejoin_percent_hint">… og høyst så stor del av resten av turen</string>
+    <string name="settings_wrong_turn_title">Når du kjører feil</string>
+    <string name="settings_rejoin_explain">Kjører du feil, regner Curveon ut om du kan kjøre videre og slutte deg til ruten lenger fram i stedet for å snu. Er omveien liten nok, kjører den bare videre uten å spørre; ellers får du valget. Under ett minutt spør den aldri.</string>
+    <string name="settings_rejoin_minutes">Kjør videre uten å spørre: maks ekstra tid</string>
+    <string name="settings_rejoin_minutes_hint">Høyst så mye lenger enn å snu</string>
+    <string name="settings_rejoin_percent">Kjør videre uten å spørre: maks ekstra andel</string>
+    <string name="settings_rejoin_percent_hint">Høyst så stor del av tiden som er igjen på turen. Den strengeste grensen gjelder.</string>
     <string name="minutes_short">%1$d min</string>
     <string name="link_status_connected">Tilkoblet</string>
     <string name="link_status_connecting">Kobler til …</string>
@@ -614,7 +616,7 @@
     <string name="tour_done">Kjør på</string>
     <string name="tour_welcome_title">Velkommen til Curveon</string>
     <string name="tour_welcome_body">Dashbordet ditt på sykkelen: kart, ruter, musikk og meldinger, og alt virker uten nett. En kort omvisning viser hva knappene og fingerbevegelsene gjør.</string>
-    <string name="tour_search_body">Søk etter steder, adresser, drivstoff og kafeer, uten nett. Lagrede ruter og nylige steder ligger klare i det tomme søket, og derfra kan du velge et punkt i kartet eller tegne en rundtur med fingeren.</string>
+    <string name="tour_search_body">Motorsykkelknappen er Hvor skal du?: søk etter steder, adresser, drivstoff og kafeer, uten nett. Lagrede ruter og nylige steder ligger klare i det tomme søket. Derfra velger du også et punkt i kartet eller tegner en rundtur med fingeren.</string>
     <string name="tour_gpx_body">Hent inn GPX-spor, vis dem i kartet og kjør dem. Hver tur du kjører, tas opp av seg selv og ligger her også.</string>
     <string name="tour_phone_body">Ring favoritter, siste anrop og kontakter. Kjører Curveon på et nettbrett som ikke kan ringe, installerer du Curveon Companion på telefonen: den sender samtaler, meldinger og musikk videre til nettbrettet.</string>
     <string name="tour_settings_body">Last ned offline kart, koble til telefon, velg språk og enheter, og mye mer.</string>
@@ -643,7 +645,7 @@
     <string name="help_group_plan">Planlegge en tur</string>
     <string name="help_group_ride">Underveis</string>
     <string name="help_group_gestures">Fingerbevegelser</string>
-    <string name="help_where_to">Hvor skal du? Søk, lagrede ruter, rundtur</string>
+    <string name="help_where_to">Hvor skal du? (motorsykkelknappen): søk, lagrede ruter, rundtur</string>
     <string name="help_gpx">GPX-spor og turene du har kjørt</string>
     <string name="help_phone">Telefon: favoritter, siste anrop, kontakter</string>
     <string name="help_full_map">Bare kartet</string>
@@ -673,13 +675,13 @@
     <string name="help_swipe_message">Sveip en melding til siden for å skjule den</string>
     <string name="help_swipe_music">Sveip musikkortet for å bytte musikkapp</string>
     <string name="tour_trip_title">Planlegg en tur</string>
-    <string name="tour_trip_body">Velg et sted i Hvor skal du?, så vises Raskest, Svingete og Supersvingete side om side med tid og avstand. Legg til stopp underveis, eller start et annet sted enn der du er. Ser det bra ut, trykker du KJØR.</string>
+    <string name="tour_trip_body">Start med motorsykkelknappen øverst i menyen (Hvor skal du?). Velg et sted der, så vises Raskest, Svingete og Supersvingete side om side med tid og avstand. Legg til stopp underveis, eller start et annet sted enn der du er. Ser det bra ut, trykker du KJØR.</string>
     <string name="tour_edit_title">Endre i kartet</string>
-    <string name="tour_edit_body">Hold fingeren på rutelinjen, eller velg Juster ruten → Endre i kartet. Dra start, mål eller et stopp for å flytte det. Dra i selve linjen, så bøyer ruten seg gjennom punktet der du slipper. Et trykk på et punkt gir en meny; Angre tar tilbake siste endring, Ferdig beholder alt.</string>
-    <string name="tour_loop_title">Rundtur, tegnet for hånd</string>
-    <string name="tour_loop_body">Hvor skal du? → Rundtur: tegn området du vil kjøre i med én finger, så lager Curveon en runde gjennom det uten å kjøre samme vei to ganger. Velg hvor lang den får bli, og asfalt eller grus. En annen runde gir et nytt forslag.</string>
+    <string name="tour_edit_body">Planlegg først en tur (motorsykkelknappen → velg et sted). Hold så fingeren på rutelinjen, eller velg Juster ruten → Endre i kartet. Dra start, mål eller et stopp for å flytte det. Dra i selve linjen, så bøyer ruten seg gjennom punktet der du slipper. Et trykk på et punkt gir en meny; Angre tar tilbake siste endring, Ferdig beholder alt.</string>
+    <string name="tour_loop_title">Lag en rundtur</string>
+    <string name="tour_loop_body">En rundtur starter i menyen, ikke i kartet: trykk på motorsykkelknappen (Hvor skal du?), og så Rundtur. Tegn deretter området du vil kjøre i med én finger, så lager Curveon en runde gjennom det uten å kjøre samme vei to ganger. Velg hvor lang den får bli, og asfalt eller grus. En annen runde gir et nytt forslag.</string>
     <string name="tour_mark_title">Endre bare en del</string>
-    <string name="tour_mark_body">På en lang tur trykker du på de tre prikkene i linjen nederst, og drar så fingeren langs delen du vil endre. Dra deretter delen ut med en stiplet linje, som når du redigerer i kartet. Bare den delen planlegges på nytt, resten av ruten blir som den er. Trykk på knappen igjen for å gå tilbake til å dra i punkter.</string>
+    <string name="tour_mark_body">Planlegg først en lang tur (motorsykkelknappen → velg et sted). Trykk så på de tre prikkene i linjen nederst, og dra fingeren langs delen du vil endre. Dra deretter delen ut med en stiplet linje, som når du redigerer i kartet. Bare den delen planlegges på nytt, resten av ruten blir som den er. Trykk på knappen igjen for å gå tilbake til å dra i punkter.</string>
     <string name="help_group_edit">Endre i kartet</string>
     <string name="help_mark">Marker delen av ruten som skal endres: dra langs den, resten blir</string>
     <string name="help_undo">Angre siste endring</string>

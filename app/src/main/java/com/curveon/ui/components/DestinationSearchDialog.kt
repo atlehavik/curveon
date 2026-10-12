@@ -101,7 +101,7 @@ fun DestinationSearchDialog(
     }
 
     CockpitDialog(
-        title = stringResource(R.string.where_to), icon = Icons.Default.Search, accent = ElectricCyan, onDismiss = onDismiss,
+        title = stringResource(R.string.where_to), icon = Icons.Default.TwoWheeler, accent = ElectricCyan, onDismiss = onDismiss,
         tag = "destination_search_dialog",
         frameModifier = Modifier.graphicsLayer {
             scaleX = 0.2f + 0.8f * size.value

@@ -70,7 +70,7 @@ fun RideLogDialog(
     val autoGroup = gpxGroups.firstOrNull { it.id == autoSaveGroup }
 
     CockpitDialog(
-        title = stringResource(R.string.rides), icon = Icons.Default.TwoWheeler, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog", sideBar = sideBar,
+        title = stringResource(R.string.rides), icon = Icons.Default.History, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog", sideBar = sideBar,
         subtitle = selection?.let { pluralStringResource(R.plurals.rides_selected, it.size, it.size) },
         actions = {
             val sel = selection

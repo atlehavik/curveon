@@ -5,6 +5,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -144,7 +148,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var stopTarget by remember { mutableStateOf<StopTarget?>(null) }
     var showRouteMenu by remember { mutableStateOf(false) }
     /** How high the next turn (and media) card at the map's bottom reaches: the rider is kept clear of it. */
-    var bottomClearance by remember { mutableStateOf(0.dp) }
     /** Suggested name while the save dialog is open. */
     var saveName by remember { mutableStateOf<String?>(null) }
     val askSaveName: () -> Unit = { scope.launch { saveName = viewModel.suggestedRouteName() } }
@@ -330,51 +333,57 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         )
     }
 
+    // Where the cards sit over the map: the trip bar top left, the speed top right, the next turn
+    // bottom left and the music (or a call) bottom right, one to a corner. The map's buttons keep to
+    // the right edge, between the speed and the music, and nothing covers them.
+    val density = LocalDensity.current
+    var mapBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    var speedSize by remember { mutableStateOf(androidx.compose.ui.unit.DpSize.Zero) }
+    val mapWidth = mapBox?.width?.let { with(density) { it.toDp() } } ?: 0.dp
+    val mapHeight = mapBox?.height?.let { with(density) { it.toDp() } } ?: 0.dp
+    // Planning, picking and drawing have the bottom (and the bar's middle); the trip bar and the turn wait.
+    val showTripBar = preview == null && !sketching && mapPick == null && !searchGrowIn
+    val turn = currentTurnInstruction
+    val showTurn = turn != null && showTripBar
+    val ringingCall = isFullScreenMap && ringing != null
+    val showMedia = isFullScreenMap && ringing == null && preview == null && mapPick == null && !sketching && track != null
+    // The music beside the turn card when there is room, else above it.
+    val sideBySide = mapWidth - 14.dp - 8.dp - SIDE_COLUMN_WIDTH - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
+    val bottomRightHeight = BOTTOM_CARD_HEIGHT + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp
+    val buttonsTopInset = 14.dp + speedSize.height + 8.dp
+    // The music keeps the corner if the buttons still fit above it; otherwise it moves left of them.
+    val buttonsFitAboveMedia = mapHeight - buttonsTopInset - (bottomRightHeight + 14.dp + 8.dp) >= MAP_BUTTONS_HEIGHT
+    val buttonsBottomInset = if (showMedia && buttonsFitAboveMedia) bottomRightHeight + 14.dp + 8.dp else 0.dp
+    val rightCardEnd = if (ringingCall || (showMedia && !buttonsFitAboveMedia)) MAP_BUTTONS_RESERVE else 14.dp
+    val turnWidth = (if (sideBySide && (showMedia || ringingCall)) minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - 8.dp - SIDE_COLUMN_WIDTH - MAP_BUTTONS_RESERVE)
+        else minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - MAP_BUTTONS_RESERVE)).coerceAtLeast(0.dp)
+    /** How far up from the bottom the cards reach: the rider is lifted to keep clear of them. */
+    val bottomClearance = maxOf(if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp, if (showMedia) bottomRightHeight + 14.dp else 0.dp)
+    /** What the status chips (and a wrong turn) must stay above on the left. */
+    val leftClearance = if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp
+
     val mapOverlays: @Composable BoxScope.() -> Unit = {
-        // Where the map is, so the bottom cards know how much room there is for the turn card.
-        var mapBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+        // Where the map is, so the corners know how much room there is.
         Box(Modifier.matchParentSize().onGloballyPositioned { mapBox = it.boundsInRoot() })
-        val density = LocalDensity.current
-        // Planning, picking and drawing have the bottom (and the bar's middle); the trip bar waits.
-        val showTripBar = preview == null && !sketching && mapPick == null && !searchGrowIn
-        // Speed, limit and clock top right (the dashboard's side has the engine panel); the trip bar
-        // beside it, as high as the speed, folding out downwards.
-        var speedHeight by remember { mutableStateOf(0.dp) }
-        Row(Modifier.align(Alignment.TopEnd).padding(14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (showTripBar) navigationSummary?.let {
-                NavigationSummaryBar(
-                    it, onStop = { viewModel.stopNavigation() },
-                    modifier = Modifier.weight(1f, fill = false),
-                    foldedHeight = speedHeight,
-                    fuel = fuelHint,
-                    onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } },
-                    onAddStop = { searchPurpose = SearchPurpose.STOP },
-                    onOpen = { showRouteMenu = true }
-                )
-            }
-            MapSpeedCluster(telemetry, cameraAlert, Modifier.tourTarget(TourTarget.SPEED)
-                .onSizeChanged { speedHeight = with(density) { it.height.toDp() } }, showAltitude = showAltitude)
+        // The trip bar top left (folding out downwards), the speed top right.
+        if (showTripBar) navigationSummary?.let {
+            NavigationSummaryBar(
+                it, onStop = { viewModel.stopNavigation() },
+                modifier = Modifier.align(Alignment.TopStart).padding(14.dp)
+                    .widthIn(max = (mapWidth - 14.dp - 14.dp - 8.dp - speedSize.width).coerceAtLeast(0.dp)),
+                foldedHeight = speedSize.height,
+                fuel = fuelHint,
+                onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } },
+                onAddStop = { searchPurpose = SearchPurpose.STOP },
+                onOpen = { showRouteMenu = true }
+            )
         }
-        // The next turn sits at the bottom right (beside the media player in full screen), as high
-        // as the player. While planning or picking, the bottom is busy: it stays top left.
-        val turn = currentTurnInstruction
-        val bottomTurn = turn != null && showTripBar
-        val ringingCall = isFullScreenMap && ringing != null
-        val showMedia = isFullScreenMap && ringing == null && preview == null && mapPick == null && !sketching && track != null
-        if (turn != null && !bottomTurn) {
-            TurnByTurnBanner(turn, modifier = Modifier.align(Alignment.TopStart).padding(14.dp).fillMaxWidth(0.55f))
+        MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
+            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude)
+        // The next turn bottom left, as high as the music beside it.
+        if (showTurn) {
+            TurnByTurnBanner(turn!!, modifier = Modifier.align(Alignment.BottomStart).padding(14.dp).width(turnWidth).height(BOTTOM_CARD_HEIGHT))
         }
-        val mapWidth = mapBox?.width?.let { with(density) { it.toDp() } } ?: 0.dp
-        // Beside the call card or media pill when there is room, else the pill above the turn card.
-        val sideBySide = mapWidth >= 14.dp * 2 + 8.dp + BOTTOM_TURN_MIN_WIDTH + SIDE_COLUMN_WIDTH
-        val turnWidth = (if (sideBySide && (showMedia || ringingCall)) minOf(BOTTOM_TURN_WIDTH, mapWidth - 28.dp - 8.dp - SIDE_COLUMN_WIDTH)
-            else minOf(BOTTOM_TURN_WIDTH, mapWidth - 28.dp)).coerceAtLeast(0.dp)
-        val turnEndPad = if (ringingCall && sideBySide) SIDE_COLUMN_WIDTH + 8.dp else 0.dp
-        if (bottomTurn && !showMedia) {
-            TurnByTurnBanner(turn!!, modifier = Modifier.align(Alignment.BottomEnd).padding(14.dp).padding(end = turnEndPad).width(turnWidth)
-                .height(BOTTOM_CARD_HEIGHT).onSizeChanged { bottomClearance = with(density) { it.height.toDp() } + 14.dp })
-        }
-        LaunchedEffect(bottomTurn, showMedia) { if (!bottomTurn && !showMedia) bottomClearance = 0.dp }
         // Picking a place: just the map and the little bar; the rest waits.
         val pickPurpose = mapPick
         val tripSummary = preview?.selectedRoute?.let { r ->
@@ -407,9 +416,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         } else if (!searchGrowIn) { // nor while the search is back up over the map
             Column(
-                // In full-screen the bottom right has the media pill and the turn card, so keep this left.
-                modifier = (if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 64.dp, bottom = 14.dp + bottomClearance)
-                else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp + bottomClearance)),
+                // In full-screen the bottom right has the media pill, so keep this left, above the turn card.
+                modifier = (if (isFullScreenMap) Modifier.align(Alignment.BottomStart).padding(start = 14.dp, bottom = 14.dp + leftClearance)
+                else Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp + leftClearance)),
                 horizontalAlignment = if (isFullScreenMap) Alignment.Start else Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -464,25 +473,21 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 )
             }
         }
-        // In full-screen map a ringing call takes the corner; otherwise keep music reachable, like
-        // Android Auto's media pill – except while a route preview needs the bottom (its Go button).
+        // In full-screen map a ringing call takes the bottom right corner (left of the map's buttons);
+        // otherwise keep music reachable, like Android Auto's media pill – except while a route
+        // preview needs the bottom (its Go button).
         if (isFullScreenMap) {
             if (ringing != null) {
                 CallCard(ringing, onAction = { i -> phone.invokeAction(ringing.id, i) }, onDismiss = { phone.hideNotification(ringing.id) },
                     // Never over the speed (top-right): the limit matters during a call too.
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(top = FULL_MAP_SPEED_CLEARANCE).padding(14.dp)
-                        .width(SIDE_COLUMN_WIDTH).heightIn(max = 360.dp).fillMaxHeight())
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(top = FULL_MAP_SPEED_CLEARANCE)
+                        .padding(start = 14.dp, top = 14.dp, end = rightCardEnd, bottom = 14.dp + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp)
+                        .width(minOf(SIDE_COLUMN_WIDTH, (mapWidth - 14.dp - rightCardEnd).coerceAtLeast(0.dp))).heightIn(max = 360.dp).fillMaxHeight())
             } else if (showMedia) track?.let { t ->
-                val bottomTurnHere = turn != null && bottomTurn
-                // Side by side: the turn card to the left of the player, both as high.
-                Row(Modifier.align(Alignment.BottomEnd).padding(14.dp).onSizeChanged { bottomClearance = with(density) { it.height.toDp() } + 14.dp },
-                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-                    if (bottomTurnHere && sideBySide) TurnByTurnBanner(turn!!, modifier = Modifier.width(turnWidth).height(BOTTOM_CARD_HEIGHT))
-                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }, Modifier.width(SIDE_COLUMN_WIDTH).height(BOTTOM_CARD_HEIGHT))
-                        if (bottomTurnHere && !sideBySide) TurnByTurnBanner(turn!!, modifier = Modifier.width(turnWidth).height(BOTTOM_CARD_HEIGHT))
-                    }
-                }
+                MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
+                    Modifier.align(Alignment.BottomEnd)
+                        .padding(start = 14.dp, end = rightCardEnd, bottom = 14.dp + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp)
+                        .width(minOf(SIDE_COLUMN_WIDTH, (mapWidth - 14.dp - rightCardEnd).coerceAtLeast(0.dp))).height(BOTTOM_CARD_HEIGHT))
             }
         }
     }
@@ -501,6 +506,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             currentTurnInstruction = currentTurnInstruction,
             isFullScreen = isFullScreenMap,
             bottomClearance = bottomClearance,
+            buttonsTopInset = buttonsTopInset,
+            buttonsBottomInset = buttonsBottomInset,
             dark = mapDark,
             previewRoutes = if (editor != null) listOf(MapRoute(editLine, true)).filter { it.points.size >= 2 }
             else preview?.candidates?.mapIndexedNotNull { i, c ->
@@ -606,68 +613,45 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
     // Turning the phone: the view last used in that orientation (not while the map is taken over for picking).
     LaunchedEffect(portrait) { viewModel.setOrientation(portrait, restore = !mapMode) }
+    // The rail's screens: the open one is lit; pressing it again closes it (like its close button),
+    // pressing another one swaps it in. A pick on the map or a drawing in progress ends first.
+    val activePanel = when {
+        searchPurpose != null -> RailPanel.SEARCH
+        showGpx -> RailPanel.GPX
+        phoneTab != null -> RailPanel.PHONE
+        showSettings -> RailPanel.SETTINGS
+        else -> null
+    }
+    val pressRail: (RailPanel) -> Unit = { panel ->
+        if (mapPick != null) endMapPick()
+        sketching = false
+        closeSearch()
+        showGpx = false
+        phoneTab = null
+        showSettings = false
+        if (panel != activePanel) when (panel) {
+            RailPanel.SEARCH -> searchPurpose = SearchPurpose.DESTINATION
+            RailPanel.GPX -> showGpx = true
+            RailPanel.PHONE -> phoneTab = PhoneTab.FAVORITES
+            RailPanel.SETTINGS -> showSettings = true
+        }
+    }
     val rail: @Composable () -> Unit = {
         Rail(
             vertical = !portrait,
             isFullScreenMap = isFullScreenMap,
-            phoneState = phoneState,
             unread = notifications.size,
-            onSearch = { searchPurpose = SearchPurpose.DESTINATION },
-            onGpx = { showGpx = true },
-            phoneOpen = phoneTab != null,
-            onPhone = { phoneTab = if (phoneTab == null) PhoneTab.FAVORITES else null },
-            onSettings = { showSettings = true },
+            active = activePanel,
+            onPress = pressRail,
             onToggleMap = { viewModel.toggleFullScreenMap() }
         )
     }
 
-    val rootModifier = Modifier
-        .fillMaxSize()
-        .background(CockpitBackground)
-        .statusBarsPadding()
-        .navigationBarsPadding()
-        // A phone's camera hole sits on one edge: keep the rail and cards clear of it, whichever
-        // way round the phone is held.
-        .windowInsetsPadding(WindowInsets.displayCutout)
-        .testTag("dashboard_screen_root")
-    CompositionLocalProvider(LocalTourTargets provides tourTargets) { Box(modifier.fillMaxSize()) {
-    if (portrait) {
-        Column(rootModifier) {
-            Column(Modifier.weight(1f).fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // The map from the top (the speed is on it); music and the engine panel share the bottom.
-                mapArea(Modifier.weight(1f).fillMaxWidth())
-                // Planning a trip needs the map: the preview sheet covers much of it.
-                if (!isFullScreenMap && preview == null) Row(
-                    Modifier.fillMaxWidth().fillMaxHeight(PORTRAIT_CARDS_SHARE).tourTarget(TourTarget.CARDS),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), content = cards)
-                    if (showEngine) enginePanel(Modifier.weight(1f).fillMaxHeight())
-                }
-            }
-            rail()
-        }
-    } else {
-        Row(rootModifier) {
-            rail()
-            Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                mapArea(Modifier.weight(1f).fillMaxHeight())
-                if (!isFullScreenMap) Column(
-                    Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight().tourTarget(TourTarget.CARDS),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (showEngine) enginePanel(Modifier)
-                    cards()
-                }
-            }
-        }
-    }
-    if (showTour) WelcomeTour(tourTargets, firstStart = tourIsFirst, onFinish = { showTour = false; tourIsFirst = false; viewModel.markTourSeen() })
-    } }
-
-    // ------------------------------------------------------------------ dialogs
-
-    CompositionLocalProvider(LocalToast provides toast) {
+    // The rail's screens (Where to?, GPX, Phone, Settings) are laid out over the whole map area, not
+    // in windows of their own, so the rail stays in sight: pressing the open one closes it, another
+    // one swaps it in.
+    val panels: @Composable () -> Unit = {
+      CompositionLocalProvider(LocalToast provides toast) {
         phoneTab?.let { tab ->
             val contacts by phone.contacts.collectAsStateWithLifecycle()
             val recents by phone.recentCalls.collectAsStateWithLifecycle()
@@ -729,6 +713,190 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 } else null
             )
         } }
+
+        if (showGpx) HostDialog(onDismiss = { showGpx = false }) {
+          val gpxPage: @Composable (TracksTab) -> Unit = { which ->
+            val tabs = @Composable {
+                DialogTabs(TracksTab.entries, which, { stringResource(it.label) }, { it.icon }, { tracksTab = it }, width = 170.dp)
+            }
+            if (which == TracksTab.RIDES) RideLogDialog(
+                current = currentRide,
+                rides = rides,
+                onRideAgain = { showGpx = false; viewModel.rideAgain(it) },
+                gpxGroups = gpxGroups,
+                onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
+                autoSaveGroup = autoSaveRidesGroup,
+                onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
+                onDelete = { viewModel.deleteRides(it) },
+                onDismiss = { showGpx = false },
+                sideBar = tabs
+            ) else GpxManagerDialog(
+                tracks = savedGpxTracks,
+                groups = gpxGroups,
+                message = gpxMessage,
+                poiCategories = poiCategories,
+                autoFollow = autoFollow,
+                actions = remember(viewModel) {
+                    GpxActions(
+                        onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
+                        onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
+                        onColor = { t, c -> viewModel.setTrackColor(t, c) },
+                        onReverse = { t, r -> viewModel.setTrackReversed(t, r) },
+                        onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
+                        onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
+                        onDelete = { viewModel.deleteGpx(it) },
+                        onRenameTrack = { t, name -> viewModel.renameTrack(t, name) },
+                        onMove = { t, id, name -> viewModel.moveTrack(t, id, name) },
+                        onGroupVisibility = { viewModel.toggleGroupVisibility(it) },
+                        onGroupDirection = { viewModel.toggleGroupDirection(it) },
+                        onGroupColor = { g, c -> viewModel.setGroupColor(g, c) },
+                        onRenameGroup = { g, name -> viewModel.renameGroup(g, name) },
+                        onDeleteGroup = { g, keep -> viewModel.deleteGroup(g, keep) },
+                        onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) }
+                    )
+                },
+                onTogglePoiCategory = viewModel::togglePoiCategory,
+                onAutoFollow = viewModel::setAutoFollow,
+                onDismiss = { showGpx = false },
+                sideBar = tabs
+            )
+          }
+          // Upright on a phone the two pages can be swiped between, tabs and pages following each other.
+          if (isNarrowScreen()) {
+            val pager = rememberPagerState(initialPage = tracksTab.ordinal) { TracksTab.entries.size }
+            LaunchedEffect(tracksTab) { if (pager.currentPage != tracksTab.ordinal) pager.animateScrollToPage(tracksTab.ordinal) }
+            LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { tracksTab = TracksTab.entries[it] } }
+            HorizontalPager(pager, Modifier.fillMaxSize(), pageSpacing = 8.dp) { gpxPage(TracksTab.entries[it]) }
+          } else gpxPage(tracksTab)
+        }
+
+        if (showSettings) {
+            val installedMaps by viewModel.installedMaps.collectAsStateWithLifecycle()
+            val mapDownload by viewModel.mapDownload.collectAsStateWithLifecycle()
+            val mapQueue by viewModel.mapQueue.collectAsStateWithLifecycle()
+            var showMapCatalog by remember { mutableStateOf(false) }
+            val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+            val autoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) { viewModel.refreshMapStatus() }
+            SettingsDialog(
+                state = SettingsState(
+                    language = remember { com.curveon.AppLanguage.current(context) },
+                    useMph = telemetry.useMph, mapTheme = mapTheme, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
+                    obdEnabled = telemetry.isObdEnabled,
+                    obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
+                    pairedDevices = viewModel.obd::pairedDevices,
+                    autoZoom = autoZoom, showSurfaces = showSurfaces, showAltitude = showAltitude, autoFollowTracks = autoFollow,
+                    offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
+                    isNavigating = navigationSummary != null, demoMode = demoMode,
+                    maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
+                    mapLayers = mapLayers,
+                    mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
+                    routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() },
+                    speedLimitsStatus = remember { viewModel.speedLimitsStatus() }
+                ),
+                actions = SettingsActions(
+                    onLanguage = { com.curveon.AppLanguage.set(context, it) },
+                    onUnits = viewModel::setUseMph,
+                    onMapTheme = viewModel::setMapTheme,
+                    onScreenLock = viewModel::setScreenLock,
+                    onObd = viewModel::setObd,
+                    onObdDevice = viewModel::setObdDevice,
+                    onObdValue = viewModel::toggleObdValue,
+                    onAutoZoom = viewModel::setAutoZoom,
+                    onShowSurfaces = viewModel::setShowSurfaces,
+                    onShowAltitude = viewModel::setShowAltitude,
+                    onAutoFollow = viewModel::setAutoFollow,
+                    onOffRoute = viewModel::setOffRouteSettings,
+                    onDemoMode = viewModel::setDemoMode,
+                    onDownloadMap = viewModel::downloadMap,
+                    onCancelMapDownload = viewModel::cancelMapDownload,
+                    onDeleteMap = viewModel::deleteMap,
+                    onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
+                    onBrowseMaps = { showMapCatalog = true },
+                    onTour = { showSettings = false; tourIsFirst = false; showTour = true },
+                    onMapLayer = viewModel::setMapLayer
+                ),
+                phone = phone,
+                openEngine = settingsOnEngine,
+                onDismiss = { showSettings = false }
+            )
+            if (showMapCatalog) {
+                MapCatalogDialog(
+                    catalog = viewModel.mapCatalog, installed = installedMaps, download = mapDownload, queue = mapQueue,
+                    freeBytes = remember(installedMaps, mapDownload is com.curveon.data.map.MapDownloadState.Running) { viewModel.freeStorageBytes() },
+                    downloadBytes = remember(installedMaps) { viewModel.mapDownloadSizer() },
+                    startContinent = remember { viewModel.currentContinent() },
+                    onDownload = viewModel::downloadMap, onCancel = viewModel::cancelMapDownload,
+                    onDismiss = { showMapCatalog = false }
+                )
+            }
+        }
+      }
+    }
+    val panelLayer: @Composable BoxScope.() -> Unit = {
+        val open = searchPurpose != null || showGpx || phoneTab != null || showSettings
+        // The cover takes every touch, so nothing reaches the map underneath.
+        if (open) Box(Modifier.matchParentSize().pointerInput(Unit) { detectTapGestures { } }) {
+            Box(Modifier.fillMaxSize().imePadding().padding(8.dp)) {
+                CompositionLocalProvider(LocalInPanel provides true) { panels() }
+            }
+        }
+    }
+
+    val rootModifier = Modifier
+        .fillMaxSize()
+        .background(CockpitBackground)
+        .statusBarsPadding()
+        .navigationBarsPadding()
+        // A phone's camera hole sits on one edge: keep the rail and cards clear of it, whichever
+        // way round the phone is held.
+        .windowInsetsPadding(WindowInsets.displayCutout)
+        .testTag("dashboard_screen_root")
+    CompositionLocalProvider(LocalTourTargets provides tourTargets) { Box(modifier.fillMaxSize()) {
+    if (portrait) {
+        Column(rootModifier) {
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+            Column(Modifier.fillMaxSize().padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // The map from the top (the speed is on it); music and the engine panel share the bottom.
+                mapArea(Modifier.weight(1f).fillMaxWidth())
+                // Planning a trip needs the map: the preview sheet covers much of it.
+                if (!isFullScreenMap && preview == null) Row(
+                    Modifier.fillMaxWidth().fillMaxHeight(PORTRAIT_CARDS_SHARE).tourTarget(TourTarget.CARDS),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), content = cards)
+                    if (showEngine) enginePanel(Modifier.weight(1f).fillMaxHeight())
+                }
+            }
+            panelLayer()
+            }
+            rail()
+        }
+    } else {
+        Row(rootModifier) {
+            rail()
+            Box(Modifier.fillMaxSize()) {
+                Row(Modifier.fillMaxSize().padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    mapArea(Modifier.weight(1f).fillMaxHeight())
+                    if (!isFullScreenMap) Column(
+                        Modifier.width(SIDE_COLUMN_WIDTH).fillMaxHeight().tourTarget(TourTarget.CARDS),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (showEngine) enginePanel(Modifier)
+                        cards()
+                    }
+                }
+                panelLayer()
+            }
+        }
+    }
+    if (showTour) WelcomeTour(tourTargets, firstStart = tourIsFirst, onFinish = { showTour = false; tourIsFirst = false; viewModel.markTourSeen() })
+    } }
+
+    // ------------------------------------------------------------------ dialogs
+
+    CompositionLocalProvider(LocalToast provides toast) {
+
 
         val favoriteSaved = stringResource(R.string.favorite_saved)
         pendingPlace?.let { (point, name) ->
@@ -821,52 +989,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
-        if (showGpx) HostDialog(onDismiss = { showGpx = false }) {
-            val tabs = @Composable {
-                DialogTabs(TracksTab.entries, tracksTab, { stringResource(it.label) }, { it.icon }, { tracksTab = it }, width = 170.dp)
-            }
-            if (tracksTab == TracksTab.RIDES) RideLogDialog(
-                current = currentRide,
-                rides = rides,
-                onRideAgain = { showGpx = false; viewModel.rideAgain(it) },
-                gpxGroups = gpxGroups,
-                onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
-                autoSaveGroup = autoSaveRidesGroup,
-                onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
-                onDelete = { viewModel.deleteRides(it) },
-                onDismiss = { showGpx = false },
-                sideBar = tabs
-            ) else GpxManagerDialog(
-                tracks = savedGpxTracks,
-                groups = gpxGroups,
-                message = gpxMessage,
-                poiCategories = poiCategories,
-                autoFollow = autoFollow,
-                actions = remember(viewModel) {
-                    GpxActions(
-                        onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
-                        onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
-                        onColor = { t, c -> viewModel.setTrackColor(t, c) },
-                        onReverse = { t, r -> viewModel.setTrackReversed(t, r) },
-                        onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
-                        onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
-                        onDelete = { viewModel.deleteGpx(it) },
-                        onRenameTrack = { t, name -> viewModel.renameTrack(t, name) },
-                        onMove = { t, id, name -> viewModel.moveTrack(t, id, name) },
-                        onGroupVisibility = { viewModel.toggleGroupVisibility(it) },
-                        onGroupDirection = { viewModel.toggleGroupDirection(it) },
-                        onGroupColor = { g, c -> viewModel.setGroupColor(g, c) },
-                        onRenameGroup = { g, name -> viewModel.renameGroup(g, name) },
-                        onDeleteGroup = { g, keep -> viewModel.deleteGroup(g, keep) },
-                        onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) }
-                    )
-                },
-                onTogglePoiCategory = viewModel::togglePoiCategory,
-                onAutoFollow = viewModel::setAutoFollow,
-                onDismiss = { showGpx = false },
-                sideBar = tabs
-            )
-        }
 
         shownPoi?.let { poi ->
             PoiDialog(
@@ -879,67 +1001,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
 
 
-        if (showSettings) {
-            val installedMaps by viewModel.installedMaps.collectAsStateWithLifecycle()
-            val mapDownload by viewModel.mapDownload.collectAsStateWithLifecycle()
-            val mapQueue by viewModel.mapQueue.collectAsStateWithLifecycle()
-            var showMapCatalog by remember { mutableStateOf(false) }
-            val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-            val autoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
-            LaunchedEffect(Unit) { viewModel.refreshMapStatus() }
-            SettingsDialog(
-                state = SettingsState(
-                    language = remember { com.curveon.AppLanguage.current(context) },
-                    useMph = telemetry.useMph, mapTheme = mapTheme, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
-                    obdEnabled = telemetry.isObdEnabled,
-                    obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
-                    pairedDevices = viewModel.obd::pairedDevices,
-                    autoZoom = autoZoom, showSurfaces = showSurfaces, showAltitude = showAltitude, autoFollowTracks = autoFollow,
-                    offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
-                    isNavigating = navigationSummary != null, demoMode = demoMode,
-                    maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
-                    mapLayers = mapLayers,
-                    mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
-                    routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() },
-                    speedLimitsStatus = remember { viewModel.speedLimitsStatus() }
-                ),
-                actions = SettingsActions(
-                    onLanguage = { com.curveon.AppLanguage.set(context, it) },
-                    onUnits = viewModel::setUseMph,
-                    onMapTheme = viewModel::setMapTheme,
-                    onScreenLock = viewModel::setScreenLock,
-                    onObd = viewModel::setObd,
-                    onObdDevice = viewModel::setObdDevice,
-                    onObdValue = viewModel::toggleObdValue,
-                    onAutoZoom = viewModel::setAutoZoom,
-                    onShowSurfaces = viewModel::setShowSurfaces,
-                    onShowAltitude = viewModel::setShowAltitude,
-                    onAutoFollow = viewModel::setAutoFollow,
-                    onOffRoute = viewModel::setOffRouteSettings,
-                    onDemoMode = viewModel::setDemoMode,
-                    onDownloadMap = viewModel::downloadMap,
-                    onCancelMapDownload = viewModel::cancelMapDownload,
-                    onDeleteMap = viewModel::deleteMap,
-                    onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
-                    onBrowseMaps = { showMapCatalog = true },
-                    onTour = { showSettings = false; tourIsFirst = false; showTour = true },
-                    onMapLayer = viewModel::setMapLayer
-                ),
-                phone = phone,
-                openEngine = settingsOnEngine,
-                onDismiss = { showSettings = false }
-            )
-            if (showMapCatalog) {
-                MapCatalogDialog(
-                    catalog = viewModel.mapCatalog, installed = installedMaps, download = mapDownload, queue = mapQueue,
-                    freeBytes = remember(installedMaps, mapDownload is com.curveon.data.map.MapDownloadState.Running) { viewModel.freeStorageBytes() },
-                    downloadBytes = remember(installedMaps) { viewModel.mapDownloadSizer() },
-                    startContinent = remember { viewModel.currentContinent() },
-                    onDownload = viewModel::downloadMap, onCancel = viewModel::cancelMapDownload,
-                    onDismiss = { showMapCatalog = false }
-                )
-            }
-        }
     }
 
 }
@@ -949,10 +1010,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
  * at a glance; the map still gets ~55% of the screen and goes full width with one tap.
  */
 private val SIDE_COLUMN_WIDTH = 300.dp
-/** The turn card at the bottom right and the media player beside it are this high. */
+/** The turn card at the bottom left and the media player at the bottom right are this high. */
 private val BOTTOM_CARD_HEIGHT = 72.dp
 private val BOTTOM_TURN_WIDTH = 320.dp
 private val BOTTOM_TURN_MIN_WIDTH = 220.dp
+/** The map's button column (CurveonMapView): four 52 dp buttons, 10 dp apart. */
+private val MAP_BUTTONS_HEIGHT = 52.dp * 4 + 10.dp * 3
+/** From the map's right edge: the buttons, their margin and a gap; cards on the left stay clear of it. */
+private val MAP_BUTTONS_RESERVE = 14.dp + 52.dp + 8.dp
 
 /** Upright, the speed and music cards take this much of the height under the map. */
 private const val PORTRAIT_CARDS_SHARE = 0.34f
@@ -960,43 +1025,44 @@ private const val PORTRAIT_CARDS_SHARE = 0.34f
 /** Room for the full-map speed and limit sign in the top-right corner (about 66 dp tall). */
 private val FULL_MAP_SPEED_CLEARANCE = 80.dp
 
+/** The screens the rail opens over the map. */
+private enum class RailPanel { SEARCH, GPX, PHONE, SETTINGS }
+
 @Composable
 private fun Rail(
     /** Down the left side (landscape), or along the bottom (portrait). */
     vertical: Boolean,
     isFullScreenMap: Boolean,
-    phoneState: CompanionConnectionState,
     unread: Int,
-    onSearch: () -> Unit,
-    onGpx: () -> Unit,
-    phoneOpen: Boolean,
-    onPhone: () -> Unit,
-    onSettings: () -> Unit,
+    /** The screen that is open: its button is lit. */
+    active: RailPanel?,
+    onPress: (RailPanel) -> Unit,
     onToggleMap: () -> Unit
 ) {
     // A phone held sideways is lower than the X7 (about 410 dp against 540): smaller buttons, so
     // the map toggle at the bottom still fits.
     val compact = vertical && LocalConfiguration.current.screenHeightDp < 480
     val search: @Composable () -> Unit = {
-        RailButton(Icons.Default.Search, stringResource(R.string.where_to), ElectricCyan, Color(0xFF00363D), filled = true, tag = "rail_search", target = TourTarget.SEARCH, onClick = onSearch)
+        RailButton(Icons.Default.TwoWheeler, stringResource(R.string.where_to), ElectricCyan, ElectricCyan, filled = active == RailPanel.SEARCH, tag = "rail_search", target = TourTarget.SEARCH, onClick = { onPress(RailPanel.SEARCH) })
     }
     val gpx: @Composable () -> Unit = {
-        RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, tag = "rail_gpx", target = TourTarget.GPX, onClick = onGpx)
+        RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, filled = active == RailPanel.GPX, tag = "rail_gpx", target = TourTarget.GPX, onClick = { onPress(RailPanel.GPX) })
     }
     val phone: @Composable () -> Unit = {
-        RailButton(Icons.Default.Phone, stringResource(R.string.phone), EcoGreen, if (phoneOpen) Color.Black else EcoGreen,
-            filled = phoneOpen, tag = "rail_phone", target = TourTarget.PHONE, onClick = onPhone)
+        RailButton(Icons.Default.Phone, stringResource(R.string.phone), ElectricCyan, EcoGreen, filled = active == RailPanel.PHONE,
+            tag = "rail_phone", target = TourTarget.PHONE, onClick = { onPress(RailPanel.PHONE) })
     }
     val settings: @Composable () -> Unit = {
-        RailButton(Icons.Default.Settings, stringResource(R.string.settings), TextSecondary, TextPrimary, tag = "rail_settings", target = TourTarget.SETTINGS, onClick = onSettings)
+        RailButton(Icons.Default.Settings, stringResource(R.string.settings), ElectricCyan, TextPrimary, filled = active == RailPanel.SETTINGS, tag = "rail_settings", target = TourTarget.SETTINGS, onClick = { onPress(RailPanel.SETTINGS) })
     }
+    // The map toggle shows a mode, not a screen: it only changes its symbol.
     val mapToggle: @Composable () -> Unit = {
         Box {
             RailButton(
                 if (isFullScreenMap) Icons.Default.Dashboard else Icons.Default.Map,
                 stringResource(if (isFullScreenMap) R.string.dashboard else R.string.full_map),
-                ElectricCyan, if (isFullScreenMap) Color(0xFF00363D) else ElectricCyan,
-                filled = isFullScreenMap, tag = "rail_toggle_map", target = TourTarget.MAP_TOGGLE, onClick = onToggleMap
+                ElectricCyan, ElectricCyan,
+                tag = "rail_toggle_map", target = TourTarget.MAP_TOGGLE, onClick = onToggleMap
             )
             if (isFullScreenMap && unread > 0) {
                 Box(
@@ -1046,7 +1112,7 @@ private fun RailButton(
             .clickable(onClick = onClick)
             .testTag(tag),
         contentAlignment = Alignment.Center
-    ) { Icon(icon, description, tint = tint, modifier = Modifier.size(28.dp)) }
+    ) { Icon(icon, description, tint = if (filled) Color(0xFF00363D) else tint, modifier = Modifier.size(28.dp)) }
 }
 
 /**
@@ -1084,5 +1150,5 @@ private sealed interface StopTarget {
 /** Pages of the GPX & rides dialog (rail button). */
 private enum class TracksTab(val label: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     GPX(R.string.gpx_tab, Icons.Default.Route),
-    RIDES(R.string.rides, Icons.Default.TwoWheeler)
+    RIDES(R.string.rides, Icons.Default.History)
 }

@@ -129,6 +129,9 @@ fun CurveonMapView(
     isFullScreen: Boolean,
     /** How far up from the bottom the cards over the map reach: the rider is lifted to keep clear of them. */
     bottomClearance: androidx.compose.ui.unit.Dp = 0.dp,
+    /** Room the cards over the map take above and below the right-hand buttons: the buttons sit between them. */
+    buttonsTopInset: androidx.compose.ui.unit.Dp = 0.dp,
+    buttonsBottomInset: androidx.compose.ui.unit.Dp = 0.dp,
     modifier: Modifier = Modifier,
     dark: Boolean = true,
     previewRoutes: List<MapRoute> = emptyList(),
@@ -249,7 +252,10 @@ fun CurveonMapView(
         mapView.getMapAsync { m ->
             m.uiSettings.apply {
                 isAttributionEnabled = true
-                attributionGravity = Gravity.BOTTOM or Gravity.START
+                // The map's licence notice has to stay readable: left edge, halfway up, where no card sits.
+                attributionGravity = Gravity.CENTER_VERTICAL or Gravity.START
+                val margin = (8 * mapView.resources.displayMetrics.density).toInt()
+                setAttributionMargins(margin, 0, 0, 0)
                 isLogoEnabled = false
                 isCompassEnabled = false
             }
@@ -835,7 +841,7 @@ fun CurveonMapView(
         // button brings the camera back to them; it hides again while following. +/- are always
         // there: while following with auto-zoom they nudge the speed-based zoom, otherwise they zoom.
         if (!inPreview) Column(
-            modifier = Modifier.align(Alignment.CenterEnd).padding(14.dp).tourTarget(TourTarget.MAP_BUTTONS),
+            modifier = Modifier.align(Alignment.CenterEnd).padding(top = buttonsTopInset, bottom = buttonsBottomInset).padding(14.dp).tourTarget(TourTarget.MAP_BUTTONS),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             MapButton(

@@ -80,12 +80,12 @@ private fun sym(icon: ImageVector, tint: Color, @StringRes text: Int, filled: Bo
 private fun glyph(g: String, @StringRes text: Int) = HelpSymbol(null, g, ElectricCyan, text)
 
 private val RAIL_SYMBOLS = listOf(
-    sym(Icons.Default.Search, ElectricCyan, R.string.help_where_to, filled = true),
+    sym(Icons.Default.TwoWheeler, ElectricCyan, R.string.help_where_to),
     sym(Icons.Default.Route, ElectricCyan, R.string.help_gpx),
     sym(Icons.Default.Phone, EcoGreen, R.string.help_phone),
     sym(Icons.Default.Settings, TextPrimary, R.string.settings),
     sym(Icons.Default.Map, ElectricCyan, R.string.help_full_map),
-    sym(Icons.Default.Dashboard, ElectricCyan, R.string.help_dashboard, filled = true)
+    sym(Icons.Default.Dashboard, ElectricCyan, R.string.help_dashboard)
 )
 private val MAP_SYMBOLS = listOf(
     glyph("N", R.string.help_north_up),
@@ -153,7 +153,7 @@ private class TourStep(
 private val STEPS = listOf(
     TourStep(null, Icons.Default.Public, ElectricCyan, R.string.settings_language, R.string.settings_language, language = true),
     TourStep(null, Icons.Default.TwoWheeler, ElectricCyan, R.string.tour_welcome_title, R.string.tour_welcome_body, welcome = true),
-    TourStep(TourTarget.SEARCH, Icons.Default.Search, ElectricCyan, R.string.where_to, R.string.tour_search_body),
+    TourStep(TourTarget.SEARCH, Icons.Default.TwoWheeler, ElectricCyan, R.string.where_to, R.string.tour_search_body),
     TourStep(TourTarget.GPX, Icons.Default.Route, ElectricCyan, R.string.gpx_manager, R.string.tour_gpx_body),
     TourStep(TourTarget.PHONE, Icons.Default.Phone, EcoGreen, R.string.phone, R.string.tour_phone_body),
     TourStep(TourTarget.SETTINGS, Icons.Default.Settings, TextPrimary, R.string.settings, R.string.tour_settings_body),
@@ -167,10 +167,10 @@ private val STEPS = listOf(
     TourStep(null, Icons.Default.Speed, NeonAmber, R.string.tour_engine_title, R.string.tour_engine_body, art = TourArt.ENGINE),
     TourStep(null, Icons.Default.Bluetooth, BluetoothAccent, R.string.tour_setup_title, R.string.tour_setup_body, art = TourArt.SETUP),
     TourStep(null, Icons.Default.PhoneAndroid, EcoGreen, R.string.tour_solo_title, R.string.tour_solo_body, art = TourArt.SOLO),
-    TourStep(null, Icons.Default.Search, ElectricCyan, R.string.tour_trip_title, R.string.tour_trip_body, art = TourArt.PLAN),
+    TourStep(TourTarget.SEARCH, Icons.Default.TwoWheeler, ElectricCyan, R.string.tour_trip_title, R.string.tour_trip_body, art = TourArt.PLAN),
     TourStep(null, Icons.Default.Gesture, NeonAmber, R.string.tour_edit_title, R.string.tour_edit_body, art = TourArt.EDIT),
     TourStep(null, Icons.Default.LinearScale, NeonAmber, R.string.tour_mark_title, R.string.tour_mark_body, art = TourArt.MARK),
-    TourStep(null, Icons.Default.Draw, NeonAmber, R.string.tour_loop_title, R.string.tour_loop_body, art = TourArt.LOOP),
+    TourStep(TourTarget.SEARCH, Icons.Default.Draw, NeonAmber, R.string.tour_loop_title, R.string.tour_loop_body, art = TourArt.LOOP),
     TourStep(null, Icons.Default.AltRoute, NeonAmber, R.string.help_group_plan, R.string.tour_plan_body, PLAN_SYMBOLS),
     TourStep(null, Icons.Default.Navigation, EcoGreen, R.string.help_group_ride, R.string.tour_ride_body, RIDE_SYMBOLS),
     TourStep(TourTarget.SETTINGS, Icons.Default.HelpOutline, ElectricCyan, R.string.tour_done_title, R.string.tour_done_body)

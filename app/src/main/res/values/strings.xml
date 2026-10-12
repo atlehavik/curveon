@@ -566,10 +566,12 @@
     <!-- Settings: off route -->
     <string name="settings_off_route">Off route after</string>
     <string name="settings_off_route_hint">Distance from the line before navigation reacts</string>
-    <string name="settings_rejoin_minutes">Quiet rejoin: extra time</string>
-    <string name="settings_rejoin_minutes_hint">Carry on quietly if at most this much slower</string>
-    <string name="settings_rejoin_percent">Quiet rejoin: extra share</string>
-    <string name="settings_rejoin_percent_hint">…and at most this share of the trip left</string>
+    <string name="settings_wrong_turn_title">If you ride off the route</string>
+    <string name="settings_rejoin_explain">Off the route, Curveon works out whether you can carry on and join the route further ahead instead of turning round. If that detour is small enough it just carries on, without asking; otherwise you get the choice. Under a minute never asks.</string>
+    <string name="settings_rejoin_minutes">Carry on without asking: max extra time</string>
+    <string name="settings_rejoin_minutes_hint">At most this much longer than turning back</string>
+    <string name="settings_rejoin_percent">Carry on without asking: max extra share</string>
+    <string name="settings_rejoin_percent_hint">At most this share of the time left on the trip. The stricter limit applies.</string>
     <string name="minutes_short">%1$d min</string>
     <string name="link_status_connected">Connected</string>
     <string name="link_status_connecting">Connecting…</string>
@@ -615,7 +617,7 @@
     <string name="tour_done">Let\'s ride</string>
     <string name="tour_welcome_title">Welcome to Curveon</string>
     <string name="tour_welcome_body">Your riding dashboard: maps, routes, music and messages, all of it working without a connection. A short tour shows what the buttons and gestures do.</string>
-    <string name="tour_search_body">Search places, addresses, fuel and cafés, offline. Saved routes and recent places wait in the empty search, and from there you can pick a point on the map or draw a roundtrip with a finger.</string>
+    <string name="tour_search_body">The motorcycle button is Where to?: search places, addresses, fuel and cafés, offline. Saved routes and recent places wait in the empty search. From there you also pick a point on the map or draw a roundtrip with a finger.</string>
     <string name="tour_gpx_body">Import GPX tracks, show them on the map and ride them. Every ride is recorded by itself and kept here too.</string>
     <string name="tour_phone_body">Call favourites, recent calls and contacts. If Curveon runs on a tablet that can\'t make calls, install Curveon Companion on your phone: it passes calls, messages and music on to the tablet.</string>
     <string name="tour_settings_body">Download offline maps, link your phone, choose language and units, and much more.</string>
@@ -644,7 +646,7 @@
     <string name="help_group_plan">Planning a trip</string>
     <string name="help_group_ride">Underway</string>
     <string name="help_group_gestures">Gestures</string>
-    <string name="help_where_to">Where to? Search, saved routes, roundtrip</string>
+    <string name="help_where_to">Where to? (motorcycle button): search, saved routes, roundtrip</string>
     <string name="help_gpx">GPX tracks and your recorded rides</string>
     <string name="help_phone">Phone: favourites, recent calls, contacts</string>
     <string name="help_full_map">The map alone</string>
@@ -674,13 +676,13 @@
     <string name="help_swipe_message">Swipe a message sideways to hide it</string>
     <string name="help_swipe_music">Swipe the music card to change music app</string>
     <string name="tour_trip_title">Plan a trip</string>
-    <string name="tour_trip_body">Pick a place in Where to?, and Fastest, Curvy and Super curvy appear side by side with time and distance. Add stops along the way, or start somewhere other than here. When it looks right, press GO.</string>
+    <string name="tour_trip_body">Start with the motorcycle button at the top of the menu (Where to?). Pick a place there, and Fastest, Curvy and Super curvy appear side by side with time and distance. Add stops along the way, or start somewhere other than here. When it looks right, press GO.</string>
     <string name="tour_edit_title">Edit on the map</string>
-    <string name="tour_edit_body">Hold a finger on the route line, or choose Adjust route → Edit on map. Drag the start, the destination or a stop to move it. Drag the line itself and the route bends through the point where you let go. A tap on a point gives a menu; Undo takes back the last change, Done keeps it all.</string>
-    <string name="tour_loop_title">A roundtrip, drawn by hand</string>
-    <string name="tour_loop_body">Where to? → Roundtrip: draw the area you want to ride in with one finger, and Curveon builds a loop through it without riding the same road twice. Choose how long it may be, and tarmac or gravel. Another loop gives a new suggestion.</string>
+    <string name="tour_edit_body">First plan a trip (motorcycle button → pick a place). Then hold a finger on the route line, or choose Adjust route → Edit on map. Drag the start, the destination or a stop to move it. Drag the line itself and the route bends through the point where you let go. A tap on a point gives a menu; Undo takes back the last change, Done keeps it all.</string>
+    <string name="tour_loop_title">Make a roundtrip</string>
+    <string name="tour_loop_body">A roundtrip starts in the menu, not on the map: press the motorcycle button (Where to?), then Roundtrip. Now draw the area you want to ride in with one finger, and Curveon builds a loop through it without riding the same road twice. Choose how long it may be, and tarmac or gravel. Another loop gives a new suggestion.</string>
     <string name="tour_mark_title">Change just one part</string>
-    <string name="tour_mark_body">On a long trip, press the three dots in the bar at the bottom, then drag a finger along the part you want to change. Then pull the part out with a dashed line, just as when editing on the map. Only that part is planned again; the rest of the route stays as it is. Press the button again to go back to dragging points.</string>
+    <string name="tour_mark_body">First plan a long trip (motorcycle button → pick a place). Then press the three dots in the bar at the bottom, and drag a finger along the part you want to change. Then pull the part out with a dashed line, just as when editing on the map. Only that part is planned again; the rest of the route stays as it is. Press the button again to go back to dragging points.</string>
     <string name="help_group_edit">Editing on the map</string>
     <string name="help_mark">Mark the part of the route to change: drag along it, the rest stays</string>
     <string name="help_undo">Undo the last change</string>

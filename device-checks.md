@@ -6,6 +6,20 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-12 — Corners, panels over the map, swipe, new menu icons
+
+- [ ] X7 riding (not the demo ride): the trip bar sits top left, the speed top right, the next turn
+      bottom left, music bottom right (full map), and the map's buttons keep clear of all four. A
+      call on the full map takes the bottom right, left of the buttons.
+- [ ] Pixel sideways and upright (Curveon on the phone): the same, with nothing over the +/− and
+      3D buttons; the map's (i) licence button sits halfway up the left edge and opens its text.
+- [ ] Rail: the open screen's button is blue; pressing it again closes the screen, pressing another
+      one swaps it in; Back closes it; the keyboard in "Where to?" doesn't hide the field.
+- [ ] Upright (X7 or Pixel): Settings and GPX & rides swipe between their pages, and the tab row
+      follows. Sliders and horizontal lists inside the pages still scroll without changing page.
+- [ ] Welcome tour (Settings → Help): Where to?, Plan a trip and Roundtrip light up the motorcycle
+      button and say what to press first.
+
 ## 2026-10-11 — New app icons (motorcycle on the curve)
 
 - [ ] Pixel: Curveon and Curveon Companion (the cyan phone with the new art on its screen) show

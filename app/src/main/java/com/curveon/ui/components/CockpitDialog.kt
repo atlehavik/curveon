@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.view.WindowCompat
@@ -41,6 +42,12 @@ import com.curveon.ui.theme.*
  * since the dashboard's own toast is hidden behind an open dialog.
  */
 val LocalToast = compositionLocalOf<String?> { null }
+
+/**
+ * True inside the dashboard's panel area: the rail screens are laid out over the map instead of in
+ * a window of their own, so the rail stays in sight and pressable.
+ */
+val LocalInPanel = compositionLocalOf { false }
 
 /**
  * The one dialog frame every rail screen uses (Where to?, Roundtrip, GPX, Phone, Settings, Rides):
@@ -65,9 +72,10 @@ fun CockpitDialog(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val toast = LocalToast.current
+    val inPanel = LocalInPanel.current
     val frame = @Composable {
         Box(
-            frameModifier.fillMaxWidth(0.94f).fillMaxHeight(0.94f).clip(DialogShape).background(CockpitSurface)
+            frameModifier.then(if (inPanel) Modifier.fillMaxSize() else Modifier.fillMaxWidth(0.94f).fillMaxHeight(0.94f)).clip(DialogShape).background(CockpitSurface)
                 .border(1.dp, CockpitBorder, DialogShape).testTag(tag)
         ) {
             Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -103,8 +111,10 @@ fun CockpitDialog(
             }
         }
     }
-    // Inside a [HostDialog] the pages swap without closing and reopening the window.
-    if (LocalInHostDialog.current) frame()
+    // In the dashboard's panel area it is just laid out there (Back closes it); inside a
+    // [HostDialog] the pages swap without closing and reopening the window.
+    if (inPanel) { BackHandler(onBack = onDismiss); frame() }
+    else if (LocalInHostDialog.current) frame()
     else Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) { HideSystemBars(); frame() }
 }
 
@@ -130,6 +140,10 @@ private val LocalInHostDialog = compositionLocalOf { false }
 /** One dialog window whose [CockpitDialog] pages (e.g. GPX and Rides) can change in place. */
 @Composable
 fun HostDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
+    if (LocalInPanel.current) {
+        CompositionLocalProvider(LocalInHostDialog provides true) { content() }
+        return
+    }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         HideSystemBars()
         CompositionLocalProvider(LocalInHostDialog provides true) { content() }
