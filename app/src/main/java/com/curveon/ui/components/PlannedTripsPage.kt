@@ -19,7 +19,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -32,6 +31,10 @@ import com.curveon.R
 import com.curveon.data.model.GpxGroup
 import com.curveon.data.model.RouteGroup
 import com.curveon.data.model.RouteItem
+import com.curveon.data.routing.SavedRoutes
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.curveon.ui.theme.*
 
 /**
@@ -42,8 +45,12 @@ import com.curveon.ui.theme.*
 fun ColumnScope.PlannedTripsPage(
     trips: List<RouteItem>,
     groups: List<RouteGroup>,
+    /** GPX groups, for "Save to GPX". */
+    gpxGroups: List<GpxGroup>,
     /** Plan the trip on the map; true = the other way round. */
     onRide: (RouteItem, Boolean) -> Unit,
+    /** Keep the trip's line as a GPX track: (trip, existing group or null, new group name or null). */
+    onSaveToGpx: (RouteItem, Long?, String?) -> Unit,
     onRename: (RouteItem, String) -> Unit,
     /** (trip, existing group or null, new group name or null). */
     onMove: (RouteItem, Long?, String?) -> Unit,
@@ -52,16 +59,17 @@ fun ColumnScope.PlannedTripsPage(
     /** (group, keep its trips as loose ones). */
     onDeleteGroup: (RouteGroup, Boolean) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(listOf<Long>()) }
-    /** Trips set to be ridden the other way. */
-    var reversed by rememberSaveable { mutableStateOf(listOf<Long>()) }
+    var expandedGroups by rememberSaveable { mutableStateOf(listOf<Long>()) }
+    /** The trip whose details are open. */
+    var openTrip by rememberSaveable { mutableStateOf<Long?>(null) }
     var renaming by remember { mutableStateOf<Any?>(null) }
     var moving by remember { mutableStateOf<RouteItem?>(null) }
+    var savingToGpx by remember { mutableStateOf<RouteItem?>(null) }
     var confirmDelete by remember { mutableStateOf<RouteItem?>(null) }
     var confirmDeleteGroup by remember { mutableStateOf<RouteGroup?>(null) }
     val byGroup = remember(trips, groups) { trips.filter { t -> groups.any { it.id == t.groupId } }.groupBy { it.groupId!! } }
-    val rows = remember(trips, groups, expanded) {
-        groups.flatMap { g -> listOf<Any>(g) + (if (g.id in expanded) byGroup[g.id].orEmpty() else emptyList()) } +
+    val rows = remember(trips, groups, expandedGroups) {
+        groups.flatMap { g -> listOf<Any>(g) + (if (g.id in expandedGroups) byGroup[g.id].orEmpty() else emptyList()) } +
             trips.filter { t -> groups.none { it.id == t.groupId } }
     }
 
@@ -69,27 +77,27 @@ fun ColumnScope.PlannedTripsPage(
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
             Text(stringResource(R.string.planned_empty), color = TextMuted, fontSize = 14.sp, modifier = Modifier.padding(24.dp))
         }
-    } else LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    } else LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(rows, key = { if (it is RouteGroup) "g${it.id}" else "t${(it as RouteItem).id}" }) { row ->
             if (row is RouteGroup) {
                 val members = byGroup[row.id].orEmpty()
-                val open = row.id in expanded
+                val open = row.id in expandedGroups
                 Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant)
-                        .border(1.dp, CockpitBorder, RoundedCornerShape(14.dp)).clickable { expanded = if (open) expanded - row.id else expanded + row.id }
-                        .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp).testTag("planned_group"),
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { expandedGroups = if (open) expandedGroups - row.id else expandedGroups + row.id }
+                        .padding(horizontal = 6.dp, vertical = 8.dp).testTag("planned_group"),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(if (open) Icons.Default.ExpandMore else Icons.Default.ChevronRight, stringResource(if (open) R.string.collapse else R.string.expand), tint = TextSecondary)
-                    Icon(if (open) Icons.Default.FolderOpen else Icons.Default.Folder, null, tint = TextSecondary, modifier = Modifier.padding(horizontal = 8.dp).size(22.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(row.name, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(
-                            pluralStringResource(R.plurals.planned_trips_count, members.size, members.size) + " · " +
-                                stringResource(R.string.distance_km_whole, members.sumOf { it.totalDistanceKm.toDouble() }),
-                            color = TextSecondary, fontSize = 12.sp, maxLines = 1
-                        )
-                    }
+                    Icon(if (open) Icons.Default.ExpandMore else Icons.Default.ChevronRight, stringResource(if (open) R.string.collapse else R.string.expand),
+                        tint = ElectricCyan, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Icon(if (open) Icons.Default.FolderOpen else Icons.Default.Folder, null, tint = TextSecondary, modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(row.name, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text(
+                        pluralStringResource(R.plurals.planned_trips_count, members.size, members.size) + " · " +
+                            stringResource(R.string.distance_km_whole, members.sumOf { it.totalDistanceKm.toDouble() }),
+                        color = TextMuted, fontSize = 12.sp
+                    )
                     RowMenu(listOf(
                         MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = row },
                         MenuItem(Icons.Default.FolderOff, stringResource(R.string.gpx_ungroup)) { onDeleteGroup(row, true) },
@@ -98,37 +106,44 @@ fun ColumnScope.PlannedTripsPage(
                 }
             } else {
                 val t = row as RouteItem
-                val inGroup = t.groupId != null
-                val other = t.id in reversed
-                Row(
-                    Modifier.fillMaxWidth().padding(start = if (inGroup) 28.dp else 0.dp).clip(RoundedCornerShape(14.dp))
-                        .background(CockpitSurfaceVariant).padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp).testTag("planned_trip"),
-                    verticalAlignment = Alignment.CenterVertically
+                val open = openTrip == t.id
+                val line = remember(t.id, t.polylineJson.length) { SavedRoutes.decode(t.polylineJson).map { it.lat to it.lon } }
+                Column(
+                    Modifier.fillMaxWidth().padding(start = if (t.groupId != null) 24.dp else 0.dp).clip(RoundedCornerShape(16.dp)).background(CockpitSurfaceVariant)
+                        .clickable { openTrip = if (open) null else t.id }.padding(14.dp).testTag("planned_trip")
                 ) {
-                    Icon(Icons.Default.Route, null, tint = ElectricCyan, modifier = Modifier.size(24.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(t.title, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        val minutes = t.estimatedMinutes
-                        Text(
-                            stringResource(R.string.distance_km_whole, t.totalDistanceKm.toDouble()) + " · %d:%02d".format(minutes / 60, minutes % 60),
-                            color = TextSecondary, fontSize = 12.sp, maxLines = 1
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RouteThumbnail(line, Modifier.size(56.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(t.title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(SimpleDateFormat("EEE d MMM", Locale.getDefault()).format(Date(t.timestamp)), color = TextSecondary, fontSize = 12.sp)
+                        }
+                        Text(stringResource(R.string.distance_km_whole, t.totalDistanceKm.toDouble()), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black)
                     }
-                    // The way it will be ridden: as saved (→) or the other way (← in amber); tap to change.
-                    Box(Modifier.size(44.dp).clip(CircleShape).clickable { reversed = if (other) reversed - t.id else reversed + t.id }, contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.TrendingFlat, stringResource(if (other) R.string.planned_reversed else R.string.gpx_as_recorded),
-                            tint = if (other) NeonAmber else TextMuted, modifier = if (other) Modifier.rotate(180f) else Modifier)
+                    if (open) {
+                        Spacer(Modifier.height(12.dp))
+                        // What a trip not ridden yet can tell: how far, how long it should take, the climb and the curves.
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            PlannedStat("%d:%02d".format(t.estimatedMinutes / 60, t.estimatedMinutes % 60), stringResource(R.string.stat_estimated))
+                            if (t.elevationGainMeters > 0) PlannedStat("%d".format(t.elevationGainMeters), stringResource(R.string.stat_climb))
+                            if (t.curvinessScore > 0) PlannedStat("%d".format(t.curvinessScore), stringResource(R.string.stat_curves))
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            PillButton(Icons.Default.Navigation, stringResource(R.string.ride_now), ElectricCyan, Color(0xFF00363D), Modifier.weight(1f)) { onRide(t, false) }
+                            PillButton(Icons.Default.SwapHoriz, stringResource(R.string.rides_ride_reversed), CockpitSurface, TextPrimary, Modifier.weight(1f)) { onRide(t, true) }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            PillButton(Icons.Default.Route, stringResource(R.string.rides_save_to_gpx), CockpitSurface, TextPrimary, Modifier.weight(1f)) { savingToGpx = t }
+                            RowMenu(listOf(
+                                MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = t },
+                                MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t },
+                                MenuItem(Icons.Default.DeleteOutline, stringResource(R.string.delete)) { confirmDelete = t }
+                            ))
+                        }
                     }
-                    RowMenu(listOf(
-                        MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = t },
-                        MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t },
-                        MenuItem(Icons.Default.DeleteOutline, stringResource(R.string.delete)) { confirmDelete = t }
-                    ))
-                    Box(
-                        Modifier.padding(start = 4.dp).size(44.dp).clip(CircleShape).background(ElectricCyan).clickable { onRide(t, other) },
-                        contentAlignment = Alignment.Center
-                    ) { Icon(Icons.Default.Navigation, stringResource(R.string.ride), tint = Color(0xFF00363D)) }
                 }
             }
         }
@@ -159,5 +174,17 @@ fun ColumnScope.PlannedTripsPage(
     moving?.let { t ->
         GroupPickerDialog(stringResource(R.string.gpx_move_to_group), groups.map { GpxGroup(id = it.id, name = it.name) }, current = t.groupId,
             onPick = { id, name -> onMove(t, id, name) }, onDismiss = { moving = null })
+    }
+    savingToGpx?.let { t ->
+        GroupPickerDialog(stringResource(R.string.rides_save_to_group), gpxGroups, current = null,
+            onPick = { id, name -> onSaveToGpx(t, id, name) }, onDismiss = { savingToGpx = null })
+    }
+}
+
+@Composable
+private fun PlannedStat(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black)
+        Text(label, color = TextMuted, fontSize = 11.sp)
     }
 }

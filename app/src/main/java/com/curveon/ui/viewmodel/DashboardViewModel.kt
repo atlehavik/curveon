@@ -373,13 +373,23 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Remaining stops plus the destination, for markers on the map. */
-    val routeMarkers: StateFlow<List<GeoPoint>> = navigator.state
+    val routeMarkers: StateFlow<List<com.curveon.ui.components.MapPin>> = navigator.state
         .map { s ->
+            fun pin(p: LatLon, kind: com.curveon.ui.components.PinKind, label: String) = com.curveon.ui.components.MapPin(GeoPoint(p.lat, p.lon), kind, label)
+            val start = com.curveon.ui.components.PinKind.START
+            val end = com.curveon.ui.components.PinKind.END
             val goal = s.preview?.goal ?: s.goal
-            // An adventure being worked out (or failed) is still a trip to its destination: keep the pin.
-            if (goal is NavigationGoal.Adventure) return@map (listOfNotNull(goal.start?.point) + goal.destination).map { GeoPoint(it.lat, it.lon) }
-            val g = goal as? NavigationGoal.Destination ?: return@map emptyList()
-            (listOfNotNull(g.start?.point) + g.stops.filterNot { it.via }.map { it.point } + g.destination).map { GeoPoint(it.lat, it.lon) }
+            when (goal) {
+                // An adventure being worked out (or failed) is still a trip to its destination: keep the pins.
+                is NavigationGoal.Adventure -> listOfNotNull(goal.start?.let { pin(it.point, start, "A") }) + pin(goal.destination, end, "B")
+                is NavigationGoal.Destination ->
+                    listOfNotNull(goal.start?.let { pin(it.point, start, "A") }) +
+                        goal.stops.filterNot { it.via }.mapIndexed { i, st -> pin(st.point, com.curveon.ui.components.PinKind.STOP, "${i + 1}") } +
+                        pin(goal.destination, end, "B")
+                // A line ridden as it is (a planned trip, a GPX track, the other way round): where it starts and ends.
+                is NavigationGoal.Track -> if (goal.points.size >= 2) listOf(pin(goal.points.first(), start, "A"), pin(goal.points.last(), end, "B")) else emptyList()
+                else -> emptyList()
+            }
         }
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -836,12 +846,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         storeRideAsGpx(ride, newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId)
     }
 
-    private suspend fun storeRideAsGpx(ride: Ride, group: Long?) {
+    private suspend fun storeRideAsGpx(ride: Ride, group: Long?, called: String? = null) {
         // Each point keeps when it was ridden, so the GPX lines up with a video of the ride.
         val pts = RideRecorder.parseTrack(ride.track).map { GeoPoint(it.lat, it.lon, it.ele, ride.startMs + (it.secondsFromStart * 1000).toLong()) }
         if (pts.size < 2) return
-        val name = ride.title.ifEmpty { str(R.string.ride) } + " · " +
-            java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ride.startMs))
+        val name = called ?: (ride.title.ifEmpty { str(R.string.ride) } + " · " +
+            java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ride.startMs)))
         repository.saveGpxTrack(
             GpxTrack(
                 name = name,
@@ -863,13 +873,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED))
     }
 
+    /** Keeps a ride under [name] where the save dialog says: as a planned trip and/or a GPX track, each in its group. */
+    fun saveRide(ride: Ride, name: String, t: com.curveon.ui.components.RouteSaveTargets) {
+        if (t.toPlanned) copyRideToPlanned(ride, name, t.plannedGroup, t.newPlannedGroup)
+        if (t.toGpx) viewModelScope.launch {
+            storeRideAsGpx(ride, t.newGpxGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: t.gpxGroup, name)
+        }
+        rememberSaveGroups(t)
+    }
+
     /** Keeps a logged ride as a planned trip, in an existing group, a new one ([newGroup]) or none. */
-    fun copyRideToPlanned(ride: Ride, groupId: Long?, newGroup: String?) = viewModelScope.launch {
+    fun copyRideToPlanned(ride: Ride, name: String?, groupId: Long?, newGroup: String?) = viewModelScope.launch {
         val pts = RideRecorder.parseTrack(ride.track).map { LatLon(it.lat, it.lon) }
         if (pts.size < 2) return@launch
         val group = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createRouteGroup(it.trim()) } ?: groupId
         repository.saveRoute(SavedRoutes.trackItem(
-            ride.title.ifEmpty { str(R.string.ride_earlier) }, pts, ride.distanceMeters, (ride.movingMillis / 60_000).toInt(),
+            name ?: ride.title.ifEmpty { str(R.string.ride_earlier) }, pts, ride.distanceMeters, (ride.movingMillis / 60_000).toInt(),
             RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED), group
         ))
     }
@@ -1123,7 +1142,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /** Saves the previewed (or active) route under [name]. */
-    fun saveRoute(name: String) {
+    fun saveRoute(name: String, groupId: Long? = null, newGroup: String? = null) {
         val s = navigator.state.value
         val goal = s.preview?.goal ?: s.goal ?: return
         val route = s.preview?.selectedRoute ?: s.route ?: return
@@ -1134,7 +1153,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val item = SavedRoutes.toItem(g, route, name).let { item ->
             (g as? NavigationGoal.Destination)?.saved?.takeIf { it.title == name }?.let { item.copy(id = it.id) } ?: item
         }
-        viewModelScope.launch { repository.saveRoute(item) }
+        viewModelScope.launch {
+            val created = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createRouteGroup(it.trim()) }
+            // A group made here is where the next route goes too.
+            created?.let { settings.edit().putLong("saveRoutePlannedGroup", it).apply() }
+            repository.saveRoute(item.copy(groupId = created ?: groupId ?: item.groupId))
+        }
     }
 
     /**
@@ -1173,17 +1197,41 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    /** Where routes were saved last time (Where to?, GPX, the GPX group), so the save dialog starts there. */
-    val saveRouteTargets: Triple<Boolean, Boolean, Long?>
-        get() = Triple(
-            settings.getBoolean("saveRouteToRoutes", true),
-            settings.getBoolean("saveRouteToGpx", false),
-            settings.getLong("saveRouteGpxGroup", -1L).takeIf { it >= 0 }
+    /** The groups routes were saved in last time (planned trips, GPX), so the save dialog starts there. Nothing is ticked. */
+    val saveGroups: com.curveon.ui.components.RouteSaveTargets
+        get() = com.curveon.ui.components.RouteSaveTargets(
+            plannedGroup = settings.getLong("saveRoutePlannedGroup", -1L).takeIf { it >= 0 },
+            gpxGroup = settings.getLong("saveRouteGpxGroup", -1L).takeIf { it >= 0 }
         )
 
-    fun rememberSaveRouteTargets(toRoutes: Boolean, toGpx: Boolean, groupId: Long?) = settings.edit()
-        .putBoolean("saveRouteToRoutes", toRoutes).putBoolean("saveRouteToGpx", toGpx)
-        .putLong("saveRouteGpxGroup", groupId ?: -1L).apply()
+    fun rememberSaveGroups(t: com.curveon.ui.components.RouteSaveTargets) = settings.edit().apply {
+        if (t.toPlanned && t.newPlannedGroup == null) putLong("saveRoutePlannedGroup", t.plannedGroup ?: -1L)
+        if (t.toGpx && t.newGpxGroup == null) putLong("saveRouteGpxGroup", t.gpxGroup ?: -1L)
+    }.apply()
+
+    /** Keeps a planned trip's line as a GPX track, in an existing group, a new one ([newGroup]) or none. */
+    fun savePlannedToGpx(item: RouteItem, groupId: Long?, newGroup: String?) = viewModelScope.launch {
+        val line = SavedRoutes.decode(item.polylineJson)
+        if (line.size < 2) return@launch
+        val pts = line.map { GeoPoint(it.lat, it.lon) }
+        val stops = (SavedRoutes.toGoal(item) as? NavigationGoal.Destination)?.let { g ->
+            g.stops.filter { !it.via }.map { it.name to it.point } + (g.name to g.destination)
+        }.orEmpty()
+        val group = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId
+        repository.saveGpxTrack(
+            GpxTrack(
+                name = item.title,
+                totalDistanceKm = item.totalDistanceKm,
+                elevationGainMeters = item.elevationGainMeters,
+                maxElevationMeters = 0,
+                pointCount = pts.size,
+                trackPointsJson = com.curveon.data.osm.GpxParser.encodePoints(pts),
+                waypointsJson = com.curveon.data.gpx.GpxOverlay.encodePois(stops.map { (n, p) -> com.curveon.data.osm.GpxParser.GpxWaypoint(n, GeoPoint(p.lat, p.lon)) }),
+                category = "Route",
+                groupId = group
+            )
+        )
+    }
 
     /** Plan a planned trip on the map; [reverse] the other way round (its stops are then dropped: it is ridden as a line). */
     fun ridePlanned(item: RouteItem, reverse: Boolean) {

@@ -241,30 +241,44 @@ private fun FavoriteDialog(placeName: String, onSave: (name: String, home: Boole
 
 private val OnCyanDark = Color(0xFF00363D)
 
-/** Where a route is saved: Where to? (to plan and ride again), the GPX collection (in [gpxGroup] or a new group [newGroup]), or both. */
-data class RouteSaveTargets(val toRoutes: Boolean, val toGpx: Boolean, val gpxGroup: Long?, val newGroup: String? = null)
+/**
+ * Where a route is saved: the planned trips (in [plannedGroup] or a new group [newPlannedGroup]) and/or the
+ * GPX collection (in [gpxGroup] or [newGpxGroup]). Nothing is ticked to begin with, so a stray tap saves nothing.
+ */
+data class RouteSaveTargets(
+    val toPlanned: Boolean = false, val plannedGroup: Long? = null, val newPlannedGroup: String? = null,
+    val toGpx: Boolean = false, val gpxGroup: Long? = null, val newGpxGroup: String? = null
+)
 
 /**
- * Name the route before saving it; [initialName] is a suggestion from the places it passes. It can
- * go to Where to? and/or the GPX collection (picking the group as when saving a ride), starting
- * from where the last route went ([initial]).
+ * Name a route (or a ride) before saving it; [initialName] is a suggestion. It can go to the planned
+ * trips and/or the GPX collection, each in a group of its own; [initial] only gives the groups to
+ * start from (the last ones used), never what is ticked.
  */
 @Composable
 fun SaveRouteDialog(
     initialName: String,
     initial: RouteSaveTargets,
+    plannedGroups: List<com.curveon.data.model.GpxGroup>,
     gpxGroups: List<com.curveon.data.model.GpxGroup>,
     onSave: (String, RouteSaveTargets) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    title: String = stringResource(R.string.save_route_title)
 ) {
     var name by remember(initialName) { mutableStateOf(initialName) }
     // A remembered group that has been deleted since: no group.
-    var targets by remember { mutableStateOf(initial.copy(gpxGroup = initial.gpxGroup?.takeIf { id -> gpxGroups.any { it.id == id } })) }
-    var pickingGroup by remember { mutableStateOf(false) }
+    var targets by remember {
+        mutableStateOf(RouteSaveTargets(
+            plannedGroup = initial.plannedGroup?.takeIf { id -> plannedGroups.any { it.id == id } },
+            gpxGroup = initial.gpxGroup?.takeIf { id -> gpxGroups.any { it.id == id } }
+        ))
+    }
+    var pickingPlanned by remember { mutableStateOf(false) }
+    var pickingGpx by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = CockpitSurface,
-        title = { HideSystemBars(); Text(stringResource(R.string.save_route_title), color = TextPrimary, fontWeight = FontWeight.Black) },
+        title = { HideSystemBars(); Text(title, color = TextPrimary, fontWeight = FontWeight.Black) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
@@ -276,24 +290,29 @@ fun SaveRouteDialog(
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("save_route_name")
                 )
-                SaveTargetRow(Icons.Default.Bookmark, stringResource(R.string.save_route_to_routes), null, targets.toRoutes,
-                    Modifier.testTag("save_route_to_routes")) { targets = targets.copy(toRoutes = !targets.toRoutes) }
-                val groupName = targets.newGroup ?: gpxGroups.firstOrNull { it.id == targets.gpxGroup }?.name ?: stringResource(R.string.gpx_no_group)
-                SaveTargetRow(Icons.Default.Route, stringResource(R.string.save_route_to_gpx), groupName.takeIf { targets.toGpx }, targets.toGpx,
-                    Modifier.testTag("save_route_to_gpx"), onDetail = { pickingGroup = true }) { targets = targets.copy(toGpx = !targets.toGpx) }
+                val plannedName = targets.newPlannedGroup ?: plannedGroups.firstOrNull { it.id == targets.plannedGroup }?.name ?: stringResource(R.string.gpx_no_group)
+                SaveTargetRow(Icons.Default.EventNote, stringResource(R.string.save_route_to_planned), plannedName.takeIf { targets.toPlanned }, targets.toPlanned,
+                    Modifier.testTag("save_route_to_planned"), onDetail = { pickingPlanned = true }) { targets = targets.copy(toPlanned = !targets.toPlanned) }
+                val gpxName = targets.newGpxGroup ?: gpxGroups.firstOrNull { it.id == targets.gpxGroup }?.name ?: stringResource(R.string.gpx_no_group)
+                SaveTargetRow(Icons.Default.Route, stringResource(R.string.save_route_to_gpx), gpxName.takeIf { targets.toGpx }, targets.toGpx,
+                    Modifier.testTag("save_route_to_gpx"), onDetail = { pickingGpx = true }) { targets = targets.copy(toGpx = !targets.toGpx) }
             }
         },
         confirmButton = {
-            val can = name.isNotBlank() && (targets.toRoutes || targets.toGpx)
+            val can = name.isNotBlank() && (targets.toPlanned || targets.toGpx)
             TextButton(onClick = { onSave(name.trim(), targets) }, enabled = can, modifier = Modifier.testTag("save_route_confirm")) {
                 Text(stringResource(R.string.save), color = if (can) ElectricCyan else TextMuted, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = TextSecondary) } }
     )
-    if (pickingGroup) {
-        GroupPickerDialog(stringResource(R.string.rides_save_to_group), gpxGroups, current = targets.gpxGroup.takeIf { targets.newGroup == null },
-            onPick = { id, newName -> targets = targets.copy(gpxGroup = id, newGroup = newName) }, onDismiss = { pickingGroup = false })
+    if (pickingPlanned) {
+        GroupPickerDialog(stringResource(R.string.save_route_planned_group), plannedGroups, current = targets.plannedGroup.takeIf { targets.newPlannedGroup == null },
+            onPick = { id, newName -> targets = targets.copy(plannedGroup = id, newPlannedGroup = newName) }, onDismiss = { pickingPlanned = false })
+    }
+    if (pickingGpx) {
+        GroupPickerDialog(stringResource(R.string.rides_save_to_group), gpxGroups, current = targets.gpxGroup.takeIf { targets.newGpxGroup == null },
+            onPick = { id, newName -> targets = targets.copy(gpxGroup = id, newGpxGroup = newName) }, onDismiss = { pickingGpx = false })
     }
 }
 

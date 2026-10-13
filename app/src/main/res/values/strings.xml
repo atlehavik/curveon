@@ -28,7 +28,7 @@
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Saved to Where to?</string>
     <string name="toast_saved_to_gpx">Saved to GPX</string>
-    <string name="toast_saved_to_both">Saved to Where to? and GPX</string>
+    <string name="toast_saved_to_both">Saved to planned trips and GPX</string>
     <string name="toast_calling">Calling %1$s…</string>
     <string name="toast_phone_not_connected">Phone not connected</string>
     <string name="toast_connect_phone_to_call">Connect the phone to call</string>
@@ -412,6 +412,14 @@
     <string name="rides_save_to_group">Save to GPX group</string>
     <string name="tracks_title">GPX &amp; rides</string>
     <string name="planned_tab">Planned</string>
+    <string name="ride_now">Ride</string>
+    <string name="stat_estimated">Estimated</string>
+    <string name="stat_curves">Curves</string>
+    <string name="rides_save">Save…</string>
+    <string name="rides_save_title">Save ride</string>
+    <string name="save_route_to_planned">Planned trips</string>
+    <string name="save_route_planned_group">Group of planned trips</string>
+    <string name="toast_saved_to_planned">Saved to planned trips</string>
     <string name="planned_empty">No planned trips yet. Save a route from the planner with the bookmark button, or copy a ride from the Rides page.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d trip</item>

@@ -135,7 +135,7 @@ fun CurveonMapView(
     modifier: Modifier = Modifier,
     dark: Boolean = true,
     previewRoutes: List<MapRoute> = emptyList(),
-    markers: List<GeoPoint> = emptyList(),
+    markers: List<MapPin> = emptyList(),
     roadNameProbe: Pair<Int, GeoPoint>? = null,
     onRoadName: (Int, String?) -> Unit = { _, _ -> },
     gpxTracks: List<com.curveon.data.gpx.OverlayTrack> = emptyList(),
@@ -565,7 +565,14 @@ fun CurveonMapView(
     LaunchedEffect(style, markers) {
         val s = style ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(MARKERS)?.setGeoJson(
-            FeatureCollection.fromFeatures(markers.map { p -> Feature.fromGeometry(Point.fromLngLat(p.longitude, p.latitude)) })
+            FeatureCollection.fromFeatures(markers.map { m ->
+                Feature.fromGeometry(Point.fromLngLat(m.point.longitude, m.point.latitude)).also {
+                    it.addStringProperty("label", m.label)
+                    it.addStringProperty("color", when (m.kind) { PinKind.START -> PIN_START; PinKind.END -> PIN_END; PinKind.STOP -> PIN_STOP })
+                    it.addStringProperty("text", if (m.kind == PinKind.END) "#FFFFFF" else "#0B0E14")
+                    it.addNumberProperty("radius", if (m.kind == PinKind.STOP) 11f else 14f)
+                }
+            })
         )
     }
 
@@ -1086,9 +1093,20 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             textColor(if (dark) "#F1F5F9" else "#1B2430"), textHaloColor(if (dark) "#0B0E14" else "#FFFFFF"), textHaloWidth(1.5f)
         ).also { it.minZoom = POI_ICON_ZOOM }
     )
+    // Where the trip starts (A, green), its stops (1, 2, …, orange) and where it ends (B, red).
     s.addLayer(
         CircleLayer("$MARKERS-dots", MARKERS).withProperties(
-            circleRadius(9f), circleColor("#FF9100"), circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f)
+            circleRadius(org.maplibre.android.style.expressions.Expression.get("radius")),
+            circleColor(org.maplibre.android.style.expressions.Expression.get("color")),
+            circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f)
+        )
+    )
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$MARKERS-labels", MARKERS).withProperties(
+            textField(org.maplibre.android.style.expressions.Expression.get("label")),
+            textFont(arrayOf("Noto Sans Medium")), textSize(15f),
+            textColor(org.maplibre.android.style.expressions.Expression.get("text")),
+            textAllowOverlap(true), textIgnorePlacement(true)
         )
     )
     addEditLayers(s, dark)
@@ -1106,6 +1124,16 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
         )
     )
 }
+
+/** What a pin on the map marks. */
+enum class PinKind { START, STOP, END }
+
+/** A place of the trip on the map: [label] is "A", "B" or the number of the stop. */
+data class MapPin(val point: GeoPoint, val kind: PinKind, val label: String)
+
+private const val PIN_START = "#00E676"
+private const val PIN_STOP = "#FF9100"
+private const val PIN_END = "#FF1744"
 
 /** Orange for gravel, purple for tracks: as the gravel and offroad route colours. */
 const val GRAVEL_COLOR = "#FF9100"

@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Pins A/B, save dialog, Planned looks like Rides
+
+Installed on the X7 and the Pixel. Scrolling and the Planned page were checked on the X7 sized like the Pixel held sideways; the map pins and the save dialog were not seen.
+
+- [ ] Plan a trip: start = green A (only when planned from elsewhere), stops = orange 1, 2…, destination = red B. A planned trip ridden the other way: A at its new start, B at the end.
+- [ ] Bookmark a route: "Save route" shows Planned trips and GPX, both unticked; pick a group for each; save to either or both.
+- [ ] Rides: open a ride: one "Save…" button (same dialog); no lean figures.
+- [ ] Planned: a thumbnail of the line and the km; tap for time, climb and curves; Ride / Ride the other way / Save to GPX.
+- [ ] Sideways on the Pixel: GPX, Rides and Planned scroll as one list (the switches and chips scroll away).
+
 ## 2026-10-13 — One frame for GPX / Rides / Planned and Phone; planned trips in groups
 
 Installed on the X7 (landscape checked there, and upright via `wm size 1080x2400`); the Pixel was not reachable.

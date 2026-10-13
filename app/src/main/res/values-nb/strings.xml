@@ -27,7 +27,7 @@
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Lagret i Hvor skal du?</string>
     <string name="toast_saved_to_gpx">Lagret i GPX-spor</string>
-    <string name="toast_saved_to_both">Lagret i Hvor skal du? og GPX-spor</string>
+    <string name="toast_saved_to_both">Lagret i planlagte turer og GPX</string>
     <string name="toast_calling">Ringer %1$s…</string>
     <string name="toast_phone_not_connected">Telefonen er ikke tilkoblet</string>
     <string name="toast_connect_phone_to_call">Koble til telefonen for å ringe</string>
@@ -411,6 +411,14 @@
     <string name="rides_save_to_group">Lagre i GPX-gruppe</string>
     <string name="tracks_title">GPX og turer</string>
     <string name="planned_tab">Planlagte</string>
+    <string name="ride_now">Kjør</string>
+    <string name="stat_estimated">Beregnet</string>
+    <string name="stat_curves">Svinger</string>
+    <string name="rides_save">Lagre …</string>
+    <string name="rides_save_title">Lagre turen</string>
+    <string name="save_route_to_planned">Planlagte turer</string>
+    <string name="save_route_planned_group">Gruppe for planlagte turer</string>
+    <string name="toast_saved_to_planned">Lagret i planlagte turer</string>
     <string name="planned_empty">Ingen planlagte turer ennå. Lagre en rute fra planleggeren med bokmerket, eller kopier en tur fra Turer.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d tur</item>

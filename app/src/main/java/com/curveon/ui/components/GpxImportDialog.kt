@@ -111,17 +111,19 @@ fun GpxManagerDialog(
 
     val importButton: @Composable RowScope.() -> Unit = { GpxImportButton(actions.onImport) }
     val body: @Composable ColumnScope.() -> Unit = {
-        if (message != null) Text(message, color = NeonAmber, fontSize = 13.sp)
+      // Everything scrolls together, so a short screen (a phone held sideways) still has room for the tracks.
+      LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (message != null) item { Text(message, color = NeonAmber, fontSize = 13.sp) }
 
         // Settings that apply to all tracks
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        item { Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.gpx_auto_follow), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Text(stringResource(R.string.gpx_auto_follow_hint), color = TextMuted, fontSize = 12.sp)
             }
             CockpitSwitch(checked = autoFollow, onCheckedChange = onAutoFollow)
-        }
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        } }
+        item { Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             PoiCategory.entries.forEach { c ->
                 val on = c in poiCategories
                 Row(
@@ -136,17 +138,19 @@ fun GpxManagerDialog(
                     Text(stringResource(c.label), color = if (on) TextPrimary else TextMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
-        }
+        } }
 
         if (tracks.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Text(
-                    stringResource(R.string.gpx_empty),
-                    color = TextMuted, fontSize = 14.sp
-                )
+            item {
+                Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        stringResource(R.string.gpx_empty),
+                        color = TextMuted, fontSize = 14.sp
+                    )
+                }
             }
         } else {
-            LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            run {
                 items(rows, key = { if (it is GpxGroup) "g${it.id}" else "t${(it as GpxTrack).id}" }) { row ->
                     if (row is GpxGroup) {
                         val members = byGroup[row.id].orEmpty()
@@ -184,6 +188,7 @@ fun GpxManagerDialog(
                 }
             }
         }
+      }
     }
     // Embedded, the frame's header holds the import button.
     if (embedded) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp), content = body)
