@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -81,37 +82,50 @@ private fun CallButtonsRow(call: NotificationItem, buttons: CallButtons) {
 }
 
 /**
- * A call as one slim row: the caller's small picture and name, and the two buttons. Ringing it pulses;
- * the buttons are Decline / Answer, and once answered Hang up / Speaker.
+ * A ringing call: the one thing to decide about right now, so it is big and may cover anything. The
+ * contact's photo fills the card (like cover art) with the name on top, or big initials without one.
+ * Decline and Answer are the only buttons. Once answered it turns into [FloatingCallBubble].
  */
 @Composable
 fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     val pulse by rememberInfiniteTransition(label = "ring").animateColor(
-        EcoGreen, if (call.isOngoingCall) EcoGreen else EcoGreen.copy(alpha = 0.25f), infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "border"
+        EcoGreen, EcoGreen.copy(alpha = 0.25f), infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "border"
     )
-    val shape = RoundedCornerShape(20.dp)
     val buttons = callButtons(call, onAction, onDismiss)
-    Row(
-        modifier.fillMaxWidth().height(CallCardHeight).clip(shape).background(CockpitSurface).border(3.dp, pulse, shape)
-            .padding(horizontal = 10.dp).testTag("call_card"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        CallAvatar(call, 44.dp)
-        Column(Modifier.weight(1f)) {
-            Text(call.message, color = Color(0xFFD0D7E0), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(call.senderName, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Black,
-                maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
+    val shape = RoundedCornerShape(24.dp)
+    Box(modifier.clip(shape).background(CockpitSurface).border(3.dp, pulse, shape).testTag("call_card")) {
+        if (call.avatar != null) {
+            Image(call.avatar.asImageBitmap(), call.senderName, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
+            Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF2000000))))
+        } else {
+            Box(Modifier.matchParentSize().padding(bottom = 140.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.heightIn(max = 140.dp).fillMaxHeight(0.85f).aspectRatio(1f).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
+                    Text(call.initials, color = EcoGreen, fontSize = 52.sp, fontWeight = FontWeight.Black)
+                }
+            }
         }
-        CallButtonsRow(call, buttons)
+        Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.PhoneInTalk, null, tint = EcoGreen, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("${call.message} · ${call.appName}", color = Color(0xFFD0D7E0), fontSize = 13.sp, maxLines = 1)
+            }
+            Text(call.senderName, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 32.sp)
+            Spacer(Modifier.height(14.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PillButton(Icons.Default.CallEnd, buttons.declineLabel, WarningRed, Color.White, Modifier.weight(1f).height(64.dp), buttons.onDecline)
+                if (buttons.onOther != null) PillButton(Icons.Default.Call, buttons.otherLabel.orEmpty(), EcoGreen, Color.Black,
+                    Modifier.weight(1f).height(64.dp), buttons.onOther)
+            }
+        }
     }
 }
 
 /**
- * An answered call on the full map: a green phone you can drag anywhere (it settles against the left
- * edge, or the right one just left of the map's buttons, and is remembered). A tap opens the name
- * with Hang up and Speaker for a few seconds. Fill the map area with [modifier]; it only takes touches
- * where the icon is.
+ * An answered call: never in the way, so just a green phone you can drag anywhere and leave there
+ * (remembered). A tap opens the name with Hang up and Speaker for a few seconds. Fill the screen
+ * area with [modifier]; it only takes touches where the icon is.
  */
 @Composable
 fun FloatingCallBubble(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
@@ -122,19 +136,16 @@ fun FloatingCallBubble(call: NotificationItem, onAction: (Int) -> Unit, onDismis
     BoxWithConstraints(modifier) {
         val sizePx = with(density) { BUBBLE_SIZE.toPx() }
         val margin = with(density) { 14.dp.toPx() }
-        // The right edge stops left of the map's buttons (52 dp wide, 14 dp from the edge).
-        val reserve = with(density) { (14.dp + 52.dp + 8.dp).toPx() }
         val w = constraints.maxWidth.toFloat()
         val h = constraints.maxHeight.toFloat()
-        val leftX = margin
-        val rightX = (w - reserve - sizePx).coerceAtLeast(leftX)
+        val minX = margin
+        val maxX = (w - sizePx - margin).coerceAtLeast(minX)
         val minY = margin
         val maxY = (h - sizePx - margin).coerceAtLeast(minY)
-        var right by remember { mutableStateOf(prefs.getBoolean("right", false)) }
-        val x = remember { Animatable(if (right) rightX else leftX) }
-        val y = remember { Animatable((prefs.getFloat("y", 0.3f) * h).coerceIn(minY, maxY)) }
+        val x = remember { Animatable((prefs.getFloat("fx", 0.02f) * w).coerceIn(minX, maxX)) }
+        val y = remember { Animatable((prefs.getFloat("fy", 0.3f) * h).coerceIn(minY, maxY)) }
         LaunchedEffect(w, h) {
-            x.snapTo(if (right) rightX else leftX)
+            x.snapTo(x.value.coerceIn(minX, maxX))
             y.snapTo(y.value.coerceIn(minY, maxY))
         }
         val scope = rememberCoroutineScope()
@@ -143,7 +154,7 @@ fun FloatingCallBubble(call: NotificationItem, onAction: (Int) -> Unit, onDismis
 
         if (open) {
             val pillW = with(density) { minOf(300.dp.toPx(), w - 2 * margin) }
-            val pillX = (if (right) x.value + sizePx - pillW else x.value).coerceIn(margin, (w - pillW - margin).coerceAtLeast(margin))
+            val pillX = (if (x.value > w / 2) x.value + sizePx - pillW else x.value).coerceIn(margin, (w - pillW - margin).coerceAtLeast(margin))
             val shape = RoundedCornerShape(36.dp)
             Row(
                 Modifier.offset { IntOffset(pillX.roundToInt(), y.value.roundToInt()) }
@@ -170,14 +181,12 @@ fun FloatingCallBubble(call: NotificationItem, onAction: (Int) -> Unit, onDismis
                             onDrag = { change, drag ->
                                 change.consume()
                                 scope.launch {
-                                    x.snapTo((x.value + drag.x).coerceIn(leftX, rightX))
+                                    x.snapTo((x.value + drag.x).coerceIn(minX, maxX))
                                     y.snapTo((y.value + drag.y).coerceIn(minY, maxY))
                                 }
                             },
                             onDragEnd = {
-                                right = x.value > (leftX + rightX) / 2
-                                scope.launch { x.animateTo(if (right) rightX else leftX, spring(dampingRatio = 0.7f)) }
-                                prefs.edit().putBoolean("right", right).putFloat("y", if (h > 0) y.value / h else 0.3f).apply()
+                                prefs.edit().putFloat("fx", if (w > 0) x.value / w else 0.02f).putFloat("fy", if (h > 0) y.value / h else 0.3f).apply()
                             }
                         )
                     }

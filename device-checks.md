@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-13 — Ringing call big, answered call a small icon you can move
+
+Needs the new Curveon Companion on the Pixel too (it says whether a call has been answered; with an
+old one an answered call looks like it is still ringing). Installed on the X7 only; never tried with
+a real call.
+
+- [ ] Ring the Pixel: a big card with the caller's photo, name, red Decline and green Answer, over
+      everything (full map, dashboard, route preview, an open screen, portrait).
+- [ ] Answer: the card becomes a green phone icon, on every view. Drag it anywhere; it stays put for
+      the next call. Tap it: name, Hang up and Speaker for a few seconds. The music card stays.
+- [ ] If the Answer button is still there after answering, the Pixel runs the old companion: install
+      `./gradlew :companion:installDebug` on it.
+
 ## 2026-10-13 — Calls as a slim card and a floating icon
 
 Needs the new Curveon Companion on the Pixel (it now says whether a call has been answered) and the
