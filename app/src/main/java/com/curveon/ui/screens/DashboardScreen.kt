@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
@@ -170,6 +171,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var adventure by remember { mutableStateOf<AdventureDraft?>(null) }
     LaunchedEffect(sketching) { if (sketching) sketchKm = null else adventure = null }
     var showGpx by remember { mutableStateOf(false) }
+    /** After saving a route or a ride: the rail buttons where it was put blink (the set, and a count so that the same one can blink again). */
+    var railFlash by remember { mutableStateOf<Pair<Set<RailPanel>, Int>>(emptySet<RailPanel>() to 0) }
+    val flashRail: (RouteSaveTargets) -> Unit = { t ->
+        val where = buildSet { if (t.toWhereTo) add(RailPanel.SEARCH); if (t.toPlanned || t.toGpx) add(RailPanel.GPX) }
+        railFlash = where to railFlash.second + 1
+    }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
     var showSettings by rememberSaveable { mutableStateOf(false) }
     /** Settings opened from the engine panel: start on its page. */
@@ -665,6 +672,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     val rail: @Composable () -> Unit = {
         Rail(
+            flash = railFlash,
             vertical = !portrait,
             isFullScreenMap = isFullScreenMap,
             unread = notifications.size,
@@ -790,6 +798,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onSave = { r, name, t ->
                         viewModel.saveRide(r, name, t)
                         toast = context.getString(savedToast(t))
+                        flashRail(t)
                     },
                     logRides = logRides,
                     onLogRides = { viewModel.setLogRides(it) },
@@ -804,7 +813,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     groups = routeGroups,
                     onRide = { t, reversed -> showGpx = false; viewModel.ridePlanned(t, reversed) },
                     gpxGroups = gpxGroups,
-                    onSaveToGpx = { t, groupId, newGroup -> viewModel.savePlannedToGpx(t, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
+                    onSaveToGpx = { t, groupId, newGroup -> viewModel.savePlannedToGpx(t, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx); flashRail(RouteSaveTargets(toGpx = true)) },
                     onRename = viewModel::renamePlanned,
                     onMove = viewModel::movePlanned,
                     onDelete = viewModel::deletePlannedTrips,
@@ -1024,6 +1033,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     viewModel.rememberSaveGroups(t)
                     saveName = null
                     toast = context.getString(savedToast(t))
+                    flashRail(t)
                 },
                 onDismiss = { saveName = null }
             )
@@ -1085,6 +1095,8 @@ private enum class RailPanel { SEARCH, GPX, PHONE, SETTINGS }
 
 @Composable
 private fun Rail(
+    /** Buttons that blink now (where something was just saved), and a count that changes for each blink. */
+    flash: Pair<Set<RailPanel>, Int>,
     /** Down the left side (landscape), or along the bottom (portrait). */
     vertical: Boolean,
     isFullScreenMap: Boolean,
@@ -1098,10 +1110,10 @@ private fun Rail(
     // the map toggle at the bottom still fits.
     val compact = vertical && LocalConfiguration.current.screenHeightDp < 480
     val search: @Composable () -> Unit = {
-        RailButton(Icons.Default.TwoWheeler, stringResource(R.string.where_to), ElectricCyan, ElectricCyan, filled = active == RailPanel.SEARCH, tag = "rail_search", target = TourTarget.SEARCH, onClick = { onPress(RailPanel.SEARCH) })
+        RailButton(Icons.Default.TwoWheeler, stringResource(R.string.where_to), ElectricCyan, ElectricCyan, filled = active == RailPanel.SEARCH, flashKey = if (RailPanel.SEARCH in flash.first) flash.second else 0, tag = "rail_search", target = TourTarget.SEARCH, onClick = { onPress(RailPanel.SEARCH) })
     }
     val gpx: @Composable () -> Unit = {
-        RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, filled = active == RailPanel.GPX, tag = "rail_gpx", target = TourTarget.GPX, onClick = { onPress(RailPanel.GPX) })
+        RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, filled = active == RailPanel.GPX, flashKey = if (RailPanel.GPX in flash.first) flash.second else 0, tag = "rail_gpx", target = TourTarget.GPX, onClick = { onPress(RailPanel.GPX) })
     }
     val phone: @Composable () -> Unit = {
         RailButton(Icons.Default.Phone, stringResource(R.string.phone), ElectricCyan, EcoGreen, filled = active == RailPanel.PHONE,
@@ -1152,22 +1164,34 @@ private fun RailButton(
     accent: Color,
     tint: Color,
     filled: Boolean = false,
+    /** Changes (above 0) each time the button should blink: something was just put where it leads. */
+    flashKey: Int = 0,
     tag: String,
     target: TourTarget,
     onClick: () -> Unit
 ) {
     // Smaller on a phone: sideways it is low, upright it is narrow.
     val compact = LocalConfiguration.current.let { minOf(it.screenHeightDp, it.screenWidthDp) < 480 }
+    // Three blinks: the button swells and turns amber and back.
+    val blink = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(flashKey) {
+        if (flashKey > 0) repeat(3) {
+            blink.animateTo(1f, androidx.compose.animation.core.tween(260))
+            blink.animateTo(0f, androidx.compose.animation.core.tween(260))
+        }
+    }
+    val base = if (filled) accent else CockpitSurfaceVariant
     Box(
         Modifier
             .size(if (compact) 48.dp else 56.dp)
             .tourTarget(target)
+            .graphicsLayer { scaleX = 1f + 0.25f * blink.value; scaleY = 1f + 0.25f * blink.value }
             .clip(RoundedCornerShape(16.dp))
-            .background(if (filled) accent else CockpitSurfaceVariant)
+            .background(androidx.compose.ui.graphics.lerp(base, NeonAmber, blink.value))
             .clickable(onClick = onClick)
             .testTag(tag),
         contentAlignment = Alignment.Center
-    ) { Icon(icon, description, tint = if (filled) Color(0xFF00363D) else tint, modifier = Modifier.size(28.dp)) }
+    ) { Icon(icon, description, tint = if (filled || blink.value > 0.5f) Color(0xFF00363D) else tint, modifier = Modifier.size(28.dp)) }
 }
 
 /**
