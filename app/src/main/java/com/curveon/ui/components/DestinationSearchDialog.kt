@@ -70,7 +70,12 @@ fun DestinationSearchDialog(
     startName: String? = null,
     onChangeStart: (() -> Unit)? = null,
     /** A loop instead (only offered for a new trip, nothing planned or ridden). */
-    onRoundtrip: (() -> Unit)? = null
+    onRoundtrip: (() -> Unit)? = null,
+    /** Search data for here that can be fetched without the map (places, fuel, camping…), and fetching it. */
+    searchOffer: com.curveon.data.search.SearchOffer? = null,
+    onDownloadSearch: () -> Unit = {},
+    /** Called when the dialog opens, so an offer can be looked for. */
+    onShown: () -> Unit = {}
 ) {
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
@@ -89,7 +94,8 @@ fun DestinationSearchDialog(
         onSearch(query).collect { results = it }
         searching = false
     }
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    // The keyboard comes only when the rider taps the field.
+    LaunchedEffect(Unit) { onShown() }
     // 1 = open, 0 = shrunk into the "pick on map" bar at the bottom of the map.
     val size = remember { androidx.compose.animation.core.Animatable(if (growIn) 0f else 1f) }
     LaunchedEffect(Unit) { if (growIn) size.animateTo(1f, androidx.compose.animation.core.tween(260)) }
@@ -179,6 +185,8 @@ fun DestinationSearchDialog(
         }
 
         LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            // No search data here yet: fuel, camping and the like need it, and it is small enough to fetch alone.
+            if (searchOffer != null && query.isEmpty()) item { SearchOfferCard(searchOffer, onDownloadSearch) }
             // Where the trip starts: set it first so the route isn't worked out from here for nothing.
             // A start elsewhere stays in sight while typing.
             if (onChangeStart != null && (startName != null || query.isEmpty() && nearest == null)) item {
@@ -400,3 +408,36 @@ private fun kindLabel(kind: String): String = when (kind) {
     "recent" -> R.string.search_recent
     else -> null
 }?.let { stringResource(it) } ?: kind.replace('_', ' ').replaceFirstChar { it.uppercase() }
+
+
+/** "Download the search data for Norway (54 MB)": what makes Nearest fuel, camping … work without a downloaded map. */
+@Composable
+private fun SearchOfferCard(offer: com.curveon.data.search.SearchOffer, onDownload: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(ElectricCyan.copy(alpha = 0.10f))
+            .border(1.dp, ElectricCyan.copy(alpha = 0.5f), RoundedCornerShape(14.dp)).padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
+            .testTag("search_offer"),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.CloudDownload, null, tint = ElectricCyan, modifier = Modifier.size(26.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.search_offer_title), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(
+                when {
+                    offer.failed -> stringResource(R.string.search_offer_failed, offer.progress.orEmpty())
+                    offer.running -> offer.progress.orEmpty()
+                    else -> stringResource(R.string.search_offer_text, offer.name, offer.bytes / 1e6)
+                },
+                color = if (offer.failed) NeonAmber else TextSecondary, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis
+            )
+            if (offer.running) androidx.compose.material3.LinearProgressIndicator(
+                progress = { offer.fraction }, color = ElectricCyan, trackColor = CockpitSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+            )
+        }
+        if (!offer.running) TextButton(onClick = onDownload, modifier = Modifier.testTag("search_offer_download")) {
+            Text(stringResource(if (offer.failed) R.string.search_offer_retry else R.string.search_offer_get), color = ElectricCyan, fontWeight = FontWeight.Bold)
+        }
+    }
+}

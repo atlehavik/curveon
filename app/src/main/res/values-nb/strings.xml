@@ -223,6 +223,12 @@
     <!-- Where to? -->
     <string name="search_placeholder">Hvor skal du? Sted, adresse, bensin, utsiktspunkt…</string>
     <string name="search_nearest">Nærmeste</string>
+    <string name="search_offer_title">Nærmeste bensin, camping og mer</string>
+    <string name="search_offer_text">Last ned søkedata for %1$s (%2$.0f MB). Du trenger ikke kartet.</string>
+    <string name="search_offer_get">Last ned</string>
+    <string name="search_offer_retry">Prøv igjen</string>
+    <string name="search_offer_starting">Starter …</string>
+    <string name="search_offer_failed">Kunne ikke laste ned: %1$s</string>
     <string name="search_saved_routes">Lagrede ruter</string>
     <string name="favorites">Favoritter</string>
     <string name="favorite_home">Hjem</string>
@@ -411,6 +417,10 @@
     <string name="rides_save_to_group">Lagre i GPX-gruppe</string>
     <string name="tracks_title">GPX og turer</string>
     <string name="planned_tab">Planlagte</string>
+    <plurals name="planned_delete_title">
+        <item quantity="one">Fjerne %d planlagte tur?</item>
+        <item quantity="other">Fjerne %d planlagte turer?</item>
+    </plurals>
     <string name="ride_now">Kjør</string>
     <string name="stat_estimated">Beregnet</string>
     <string name="stat_curves">Svinger</string>
@@ -419,6 +429,8 @@
     <string name="save_route_to_planned">Planlagte turer</string>
     <string name="save_route_planned_group">Gruppe for planlagte turer</string>
     <string name="toast_saved_to_planned">Lagret i planlagte turer</string>
+    <string name="toast_saved">Lagret</string>
+    <string name="save_route_to_where_to">Hvor skal du?</string>
     <string name="planned_empty">Ingen planlagte turer ennå. Lagre en rute fra planleggeren med bokmerket, eller kopier en tur fra Turer.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d tur</item>

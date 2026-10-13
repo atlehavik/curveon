@@ -224,6 +224,12 @@
     <!-- Where to? -->
     <string name="search_placeholder">Where to? Town, address, fuel, viewpoint…</string>
     <string name="search_nearest">Nearest</string>
+    <string name="search_offer_title">Nearest fuel, camping and more</string>
+    <string name="search_offer_text">Download the search data for %1$s (%2$.0f MB). The map is not needed.</string>
+    <string name="search_offer_get">Download</string>
+    <string name="search_offer_retry">Try again</string>
+    <string name="search_offer_starting">Starting…</string>
+    <string name="search_offer_failed">Could not download: %1$s</string>
     <string name="search_saved_routes">Saved routes</string>
     <string name="favorites">Favourites</string>
     <string name="favorite_home">Home</string>
@@ -412,6 +418,10 @@
     <string name="rides_save_to_group">Save to GPX group</string>
     <string name="tracks_title">GPX &amp; rides</string>
     <string name="planned_tab">Planned</string>
+    <plurals name="planned_delete_title">
+        <item quantity="one">Remove %d planned trip?</item>
+        <item quantity="other">Remove %d planned trips?</item>
+    </plurals>
     <string name="ride_now">Ride</string>
     <string name="stat_estimated">Estimated</string>
     <string name="stat_curves">Curves</string>
@@ -420,6 +430,8 @@
     <string name="save_route_to_planned">Planned trips</string>
     <string name="save_route_planned_group">Group of planned trips</string>
     <string name="toast_saved_to_planned">Saved to planned trips</string>
+    <string name="toast_saved">Saved</string>
+    <string name="save_route_to_where_to">Where to?</string>
     <string name="planned_empty">No planned trips yet. Save a route from the planner with the bookmark button, or copy a ride from the Rides page.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d trip</item>

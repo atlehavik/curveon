@@ -55,6 +55,13 @@ class MapCatalog(private val context: Context) {
     fun areaAt(lat: Double, lon: Double): CatalogArea? =
         areas.filter { it.parent.isEmpty() && it.contains(lat, lon) }.minByOrNull { (it.bbox[2] - it.bbox[0]) * (it.bbox[3] - it.bbox[1]) }
 
+    /** The area whose search index covers a place: the country, or its state/region when the country is split. */
+    fun indexAreaAt(lat: Double, lon: Double): CatalogArea? {
+        val country = areaAt(lat, lon) ?: return null
+        if (!isSplit(country)) return country
+        return children(country.id).filter { it.contains(lat, lon) }.minByOrNull { (it.bbox[2] - it.bbox[0]) * (it.bbox[3] - it.bbox[1]) }
+    }
+
     private fun load(): List<CatalogArea> {
         val root = JSONObject(context.assets.open("map/countries.json").bufferedReader().use { it.readText() })
         root.getJSONObject("routingSizes").let { s -> s.keys().forEach { routingSizes[it] = s.getLong(it) } }

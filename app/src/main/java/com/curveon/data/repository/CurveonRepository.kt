@@ -26,10 +26,20 @@ class CurveonRepository(
 
     suspend fun renameRouteGroup(id: Long, name: String) = routeDao.renameGroup(id, name)
 
-    /** Deletes a group of planned trips; [keepTrips] leaves them as loose ones, else they go too. */
+    /** Deletes a group of planned trips; [keepTrips] leaves them as loose ones, else they leave the planned trips too. */
     suspend fun deleteRouteGroup(id: Long, keepTrips: Boolean) {
-        if (keepTrips) routeDao.ungroupRoutes(id) else routeDao.deleteRoutesInGroup(id)
+        if (keepTrips) routeDao.ungroupRoutes(id) else routeDao.getRoutesInGroup(id).forEach { removeFromPlanned(it) }
         routeDao.deleteGroupById(id)
+    }
+
+    /** Takes a saved route out of Where to?; gone altogether when it isn't among the planned trips either. */
+    suspend fun removeFromWhereTo(route: RouteItem) {
+        if (route.inPlanned) routeDao.updateRoute(route.copy(inWhereTo = false)) else routeDao.deleteRouteById(route.id)
+    }
+
+    /** Takes a saved route out of the planned trips (and their groups); gone altogether when it isn't in Where to? either. */
+    suspend fun removeFromPlanned(route: RouteItem) {
+        if (route.inWhereTo) routeDao.updateRoute(route.copy(inPlanned = false, groupId = null)) else routeDao.deleteRouteById(route.id)
     }
 
     suspend fun saveGpxTrack(track: GpxTrack): Long = gpxDao.insertTrack(track)

@@ -129,6 +129,53 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Continent to open the country list on: where the rider is, else Europe. */
     fun currentContinent(): String = _currentLocation.value.let { mapCatalog.areaAt(it.latitude, it.longitude)?.continent } ?: "Europe"
 
+    // ---------------------------------------------------------------- search data without the map
+
+    private val _searchOffer = MutableStateFlow<com.curveon.data.search.SearchOffer?>(null)
+    /** Search data for where the rider is that can be fetched without downloading the map (see [checkSearchOffer]). */
+    val searchOffer: StateFlow<com.curveon.data.search.SearchOffer?> = _searchOffer.asStateFlow()
+    private var searchOfferJob: Job? = null
+    /** Countries already fetched by themselves this time the app runs: once, so a failure doesn't make a loop. */
+    private val autoSearchTried = mutableSetOf<String>()
+
+    /**
+     * Is there a search index for where the rider is that isn't on the tablet but is small enough to
+     * offer? Called when Where to? opens (and a little after start). A very small one on an unmetered
+     * connection is fetched by itself.
+     */
+    fun checkSearchOffer() {
+        if (searchOfferJob?.isActive == true) return
+        val here = _currentLocation.value
+        if (here == DEFAULT_LOCATION) return
+        viewModelScope.launch {
+            val area = withContext(Dispatchers.Default) { mapCatalog.indexAreaAt(here.latitude, here.longitude) }
+            if (area == null || placeSearch.indexes.source(area.id) != com.curveon.data.search.SearchIndexes.Source.NONE) { _searchOffer.value = null; return@launch }
+            withContext(Dispatchers.IO) { if (mapDownloads.searchBytes(area.id) == null) mapDownloads.refreshSearch() }
+            val bytes = mapDownloads.searchBytes(area.id)
+            if (bytes == null || bytes > SEARCH_OFFER_MAX_BYTES) { _searchOffer.value = null; return@launch }
+            if (_searchOffer.value?.areaId != area.id) _searchOffer.value = com.curveon.data.search.SearchOffer(area.id, area.displayName(java.util.Locale.getDefault()), bytes)
+            val cm = getApplication<Application>().getSystemService(android.net.ConnectivityManager::class.java)
+            if (bytes <= SEARCH_AUTO_MAX_BYTES && cm?.isActiveNetworkMetered == false && autoSearchTried.add(area.id)) downloadSearchIndex()
+        }
+    }
+
+    /** Fetches the offered search index. */
+    fun downloadSearchIndex() {
+        val offer = _searchOffer.value ?: return
+        if (searchOfferJob?.isActive == true) return
+        searchOfferJob = viewModelScope.launch {
+            _searchOffer.value = offer.copy(progress = str(R.string.search_offer_starting), fraction = 0f, failed = false)
+            try {
+                placeSearch.indexes.fetch(offer.areaId, { msg, f -> _searchOffer.value = offer.copy(progress = msg, fraction = f) }, isCancelled = { false })
+                _searchOffer.value = null
+                updateMapStatus()
+            } catch (e: Throwable) {
+                placeSearch.indexes.cleanupPartial(offer.areaId)
+                _searchOffer.value = offer.copy(progress = e.message ?: "", failed = true)
+            }
+        }
+    }
+
     /** Checks online (when there is a connection) whether a newer map build exists. */
     fun refreshMapStatus() = viewModelScope.launch {
         latestMapBuild = mapDownloads.latestBuild() ?: latestMapBuild
@@ -875,21 +922,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Keeps a ride under [name] where the save dialog says: as a planned trip and/or a GPX track, each in its group. */
     fun saveRide(ride: Ride, name: String, t: com.curveon.ui.components.RouteSaveTargets) {
-        if (t.toPlanned) copyRideToPlanned(ride, name, t.plannedGroup, t.newPlannedGroup)
+        if (t.toWhereTo || t.toPlanned) saveRideAsRoute(ride, name, t.toWhereTo, t.toPlanned, t.plannedGroup, t.newPlannedGroup)
         if (t.toGpx) viewModelScope.launch {
             storeRideAsGpx(ride, t.newGpxGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: t.gpxGroup, name)
         }
         rememberSaveGroups(t)
     }
 
-    /** Keeps a logged ride as a planned trip, in an existing group, a new one ([newGroup]) or none. */
-    fun copyRideToPlanned(ride: Ride, name: String?, groupId: Long?, newGroup: String?) = viewModelScope.launch {
+    /** Keeps a logged ride as a saved route in Where to? and/or the planned trips (in an existing group, a new one ([newGroup]) or none). */
+    private fun saveRideAsRoute(ride: Ride, name: String, whereTo: Boolean, planned: Boolean, groupId: Long?, newGroup: String?) = viewModelScope.launch {
         val pts = RideRecorder.parseTrack(ride.track).map { LatLon(it.lat, it.lon) }
         if (pts.size < 2) return@launch
-        val group = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createRouteGroup(it.trim()) } ?: groupId
+        val group = if (planned) newGroup?.takeIf { it.isNotBlank() }?.let { repository.createRouteGroup(it.trim()) } ?: groupId else null
         repository.saveRoute(SavedRoutes.trackItem(
-            name ?: ride.title.ifEmpty { str(R.string.ride_earlier) }, pts, ride.distanceMeters, (ride.movingMillis / 60_000).toInt(),
-            RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED), group
+            name, pts, ride.distanceMeters, (ride.movingMillis / 60_000).toInt(),
+            RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED), group, inWhereTo = whereTo, inPlanned = planned
         ))
     }
 
@@ -1142,7 +1189,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /** Saves the previewed (or active) route under [name]. */
-    fun saveRoute(name: String, groupId: Long? = null, newGroup: String? = null) {
+    fun saveRoute(name: String, whereTo: Boolean, planned: Boolean, groupId: Long? = null, newGroup: String? = null) {
         val s = navigator.state.value
         val goal = s.preview?.goal ?: s.goal ?: return
         val route = s.preview?.selectedRoute ?: s.route ?: return
@@ -1154,10 +1201,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             (g as? NavigationGoal.Destination)?.saved?.takeIf { it.title == name }?.let { item.copy(id = it.id) } ?: item
         }
         viewModelScope.launch {
-            val created = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createRouteGroup(it.trim()) }
+            val created = if (planned) newGroup?.takeIf { it.isNotBlank() }?.let { repository.createRouteGroup(it.trim()) } else null
             // A group made here is where the next route goes too.
             created?.let { settings.edit().putLong("saveRoutePlannedGroup", it).apply() }
-            repository.saveRoute(item.copy(groupId = created ?: groupId ?: item.groupId))
+            // Saved again under its own name: where it was kept before it stays kept.
+            val before = savedRoutes.value.firstOrNull { it.id == item.id && item.id != 0L }
+            repository.saveRoute(item.copy(
+                inWhereTo = whereTo || before?.inWhereTo == true, inPlanned = planned || before?.inPlanned == true,
+                groupId = if (planned) created ?: groupId else before?.groupId
+            ))
         }
     }
 
@@ -1252,7 +1304,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun deletePlannedGroup(group: com.curveon.data.model.RouteGroup, keepTrips: Boolean) = viewModelScope.launch { repository.deleteRouteGroup(group.id, keepTrips) }
 
-    fun deleteSavedRoute(item: RouteItem) = viewModelScope.launch { repository.deleteRoute(item.id) }
+    /** Takes a saved route out of Where to? (gone altogether unless it is among the planned trips too). */
+    fun deleteSavedRoute(item: RouteItem) = viewModelScope.launch { repository.removeFromWhereTo(item) }
+
+    /** Takes trips out of the planned trips (gone altogether unless they are in Where to? too). */
+    fun deletePlannedTrips(items: Collection<RouteItem>) = viewModelScope.launch { items.forEach { repository.removeFromPlanned(it) } }
 
     fun recents(): List<Stop> = recentDestinations.all()
 
@@ -1464,6 +1520,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     companion object {
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
+        /** Search data bigger than this (compressed) isn't offered on its own: it comes with the country's map. */
+        private const val SEARCH_OFFER_MAX_BYTES = 120_000_000L
+        /** Search data this small is fetched by itself on an unmetered connection. */
+        private const val SEARCH_AUTO_MAX_BYTES = 8_000_000L
         private const val DR_START_MS = 3_000L
         /** A single fix further from the route than this is shown as it is, even before off-route kicks in. */
         private const val SNAP_LEAVE_M = 20.0

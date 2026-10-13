@@ -108,6 +108,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val obdValues by viewModel.obdValues.collectAsStateWithLifecycle()
     val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
     val routeGroups by viewModel.routeGroups.collectAsStateWithLifecycle()
+    val searchOffer by viewModel.searchOffer.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
     val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
@@ -719,13 +720,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 },
                 // Leaving the start search opened from "Where to?" goes back there.
                 onDismiss = { if (startFirst) { startFirst = false; searchPurpose = SearchPurpose.DESTINATION } else closeSearch() },
-                savedRoutes = savedRoutes,
+                savedRoutes = savedRoutes.filter { it.inWhereTo },
                 recents = remember(purpose) { viewModel.recents() },
                 favorites = favorites,
                 onDeleteFavorite = viewModel::deleteFavorite,
                 onPickSaved = { closeSearch(); viewModel.previewSaved(it) },
                 onDeleteSaved = { viewModel.deleteSavedRoute(it) },
                 onNearest = { viewModel.nearest(it) },
+                searchOffer = searchOffer, onDownloadSearch = viewModel::downloadSearchIndex, onShown = viewModel::checkSearchOffer,
                 purpose = purpose,
                 onPickOnMap = { startMapPick(purpose) },
                 growIn = searchGrowIn,
@@ -787,7 +789,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     saveGroups = viewModel.saveGroups,
                     onSave = { r, name, t ->
                         viewModel.saveRide(r, name, t)
-                        toast = context.getString(if (t.toPlanned && t.toGpx) R.string.toast_saved_to_both else if (t.toGpx) R.string.toast_saved_to_gpx else R.string.toast_saved_to_planned)
+                        toast = context.getString(savedToast(t))
                     },
                     logRides = logRides,
                     onLogRides = { viewModel.setLogRides(it) },
@@ -798,14 +800,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     embedded = true
                 )
                 TracksTab.PLANNED -> PlannedTripsPage(
-                    trips = savedRoutes,
+                    trips = savedRoutes.filter { it.inPlanned },
                     groups = routeGroups,
                     onRide = { t, reversed -> showGpx = false; viewModel.ridePlanned(t, reversed) },
                     gpxGroups = gpxGroups,
                     onSaveToGpx = { t, groupId, newGroup -> viewModel.savePlannedToGpx(t, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
                     onRename = viewModel::renamePlanned,
                     onMove = viewModel::movePlanned,
-                    onDelete = viewModel::deleteSavedRoute,
+                    onDelete = viewModel::deletePlannedTrips,
                     onRenameGroup = viewModel::renamePlannedGroup,
                     onDeleteGroup = viewModel::deletePlannedGroup
                 )
@@ -1017,11 +1019,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 plannedGroups = routeGroups.map { com.curveon.data.model.GpxGroup(id = it.id, name = it.name) },
                 gpxGroups = gpxGroups,
                 onSave = { name, t ->
-                    if (t.toPlanned) viewModel.saveRoute(name, t.plannedGroup, t.newPlannedGroup)
+                    if (t.toWhereTo || t.toPlanned) viewModel.saveRoute(name, t.toWhereTo, t.toPlanned, t.plannedGroup, t.newPlannedGroup)
                     if (t.toGpx) viewModel.saveRouteToGpx(name, t.gpxGroup, t.newGpxGroup)
                     viewModel.rememberSaveGroups(t)
                     saveName = null
-                    toast = context.getString(if (t.toPlanned && t.toGpx) R.string.toast_saved_to_both else if (t.toGpx) R.string.toast_saved_to_gpx else R.string.toast_saved_to_planned)
+                    toast = context.getString(savedToast(t))
                 },
                 onDismiss = { saveName = null }
             )
@@ -1209,3 +1211,11 @@ private enum class TracksTab(val label: Int, val icon: androidx.compose.ui.graph
 
 /** An adventure being drawn: where to, and how long it should take (minutes of estimated riding). */
 private data class AdventureDraft(val name: String, val destination: com.curveon.routing.LatLon, val minutes: Int)
+
+/** What to tell the rider after saving: where it went. */
+private fun savedToast(t: RouteSaveTargets) = when {
+    listOf(t.toWhereTo, t.toPlanned, t.toGpx).count { it } > 1 -> R.string.toast_saved
+    t.toWhereTo -> R.string.toast_saved_to_where_to
+    t.toPlanned -> R.string.toast_saved_to_planned
+    else -> R.string.toast_saved_to_gpx
+}

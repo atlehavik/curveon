@@ -59,6 +59,9 @@ class MapDownloads(
 
     suspend fun refreshSearch() { search.available()?.let { searchAvailable = it } }
 
+    /** Size of [areaId]'s full search index online, once [refreshSearch] has reached the server. */
+    fun searchBytes(areaId: String): Long? = searchAvailable?.get(areaId)
+
     val catalog = MapCatalog(context)
     private val prefs = context.getSharedPreferences("maps", Context.MODE_PRIVATE)
     private val http = OkHttpClient.Builder().connectTimeout(15, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build()

@@ -51,6 +51,9 @@ interface RouteDao {
     @Query("DELETE FROM saved_routes WHERE groupId = :groupId")
     suspend fun deleteRoutesInGroup(groupId: Long)
 
+    @Query("SELECT * FROM saved_routes WHERE groupId = :groupId")
+    suspend fun getRoutesInGroup(groupId: Long): List<RouteItem>
+
     @Query("SELECT COUNT(*) FROM saved_routes")
     suspend fun getRouteCount(): Int
 }

@@ -3,6 +3,7 @@ package com.curveon.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -41,6 +42,7 @@ import com.curveon.ui.theme.*
  * Planned trips: routes saved from the planner or copied from the ride log, kept in named groups
  * ("Trips for the weekend") like GPX tracks. A trip can be ridden as it is or the other way round.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ColumnScope.PlannedTripsPage(
     trips: List<RouteItem>,
@@ -54,7 +56,8 @@ fun ColumnScope.PlannedTripsPage(
     onRename: (RouteItem, String) -> Unit,
     /** (trip, existing group or null, new group name or null). */
     onMove: (RouteItem, Long?, String?) -> Unit,
-    onDelete: (RouteItem) -> Unit,
+    /** Takes trips out of the planned trips. */
+    onDelete: (Collection<RouteItem>) -> Unit,
     onRenameGroup: (RouteGroup, String) -> Unit,
     /** (group, keep its trips as loose ones). */
     onDeleteGroup: (RouteGroup, Boolean) -> Unit
@@ -65,7 +68,9 @@ fun ColumnScope.PlannedTripsPage(
     var renaming by remember { mutableStateOf<Any?>(null) }
     var moving by remember { mutableStateOf<RouteItem?>(null) }
     var savingToGpx by remember { mutableStateOf<RouteItem?>(null) }
-    var confirmDelete by remember { mutableStateOf<RouteItem?>(null) }
+    /** Trips picked for deleting; null when not selecting (long-press a trip, or the select button, as in Rides). */
+    var selection by remember { mutableStateOf<Set<Long>?>(null) }
+    var confirmDelete by remember { mutableStateOf<Collection<RouteItem>?>(null) }
     var confirmDeleteGroup by remember { mutableStateOf<RouteGroup?>(null) }
     val byGroup = remember(trips, groups) { trips.filter { t -> groups.any { it.id == t.groupId } }.groupBy { it.groupId!! } }
     val rows = remember(trips, groups, expandedGroups) {
@@ -78,6 +83,26 @@ fun ColumnScope.PlannedTripsPage(
             Text(stringResource(R.string.planned_empty), color = TextMuted, fontSize = 14.sp, modifier = Modifier.padding(24.dp))
         }
     } else LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (trips.isNotEmpty()) item {
+            val sel = selection
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+                if (sel != null) {
+                    Text(pluralStringResource(R.plurals.rides_selected, sel.size, sel.size), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    val all = sel.size == trips.size
+                    PillButton(if (all) Icons.Default.RemoveDone else Icons.Default.DoneAll,
+                        stringResource(if (all) R.string.rides_select_none else R.string.rides_select_all), CockpitSurfaceVariant, TextPrimary) {
+                        selection = if (all) emptySet() else trips.map { it.id }.toSet()
+                    }
+                    if (sel.isNotEmpty()) RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 48.dp, WarningRed, TextPrimary) {
+                        confirmDelete = trips.filter { it.id in sel }
+                    }
+                }
+                RoundButton(
+                    Icons.Default.Checklist, stringResource(R.string.rides_select), 48.dp,
+                    if (sel != null) ElectricCyan else CockpitSurfaceVariant, if (sel != null) Color(0xFF00363D) else TextPrimary
+                ) { selection = if (sel == null) emptySet() else null }
+            }
+        }
         items(rows, key = { if (it is RouteGroup) "g${it.id}" else "t${(it as RouteItem).id}" }) { row ->
             if (row is RouteGroup) {
                 val members = byGroup[row.id].orEmpty()
@@ -106,13 +131,28 @@ fun ColumnScope.PlannedTripsPage(
                 }
             } else {
                 val t = row as RouteItem
-                val open = openTrip == t.id
+                val sel = selection
+                val picked = sel != null && t.id in sel
+                val open = sel == null && openTrip == t.id
                 val line = remember(t.id, t.polylineJson.length) { SavedRoutes.decode(t.polylineJson).map { it.lat to it.lon } }
                 Column(
-                    Modifier.fillMaxWidth().padding(start = if (t.groupId != null) 24.dp else 0.dp).clip(RoundedCornerShape(16.dp)).background(CockpitSurfaceVariant)
-                        .clickable { openTrip = if (open) null else t.id }.padding(14.dp).testTag("planned_trip")
+                    Modifier.fillMaxWidth().padding(start = if (t.groupId != null) 24.dp else 0.dp).clip(RoundedCornerShape(16.dp))
+                        .background(if (picked) ElectricCyan.copy(alpha = 0.15f) else CockpitSurfaceVariant)
+                        .border(1.dp, if (picked) ElectricCyan else Color.Transparent, RoundedCornerShape(16.dp))
+                        .combinedClickable(
+                            onClick = {
+                                if (sel != null) selection = if (picked) sel - t.id else sel + t.id
+                                else openTrip = if (open) null else t.id
+                            },
+                            onLongClick = { selection = (sel ?: emptySet()) + t.id }
+                        ).padding(14.dp).testTag("planned_trip")
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (sel != null) {
+                            Icon(if (picked) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked, null,
+                                tint = if (picked) ElectricCyan else TextMuted, modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.width(12.dp))
+                        }
                         RouteThumbnail(line, Modifier.size(56.dp))
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
@@ -139,9 +179,10 @@ fun ColumnScope.PlannedTripsPage(
                             PillButton(Icons.Default.Route, stringResource(R.string.rides_save_to_gpx), CockpitSurface, TextPrimary, Modifier.weight(1f)) { savingToGpx = t }
                             RowMenu(listOf(
                                 MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = t },
-                                MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t },
-                                MenuItem(Icons.Default.DeleteOutline, stringResource(R.string.delete)) { confirmDelete = t }
+                                MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t }
                             ))
+                            // Taken out of the planned trips at once, as a ride is from the log.
+                            RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 56.dp, CockpitSurface, TextMuted) { onDelete(listOf(t)) }
                         }
                     }
                 }
@@ -149,11 +190,13 @@ fun ColumnScope.PlannedTripsPage(
         }
     }
 
-    confirmDelete?.let { t ->
+    confirmDelete?.let { picked ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { HideSystemBars(); Text(stringResource(R.string.delete_named, t.title)) },
-            confirmButton = { TextButton(onClick = { onDelete(t); confirmDelete = null }) { Text(stringResource(R.string.delete), color = WarningRed) } },
+            title = { HideSystemBars(); Text(pluralStringResource(R.plurals.planned_delete_title, picked.size, picked.size)) },
+            confirmButton = {
+                TextButton(onClick = { onDelete(picked); confirmDelete = null; selection = null }) { Text(stringResource(R.string.delete), color = WarningRed) }
+            },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } }
         )
     }

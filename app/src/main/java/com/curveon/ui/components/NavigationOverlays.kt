@@ -246,6 +246,7 @@ private val OnCyanDark = Color(0xFF00363D)
  * GPX collection (in [gpxGroup] or [newGpxGroup]). Nothing is ticked to begin with, so a stray tap saves nothing.
  */
 data class RouteSaveTargets(
+    val toWhereTo: Boolean = false,
     val toPlanned: Boolean = false, val plannedGroup: Long? = null, val newPlannedGroup: String? = null,
     val toGpx: Boolean = false, val gpxGroup: Long? = null, val newGpxGroup: String? = null
 )
@@ -290,6 +291,8 @@ fun SaveRouteDialog(
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("save_route_name")
                 )
+                SaveTargetRow(Icons.Default.Search, stringResource(R.string.save_route_to_where_to), null, targets.toWhereTo,
+                    Modifier.testTag("save_route_to_where_to")) { targets = targets.copy(toWhereTo = !targets.toWhereTo) }
                 val plannedName = targets.newPlannedGroup ?: plannedGroups.firstOrNull { it.id == targets.plannedGroup }?.name ?: stringResource(R.string.gpx_no_group)
                 SaveTargetRow(Icons.Default.EventNote, stringResource(R.string.save_route_to_planned), plannedName.takeIf { targets.toPlanned }, targets.toPlanned,
                     Modifier.testTag("save_route_to_planned"), onDetail = { pickingPlanned = true }) { targets = targets.copy(toPlanned = !targets.toPlanned) }
@@ -299,7 +302,7 @@ fun SaveRouteDialog(
             }
         },
         confirmButton = {
-            val can = name.isNotBlank() && (targets.toPlanned || targets.toGpx)
+            val can = name.isNotBlank() && (targets.toWhereTo || targets.toPlanned || targets.toGpx)
             TextButton(onClick = { onSave(name.trim(), targets) }, enabled = can, modifier = Modifier.testTag("save_route_confirm")) {
                 Text(stringResource(R.string.save), color = if (can) ElectricCyan else TextMuted, fontWeight = FontWeight.Bold)
             }

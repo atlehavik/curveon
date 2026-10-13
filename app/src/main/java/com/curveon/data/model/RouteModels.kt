@@ -1,5 +1,6 @@
 package com.curveon.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -68,7 +69,10 @@ data class RouteItem(
     val waypointsJson: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     /** The group of planned trips this one is kept in ("Trips for the weekend"); null = none. */
-    val groupId: Long? = null
+    val groupId: Long? = null,
+    /** Offered in Where to? (saved routes), and/or kept among the planned trips: one saved route can be both. */
+    @ColumnInfo(defaultValue = "1") val inWhereTo: Boolean = true,
+    @ColumnInfo(defaultValue = "0") val inPlanned: Boolean = false
 )
 
 /** A named set of planned trips, e.g. "Trips for the weekend". */

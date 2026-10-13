@@ -50,10 +50,12 @@ object SavedRoutes {
     }
 
     /** A planned trip made of a line ridden or drawn earlier (a ride from the log), to ride again as it is. */
-    fun trackItem(name: String, points: List<LatLon>, distanceMeters: Double, minutes: Int, options: RouteOptions, groupId: Long?) = RouteItem(
+    fun trackItem(name: String, points: List<LatLon>, distanceMeters: Double, minutes: Int, options: RouteOptions, groupId: Long?,
+        inWhereTo: Boolean = false, inPlanned: Boolean = true) = RouteItem(
         title = name, subtitle = "Track", totalDistanceKm = (distanceMeters / 1000).toFloat(), estimatedMinutes = minutes,
         roadType = options.roadStyle.name, groundType = options.surface.name, curvinessScore = 0, elevationGainMeters = 0,
-        polylineJson = encode(points), waypointsJson = JSONObject().put("options", optionsJson(options)).toString(), groupId = groupId
+        polylineJson = encode(points), waypointsJson = JSONObject().put("options", optionsJson(options)).toString(), groupId = groupId,
+        inWhereTo = inWhereTo, inPlanned = inPlanned
     )
 
     fun toGoal(item: RouteItem): NavigationGoal {

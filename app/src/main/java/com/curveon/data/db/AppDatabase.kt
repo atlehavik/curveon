@@ -12,13 +12,21 @@ import com.curveon.data.model.RouteItem
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [RouteItem::class, RouteGroup::class, GpxTrack::class, GpxGroup::class, Ride::class], version = 5, exportSchema = false)
+@Database(entities = [RouteItem::class, RouteGroup::class, GpxTrack::class, GpxGroup::class, Ride::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun routeDao(): RouteDao
     abstract fun gpxDao(): GpxDao
     abstract fun rideDao(): RideDao
 
     companion object {
+        /** v6: a saved route is in Where to? and/or among the planned trips (old ones stay in Where to? only). */
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `saved_routes` ADD COLUMN `inWhereTo` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE `saved_routes` ADD COLUMN `inPlanned` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         /** v5: planned trips can be kept in named groups. */
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -81,7 +89,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "curveon_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

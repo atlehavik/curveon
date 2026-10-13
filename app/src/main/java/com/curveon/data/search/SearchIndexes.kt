@@ -73,6 +73,9 @@ class SearchIndexes(private val context: Context) {
         if (source(id) == Source.NONE) buildFromMap(id, map, onProgress, isCancelled)
     }
 
+    /** Fetches [id]'s full index from the cloud, without its map. */
+    suspend fun fetch(id: String, onProgress: (String, Float) -> Unit, isCancelled: () -> Boolean) = download(id, onProgress, isCancelled)
+
     private suspend fun download(id: String, onProgress: (String, Float) -> Unit, isCancelled: () -> Boolean) = withContext(Dispatchers.IO) {
         val tmp = File(dir, "$id.sqlite.part")
         http.newCall(Request.Builder().url("$RELEASE/$id.sqlite.gz").build()).execute().use { r ->
