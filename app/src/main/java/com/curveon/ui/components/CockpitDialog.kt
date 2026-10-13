@@ -150,6 +150,50 @@ fun HostDialog(onDismiss: () -> Unit, content: @Composable () -> Unit) {
     }
 }
 
+/**
+ * A screen of several pages in one frame (Settings, GPX / Rides / Planned, Phone): the page menu down the
+ * left on a wide screen; upright on a phone a row of tabs on top with the pages swiped between side by side.
+ * Every page is laid out in a column that fills what is left, so lists can take the rest with a weight.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun <T> PagedCockpitDialog(
+    title: String,
+    icon: ImageVector,
+    accent: Color,
+    onDismiss: () -> Unit,
+    tag: String,
+    pages: List<T>,
+    selected: T,
+    onSelect: (T) -> Unit,
+    pageLabel: @Composable (T) -> String,
+    pageIcon: (T) -> ImageVector,
+    tabsWidth: androidx.compose.ui.unit.Dp = 210.dp,
+    /** Replaces the title in the header (e.g. the phone's own tab buttons on a wide screen). */
+    header: (@Composable RowScope.() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+    page: @Composable ColumnScope.(T) -> Unit
+) {
+    CockpitDialog(title = title, icon = icon, accent = accent, onDismiss = onDismiss, tag = tag, header = header, actions = actions) {
+        val tabs: @Composable () -> Unit = { DialogTabs(pages, selected, pageLabel, pageIcon, onSelect, width = tabsWidth) }
+        val pageColumn: @Composable (T) -> Unit = { which ->
+            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) { page(which) }
+        }
+        if (isNarrowScreen()) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            tabs()
+            val index = pages.indexOf(selected).coerceAtLeast(0)
+            val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = index) { pages.size }
+            // A tap on a tab scrolls to its page; a swipe lights its tab once it has settled.
+            LaunchedEffect(index) { if (pager.currentPage != index) pager.animateScrollToPage(index) }
+            LaunchedEffect(pager) { androidx.compose.runtime.snapshotFlow { pager.settledPage }.collect { pages.getOrNull(it)?.let(onSelect) } }
+            androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), pageSpacing = 12.dp) { pageColumn(pages[it]) }
+        } else Row(Modifier.fillMaxSize()) {
+            tabs()
+            Box(Modifier.weight(1f).fillMaxHeight().padding(start = 18.dp)) { pageColumn(selected) }
+        }
+    }
+}
+
 /** Narrower than a 7" tablet held upright: a phone held upright. Dialogs stack instead of sitting side by side. */
 @Composable
 fun isNarrowScreen(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600

@@ -360,6 +360,13 @@
     <string name="roundtrip_draw_km">Omtrent %1$d km rundt</string>
     <string name="roundtrip_draw_hint">Tegn området du vil kjøre i med én finger. To fingre flytter kartet.</string>
     <string name="roundtrip_search_subtitle">Tegn området du vil kjøre i på kartet</string>
+    <string name="adventure_chip">Eventyr</string>
+    <string name="adventure_draw_hint">Tegn området du vil kjøre i på veien dit. To fingre flytter kartet.</string>
+    <string name="adventure_time_hm">%1$d:%2$02d t</string>
+    <string name="preview_adventure_title">Eventyr til %1$s</string>
+    <string name="nav_no_adventure">Fant ikke noe eventyr i det området. Prøv å tegne det større, eller bruk mer tid.</string>
+    <string name="nav_adventure_too_short">Raskeste vei tar %1$d min. Be om mer tid for å få et eventyr.</string>
+    <string name="nav_adventure_progress">Finner veier… %1$d av %2$d</string>
     <string name="preview_loop_from">Rundtur fra %1$s</string>
     <string name="preview_area_roundtrip_title">Rundtur i området</string>
     <string name="style_fastest">Raskest</string>
@@ -402,6 +409,23 @@
     <string name="rides_ride_again">Kjør igjen</string>
     <string name="rides_save_to_gpx">Lagre i GPX-spor</string>
     <string name="rides_save_to_group">Lagre i GPX-gruppe</string>
+    <string name="tracks_title">GPX og turer</string>
+    <string name="planned_tab">Planlagte</string>
+    <string name="planned_empty">Ingen planlagte turer ennå. Lagre en rute fra planleggeren med bokmerket, eller kopier en tur fra Turer.</string>
+    <plurals name="planned_trips_count">
+        <item quantity="one">%d tur</item>
+        <item quantity="other">%d turer</item>
+    </plurals>
+    <plurals name="planned_delete_group_text">
+        <item quantity="one">Gruppen og den %d turen slettes.</item>
+        <item quantity="other">Gruppen og de %d turene slettes.</item>
+    </plurals>
+    <string name="planned_rename">Gi turen nytt navn</string>
+    <string name="planned_reversed">Kjøres motsatt vei</string>
+    <string name="rides_ride_reversed">Kjør motsatt vei</string>
+    <string name="rides_copy_to_planned">Kopier til planlagte</string>
+    <string name="rides_copy_to_group">Kopier til planlagte turer</string>
+    <string name="toast_copied_to_planned">Kopiert til planlagte turer</string>
     <string name="rides_select">Velg turer</string>
     <string name="rides_select_all">Alle</string>
     <string name="rides_select_none">Ingen</string>
@@ -414,6 +438,12 @@
         <item quantity="other">Slette %d turer?</item>
     </plurals>
     <string name="rides_delete_text">Kopier lagret i GPX-spor beholdes.</string>
+    <string name="rides_log">Lagre nye turer</string>
+    <string name="rides_log_on">Fullførte turer havner i denne listen</string>
+    <string name="rides_log_off">Av – nye turer lagres ikke, og heller ikke som GPX</string>
+    <string name="rides_this_week">Denne uka</string>
+    <string name="rides_last_week">Forrige uke</string>
+    <string name="rides_group_summary">%1$d turer · %2$d km</string>
     <string name="rides_auto_save">Autolagre nye turer i GPX</string>
     <string name="rides_auto_save_off">Av – turene ligger bare her</string>
     <string name="rides_auto_save_group">I %1$s · trykk for å bytte</string>

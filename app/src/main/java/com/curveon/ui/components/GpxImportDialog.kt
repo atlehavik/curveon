@@ -40,6 +40,24 @@ import com.curveon.data.gpx.PoiCategory
 import com.curveon.data.model.GpxTrack
 import com.curveon.ui.theme.*
 
+/** "Import": pick a GPX file to add. */
+@Composable
+fun GpxImportButton(onClick: () -> Unit) {
+    // Upright on a phone only the icon: the title next to it needs the room.
+    if (isNarrowScreen()) return Box(Modifier.testTag("gpx_import_btn")) {
+        RoundButton(Icons.Default.FileOpen, stringResource(R.string.gpx_import), 48.dp, ElectricCyan, Color(0xFF00363D), onClick)
+    }
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
+        modifier = Modifier.height(48.dp).testTag("gpx_import_btn")
+    ) {
+        Icon(Icons.Default.FileOpen, null, tint = Color(0xFF00363D))
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(R.string.gpx_import), color = Color(0xFF00363D), fontWeight = FontWeight.Bold)
+    }
+}
+
 /**
  * GPX manager: import tracks, sort them into groups (like layer groups), show them on the map in
  * a chosen colour and direction, show their waypoints, export, and ride one. Tapping a track row
@@ -57,7 +75,9 @@ fun GpxManagerDialog(
     onAutoFollow: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     /** Page menu when shown inside the GPX & rides dialog. */
-    sideBar: (@Composable () -> Unit)? = null
+    sideBar: (@Composable () -> Unit)? = null,
+    /** Only the page, for a frame that is somebody else's (the GPX / Rides / Planned screen). */
+    embedded: Boolean = false
 ) {
     var confirmDelete by remember { mutableStateOf<GpxTrack?>(null) }
     var confirmDeleteGroup by remember { mutableStateOf<GpxGroup?>(null) }
@@ -89,20 +109,8 @@ fun GpxManagerDialog(
         }
     }
 
-    CockpitDialog(
-        title = "GPX", icon = Icons.Default.Route, accent = ElectricCyan, onDismiss = onDismiss, tag = "gpx_manager", sideBar = sideBar,
-        actions = {
-            Button(
-                onClick = actions.onImport,
-                colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan),
-                modifier = Modifier.height(48.dp).testTag("gpx_import_btn")
-            ) {
-                Icon(Icons.Default.FileOpen, null, tint = Color(0xFF00363D))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.gpx_import), color = Color(0xFF00363D), fontWeight = FontWeight.Bold)
-            }
-        }
-    ) {
+    val importButton: @Composable RowScope.() -> Unit = { GpxImportButton(actions.onImport) }
+    val body: @Composable ColumnScope.() -> Unit = {
         if (message != null) Text(message, color = NeonAmber, fontSize = 13.sp)
 
         // Settings that apply to all tracks
@@ -177,6 +185,12 @@ fun GpxManagerDialog(
             }
         }
     }
+    // Embedded, the frame's header holds the import button.
+    if (embedded) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp), content = body)
+    else CockpitDialog(
+        title = "GPX", icon = Icons.Default.Route, accent = ElectricCyan, onDismiss = onDismiss, tag = "gpx_manager", sideBar = sideBar,
+        actions = importButton, content = body
+    )
 
     confirmDelete?.let { t ->
         AlertDialog(
@@ -230,7 +244,7 @@ class GpxActions(
     val onExport: (GpxGroup?, GpxTrack?, android.net.Uri) -> Unit
 )
 
-private class MenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit)
+internal class MenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit)
 
 @Composable
 private fun GroupRow(
@@ -361,7 +375,7 @@ private fun Palette(selected: Int?, onColor: (Int?) -> Unit, ownColors: List<Int
 }
 
 @Composable
-private fun RowMenu(items: List<MenuItem>) {
+internal fun RowMenu(items: List<MenuItem>) {
     var open by remember { mutableStateOf(false) }
     Box {
         RowIcon(Icons.Default.MoreVert, stringResource(R.string.more), TextSecondary) { open = true }
@@ -378,7 +392,7 @@ private fun RowMenu(items: List<MenuItem>) {
 }
 
 @Composable
-private fun RowIcon(icon: ImageVector, description: String, tint: Color, onClick: () -> Unit) {
+internal fun RowIcon(icon: ImageVector, description: String, tint: Color, onClick: () -> Unit) {
     Box(Modifier.size(44.dp).clip(CircleShape).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
         Icon(icon, description, tint = tint)
     }

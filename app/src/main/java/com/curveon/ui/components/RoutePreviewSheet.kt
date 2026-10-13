@@ -74,8 +74,12 @@ fun RoutePreviewSheet(
     onEditOnMap: () -> Unit = {},
     /** A drawn loop: plan it again no longer than this (null = the whole area). */
     onLoopMax: (Int?) -> Unit = {},
-    /** A drawn loop: draw the area again. */
+    /** A drawn loop or adventure: draw the area again. */
     onRedraw: () -> Unit = {},
+    /** A trip to a place: make it an adventure (draw the area to ride in, say how long). */
+    onAdventure: () -> Unit = {},
+    /** An adventure: plan it again taking this many minutes. */
+    onAdventureMinutes: (Int) -> Unit = {},
     /** Gravel/Offroad: how far off the ordinary route it may go for gravel (null = any distance). */
     onGravelReach: (Int?) -> Unit = {},
     onSave: () -> Unit,
@@ -125,18 +129,20 @@ fun RoutePreviewSheet(
             Text(
                 when (goal) {
                     is NavigationGoal.Destination -> when {
+                        goal.adventure != null -> stringResource(R.string.preview_adventure_title, goal.name)
                         goal.loop?.area != null -> stringResource(R.string.preview_area_roundtrip_title)
                         goal.loop != null -> stringResource(R.string.preview_loop_from, goal.name)
                         else -> goal.name
                     }
                     is NavigationGoal.Roundtrip -> if (goal.area != null) stringResource(R.string.preview_area_roundtrip_title)
                         else stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
+                    is NavigationGoal.Adventure -> stringResource(R.string.preview_adventure_title, goal.name)
                     is NavigationGoal.Track -> goal.name
                 },
                 color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
             )
-            if (goal is NavigationGoal.Roundtrip || (goal as? NavigationGoal.Destination)?.loop != null) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
+            if (goal is NavigationGoal.Roundtrip || goal is NavigationGoal.Adventure || (goal as? NavigationGoal.Destination)?.loop != null || (goal as? NavigationGoal.Destination)?.adventure != null) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
@@ -161,6 +167,19 @@ fun RoutePreviewSheet(
                 goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
                 if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
             )
+            // An adventure: how long, where from, and drawing the area again.
+            if (goal is NavigationGoal.Adventure) Row(
+                Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AdventureTimeChip(goal.minutes, onAdventureMinutes)
+                PlanChip(Icons.Default.Gesture, stringResource(R.string.loop_redraw), NeonAmber, "preview_redraw", onRedraw, outlined = true)
+                PlanChip(
+                    Icons.Default.TripOrigin,
+                    goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
+                    if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
+                )
+            }
             // A→B: where from (the planner), "+ Stop", and the stops with how long to each.
             if (goal is NavigationGoal.Destination) {
                 val route = preview.selectedRoute
@@ -170,6 +189,11 @@ fun RoutePreviewSheet(
                     Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // An adventure: how long it takes, and drawing it again, first.
+                    goal.adventure?.let { adventure ->
+                        AdventureTimeChip(adventure.minutes, onAdventureMinutes)
+                        PlanChip(Icons.Default.Gesture, stringResource(R.string.loop_redraw), NeonAmber, "preview_redraw", onRedraw, outlined = true)
+                    }
                     // A drawn loop: how long it may be, and drawing it again, first.
                     goal.loop?.takeIf { it.area != null }?.let { loop ->
                         LoopMaxChip(loop.maxKm, onLoopMax)
@@ -180,6 +204,10 @@ fun RoutePreviewSheet(
                         goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
                         if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
                     )
+                    // Not the quickest way there: a longer ride through an area drawn on the map.
+                    if (goal.loop == null && goal.adventure == null && goal.fixedLine == null && goal.stops.isEmpty()) {
+                        PlanChip(Icons.Default.Explore, stringResource(R.string.adventure_chip), NeonAmber, "preview_adventure", onAdventure, outlined = true)
+                    }
                     // "+ Stop" next to the start, so it stays in sight however many stops the trip has.
                     // Changing the route: a stop from the search, or on the map (points, dragging the line).
                     Box {
@@ -335,12 +363,14 @@ private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo:
             Text(
                 when (goal) {
                     is NavigationGoal.Destination -> when {
+                        goal.adventure != null -> stringResource(R.string.preview_adventure_title, goal.name)
                         goal.loop?.area != null -> stringResource(R.string.preview_area_roundtrip_title)
                         goal.loop != null -> stringResource(R.string.preview_loop_from, goal.name)
                         else -> goal.name
                     }
                     is NavigationGoal.Roundtrip -> if (goal.area != null) stringResource(R.string.preview_area_roundtrip_title)
                         else stringResource(R.string.preview_roundtrip_title, goal.distanceKm)
+                    is NavigationGoal.Adventure -> stringResource(R.string.preview_adventure_title, goal.name)
                     is NavigationGoal.Track -> goal.name
                 },
                 color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis

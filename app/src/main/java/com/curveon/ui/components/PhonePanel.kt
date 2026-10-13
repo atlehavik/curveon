@@ -90,33 +90,17 @@ fun PhoneDialog(
     onReconnect: () -> Unit,
     onClose: () -> Unit
 ) {
-    val narrow = isNarrowScreen()
-    CockpitDialog(
+    PagedCockpitDialog(
         title = stringResource(R.string.phone), icon = Icons.Default.Phone, accent = EcoGreen, onDismiss = onClose, tag = "phone_panel",
-        header = {
-            Icon(Icons.Default.Phone, null, tint = EcoGreen, modifier = Modifier.size(28.dp))
-            Text(stringResource(R.string.phone), color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
-            Spacer(Modifier.width(8.dp))
-            if (narrow) Spacer(Modifier.weight(1f))
-            else Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                PhoneTab.entries.forEach { t ->
-                    TabButton(t, selected = t == tab, Modifier.weight(1f)) { onTab(t) }
-                }
-            }
-        }
-    ) {
-        // Upright on a phone the tabs get their own row; only the chosen one is labelled.
-        if (narrow) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            PhoneTab.entries.forEach { t ->
-                TabButton(t, selected = t == tab, Modifier.weight(if (t == tab) 2f else 1f), showLabel = t == tab) { onTab(t) }
-            }
-        }
+        pages = PhoneTab.entries, selected = tab, onSelect = onTab,
+        pageLabel = { stringResource(it.label) }, pageIcon = { it.icon }, tabsWidth = 170.dp
+    ) { which ->
         Box(Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(CockpitBackground)) {
             val photo: @Composable (String?) -> Bitmap? = { key ->
                 if (key != null) LaunchedEffect(key) { onNeedPhoto(key) }
                 key?.let { state.photos[it] }
             }
-            when (tab) {
+            when (which) {
                 PhoneTab.FAVORITES -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect) { all ->
                     val favorites = all.filter { it.starred }
                     if (favorites.isEmpty()) Empty(Icons.Default.StarBorder, stringResource(R.string.phone_no_favorites), stringResource(R.string.phone_no_favorites_hint))
@@ -132,24 +116,6 @@ fun PhoneDialog(
                 }
                 PhoneTab.KEYPAD -> Keypad(onCall)
             }
-        }
-    }
-}
-
-@Composable
-private fun TabButton(tab: PhoneTab, selected: Boolean, modifier: Modifier, showLabel: Boolean = true, onClick: () -> Unit) {
-    Row(
-        modifier.height(48.dp).clip(RoundedCornerShape(24.dp))
-            .background(if (selected) ElectricCyan else Color.Transparent)
-            .clickable(onClick = onClick).padding(horizontal = 8.dp).testTag("phone_tab_${tab.name.lowercase()}"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        val color = if (selected) Color(0xFF00363D) else TextSecondary
-        Icon(tab.icon, stringResource(tab.label), tint = color, modifier = Modifier.size(24.dp))
-        if (showLabel) {
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(tab.label), color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Clip)
         }
     }
 }

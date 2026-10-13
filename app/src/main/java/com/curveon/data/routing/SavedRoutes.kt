@@ -49,6 +49,13 @@ object SavedRoutes {
         }
     }
 
+    /** A planned trip made of a line ridden or drawn earlier (a ride from the log), to ride again as it is. */
+    fun trackItem(name: String, points: List<LatLon>, distanceMeters: Double, minutes: Int, options: RouteOptions, groupId: Long?) = RouteItem(
+        title = name, subtitle = "Track", totalDistanceKm = (distanceMeters / 1000).toFloat(), estimatedMinutes = minutes,
+        roadType = options.roadStyle.name, groundType = options.surface.name, curvinessScore = 0, elevationGainMeters = 0,
+        polylineJson = encode(points), waypointsJson = JSONObject().put("options", optionsJson(options)).toString(), groupId = groupId
+    )
+
     fun toGoal(item: RouteItem): NavigationGoal {
         val json = runCatching { JSONObject(item.waypointsJson) }.getOrNull() ?: JSONObject()
         val options = json.optJSONObject("options")?.let(::parseOptions)

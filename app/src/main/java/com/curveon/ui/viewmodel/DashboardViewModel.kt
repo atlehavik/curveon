@@ -255,6 +255,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     val savedRoutes = repository.allRoutes.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    /** Named sets of planned trips ("Trips for the weekend"). */
+    val routeGroups = repository.allRouteGroups.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val gpxGroups = repository.allGpxGroups.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -373,7 +375,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Remaining stops plus the destination, for markers on the map. */
     val routeMarkers: StateFlow<List<GeoPoint>> = navigator.state
         .map { s ->
-            val g = (s.preview?.goal ?: s.goal) as? NavigationGoal.Destination ?: return@map emptyList()
+            val goal = s.preview?.goal ?: s.goal
+            // An adventure being worked out (or failed) is still a trip to its destination: keep the pin.
+            if (goal is NavigationGoal.Adventure) return@map (listOfNotNull(goal.start?.point) + goal.destination).map { GeoPoint(it.lat, it.lon) }
+            val g = goal as? NavigationGoal.Destination ?: return@map emptyList()
             (listOfNotNull(g.start?.point) + g.stops.filterNot { it.via }.map { it.point } + g.destination).map { GeoPoint(it.lat, it.lon) }
         }
         .distinctUntilChanged()
@@ -708,7 +713,17 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         return if (drawnOnRoute) p.snapped to p.routeBearingDeg.toFloat() else null
     }
 
+    /** Whether new rides are recorded into the ride log at all. A ride already under way finishes regardless. */
+    private val _logRides = MutableStateFlow(settings.getBoolean("logRides", true))
+    val logRides: StateFlow<Boolean> = _logRides.asStateFlow()
+
+    fun setLogRides(on: Boolean) {
+        _logRides.value = on
+        settings.edit().putBoolean("logRides", on).apply()
+    }
+
     private fun recordRide(fix: GpsFix) {
+        if (!_logRides.value && rideRecorder.current == null) return
         leanSensor.speedMps = tripTracker.speedKmh / 3.6f
         when (rideRecorder.onFix(fix, tripTracker.speedKmh, leanSensor.leanDeg)) {
             RideRecorder.Event.STARTED -> viewModelScope.launch {
@@ -751,6 +766,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private suspend fun autoSaveRide(ride: Ride) {
+        if (!_logRides.value) return // rides aren't kept, so neither is their GPX
         val groupId = _autoSaveRidesGroup.value ?: return
         // The group was deleted since: stop rather than scatter rides as loose tracks.
         if (db.gpxDao().getGroupById(groupId) == null) { setAutoSaveRides(null, null); return }
@@ -803,6 +819,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 val km = ((route?.distanceMeters ?: goal.distanceKm * 1000) / 1000).roundToInt()
                 if (from != null) str(R.string.loop_name_from, from, km) else str(R.string.loop_name, km)
             }
+            is NavigationGoal.Adventure -> {
+                val from = goal.start?.let { named(it) } ?: route?.points?.firstOrNull()?.let { placeName(it.lat, it.lon) }
+                    ?: placeName(here.latitude, here.longitude)
+                val to = named(Stop(goal.name, goal.destination)) ?: goal.name
+                if (from == null || from == to) to else "$from – $to"
+            }
             is NavigationGoal.Track -> goal.name
         }
     }
@@ -834,10 +856,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         )
     }
 
-    /** Ride a logged ride again, as a track. */
-    fun rideAgain(ride: Ride) {
+    /** Ride a logged ride again, as a track; [reverse] the other way round. */
+    fun rideAgain(ride: Ride, reverse: Boolean = false) {
         val pts = RideRecorder.parseTrack(ride.track).map { LatLon(it.lat, it.lon) }
-        if (pts.size >= 2) navigator.previewTrack(ride.title.ifEmpty { str(R.string.ride_earlier) }, pts, RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED))
+        if (pts.size >= 2) navigator.previewTrack(ride.title.ifEmpty { str(R.string.ride_earlier) }, if (reverse) pts.reversed() else pts,
+            RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED))
+    }
+
+    /** Keeps a logged ride as a planned trip, in an existing group, a new one ([newGroup]) or none. */
+    fun copyRideToPlanned(ride: Ride, groupId: Long?, newGroup: String?) = viewModelScope.launch {
+        val pts = RideRecorder.parseTrack(ride.track).map { LatLon(it.lat, it.lon) }
+        if (pts.size < 2) return@launch
+        val group = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createRouteGroup(it.trim()) } ?: groupId
+        repository.saveRoute(SavedRoutes.trackItem(
+            ride.title.ifEmpty { str(R.string.ride_earlier) }, pts, ride.distanceMeters, (ride.movingMillis / 60_000).toInt(),
+            RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED), group
+        ))
     }
 
     // ---------------------------------------------------------------- demo ride
@@ -989,6 +1023,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         maxKm
     )
 
+    /**
+     * An adventure to [destination] inside [area], taking about [minutes] of estimated riding time.
+     * Like a loop its shape is found on curvy roads when Fastest was last used.
+     */
+    fun previewAdventure(
+        name: String, destination: LatLon, area: List<GeoPoint>, minutes: Int, start: GeoPoint? = null, startName: String = "",
+        surface: SurfacePreference = lastOptions.surface, gravelReachKm: Int? = lastOptions.gravelReachKm
+    ) = navigator.previewAdventure(
+        name, destination, area.map { LatLon(it.latitude, it.longitude) }, minutes,
+        lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle,
+            surface = surface, gravelReachKm = gravelReachKm),
+        start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) }
+    )
+
+    fun setAdventureMinutes(minutes: Int) = navigator.setAdventureMinutes(minutes)
+
     /** The surface last planned with: what a new loop starts with. */
     fun lastSurface(): SurfacePreference = lastOptions.surface
 
@@ -1011,6 +1061,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             is NavigationGoal.Destination -> navigator.previewPlanned(g)
             is NavigationGoal.Track -> navigator.previewTrack(g.name, g.points, g.options)
             is NavigationGoal.Roundtrip -> Unit // saved loops are stored as tracks
+            is NavigationGoal.Adventure -> Unit // saved adventures are stored as tracks
         }
     }
 
@@ -1133,6 +1184,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun rememberSaveRouteTargets(toRoutes: Boolean, toGpx: Boolean, groupId: Long?) = settings.edit()
         .putBoolean("saveRouteToRoutes", toRoutes).putBoolean("saveRouteToGpx", toGpx)
         .putLong("saveRouteGpxGroup", groupId ?: -1L).apply()
+
+    /** Plan a planned trip on the map; [reverse] the other way round (its stops are then dropped: it is ridden as a line). */
+    fun ridePlanned(item: RouteItem, reverse: Boolean) {
+        if (!reverse) return previewSaved(item)
+        val pts = SavedRoutes.decode(item.polylineJson).reversed()
+        if (pts.size >= 2) navigator.previewTrack(item.title, pts, SavedRoutes.toGoal(item).options)
+    }
+
+    fun renamePlanned(item: RouteItem, name: String) = viewModelScope.launch { repository.renameRoute(item.id, name.trim()) }
+
+    /** Moves a planned trip into an existing group, a new one ([newGroup]) or out of groups. */
+    fun movePlanned(item: RouteItem, groupId: Long?, newGroup: String?) = viewModelScope.launch {
+        val group = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createRouteGroup(it.trim()) } ?: groupId
+        repository.setRouteGroup(item.id, group)
+    }
+
+    fun renamePlannedGroup(group: com.curveon.data.model.RouteGroup, name: String) = viewModelScope.launch { repository.renameRouteGroup(group.id, name.trim()) }
+
+    fun deletePlannedGroup(group: com.curveon.data.model.RouteGroup, keepTrips: Boolean) = viewModelScope.launch { repository.deleteRouteGroup(group.id, keepTrips) }
 
     fun deleteSavedRoute(item: RouteItem) = viewModelScope.launch { repository.deleteRoute(item.id) }
 

@@ -107,9 +107,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val obdState by viewModel.obd.state.collectAsStateWithLifecycle()
     val obdValues by viewModel.obdValues.collectAsStateWithLifecycle()
     val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
+    val routeGroups by viewModel.routeGroups.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
     val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
+    val logRides by viewModel.logRides.collectAsStateWithLifecycle()
     val wrongTurn by viewModel.wrongTurn.collectAsStateWithLifecycle()
     val navState by viewModel.navigation.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -163,7 +165,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var sketchMaxKm by remember { mutableStateOf<Int?>(null) }
     var sketchSurface by remember { mutableStateOf(viewModel.lastSurface()) }
     var sketchGravelReach by remember { mutableStateOf(viewModel.lastGravelReach()) }
-    LaunchedEffect(sketching) { if (sketching) sketchKm = null }
+    /** Drawing the area for an adventure to this place instead of a loop's. */
+    var adventure by remember { mutableStateOf<AdventureDraft?>(null) }
+    LaunchedEffect(sketching) { if (sketching) sketchKm = null else adventure = null }
     var showGpx by remember { mutableStateOf(false) }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
     var showSettings by rememberSaveable { mutableStateOf(false) }
@@ -396,7 +400,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         if (sketching) {
             SketchBar(onCancel = { sketching = false }, km = sketchKm?.let { k -> sketchMaxKm?.let { minOf(it, k) } ?: k }, startName = roundtripStart?.second,
                 maxKm = sketchMaxKm, onMaxKm = { sketchMaxKm = it }, surface = sketchSurface, onSurface = { sketchSurface = it },
-                gravelReachKm = sketchGravelReach, onGravelReach = { sketchGravelReach = it }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
+                gravelReachKm = sketchGravelReach, onGravelReach = { sketchGravelReach = it },
+                adventureMinutes = adventure?.minutes, onAdventureMinutes = { m -> adventure = adventure?.copy(minutes = m) },
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
         } else if (pickPurpose != null) {
             MapPickBar(
                 purpose = pickPurpose,
@@ -456,7 +462,27 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onEditOnMap = editOnMap,
                 onLoopMax = viewModel::setLoopMax,
                 onGravelReach = viewModel::setPreviewGravelReach,
+                onAdventure = {
+                    (preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.let { g ->
+                        // About what the twistier roads there take, to start from.
+                        val minutes = preview?.candidates.orEmpty().filter { it.route != null }
+                        val curvy = (minutes.firstOrNull { it.style == com.curveon.routing.RoadStyle.CURVY } ?: minutes.firstOrNull())?.route?.durationSeconds ?: 0.0
+                        val slowest = minutes.maxOfOrNull { it.route!!.durationSeconds } ?: 0.0
+                        adventure = AdventureDraft(g.name, g.destination, defaultAdventureMinutes(curvy / 60, slowest / 60))
+                        roundtripStart = g.start?.let { GeoPoint(it.point.lat, it.point.lon) to it.name }
+                        sketchSurface = g.options.surface
+                        sketchGravelReach = g.options.gravelReachKm
+                        sketching = true
+                    }
+                },
+                onAdventureMinutes = viewModel::setAdventureMinutes,
                 onRedraw = {
+                    ((preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.adventure ?: preview?.goal as? com.curveon.data.routing.NavigationGoal.Adventure)?.let { g ->
+                        adventure = AdventureDraft(g.name, g.destination, g.minutes)
+                        roundtripStart = g.start?.let { GeoPoint(it.point.lat, it.point.lon) to it.name }
+                        sketchSurface = g.options.surface
+                        sketchGravelReach = g.options.gravelReachKm
+                    }
                     // Same start, max and surface as the loop on screen.
                     (preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.loop?.let { loop ->
                         roundtripStart = loop.start?.let { GeoPoint(it.point.lat, it.point.lon) to it.name }
@@ -539,7 +565,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             pickedPoint = picked?.first,
             sketch = when (val g = preview?.goal) {
                 is com.curveon.data.routing.NavigationGoal.Roundtrip -> g.area
-                is com.curveon.data.routing.NavigationGoal.Destination -> g.loop?.area
+                is com.curveon.data.routing.NavigationGoal.Adventure -> g.area
+                is com.curveon.data.routing.NavigationGoal.Destination -> g.loop?.area ?: g.adventure?.area
                 else -> null
             }?.map { GeoPoint(it.lat, it.lon) }.orEmpty(),
             onSketchProgress = { stroke ->
@@ -547,8 +574,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 else ((stroke + stroke.first()).zipWithNext { a, b -> com.curveon.routing.Geo.distance(a.latitude, a.longitude, b.latitude, b.longitude) }.sum() / 1000).toInt()
             },
             onSketch = if (sketching) ({ stroke ->
+                val trip = adventure
                 sketching = false
-                viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "", sketchMaxKm, sketchSurface, sketchGravelReach)
+                if (trip != null) viewModel.previewAdventure(trip.name, trip.destination, stroke, trip.minutes, roundtripStart?.first, roundtripStart?.second ?: "", sketchSurface, sketchGravelReach)
+                else viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "", sketchMaxKm, sketchSurface, sketchGravelReach)
             }) else null,
             gpxTracks = overlayTracks,
             gpxPois = overlayPois,
@@ -711,60 +740,71 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         } }
 
-        if (showGpx) HostDialog(onDismiss = { showGpx = false }) {
-          val gpxPage: @Composable (TracksTab) -> Unit = { which ->
-            val tabs = @Composable {
-                DialogTabs(TracksTab.entries, which, { stringResource(it.label) }, { it.icon }, { tracksTab = it }, width = 170.dp)
+        if (showGpx) PagedCockpitDialog(
+            title = stringResource(R.string.tracks_title), icon = Icons.Default.Route, accent = ElectricCyan, onDismiss = { showGpx = false }, tag = "gpx_manager",
+            pages = TracksTab.entries, selected = tracksTab, onSelect = { tracksTab = it },
+            pageLabel = { stringResource(it.label) }, pageIcon = { it.icon }, tabsWidth = 170.dp,
+            actions = { if (tracksTab == TracksTab.GPX) GpxImportButton { importGpxLauncher.launch(arrayOf("*/*")) } }
+        ) { which ->
+            when (which) {
+                TracksTab.GPX -> GpxManagerDialog(
+                    tracks = savedGpxTracks,
+                    groups = gpxGroups,
+                    message = gpxMessage,
+                    poiCategories = poiCategories,
+                    autoFollow = autoFollow,
+                    actions = remember(viewModel) {
+                        GpxActions(
+                            onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
+                            onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
+                            onColor = { t, c -> viewModel.setTrackColor(t, c) },
+                            onReverse = { t, r -> viewModel.setTrackReversed(t, r) },
+                            onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
+                            onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
+                            onDelete = { viewModel.deleteGpx(it) },
+                            onRenameTrack = { t, name -> viewModel.renameTrack(t, name) },
+                            onMove = { t, id, name -> viewModel.moveTrack(t, id, name) },
+                            onGroupVisibility = { viewModel.toggleGroupVisibility(it) },
+                            onGroupDirection = { viewModel.toggleGroupDirection(it) },
+                            onGroupColor = { g, c -> viewModel.setGroupColor(g, c) },
+                            onRenameGroup = { g, name -> viewModel.renameGroup(g, name) },
+                            onDeleteGroup = { g, keep -> viewModel.deleteGroup(g, keep) },
+                            onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) }
+                        )
+                    },
+                    onTogglePoiCategory = viewModel::togglePoiCategory,
+                    onAutoFollow = viewModel::setAutoFollow,
+                    onDismiss = { showGpx = false },
+                    embedded = true
+                )
+                TracksTab.RIDES -> RideLogDialog(
+                    current = currentRide,
+                    rides = rides,
+                    onRideAgain = { showGpx = false; viewModel.rideAgain(it) },
+                    onRideReversed = { showGpx = false; viewModel.rideAgain(it, reverse = true) },
+                    plannedGroups = routeGroups.map { com.curveon.data.model.GpxGroup(id = it.id, name = it.name) },
+                    onCopyToPlanned = { r, groupId, newGroup -> viewModel.copyRideToPlanned(r, groupId, newGroup); toast = context.getString(R.string.toast_copied_to_planned) },
+                    gpxGroups = gpxGroups,
+                    onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
+                    logRides = logRides,
+                    onLogRides = { viewModel.setLogRides(it) },
+                    autoSaveGroup = autoSaveRidesGroup,
+                    onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
+                    onDelete = { viewModel.deleteRides(it) },
+                    onDismiss = { showGpx = false },
+                    embedded = true
+                )
+                TracksTab.PLANNED -> PlannedTripsPage(
+                    trips = savedRoutes,
+                    groups = routeGroups,
+                    onRide = { t, reversed -> showGpx = false; viewModel.ridePlanned(t, reversed) },
+                    onRename = viewModel::renamePlanned,
+                    onMove = viewModel::movePlanned,
+                    onDelete = viewModel::deleteSavedRoute,
+                    onRenameGroup = viewModel::renamePlannedGroup,
+                    onDeleteGroup = viewModel::deletePlannedGroup
+                )
             }
-            if (which == TracksTab.RIDES) RideLogDialog(
-                current = currentRide,
-                rides = rides,
-                onRideAgain = { showGpx = false; viewModel.rideAgain(it) },
-                gpxGroups = gpxGroups,
-                onSaveToGpx = { r, groupId, newGroup -> viewModel.saveRideToGpx(r, groupId, newGroup); toast = context.getString(R.string.toast_saved_to_gpx) },
-                autoSaveGroup = autoSaveRidesGroup,
-                onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
-                onDelete = { viewModel.deleteRides(it) },
-                onDismiss = { showGpx = false },
-                sideBar = tabs
-            ) else GpxManagerDialog(
-                tracks = savedGpxTracks,
-                groups = gpxGroups,
-                message = gpxMessage,
-                poiCategories = poiCategories,
-                autoFollow = autoFollow,
-                actions = remember(viewModel) {
-                    GpxActions(
-                        onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
-                        onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
-                        onColor = { t, c -> viewModel.setTrackColor(t, c) },
-                        onReverse = { t, r -> viewModel.setTrackReversed(t, r) },
-                        onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
-                        onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
-                        onDelete = { viewModel.deleteGpx(it) },
-                        onRenameTrack = { t, name -> viewModel.renameTrack(t, name) },
-                        onMove = { t, id, name -> viewModel.moveTrack(t, id, name) },
-                        onGroupVisibility = { viewModel.toggleGroupVisibility(it) },
-                        onGroupDirection = { viewModel.toggleGroupDirection(it) },
-                        onGroupColor = { g, c -> viewModel.setGroupColor(g, c) },
-                        onRenameGroup = { g, name -> viewModel.renameGroup(g, name) },
-                        onDeleteGroup = { g, keep -> viewModel.deleteGroup(g, keep) },
-                        onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) }
-                    )
-                },
-                onTogglePoiCategory = viewModel::togglePoiCategory,
-                onAutoFollow = viewModel::setAutoFollow,
-                onDismiss = { showGpx = false },
-                sideBar = tabs
-            )
-          }
-          // Upright on a phone the two pages can be swiped between, tabs and pages following each other.
-          if (isNarrowScreen()) {
-            val pager = rememberPagerState(initialPage = tracksTab.ordinal) { TracksTab.entries.size }
-            LaunchedEffect(tracksTab) { if (pager.currentPage != tracksTab.ordinal) pager.animateScrollToPage(tracksTab.ordinal) }
-            LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { tracksTab = TracksTab.entries[it] } }
-            HorizontalPager(pager, Modifier.fillMaxSize(), pageSpacing = 8.dp) { gpxPage(TracksTab.entries[it]) }
-          } else gpxPage(tracksTab)
         }
 
         if (showSettings) {
@@ -1162,5 +1202,9 @@ private sealed interface StopTarget {
 /** Pages of the GPX & rides dialog (rail button). */
 private enum class TracksTab(val label: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     GPX(R.string.gpx_tab, Icons.Default.Route),
-    RIDES(R.string.rides, Icons.Default.History)
+    RIDES(R.string.rides, Icons.Default.History),
+    PLANNED(R.string.planned_tab, Icons.Default.EventNote)
 }
+
+/** An adventure being drawn: where to, and how long it should take (minutes of estimated riding). */
+private data class AdventureDraft(val name: String, val destination: com.curveon.routing.LatLon, val minutes: Int)

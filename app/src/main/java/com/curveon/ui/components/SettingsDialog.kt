@@ -130,7 +130,10 @@ private fun MapLayerChips(on: Set<com.curveon.data.search.MapLayer>, onToggle: (
 fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, openEngine: Boolean = false, onDismiss: () -> Unit) {
     var tab by rememberSaveable { mutableStateOf(if (openEngine) SettingsTab.ENGINE else SettingsTab.DISPLAY) }
     var confirmDelete by remember { mutableStateOf<InstalledMap?>(null) }
-    CockpitDialog(title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog") {
+    PagedCockpitDialog(
+        title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog",
+        pages = SettingsTab.entries, selected = tab, onSelect = { tab = it }, pageLabel = { stringResource(it.label) }, pageIcon = { it.icon }
+    ) { current ->
         val pageFor: @Composable (SettingsTab) -> Unit = { which ->
                 when (which) {
                     SettingsTab.DISPLAY -> Page {
@@ -209,20 +212,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                     SettingsTab.HELP -> Page { HelpPage(actions.onTour) }
                 }
         }
-        val tabs: @Composable () -> Unit = { DialogTabs(SettingsTab.entries, tab, { stringResource(it.label) }, { it.icon }, { tab = it }) }
-        // Upright on a phone the page tabs go on top, and the pages can be swiped between; otherwise
-        // the tabs go down the left, like Android Auto.
-        if (isNarrowScreen()) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            tabs()
-            val pager = rememberPagerState(initialPage = tab.ordinal) { SettingsTab.entries.size }
-            // A tap on a tab scrolls to its page; a swipe lights its tab once it has settled.
-            LaunchedEffect(tab) { if (pager.currentPage != tab.ordinal) pager.animateScrollToPage(tab.ordinal) }
-            LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { tab = SettingsTab.entries[it] } }
-            HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), pageSpacing = 12.dp, verticalAlignment = Alignment.Top) { pageFor(SettingsTab.entries[it]) }
-        } else Row(Modifier.fillMaxSize()) {
-            tabs()
-            Box(Modifier.weight(1f).fillMaxHeight().padding(start = 24.dp, end = 6.dp)) { pageFor(tab) }
-        }
+        pageFor(current)
     }
 
     confirmDelete?.let { m ->

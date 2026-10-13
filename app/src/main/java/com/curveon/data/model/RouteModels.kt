@@ -66,7 +66,17 @@ data class RouteItem(
     val isRoundtrip: Boolean = false,
     val polylineJson: String = "", // serialized points
     val waypointsJson: String = "",
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    /** The group of planned trips this one is kept in ("Trips for the weekend"); null = none. */
+    val groupId: Long? = null
+)
+
+/** A named set of planned trips, e.g. "Trips for the weekend". */
+@Entity(tableName = "route_groups")
+data class RouteGroup(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val name: String
 )
 
 data class RoundtripConfig(

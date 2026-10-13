@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
@@ -48,9 +49,17 @@ fun RideLogDialog(
     current: Ride?,
     rides: List<Ride>,
     onRideAgain: (Ride) -> Unit,
+    /** The same ride the other way round. */
+    onRideReversed: (Ride) -> Unit = {},
+    /** Planned-trip groups (as GPX groups, for the group picker) and keeping a ride as a planned trip. */
+    plannedGroups: List<com.curveon.data.model.GpxGroup> = emptyList(),
+    onCopyToPlanned: (Ride, Long?, String?) -> Unit = { _, _, _ -> },
     gpxGroups: List<com.curveon.data.model.GpxGroup>,
     /** Keep the ride in the GPX collection: (ride, existing group or null, new group name or null). */
     onSaveToGpx: (Ride, Long?, String?) -> Unit,
+    /** Whether new rides are kept at all; off also means no GPX auto-save. Only affects future rides. */
+    logRides: Boolean,
+    onLogRides: (Boolean) -> Unit,
     /** Group every finished ride is saved into, or null when that is off. */
     autoSaveGroup: Long?,
     /** (existing group or null, new group name or null); both null turns auto-saving off. */
@@ -58,21 +67,25 @@ fun RideLogDialog(
     onDelete: (Collection<Long>) -> Unit,
     onDismiss: () -> Unit,
     /** Page menu when shown inside the GPX & rides dialog. */
-    sideBar: (@Composable () -> Unit)? = null
+    sideBar: (@Composable () -> Unit)? = null,
+    /** Only the page, for a frame that is somebody else's (the GPX / Rides / Planned screen). */
+    embedded: Boolean = false
 ) {
     var expanded by remember { mutableStateOf<Long?>(null) }
     var saving by remember { mutableStateOf<Ride?>(null) }
+    var copying by remember { mutableStateOf<Ride?>(null) }
     var pickingAutoGroup by remember { mutableStateOf(false) }
     /** Rides picked for deleting; null when not selecting. */
     var selection by remember { mutableStateOf<Set<Long>?>(null) }
     var confirmDelete by remember { mutableStateOf<Set<Long>?>(null) }
     val history = rides.filter { it.id != current?.id }
-    val autoGroup = gpxGroups.firstOrNull { it.id == autoSaveGroup }
+    val autoGroup = gpxGroups.firstOrNull { it.id == autoSaveGroup }?.takeIf { logRides }
+    val groups = rememberRideGroups(history)
+    /** Groups the user opened or closed by hand; the rest follow the default (only the newest is open). */
+    var toggled by remember { mutableStateOf(mapOf<String, Boolean>()) }
 
-    CockpitDialog(
-        title = stringResource(R.string.rides), icon = Icons.Default.History, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog", sideBar = sideBar,
-        subtitle = selection?.let { pluralStringResource(R.plurals.rides_selected, it.size, it.size) },
-        actions = {
+    val subtitle = selection?.let { pluralStringResource(R.plurals.rides_selected, it.size, it.size) }
+    val toolbar: @Composable RowScope.() -> Unit = {
             val sel = selection
             if (sel != null) {
                 val all = sel.size == history.size
@@ -86,12 +99,29 @@ fun RideLogDialog(
                 Icons.Default.Checklist, stringResource(R.string.rides_select), 48.dp,
                 if (sel != null) ElectricCyan else CockpitSurfaceVariant, if (sel != null) Color(0xFF00363D) else TextPrimary
             ) { selection = if (sel == null) emptySet() else null }
+    }
+    val body: @Composable ColumnScope.() -> Unit = {
+        // Keep rides at all? Off also turns the GPX auto-save off (it is greyed out below).
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitSurfaceVariant)
+                .clickable { onLogRides(!logRides) }.padding(horizontal = 14.dp, vertical = 8.dp).testTag("rides_log"),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.History, null, tint = if (logRides) ElectricCyan else TextMuted, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.rides_log), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(if (logRides) R.string.rides_log_on else R.string.rides_log_off),
+                    color = TextMuted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            CockpitSwitch(checked = logRides, onCheckedChange = onLogRides)
         }
-    ) {
+
         // Auto-save: off, or the group every finished ride goes into (tap to change).
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitSurfaceVariant)
-                .clickable { pickingAutoGroup = true }.padding(horizontal = 14.dp, vertical = 8.dp).testTag("rides_auto_save"),
+                .clickable(enabled = logRides) { pickingAutoGroup = true }.alpha(if (logRides) 1f else 0.4f)
+                .padding(horizontal = 14.dp, vertical = 8.dp).testTag("rides_auto_save"),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Default.Route, null, tint = if (autoGroup != null) ElectricCyan else TextMuted, modifier = Modifier.size(22.dp))
@@ -105,7 +135,7 @@ fun RideLogDialog(
             }
             CockpitSwitch(
                 checked = autoGroup != null,
-                onCheckedChange = { on -> if (on) pickingAutoGroup = true else onAutoSave(null, null) })
+                onCheckedChange = { on -> if (logRides) { if (on) pickingAutoGroup = true else onAutoSave(null, null) } })
         }
 
         if (current != null) {
@@ -124,7 +154,22 @@ fun RideLogDialog(
                 Text(stringResource(R.string.rides_empty), color = TextMuted, fontSize = 15.sp)
             }
         } else LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(history, key = { it.id }) { r ->
+            groups.forEachIndexed { index, g ->
+                val groupOpen = toggled[g.key] ?: (index == 0)
+                item(key = "group-${g.key}") {
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { toggled = toggled + (g.key to !groupOpen) }
+                            .padding(horizontal = 6.dp, vertical = 8.dp).testTag("rides_group_${g.key}"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(if (groupOpen) Icons.Default.ExpandMore else Icons.Default.ChevronRight, null, tint = ElectricCyan, modifier = Modifier.size(24.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(g.label(), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.rides_group_summary, g.rides.size, (g.rides.sumOf { it.distanceMeters } / 1000).toInt()),
+                            color = TextMuted, fontSize = 12.sp)
+                    }
+                }
+                if (groupOpen) items(g.rides, key = { it.id }) { r ->
                 val sel = selection
                 val picked = sel != null && r.id in sel
                 val open = sel == null && expanded == r.id
@@ -162,17 +207,37 @@ fun RideLogDialog(
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             PillButton(Icons.Default.Replay, stringResource(R.string.rides_ride_again), ElectricCyan, Color(0xFF00363D),
                                 Modifier.weight(1f)) { onRideAgain(r) }
+                            PillButton(Icons.Default.SwapHoriz, stringResource(R.string.rides_ride_reversed), CockpitSurface, TextPrimary,
+                                Modifier.weight(1f)) { onRideReversed(r) }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             PillButton(Icons.Default.Route, stringResource(R.string.rides_save_to_gpx), CockpitSurface, TextPrimary, Modifier.weight(1f)) { saving = r }
+                            PillButton(Icons.Default.EventNote, stringResource(R.string.rides_copy_to_planned), CockpitSurface, TextPrimary, Modifier.weight(1f)) { copying = r }
                             RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 56.dp, CockpitSurface, TextMuted) { onDelete(listOf(r.id)) }
                         }
                     }
                 }
             }
+            }
         }
     }
+    if (embedded) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (history.isNotEmpty()) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+            if (subtitle != null) Text(subtitle, color = TextSecondary, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            toolbar()
+        }
+        body()
+    } else CockpitDialog(
+        title = stringResource(R.string.rides), icon = Icons.Default.History, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog", sideBar = sideBar,
+        subtitle = subtitle, actions = toolbar, content = body
+    )
 
     saving?.let { r ->
         GroupPickerDialog(stringResource(R.string.rides_save_to_group), gpxGroups, current = null, onPick = { id, name -> onSaveToGpx(r, id, name) }, onDismiss = { saving = null })
+    }
+    copying?.let { r ->
+        GroupPickerDialog(stringResource(R.string.rides_copy_to_group), plannedGroups, current = null, onPick = { id, name -> onCopyToPlanned(r, id, name) }, onDismiss = { copying = null })
     }
     if (pickingAutoGroup) {
         GroupPickerDialog(stringResource(R.string.rides_auto_save_pick), gpxGroups, current = autoGroup?.id, allowNone = false,
@@ -237,3 +302,39 @@ private fun TrackThumbnail(r: Ride, modifier: Modifier) {
 
 private fun dateText(r: Ride): String =
     SimpleDateFormat("EEE d MMM · HH:mm", Locale.getDefault()).format(Date(r.startMs))
+
+private class RideGroup(val key: String, val label: @Composable () -> String, val rides: List<Ride>)
+
+/** This week, last week (ISO weeks, Monday first), then one group per month; newest first. */
+@Composable
+private fun rememberRideGroups(rides: List<Ride>): List<RideGroup> {
+    val thisWeek = stringResource(R.string.rides_this_week)
+    val lastWeek = stringResource(R.string.rides_last_week)
+    return remember(rides, thisWeek, lastWeek) {
+        val cal = java.util.Calendar.getInstance().apply {
+            firstDayOfWeek = java.util.Calendar.MONDAY
+            set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
+            set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0); set(java.util.Calendar.MILLISECOND, 0)
+        }
+        val weekStart = cal.timeInMillis
+        cal.add(java.util.Calendar.DAY_OF_YEAR, -7)
+        val lastWeekStart = cal.timeInMillis
+        val monthKey = SimpleDateFormat("yyyy-MM", Locale.US)
+        val monthLabel = SimpleDateFormat("LLLL yyyy", Locale.getDefault())
+        rides.sortedByDescending { it.startMs }.groupBy {
+            when {
+                it.startMs >= weekStart -> "week"
+                it.startMs >= lastWeekStart -> "lastweek"
+                else -> monthKey.format(Date(it.startMs))
+            }
+        }.map { (key, list) ->
+            val label = when (key) {
+                "week" -> thisWeek
+                "lastweek" -> lastWeek
+                else -> monthLabel.format(Date(list.first().startMs)).replaceFirstChar { it.uppercase() }
+            }
+            RideGroup(key, { label }, list)
+        }
+    }
+}

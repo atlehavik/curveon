@@ -51,7 +51,9 @@ class BRouterEngine(
          * it BRouter cuts such an out-and-back short and rides past the stop (fine for points that
          * only shape the route, like a track's).
          */
-        visitEveryVia: Boolean = false
+        visitEveryVia: Boolean = false,
+        /** Give up on this route after this long, instead of the engine's own limit (a quick look at a road that may wind for ever). */
+        maxMillis: Long? = null
     ): Route {
         val reach = options.gravelReachKm
         if (reach != null && options.surface >= SurfacePreference.GRAVEL) {
@@ -74,9 +76,9 @@ class BRouterEngine(
                 route(listOf(a, b), options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg.takeIf { i == 0 }, noGo, tracksAsLastResort)
             })
         }
-        val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false)
+        val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false, maxMillis = maxMillis)
         // Start and end on the rider's own road even where the map doesn't join it to the network.
-        return OwnRoad { pts, look -> routeOnce(pts, options, null, avoidedFerryCost, null, emptyList(), tracksAsLastResort, look) }.join(waypoints, r)
+        return OwnRoad { pts, look -> routeOnce(pts, options, null, avoidedFerryCost, null, emptyList(), tracksAsLastResort, look, maxMillis) }.join(waypoints, r)
     }
 
     private fun routeOnce(
@@ -88,7 +90,8 @@ class BRouterEngine(
         noGo: List<NoGo>,
         tracksAsLastResort: Boolean,
         /** Paths count as roads: only to find where the rider's own road meets one (see [OwnRoad]). */
-        lookPastPaths: Boolean
+        lookPastPaths: Boolean,
+        maxMillis: Long? = null
     ): Route {
         require(waypoints.size >= 2) { "Need at least start and destination" }
         val nodes = waypoints.mapIndexed { i, p ->
@@ -124,7 +127,7 @@ class BRouterEngine(
         }
         val engine = RoutingEngine(null, null, segmentDir, nodes, rc, RoutingEngine.BROUTER_ENGINEMODE_ROUTING)
         engine.quite = true
-        engine.doRun(timeoutMillis)
+        engine.doRun(maxMillis ?: timeoutMillis)
         engine.errorMessage?.let { throw RoutingException(it) }
         val track = engine.foundTrack ?: throw RoutingException("No route found")
         return toRoute(track)

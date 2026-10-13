@@ -7,17 +7,26 @@ import androidx.room.RoomDatabase
 import com.curveon.data.model.GpxGroup
 import com.curveon.data.model.GpxTrack
 import com.curveon.data.model.Ride
+import com.curveon.data.model.RouteGroup
 import com.curveon.data.model.RouteItem
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [RouteItem::class, GpxTrack::class, GpxGroup::class, Ride::class], version = 4, exportSchema = false)
+@Database(entities = [RouteItem::class, RouteGroup::class, GpxTrack::class, GpxGroup::class, Ride::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun routeDao(): RouteDao
     abstract fun gpxDao(): GpxDao
     abstract fun rideDao(): RideDao
 
     companion object {
+        /** v5: planned trips can be kept in named groups. */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `route_groups` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL)")
+                db.execSQL("ALTER TABLE `saved_routes` ADD COLUMN `groupId` INTEGER")
+            }
+        }
+
         /** v4: GPX groups and inverted tracks. Files imported with several tracks become a group. */
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -72,7 +81,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "curveon_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

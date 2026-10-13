@@ -361,6 +361,13 @@
     <string name="roundtrip_draw_km">About %1$d km round</string>
     <string name="roundtrip_draw_hint">Draw the area to ride in with one finger. Two fingers move the map.</string>
     <string name="roundtrip_search_subtitle">Draw the area to ride in on the map</string>
+    <string name="adventure_chip">Adventure</string>
+    <string name="adventure_draw_hint">Draw the area to ride in on the way there. Two fingers move the map.</string>
+    <string name="adventure_time_hm">%1$d:%2$02d h</string>
+    <string name="preview_adventure_title">Adventure to %1$s</string>
+    <string name="nav_no_adventure">Could not find an adventure in that area. Try drawing it bigger, or taking more time.</string>
+    <string name="nav_adventure_too_short">The quickest way takes %1$d min. Ask for more time to get an adventure.</string>
+    <string name="nav_adventure_progress">Finding roads… %1$d of %2$d</string>
     <string name="preview_loop_from">Roundtrip from %1$s</string>
     <string name="preview_area_roundtrip_title">Roundtrip in your area</string>
     <string name="style_fastest">Fastest</string>
@@ -403,6 +410,23 @@
     <string name="rides_ride_again">Ride again</string>
     <string name="rides_save_to_gpx">Save to GPX</string>
     <string name="rides_save_to_group">Save to GPX group</string>
+    <string name="tracks_title">GPX &amp; rides</string>
+    <string name="planned_tab">Planned</string>
+    <string name="planned_empty">No planned trips yet. Save a route from the planner with the bookmark button, or copy a ride from the Rides page.</string>
+    <plurals name="planned_trips_count">
+        <item quantity="one">%d trip</item>
+        <item quantity="other">%d trips</item>
+    </plurals>
+    <plurals name="planned_delete_group_text">
+        <item quantity="one">The group and its %d trip are deleted.</item>
+        <item quantity="other">The group and its %d trips are deleted.</item>
+    </plurals>
+    <string name="planned_rename">Rename trip</string>
+    <string name="planned_reversed">Ridden the other way</string>
+    <string name="rides_ride_reversed">Ride the other way</string>
+    <string name="rides_copy_to_planned">Copy to planned</string>
+    <string name="rides_copy_to_group">Copy to planned trips</string>
+    <string name="toast_copied_to_planned">Copied to planned trips</string>
     <string name="rides_select">Select rides</string>
     <string name="rides_select_all">All</string>
     <string name="rides_select_none">None</string>
@@ -415,6 +439,12 @@
         <item quantity="other">Delete %d rides?</item>
     </plurals>
     <string name="rides_delete_text">Copies saved to GPX are kept.</string>
+    <string name="rides_log">Save new rides</string>
+    <string name="rides_log_on">Finished rides are kept in this list</string>
+    <string name="rides_log_off">Off – new rides are not saved, and no GPX either</string>
+    <string name="rides_this_week">This week</string>
+    <string name="rides_last_week">Last week</string>
+    <string name="rides_group_summary">%1$d rides · %2$d km</string>
     <string name="rides_auto_save">Auto-save new rides to GPX</string>
     <string name="rides_auto_save_off">Off – rides are only kept here</string>
     <string name="rides_auto_save_group">Into %1$s · tap to change</string>

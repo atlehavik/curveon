@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.AltRoute
 import androidx.compose.ui.Alignment
@@ -79,18 +80,23 @@ fun OptionChip(
             .clickable(onClick = onClick).padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val crossed = avoid && active
-        Box(
-            Modifier.size(22.dp).drawWithContent {
-                drawContent()
-                if (crossed) drawLine(WarningRed, androidx.compose.ui.geometry.Offset(0f, 0f),
-                    androidx.compose.ui.geometry.Offset(size.width, size.height), strokeWidth = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-            },
-            contentAlignment = Alignment.Center
-        ) { icon() }
+        CrossedIcon(avoid && active, icon = icon)
         Spacer(Modifier.width(6.dp))
         Text(label, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
+}
+
+/** An icon with a red slash through it, like a no-entry sign, when [crossed]. */
+@Composable
+fun CrossedIcon(crossed: Boolean, modifier: Modifier = Modifier, icon: @Composable () -> Unit) {
+    Box(
+        modifier.size(22.dp).drawWithContent {
+            drawContent()
+            if (crossed) drawLine(WarningRed, androidx.compose.ui.geometry.Offset(0f, 0f),
+                androidx.compose.ui.geometry.Offset(size.width, size.height), strokeWidth = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        },
+        contentAlignment = Alignment.Center
+    ) { icon() }
 }
 
 /** A row of mutually exclusive choices (km/h | mph, Auto | Day | Night, …). */
@@ -136,6 +142,49 @@ fun LoopMaxChip(maxKm: Int?, onPick: (Int?) -> Unit) {
                             color = if (km == maxKm) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     },
                     onClick = { open = false; onPick(km) }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * What an adventure can be asked to take, in minutes of estimated riding time: every half hour to
+ * four hours, then every hour, up to [current] and a while beyond (a trip of many hours has many to pick from).
+ */
+fun adventureMinuteChoices(current: Int): List<Int> {
+    val top = maxOf(480, current + 240)
+    val steps = generateSequence(60) { it + if (it < 240) 30 else 60 }.takeWhile { it <= top }.toList()
+    return (steps + current).distinct().sorted()
+}
+
+/**
+ * The time an adventure to the trip on screen starts with: about what its twistier roads take
+ * ([curvyMinutes] for Curvy, [slowestMinutes] for the slowest style) and a little more, as there
+ * must be something to wander for; rounded up to the half hour.
+ */
+fun defaultAdventureMinutes(curvyMinutes: Double, slowestMinutes: Double): Int {
+    val wanted = maxOf(slowestMinutes, curvyMinutes * 1.12)
+    return ((wanted + 29) / 30).toInt() * 30
+}
+
+/** "3:00 h"; the list is open for any time, the chip shows the one picked. */
+@Composable
+fun adventureTimeLabel(minutes: Int) = stringResource(R.string.adventure_time_hm, minutes / 60, minutes % 60)
+
+/** How long the adventure should take: "3:00 h", tap for the list. */
+@Composable
+fun AdventureTimeChip(minutes: Int, onPick: (Int) -> Unit) {
+    var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    Box {
+        OptionChip(adventureTimeLabel(minutes), active = true, onClick = { open = true }) {
+            Icon(Icons.Default.Schedule, null, tint = NeonAmber)
+        }
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+            adventureMinuteChoices(minutes).forEach { m ->
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text(adventureTimeLabel(m), color = if (m == minutes) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                    onClick = { open = false; onPick(m) }
                 )
             }
         }
@@ -201,13 +250,15 @@ fun MotorwayChip(avoidMotorways: Boolean, avoidTrunk: Boolean, onPick: (Boolean,
         c.first -> R.string.no_motorways
         else -> R.string.motorways_ok
     })
+    // Refusing E-roads also refuses motorways, so the E sign is the one crossed out then.
+    @Composable fun sign(c: Pair<Boolean, Boolean>) =
+        Image(painterResource(if (c.second) com.curveon.R.drawable.ic_eroad else com.curveon.R.drawable.ic_motorway), null, modifier = Modifier.size(22.dp))
     Box {
-        OptionChip(label(current), active = avoidMotorways, avoid = true, onClick = { open = true }) {
-            Image(painterResource(com.curveon.R.drawable.ic_motorway), null, modifier = Modifier.size(22.dp))
-        }
+        OptionChip(label(current), active = avoidMotorways, avoid = true, onClick = { open = true }) { sign(current) }
         androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
             choices.forEach { c ->
                 androidx.compose.material3.DropdownMenuItem(
+                    leadingIcon = { CrossedIcon(c.first) { sign(c) } },
                     text = { Text(label(c), color = if (c == current) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
                     onClick = { open = false; if (c != current) onPick(c.first, c.second) }
                 )

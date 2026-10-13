@@ -11,6 +11,8 @@ import com.curveon.routing.OffRoutePlanner
 import com.curveon.routing.ProfileInstaller
 import com.curveon.routing.RoadStyle
 import com.curveon.routing.RoundtripPlanner
+import com.curveon.routing.AdventurePlanner
+import com.curveon.routing.NoAdventureException
 import com.curveon.routing.NoRoundtripException
 import com.curveon.R
 import com.curveon.routing.Route
@@ -18,6 +20,7 @@ import com.curveon.routing.RouteCorridor
 import com.curveon.routing.RouteOptions
 import com.curveon.routing.Routes
 import com.curveon.routing.TrackFollower
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -101,7 +104,9 @@ sealed interface NavigationGoal {
         val fixedLine: List<LatLon>? = null,
         val saved: SavedRef? = null,
         /** A loop made into this trip once found (its stops are points along it): Shuffle plans another. */
-        val loop: Roundtrip? = null
+        val loop: Roundtrip? = null,
+        /** An adventure made into this trip once found (its stops are points along it): Shuffle plans another. */
+        val adventure: Adventure? = null
     ) : NavigationGoal {
         override val title get() = name
     }
@@ -118,6 +123,23 @@ sealed interface NavigationGoal {
         val start: Stop? = null,
         /** A drawn area's loop no longer than this; null = the way round the whole area. */
         val maxKm: Int? = null
+    ) : NavigationGoal {
+        override val title get() = name
+    }
+
+    /**
+     * To [destination] by the most fun roads inside [area], taking about [minutes] of estimated
+     * riding time: not the quickest way there. Ridden as a fixed line once started.
+     */
+    data class Adventure(
+        val name: String,
+        val destination: LatLon,
+        val area: List<LatLon>,
+        val minutes: Int,
+        override val options: RouteOptions,
+        val variant: Int = 0,
+        /** Starting somewhere else than where the rider is; null = from here. */
+        val start: Stop? = null
     ) : NavigationGoal {
         override val title get() = name
     }
@@ -245,6 +267,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     fun setPreviewStart(start: Stop?) {
         // A loop from somewhere else is another loop.
         val goal = _state.value.preview?.goal
+        val adventure = goal as? NavigationGoal.Adventure ?: (goal as? NavigationGoal.Destination)?.adventure
+        if (adventure != null) return preview(adventure.copy(start = start, options = goal!!.options))
         val loop = goal as? NavigationGoal.Roundtrip ?: (goal as? NavigationGoal.Destination)?.loop
         if (loop != null) preview(loop.copy(start = start, options = goal!!.options)) else editPreview { it.copy(start = start) }
     }
@@ -296,6 +320,25 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     /** A loop inside [area], drawn on the map with a finger. */
     fun previewAreaRoundtrip(area: List<LatLon>, options: RouteOptions, start: Stop? = null, maxKm: Int? = null) =
         preview(NavigationGoal.Roundtrip(0.0, 0.0, options, name = context.getString(R.string.roundtrip), area = area, start = start, maxKm = maxKm))
+
+    /** An adventure to [destination] inside [area], taking about [minutes] of estimated riding time. */
+    fun previewAdventure(name: String, destination: LatLon, area: List<LatLon>, minutes: Int, options: RouteOptions, start: Stop? = null) =
+        preview(NavigationGoal.Adventure(name, destination, area, minutes, options, start = start))
+
+    /** The adventure on screen: being worked out, or found and made into an ordinary trip. */
+    private fun previewedAdventure(): NavigationGoal.Adventure? {
+        val p = _state.value.preview ?: return null
+        val adventure = p.goal as? NavigationGoal.Adventure ?: (p.goal as? NavigationGoal.Destination)?.adventure ?: return null
+        // As planned, on the road style picked now (Fastest still finds the adventure on curvy roads) and the options changed since.
+        val style = p.candidates.getOrNull(p.selected)?.style?.takeIf { it != RoadStyle.FASTEST } ?: adventure.options.roadStyle
+        return adventure.copy(options = p.goal.options.copy(roadStyle = style))
+    }
+
+    /** The previewed adventure again taking [minutes]. */
+    fun setAdventureMinutes(minutes: Int) {
+        val g = previewedAdventure() ?: return
+        preview(g.copy(minutes = minutes, variant = 0))
+    }
 
     /** The previewed loop again with another max length (null = the whole area), on the road style picked now. */
     fun setLoopMax(maxKm: Int?) = replanLoop { it.copy(maxKm = maxKm, variant = 0) }
@@ -379,7 +422,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     /** Another loop in the same direction and length. */
-    fun shuffleRoundtrip() = replanLoop { it.copy(variant = it.variant + 1) }
+    fun shuffleRoundtrip() {
+        val g = previewedAdventure()
+        if (g != null) preview(g.copy(variant = g.variant + 1)) else replanLoop { it.copy(variant = it.variant + 1) }
+    }
 
     fun updatePreviewOptions(transform: (RouteOptions) -> RouteOptions) {
         val p = _state.value.preview ?: return
@@ -387,6 +433,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             when (val g = p.goal) {
                 is NavigationGoal.Destination -> g.copy(options = transform(g.options))
                 is NavigationGoal.Roundtrip -> g.copy(options = transform(g.options))
+                is NavigationGoal.Adventure -> g.copy(options = transform(g.options))
                 is NavigationGoal.Track -> g.copy(options = transform(g.options))
             },
             keepSelection = p.selected, keepHistory = true
@@ -424,6 +471,12 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             // A loop from elsewhere: ride to it and round it.
             return followTrackNow(loop.title, route.points.map { LatLon(it.lat, it.lon) }, loop.options)
         }
+        (p.goal as? NavigationGoal.Adventure)?.let { adventure ->
+            // Ridden as a fixed line, from elsewhere after riding to it.
+            val line = route.points.map { LatLon(it.lat, it.lon) }
+            return if (adventure.start != null) followTrackNow(adventure.title, line, adventure.options)
+            else activate(NavigationGoal.Track(adventure.title, line, adventure.options), route)
+        }
         // An unchanged saved route: ride its line, rejoining it after a wrong turn as before.
         if (planned?.fixedLine != null) return activate(NavigationGoal.Track(planned.saved?.title ?: planned.name, planned.fixedLine, planned.options), route)
         if (planned?.start != null) {
@@ -443,7 +496,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val planned = goal as? NavigationGoal.Destination
         // A saved line is joined from where the rider is, like a track.
         val from = (if (planned?.fixedLine != null) lastPosition ?: planned.start?.point
-            else planned?.start?.point ?: (goal as? NavigationGoal.Roundtrip)?.start?.point ?: lastPosition)
+            else planned?.start?.point ?: (goal as? NavigationGoal.Roundtrip)?.start?.point ?: (goal as? NavigationGoal.Adventure)?.start?.point ?: lastPosition)
             ?: return fail(context.getString(R.string.nav_waiting_gps))
         val tiles = tilesAround(goalPoints(goal, from))
         if (!canRoute(tiles)) return fail(routingData.describe())
@@ -462,7 +515,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             styles.mapIndexed { i, style ->
                 async(Dispatchers.Default) {
                     val t0 = System.nanoTime()
-                    val result = runCatching { calculate(goal, from, style) }
+                    val result = runCatching { calculate(goal, from, style) { !isActive } }
                     android.util.Log.i("Curveon", "Routed ${goal::class.simpleName} ${style ?: ""} in %.1f s: %s".format(
                         (System.nanoTime() - t0) / 1e9,
                         result.fold({ "%.0f km, %d ferries, %.0f m unpaved".format(it.distanceMeters / 1000, it.ferryCount, it.unpavedMeters) }, { "failed: ${it.message}" })))
@@ -472,25 +525,63 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                         val updated = p.candidates.toMutableList().also {
                             it[i] = RouteCandidate(style, result.getOrNull(), result.exceptionOrNull()?.let(::message))
                         }
-                        _state.value = _state.value.copy(preview = p.copy(candidates = updated))
+                        _state.value = _state.value.copy(preview = p.copy(candidates = updated, fetching = if (goal is NavigationGoal.Adventure) null else p.fetching))
                     }
                 }
             }.awaitAll()
             // A loop found: on as an ordinary trip.
             val found = _state.value.preview?.takeIf { it.goal == goal }?.selectedRoute
             if (goal is NavigationGoal.Roundtrip && found != null) return@launch tripFromLoop(goal, found)
+            // An adventure found: on as an ordinary trip too, to drag on the map, add stops and so on.
+            if (goal is NavigationGoal.Adventure && found != null) return@launch tripFromAdventure(goal, found)
             // If the pre-selected style failed, fall back to one that worked.
             val p = _state.value.preview ?: return@launch
             if (p.selectedRoute == null) p.candidates.indexOfFirst { it.route != null }.takeIf { it >= 0 }?.let { selectCandidate(it) }
         }
     }
 
+    /** "Finding roads… 12 of 48" in the sheet while an adventure is worked out. */
+    private fun adventureProgress(goal: NavigationGoal, done: Int, total: Int) = synchronized(this) {
+        val p = _state.value.preview?.takeIf { it.goal == goal && it.selectedRoute == null } ?: return
+        _state.value = _state.value.copy(preview = p.copy(fetching = context.getString(R.string.nav_adventure_progress, done, total)))
+    }
+
     // ------------------------------------------------------------------ routing data on demand
+
+    /**
+     * An adventure as soon as it is found becomes an ordinary trip like a loop does: points along it
+     * become via points (about one every [ADVENTURE_VIA_SPACING_M]), so the rider can change it by
+     * dragging it on the map, adding stops and so on. It remembers the adventure, so Shuffle, the
+     * time and drawing the area again plan another.
+     */
+    private suspend fun tripFromAdventure(g: NavigationGoal.Adventure, route: Route) {
+        val count = (route.distanceMeters / ADVENTURE_VIA_SPACING_M).toInt().coerceIn(4, 16)
+        var next = 0
+        val points = buildList {
+            // Never on a ferry: a stop out at sea is a ride out and back.
+            for (pt in route.points) if (next < count && !pt.ferry && pt.distanceFromStart >= route.distanceMeters * (next + 1) / (count + 1)) {
+                add(LatLon(pt.lat, pt.lon)); next++
+            }
+        }
+        val vias = points.map { Stop(describePlace(it), it, via = true) }
+        // Still the same adventure on screen?
+        if (_state.value.preview?.goal != g) return
+        previewHistory.clear()
+        val style = RoadStyle.entries.indexOf(g.options.roadStyle)
+        preview(NavigationGoal.Destination(g.name, g.destination, g.options, vias, g.start, adventure = g), keepSelection = style, keepHistory = true)
+        // The adventure stays on the map until its own style's route through the points is in.
+        synchronized(this) {
+            val p = _state.value.preview ?: return
+            if (p.candidates[style].route == null && p.candidates[style].error == null) _state.value = _state.value.copy(
+                preview = p.copy(candidates = p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) }))
+        }
+    }
 
     /** Where a trip may go: its places, or for a loop the circle it can reach. */
     private fun goalPoints(goal: NavigationGoal, from: LatLon): List<LatLon> = when (goal) {
         is NavigationGoal.Destination -> listOf(from) + listOfNotNull(goal.start?.point) + goal.stops.map { it.point } + goal.destination + goal.fixedLine.orEmpty()
         is NavigationGoal.Track -> goal.points + from
+        is NavigationGoal.Adventure -> goal.area + from + goal.destination
         is NavigationGoal.Roundtrip -> if (goal.area != null) goal.area + from else {
             val r = goal.distanceKm / (2 * Math.PI) * 1.4 / 111.0 // degrees of latitude
             val rLon = r / kotlin.math.cos(Math.toRadians(from.lat)).coerceAtLeast(0.2)
@@ -520,7 +611,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
-    private fun calculate(goal: NavigationGoal, from: LatLon, style: RoadStyle?): Route = when (goal) {
+    private fun calculate(goal: NavigationGoal, from: LatLon, style: RoadStyle?, cancelled: () -> Boolean = { false }): Route = when (goal) {
         is NavigationGoal.Destination -> if (goal.fixedLine != null) TrackFollower(engine).route(from, goal.fixedLine, goal.options) else engine.route(
             listOf(from) + goal.stops.map { it.point } + goal.destination,
             goal.options.copy(roadStyle = style ?: goal.options.roadStyle),
@@ -534,6 +625,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             )
         }
         is NavigationGoal.Track -> TrackFollower(engine).route(from, goal.points, goal.options)
+        is NavigationGoal.Adventure -> AdventurePlanner(engine, { android.util.Log.d("CurveonPlan", it) }, { done, total -> adventureProgress(goal, done, total) }, cancelled)
+            .plan(from, goal.destination, goal.area, goal.minutes, goal.options, goal.variant)
     }
 
     // ------------------------------------------------------------------ navigation
@@ -871,6 +964,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     private fun message(e: Throwable): String = when {
+        e is NoAdventureException -> e.directMinutes?.let { context.getString(R.string.nav_adventure_too_short, it) } ?: context.getString(R.string.nav_no_adventure)
         e is NoRoundtripException -> context.getString(if (e.inArea) R.string.nav_no_area_roundtrip else R.string.nav_no_roundtrip)
         e.message?.contains("not mapped", true) == true || e.message?.contains("no track", true) == true ->
             context.getString(R.string.nav_no_road)
@@ -881,6 +975,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         private const val REROUTE_COOLDOWN_MS = 10_000L
         /** A loop made into a trip gets about one via point this far apart (close enough to keep its shape). */
         private const val LOOP_VIA_SPACING_M = 8_000.0
+        /** An adventure made into a trip gets about one via point this far apart: far enough to keep the roads it was made of, close enough to keep its shape. */
+        private const val ADVENTURE_VIA_SPACING_M = 15_000.0
         /** A route starting further away than this isn't "your road missing from the map" any more. */
         private const val MAX_APPROACH_M = 1_500.0
         /** Ridden this much further from the route's start than you began: you went elsewhere. */

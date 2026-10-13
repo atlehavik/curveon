@@ -10,12 +10,27 @@ class CurveonRepository(
     private val gpxDao: GpxDao
 ) {
     val allRoutes: Flow<List<RouteItem>> = routeDao.getAllRoutes()
+    val allRouteGroups: Flow<List<RouteGroup>> = routeDao.getAllGroups()
     val allGpxTracks: Flow<List<GpxTrack>> = gpxDao.getAllTracks()
     val allGpxGroups: Flow<List<GpxGroup>> = gpxDao.getAllGroups()
 
     suspend fun saveRoute(route: RouteItem): Long = routeDao.insertRoute(route)
 
     suspend fun deleteRoute(id: Long) = routeDao.deleteRouteById(id)
+
+    suspend fun renameRoute(id: Long, title: String) = routeDao.renameRoute(id, title)
+
+    suspend fun setRouteGroup(id: Long, groupId: Long?) = routeDao.setRouteGroup(id, groupId)
+
+    suspend fun createRouteGroup(name: String): Long = routeDao.insertGroup(RouteGroup(name = name))
+
+    suspend fun renameRouteGroup(id: Long, name: String) = routeDao.renameGroup(id, name)
+
+    /** Deletes a group of planned trips; [keepTrips] leaves them as loose ones, else they go too. */
+    suspend fun deleteRouteGroup(id: Long, keepTrips: Boolean) {
+        if (keepTrips) routeDao.ungroupRoutes(id) else routeDao.deleteRoutesInGroup(id)
+        routeDao.deleteGroupById(id)
+    }
 
     suspend fun saveGpxTrack(track: GpxTrack): Long = gpxDao.insertTrack(track)
 

@@ -6,6 +6,48 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-13 — One frame for GPX / Rides / Planned and Phone; planned trips in groups
+
+Installed on the X7 (landscape checked there, and upright via `wm size 1080x2400`); the Pixel was not reachable.
+
+- [ ] Pixel upright: open the route icon (GPX): one frame with three tabs (GPX, Rides, Planned); swipe sideways between them (the tab lights up). Same in Settings and Phone (also swipeable now).
+- [ ] Planned: your saved routes are here. ⋮ → Move to group → new group ("Trips for the weekend"); the group opens and closes; ⋮ on a group renames, ungroups or deletes it.
+- [ ] Planned: the arrow on a trip turns amber = ride the other way round; the cyan button then plans it reversed (as a line, without its stops).
+- [ ] Rides: open a ride: "Ride the other way" and "Copy to planned" (pick or create a group); the copy appears under Planned.
+- [ ] The orange destination pin stays while an adventure is drawn and worked out.
+
+## 2026-10-13 — Adventure routing (new)
+
+Installed on the Pixel and the X7.
+
+- [ ] Search a destination, then in the route preview tap **Adventure** (next to "From here"). Set the
+      time and surface in the bar, draw the area to ride in with one finger. Expect an "Adventure to …"
+      route taking about the asked time, inside the area (wait ~10–40 s for long ones).
+- [ ] In the adventure preview: time chip (changes the time), **Draw again**, shuffle (another route),
+      start chip (plan from elsewhere), surface chips, GO. Check `adb logcat -s CurveonPlan` for the
+      candidates it tried.
+- [ ] Too little time (less than the quickest way): expect the message with the quickest way's minutes.
+- [ ] Roundtrip (draw area from "Where to?") works as before.
+
+## 2026-10-13 — Motorway choice with icons (route preview)
+
+Installed on the Pixel only.
+
+- [ ] Tap the motorway chip: the list shows the blue motorway sign, the same crossed out, and the
+      green E sign crossed out.
+- [ ] "No motorways or E-roads": the chip shows the green E sign crossed out; "No motorways" the
+      blue motorway sign crossed out; "Motorways OK" the plain blue sign.
+
+## 2026-10-13 — Ride log: save-rides switch and grouping by time
+
+Installed on the Pixel only.
+
+- [ ] Rides dialog: "Save new rides" off, ride a short stretch: it must not appear in the list, and
+      nothing lands in the GPX group. The GPX auto-save row is greyed out.
+- [ ] Switch it off in the middle of a ride: that ride still finishes and is saved.
+- [ ] "This week" is open, "Last week" and the months are closed; headers show rides and km.
+- [ ] Select all + delete also takes the rides in closed groups.
+
 ## 2026-10-13 — Ringing call big, answered call a small icon you can move
 
 Needs the new Curveon Companion on the Pixel too (it says whether a call has been answered; with an
