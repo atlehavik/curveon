@@ -612,7 +612,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     private fun calculate(goal: NavigationGoal, from: LatLon, style: RoadStyle?, cancelled: () -> Boolean = { false }): Route = when (goal) {
-        is NavigationGoal.Destination -> if (goal.fixedLine != null) TrackFollower(engine).route(from, goal.fixedLine, goal.options) else engine.route(
+        is NavigationGoal.Destination -> if (goal.fixedLine != null) TrackFollower(engine).route(from, goal.fixedLine, goal.options, fromStart = true) else engine.route(
             listOf(from) + goal.stops.map { it.point } + goal.destination,
             goal.options.copy(roadStyle = style ?: goal.options.roadStyle),
             visitEveryVia = true
@@ -624,7 +624,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 rotationsDeg = listOf(0.0, -30.0, 30.0).map { it + goal.variant * 17.0 }
             )
         }
-        is NavigationGoal.Track -> TrackFollower(engine).route(from, goal.points, goal.options)
+        is NavigationGoal.Track -> TrackFollower(engine).route(from, goal.points, goal.options, fromStart = true)
         is NavigationGoal.Adventure -> AdventurePlanner(engine, { android.util.Log.d("CurveonPlan", it) }, { done, total -> adventureProgress(goal, done, total) }, cancelled)
             .plan(from, goal.destination, goal.area, goal.minutes, goal.options, goal.variant)
     }

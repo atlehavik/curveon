@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — "Ride again" on a loop from home
+
+"Ride again" on today's 32 km loop (on the Pixel) offered only the last ~4 km: the loop passes home
+again after ~18 km, and the trip joined the track there. It now joins where the track first passes
+you. Installed on the X7 and the Pixel:
+
+- [ ] At home, Rides → today's Svortland loop → "Ride again": the preview should be the whole loop
+  (~32 km), not a few km. Try "Ride the other way" too.
+
 ## 2026-10-14 — Rider arrow placement (test)
 
 The arrow sat a little ahead of the rider. The Pixel's nav trace shows it drawn 0.25 s ahead of the

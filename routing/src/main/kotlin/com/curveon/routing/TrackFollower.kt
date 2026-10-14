@@ -2,14 +2,19 @@ package com.curveon.routing
 
 /**
  * Turns a GPX track into a navigable route: ride from where you are to the track (joining it
- * where you are closest if you are already on it), then follow the track through dense via
- * points so the router stays on the same roads but still produces turn instructions.
+ * where you are if you are already on it), then follow the track through dense via points so the
+ * router stays on the same roads but still produces turn instructions.
  */
 class TrackFollower(private val engine: BRouterEngine) {
 
-    fun route(from: LatLon, track: List<LatLon>, options: RouteOptions): Route {
+    /**
+     * [fromStart]: a track picked to ride (rather than one the rider is already riding) joins at its
+     * first pass by the rider, so a loop from home is ridden whole even where it passes home again.
+     */
+    fun route(from: LatLon, track: List<LatLon>, options: RouteOptions, fromStart: Boolean = false): Route {
         require(track.size >= 2) { "Track has no points" }
-        val joinIndex = nearestIndex(from, track).takeIf { Geo.distance(from, track[it]) < ON_TRACK_M } ?: 0
+        val joinIndex = (if (fromStart) firstIndexWithin(from, track, ON_TRACK_M) else
+            nearestIndex(from, track).takeIf { Geo.distance(from, track[it]) < ON_TRACK_M }) ?: 0
         val vias = sample(track.subList(joinIndex, track.size), VIA_SPACING_M)
         // Tight snapping keeps us on the track's roads; the approach leg uses normal snapping
         // because the rider may start far from any road the track uses.
@@ -26,6 +31,10 @@ class TrackFollower(private val engine: BRouterEngine) {
 
         fun nearestIndex(p: LatLon, track: List<LatLon>): Int =
             track.indices.minByOrNull { Geo.distance(p, track[it]) } ?: 0
+
+        /** Where the track first comes within [range] of [p], or null if it never does. */
+        fun firstIndexWithin(p: LatLon, track: List<LatLon>, range: Double): Int? =
+            track.indices.firstOrNull { Geo.distance(p, track[it]) < range }
 
         /** Every point that is at least [spacing] metres along the track from the previous kept one, plus the end. */
         fun sample(track: List<LatLon>, spacing: Double): List<LatLon> {
