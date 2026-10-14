@@ -114,6 +114,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
     val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
     val logRides by viewModel.logRides.collectAsStateWithLifecycle()
+    val recordLean by viewModel.recordLean.collectAsStateWithLifecycle()
     val wrongTurn by viewModel.wrongTurn.collectAsStateWithLifecycle()
     val navState by viewModel.navigation.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -802,6 +803,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     },
                     logRides = logRides,
                     onLogRides = { viewModel.setLogRides(it) },
+                    recordLean = recordLean,
+                    onRecordLean = { viewModel.setRecordLean(it) },
                     autoSaveGroup = autoSaveRidesGroup,
                     onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
                     onDelete = { viewModel.deleteRides(it) },

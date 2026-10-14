@@ -43,24 +43,24 @@ object NavTrace {
 
     fun fix(f: GpsFix, sats: Int, estimated: Boolean) = line(
         "F,${f.timeMillis},${f.atNanos / 1_000_000},${(System.nanoTime() - f.atNanos) / 1_000_000}," +
-            "${"%.7f".format(Locale.US, f.latitude)},${"%.7f".format(Locale.US, f.longitude)}," +
-            "${f.accuracyMeters ?: ""},${f.altitudeMeters?.let { "%.1f".format(Locale.US, it) } ?: ""}," +
+            "${num(f.latitude, 7)},${num(f.longitude, 7)}," +
+            "${f.accuracyMeters ?: ""},${f.altitudeMeters?.let { num(it, 1) } ?: ""}," +
             "${f.speedMps ?: ""},${f.speedAccuracyMps ?: ""},${f.bearingDeg ?: ""},${f.bearingAccuracyDeg ?: ""}," +
             "$sats,${if (estimated) 1 else 0}"
     )
 
     fun match(snapped: Boolean, distFromRoute: Double, routeBearing: Double, along: Double, offRoute: Boolean, heading: Float) = line(
-        "N,${mono()},${if (snapped) 1 else 0},${"%.1f".format(Locale.US, distFromRoute)},${"%.0f".format(Locale.US, routeBearing)}," +
-            "${"%.1f".format(Locale.US, along)},${if (offRoute) 1 else 0},${"%.0f".format(Locale.US, heading)}"
+        "N,${mono()},${if (snapped) 1 else 0},${num(distFromRoute, 1)},${num(routeBearing, 0)}," +
+            "${num(along, 1)},${if (offRoute) 1 else 0},${num(heading, 0)}"
     )
 
     fun drawn(lat: Double, lon: Double, bearing: Double, zoom: Double, tilt: Double, following: Boolean) = line(
-        "D,${mono()},${"%.7f".format(Locale.US, lat)},${"%.7f".format(Locale.US, lon)},${"%.0f".format(Locale.US, bearing)}," +
-            "${"%.2f".format(Locale.US, zoom)},${"%.0f".format(Locale.US, tilt)},${if (following) 1 else 0}"
+        "D,${mono()},${num(lat, 7)},${num(lon, 7)},${num(bearing, 0)}," +
+            "${num(zoom, 2)},${num(tilt, 0)},${if (following) 1 else 0}"
     )
 
     fun route(points: List<com.curveon.routing.LatLon>) = line(
-        "R,${mono()}," + points.joinToString(";") { "%.6f %.6f".format(Locale.US, it.lat, it.lon) }
+        "R,${mono()}," + points.joinToString(";") { num(it.lat, 6) + " " + num(it.lon, 6) }
     )
 
     fun event(text: String) = line("E,${mono()},${text.replace('\n', ' ')}")
@@ -76,6 +76,30 @@ object NavTrace {
             }
         }
     }
+
+    private val scales = longArrayOf(1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000)
+
+    /**
+     * [v] with [decimals] decimals, as "%.Nf" would write it: String.format is slow on Android, and
+     * this runs several times a second.
+     */
+    internal fun num(v: Double, decimals: Int): String {
+        if (v.isNaN() || v.isInfinite()) return v.toString()
+        val scale = scales[decimals]
+        val r = Math.round(kotlin.math.abs(v) * scale)
+        val sb = StringBuilder(16)
+        if (v < 0 && r != 0L) sb.append('-')
+        sb.append(r / scale)
+        if (decimals > 0) {
+            val frac = (r % scale).toString()
+            sb.append('.')
+            repeat(decimals - frac.length) { sb.append('0') }
+            sb.append(frac)
+        }
+        return sb.toString()
+    }
+
+    private fun num(v: Float, decimals: Int) = num(v.toDouble(), decimals)
 
     fun flush() = io.execute { runCatching { writer?.flush() } }
 

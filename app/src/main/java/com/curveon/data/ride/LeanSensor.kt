@@ -38,13 +38,38 @@ class LeanSensor(context: Context) : SensorEventListener {
 
     val available get() = gyro != null && accel != null
 
+    private var listening = false
+
+    /**
+     * Same 50 Hz as before, but the sensor hub holds readings for up to half a second and delivers
+     * them in one go, so the CPU wakes far less often. The lean is only read once a second.
+     */
     fun start() {
-        if (!available) return
-        sensors!!.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME)
-        sensors.registerListener(this, gyro, SensorManager.SENSOR_DELAY_GAME)
+        if (!available || listening) return
+        listening = true
+        sensors!!.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME, BATCH_US)
+        sensors.registerListener(this, gyro, SensorManager.SENSOR_DELAY_GAME, BATCH_US)
     }
 
-    fun stop() = sensors?.unregisterListener(this)
+    fun stop() {
+        listening = false
+        sensors?.unregisterListener(this)
+    }
+
+    /**
+     * Lean is 0 below 3 m/s anyway, so the sensors rest while standing still and wake at 1.5 m/s,
+     * which leaves the gravity filter time to settle before the bike is fast enough to lean.
+     */
+    fun onSpeed(mps: Float) {
+        speedMps = mps
+        if (mps >= WAKE_MPS) start() else if (mps < REST_MPS) stop()
+    }
+
+    private companion object {
+        const val BATCH_US = 500_000
+        const val WAKE_MPS = 1.5f
+        const val REST_MPS = 0.5f
+    }
 
     override fun onSensorChanged(e: SensorEvent) {
         when (e.sensor.type) {

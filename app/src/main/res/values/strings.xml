@@ -465,6 +465,9 @@
     <string name="rides_this_week">This week</string>
     <string name="rides_last_week">Last week</string>
     <string name="rides_group_summary">%1$d rides · %2$d km</string>
+    <string name="rides_lean">Note lean angle</string>
+    <string name="rides_lean_on">On – uses the motion sensors (more battery)</string>
+    <string name="rides_lean_off">Off – saves battery</string>
     <string name="rides_auto_save">Auto-save new rides to GPX</string>
     <string name="rides_auto_save_off">Off – rides are only kept here</string>
     <string name="rides_auto_save_group">Into %1$s · tap to change</string>

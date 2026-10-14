@@ -91,12 +91,17 @@ class LocationSource(context: Context) {
             listener,
             Looper.getMainLooper()
         )
-        runCatching { locationManager.registerGnssStatusCallback(gnss, android.os.Handler(Looper.getMainLooper())) }
-        runCatching { locationManager.addNmeaListener(nmea, android.os.Handler(Looper.getMainLooper())) }
+        // The receiver sends a dozen NMEA sentences and a satellite report every second; they only
+        // set two fields, so take them on a thread of their own and let the main thread sleep.
+        val side = android.os.HandlerThread("GnssSide").apply { start() }
+        val sideHandler = android.os.Handler(side.looper)
+        runCatching { locationManager.registerGnssStatusCallback(gnss, sideHandler) }
+        runCatching { locationManager.addNmeaListener(nmea, sideHandler) }
         awaitClose {
             locationManager.removeUpdates(listener)
             runCatching { locationManager.removeNmeaListener(nmea) }
             runCatching { locationManager.unregisterGnssStatusCallback(gnss) }
+            side.quitSafely()
         }
     }
 }

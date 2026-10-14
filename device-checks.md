@@ -6,6 +6,22 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Less battery
+
+Installed on the X7 and measured there (CPU per thread, same spot of the same demo ride, old vs new):
+standing still the app went from ~23 % of a core to ~5 %; riding, the main thread from ~67 % to
+~47 % (the map's own drawing, ~75 %, is unchanged). Still to see on a real ride:
+
+- [ ] Ride with the map following: it should glide exactly as before, also pulling away from a stop
+      (the rider loop now sleeps while the bike stands still and nothing changes).
+- [ ] The road name after the next turn, the online map where no downloaded map reaches and the
+      gravel roads still appear while riding (they are now looked for once a second instead of on
+      every frame).
+- [ ] GPX & rides → Rides: "Note lean angle" is off by default (lean is stored but not shown
+      anywhere yet). Switched on, ride a few bends: the ride still gets a lean angle.
+- [ ] Battery over an hour's ride, compared with before:
+      `adb shell dumpsys batterystats --charged com.curveon.tablet`.
+
 ## 2026-10-14 — Pins A/B, save dialog, Planned looks like Rides
 
 Installed on the X7 and the Pixel. Scrolling and the Planned page were checked on the X7 sized like the Pixel held sideways; the map pins and the save dialog were not seen.

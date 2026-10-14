@@ -67,6 +67,8 @@ private const val ALT = "curveon-alternatives"
 private const val MARKERS = "curveon-markers"
 private const val PICK = "curveon-pick"
 private const val APPROACH = "curveon-approach"
+/** At most this often is a camera that keeps moving (following the rider) reported as settled. */
+private const val IDLE_TICK_MS = 1_000L
 private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val HINT = "curveon-track-hint"
@@ -203,6 +205,8 @@ fun CurveonMapView(
     var zoomBias by remember { mutableDoubleStateOf(0.0) }
     var cameraBearing by remember { mutableFloatStateOf(0f) }
     var cameraIdleTick by remember { mutableIntStateOf(0) }
+    /** Nudged when what the rider loop below draws may change (a fix, the camera, the layout), to wake it. */
+    val wake = remember { kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED) }
     /** Where and how to draw the rider arrow this frame. */
     var puck by remember { mutableStateOf<Puck?>(null) }
 
@@ -271,8 +275,26 @@ fun CurveonMapView(
                 val p = m.projection.toScreenLocation(LatLng(loc.latitude, loc.longitude))
                 riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y)
             }
-            m.addOnCameraMoveListener { cameraBearing = m.cameraPosition.bearing.toFloat(); trackRider() }
-            m.addOnCameraIdleListener { cameraIdleTick++; trackRider() }
+            // Called on every frame while following: only write what is read then (the compass
+            // letter when it turns visibly; where the rider is only once the map is panned away).
+            m.addOnCameraMoveListener {
+                val bearing = m.cameraPosition.bearing.toFloat()
+                if (kotlin.math.abs(bearing - cameraBearing) >= 0.5f) cameraBearing = bearing
+                if (!following) trackRider()
+                wake.trySend(Unit)
+            }
+            // MapLibre calls the camera idle after every moveCamera, so on every frame while it
+            // follows the rider. What waits for it (online map check, gravel roads, road name
+            // ahead) restarted 60 times a second then; once a second is plenty, and the last one
+            // always comes, so a pan that stops is still seen.
+            var lastIdleTick = 0L
+            val idleTick = Runnable { lastIdleTick = android.os.SystemClock.uptimeMillis(); cameraIdleTick++ }
+            m.addOnCameraIdleListener {
+                if (!following) trackRider()
+                mapView.removeCallbacks(idleTick)
+                val wait = lastIdleTick + IDLE_TICK_MS - android.os.SystemClock.uptimeMillis()
+                if (wait <= 0) idleTick.run() else mapView.postDelayed(idleTick, wait)
+            }
             m.addOnMapClickListener { p ->
                 onTapState.value?.let { tap -> tap(GeoPoint(p.latitude, p.longitude)); return@addOnMapClickListener true }
                 // A tap on a GPX waypoint shows it. Only the rail button switches map/dashboard,
@@ -588,11 +610,16 @@ fun CurveonMapView(
         )
     }
 
+    // Emptying an empty source still redraws the map, and location changes every second.
+    var approachShown by remember { mutableStateOf(true) }
     LaunchedEffect(style, location, approachTo) {
         val s = style ?: return@LaunchedEffect
         val to = approachTo?.takeIf { haversine(location, it) > 20 }
+        if (to == null && !approachShown) return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(APPROACH)?.setGeoJson(lineFeatures(listOfNotNull(to?.let { listOf(location, it) })))
+        approachShown = to != null
     }
+    LaunchedEffect(style) { approachShown = true }
 
     // Editing: the trip's places as handles. The dashed guess goes once the new route is in.
     LaunchedEffect(style, editor?.handles, dark) {
@@ -680,7 +707,13 @@ fun CurveonMapView(
     // glides along the road. Zoom, tilt and where the rider sits on screen ease towards their
     // targets, so changing speed or mode doesn't jolt the view.
     val motion = remember { com.curveon.data.location.RiderMotion() }
-    LaunchedEffect(riderFix) { riderFix?.let { motion.onFix(it, System.nanoTime()) } }
+    LaunchedEffect(riderFix) { riderFix?.let { motion.onFix(it, System.nanoTime()) }; wake.trySend(Unit) }
+    LaunchedEffect(headingDeg, speedKmh, currentTurnInstruction, bottomClearance) { wake.trySend(Unit) }
+    DisposableEffect(mapView) {
+        val onLayout = android.view.View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> wake.trySend(Unit) }
+        mapView.addOnLayoutChangeListener(onLayout)
+        onDispose { mapView.removeOnLayoutChangeListener(onLayout) }
+    }
     val speedState = rememberUpdatedState(speedKmh)
     val headingState = rememberUpdatedState(headingDeg)
     val turnState = rememberUpdatedState(currentTurnInstruction)
@@ -698,15 +731,21 @@ fun CurveonMapView(
         var last = 0L
         var lastPose: com.curveon.data.location.RiderMotion.Pose? = null
         var lastTrace = 0L
+        var idle = false
         while (true) {
+            // Standing still with the camera settled there is nothing to glide: rather than work on
+            // every frame, sleep until something changes (a fix, the heading, a pan or zoom, the
+            // layout), so the arrow never lags the map; and look once a second regardless.
+            if (idle) kotlinx.coroutines.withTimeoutOrNull(1_000) { wake.receive() }
             val now = withFrameNanos { it }
             val dt = if (last == 0L) 0.016 else ((now - last) / 1e9).coerceIn(0.0, 0.5)
             last = now
             val pose = (if (hasGpsFix) motion.sample(System.nanoTime()) else null)
             val target = pose?.let { LatLng(it.lat, it.lon) } ?: locationState.value.let { LatLng(it.latitude, it.longitude) }
+            val moving = speedState.value >= 5f
+            var settled = true
             if (follow) {
                 val speed = speedState.value
-                val moving = speed >= 5f
                 val h = mapView.height.toDouble()
                 val wantZoom = if (autoZoom) (followZoom(speed, turnState.value?.distanceMeters, threeD) + zoomBias).coerceIn(10.0, 18.5) else zoom
                 val wantTilt = if (threeD) TILT_3D else 0.0
@@ -733,6 +772,7 @@ fun CurveonMapView(
                     kotlin.math.abs(cam.zoom - zoom) > 1e-3 || kotlin.math.abs(cam.tilt - tilt) > 0.05 ||
                     kotlin.math.abs(com.curveon.routing.Geo.angleDiff(cam.bearing, camBearing)) > 0.05 ||
                     kotlin.math.abs((cam.padding?.getOrNull(1) ?: 0.0) - lift) > 0.5
+                settled = !changed
                 if (changed) m.moveCamera(CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
                         .target(target)
@@ -747,9 +787,11 @@ fun CurveonMapView(
             // moves in step with the map. MapLibre's own location puck animates on its own clock
             // and can't take a new position every frame.
             val p = m.projection.toScreenLocation(target)
-            riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y)
+            if (!follow) riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y) // only shown once panned away
             val cam = m.cameraPosition
-            puck = Puck(p.x, p.y, ((pose?.bearingDeg ?: headingState.value.toDouble()) - cam.bearing).toFloat(), cam.tilt.toFloat())
+            val newPuck = Puck(p.x, p.y, ((pose?.bearingDeg ?: headingState.value.toDouble()) - cam.bearing).toFloat(), cam.tilt.toFloat())
+            idle = settled && !moving && newPuck == puck
+            puck = newPuck
             if (pose != null && now - lastTrace > 200_000_000L) {
                 lastTrace = now
                 com.curveon.data.location.NavTrace.drawn(pose.lat, pose.lon, pose.bearingDeg, m.cameraPosition.zoom, m.cameraPosition.tilt, follow)

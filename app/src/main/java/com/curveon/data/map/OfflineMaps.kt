@@ -72,7 +72,7 @@ class OfflineMaps(private val context: Context) {
 
     private fun asset(path: String) = context.assets.open(path).bufferedReader().use { it.readText() }
 
-    private class Coverage(val key: String, val maps: List<PmtilesIndex>)
+    private data class Coverage(val key: String, val maps: List<PmtilesIndex>, val at: Long)
     @Volatile private var coverage: Coverage? = null
 
     /**
@@ -90,10 +90,12 @@ class OfflineMaps(private val context: Context) {
 
     @Synchronized
     private fun indexes(): List<PmtilesIndex> {
+        // Asked 25 times per look at the view (up to once a second while riding): read the folder only now and then.
+        coverage?.takeIf { android.os.SystemClock.elapsedRealtime() - it.at < COVERAGE_RECHECK_MS }?.let { return it.maps }
         val maps = installedMaps()
         val key = maps.joinToString { "${it.name}:${it.length()}:${it.lastModified()}" }
-        coverage?.takeIf { it.key == key }?.let { return it.maps }
-        return maps.mapNotNull { runCatching { PmtilesIndex(it) }.getOrNull() }.also { coverage = Coverage(key, it) }
+        coverage?.takeIf { it.key == key }?.let { coverage = it.copy(at = android.os.SystemClock.elapsedRealtime()); return it.maps }
+        return maps.mapNotNull { runCatching { PmtilesIndex(it) }.getOrNull() }.also { coverage = Coverage(key, it, android.os.SystemClock.elapsedRealtime()) }
     }
 
     private fun sourceName(i: Int) = if (i == 0) SOURCE else "$SOURCE$i"
@@ -126,6 +128,8 @@ class OfflineMaps(private val context: Context) {
 
     companion object {
         private const val SOURCE = "protomaps"
+        /** How long the list of downloaded maps is trusted before the folder is looked at again. */
+        private const val COVERAGE_RECHECK_MS = 10_000L
 
         /** The online layers' source; their ids start with "online-". */
         const val ONLINE_SOURCE = "online"

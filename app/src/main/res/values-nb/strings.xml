@@ -464,6 +464,9 @@
     <string name="rides_this_week">Denne uka</string>
     <string name="rides_last_week">Forrige uke</string>
     <string name="rides_group_summary">%1$d turer · %2$d km</string>
+    <string name="rides_lean">Ta med helningsvinkel</string>
+    <string name="rides_lean_on">På – bruker bevegelsessensorene (mer batteri)</string>
+    <string name="rides_lean_off">Av – sparer batteri</string>
     <string name="rides_auto_save">Autolagre nye turer i GPX</string>
     <string name="rides_auto_save_off">Av – turene ligger bare her</string>
     <string name="rides_auto_save_group">I %1$s · trykk for å bytte</string>

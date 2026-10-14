@@ -578,8 +578,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         NavTrace.start(application)
         updateMapDark()
         startDeadReckoning()
-        leanSensor.start()
-
         viewModelScope.launch { while (true) { delay(60_000); updateMapDark() } }
 
         // Speed limit while navigating: the official one of the road the route is on, else the route's (OSM).
@@ -779,10 +777,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         settings.edit().putBoolean("logRides", on).apply()
     }
 
+    /** Whether the gyro and accelerometer are used to note the lean angle in rides. Off by default: they cost battery. */
+    private val _recordLean = MutableStateFlow(settings.getBoolean("recordLean", false))
+    val recordLean: StateFlow<Boolean> = _recordLean.asStateFlow()
+
+    fun setRecordLean(on: Boolean) {
+        _recordLean.value = on
+        settings.edit().putBoolean("recordLean", on).apply()
+        if (!on) leanSensor.stop()
+    }
+
     private fun recordRide(fix: GpsFix) {
         if (!_logRides.value && rideRecorder.current == null) return
-        leanSensor.speedMps = tripTracker.speedKmh / 3.6f
-        when (rideRecorder.onFix(fix, tripTracker.speedKmh, leanSensor.leanDeg)) {
+        val lean = _recordLean.value
+        if (lean) leanSensor.onSpeed(tripTracker.speedKmh / 3.6f)
+        when (rideRecorder.onFix(fix, tripTracker.speedKmh, if (lean) leanSensor.leanDeg else null)) {
             RideRecorder.Event.STARTED -> viewModelScope.launch {
                 val id = rideDao.insert(rideRecorder.current!!)
                 rideRecorder.setId(id)
