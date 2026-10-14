@@ -126,6 +126,8 @@ assign initialcost =
        else 0
 
 # Base cost per metre by road class and riding style. Offroad: a track is as good as the best road.
+# A ferry costs at least as much as a motorway: sailing is never cheaper than riding, or a long
+# ship (Hurtigruten Bergen-Florø) beats riding up the coast on trunk roads.
 assign class_cost =
   if and offroad is_track then 1.0
   else if fastest then
@@ -173,7 +175,7 @@ assign class_cost =
     switch isresidentialorliving             3.0
     switch highway=service                   4.0
     switch is_track                          2.0
-    switch route=ferry                       3.0
+    switch route=ferry                       6.0
     10000
   )
 

@@ -6,6 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Very curvy no longer takes the Hurtigruten
+
+- [ ] From Bømlo, destination Florø, Supersvingete: the route rides up the coast (about 390 km,
+      a few short fjord ferries), not to Bergen and the Hurtigruten from there.
+
 ## 2026-10-14 — Lock the route while editing on the map
 
 - [ ] Juster ruten → Endre i kartet: a lock button (open padlock) sits beside Undo. Press it: it
