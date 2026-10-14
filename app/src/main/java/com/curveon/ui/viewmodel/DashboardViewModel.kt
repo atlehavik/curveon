@@ -584,6 +584,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         updateMapDark()
         startDeadReckoning()
         viewModelScope.launch { while (true) { delay(60_000); updateMapDark() } }
+        // The service's notification says when a trip is navigated (the companion's battery test reads it).
+        viewModelScope.launch {
+            kotlinx.coroutines.flow.combine(isNavigating, mapSaver) { nav, saver -> nav to saver }
+                .collect { (nav, saver) -> com.curveon.RideService.navigation(application, nav, saver) }
+        }
 
         // Speed limit while navigating: the official one of the road the route is on, else the route's (OSM).
         viewModelScope.launch {

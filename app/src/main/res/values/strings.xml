@@ -525,6 +525,7 @@
     <string name="background_text">It has used GPS and battery for %1$d minutes without being used. Close it if you don\'t need it.</string>
     <string name="service_channel">Riding</string>
     <string name="service_running">GPS and navigation are running</string>
+    <string name="service_navigating">Navigating</string>
     <string name="gpx_no_track_in">No track or route in %1$s</string>
     <string name="saved_loop">Loop</string>
     <string name="saved_track">Track</string>

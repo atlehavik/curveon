@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -93,6 +94,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            BatteryTestCard(notificationAccess)
+
             if (BuildConfig.DEV) Card("Test") {
                 Text("Send a fake message or call through the real chain to the tablet. " +
                     "What the tablet sends back (reply, answer, decline) shows up under Status.", color = Muted, fontSize = 13.sp)
@@ -114,6 +117,51 @@ class MainActivity : ComponentActivity() {
                 Text(if (status.serviceRunning) "Stop sharing" else "Start sharing with tablet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+
+    /** Start/stop the battery test, and mAh per hour for each app that navigated. */
+    @Composable
+    private fun BatteryTestCard(notificationAccess: Boolean) {
+        val test by BatteryTest.state.collectAsStateWithLifecycle()
+        var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+        LaunchedEffect(test.running) { while (test.running) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(10_000) } }
+        Card(stringResource(R.string.battery_test)) {
+            Text(stringResource(R.string.battery_test_hint), color = Muted, fontSize = 13.sp)
+            if (!notificationAccess) Text(stringResource(R.string.battery_test_no_access), color = Amber, fontSize = 13.sp)
+            if (test.running) Text(
+                stringResource(R.string.battery_test_running, duration(now - test.startedAt), bucketName(test.now)),
+                color = Color.White, fontSize = 14.sp
+            ) else if (test.file != null) Text(stringResource(R.string.battery_test_last), color = Color.White, fontSize = 14.sp)
+            BatteryTest.Bucket.entries.forEach { bucket ->
+                val t = test.totals[bucket] ?: return@forEach
+                val name = bucketName(bucket)
+                Text(
+                    if (t.mahPerHour.isNaN()) stringResource(R.string.battery_test_short, "$name · ${duration(t.ms)}")
+                    else stringResource(R.string.battery_test_row, "$name · ${duration(t.ms)}",
+                        "%.0f".format(t.mah), "%.0f".format(t.mahPerHour), t.brightness),
+                    color = if (bucket == BatteryTest.Bucket.NONE) Muted else Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold
+                )
+            }
+            if (test.chargingMs > 0) Text(stringResource(R.string.battery_test_charging, duration(test.chargingMs)), color = Amber, fontSize = 13.sp)
+            test.file?.let { Text(stringResource(R.string.battery_test_file, it.name), color = Muted, fontSize = 12.sp) }
+            Button(
+                onClick = { if (test.running) BatteryTest.stop(this@MainActivity) else BatteryTest.start(this@MainActivity) },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text(stringResource(if (test.running) R.string.battery_test_stop else R.string.battery_test_start), fontWeight = FontWeight.Bold) }
+        }
+    }
+
+    @Composable
+    private fun bucketName(b: BatteryTest.Bucket) = stringResource(when (b) {
+        BatteryTest.Bucket.NONE -> R.string.battery_nav_none
+        BatteryTest.Bucket.GOOGLE_MAPS -> R.string.battery_nav_maps
+        BatteryTest.Bucket.CURVEON -> R.string.battery_nav_curveon
+        BatteryTest.Bucket.CURVEON_SAVER -> R.string.battery_nav_curveon_saver
+    })
+
+    private fun duration(ms: Long): String {
+        val min = (ms / 60_000).coerceAtLeast(0)
+        return if (min < 60) "$min min" else "${min / 60} h ${min % 60} min"
     }
 
     @Composable

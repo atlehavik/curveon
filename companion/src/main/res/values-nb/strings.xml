@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_test">Batteritest</string>
+    <string name="battery_test_hint">Sammenligner hvor mye batteri Google Maps og Curveon bruker på denne telefonen. Koble fra laderen, start testen, kjør A→B med den ene og B→A med den andre, og stopp. Bruk samme lysstyrke på skjermen begge veier.</string>
+    <string name="battery_test_start">Start batteritest</string>
+    <string name="battery_test_stop">Stopp batteritest</string>
+    <string name="battery_test_running">Har gått i %1$s · nå: %2$s</string>
+    <string name="battery_test_last">Siste test</string>
+    <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/t · lysstyrke %4$d</string>
+    <string name="battery_test_short">%1$s · for kort til å si noe ennå</string>
+    <string name="battery_test_charging">%1$s på lader, teller ikke</string>
+    <string name="battery_test_no_access">Trenger varseltilgang (Oppsett) for å se hvilken app som navigerer.</string>
+    <string name="battery_test_file">Logg: %1$s</string>
+    <string name="battery_nav_none">Ingen navigasjon</string>
+    <string name="battery_nav_maps">Google Maps</string>
+    <string name="battery_nav_curveon">Curveon</string>
+    <string name="battery_nav_curveon_saver">Curveon (batterisparende kart)</string>
+</resources>

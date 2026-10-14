@@ -6,6 +6,17 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Battery test: Google Maps against Curveon (Pixel)
+
+Installed on the Pixel (Companion and Curveon). Tried on the X7 (faked unplugged): Google Maps'
+navigation, Curveon's and Curveon's with the battery saver map are each recognised, start and end.
+
+- [ ] Pixel unplugged, same screen brightness both ways (auto-brightness off): Companion → Battery
+      test → Start. Ride A→B navigating with Google Maps, B→A with Curveon (on the way back maybe
+      half with the battery saver map on), then Stop. Companion shows mAh and mAh/h per app.
+- [ ] Afterwards, for a closer look: `adb pull /sdcard/Android/data/com.curveon.companion/files/batterytest/`
+- [ ] Close the other app while one navigates (Curveon via "Close Curveon" in its notification).
+
 ## 2026-10-14 — Less battery
 
 Installed on the X7 and measured there (CPU per thread, same spot of the same demo ride, old vs new):

@@ -43,6 +43,7 @@ class CompanionService : Service() {
             return START_NOT_STICKY
         }
         startForegroundCompat()
+        BatteryTest.resume(this)
         if (!running) {
             running = true
             PhoneHub.voice = VoiceReplier(this)

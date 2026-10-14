@@ -48,6 +48,7 @@ class RideService : Service() {
                 handler.removeCallbacks(warn)
                 getSystemService(NotificationManager::class.java).cancel(WARNING_ID)
             }
+            ACTION_NAV -> getSystemService(NotificationManager::class.java).notify(ID, notification())
             ACTION_HIDDEN -> {
                 handler.removeCallbacks(warn)
                 // Navigating with another app in front is what the service is for: no warning then.
@@ -61,17 +62,23 @@ class RideService : Service() {
     private fun startForeground() {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CHANNEL, getString(R.string.service_channel), NotificationManager.IMPORTANCE_LOW))
-        val notification = Notification.Builder(this, CHANNEL)
-            .setContentTitle("Curveon")
-            .setContentText(getString(R.string.service_running))
-            .setSmallIcon(R.drawable.ic_nav_arrow)
-            .setContentIntent(openApp())
-            .addAction(quitAction())
-            .setOngoing(true)
-            .build()
-        if (Build.VERSION.SDK_INT >= 29) startForeground(ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
-        else startForeground(ID, notification)
+        if (Build.VERSION.SDK_INT >= 29) startForeground(ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+        else startForeground(ID, notification())
     }
+
+    /** Says whether a trip is being navigated, which the companion's battery test reads (NavWatch). */
+    private fun notification() = Notification.Builder(this, CHANNEL)
+        .setContentTitle("Curveon")
+        .setContentText(getString(if (navigating) R.string.service_navigating else R.string.service_running))
+        .setSmallIcon(R.drawable.ic_nav_arrow)
+        .setContentIntent(openApp())
+        .addAction(quitAction())
+        .setOngoing(true)
+        .addExtras(android.os.Bundle().apply {
+            putBoolean(com.curveon.phone.NavWatch.EXTRA_NAVIGATING, navigating)
+            putBoolean(com.curveon.phone.NavWatch.EXTRA_MAP_SAVER, mapSaver)
+        })
+        .build()
 
     private fun showBackgroundWarning() {
         val nm = getSystemService(NotificationManager::class.java)
@@ -116,11 +123,22 @@ class RideService : Service() {
         private const val ACTION_QUIT = "com.curveon.QUIT"
         private const val ACTION_SHOWN = "com.curveon.SHOWN"
         private const val ACTION_HIDDEN = "com.curveon.HIDDEN"
+        private const val ACTION_NAV = "com.curveon.NAV"
         private const val EXTRA_NAVIGATING = "navigating"
         /** Out of sight this long without a trip: warn that Curveon is still using GPS and battery. */
         private const val BACKGROUND_WARN_MS = 10 * 60_000L
 
         @Volatile private var running = false
+        @Volatile private var navigating = false
+        @Volatile private var mapSaver = false
+
+        /** A trip is (or isn't) being navigated, with or without the battery saver map: shown in the notification. */
+        fun navigation(context: Context, navigating: Boolean, mapSaver: Boolean) {
+            if (navigating == this.navigating && mapSaver == this.mapSaver) return
+            this.navigating = navigating
+            this.mapSaver = mapSaver
+            tell(context, Intent(context, RideService::class.java).setAction(ACTION_NAV))
+        }
 
         fun start(context: Context) = runCatching {
             context.startForegroundService(Intent(context, RideService::class.java))

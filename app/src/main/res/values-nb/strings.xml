@@ -524,6 +524,7 @@
     <string name="background_text">Den har brukt GPS og batteri i %1$d minutter uten å være i bruk. Lukk den hvis du ikke trenger den.</string>
     <string name="service_channel">Kjøring</string>
     <string name="service_running">GPS og navigasjon kjører</string>
+    <string name="service_navigating">Navigerer</string>
     <string name="gpx_no_track_in">Ingen spor eller rute i %1$s</string>
     <string name="saved_loop">Rundtur</string>
     <string name="saved_track">Spor</string>

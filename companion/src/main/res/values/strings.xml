@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">Curveon Companion</string>
+    <string name="battery_test">Battery test</string>
+    <string name="battery_test_hint">Compares how much battery Google Maps and Curveon use on this phone. Unplug the phone, start the test, ride A→B navigating with one and B→A with the other, then stop. Keep the same screen brightness for both.</string>
+    <string name="battery_test_start">Start battery test</string>
+    <string name="battery_test_stop">Stop battery test</string>
+    <string name="battery_test_running">Running for %1$s · now: %2$s</string>
+    <string name="battery_test_last">Last test</string>
+    <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/h · brightness %4$d</string>
+    <string name="battery_test_short">%1$s · too short to tell yet</string>
+    <string name="battery_test_charging">%1$s on the charger, not counted</string>
+    <string name="battery_test_no_access">Needs notification access (Setup) to see which app is navigating.</string>
+    <string name="battery_test_file">Log: %1$s</string>
+    <string name="battery_nav_none">No navigation</string>
+    <string name="battery_nav_maps">Google Maps</string>
+    <string name="battery_nav_curveon">Curveon</string>
+    <string name="battery_nav_curveon_saver">Curveon (battery saver map)</string>
 </resources>

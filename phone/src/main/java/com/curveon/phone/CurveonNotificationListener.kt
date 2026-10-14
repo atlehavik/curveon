@@ -56,12 +56,14 @@ class CurveonNotificationListener : NotificationListenerService() {
     // ---------------------------------------------------------------- notifications
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        NavWatch.onPosted(sbn)
         val message = runCatching { toMessage(sbn) }.onFailure { Log.w(TAG, "Skipping ${sbn.key}", it) }.getOrNull() ?: return
         synchronized(active) { active[sbn.key] = sbn }
         PhoneHub.postNotification(message)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        NavWatch.onRemoved(sbn)
         synchronized(active) { active.remove(sbn.key) }
         PhoneHub.removeNotification(sbn.key)
     }
