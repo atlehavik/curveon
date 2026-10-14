@@ -81,9 +81,7 @@ fun MapSpeedCluster(
     camera: com.curveon.data.routing.CameraAlert?,
     modifier: Modifier = Modifier,
     /** Settings → Display: the height above sea level under the speed. */
-    showAltitude: Boolean = false,
-    /** Number and priority of the road the rider is on (Settings → Display), when known. */
-    road: com.curveon.data.road.CurrentRoad? = null
+    showAltitude: Boolean = false
 ) {
     val limit = camera?.maxSpeedKmh ?: telemetry.speedLimitKmh
     val over = limit > 0 && telemetry.speedKmh > limit + 3
@@ -119,7 +117,6 @@ fun MapSpeedCluster(
             telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
             !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
         }
-        road?.let { CurrentRoadSigns(it, Modifier.padding(top = 6.dp)) }
         if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
             Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(5.dp))
@@ -179,10 +176,22 @@ fun PriorityRoadSign(size: Dp, modifier: Modifier = Modifier) {
     }
 }
 
-/** The road the rider is on: its number and, on a priority road, the priority sign. */
+/**
+ * The road the rider is on, in a little card of its own: its number and, on a priority road, the
+ * priority sign (Settings → Display → Road info).
+ */
 @Composable
-fun CurrentRoadSigns(road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier) {
-    Row(modifier.testTag("current_road"), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+fun CurrentRoadCard(road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(CockpitSurface.copy(alpha = 0.92f))
+            .border(1.dp, CockpitBorder, RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .testTag("current_road"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         road.ref?.let { RoadShield(it, 26.dp) }
         if (road.priority) PriorityRoadSign(30.dp)
     }

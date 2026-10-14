@@ -9,9 +9,9 @@ Commands assume the device is connected over USB. With both connected, pick one 
 ## 2026-10-14 — Road number signs and priority roads
 
 Installed on the X7 and tried on the demo ride with a Vestland-only data file
-(`speedlimits/zz-test-vestland.sqlite`, delete it once the new norway.sqlite is out): by the speed
-"Fv4998" and the priority road sign; in the turn card "270 m [Fv5012]". Settings → Display →
-Road info hides and shows them.
+(`speedlimits/zz-test-vestland.sqlite`, delete it once the new norway.sqlite is out): "Fv4998" and
+the priority road sign in a card of their own (top middle in landscape, under the speed in
+portrait); in the turn card "270 m [Fv5012]". Settings → Display → Road info hides and shows them.
 
 - [ ] Real ride: the number by the speed changes as you turn onto another road, and the priority
       sign shows on forkjørsveg and goes away off it (within ~2 s).
