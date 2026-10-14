@@ -49,7 +49,9 @@ data class TurnInstruction(
     val distanceMeters: Int,
     val streetName: String,
     val speedLimitKmh: Int = 80,
-    val location: GeoPoint
+    val location: GeoPoint,
+    /** The number sign of the road after the turn, when known. */
+    val roadRef: com.curveon.data.road.RoadRef? = null
 )
 
 @Entity(tableName = "saved_routes")

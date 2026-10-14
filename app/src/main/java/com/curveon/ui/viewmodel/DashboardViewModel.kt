@@ -452,8 +452,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ---------------------------------------------------------------- road names
 
-    /** Road name/number after each maneuver, looked up from the map tiles as it comes into view. */
-    private val roadNames = MutableStateFlow<Map<Int, String>>(emptyMap())
+    /**
+     * Road number and name after each maneuver: the name from the map tiles as it comes into view,
+     * the number from the road register where there is one (Norway), else from the tiles.
+     */
+    private val roadNames = MutableStateFlow<Map<Int, com.curveon.data.road.NextRoad>>(emptyMap())
     private var roadNamesRoute: com.curveon.routing.Route? = null
 
     /** Point just after the next maneuver, where the map should read the road name. */
@@ -470,10 +473,57 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    fun onRoadName(maneuverIndex: Int, name: String?) {
-        val route = navigator.state.value.route
+    fun onRoadName(maneuverIndex: Int, road: com.curveon.data.road.MapRoad?) {
+        val route = navigator.state.value.route ?: return
         if (route !== roadNamesRoute) { roadNames.value = emptyMap(); roadNamesRoute = route }
-        roadNames.value = roadNames.value + (maneuverIndex to (name ?: ""))
+        // The name at once (and the probe stops); the number once the register has been read.
+        roadNames.value = roadNames.value + (maneuverIndex to com.curveon.data.road.NextRoad(null, road?.name))
+        val m = route.maneuvers.getOrNull(maneuverIndex) ?: return
+        val (p, bearing) = Routes.pointAt(route, m.distanceFromStart + 30)
+        viewModelScope.launch {
+            val ref = roadRefAt(p.lat, p.lon, bearing, road)
+            if (roadNamesRoute === route) roadNames.value = roadNames.value +
+                (maneuverIndex to com.curveon.data.road.NextRoad(ref, road?.name?.takeIf { it != ref?.text }))
+        }
+    }
+
+    /** The road's number sign: Norway's road register where it has the road, else the map's ref read the country's way. */
+    private suspend fun roadRefAt(lat: Double, lon: Double, headingDeg: Double?, road: com.curveon.data.road.MapRoad?) =
+        withContext(Dispatchers.IO) {
+            val country = mapCatalog.areaAt(lat, lon)?.iso
+            (if (country == "NO") speedLimits.roadRef(lat, lon, headingDeg) else null)
+                ?: com.curveon.data.road.RoadRef.fromOsm(road?.ref, road?.kindDetail, country)
+        }
+
+    /** Settings → Display: the number and priority sign of the road the rider is on, by the speed. */
+    private val _showRoadInfo = MutableStateFlow(settings.getBoolean("roadInfo", true))
+    val showRoadInfo: StateFlow<Boolean> = _showRoadInfo.asStateFlow()
+    fun setShowRoadInfo(on: Boolean) { _showRoadInfo.value = on; settings.edit().putBoolean("roadInfo", on).apply() }
+
+    /** The road under the rider as the map tiles have it, read now and then by the map. */
+    @Volatile private var mapRoadHere: com.curveon.data.road.MapRoad? = null
+    fun onRoadHere(road: com.curveon.data.road.MapRoad?) { mapRoadHere = road }
+
+    private val _currentRoad = MutableStateFlow<com.curveon.data.road.CurrentRoad?>(null)
+    /** Number and priority of the road the rider is on; null when neither is known (or it's switched off). */
+    val currentRoad: StateFlow<com.curveon.data.road.CurrentRoad?> = _currentRoad.asStateFlow()
+
+    private fun watchCurrentRoad() = viewModelScope.launch {
+        while (true) {
+            delay(2_000)
+            val t = _telemetry.value
+            if (!_showRoadInfo.value || !t.hasGpsFix) { _currentRoad.value = null; continue }
+            // On the route: where it is drawn and the route's direction; else the GPS and its heading
+            // (none while slow: it's noise then, and a crossing road could win at a junction).
+            val p = navigator.state.value.progress?.takeIf { !it.offRoute && it.distanceFromRoute < 25 }
+            val lat = p?.snapped?.lat ?: _currentLocation.value.latitude
+            val lon = p?.snapped?.lon ?: _currentLocation.value.longitude
+            val heading = p?.routeBearingDeg ?: t.headingDeg.toDouble().takeIf { t.speedKmh >= 8f }
+            if (heading == null && _currentRoad.value != null) continue // standing still: keep what we had
+            val ref = roadRefAt(lat, lon, heading, mapRoadHere)
+            val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(lat, lon, heading) }
+            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority).takeUnless { it.isEmpty }
+        }
     }
 
     val currentTurnInstruction: StateFlow<TurnInstruction?> = combine(navigator.state, roadNames) { s, names ->
@@ -495,7 +545,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val then = p.followingManeuver?.takeIf {
             it.type != ManeuverType.ARRIVE && it.distanceFromStart - m.distanceFromStart < 300
         }
-        val road = if (route === roadNamesRoute) names[idx]?.takeIf { it.isNotEmpty() } else null
+        val next = if (route === roadNamesRoute) names[idx] else null
+        val road = next?.name?.takeIf { it.isNotEmpty() }
         TurnInstruction(
             index = idx,
             type = m.toTurnType(),
@@ -505,7 +556,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             distanceMeters = roundDistance(p.distanceToNextManeuver),
             streetName = road ?: "",
             speedLimitKmh = p.speedLimitKmh ?: 0,
-            location = route.points[m.pointIndex].let { GeoPoint(it.lat, it.lon) }
+            location = route.points[m.pointIndex].let { GeoPoint(it.lat, it.lon) },
+            roadRef = next?.ref
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -583,6 +635,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         NavTrace.start(application)
         updateMapDark()
         startDeadReckoning()
+        watchCurrentRoad()
         viewModelScope.launch { while (true) { delay(60_000); updateMapDark() } }
         // The service's notification says when a trip is navigated (the companion's battery test reads it).
         viewModelScope.launch {

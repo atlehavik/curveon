@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Road number signs and priority roads
+
+Installed on the X7 and tried on the demo ride with a Vestland-only data file
+(`speedlimits/zz-test-vestland.sqlite`, delete it once the new norway.sqlite is out): by the speed
+"Fv4998" and the priority road sign; in the turn card "270 m [Fv5012]". Settings → Display →
+Road info hides and shows them.
+
+- [ ] Real ride: the number by the speed changes as you turn onto another road, and the priority
+      sign shows on forkjørsveg and goes away off it (within ~2 s).
+- [ ] An E-road and a riksveg show green signs (E39, Rv…), fylkesveg white, kommunal veg grey.
+- [ ] Abroad (or without the new data file): the number comes from the map instead, in the
+      country's colours; no priority sign.
+
 ## 2026-10-14 — Battery test: Google Maps against Curveon (Pixel)
 
 Installed on the Pixel (Companion and Curveon). Tried on the X7 (faked unplugged): Google Maps'

@@ -32,11 +32,12 @@ class SpeedLimits(private val context: Context) {
 
     fun file(id: String) = File(dir, "$id.sqlite")
 
-    /** One stretch of road in a square: its limit and points (degrees). */
-    private class Run(val kmh: Int, val lat: DoubleArray, val lon: DoubleArray)
+    /** One stretch of road in a square: its value (limit, road number, …) and points (degrees). */
+    private class Run(val value: Int, val lat: DoubleArray, val lon: DoubleArray)
 
     @Volatile private var dbs: List<SQLiteDatabase>? = null
-    private val cells = LruCache<Long, List<Run>>(256)
+    /** Squares read so far, per table: speed limits, road numbers, priority roads. */
+    private val caches = TABLES.associateWith { LruCache<Long, List<Run>>(256) }
 
     private fun open(): List<SQLiteDatabase> = dbs ?: synchronized(this) {
         dbs ?: dir.listFiles { f -> f.isFile && f.name.endsWith(".sqlite") }.orEmpty().mapNotNull {
@@ -47,7 +48,7 @@ class SpeedLimits(private val context: Context) {
     private fun reopen() = synchronized(this) {
         dbs?.forEach { runCatching { it.close() } }
         dbs = null
-        cells.evictAll()
+        caches.values.forEach { it.evictAll() }
     }
 
     /**
@@ -55,14 +56,24 @@ class SpeedLimits(private val context: Context) {
      * runs the way the rider does ([headingDeg], either direction along it; null = any), so a road
      * crossing at a junction doesn't win. Null where there is none (no file, private road, abroad).
      */
-    fun at(lat: Double, lon: Double, headingDeg: Double?): Int? {
+    fun at(lat: Double, lon: Double, headingDeg: Double?): Int? = nearest(CELLS, lat, lon, headingDeg)
+
+    /** The road's number from the road register (Norway: E39, Rv7, Fv541, Kv1209), as [at] finds the road. */
+    fun roadRef(lat: Double, lon: Double, headingDeg: Double?): com.curveon.data.road.RoadRef? =
+        nearest(REFS, lat, lon, headingDeg)?.let { com.curveon.data.road.RoadRef.fromNvdb(it) }
+
+    /** Whether the road is a priority road (Norway: forkjørsveg). */
+    fun isPriorityRoad(lat: Double, lon: Double, headingDeg: Double?): Boolean =
+        nearest(PRIORITY, lat, lon, headingDeg) != null
+
+    private fun nearest(table: String, lat: Double, lon: Double, headingDeg: Double?): Int? {
         if (open().isEmpty()) return null
         val kx = cos(Math.toRadians(lat)) * 111_320.0
         var best: Int? = null
         var bestD = MAX_OFFSET_M
         val cy = floor(lat * 100).toInt()
         val cx = floor(lon * 100).toInt()
-        for (dy in -1..1) for (dx in -1..1) for (r in runs(cy + dy, cx + dx)) {
+        for (dy in -1..1) for (dx in -1..1) for (r in runs(table, cy + dy, cx + dx)) {
             for (i in 0 until r.lat.size - 1) {
                 val ax = (r.lon[i] - lon) * kx; val ay = (r.lat[i] - lat) * KY
                 val bx = (r.lon[i + 1] - lon) * kx; val by = (r.lat[i + 1] - lat) * KY
@@ -77,22 +88,24 @@ class SpeedLimits(private val context: Context) {
                     if (diff > MAX_ANGLE_DEG) continue
                 }
                 bestD = d
-                best = r.kmh
+                best = r.value
             }
         }
         return best
     }
 
-    private fun runs(latCell: Int, lonCell: Int): List<Run> {
+    private fun runs(table: String, latCell: Int, lonCell: Int): List<Run> {
         val key = (latCell + 9000).toLong() * 100_000 + (lonCell + 18000)
-        cells.get(key)?.let { return it }
+        val cache = caches.getValue(table)
+        cache.get(key)?.let { return it }
         val out = ArrayList<Run>()
+        // A file without the table (built before it, or another country) just has nothing here.
         for (db in open()) runCatching {
-            db.rawQuery("SELECT data FROM cells WHERE cell = ?", arrayOf(key.toString())).use { c ->
+            db.rawQuery("SELECT data FROM $table WHERE cell = ?", arrayOf(key.toString())).use { c ->
                 if (c.moveToFirst()) decode(c.getBlob(0), latCell, lonCell, out)
             }
         }
-        cells.put(key, out)
+        cache.put(key, out)
         return out
     }
 
@@ -111,14 +124,14 @@ class SpeedLimits(private val context: Context) {
         fun signed(): Long { val z = varint(); return (z ushr 1) xor -(z and 1) }
         while (pos < data.size) {
             val n = varint().toInt()
-            val kmh = varint().toInt()
+            val value = varint().toInt()
             val lat = DoubleArray(n); val lon = DoubleArray(n)
             var la = latCell * 1000L; var lo = lonCell * 1000L
             for (i in 0 until n) {
                 la += signed(); lo += signed()
                 lat[i] = la / 1e5; lon[i] = lo / 1e5
             }
-            out += Run(kmh, lat, lon)
+            out += Run(value, lat, lon)
         }
     }
 
@@ -190,5 +203,10 @@ class SpeedLimits(private val context: Context) {
         /** A road this close counts as the one the rider is on (GPS error plus half a wide road). */
         private const val MAX_OFFSET_M = 20.0
         private const val MAX_ANGLE_DEG = 40.0
+        /** The tables a file can hold (see tools/speedlimits/build_speedlimits.py). */
+        private const val CELLS = "cells"
+        private const val REFS = "refs"
+        private const val PRIORITY = "priority"
+        private val TABLES = listOf(CELLS, REFS, PRIORITY)
     }
 }

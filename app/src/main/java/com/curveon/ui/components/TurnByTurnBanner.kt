@@ -68,14 +68,18 @@ fun TurnByTurnBanner(
 
             // Distance & Street Name
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = formatDistance(instruction.distanceMeters),
-                    color = TextPrimary,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = (-0.5).sp
-                )
+                // The distance, and the number sign of the road the turn leads onto.
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = formatDistance(instruction.distanceMeters),
+                        color = TextPrimary,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = (-0.5).sp
+                    )
+                    instruction.roadRef?.let { RoadShield(it, 26.dp) }
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = instruction.text,

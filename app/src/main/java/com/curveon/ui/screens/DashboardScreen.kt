@@ -95,6 +95,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val mapSaver by viewModel.mapSaver.collectAsStateWithLifecycle()
     val showSurfaces by viewModel.showSurfaces.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
+    val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
+    val currentRoad by viewModel.currentRoad.collectAsStateWithLifecycle()
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
@@ -396,7 +398,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
         MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
-            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude)
+            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude,
+            road = currentRoad)
         // The next turn bottom left, as high as the music beside it.
         if (showTurn) {
             TurnByTurnBanner(turn!!, modifier = Modifier.align(Alignment.BottomStart).padding(14.dp).width(turnWidth).height(BOTTOM_CARD_HEIGHT))
@@ -560,6 +563,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             showSurfaces = showSurfaces,
             roadNameProbe = roadNameProbe,
             onRoadName = viewModel::onRoadName,
+            onRoadHere = if (showRoadInfo) viewModel::onRoadHere else null,
             // Held on the map: go there or keep it as a favourite (riding or planning: also a stop or the start).
             onLongPress = { p, roadName ->
                 roadInfo = null
@@ -843,7 +847,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obdEnabled = telemetry.isObdEnabled,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
-                    autoZoom = autoZoom, mapSaver = mapSaver, showSurfaces = showSurfaces, showAltitude = showAltitude, autoFollowTracks = autoFollow,
+                    autoZoom = autoZoom, mapSaver = mapSaver, showSurfaces = showSurfaces, showAltitude = showAltitude, showRoadInfo = showRoadInfo, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, demoMode = demoMode,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
@@ -864,6 +868,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onMapSaver = viewModel::setMapSaver,
                     onShowSurfaces = viewModel::setShowSurfaces,
                     onShowAltitude = viewModel::setShowAltitude,
+                    onShowRoadInfo = viewModel::setShowRoadInfo,
                     onAutoFollow = viewModel::setAutoFollow,
                     onOffRoute = viewModel::setOffRouteSettings,
                     onDemoMode = viewModel::setDemoMode,

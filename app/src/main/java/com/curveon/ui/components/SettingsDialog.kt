@@ -59,6 +59,7 @@ data class SettingsState(
     val mapSaver: Boolean = false,
     val showSurfaces: Boolean,
     val showAltitude: Boolean,
+    val showRoadInfo: Boolean = true,
     val autoFollowTracks: Boolean,
     val offRoute: com.curveon.data.routing.OffRouteSettings,
     val isNavigating: Boolean,
@@ -87,6 +88,7 @@ class SettingsActions(
     val onMapSaver: (Boolean) -> Unit = {},
     val onShowSurfaces: (Boolean) -> Unit,
     val onShowAltitude: (Boolean) -> Unit,
+    val onShowRoadInfo: (Boolean) -> Unit = {},
     val onAutoFollow: (Boolean) -> Unit,
     val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
     val onDemoMode: (Boolean) -> Unit,
@@ -157,6 +159,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint), small = true) {
                             CockpitSwitch(state.showAltitude, actions.onShowAltitude)
+                        }
+                        Setting(stringResource(R.string.settings_road_info), stringResource(R.string.settings_road_info_hint), small = true) {
+                            CockpitSwitch(state.showRoadInfo, actions.onShowRoadInfo)
                         }
                         SectionTitle(stringResource(R.string.settings_map_layers))
                         Text(stringResource(R.string.settings_map_layers_hint), color = TextMuted, fontSize = 13.sp)

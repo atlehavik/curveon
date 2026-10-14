@@ -81,7 +81,9 @@ fun MapSpeedCluster(
     camera: com.curveon.data.routing.CameraAlert?,
     modifier: Modifier = Modifier,
     /** Settings → Display: the height above sea level under the speed. */
-    showAltitude: Boolean = false
+    showAltitude: Boolean = false,
+    /** Number and priority of the road the rider is on (Settings → Display), when known. */
+    road: com.curveon.data.road.CurrentRoad? = null
 ) {
     val limit = camera?.maxSpeedKmh ?: telemetry.speedLimitKmh
     val over = limit > 0 && telemetry.speedKmh > limit + 3
@@ -117,6 +119,7 @@ fun MapSpeedCluster(
             telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
             !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
         }
+        road?.let { CurrentRoadSigns(it, Modifier.padding(top = 6.dp)) }
         if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
             Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(5.dp))
@@ -144,6 +147,45 @@ fun Clock(fontSize: TextUnit, modifier: Modifier = Modifier) {
         color = TextSecondary, fontSize = fontSize, fontWeight = FontWeight.Bold, maxLines = 1,
         modifier = modifier.testTag("clock")
     )
+}
+
+/** A road's number as its sign shows it (green E- and riksveg, white fylkesveg, …), [height] tall. */
+@Composable
+fun RoadShield(ref: com.curveon.data.road.RoadRef, height: Dp, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(height * 0.16f)
+    Box(
+        modifier.height(height).clip(shape).background(Color(ref.style.background))
+            .border(height * 0.08f, Color(ref.style.border), shape)
+            .padding(horizontal = height * 0.24f),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(ref.text, color = Color(ref.style.text), fontSize = (height.value * 0.52f).sp, lineHeight = (height.value * 0.6f).sp,
+            fontWeight = FontWeight.Black, maxLines = 1)
+    }
+}
+
+/** The priority road sign: a yellow diamond with a white edge. */
+@Composable
+fun PriorityRoadSign(size: Dp, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Canvas(modifier.size(size)) {
+        fun diamond(inset: Float) = androidx.compose.ui.graphics.Path().apply {
+            val c = this@Canvas.size.width / 2
+            moveTo(c, inset); lineTo(2 * c - inset, c); lineTo(c, 2 * c - inset); lineTo(inset, c); close()
+        }
+        val w = this.size.width
+        drawPath(diamond(0f), Color(0xFF1A1A1A))
+        drawPath(diamond(w * 0.03f), Color.White)
+        drawPath(diamond(w * 0.2f), Color(0xFFFFC20E))
+    }
+}
+
+/** The road the rider is on: its number and, on a priority road, the priority sign. */
+@Composable
+fun CurrentRoadSigns(road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier) {
+    Row(modifier.testTag("current_road"), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        road.ref?.let { RoadShield(it, 26.dp) }
+        if (road.priority) PriorityRoadSign(30.dp)
+    }
 }
 
 @Composable

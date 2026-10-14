@@ -141,7 +141,9 @@ fun CurveonMapView(
     previewRoutes: List<MapRoute> = emptyList(),
     markers: List<MapPin> = emptyList(),
     roadNameProbe: Pair<Int, GeoPoint>? = null,
-    onRoadName: (Int, String?) -> Unit = { _, _ -> },
+    onRoadName: (Int, com.curveon.data.road.MapRoad?) -> Unit = { _, _ -> },
+    /** Called now and then with the road under the rider as the tiles have it; null = don't read it. */
+    onRoadHere: ((com.curveon.data.road.MapRoad?) -> Unit)? = null,
     gpxTracks: List<com.curveon.data.gpx.OverlayTrack> = emptyList(),
     gpxPois: List<com.curveon.data.gpx.GpxPoi> = emptyList(),
     trackHint: com.curveon.data.gpx.TrackHint? = null,
@@ -875,7 +877,22 @@ fun CurveonMapView(
         val r = 24f
         val roadLayers = s.layers.map { it.id }.filter { it.startsWith("roads_") }.toTypedArray()
         val features = m.queryRenderedFeatures(RectF(screen.x - r, screen.y - r, screen.x + r, screen.y + r), *roadLayers)
-        onRoadName(index, roadLabel(features))
+        onRoadName(index, mapRoad(features))
+    }
+
+    // The road under the rider, for its number by the speed (abroad, where there's no road register).
+    val onRoadHereState = rememberUpdatedState(onRoadHere)
+    LaunchedEffect(map, style, canQuery, onRoadHere != null) {
+        if (!canQuery || onRoadHere == null) return@LaunchedEffect
+        val m = map ?: return@LaunchedEffect
+        val s = style ?: return@LaunchedEffect
+        val roadLayers = s.layers.map { it.id }.filter { it.startsWith("roads_") }.toTypedArray()
+        while (true) {
+            kotlinx.coroutines.delay(2_000)
+            val p = puck ?: continue
+            val r = 10f * mapView.resources.displayMetrics.density
+            onRoadHereState.value?.invoke(mapRoad(m.queryRenderedFeatures(RectF(p.x - r, p.y - r, p.x + r, p.y + r), *roadLayers)))
+        }
     }
 
     Box(
@@ -1210,6 +1227,13 @@ private fun lineFeatures(lines: List<List<GeoPoint>>): FeatureCollection =
     FeatureCollection.fromFeatures(lines.filter { it.size >= 2 }.map { pts ->
         Feature.fromGeometry(LineString.fromLngLats(pts.map { Point.fromLngLat(it.longitude, it.latitude) }))
     })
+
+/** Number, class and name of the road among [features] (the first with a number, else the first). */
+internal fun mapRoad(features: List<Feature>): com.curveon.data.road.MapRoad? {
+    val f = features.firstOrNull { !it.getStringProperty("ref").isNullOrBlank() } ?: features.firstOrNull() ?: return null
+    val name = features.firstNotNullOfOrNull { it.getStringProperty("name")?.takeIf { n -> n.isNotBlank() } }
+    return com.curveon.data.road.MapRoad(f.getStringProperty("ref")?.takeIf { it.isNotBlank() }, f.getStringProperty("kind_detail"), name)
+}
 
 /**
  * "Fv63 Storgata" style label from Protomaps road features: route number first, as that is what
