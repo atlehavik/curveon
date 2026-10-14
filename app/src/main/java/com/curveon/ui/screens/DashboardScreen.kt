@@ -579,10 +579,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onRoadName = viewModel::onRoadName,
             onRoadHere = if (showRoadInfo) viewModel::onRoadHere else null,
             // Held on the map: go there or keep it as a favourite (riding or planning: also a stop or the start).
-            onLongPress = { p, roadName ->
+            onLongPress = { p, roadName, mapRoad ->
                 roadInfo = null
                 scope.launch { pendingPlace = p to viewModel.describePoint(p) }
-                scope.launch { val r = viewModel.roadAt(p, roadName); if (pendingPlace?.first == p || pendingPlace == null) roadInfo = r }
+                scope.launch { val r = viewModel.roadAt(p, roadName, mapRoad); if (pendingPlace?.first == p || pendingPlace == null) roadInfo = r }
             },
             onTap = if (mapPick != null) ({ p ->
                 if (chaining) chainTap(p) else {

@@ -1400,13 +1400,17 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun searchStatus(): String = placeSearch.describe()
 
     /** The road at [point] (a finger held on the map): name from the map ([mapName]), the rest from the routing and speed data. */
-    suspend fun roadAt(point: GeoPoint, mapName: String?): com.curveon.data.routing.RoadInfo? {
+    suspend fun roadAt(point: GeoPoint, mapName: String?, mapRoad: com.curveon.data.road.MapRoad? = null): com.curveon.data.routing.RoadInfo? {
         val p = LatLon(point.latitude, point.longitude)
         val road = navigator.roadAt(p)
         val official = withContext(Dispatchers.IO) { speedLimits.at(p.lat, p.lon, null) }
-        if (road == null && official == null && mapName == null) return null
-        return com.curveon.data.routing.RoadInfo(mapName, road?.highway, road?.surface, road?.tracktype, road?.unpaved ?: false,
-            official ?: road?.maxSpeedKmh, official != null)
+        val ref = roadRefAt(p.lat, p.lon, null, mapRoad)
+        val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(p.lat, p.lon, null) }
+        if (road == null && official == null && mapName == null && ref == null) return null
+        // With the number on its sign, the name is the street's alone.
+        val name = if (ref != null) mapRoad?.name?.takeIf { it != ref.text } else mapName
+        return com.curveon.data.routing.RoadInfo(name, road?.highway, road?.surface, road?.tracktype, road?.unpaved ?: false,
+            official ?: road?.maxSpeedKmh, official != null, ref, priority)
     }
 
     /** Settings → Maps & data: where the speed limits come from, per country (credits the licences ask for). */

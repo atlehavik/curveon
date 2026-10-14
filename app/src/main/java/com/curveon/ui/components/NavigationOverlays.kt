@@ -638,6 +638,8 @@ fun RoadInfoRow(road: com.curveon.data.routing.RoadInfo) {
     val surface = roadSurface(road)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.testTag("road_info")) {
         road.speedKmh?.let { SpeedLimitSign(it, 44.dp) }
+        road.ref?.let { RoadShield(it, 30.dp) }
+        if (road.priority) PriorityRoadSign(34.dp)
         Column {
             Text(road.name ?: kind ?: "", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)

@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Road number sign when holding a finger on a road
+
+- [ ] Hold a finger on a numbered road (e.g. an E-, riks- or fylkesveg): the road info in the
+      dialog shows the number sign (green/white as in the turn card) next to the speed limit, and the
+      street name beside it instead of "Fv63 Storgata".
+- [ ] On a forkjørsveg the yellow priority diamond shows too; on an unnumbered road just the name as before.
+
 ## 2026-10-14 — "Point by point" from a long-press on the map
 
 - [ ] With no trip planned and not riding, hold a finger on a road: the dialog has a third button,

@@ -13,5 +13,9 @@ data class RoadInfo(
     val unpaved: Boolean,
     val speedKmh: Int?,
     /** The limit is the official one (NVDB, Digiroad, …), not OpenStreetMap's. */
-    val officialSpeed: Boolean
+    val officialSpeed: Boolean,
+    /** The road's number as its sign shows it; [name] is then the street name alone. */
+    val ref: com.curveon.data.road.RoadRef? = null,
+    /** A priority road (forkjørsveg), where the country's register says so. */
+    val priority: Boolean = false
 )
