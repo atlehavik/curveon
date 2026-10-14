@@ -169,6 +169,8 @@ fun PlaceActionDialog(
     onAddStop: (() -> Unit)?,
     onGoHere: () -> Unit,
     onStartHere: (() -> Unit)?,
+    /** Not riding or planning: the first point of a trip built point by point on the map; null otherwise. */
+    onPointByPoint: (() -> Unit)? = null,
     /** Keep the place as a favourite: as Home, or under the name given. */
     onFavorite: (name: String, home: Boolean) -> Unit,
     onDismiss: () -> Unit
@@ -194,6 +196,8 @@ fun PlaceActionDialog(
                     Modifier.testTag("add_stop_btn"), onAddStop)
                 PillButton(Icons.Default.Flag, stringResource(R.string.go_here), ElectricCyan, OnCyanDark,
                     Modifier.testTag("go_here_btn"), onGoHere)
+                if (onPointByPoint != null) PillButton(Icons.Default.Timeline, stringResource(R.string.plan_point_by_point), CockpitSurfaceVariant, ElectricCyan,
+                    Modifier.testTag("point_by_point_btn"), onPointByPoint)
                 if (onStartHere != null) PillButton(Icons.Default.TripOrigin, stringResource(R.string.start_here), CockpitSurfaceVariant, TextPrimary,
                     Modifier.testTag("start_here_btn"), onStartHere)
                 PillButton(Icons.Default.StarBorder, stringResource(R.string.save_favorite), CockpitSurfaceVariant, NeonAmber,

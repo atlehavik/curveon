@@ -364,6 +364,7 @@
     <string name="nav_route">Rute</string>
     <string name="add_stop">Legg til stopp</string>
     <string name="go_here">Kjør hit</string>
+    <string name="plan_point_by_point">Punkt for punkt</string>
 
     <!-- Roundtrip and route preview -->
     <string name="nav_no_area_roundtrip">Fant ingen rundtur i det området. Prøv å tegne det større, eller rundt flere veier.</string>

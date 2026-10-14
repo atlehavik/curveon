@@ -1002,6 +1002,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     pendingPlace = null
                 },
                 onStartHere = if (planning) ({ viewModel.setPreviewStart(point, name); pendingPlace = null }) else null,
+                // The trip's first point, then on to the map to tap the next ones (as "Pick on map" from search).
+                onPointByPoint = if (isNavigating || planning) null else ({
+                    pendingPlace = null
+                    viewModel.planPointByPoint(point, name)
+                    startMapPick(SearchPurpose.DESTINATION)
+                }),
                 onFavorite = { n, home ->
                     viewModel.saveFavorite(point, n, home)
                     pendingPlace = null

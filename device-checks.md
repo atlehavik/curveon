@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — "Point by point" from a long-press on the map
+
+- [ ] With no trip planned and not riding, hold a finger on a road: the dialog has a third button,
+      "Punkt for punkt" (next to "Kjør hit" and "Lagre som favoritt").
+- [ ] Press it: the map goes full-screen with the point-by-point bar, and the trip from here to that
+      point is found. Tap further along: each tap rides the trip on to there; Undo takes the last back.
+- [ ] ✓ ends on the ordinary route preview with all the points as stops, where the route can be
+      adjusted and started as usual.
+
 ## 2026-10-14 — "Ride again" on a loop from home
 
 "Ride again" on today's 32 km loop (on the Pixel) offered only the last ~4 km: the loop passes home
