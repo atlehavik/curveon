@@ -13,7 +13,9 @@ import java.util.concurrent.Executors
  * drawn (smoothness, lag, leaving the route) from real rides. One file per app start in
  * Android/data/<app>/files/navtrace/, pulled with adb (see device-checks.md). Lines:
  *
- * - `F,wallMs,monoMs,ageMs,lat,lon,acc,alt,speed,speedAcc,bearing,bearingAcc,sats,estimated` a fix
+ * - `F,wallMs,monoMs,ageMs,lat,lon,acc,alt,speed,speedAcc,bearing,bearingAcc,sats,estimated,receivedWallMs` a fix;
+ *   wallMs is the receiver's (GPS) time of the fix, receivedWallMs the phone's clock when it came, so
+ *   their difference is how late fixes arrive (when the phone's clock is right)
  * - `N,monoMs,snapped,distFromRoute,routeBearing,along,offRoute,heading` how it matched the route
  * - `D,monoMs,lat,lon,bearing,zoom,tilt,following` where the rider was drawn (a few times a second)
  * - `R,monoMs,lat lon;lat lon;…` a new route
@@ -46,7 +48,7 @@ object NavTrace {
             "${num(f.latitude, 7)},${num(f.longitude, 7)}," +
             "${f.accuracyMeters ?: ""},${f.altitudeMeters?.let { num(it, 1) } ?: ""}," +
             "${f.speedMps ?: ""},${f.speedAccuracyMps ?: ""},${f.bearingDeg ?: ""},${f.bearingAccuracyDeg ?: ""}," +
-            "$sats,${if (estimated) 1 else 0}"
+            "$sats,${if (estimated) 1 else 0},${System.currentTimeMillis()}"
     )
 
     fun match(snapped: Boolean, distFromRoute: Double, routeBearing: Double, along: Double, offRoute: Boolean, heading: Float) = line(
