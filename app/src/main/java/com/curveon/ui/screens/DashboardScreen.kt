@@ -92,6 +92,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val poiCategories by viewModel.poiCategories.collectAsStateWithLifecycle()
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
     val mapAutoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
+    val mapSaver by viewModel.mapSaver.collectAsStateWithLifecycle()
     val showSurfaces by viewModel.showSurfaces.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
@@ -594,6 +595,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onPoiClick = { shownPoi = it },
             onViewport = viewModel::setViewport,
             autoZoom = mapAutoZoom,
+            halfRate = mapSaver,
             mapVersion = mapVersion,
             overlays = mapOverlays
         )
@@ -841,7 +843,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obdEnabled = telemetry.isObdEnabled,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
-                    autoZoom = autoZoom, showSurfaces = showSurfaces, showAltitude = showAltitude, autoFollowTracks = autoFollow,
+                    autoZoom = autoZoom, mapSaver = mapSaver, showSurfaces = showSurfaces, showAltitude = showAltitude, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, demoMode = demoMode,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
@@ -859,6 +861,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onObdDevice = viewModel::setObdDevice,
                     onObdValue = viewModel::toggleObdValue,
                     onAutoZoom = viewModel::setAutoZoom,
+                    onMapSaver = viewModel::setMapSaver,
                     onShowSurfaces = viewModel::setShowSurfaces,
                     onShowAltitude = viewModel::setShowAltitude,
                     onAutoFollow = viewModel::setAutoFollow,

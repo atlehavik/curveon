@@ -81,6 +81,8 @@
     <string name="surface_soft">Jord, ulendt eller ukjent</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom inn i lav fart, ut på raske veier</string>
+    <string name="settings_map_saver">Batterisparende kart</string>
+    <string name="settings_map_saver_hint">Tegner kartet 30 ganger i sekundet i stedet for 60: mindre batteri, litt mindre jevnt</string>
     <string name="settings_auto_follow">Følg GPX-spor automatisk</string>
     <string name="settings_auto_follow_hint">Naviger når du kjører langs et spor på kartet</string>
     <string name="settings_demo_ride">Demotur</string>

@@ -56,6 +56,7 @@ data class SettingsState(
     val obdValues: List<com.curveon.data.obd.ObdValue>,
     val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
+    val mapSaver: Boolean = false,
     val showSurfaces: Boolean,
     val showAltitude: Boolean,
     val autoFollowTracks: Boolean,
@@ -83,6 +84,7 @@ class SettingsActions(
     val onObdDevice: (String?) -> Unit,
     val onObdValue: (com.curveon.data.obd.ObdValue) -> Unit,
     val onAutoZoom: (Boolean) -> Unit,
+    val onMapSaver: (Boolean) -> Unit = {},
     val onShowSurfaces: (Boolean) -> Unit,
     val onShowAltitude: (Boolean) -> Unit,
     val onAutoFollow: (Boolean) -> Unit,
@@ -163,6 +165,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                     SettingsTab.NAVIGATION -> Page {
                         Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint), small = true) {
                             CockpitSwitch(state.autoZoom, actions.onAutoZoom)
+                        }
+                        Setting(stringResource(R.string.settings_map_saver), stringResource(R.string.settings_map_saver_hint), small = true) {
+                            CockpitSwitch(state.mapSaver, actions.onMapSaver)
                         }
                         Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint), small = true) {
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)

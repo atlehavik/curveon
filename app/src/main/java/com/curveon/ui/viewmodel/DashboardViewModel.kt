@@ -244,6 +244,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val autoZoom: StateFlow<Boolean> = _autoZoom.asStateFlow()
     fun setAutoZoom(on: Boolean) { _autoZoom.value = on; settings.edit().putBoolean("autoZoom", on).apply() }
 
+    /** Draw the map at half rate (30 instead of 60 frames a second) to save battery. */
+    private val _mapSaver = MutableStateFlow(settings.getBoolean("mapSaver", false))
+    val mapSaver: StateFlow<Boolean> = _mapSaver.asStateFlow()
+    fun setMapSaver(on: Boolean) { _mapSaver.value = on; settings.edit().putBoolean("mapSaver", on).apply() }
+
     /** Gravel and soft roads dashed on the map. */
     private val _showSurfaces = MutableStateFlow(settings.getBoolean("showSurfaces", true))
     val showSurfaces: StateFlow<Boolean> = _showSurfaces.asStateFlow()

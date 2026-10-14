@@ -19,6 +19,11 @@ standing still the app went from ~23 % of a core to ~5 %; riding, the main threa
       every frame).
 - [ ] GPX & rides → Rides: "Note lean angle" is off by default (lean is stored but not shown
       anywhere yet). Switched on, ride a few bends: the ride still gets a lean angle.
+- [ ] Settings → Navigation → "Battery saver map" (off by default): ride a while with it on and
+      a while with it off. On, the map is drawn 30 times a second instead of 60. Measured on the
+      demo ride: ~30 % less CPU (map thread ~75 → ~60 %, main ~50 → ~35 %, UI ~45 → ~26 %), but
+      about one picture in seven comes 48 ms after the last instead of 33, which may show as a
+      small hitch. Does it look good enough to keep on? Off is exactly as before (even 60).
 - [ ] Battery over an hour's ride, compared with before:
       `adb shell dumpsys batterystats --charged com.curveon.tablet`.
 

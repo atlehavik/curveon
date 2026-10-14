@@ -69,6 +69,8 @@ private const val PICK = "curveon-pick"
 private const val APPROACH = "curveon-approach"
 /** At most this often is a camera that keeps moving (following the rider) reported as settled. */
 private const val IDLE_TICK_MS = 1_000L
+/** Battery saver: frames closer than this to the last one drawn are skipped (60 Hz → 30 Hz). */
+private const val HALF_RATE_FRAME_NS = 25_000_000L
 private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val HINT = "curveon-track-hint"
@@ -148,6 +150,8 @@ fun CurveonMapView(
     onViewport: (south: Double, north: Double, west: Double, east: Double, zoom: Double) -> Unit = { _, _, _, _, _ -> },
     /** Zoom follows speed (in when slow and twisty, out on fast roads). */
     autoZoom: Boolean = true,
+    /** Battery saver: the map, camera and arrow move 30 times a second instead of on every (60 Hz) frame. */
+    halfRate: Boolean = false,
     /** Changes when the offline map file was downloaded/replaced/deleted: reload the style. */
     mapVersion: Int = 0,
     /** A finger held on the map: the place, and the road there as the map names it (null if none). */
@@ -718,7 +722,10 @@ fun CurveonMapView(
     val headingState = rememberUpdatedState(headingDeg)
     val turnState = rememberUpdatedState(currentTurnInstruction)
     val clearanceState = rememberUpdatedState(bottomClearance)
-    LaunchedEffect(map, style, following, inPreview, orientation, zoomBias, hasGpsFix, autoZoom) {
+    // MapLibre draws on every screen frame of its own accord while the map moves (labels fade in
+    // and out), so cap it to match. There is no "no cap": 1000 is as good as none.
+    LaunchedEffect(map, halfRate) { if (map != null) mapView.setMaximumFps(if (halfRate) 30 else 1000) }
+    LaunchedEffect(map, style, following, inPreview, orientation, zoomBias, hasGpsFix, autoZoom, halfRate) {
         val m = map ?: return@LaunchedEffect
         if (style == null) return@LaunchedEffect
         val follow = following && !inPreview
@@ -738,6 +745,7 @@ fun CurveonMapView(
             // layout), so the arrow never lags the map; and look once a second regardless.
             if (idle) kotlinx.coroutines.withTimeoutOrNull(1_000) { wake.receive() }
             val now = withFrameNanos { it }
+            if (halfRate && last != 0L && now - last < HALF_RATE_FRAME_NS) continue // every other 60 Hz frame
             val dt = if (last == 0L) 0.016 else ((now - last) / 1e9).coerceIn(0.0, 0.5)
             last = now
             val pose = (if (hasGpsFix) motion.sample(System.nanoTime()) else null)

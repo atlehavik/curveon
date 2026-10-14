@@ -82,6 +82,8 @@
     <string name="surface_soft">Dirt, rough or unknown</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom in when slow, out on fast roads</string>
+    <string name="settings_map_saver">Battery saver map</string>
+    <string name="settings_map_saver_hint">Draws the map 30 times a second instead of 60: less battery, a little less smooth</string>
     <string name="settings_auto_follow">Auto-follow GPX tracks</string>
     <string name="settings_auto_follow_hint">Navigate when riding along a track shown on the map</string>
     <string name="settings_demo_ride">Demo ride</string>
