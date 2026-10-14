@@ -1,150 +1,186 @@
+<div align="center">
+
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" width="96" alt="Curveon icon">
+
 # Curveon
 
-Offline motorcycle dashboard for a handlebar-mounted Android tablet (target: Hugerock X7, 7"
-1920x1080, Android 13), with a companion app on the rider's phone. See [dashboard.md](dashboard.md)
-for the goals.
+**Motorcycle navigation that loves curvy roads — and works without a signal.**
 
-| Module | What it is |
-|---|---|
-| `app` | The tablet app (`com.curveon.tablet`): map, navigation, dashboard |
-| `companion` | Phone app (`com.curveon.companion`), installed on its own: mirrors messages, calls and music to the tablet over Bluetooth |
-| `phone` | What a phone shares (messages, calls, music, contacts, spoken replies), read on the device itself; used by `companion`, and by `app` when it is its own phone |
-| `routing` | Offline routing on BRouter: motorcycle profile, roundtrips, GPX following, route tracking |
-| `protocol` | Tablet ⇄ phone messages (length-prefixed JSON over RFCOMM) |
-| `tools/map`, `tools/search` | Scripts that build the offline map and search index |
+Curveon turns your phone, or an Android tablet on the handlebars, into a dashboard for the ride:
+maps, turn-by-turn navigation, your music, messages and calls, all in one place.
+Free, open source and made for riders.
 
-## What works
+<br>
 
-- **Offline maps of any country** (Protomaps vector tiles, MapLibre): Settings → Maps & data →
-  Download countries, by continent like DMD2; each country brings its routing data and offline
-  search (full from the public curveon-data repo, or built from the map). Several
-  countries show together. Dark style, heading-up follow, long-press to navigate somewhere.
-  Outside the downloaded countries the map comes from OpenFreeMap's free online tiles (no key) in the
-  same colours, when there is a connection; tiles seen once stay cached (300 MB) for offline use.
-- **Offline routing** with Fastest / Curvy / Super curvy, Tarmac / Mixed / Gravel / Offroad, avoid
-  ferries / motorways; ETA and remaining distance; rerouting when you leave the route.
-  Every road a motorcycle may use is routable, tracks of any grade included: with Tarmac a track is
-  only a last resort (to reach a place that is on one), never a short cut. Cycle paths and footpaths
-  are never used (not allowed by law) – except at the very start or end when the map joins the place
-  to the roads only through one (the map is wrong, or the place is on a path): then the first/last leg
-  uses as little path as there is no road way around, however long that is. Never in the middle.
-  Online with no country downloaded, just the routing tiles a trip needs are fetched as it is planned
-  (and kept).
-- **Roundtrip** (from "Where to?" when no trip is planned): draw the area to ride in on the map with a finger; the loop avoids riding the same road twice. Can start elsewhere than where you are, and "Edit on map" turns the loop into an ordinary trip through via points.
-- **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first. Tracks live in
-  groups (a multi-track file becomes one) that can show/hide, colour and invert all their tracks at once
-  while keeping each track's own settings; tracks and groups can be renamed and exported as GPX.
-  Waypoints show as coloured dots when zoomed out and as an icon per kind (camping, fuel, ferry, …)
-  when zoomed in; tapping one shows everything the file has on it (address, phone, links, …).
-- **Destination search**, offline (towns, addresses with house numbers, fuel, cafés,
-  viewpoints, campsites, ferries, passes…, and businesses from Overture Maps), plus online results
-  when the tablet has a connection: offline hits show at once, then Photon (OSM, worldwide) and in
-  Norway Kartverket's place names (farms, bays, lakes, …) and addresses are mixed in.
-- **Route preview**: Fastest / Curvy / Super curvy side by side (time, km, curviness, gravel and
-  ferries) before you ride; surface and avoid options adjust them in place.
-- **Stops**: pick a place while riding → *Add stop* (inserted where it adds least detour) or *Go here*.
-- **Editing a planned trip**: tap a stop chip to move it earlier/later, *Change place* (search or pick
-  on map), *Add stop before*, or remove it. **Edit on map** (long-press the route line, or the squiggle in
-  the preview): drag a stop, the start or the destination to move it, or drag the line itself to make
-  the route go through that point (a dashed guess follows the finger, then it re-routes); Undo / Done.
-- **Saved A→B routes** open with their stops, start and destination: ridden on the exact saved line until
-  something is changed; saving again under the same name updates the saved route.
-- **Pick on map** in every search (destination, stop, start): the search shrinks into a bar on the full
-  map; tap to drop a pin (tap again to move it), then *Go here* / *Add stop* / *Start here*.
-- **Saved routes and recents** show up in the empty search, with a *Nearest fuel* shortcut.
-- **Fuel along the route** in the trip bar (tap to add it as a stop), amber when the gap is long.
-- **Speed camera warnings** (OSM fixed cameras), navigating or free riding.
-- **Road numbers/names** in the turn banner ("Turn right · Fv33 Storgata").
-- **Day/night map** that follows the sun at your position (or fixed in Settings).
-- **Tunnels**: position keeps moving along the route at your speed when GPS drops out.
-- **Ride log**: rides record automatically (distance, time, speeds, climb, gyro lean angle);
-  find them under Rides in the GPX & rides dialog (rail), save one to the GPX collection or ride one again.
-- **Speed limit sign**, while navigating and while free riding: the official limit where a country
-  publishes them freely (Norway: Statens vegvesen NVDB; Finland: Digiroad; the Netherlands: NDW/RWS;
-  Flanders: AWV), built monthly by the curveon-data repo (`tools/speedlimits/`); OSM's maxspeed elsewhere.
-- **Places on the map** (Settings → Display → On the map; only fuel until the rider chooses): fuel, speed cameras, viewpoints, mountain
-  passes, camping, food and coffee, ferries, motorcycle shops and workshops can be kept on the map at all
-  times, from the offline search index of the downloaded countries; each appears when the map is zoomed in
-  enough for it to be readable, and a tap opens it like a GPX waypoint.
-- **Road info**: hold a finger on a road to see its speed limit, name or number, kind and surface.
-- **Dashboard** (Android Auto-like): speed, limit and clock on the map; newest message with
-  Reply/Dismiss, calls with Answer/Decline, music with full cover art when nothing else needs the space.
-- **Engine panel** (Settings → Engine, optional): fuel, RPM, coolant and battery from an ELM327
-  OBD2 adapter paired over Bluetooth (classic serial profile); readings the bike doesn't report stay "–".
-  "Demo" makes up values. Above the music on the tablet; beside it, bottom right, on a phone held upright.
-- **Spoken replies**: Reply → the phone listens through the headset → the tablet shows what was
-  heard → Send.
-- **Welcome tour** on the first start (language first; animated how-tos: how tablet, phone and intercom fit together, Curveon on just a phone, planning, editing a trip on the map, drawing a roundtrip): the screen dims and a lit ring walks over the buttons and
-  gestures with a card for each; again any time from Settings → Help, which also lists every symbol.
-- **Demo ride** (Settings) drives the active route without GPS; **demo phone data** (Phone link)
-  shows the dashboard without a phone.
+[![Download Curveon](https://img.shields.io/github/v/release/atlehavik/curveon?style=for-the-badge&label=Download%20Curveon&color=00E5FF&labelColor=0D1117&logo=android&logoColor=white)](https://github.com/atlehavik/curveon/releases/latest)
 
-Not done: voice guidance (deliberately not planned). The OBD2 link is untested with a real adapter.
+<sub>Android 10 or newer · phone or tablet · English and Norwegian</sub>
 
-## Build
+<br>
 
-Requirements: JDK 17+ (21 recommended) and the Android SDK (`local.properties` → `sdk.dir`).
+<img src="docs/screenshots/hero.png" alt="Curveon on a tablet and on a phone">
 
-```
-./gradlew :app:installDebug          # tablet app on the connected device/emulator
-./gradlew :app:installRide           # same app, not debuggable: routing ~40% faster (for the bike)
-./gradlew :companion:installDebug    # phone app (with the phone connected)
-./gradlew test                       # unit tests; :routing:test also routes over real Norway data
-./gradlew :routing:test --tests '*RoutingBenchmarkTest*' -Dcurveon.bench=true   # routing timings
-```
+</div>
 
-The ride build is signed with the debug key, so it installs over a debug build and keeps the
-app's data. After installing, `adb shell cmd package compile -m speed -f com.curveon.tablet`
-compiles it ahead of time instead of waiting for Android to do it overnight.
+---
 
-Emulator matching the tablet: AVD `Hugerock_X7` (API 33, 1080x1920 @ 320 dpi, landscape).
+## Why Curveon?
 
-## Releases and in-app updates
+- 🏍️ **Finds the fun roads.** Choose *Fastest*, *Curvy* or *Super curvy* and see all three side by
+  side before you go: time, distance and how twisty each one is.
+- 📴 **Works offline.** Download the countries you ride in once. Maps, routes and search then work
+  in the mountains, in tunnels and abroad, with no mobile data.
+- 🎵 **Everything on one screen.** Music, messages and calls from your phone show up next to the
+  map, with big buttons you can hit with gloves on.
+- 🗺️ **Plan your way.** Drag the route where you want it, draw a roundtrip with one finger, keep
+  trips for later, and ride any GPX track.
 
-Curveon looks for a newer version on this repo's GitHub releases when it starts (release builds
-only; offline it tries again every half hour, then once a day) and from Settings → Help, then
-downloads the APK and hands it to Android's installer. For a release it can find:
+---
 
-1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`.
-2. Add the version, newest first, to `app/src/main/assets/changelog.json` (English and Norwegian):
-   it is shown once after the update, and under Settings → Help → What's new.
-3. `source ~/.curveon-signing/signing.env && ./gradlew :app:assembleRelease`
-4. Release tagged `v<versionName>` (e.g. `v1.1`) with the APK named `Curveon-<versionName>.apk`:
-   `gh release create v1.1 Curveon-1.1.apk --title "Curveon 1.1" --notes "..."`.
-   The notes are shown in the app before installing.
+## A quick tour
 
-Only builds signed with the release key can update this way; debug and ride builds look only when
-asked, and Android refuses the release APK over them.
+### Pick your kind of ride
 
-## Data for the tablet (one-time)
+Search for a place (towns, addresses, fuel, cafés, viewpoints, campsites, ferries and more, all
+offline), and Curveon shows three routes at once. Choose *Tarmac only*, skip ferries or motorways,
+and the choices update in place.
 
-Everything lives under `Android/data/com.curveon.tablet/files/` on the tablet; copy over USB
-or with `adb push`.
+<img src="docs/screenshots/route-preview.png" alt="Route preview with Fastest, Curvy and Super curvy">
 
-| Folder | File(s) | Size | How to get it |
-|---|---|---|---|
-| `maps/` | `<country>.pmtiles` | Norway 1.7 GB | Settings → Download countries (when online), or `tools/map/build-norway-map.sh` / Settings → Import |
-| `routing/segments4/` | `E*_N*.rd5` | Norway 210 MB | Comes with each country, or from https://brouter.de/brouter/segments4/ |
-| `search/` | `<country>.sqlite` | Norway 150 MB | Comes with each country (see `tools/search/README.md`) |
+### On the road
 
-The country list (`app/src/main/assets/map/countries.json`: outlines as zoom-10 tiles, sizes,
-routing tiles) is rebuilt with `tools/map/build-countries.sh`; only needed if borders or the
-split of big countries should change.
+A big turn card with road numbers, your speed next to the speed limit, the road you are on, and
+warnings for speed cameras. Your music, the latest message (reply by voice through your headset)
+and, if you like, engine data such as revs sit beside the map.
 
-## Phone setup (Pixel)
+<img src="docs/screenshots/ride-dashboard.png" alt="Riding with the dashboard: turn card, speed limit, revs, a message and music">
 
-1. Pair phone and tablet in Android's Bluetooth settings.
-2. Install the companion app, open it, grant **Notification access** and **Bluetooth,
-   microphone, contacts**, tap **Start sharing with tablet**.
-3. On the tablet: Settings → Phone → pick the phone. Another paired phone can be picked there any
-   time (pair it in Android's Bluetooth settings first).
+Prefer just the map? One tap gives you the full-screen map, here in day colours. Day and night
+colours can also switch by themselves, following the sun where you are.
 
-Curveon turns with the device (landscape or portrait, as Android's auto-rotate says).
+<img src="docs/screenshots/full-map-day.png" alt="Full-screen map in day colours while navigating">
 
-Curveon running on a phone (or a tablet with its own apps) needs no companion: Settings → Phone →
-**This device**, then allow notification access and contacts/calls/microphone there.
+### Calls without fumbling
 
-## License
+When someone rings, a big card with *Answer* and *Decline* covers the screen. Once you answer,
+it shrinks to a small phone icon you can drag out of the way.
 
-Curveon is released under the [MIT License](LICENSE).  
-Third-party components are listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+<img src="docs/screenshots/incoming-call.png" alt="Incoming call card">
+
+### Make the route your own
+
+Tap *Adjust route* → *Edit on map*: drag the line to make it go through a road you like, drag a
+stop to move it, or tap to add a point. Curveon re-routes as you go, and Undo is always there.
+
+<img src="docs/screenshots/edit-on-map.png" alt="Editing a route by dragging it on the map">
+
+### Roundtrips by drawing
+
+Don't know where to go? Choose *Roundtrip* and circle an area on the map with your finger.
+Curveon finds a loop through it that avoids riding the same road twice.
+
+<img src="docs/screenshots/roundtrip.png" alt="A roundtrip drawn on the map">
+
+### Save trips for later
+
+Keep the trips you plan under *Planned*, sorted into groups like "Summer tour". Each one opens
+with its stops, ready to ride, or to ride the other way round.
+
+<img src="docs/screenshots/planned-trips.png" alt="Planned trips in a group">
+
+### GPX tracks
+
+Import GPX files from friends, clubs or route planners. Tracks live in groups that you can show,
+hide and colour together. Ride any track (also in reverse), and Curveon first guides you to it.
+Waypoints such as fuel, camping and viewpoints show as icons on the map.
+
+<img src="docs/screenshots/gpx-tracks.png" alt="GPX tracks in a group">
+
+Close to a track you have on the map? Curveon shows how far away it is, and one tap takes you
+there and along it.
+
+<img src="docs/screenshots/nearest-track.png" alt="The nearest GPX track shown on the map">
+
+### And a lot more
+
+- **Rides are logged by themselves:** distance, time, speeds and climb. Ride one again, or save it
+  as GPX.
+- **Stops along the way:** fuel along the route (with a warning before a long gap), or any place
+  you pick on the map.
+- **Hold a finger on a road** to see its speed limit, number, kind and surface.
+- **Tunnels:** your position keeps moving along the route when GPS drops out.
+- **Places on the map:** keep fuel, viewpoints, mountain passes, camping, cafés, ferries or
+  motorcycle workshops visible all the time.
+- **Updates itself:** Curveon tells you when a new version is out and installs it for you.
+- **Welcome tour** the first time you start, and a list of every symbol under Settings → Help.
+
+No voice guidance, on purpose: the screen tells you what's next, and your music keeps playing.
+
+---
+
+## On a phone, or a tablet plus your phone
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Just your phone
+
+Install Curveon on the phone you ride with, and that's it. Messages, calls and music come from
+the phone itself (Settings → Phone → *This device*).
+
+<img src="docs/screenshots/phone-full-map.png" alt="Curveon on a phone" width="300">
+
+</td>
+<td width="50%" valign="top">
+
+### A tablet on the bars + Curveon Companion
+
+A tablet gives you a bigger, brighter screen, while the phone stays in your pocket. Install
+**Curveon Companion** on the phone: it sends music, messages and calls to the tablet over
+Bluetooth, and lets you reply by voice through your headset.
+
+<img src="docs/screenshots/companion.png" alt="Curveon Companion on the phone" width="300">
+
+</td>
+</tr>
+</table>
+
+---
+
+## Get started
+
+1. **Download.** On your phone or tablet, open the
+   [**latest release**](https://github.com/atlehavik/curveon/releases/latest) and tap
+   **Curveon-x.y.apk** under *Assets*. For a tablet with the phone helper, also download
+   **Curveon-Companion-x.y.apk** on the phone.
+2. **Install.** Open the downloaded file. Android asks whether your browser may install apps:
+   allow it once, then tap *Install*.
+3. **Download maps.** In Curveon, go to Settings → *Maps & data* → *Download countries…* while you
+   are on Wi-Fi. Each country comes with its map, routing and search.
+4. **Ride.** Tap the motorcycle button and search for where you are going.
+
+**Using a tablet with the companion app:** pair the phone and the tablet in Android's Bluetooth
+settings. Open Curveon Companion on the phone, allow what it asks for (notifications, Bluetooth,
+microphone, contacts) and tap *Start sharing with tablet*. Then, on the tablet: Settings → Phone →
+pick your phone.
+
+**Engine data (optional):** plug an ELM327 OBD2 Bluetooth adapter into the bike to see revs,
+coolant temperature and battery voltage (Settings → Engine).
+
+---
+
+## Credits
+
+Maps © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, via
+[Protomaps](https://protomaps.com) and [OpenFreeMap](https://openfreemap.org). Routing by
+[BRouter](https://brouter.de). Places also from [Overture Maps](https://overturemaps.org), and in
+Norway from Kartverket and Statens vegvesen (speed limits).
+
+Curveon is free and open source under the [MIT License](LICENSE). Third-party components are
+listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+---
+
+<sub>**For developers:** how Curveon is built, how to build it yourself, the data tools and how
+releases work are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).</sub>

@@ -783,4 +783,6 @@
     <string name="whats_new">Nyheter</string>
     <string name="whats_new_hint">Hva som er endret i hver versjon</string>
     <string name="whats_new_title">Nytt i Curveon %1$s</string>
+    <string name="github_title">Curveon på GitHub</string>
+    <string name="github_hint">Nedlastinger, kildekode og hvor du melder fra om feil</string>
 </resources>

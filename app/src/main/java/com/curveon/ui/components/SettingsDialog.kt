@@ -436,7 +436,23 @@ private fun AppVersionCard(update: UpdateState, actions: SettingsActions) {
         }
         Icon(Icons.Default.ChevronRight, null, tint = TextMuted)
     }
+    val uri = androidx.compose.ui.platform.LocalUriHandler.current
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CockpitSurfaceVariant)
+            .clickable { runCatching { uri.openUri(GITHUB_URL) } }.padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.Code, null, tint = ElectricCyan, modifier = Modifier.size(28.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.github_title), color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.github_hint), color = TextSecondary, fontSize = 13.sp)
+        }
+        Icon(Icons.Default.OpenInNew, null, tint = TextMuted)
+    }
 }
+
+private const val GITHUB_URL = "https://github.com/atlehavik/curveon"
 
 /** Settings → Help: the welcome tour, and what every symbol in the app means. */
 @Composable

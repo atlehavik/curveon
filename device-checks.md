@@ -6,6 +6,10 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-15 — Curveon on GitHub in Settings → Help
+
+- [ ] Settings → Help → Curveon on GitHub opens the GitHub page in the browser.
+
 ## 2026-10-14 — Updates from GitHub, and What's new
 
 - [ ] First start of the new build on the X7 and Pixel: "New in Curveon 1.1" opens once, and not

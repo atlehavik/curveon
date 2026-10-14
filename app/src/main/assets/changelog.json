@@ -3,7 +3,7 @@
     "version": "1.1",
     "en": [
       "Curveon updates itself: it looks for a new version when it starts, and in Settings → Help",
-      "What's new is shown after each update, and in Settings → Help",
+      "What's new is shown after each update, and in Settings → Help, beside a link to Curveon on GitHub",
       "Uses far less battery: the map rests while the bike stands still, and lean angle is off unless you turn it on",
       "Road number signs (and the priority road sign) by the speed and in the turn card",
       "Adventure routing, and planned trips in groups",
@@ -18,7 +18,7 @@
     ],
     "nb": [
       "Curveon oppdaterer seg selv: ser etter ny versjon ved oppstart, og i Innstillinger → Hjelp",
-      "Nyheter vises etter hver oppdatering, og i Innstillinger → Hjelp",
+      "Nyheter vises etter hver oppdatering, og i Innstillinger → Hjelp, sammen med en lenke til Curveon på GitHub",
       "Bruker langt mindre batteri: kartet hviler når sykkelen står stille, og lenevinkel er av til du slår den på",
       "Vegnummerskilt (og forkjørsvegskilt) ved farten og i svingkortet",
       "Eventyrruting, og planlagte turer i grupper",
