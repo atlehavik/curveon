@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Lock the route while editing on the map
+
+- [ ] Juster ruten → Endre i kartet: a lock button (open padlock) sits beside Undo. Press it: it
+      turns amber, the hint says "Ruta er låst: trykk for nytt punkt".
+- [ ] Locked: pan with a finger that starts on the route line or on a point: the map moves, the
+      route doesn't bend or move. Taps still add a point; a tap on a point still opens its menu.
+- [ ] Two fingers (zoom) starting on the line still zoom. Unlock: dragging the line works as before.
+
 ## 2026-10-14 — Music on the full-screen map can be switched off
 
 - [ ] Settings → Display → "Musikk på kartet" off: the player no longer shows in the corner of the

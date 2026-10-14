@@ -434,6 +434,14 @@ fun CurveonMapView(
                             }
                         } else if (dragAt != null || kotlin.math.hypot(e.x - downX, e.y - downY) > slop) {
                             cancelLongPress(v)
+                            if (ed.locked) {
+                                // Locked: not a drag of the route but a pan. Hand the map the finger from where it went down.
+                                grabbed = null
+                                val down = android.view.MotionEvent.obtain(e.downTime, e.downTime, android.view.MotionEvent.ACTION_DOWN, downX, downY, e.metaState)
+                                v.onTouchEvent(down)
+                                down.recycle()
+                                return@setOnTouchListener false
+                            }
                             val ll = m.projection.fromScreenLocation(android.graphics.PointF(e.x, e.y))
                             val at = GeoPoint(ll.latitude, ll.longitude)
                             dragAt = at

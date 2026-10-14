@@ -497,7 +497,10 @@ fun MapPickBar(
     error: String? = null,
     /** Marking a part of the route to change (on a long trip, so the rest stays as it is); null = no trip to mark on yet. */
     marking: Boolean? = null,
-    onMark: () -> Unit = {}
+    onMark: () -> Unit = {},
+    /** The route locked against dragging (panning only); null = no trip to lock yet. */
+    locked: Boolean? = null,
+    onLock: () -> Unit = {}
 ) {
     // Grows out of the shrinking dialog (bottom centre).
     val grow = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -536,7 +539,11 @@ fun MapPickBar(
                 if (busy) CircularProgressIndicator(color = ElectricCyan, strokeWidth = 3.dp, modifier = Modifier.padding(end = 10.dp).size(20.dp))
                 Column {
                     Text(
-                        error ?: stringResource(if (marking == true) R.string.edit_route_mark_hint else R.string.pick_hint_next_point),
+                        error ?: stringResource(when {
+                            marking == true -> R.string.edit_route_mark_hint
+                            locked == true -> R.string.edit_route_locked_hint
+                            else -> R.string.pick_hint_next_point
+                        }),
                         color = if (error != null) WarningRed else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
                         maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
@@ -546,6 +553,11 @@ fun MapPickBar(
             if (marking != null) Box(Modifier.testTag("route_edit_mark")) {
                 RoundButton(Icons.Default.LinearScale, stringResource(R.string.edit_route_mark), 48.dp,
                     if (marking) ElectricCyan else CockpitSurfaceVariant, if (marking) OnCyanDark else TextPrimary, onMark)
+            }
+            if (locked != null && marking != true) Box(Modifier.testTag("route_edit_lock")) {
+                RoundButton(if (locked) Icons.Default.Lock else Icons.Default.LockOpen,
+                    stringResource(if (locked) R.string.edit_route_unlock else R.string.edit_route_lock), 48.dp,
+                    if (locked) NeonAmber else CockpitSurfaceVariant, if (locked) Color.Black else TextPrimary, onLock)
             }
             Box(Modifier.testTag("map_pick_undo").graphicsLayer { alpha = if (canUndo) 1f else 0.35f }) {
                 RoundButton(Icons.Default.Undo, stringResource(R.string.undo), 48.dp, CockpitSurfaceVariant, TextPrimary) { if (canUndo) onUndo() }

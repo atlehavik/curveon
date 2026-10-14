@@ -42,6 +42,11 @@ class RouteEditor(
      * letting go [onMarkSection] pins its two ends (so the rest of a long trip stays as it is).
      */
     val marking: Boolean = false,
+    /**
+     * The route locked against dragging: a finger that moves after landing on the line or a point
+     * pans the map instead (taps and long presses on them still work), so panning can't bend it by mistake.
+     */
+    val locked: Boolean = false,
     /** A tap (not a drag) on the line: the map's own tap, which the line would otherwise swallow. */
     val onTapLine: ((GeoPoint) -> Unit)? = null,
     /** A finger held still on a point: its menu, to remove it. */

@@ -595,6 +595,9 @@
     <string name="edit_on_map">Endre i kartet</string>
     <string name="edit_route_mark">Marker delen som skal endres</string>
     <string name="edit_route_mark_hint">Dra langs delen du vil endre</string>
+    <string name="edit_route_lock">Lås ruta (flytt bare kartet)</string>
+    <string name="edit_route_unlock">Lås opp ruta</string>
+    <string name="edit_route_locked_hint">Ruta er låst: trykk for nytt punkt</string>
     <string name="undo">Angre</string>
     <string name="done">Ferdig</string>
     <string name="change_place">Bytt sted</string>

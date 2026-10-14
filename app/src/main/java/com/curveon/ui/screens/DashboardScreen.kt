@@ -148,6 +148,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var searchGrowIn by remember { mutableStateOf(false) }
     /** Editing on the map: the next drag along the line marks the part of the route to change. */
     var marking by remember { mutableStateOf(false) }
+    /** Editing on the map: the route locked against dragging, so a pan can't bend it (kept between edits). */
+    var routeLocked by remember { mutableStateOf(false) }
     // The route preview folded down to a bar so more of the route shows; open again for each new plan.
     var previewMinimized by remember { mutableStateOf(false) }
     LaunchedEffect(preview == null) { if (preview == null) previewMinimized = false }
@@ -304,7 +306,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val selectedCandidate = preview?.candidates?.getOrNull(preview!!.selected)
     // Point by point shows the trip's points the same way, so they can be dragged while building it
     // (and the map stays where the rider is tapping instead of fitting the whole trip each time).
-    val editor = if (!chaining || planGoal == null) null else remember(planGoal, selectedCandidate, marking) {
+    val editor = if (!chaining || planGoal == null) null else remember(planGoal, selectedCandidate, marking, routeLocked) {
         var number = 0
         val handles = buildList {
             planGoal.start?.let { add(RouteHandle(GeoPoint(it.point.lat, it.point.lon), HandleKind.START)) }
@@ -336,6 +338,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
             },
             marking = marking,
+            locked = routeLocked,
             onLongPressHandle = { h ->
                 when (h.kind) {
                     HandleKind.STOP, HandleKind.VIA -> editStopMenu = h.stopIndex
@@ -449,6 +452,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 error = selectedCandidate?.error.takeIf { planGoal != null },
                 marking = marking.takeIf { planGoal != null },
                 onMark = { marking = !marking },
+                locked = routeLocked.takeIf { planGoal != null },
+                onLock = { routeLocked = !routeLocked },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
             )
         } else if (!searchGrowIn) { // nor while the search is back up over the map
