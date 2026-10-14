@@ -27,12 +27,12 @@ import java.util.Locale
  * app's process is restarted.
  *
  * Lines: `S,elapsedMs,wallMs,level,chargeUah,currentUa,voltageMv,tempDeciC,plugged,screenOn,
- * brightness,brightnessAuto,nav,mapSaver` for a sample, `E,elapsedMs,wallMs,text` for an event.
+ * brightness,brightnessAuto,nav` for a sample, `E,elapsedMs,wallMs,text` for an event.
  */
 object BatteryTest {
 
     /** What a part of the test is counted under. */
-    enum class Bucket { NONE, GOOGLE_MAPS, CURVEON, CURVEON_SAVER }
+    enum class Bucket { NONE, GOOGLE_MAPS, CURVEON }
 
     /**
      * [uah] from the battery's charge counter; [currentUah] from the current drawn, for phones whose
@@ -104,7 +104,7 @@ object BatteryTest {
             val tick = object : Runnable {
                 override fun run() {
                     val nav = NavWatch.state.value
-                    if (nav != lastApp) { event("navigating: ${nav.app}${if (nav.curveonMapSaver) " (battery saver map)" else ""}"); lastApp = nav }
+                    if (nav != lastApp) { event("navigating: ${nav.app}"); lastApp = nav }
                     sample(app)
                     h.postDelayed(this, SAMPLE_MS)
                 }
@@ -129,8 +129,8 @@ object BatteryTest {
         val nav = NavWatch.state.value
         val elapsed = SystemClock.elapsedRealtime()
         write("S,$elapsed,${System.currentTimeMillis()},$level,$charge,$current,$voltage,$temp,${b(plugged)},${b(screenOn)}," +
-            "$brightness,${b(auto)},${nav.app},${b(nav.curveonMapSaver)}")
-        add(Sample(elapsed, charge, current, plugged, brightness, bucketOf(nav.app, nav.curveonMapSaver)))
+            "$brightness,${b(auto)},${nav.app}")
+        add(Sample(elapsed, charge, current, plugged, brightness, bucketOf(nav.app)))
     }
 
     /** Counts the time since the last sample under what was navigating, unless it was charging or changed meanwhile. */
@@ -157,9 +157,9 @@ object BatteryTest {
         file.forEachLine { line ->
             val f = line.split(',')
             if (f.size >= 3 && f[0] == "E" && f.getOrNull(3) == "started") f[2].toLongOrNull()?.let { _state.value = _state.value.copy(startedAt = it) }
-            if (f.size >= 14 && f[0] == "S") runCatching {
+            if (f.size >= 13 && f[0] == "S") runCatching {
                 add(Sample(f[1].toLong(), f[4].toLong(), f[5].toLong(), f[8] == "1", f[10].toInt(),
-                    bucketOf(NavWatch.App.valueOf(f[12]), f[13] == "1")))
+                    bucketOf(NavWatch.App.valueOf(f[12]))))
             }
         }
         // The process was gone a while: don't count across the gap.
@@ -167,10 +167,10 @@ object BatteryTest {
         event("resumed")
     }
 
-    private fun bucketOf(app: NavWatch.App, saver: Boolean) = when (app) {
+    private fun bucketOf(app: NavWatch.App) = when (app) {
         NavWatch.App.NONE -> Bucket.NONE
         NavWatch.App.GOOGLE_MAPS -> Bucket.GOOGLE_MAPS
-        NavWatch.App.CURVEON -> if (saver) Bucket.CURVEON_SAVER else Bucket.CURVEON
+        NavWatch.App.CURVEON -> Bucket.CURVEON
     }
 
     private fun event(text: String) = write("E,${SystemClock.elapsedRealtime()},${System.currentTimeMillis()},${text.replace(',', ';')}")

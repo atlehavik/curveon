@@ -76,7 +76,6 @@ class RideService : Service() {
         .setOngoing(true)
         .addExtras(android.os.Bundle().apply {
             putBoolean(com.curveon.phone.NavWatch.EXTRA_NAVIGATING, navigating)
-            putBoolean(com.curveon.phone.NavWatch.EXTRA_MAP_SAVER, mapSaver)
         })
         .build()
 
@@ -130,13 +129,11 @@ class RideService : Service() {
 
         @Volatile private var running = false
         @Volatile private var navigating = false
-        @Volatile private var mapSaver = false
 
-        /** A trip is (or isn't) being navigated, with or without the battery saver map: shown in the notification. */
-        fun navigation(context: Context, navigating: Boolean, mapSaver: Boolean) {
-            if (navigating == this.navigating && mapSaver == this.mapSaver) return
+        /** A trip is (or isn't) being navigated: shown in the notification. */
+        fun navigation(context: Context, navigating: Boolean) {
+            if (navigating == this.navigating) return
             this.navigating = navigating
-            this.mapSaver = mapSaver
             tell(context, Intent(context, RideService::class.java).setAction(ACTION_NAV))
         }
 

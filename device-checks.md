@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Rider arrow placement (test)
+
+The arrow sat a little ahead of the rider. The Pixel's nav trace shows it drawn 0.25 s ahead of the
+GPS (the lead it is given on purpose), and its middle, not its tip, on the spot. Installed on the
+X7 and the Pixel; Settings → Navigation → "Rider arrow (test)":
+
+- [ ] Ride with Standard, "0 s" (no lead) and "Tip" (no lead, the arrow's tip on the spot) and say
+      which matches where you are best. The chosen one becomes the only behaviour.
+
 ## 2026-10-14 — Road number signs and priority roads
 
 Installed on the X7 and tried on the demo ride with a Vestland-only data file
@@ -22,11 +31,10 @@ portrait); in the turn card "270 m [Fv5012]". Settings → Display → Road info
 ## 2026-10-14 — Battery test: Google Maps against Curveon (Pixel)
 
 Installed on the Pixel (Companion and Curveon). Tried on the X7 (faked unplugged): Google Maps'
-navigation, Curveon's and Curveon's with the battery saver map are each recognised, start and end.
+navigation and Curveon's are each recognised, start and end.
 
 - [ ] Pixel unplugged, same screen brightness both ways (auto-brightness off): Companion → Battery
-      test → Start. Ride A→B navigating with Google Maps, B→A with Curveon (on the way back maybe
-      half with the battery saver map on), then Stop. Companion shows mAh and mAh/h per app.
+      test → Start. Ride A→B navigating with Google Maps, B→A with Curveon, then Stop. Companion shows mAh and mAh/h per app.
 - [ ] Afterwards, for a closer look: `adb pull /sdcard/Android/data/com.curveon.companion/files/batterytest/`
 - [ ] Close the other app while one navigates (Curveon via "Close Curveon" in its notification).
 
@@ -43,11 +51,6 @@ standing still the app went from ~23 % of a core to ~5 %; riding, the main threa
       every frame).
 - [ ] GPX & rides → Rides: "Note lean angle" is off by default (lean is stored but not shown
       anywhere yet). Switched on, ride a few bends: the ride still gets a lean angle.
-- [ ] Settings → Navigation → "Battery saver map" (off by default): ride a while with it on and
-      a while with it off. On, the map is drawn 30 times a second instead of 60. Measured on the
-      demo ride: ~30 % less CPU (map thread ~75 → ~60 %, main ~50 → ~35 %, UI ~45 → ~26 %), but
-      about one picture in seven comes 48 ms after the last instead of 33, which may show as a
-      small hitch. Does it look good enough to keep on? Off is exactly as before (even 60).
 - [ ] Battery over an hour's ride, compared with before:
       `adb shell dumpsys batterystats --charged com.curveon.tablet`.
 

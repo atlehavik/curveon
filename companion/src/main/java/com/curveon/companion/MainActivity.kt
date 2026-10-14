@@ -156,7 +156,6 @@ class MainActivity : ComponentActivity() {
         BatteryTest.Bucket.NONE -> R.string.battery_nav_none
         BatteryTest.Bucket.GOOGLE_MAPS -> R.string.battery_nav_maps
         BatteryTest.Bucket.CURVEON -> R.string.battery_nav_curveon
-        BatteryTest.Bucket.CURVEON_SAVER -> R.string.battery_nav_curveon_saver
     })
 
     private fun duration(ms: Long): String {

@@ -9,17 +9,15 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * Which navigation app is guiding right now, seen from the notifications they keep up while they
  * navigate (for the companion's battery test). Google Maps shows an ongoing navigation
- * notification; Curveon marks its own with [EXTRA_NAVIGATING] (and whether the battery saver map
- * is on with [EXTRA_MAP_SAVER]).
+ * notification; Curveon marks its own with [EXTRA_NAVIGATING].
  */
 object NavWatch {
 
     enum class App { NONE, GOOGLE_MAPS, CURVEON }
 
-    data class State(val app: App = App.NONE, val curveonMapSaver: Boolean = false)
+    data class State(val app: App = App.NONE)
 
     const val EXTRA_NAVIGATING = "com.curveon.NAVIGATING"
-    const val EXTRA_MAP_SAVER = "com.curveon.MAP_SAVER"
     const val GOOGLE_MAPS = "com.google.android.apps.maps"
     const val CURVEON = "com.curveon.tablet"
 
@@ -31,7 +29,6 @@ object NavWatch {
 
     private val mapsKeys = HashSet<String>()
     private var curveonKey: String? = null
-    private var curveonSaver = false
 
     @Synchronized
     fun onPosted(sbn: StatusBarNotification) {
@@ -44,10 +41,8 @@ object NavWatch {
                 val changed = if (nav) mapsKeys.add(sbn.key) else mapsKeys.remove(sbn.key)
                 if (changed) onEvent?.invoke("maps notification ongoing=${sbn.isOngoing} category=${n.category} channel=${n.channelId} nav=$nav")
             }
-            CURVEON -> if (n.extras.getBoolean(EXTRA_NAVIGATING)) {
-                curveonKey = sbn.key
-                curveonSaver = n.extras.getBoolean(EXTRA_MAP_SAVER)
-            } else if (curveonKey == sbn.key) curveonKey = null
+            CURVEON -> if (n.extras.getBoolean(EXTRA_NAVIGATING)) curveonKey = sbn.key
+                else if (curveonKey == sbn.key) curveonKey = null
             else -> return
         }
         publish()
@@ -66,7 +61,7 @@ object NavWatch {
     private fun publish() {
         // Both at once shouldn't happen on a test ride; Curveon is then the one that counts.
         _state.value = when {
-            curveonKey != null -> State(App.CURVEON, curveonSaver)
+            curveonKey != null -> State(App.CURVEON)
             mapsKeys.isNotEmpty() -> State(App.GOOGLE_MAPS)
             else -> State()
         }

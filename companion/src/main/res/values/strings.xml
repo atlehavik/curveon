@@ -14,5 +14,4 @@
     <string name="battery_nav_none">No navigation</string>
     <string name="battery_nav_maps">Google Maps</string>
     <string name="battery_nav_curveon">Curveon</string>
-    <string name="battery_nav_curveon_saver">Curveon (battery saver map)</string>
 </resources>

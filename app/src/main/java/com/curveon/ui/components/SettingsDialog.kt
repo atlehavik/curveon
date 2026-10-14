@@ -56,7 +56,7 @@ data class SettingsState(
     val obdValues: List<com.curveon.data.obd.ObdValue>,
     val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
-    val mapSaver: Boolean = false,
+    val arrowPlacement: com.curveon.data.location.ArrowPlacement = com.curveon.data.location.ArrowPlacement.STANDARD,
     val showSurfaces: Boolean,
     val showAltitude: Boolean,
     val showRoadInfo: Boolean = true,
@@ -85,7 +85,7 @@ class SettingsActions(
     val onObdDevice: (String?) -> Unit,
     val onObdValue: (com.curveon.data.obd.ObdValue) -> Unit,
     val onAutoZoom: (Boolean) -> Unit,
-    val onMapSaver: (Boolean) -> Unit = {},
+    val onArrowPlacement: (com.curveon.data.location.ArrowPlacement) -> Unit = {},
     val onShowSurfaces: (Boolean) -> Unit,
     val onShowAltitude: (Boolean) -> Unit,
     val onShowRoadInfo: (Boolean) -> Unit = {},
@@ -171,8 +171,14 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint), small = true) {
                             CockpitSwitch(state.autoZoom, actions.onAutoZoom)
                         }
-                        Setting(stringResource(R.string.settings_map_saver), stringResource(R.string.settings_map_saver_hint), small = true) {
-                            CockpitSwitch(state.mapSaver, actions.onMapSaver)
+                        Setting(stringResource(R.string.settings_arrow), stringResource(R.string.settings_arrow_hint)) {
+                            Segmented(com.curveon.data.location.ArrowPlacement.entries, state.arrowPlacement, {
+                                stringResource(when (it) {
+                                    com.curveon.data.location.ArrowPlacement.STANDARD -> R.string.settings_arrow_standard
+                                    com.curveon.data.location.ArrowPlacement.NO_LEAD -> R.string.settings_arrow_no_lead
+                                    com.curveon.data.location.ArrowPlacement.TIP -> R.string.settings_arrow_tip
+                                })
+                            }, actions.onArrowPlacement)
                         }
                         Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint), small = true) {
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)

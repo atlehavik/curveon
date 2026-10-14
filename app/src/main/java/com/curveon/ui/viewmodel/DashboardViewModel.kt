@@ -240,14 +240,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _mapVersion.value++
     }
 
+    /** Test: how far ahead of the GPS the rider arrow sits (see [com.curveon.data.location.ArrowPlacement]). */
+    private val _arrowPlacement = MutableStateFlow(
+        runCatching { com.curveon.data.location.ArrowPlacement.valueOf(settings.getString("arrowPlacement", null)!!) }
+            .getOrDefault(com.curveon.data.location.ArrowPlacement.STANDARD)
+    ).also { RiderMotion.LEAD_S = it.value.leadS }
+    val arrowPlacement: StateFlow<com.curveon.data.location.ArrowPlacement> = _arrowPlacement.asStateFlow()
+    fun setArrowPlacement(p: com.curveon.data.location.ArrowPlacement) {
+        _arrowPlacement.value = p
+        RiderMotion.LEAD_S = p.leadS
+        settings.edit().putString("arrowPlacement", p.name).apply()
+    }
+
     private val _autoZoom = MutableStateFlow(settings.getBoolean("autoZoom", true))
     val autoZoom: StateFlow<Boolean> = _autoZoom.asStateFlow()
     fun setAutoZoom(on: Boolean) { _autoZoom.value = on; settings.edit().putBoolean("autoZoom", on).apply() }
-
-    /** Draw the map at half rate (30 instead of 60 frames a second) to save battery. */
-    private val _mapSaver = MutableStateFlow(settings.getBoolean("mapSaver", false))
-    val mapSaver: StateFlow<Boolean> = _mapSaver.asStateFlow()
-    fun setMapSaver(on: Boolean) { _mapSaver.value = on; settings.edit().putBoolean("mapSaver", on).apply() }
 
     /** Gravel and soft roads dashed on the map. */
     private val _showSurfaces = MutableStateFlow(settings.getBoolean("showSurfaces", true))
@@ -638,10 +645,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         watchCurrentRoad()
         viewModelScope.launch { while (true) { delay(60_000); updateMapDark() } }
         // The service's notification says when a trip is navigated (the companion's battery test reads it).
-        viewModelScope.launch {
-            kotlinx.coroutines.flow.combine(isNavigating, mapSaver) { nav, saver -> nav to saver }
-                .collect { (nav, saver) -> com.curveon.RideService.navigation(application, nav, saver) }
-        }
+        viewModelScope.launch { isNavigating.collect { com.curveon.RideService.navigation(application, it) } }
 
         // Speed limit while navigating: the official one of the road the route is on, else the route's (OSM).
         viewModelScope.launch {

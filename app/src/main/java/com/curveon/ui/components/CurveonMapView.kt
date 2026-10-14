@@ -69,8 +69,13 @@ private const val PICK = "curveon-pick"
 private const val APPROACH = "curveon-approach"
 /** At most this often is a camera that keeps moving (following the rider) reported as settled. */
 private const val IDLE_TICK_MS = 1_000L
-/** Battery saver: frames closer than this to the last one drawn are skipped (60 Hz → 30 Hz). */
-private const val HALF_RATE_FRAME_NS = 25_000_000L
+/**
+ * The map, camera and rider arrow move 30 times a second, not on every 60 Hz frame: it looks the
+ * same on the bike and costs about a quarter less battery (measured against 60 on a Pixel 9a).
+ * Frames closer than this to the last one drawn are skipped.
+ */
+private const val FRAME_NS = 25_000_000L
+private const val MAX_FPS = 30
 private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val HINT = "curveon-track-hint"
@@ -152,8 +157,8 @@ fun CurveonMapView(
     onViewport: (south: Double, north: Double, west: Double, east: Double, zoom: Double) -> Unit = { _, _, _, _, _ -> },
     /** Zoom follows speed (in when slow and twisty, out on fast roads). */
     autoZoom: Boolean = true,
-    /** Battery saver: the map, camera and arrow move 30 times a second instead of on every (60 Hz) frame. */
-    halfRate: Boolean = false,
+    /** Test: the arrow's tip, not its middle, where the rider is. */
+    arrowTipOnSpot: Boolean = false,
     /** Changes when the offline map file was downloaded/replaced/deleted: reload the style. */
     mapVersion: Int = 0,
     /** A finger held on the map: the place, and the road there as the map names it (null if none). */
@@ -726,8 +731,8 @@ fun CurveonMapView(
     val clearanceState = rememberUpdatedState(bottomClearance)
     // MapLibre draws on every screen frame of its own accord while the map moves (labels fade in
     // and out), so cap it to match. There is no "no cap": 1000 is as good as none.
-    LaunchedEffect(map, halfRate) { if (map != null) mapView.setMaximumFps(if (halfRate) 30 else 1000) }
-    LaunchedEffect(map, style, following, inPreview, orientation, zoomBias, hasGpsFix, autoZoom, halfRate) {
+    LaunchedEffect(map) { if (map != null) mapView.setMaximumFps(MAX_FPS) }
+    LaunchedEffect(map, style, following, inPreview, orientation, zoomBias, hasGpsFix, autoZoom) {
         val m = map ?: return@LaunchedEffect
         if (style == null) return@LaunchedEffect
         val follow = following && !inPreview
@@ -747,7 +752,7 @@ fun CurveonMapView(
             // layout), so the arrow never lags the map; and look once a second regardless.
             if (idle) kotlinx.coroutines.withTimeoutOrNull(1_000) { wake.receive() }
             val now = withFrameNanos { it }
-            if (halfRate && last != 0L && now - last < HALF_RATE_FRAME_NS) continue // every other 60 Hz frame
+            if (last != 0L && now - last < FRAME_NS) continue // every other 60 Hz frame
             val dt = if (last == 0L) 0.016 else ((now - last) / 1e9).coerceIn(0.0, 0.5)
             last = now
             val pose = (if (hasGpsFix) motion.sample(System.nanoTime()) else null)
@@ -908,7 +913,7 @@ fun CurveonMapView(
             .testTag("map_container")
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
-        if (hasGpsFix && style != null) RiderArrow { puck }
+        if (hasGpsFix && style != null) RiderArrow(arrowTipOnSpot) { puck }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, Modifier.matchParentSize()) }
 
         // Compass button: north up → heading up → 3D. Once the rider pans the map away, a second
@@ -1282,7 +1287,7 @@ private data class Puck(val x: Float, val y: Float, val rotation: Float, val til
  * every frame only redraws the arrow. Tilted with the map in 3D so it lies on the road.
  */
 @Composable
-private fun RiderArrow(puck: () -> Puck?) {
+private fun RiderArrow(tipOnSpot: Boolean, puck: () -> Puck?) {
     val size = 44.dp
     val half = with(androidx.compose.ui.platform.LocalDensity.current) { size.toPx() / 2 }
     androidx.compose.foundation.Image(
@@ -1301,6 +1306,9 @@ private fun RiderArrow(puck: () -> Puck?) {
                 }
             }
             .graphicsLayer { rotationZ = puck()?.rotation ?: 0f }
+            // Inside the turn, so it moves back along the arrow: the tip (1/48 from the top of
+            // ic_nav_arrow) lands on the spot.
+            .graphicsLayer { translationY = if (tipOnSpot) half * 23f / 24f else 0f }
     )
 }
 

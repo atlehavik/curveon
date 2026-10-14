@@ -8,6 +8,15 @@ import kotlin.math.cos
 import kotlin.math.exp
 
 /**
+ * Where the rider arrow sits relative to the GPS (a test, Settings → Navigation): [STANDARD] carries
+ * it [RiderMotion.LEAD_S] ahead with its middle on the spot, [NO_LEAD] without that lead, [TIP] also
+ * puts its tip rather than its middle on the spot.
+ */
+enum class ArrowPlacement(val leadS: Double, val tipOnSpot: Boolean) {
+    STANDARD(0.25, false), NO_LEAD(0.0, false), TIP(0.0, true)
+}
+
+/**
  * Where to draw the rider right now, between GPS fixes. The receiver gives one fix a second, and
  * that fix is already a little old when it arrives; moving the arrow (and the map) only when a fix
  * comes in makes it hop along a second behind the bike. Instead the last fix is carried forward at
