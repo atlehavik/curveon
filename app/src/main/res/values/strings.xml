@@ -768,4 +768,20 @@
     <string name="layer_ferries">Ferries</string>
     <string name="layer_motorcycle">Motorcycle shops and workshops</string>
     <string name="kind_camera">Speed camera</string>
+    <string name="update_version">Version %1$s</string>
+    <string name="update_check">Look for updates</string>
+    <string name="update_checking">Looking…</string>
+    <string name="update_up_to_date">This is the newest version</string>
+    <string name="update_available">Curveon %1$s is out</string>
+    <string name="update_install">Download and install</string>
+    <string name="update_downloading">Downloading… %1$d %%</string>
+    <string name="update_installing">Confirm in Android\'s installer</string>
+    <string name="update_offline">No answer from GitHub. Online?</string>
+    <string name="update_download_failed">The download stopped. Try again when online.</string>
+    <string name="update_failed">The update could not be installed</string>
+    <string name="update_signed_differently">This copy of Curveon is signed with another key: uninstall it, then install the new version from GitHub</string>
+    <string name="toast_update_available">Curveon %1$s is out: Settings → Help</string>
+    <string name="whats_new">What\'s new</string>
+    <string name="whats_new_hint">What changed in each version</string>
+    <string name="whats_new_title">New in Curveon %1$s</string>
 </resources>

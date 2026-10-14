@@ -1,0 +1,40 @@
+[
+  {
+    "version": "1.1",
+    "en": [
+      "Curveon updates itself: it looks for a new version when it starts, and in Settings → Help",
+      "What's new is shown after each update, and in Settings → Help",
+      "Uses far less battery: the map rests while the bike stands still, and lean angle is off unless you turn it on",
+      "Road number signs (and the priority road sign) by the speed and in the turn card",
+      "Adventure routing, and planned trips in groups",
+      "Where to? can save a route; start and end pins on the map",
+      "Hold the map → \"Point by point\" to plan a trip by tapping one point after another",
+      "Editing a route: a lock button so panning can't drag the route by mistake",
+      "\"Ride again\" rides the whole loop",
+      "Very curvy rides follow the coast instead of taking the Hurtigruten",
+      "Calls: a big card while it rings, and a phone icon you can drag anywhere once answered",
+      "Settings → Display → Music on the map can be switched off",
+      "The rail button where a route was saved blinks"
+    ],
+    "nb": [
+      "Curveon oppdaterer seg selv: ser etter ny versjon ved oppstart, og i Innstillinger → Hjelp",
+      "Nyheter vises etter hver oppdatering, og i Innstillinger → Hjelp",
+      "Bruker langt mindre batteri: kartet hviler når sykkelen står stille, og lenevinkel er av til du slår den på",
+      "Vegnummerskilt (og forkjørsvegskilt) ved farten og i svingkortet",
+      "Eventyrruting, og planlagte turer i grupper",
+      "Hvor skal du? kan lagre en rute; start- og målnål på kartet",
+      "Hold på kartet → «Punkt for punkt» for å planlegge en tur ved å trykke punkt etter punkt",
+      "Redigere rute: en lås så panorering ikke drar ruten ved et uhell",
+      "«Kjør igjen» kjører hele runden",
+      "Svært svingete turer følger kysten i stedet for å ta Hurtigruten",
+      "Anrop: stort kort når det ringer, og et telefonikon du kan dra hvor som helst når du har svart",
+      "Innstillinger → Visning → Musikk på kartet kan slås av",
+      "Knappen der en rute ble lagret blinker"
+    ]
+  },
+  {
+    "version": "1.0",
+    "en": ["First release"],
+    "nb": ["Første versjon"]
+  }
+]

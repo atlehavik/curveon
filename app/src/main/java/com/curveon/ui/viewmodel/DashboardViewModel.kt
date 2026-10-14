@@ -34,6 +34,10 @@ import com.curveon.data.routing.SavedRoutes
 import com.curveon.data.routing.Stop
 import com.curveon.data.search.PlaceSearch
 import com.curveon.data.search.SearchResult
+import com.curveon.data.update.AppUpdates
+import com.curveon.data.update.Changelog
+import com.curveon.data.update.ChangelogEntry
+import com.curveon.data.update.UpdateState
 import com.curveon.routing.LatLon
 import com.curveon.routing.Maneuver
 import com.curveon.routing.ManeuverType
@@ -266,6 +270,83 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** The welcome tour has been shown (or skipped) once; Settings → Help brings it back. */
     val tourSeen: Boolean get() = settings.getBoolean("tourSeen", false)
     fun markTourSeen() = settings.edit().putBoolean("tourSeen", true).apply()
+
+    // ---------------------------------------------------------------- app updates (GitHub releases)
+
+    private val appUpdates = AppUpdates(application)
+    private val _appUpdate = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    /** A newer version on GitHub, and how far downloading and installing it has come. */
+    val appUpdate: StateFlow<UpdateState> = _appUpdate.asStateFlow()
+    private val _updateAnnounced = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    /** A newer version was just found by the startup check (once per version): its number. */
+    val updateAnnounced: SharedFlow<String> = _updateAnnounced
+
+    /** Looks for a newer version now (Settings → Help, or [quiet]ly by itself). */
+    fun checkForUpdate(quiet: Boolean = false) {
+        val s = _appUpdate.value
+        if (s is UpdateState.Checking || s is UpdateState.Downloading ||
+            s is UpdateState.Installing) return
+        viewModelScope.launch { checkNow(quiet) }
+    }
+
+    /** True once the server answered. */
+    private suspend fun checkNow(quiet: Boolean): Boolean {
+        if (!quiet) _appUpdate.value = UpdateState.Checking
+        return runCatching { appUpdates.newer() }.fold(
+            onSuccess = { release ->
+                if (release == null) {
+                    if (_appUpdate.value !is UpdateState.Available || !quiet) _appUpdate.value = UpdateState.UpToDate
+                    appUpdates.cleanup()
+                } else {
+                    _appUpdate.value = UpdateState.Available(release)
+                    if (quiet && settings.getString("updateAnnounced", null) != release.version) {
+                        settings.edit().putString("updateAnnounced", release.version).apply()
+                        _updateAnnounced.tryEmit(release.version)
+                    }
+                }
+                true
+            },
+            onFailure = {
+                if (!quiet) _appUpdate.value = UpdateState.Failed(str(R.string.update_offline), null)
+                false
+            }
+        )
+    }
+
+    /** Downloads the new version and hands it to Android's installer, which asks the rider to confirm. */
+    fun installUpdate() {
+        val release = when (val s = _appUpdate.value) {
+            is UpdateState.Available -> s.release
+            is UpdateState.Failed -> s.release
+            else -> null
+        } ?: return
+        viewModelScope.launch {
+            runCatching {
+                _appUpdate.value = UpdateState.Downloading(release, 0f)
+                val apk = appUpdates.download(release) { f -> _appUpdate.value = UpdateState.Downloading(release, f) }
+                _appUpdate.value = UpdateState.Installing(release)
+                appUpdates.install(apk)
+            }.onFailure {
+                _appUpdate.value = UpdateState.Failed(str(R.string.update_download_failed), release)
+            }
+        }
+    }
+
+    /** What changed, newest version first, in the rider's language. */
+    fun changelog(): List<ChangelogEntry> =
+        Changelog.read(app, com.curveon.AppLanguage.current(app) == com.curveon.AppLanguage.NORWEGIAN)
+
+    /**
+     * The versions installed since the app last ran, to show once after an update; empty on a
+     * fresh install. (1.0 didn't note its version: a rider who has seen the tour came from 1.0.)
+     */
+    fun takeNewChanges(): List<ChangelogEntry> {
+        val current = com.curveon.BuildConfig.VERSION_NAME
+        val last = settings.getString("lastVersion", null) ?: if (tourSeen) "1.0" else current
+        settings.edit().putString("lastVersion", current).apply()
+        if (!AppUpdates.isNewer(current, last)) return emptyList()
+        return Changelog.since(changelog(), last).filterNot { AppUpdates.isNewer(it.version, current) }
+    }
 
     fun setShowAltitude(on: Boolean) { _showAltitude.value = on; settings.edit().putBoolean("showAltitude", on).apply() }
 
@@ -649,6 +730,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         startDeadReckoning()
         watchCurrentRoad()
         viewModelScope.launch { while (true) { delay(60_000); updateMapDark() } }
+        // A new version on GitHub: looked for soon after start, again every half hour until the
+        // server has answered (often offline), then once a day. Developer builds are signed with
+        // another key and can't take the release, so they only look when asked (Settings → Help).
+        if (!com.curveon.BuildConfig.DEV) viewModelScope.launch {
+            delay(15_000)
+            while (true) delay(if (checkNow(quiet = true)) 24 * 3_600_000L else 30 * 60_000L)
+        }
+        viewModelScope.launch {
+            AppUpdates.results.collect { r ->
+                val release = (_appUpdate.value as? UpdateState.Installing)?.release
+                _appUpdate.value = when (r) {
+                    AppUpdates.InstallResult.Cancelled -> release?.let { UpdateState.Available(it) } ?: UpdateState.Idle
+                    is AppUpdates.InstallResult.Error -> UpdateState.Failed(r.message, release)
+                }
+            }
+        }
         // The service's notification says when a trip is navigated (the companion's battery test reads it).
         viewModelScope.launch { isNavigating.collect { com.curveon.RideService.navigation(application, it) } }
 

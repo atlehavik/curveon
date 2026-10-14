@@ -99,6 +99,23 @@ compiles it ahead of time instead of waiting for Android to do it overnight.
 
 Emulator matching the tablet: AVD `Hugerock_X7` (API 33, 1080x1920 @ 320 dpi, landscape).
 
+## Releases and in-app updates
+
+Curveon looks for a newer version on this repo's GitHub releases when it starts (release builds
+only; offline it tries again every half hour, then once a day) and from Settings → Help, then
+downloads the APK and hands it to Android's installer. For a release it can find:
+
+1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`.
+2. Add the version, newest first, to `app/src/main/assets/changelog.json` (English and Norwegian):
+   it is shown once after the update, and under Settings → Help → What's new.
+3. `source ~/.curveon-signing/signing.env && ./gradlew :app:assembleRelease`
+4. Release tagged `v<versionName>` (e.g. `v1.1`) with the APK named `Curveon-<versionName>.apk`:
+   `gh release create v1.1 Curveon-1.1.apk --title "Curveon 1.1" --notes "..."`.
+   The notes are shown in the app before installing.
+
+Only builds signed with the release key can update this way; debug and ride builds look only when
+asked, and Android refuses the release APK over them.
+
 ## Data for the tablet (one-time)
 
 Everything lives under `Android/data/com.curveon.tablet/files/` on the tablet; copy over USB

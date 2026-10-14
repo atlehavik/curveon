@@ -121,6 +121,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val recordLean by viewModel.recordLean.collectAsStateWithLifecycle()
     val wrongTurn by viewModel.wrongTurn.collectAsStateWithLifecycle()
     val navState by viewModel.navigation.collectAsStateWithLifecycle()
+    val appUpdate by viewModel.appUpdate.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     val importMapLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -188,7 +189,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var showSettings by rememberSaveable { mutableStateOf(false) }
     /** Settings opened from the engine panel: start on its page. */
     var settingsOnEngine by remember { mutableStateOf(false) }
-    LaunchedEffect(showSettings) { if (!showSettings) settingsOnEngine = false }
+    /** Settings opened while a new version waits: start on Help, where it is. */
+    var settingsOnHelp by remember { mutableStateOf(false) }
+    LaunchedEffect(showSettings) { if (!showSettings) { settingsOnEngine = false; settingsOnHelp = false } }
+    /** What's new: shown once after an update, and from Settings → Help. */
+    var whatsNew by remember { mutableStateOf<List<com.curveon.data.update.ChangelogEntry>?>(null) }
     var tracksTab by rememberSaveable { mutableStateOf(TracksTab.GPX) }
     // The welcome tour: once on the first start (when the screen has settled), and from Settings → Help.
     val tourTargets = remember { TourTargets() }
@@ -205,6 +210,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
     LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
+    LaunchedEffect(Unit) { viewModel.updateAnnounced.collect { toast = context.getString(R.string.toast_update_available, it) } }
+    LaunchedEffect(Unit) { viewModel.takeNewChanges().takeIf { it.isNotEmpty() }?.let { delay(1200); whatsNew = it } }
     // Fresh call log each time the phone opens (the contacts come along).
     LaunchedEffect(phoneTab != null) { if (phoneTab != null) phone.refreshPhoneBook() }
 
@@ -694,7 +701,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             RailPanel.SEARCH -> searchPurpose = SearchPurpose.DESTINATION
             RailPanel.GPX -> showGpx = true
             RailPanel.PHONE -> phoneTab = PhoneTab.FAVORITES
-            RailPanel.SETTINGS -> showSettings = true
+            RailPanel.SETTINGS -> { settingsOnHelp = appUpdate is com.curveon.data.update.UpdateState.Available; showSettings = true }
         }
     }
     val rail: @Composable () -> Unit = {
@@ -703,6 +710,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             vertical = !portrait,
             isFullScreenMap = isFullScreenMap,
             unread = notifications.size,
+            updateWaiting = appUpdate is com.curveon.data.update.UpdateState.Available,
             active = activePanel,
             onPress = pressRail,
             onToggleMap = { viewModel.toggleFullScreenMap() }
@@ -874,7 +882,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     mapLayers = mapLayers,
                     mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
                     routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() },
-                    speedLimitsStatus = remember { viewModel.speedLimitsStatus() }
+                    speedLimitsStatus = remember { viewModel.speedLimitsStatus() },
+                    appUpdate = appUpdate
                 ),
                 actions = SettingsActions(
                     onLanguage = { com.curveon.AppLanguage.set(context, it) },
@@ -899,10 +908,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
                     onBrowseMaps = { showMapCatalog = true },
                     onTour = { showSettings = false; tourIsFirst = false; showTour = true },
-                    onMapLayer = viewModel::setMapLayer
+                    onMapLayer = viewModel::setMapLayer,
+                    onCheckUpdate = { viewModel.checkForUpdate() },
+                    onInstallUpdate = viewModel::installUpdate,
+                    onWhatsNew = { whatsNew = viewModel.changelog() }
                 ),
                 phone = phone,
                 openEngine = settingsOnEngine,
+                openHelp = settingsOnHelp,
                 onDismiss = { showSettings = false }
             )
             if (showMapCatalog) {
@@ -990,6 +1003,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             }
         }
     }
+    whatsNew?.let { WhatsNewDialog(it, onDismiss = { whatsNew = null }) }
     if (showTour) WelcomeTour(tourTargets, firstStart = tourIsFirst, onFinish = { showTour = false; tourIsFirst = false; viewModel.markTourSeen() })
     } }
 
@@ -1139,6 +1153,8 @@ private fun Rail(
     vertical: Boolean,
     isFullScreenMap: Boolean,
     unread: Int,
+    /** A new version of the app is out: a dot on Settings. */
+    updateWaiting: Boolean,
     /** The screen that is open: its button is lit. */
     active: RailPanel?,
     onPress: (RailPanel) -> Unit,
@@ -1158,7 +1174,10 @@ private fun Rail(
             tag = "rail_phone", target = TourTarget.PHONE, onClick = { onPress(RailPanel.PHONE) })
     }
     val settings: @Composable () -> Unit = {
-        RailButton(Icons.Default.Settings, stringResource(R.string.settings), ElectricCyan, TextPrimary, filled = active == RailPanel.SETTINGS, tag = "rail_settings", target = TourTarget.SETTINGS, onClick = { onPress(RailPanel.SETTINGS) })
+        Box {
+            RailButton(Icons.Default.Settings, stringResource(R.string.settings), ElectricCyan, TextPrimary, filled = active == RailPanel.SETTINGS, tag = "rail_settings", target = TourTarget.SETTINGS, onClick = { onPress(RailPanel.SETTINGS) })
+            if (updateWaiting) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(ElectricCyan))
+        }
     }
     // The map toggle shows a mode, not a screen: it only changes its symbol.
     val mapToggle: @Composable () -> Unit = {

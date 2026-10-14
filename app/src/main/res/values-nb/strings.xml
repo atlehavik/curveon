@@ -767,4 +767,20 @@
     <string name="layer_ferries">Ferjer</string>
     <string name="layer_motorcycle">MC-butikker og verksteder</string>
     <string name="kind_camera">Fotoboks</string>
+    <string name="update_version">Versjon %1$s</string>
+    <string name="update_check">Se etter oppdatering</string>
+    <string name="update_checking">Ser etter…</string>
+    <string name="update_up_to_date">Dette er nyeste versjon</string>
+    <string name="update_available">Curveon %1$s er ute</string>
+    <string name="update_install">Last ned og installer</string>
+    <string name="update_downloading">Laster ned… %1$d %%</string>
+    <string name="update_installing">Bekreft i Androids installasjon</string>
+    <string name="update_offline">Fikk ikke svar fra GitHub. Er du på nett?</string>
+    <string name="update_download_failed">Nedlastingen stoppet. Prøv igjen når du er på nett.</string>
+    <string name="update_failed">Oppdateringen kunne ikke installeres</string>
+    <string name="update_signed_differently">Denne Curveon er signert med en annen nøkkel: avinstaller den, og installer den nye versjonen fra GitHub</string>
+    <string name="toast_update_available">Curveon %1$s er ute: Innstillinger → Hjelp</string>
+    <string name="whats_new">Nyheter</string>
+    <string name="whats_new_hint">Hva som er endret i hver versjon</string>
+    <string name="whats_new_title">Nytt i Curveon %1$s</string>
 </resources>

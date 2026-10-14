@@ -29,6 +29,7 @@ import com.curveon.R
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.data.map.InstalledMap
 import com.curveon.data.map.MapDownloadState
+import com.curveon.data.update.UpdateState
 import com.curveon.ui.theme.*
 import com.curveon.ui.viewmodel.MapTheme
 
@@ -73,7 +74,8 @@ data class SettingsState(
     val routingDataStatus: String,
     val searchStatus: String,
     val speedLimitsStatus: String = "",
-    val mapLayers: Set<com.curveon.data.search.MapLayer> = emptySet()
+    val mapLayers: Set<com.curveon.data.search.MapLayer> = emptySet(),
+    val appUpdate: UpdateState = UpdateState.Idle
 )
 
 /** What the Settings screen can change. */
@@ -101,7 +103,11 @@ class SettingsActions(
     val onBrowseMaps: () -> Unit,
     /** Settings → Help: the welcome tour again. */
     val onTour: () -> Unit = {},
-    val onMapLayer: (com.curveon.data.search.MapLayer, Boolean) -> Unit = { _, _ -> }
+    val onMapLayer: (com.curveon.data.search.MapLayer, Boolean) -> Unit = { _, _ -> },
+    val onCheckUpdate: () -> Unit = {},
+    val onInstallUpdate: () -> Unit = {},
+    /** Settings → Help: what changed in each version. */
+    val onWhatsNew: () -> Unit = {}
 )
 
 /** The kinds of place to keep on the map: one chip each, lit when on. */
@@ -133,8 +139,8 @@ private fun MapLayerChips(on: Set<com.curveon.data.search.MapLayer>, onToggle: (
  * there is room for more.
  */
 @Composable
-fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, openEngine: Boolean = false, onDismiss: () -> Unit) {
-    var tab by rememberSaveable { mutableStateOf(if (openEngine) SettingsTab.ENGINE else SettingsTab.DISPLAY) }
+fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneCompanionManager, openEngine: Boolean = false, openHelp: Boolean = false, onDismiss: () -> Unit) {
+    var tab by rememberSaveable { mutableStateOf(when { openEngine -> SettingsTab.ENGINE; openHelp -> SettingsTab.HELP; else -> SettingsTab.DISPLAY }) }
     var confirmDelete by remember { mutableStateOf<InstalledMap?>(null) }
     PagedCockpitDialog(
         title = stringResource(R.string.settings), icon = Icons.Default.Settings, accent = TextSecondary, onDismiss = onDismiss, tag = "settings_dialog",
@@ -230,7 +236,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         SectionTitle(stringResource(R.string.settings_speed_limits))
                         Text(state.speedLimitsStatus, color = TextSecondary, fontSize = 13.sp)
                     }
-                    SettingsTab.HELP -> Page { HelpPage(actions.onTour) }
+                    SettingsTab.HELP -> Page { AppVersionCard(state.appUpdate, actions); HelpPage(actions.onTour) }
                 }
         }
         pageFor(current)
@@ -365,6 +371,70 @@ private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsAc
         }), small = true) {
             CockpitSwitch(v in state.obdValues, { actions.onObdValue(v) })
         }
+    }
+}
+
+/** Settings → Help: this version, a newer one on GitHub (download and install), and what's new. */
+@Composable
+private fun AppVersionCard(update: UpdateState, actions: SettingsActions) {
+    val release = when (update) {
+        is UpdateState.Available -> update.release
+        is UpdateState.Downloading -> update.release
+        is UpdateState.Installing -> update.release
+        is UpdateState.Failed -> update.release
+        else -> null
+    }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
+            .background(if (release != null) ElectricCyan.copy(alpha = 0.12f) else CockpitSurfaceVariant)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(if (release != null) Icons.Default.SystemUpdate else Icons.Default.Info, null,
+                tint = if (release != null) ElectricCyan else TextSecondary, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                Text(
+                    if (release != null) stringResource(R.string.update_available, release.version)
+                    else stringResource(R.string.app_name) + " " + com.curveon.BuildConfig.VERSION_NAME,
+                    color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold
+                )
+                val status = when (update) {
+                    UpdateState.Checking -> stringResource(R.string.update_checking)
+                    UpdateState.UpToDate -> stringResource(R.string.update_up_to_date)
+                    is UpdateState.Installing -> stringResource(R.string.update_installing)
+                    is UpdateState.Downloading -> stringResource(R.string.update_downloading, (update.fraction * 100).toInt())
+                    is UpdateState.Failed -> update.message
+                    is UpdateState.Available -> stringResource(R.string.update_version, com.curveon.BuildConfig.VERSION_NAME)
+                    UpdateState.Idle -> null
+                }
+                if (status != null) Text(status, color = if (update is UpdateState.Failed) WarningRed else TextSecondary, fontSize = 13.sp)
+            }
+            when {
+                update is UpdateState.Downloading || update is UpdateState.Installing || update == UpdateState.Checking -> Unit
+                release != null -> Button(onClick = actions.onInstallUpdate, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
+                    Text(stringResource(R.string.update_install), color = OnCyan, fontWeight = FontWeight.Bold)
+                }
+                else -> OutlinedButton(onClick = actions.onCheckUpdate) { Text(stringResource(R.string.update_check), color = ElectricCyan) }
+            }
+        }
+        if (update is UpdateState.Downloading) LinearProgressIndicator(progress = { update.fraction }, Modifier.fillMaxWidth(), color = ElectricCyan)
+        // The release's own notes from GitHub, before it is installed.
+        if (release != null && release.notes.isNotBlank()) Text(release.notes.take(600), color = TextSecondary, fontSize = 13.sp)
+    }
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CockpitSurfaceVariant)
+            .clickable(onClick = actions.onWhatsNew).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.NewReleases, null, tint = ElectricCyan, modifier = Modifier.size(28.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.whats_new), color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.whats_new_hint), color = TextSecondary, fontSize = 13.sp)
+        }
+        Icon(Icons.Default.ChevronRight, null, tint = TextMuted)
     }
 }
 

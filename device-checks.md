@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Updates from GitHub, and What's new
+
+- [ ] First start of the new build on the X7 and Pixel: "New in Curveon 1.1" opens once, and not
+      again on the next start.
+- [ ] Settings → Help → Look for updates: "This is the newest version" (1.1 isn't on GitHub yet).
+- [ ] Settings → Help → What's new lists 1.1 and 1.0.
+- [ ] When 1.2 is out (1.0 has no updater, so 1.1 → 1.2 is the first real update): on a device with
+      the GitHub 1.1 APK, the startup check shows a toast and a dot on Settings, Settings opens on
+      Help, Download and install works, and What's new shows 1.2 after the restart.
+
 ## 2026-10-14 — Very curvy no longer takes the Hurtigruten
 
 - [ ] From Bømlo, destination Florø, Supersvingete: the route rides up the coast (about 390 km,
