@@ -96,6 +96,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val showSurfaces by viewModel.showSurfaces.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
+    val showMapMedia by viewModel.showMapMedia.collectAsStateWithLifecycle()
     val currentRoad by viewModel.currentRoad.collectAsStateWithLifecycle()
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
@@ -367,7 +368,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val showTurn = turn != null && showTripBar
     // A ringing call is a big card over everything (see [callLayer]); an answered one is a floating icon
     // that leaves the music where it is.
-    val showMedia = isFullScreenMap && (ringing == null || callOngoing) && preview == null && mapPick == null && !sketching && track != null
+    val showMedia = isFullScreenMap && showMapMedia && (ringing == null || callOngoing) && preview == null && mapPick == null && !sketching && track != null
     // The music beside the turn card when there is room, else above it.
     val sideBySide = mapWidth - 14.dp - 8.dp - SIDE_COLUMN_WIDTH - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
     val bottomRightHeight = BOTTOM_CARD_HEIGHT + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp
@@ -861,7 +862,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obdEnabled = telemetry.isObdEnabled,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
-                    autoZoom = autoZoom, arrowPlacement = arrowPlacement, showSurfaces = showSurfaces, showAltitude = showAltitude, showRoadInfo = showRoadInfo, autoFollowTracks = autoFollow,
+                    autoZoom = autoZoom, arrowPlacement = arrowPlacement, showSurfaces = showSurfaces, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, demoMode = demoMode,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
@@ -883,6 +884,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onShowSurfaces = viewModel::setShowSurfaces,
                     onShowAltitude = viewModel::setShowAltitude,
                     onShowRoadInfo = viewModel::setShowRoadInfo,
+                    onShowMapMedia = viewModel::setShowMapMedia,
                     onAutoFollow = viewModel::setAutoFollow,
                     onOffRoute = viewModel::setOffRouteSettings,
                     onDemoMode = viewModel::setDemoMode,

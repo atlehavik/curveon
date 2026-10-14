@@ -6,6 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-14 — Music on the full-screen map can be switched off
+
+- [ ] Settings → Display → "Musikk på kartet" off: the player no longer shows in the corner of the
+      full-screen map (and the map buttons/turn card use the room); on again: it is back.
+
 ## 2026-10-14 — Road number sign when holding a finger on a road
 
 - [ ] Hold a finger on a numbered road (e.g. an E-, riks- or fylkesveg): the road info in the

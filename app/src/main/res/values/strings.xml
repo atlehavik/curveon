@@ -75,6 +75,8 @@
     <string name="settings_altitude">Altitude</string>
     <string name="settings_altitude_hint">Height above sea level under the speed</string>
     <string name="settings_road_info">Road info</string>
+    <string name="settings_map_media">Music on the map</string>
+    <string name="settings_map_media_hint">The player in the corner of the full-screen map</string>
     <string name="settings_road_info_hint">Road number and priority road sign under the speed, when known</string>
     <string name="altitude_m">%1$d m a.s.l.</string>
     <string name="altitude_ft">%1$d ft</string>

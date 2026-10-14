@@ -507,6 +507,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val showRoadInfo: StateFlow<Boolean> = _showRoadInfo.asStateFlow()
     fun setShowRoadInfo(on: Boolean) { _showRoadInfo.value = on; settings.edit().putBoolean("roadInfo", on).apply() }
 
+    /** Settings → Display: the music player in the corner of the full-screen map. */
+    private val _showMapMedia = MutableStateFlow(settings.getBoolean("mapMedia", true))
+    val showMapMedia: StateFlow<Boolean> = _showMapMedia.asStateFlow()
+    fun setShowMapMedia(on: Boolean) { _showMapMedia.value = on; settings.edit().putBoolean("mapMedia", on).apply() }
+
     /** The road under the rider as the map tiles have it, read now and then by the map. */
     @Volatile private var mapRoadHere: com.curveon.data.road.MapRoad? = null
     fun onRoadHere(road: com.curveon.data.road.MapRoad?) { mapRoadHere = road }
