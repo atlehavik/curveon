@@ -41,6 +41,7 @@ import com.curveon.data.model.GroundPreference
 import com.curveon.data.model.TurnInstruction
 import com.curveon.ui.theme.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.maplibre.android.style.expressions.Expression as E
 import org.maplibre.android.MapLibre
@@ -574,6 +575,7 @@ fun CurveonMapView(
                 onViewportState.value(b.latitudeSouth, b.latitudeNorth, b.longitudeWest, b.longitudeEast, m.cameraPosition.zoom)
             }
             kotlinx.coroutines.delay(800)
+            lifecycleOwner.lifecycle.untilStarted()
         }
     }
     LaunchedEffect(style, gpxPois) {
@@ -901,6 +903,7 @@ fun CurveonMapView(
         val roadLayers = s.layers.map { it.id }.filter { it.startsWith("roads_") }.toTypedArray()
         while (true) {
             kotlinx.coroutines.delay(2_000)
+            lifecycleOwner.lifecycle.untilStarted()
             val p = puck ?: continue
             val r = 10f * mapView.resources.displayMetrics.density
             onRoadHereState.value?.invoke(mapRoad(m.queryRenderedFeatures(RectF(p.x - r, p.y - r, p.x + r, p.y + r), *roadLayers)))
@@ -1378,3 +1381,8 @@ private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Bool
 
 private fun haversine(a: GeoPoint, b: GeoPoint): Double =
     com.curveon.routing.Geo.distance(a.latitude, a.longitude, b.latitude, b.longitude)
+
+/** Waits while the screen is out of sight, so a looping effect doesn't run in the background. */
+internal suspend fun Lifecycle.untilStarted() {
+    currentStateFlow.first { it.isAtLeast(Lifecycle.State.STARTED) }
+}

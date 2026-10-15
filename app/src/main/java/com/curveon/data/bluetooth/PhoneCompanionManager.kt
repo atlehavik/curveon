@@ -271,6 +271,9 @@ class PhoneCompanionManager(
         restart()
     }
 
+    /** Curveon sleeps out of sight: let go of the phone until [restart]. */
+    fun pause() = stopLink()
+
     /** Re-evaluate after permissions were granted or Bluetooth was switched on. */
     fun restart() {
         stopLink()

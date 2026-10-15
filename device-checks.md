@@ -6,6 +6,22 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-15 — Curveon sleeps out of sight; the trip being planned is kept
+
+Out of sight with no trip being navigated (another app, screen off), Curveon now sleeps: no GPS,
+no "Curveon" notification, no phone link or OBD, no lookups. Checked on the X7: 0 CPU ticks in
+30 s hidden (2791 on screen), no GPS request, service gone; all back on return. The trip being
+planned is kept on disk and comes back even if Android ends Curveon (checked on the X7 with a
+force-stop: same stops, start and road style). Installed on the X7 and the Pixel.
+
+- [ ] Pixel: leave Curveon (no trip) for a few hours, then Settings → Battery → Curveon: next to
+      nothing in the background, and no "Curveon" notification while it is hidden.
+- [ ] Navigating with Google Maps (or another app) in front: Curveon keeps navigating, notification
+      shows; once the trip ends (arrived or stopped) the notification goes away.
+- [ ] Plan a trip, go to e-mail, come back: the plan is there. Same after a long time away.
+- [ ] Back on screen: GPS fix, phone link (music, messages) and OBD come back within seconds.
+- [ ] Downloading a map and leaving Curveon: the download finishes.
+
 ## 2026-10-15 — Route preview: zoom-to-trip button and gravel detour menu
 
 - [ ] Plan a trip on the Pixel (upright) while on a numbered road: the zoom-to-trip button sits
@@ -399,17 +415,13 @@ emulator; installed on the X7 (the Pixel wasn't reachable).
 - [ ] Draw with Max 80 km on the X7: about 80 km or less?
 - [ ] Change the max on the sheet, and Draw again.
 
-## 2026-10-10 — Close Curveon from the notification; warning when it idles in the background
+## 2026-10-10 — Close Curveon from the notification
 
-The "GPS and navigation are running" notification now has **Close Curveon**: it closes the screen,
-GPS, the phone link and OBD and ends the app (Android keeps only its small notification reader).
-When Curveon has been out of sight for 10 minutes without a trip being navigated, a second
-notification with a sound says it is still using GPS and battery, with the same button; opening
-Curveon takes it away. Checked in the emulator (with the wait shortened): GPS off after closing. Installed on the X7 and the Pixel.
+The "GPS and navigation are running" notification has **Close Curveon**: it closes the screen,
+GPS, the phone link and OBD and ends the app. (The 10-minute "still running" warning is gone:
+Curveon now sleeps out of sight instead, see 2026-10-15.)
 
-- [ ] On the Pixel: leave Curveon for another app for 10 min (no trip): the warning sounds.
 - [ ] "Close Curveon" from the notification: Curveon is gone; opening it again starts normally.
-- [ ] Navigating with another app in front: no warning.
 
 ## 2026-10-10 — Roundtrip is drawn straight away; loops ride less road twice
 

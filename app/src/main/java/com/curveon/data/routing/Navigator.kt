@@ -241,6 +241,21 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     /** A saved A→B route: its stops stay editable, and it rides its saved line until changed. */
     fun previewPlanned(goal: NavigationGoal.Destination) = preview(goal)
 
+    /** A trip that was being planned when Curveon was last ended, waiting for where the rider is. */
+    private var pendingPreview: Pair<NavigationGoal, Int>? = null
+
+    /** Open the preview of a trip planned before Curveon was ended, as soon as it can be planned. */
+    fun restorePreview(goal: NavigationGoal, selected: Int) {
+        val ownStart = when (goal) {
+            is NavigationGoal.Destination -> goal.start != null
+            is NavigationGoal.Roundtrip -> goal.start != null
+            is NavigationGoal.Adventure -> goal.start != null
+            is NavigationGoal.Track -> false
+        }
+        if (lastPosition == null && !ownStart) pendingPreview = goal to selected
+        else preview(goal, keepSelection = selected)
+    }
+
     /** Earlier versions of the previewed trip, newest last, for Undo. */
     private val previewHistory = ArrayList<NavigationGoal.Destination>()
 
@@ -456,6 +471,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun cancelPreview() {
+        pendingPreview = null
         previewJob?.cancel()
         _state.value = _state.value.copy(preview = null, status = RoutingStatus.Idle)
     }
@@ -492,6 +508,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     private fun preview(goal: NavigationGoal, keepSelection: Int? = null, keepHistory: Boolean = false) {
+        pendingPreview = null
         if (!keepHistory) previewHistory.clear()
         val planned = goal as? NavigationGoal.Destination
         // A saved line is joined from where the rider is, like a track.
@@ -632,6 +649,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     // ------------------------------------------------------------------ navigation
 
     fun stop() {
+        pendingPreview = null
         calcJob?.cancel()
         previewJob?.cancel()
         arrivalJob?.cancel()
@@ -685,6 +703,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             headingAnchor = position
         }
         if (lastHeading == null && headingDeg != null) lastHeading = headingDeg
+        pendingPreview?.let { (goal, selected) -> if (tracker == null) preview(goal, keepSelection = selected) }
         val t = tracker ?: return
         val progress = t.update(position, accuracyMeters)
         var current = _state.value.copy(progress = progress)

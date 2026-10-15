@@ -133,10 +133,12 @@ fun MapSpeedCluster(
 @Composable
 fun Clock(fontSize: TextUnit, modifier: Modifier = Modifier) {
     var now by remember { mutableStateOf(Date()) }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(Unit) {
         while (true) {
             now = Date()
             delay(10_000)
+            lifecycle.untilStarted()
         }
     }
     Text(

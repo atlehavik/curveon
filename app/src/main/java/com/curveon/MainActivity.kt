@@ -63,14 +63,12 @@ class MainActivity : ComponentActivity() {
                 dashboardViewModel.phoneCompanion.restart() // Bluetooth permission may just have been granted
                 if (granted[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
                     dashboardViewModel.startGps()
-                    RideService.start(this@MainActivity)
                 }
             }
 
             LaunchedEffect(Unit) {
                 if (hasLocationPermission()) {
                     dashboardViewModel.startGps()
-                    RideService.start(this@MainActivity)
                 } else permissionLauncher.launch(
                     arrayOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
@@ -107,13 +105,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        RideService.shown(this)
+        dashboardViewModel.setOnScreen(true)
     }
 
-    // Out of sight: after a while without a trip, the service warns that GPS is still on.
+    // Out of sight with no trip to navigate: Curveon sleeps until it is back on screen.
     override fun onStop() {
         super.onStop()
-        if (!isChangingConfigurations) RideService.hidden(this, dashboardViewModel.isNavigating.value)
+        if (!isChangingConfigurations) dashboardViewModel.setOnScreen(false)
     }
 
     override fun onResume() {

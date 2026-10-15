@@ -483,6 +483,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val tripTracker = TripTracker()
     private var gpsJob: Job? = null
 
+    /**
+     * Out of sight with no trip being navigated (and no map downloading), Curveon sleeps: no GPS,
+     * phone link, OBD or lookups, so it uses no battery until it is on screen again.
+     */
+    private val awake = MutableStateFlow(true)
+    private val onScreen = MutableStateFlow(true)
+
+    /** The trip being planned, kept on disk so it survives Android ending Curveon while it sleeps. */
+    private val planDraft = com.curveon.data.routing.PlanDraft(application)
+
+    /** Waits here while Curveon sleeps; loops call it so they don't run in the background. */
+    private suspend fun untilAwake() { awake.first { it } }
+
     // Until the first fix arrives we show Oslo rather than a random spot in the sea.
     private val _currentLocation = MutableStateFlow(DEFAULT_LOCATION)
     /** The latest position with what the map needs to keep the rider moving smoothly until the next fix. */
@@ -607,6 +620,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun watchCurrentRoad() = viewModelScope.launch {
         while (true) {
             delay(2_000)
+            untilAwake()
             val t = _telemetry.value
             if (!_showRoadInfo.value || !t.hasGpsFix) { _currentRoad.value = null; continue }
             // On the route: where it is drawn and the route's direction; else the GPS and its heading
@@ -733,13 +747,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         updateMapDark()
         startDeadReckoning()
         watchCurrentRoad()
-        viewModelScope.launch { while (true) { delay(60_000); updateMapDark() } }
+        watchSleep()
+        restorePlan()
+        viewModelScope.launch { while (true) { delay(60_000); untilAwake(); updateMapDark() } }
         // A new version on GitHub: looked for soon after start, again every half hour until the
         // server has answered (often offline), then once a day. Developer builds are signed with
         // another key and can't take the release, so they only look when asked (Settings → Help).
         if (!com.curveon.BuildConfig.DEV) viewModelScope.launch {
             delay(15_000)
-            while (true) delay(if (checkNow(quiet = true)) 24 * 3_600_000L else 30 * 60_000L)
+            while (true) { untilAwake(); delay(if (checkNow(quiet = true)) 24 * 3_600_000L else 30 * 60_000L) }
         }
         viewModelScope.launch {
             AppUpdates.results.collect { r ->
@@ -769,6 +785,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             var lastIds = emptySet<String>()
             var lastCheck = 0L
             while (true) {
+                untilAwake()
                 val here = if (_telemetry.value.hasGpsFix) _currentLocation.value.let { mapCatalog.areaAt(it.latitude, it.longitude)?.id } else null
                 val ids = offlineMaps.installedMaps().map { it.nameWithoutExtension }.toSet() + listOfNotNull(here)
                 val now = System.currentTimeMillis()
@@ -786,6 +803,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             while (true) {
                 delay(4_000)
+                untilAwake()
                 val t = _telemetry.value
                 if (navigator.state.value.isNavigating || !t.hasGpsFix) continue
                 val here = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
@@ -829,8 +847,53 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /** Called by the activity once location permission is granted. Safe to call repeatedly. */
+    /** Curveon is on screen ([shown]) or out of sight: see [awake]. */
+    fun setOnScreen(shown: Boolean) { onScreen.value = shown }
+
+    private fun watchSleep() = viewModelScope.launch {
+        combine(onScreen, isNavigating, _mapDownload) { shown, navigating, download ->
+            shown || navigating || download is com.curveon.data.map.MapDownloadState.Running
+        }.distinctUntilChanged().drop(1).collect { if (it) wake() else sleep() }
+    }
+
+    private fun sleep() {
+        NavTrace.event("asleep")
+        awake.value = false
+        gpsJob?.cancel()
+        gpsJob = null
+        leanSensor.stop()
+        phoneCompanion.pause()
+        obd.use(null)
+        saveRide(finish = false)
+        NavTrace.flush()
+        com.curveon.RideService.stop(getApplication())
+    }
+
+    private fun wake() {
+        NavTrace.event("awake")
+        awake.value = true
+        if (androidx.core.content.ContextCompat.checkSelfPermission(getApplication(), android.Manifest.permission.ACCESS_FINE_LOCATION) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED) startGps()
+        phoneCompanion.restart()
+        connectObd()
+    }
+
+    // ---------------------------------------------------------------- the trip being planned
+
+    /** A trip being planned when Curveon was last ended comes back; the one on screen is kept on disk. */
+    private fun restorePlan() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { planDraft.load() }?.let { (goal, selected) -> navigator.restorePreview(goal, selected) }
+            navigator.state.map { s -> s.preview?.let { it.goal to it.selected } }
+                .distinctUntilChanged().drop(1)
+                .collect { draft -> withContext(Dispatchers.IO) { planDraft.save(draft) } }
+        }
+    }
+
+    /** GPS, with the service that keeps it going behind another app; not while Curveon sleeps. */
     fun startGps() {
-        if (gpsJob?.isActive == true) return
+        if (gpsJob?.isActive == true || !awake.value) return
+        com.curveon.RideService.start(getApplication())
         locationSource.lastKnown()?.let {
             _currentLocation.value = GeoPoint(it.latitude, it.longitude, it.altitudeMeters ?: 0.0)
             updateMapDark()
@@ -857,6 +920,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         var anchorSpeedMps = 0.0
         while (true) {
             delay(1000)
+            untilAwake()
             val now = System.currentTimeMillis()
             val nav = navigator.state.value
             val route = nav.route

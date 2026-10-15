@@ -535,9 +535,6 @@
     <string name="map_reading_index_parts">Reading map index (%1$d of %2$d parts)</string>
     <string name="map_downloading">Downloading map – %1$.0f of %2$.0f MB</string>
     <string name="quit_app">Close Curveon</string>
-    <string name="background_channel">Running in the background</string>
-    <string name="background_title">Curveon is still running</string>
-    <string name="background_text">It has used GPS and battery for %1$d minutes without being used. Close it if you don\'t need it.</string>
     <string name="service_channel">Riding</string>
     <string name="service_running">GPS and navigation are running</string>
     <string name="service_navigating">Navigating</string>
