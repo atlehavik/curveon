@@ -198,7 +198,11 @@ fun SurfaceChip(surface: SurfacePreference, onSurface: (SurfacePreference) -> Un
 /** How far off the ordinary route gravel may take the trip; null = as far as it likes. */
 val GRAVEL_REACH_KM = listOf(1, 3, 5, 10, 20, null)
 
-/** "Detour up to 5 km" / "Any detour" (to find gravel, beside the Gravel chip); tap for the list. */
+/**
+ * "Detour up to 5 km" / "Gravel when worth it" (beside the Gravel chip); tap for the list. Without a
+ * limit the profile alone decides: gravel costs about half what tarmac does, so a gravel way up to
+ * about twice as long wins, and no further.
+ */
 @Composable
 fun GravelReachChip(reachKm: Int?, onPick: (Int?) -> Unit) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -214,6 +218,7 @@ fun GravelReachChip(reachKm: Int?, onPick: (Int?) -> Unit) {
             GRAVEL_REACH_KM.forEach { km ->
                 val item = if (km == null) stringResource(R.string.gravel_reach_item_any) else stringResource(R.string.gravel_reach_item_km, km)
                 androidx.compose.material3.DropdownMenuItem(
+                    modifier = Modifier.widthIn(max = 280.dp),
                     text = { Text(item, color = if (km == reachKm) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
                     onClick = { open = false; onPick(km) }
                 )

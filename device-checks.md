@@ -10,8 +10,8 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 - [ ] Plan a trip on the Pixel (upright) while on a numbered road: the zoom-to-trip button sits
       under the road number card, not behind it.
-- [ ] Pick Grus: the chip beside it reads "Omvei inntil 5 km" / "Fri omvei"; its menu starts with
-      "Hvor langt fra vanlig rute for å finne grus?" and lists "Inntil 1 km" … "Så langt det trengs".
+- [ ] Pick Grus: the chip beside it reads "Omvei inntil 5 km" / "Grus når det lønner seg"; its menu starts with
+      "Hvor langt fra vanlig rute for å finne grus?" and lists "Inntil 1 km" … "Ingen fast grense: grus når den er verdt omveien (inntil ca. dobbelt så langt)" (fits on two lines).
 
 ## 2026-10-15 — Settings: choices as drop-down buttons on the right
 
