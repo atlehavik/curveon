@@ -581,7 +581,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                         surfaces = if (selected) r.points.map { p -> if (p.highway == "track") SURFACE_TRACK else if (p.unpaved) SURFACE_GRAVEL else SURFACE_PAVED } else null)
                 }
             }.orEmpty(),
-            markers = if (editor != null) emptyList() else markers,
+            markers = if (editor != null) emptyList()
+                // Starting point by point somewhere else: its start shows until the first leg is planned.
+                else if (mapPick != null && preview == null) markers + listOfNotNull(planStart?.let { (p, _) ->
+                    com.curveon.ui.components.MapPin(p, com.curveon.ui.components.PinKind.START, "A") })
+                else markers,
             editor = editor,
             // The route starts on the nearest road the map joins up: show the way to it.
             approachTo = if (preview != null) preview?.selectedRoute?.points?.firstOrNull()?.takeIf { planGoal?.start == null }?.let { GeoPoint(it.lat, it.lon) }
@@ -1034,10 +1038,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     pendingPlace = null
                 },
                 onStartHere = if (planning) ({ viewModel.setPreviewStart(point, name); pendingPlace = null }) else null,
-                // The trip's first point, then on to the map to tap the next ones (as "Pick on map" from search).
-                onPointByPoint = if (isNavigating || planning) null else ({
+                // On to the map to tap the next points (as "Pick on map" from search): either from here to
+                // this place first, or with the trip starting at this place (nothing routed until the next tap).
+                onPointByPoint = if (isNavigating || planning) null else ({ fromHere ->
                     pendingPlace = null
-                    viewModel.planPointByPoint(point, name)
+                    if (fromHere) viewModel.planPointByPoint(point, name) else planStart = point to name
                     startMapPick(SearchPurpose.DESTINATION)
                 }),
                 onFavorite = { n, home ->

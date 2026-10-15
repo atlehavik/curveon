@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-15 — Point by point: start where the finger was held, or from my position
+
+A finger held on the map → Point by point now asks first: **Start here** (the trip starts at that
+place; nothing is routed from where you are, e.g. planning a trip abroad from home) or **From my
+position** (as before). Checked on the X7: Start here put A on the held place, the next tap
+planned from there ("From Søvoll").
+
+- [ ] Pixel: hold a finger far away (another country), Point by point → Start here, tap a few
+      points: no routing from where you are, A stays on the first place.
+
 ## 2026-10-15 — Open GPX files from other apps; tidy waypoint cards; track name on a held road
 
 - Curveon is offered for GPX files opened or shared from other apps. Checked on the X7: a GPX in

@@ -374,6 +374,10 @@
     <string name="add_stop">Legg til stopp</string>
     <string name="go_here">Kjør hit</string>
     <string name="plan_point_by_point">Punkt for punkt</string>
+    <string name="point_by_point_start_here">Start her</string>
+    <string name="point_by_point_start_here_hint">Turen starter på dette stedet</string>
+    <string name="point_by_point_from_me">Fra min posisjon</string>
+    <string name="point_by_point_from_me_hint">Turen starter der du er nå</string>
 
     <!-- Roundtrip and route preview -->
     <string name="nav_no_area_roundtrip">Fant ingen rundtur i det området. Prøv å tegne det større, eller rundt flere veier.</string>

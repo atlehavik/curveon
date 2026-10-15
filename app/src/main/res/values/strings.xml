@@ -375,6 +375,10 @@
     <string name="add_stop">Add stop</string>
     <string name="go_here">Go here</string>
     <string name="plan_point_by_point">Point by point</string>
+    <string name="point_by_point_start_here">Start here</string>
+    <string name="point_by_point_start_here_hint">This place is where the trip starts</string>
+    <string name="point_by_point_from_me">From my position</string>
+    <string name="point_by_point_from_me_hint">The trip starts where you are now</string>
 
     <!-- Roundtrip and route preview -->
     <string name="nav_no_area_roundtrip">Could not find a roundtrip in that area. Try drawing it bigger, or round more roads.</string>
