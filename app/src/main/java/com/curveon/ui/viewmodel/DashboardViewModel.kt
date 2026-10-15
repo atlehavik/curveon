@@ -244,7 +244,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _mapVersion.value++
     }
 
-    /** Test: how many seconds ahead of the GPS the rider arrow sits ([RiderMotion.LEAD_S]; negative = behind). */
+    /** How many seconds ahead of the GPS the rider arrow sits ([RiderMotion.LEAD_S]; negative = behind). */
     private val _arrowLead = MutableStateFlow(
         settings.getFloat("arrowLeadS", RiderMotion.DEFAULT_LEAD_S.toFloat()).toDouble()
             .coerceIn(RiderMotion.MIN_LEAD_S, RiderMotion.MAX_LEAD_S)

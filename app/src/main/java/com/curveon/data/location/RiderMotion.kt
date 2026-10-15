@@ -108,11 +108,12 @@ class RiderMotion {
 
     companion object {
         /**
-         * The receiver's own delay between measuring and reporting, on top of the fix's age. A test:
-         * the rider sets it in Settings → Navigation, [MIN_LEAD_S]…[MAX_LEAD_S] in [LEAD_STEP_S] steps.
+         * The receiver's own delay between measuring and reporting, on top of the fix's age. The rider
+         * can tune it in Settings → Navigation, [MIN_LEAD_S]…[MAX_LEAD_S] in [LEAD_STEP_S] steps.
+         * [DEFAULT_LEAD_S] is what looked right riding with the Pixel and the X7.
          */
         var LEAD_S = DEFAULT_LEAD_S
-        const val DEFAULT_LEAD_S = 0.25
+        const val DEFAULT_LEAD_S = 1.75
         const val MAX_LEAD_S = 3.0
         const val MIN_LEAD_S = -3.0
         const val LEAD_STEP_S = 0.25

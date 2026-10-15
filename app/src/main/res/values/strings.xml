@@ -93,8 +93,8 @@
     <string name="surface_soft">Dirt, rough or unknown</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom in when slow, out on fast roads</string>
-    <string name="settings_arrow">Rider arrow (test)</string>
-    <string name="settings_arrow_hint">Seconds ahead of the GPS: − moves the arrow back, + forward (standard +0.25)</string>
+    <string name="settings_arrow">Rider arrow</string>
+    <string name="settings_arrow_hint">Seconds ahead of the GPS, to make up for its delay: − moves the arrow back, + forward (standard +1.75)</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Move the arrow back</string>
     <string name="settings_arrow_ahead">Move the arrow forward</string>

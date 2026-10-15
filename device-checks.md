@@ -95,19 +95,14 @@ you. Installed on the X7 and the Pixel:
 - [ ] At home, Rides → today's Svortland loop → "Ride again": the preview should be the whole loop
   (~32 km), not a few km. Try "Ride the other way" too.
 
-## 2026-10-15 — Rider arrow: set the lead by hand (test)
+## 2026-10-15 — Rider arrow: +1.75 s ahead of the GPS by default
 
-Standard / 0 s / Tip were too close to tell apart (0.25 s is ~5 m at 80 km/h). Settings → Navigation
-→ "Rider arrow (test)" is now − / + in 0.25 s steps from −3 s (behind the GPS) to +3 s (ahead);
-standard +0.25. Every change is written to the nav trace (`E,…,arrow lead X s`).
+Testing on the road, +1.75 s put the arrow where the bike is (+0.25 s left it behind at junctions).
+That is now the standard, and the setting stays (Settings → Navigation → "Rider arrow", no longer
+"test"). A value already picked by hand is kept; only devices still on the old standard move.
 
-- [ ] First, standing still at a stop line or a junction you know: is the arrow on the spot? (The
-      lead does nothing below ~5 km/h, so if it is off here it is the GPS or the map, not the lead.)
-- [ ] Riding at a steady speed (60–80 km/h), step − and + until the arrow is where you are when
-      you pass something you can see on the map (a junction, a bridge). Note the value, and
-      whether it is the same at 40 and at 80 km/h (if not, it isn't a time lag).
-- [ ] Afterwards pull the trace from the device that was used:
-      `adb pull /sdcard/Android/data/com.curveon.tablet/files/navtrace/`
+- [ ] At 40 and at 80 km/h, passing a junction: the arrow passes it with you.
+- [ ] Pixel: still to be installed (it was off the wifi).
 
 ## 2026-10-14 — Road number signs and priority roads
 
