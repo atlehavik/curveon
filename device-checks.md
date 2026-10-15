@@ -6,6 +6,24 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-15 — Open GPX files from other apps; tidy waypoint cards; track name on a held road
+
+- Curveon is offered for GPX files opened or shared from other apps. Checked on the X7: a GPX in
+  Downloads opened with Curveon (Android calls it `application/octet-stream`) was imported and
+  GPX & rides opened with it at the top. Curveon may now also be offered for other binary or XML
+  files; those just say there is no track in them.
+- Waypoint cards on a phone upright: the text goes above the facts instead of beside them (it got
+  almost no width there and grew very tall), and empty lines in the text are dropped.
+- A group's colour choices: "each track its own colour" is always the many-coloured ring (checked
+  on the X7 on an all-blue group).
+- A finger held on a GPX track: the card names the track (with its colour) under the road.
+
+- [ ] Pixel: open a .gpx from Files, Gmail and Drive → "Open with Curveon" → imported, and GPX &
+      rides shows it. Share a .gpx to Curveon too.
+- [ ] Pixel upright: tap Reinheimen Lodge (TET N-13 Lom-Grotli): the card is only as tall as its
+      text, with the text above the facts.
+- [ ] Hold a finger on a road under a shown GPX track: the card names the track.
+
 ## 2026-10-15 — Halo round the rider arrow: how sure the GPS is
 
 A see-through disc under the arrow, as wide as the GPS's accuracy: normally a small ring just round

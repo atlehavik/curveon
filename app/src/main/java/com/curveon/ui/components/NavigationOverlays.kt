@@ -165,6 +165,8 @@ fun PlaceActionDialog(
     name: String,
     /** The road there (held on the map): shown under the name; null while looked up, or none. */
     road: com.curveon.data.routing.RoadInfo? = null,
+    /** GPX tracks drawn where the finger was held: name and colour ("#RRGGBB"). */
+    tracks: List<Pair<String, String>> = emptyList(),
     /** Null when there is no trip to add it to. */
     onAddStop: (() -> Unit)?,
     onGoHere: () -> Unit,
@@ -191,6 +193,12 @@ fun PlaceActionDialog(
         ) {
             Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
             road?.let { RoadInfoRow(it) }
+            tracks.forEach { (track, color) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.testTag("place_track")) {
+                    Icon(Icons.Default.Route, null, tint = runCatching { Color(android.graphics.Color.parseColor(color)) }.getOrDefault(TextSecondary), modifier = Modifier.size(22.dp))
+                    Text(track, color = TextSecondary, fontSize = 15.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                }
+            }
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (onAddStop != null) PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black,
                     Modifier.testTag("add_stop_btn"), onAddStop)

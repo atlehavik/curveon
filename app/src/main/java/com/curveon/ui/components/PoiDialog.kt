@@ -73,36 +73,40 @@ fun PoiDialog(poi: GpxPoi, from: GeoPoint?, onGo: () -> Unit, onCall: ((String) 
             }
             Text(name, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
 
-            // Landscape: the text on the left, the facts (address, phone, …) beside it so they
-            // stay in view however long the description is.
-            val hasText = (poi.description.isNotBlank() && poi.description != poi.name) || (poi.comment.isNotBlank() && poi.comment != poi.name)
-            Row(Modifier.weight(1f, fill = false), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                if (hasText) Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                    SelectionContainer { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (poi.description.isNotBlank() && poi.description != poi.name) {
-                            Text(linkified(poi.description), color = TextPrimary, fontSize = 15.sp, lineHeight = 21.sp)
-                        }
-                        if (poi.comment.isNotBlank() && poi.comment != poi.name) {
-                            Text(linkified(poi.comment), color = TextSecondary, fontSize = 14.sp, lineHeight = 20.sp)
-                        }
-                    } }
+            // Wide screens: the text on the left, the facts (address, phone, …) beside it so they
+            // stay in view however long the description is. Narrow (a phone upright): one under the
+            // other, all scrolling together; side by side the text would get almost no width.
+            val description = tidy(poi.description).takeIf { it.isNotEmpty() && it != poi.name }
+            val comment = tidy(poi.comment).takeIf { it.isNotEmpty() && it != poi.name && it != description }
+            val texts: @Composable () -> Unit = {
+                SelectionContainer { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    description?.let { Text(linkified(it), color = TextPrimary, fontSize = 15.sp, lineHeight = 21.sp) }
+                    comment?.let { Text(linkified(it), color = TextSecondary, fontSize = 14.sp, lineHeight = 20.sp) }
+                } }
+            }
+            val facts: @Composable () -> Unit = {
+                if (poi.address.isNotEmpty()) Fact(Icons.Default.Home, poi.address.joinToString("\n"))
+                if (poi.phone.isNotBlank()) Fact(Icons.Default.Phone, poi.phone)
+                // Links that the description already shows in full aren't repeated.
+                poi.links.filter { (href, _) -> href !in poi.description && href !in poi.comment }.forEach { (href, text) ->
+                    Fact(Icons.Default.Link, linkified(href, text.ifBlank { href.substringAfter("://").substringBefore('?').trimEnd('/') }))
                 }
-                Column(
-                    (if (hasText) Modifier.width(300.dp) else Modifier.weight(1f)).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (poi.address.isNotEmpty()) Fact(Icons.Default.Home, poi.address.joinToString("\n"))
-                    if (poi.phone.isNotBlank()) Fact(Icons.Default.Phone, poi.phone)
-                    // Links that the description already shows in full aren't repeated.
-                    poi.links.filter { (href, _) -> href !in poi.description && href !in poi.comment }.forEach { (href, text) ->
-                        Fact(Icons.Default.Link, linkified(href, text.ifBlank { href.substringAfter("://").substringBefore('?').trimEnd('/') }))
-                    }
-                    poi.elevation?.let { Fact(Icons.Default.Terrain, stringResource(R.string.poi_elevation, it)) }
-                    dateText(poi.time)?.let { Fact(Icons.Default.Event, stringResource(R.string.poi_added, it)) }
-                    if (poi.categories.isNotEmpty()) Fact(Icons.Default.Sell, poi.categories.joinToString(", "))
-                    if (poi.trackName.isNotBlank()) Fact(Icons.Default.Route, poi.trackName)
-                    Fact(Icons.Default.Place, String.format(Locale.ROOT, "%.5f, %.5f", poi.lat, poi.lon))
-                }
+                poi.elevation?.let { Fact(Icons.Default.Terrain, stringResource(R.string.poi_elevation, it)) }
+                dateText(poi.time)?.let { Fact(Icons.Default.Event, stringResource(R.string.poi_added, it)) }
+                if (poi.categories.isNotEmpty()) Fact(Icons.Default.Sell, poi.categories.joinToString(", "))
+                if (poi.trackName.isNotBlank()) Fact(Icons.Default.Route, poi.trackName)
+                Fact(Icons.Default.Place, String.format(Locale.ROOT, "%.5f, %.5f", poi.lat, poi.lon))
+            }
+            val hasText = description != null || comment != null
+            if (isNarrowScreen() || !hasText) Column(
+                Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (hasText) texts()
+                facts()
+            } else Row(Modifier.weight(1f, fill = false), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) { texts() }
+                Column(Modifier.width(300.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) { facts() }
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
@@ -129,6 +133,11 @@ private fun Fact(icon: ImageVector, text: AnnotatedString) {
         SelectionContainer { Text(text, color = TextSecondary, fontSize = 14.sp, lineHeight = 20.sp) }
     }
 }
+
+/** Text from a GPX file without the empty lines and spaces some files are padded with. */
+private fun tidy(text: String): String =
+    text.replace("\r", "").lines().joinToString("\n") { it.trimEnd() }
+        .replace(Regex("\n{3,}"), "\n\n").trim()
 
 private val URL = Regex("""(https?://|www\.)[^\s<>"]+""")
 

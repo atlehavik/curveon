@@ -207,6 +207,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var pendingPlace by remember { mutableStateOf<Pair<GeoPoint, String>?>(null) }
     /** The road at the place held on the map (name, surface, speed limit), once looked up. */
     var roadInfo by remember { mutableStateOf<com.curveon.data.routing.RoadInfo?>(null) }
+    /** The GPX tracks under a finger held on the map (name, colour), for the place there. */
+    var pressedTracks by remember { mutableStateOf<Pair<GeoPoint, List<Pair<String, String>>>?>(null) }
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
     LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
@@ -592,8 +594,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onRoadName = viewModel::onRoadName,
             onRoadHere = if (showRoadInfo) viewModel::onRoadHere else null,
             // Held on the map: go there or keep it as a favourite (riding or planning: also a stop or the start).
-            onLongPress = { p, roadName, mapRoad ->
+            onLongPress = { p, roadName, mapRoad, tracks ->
                 roadInfo = null
+                pressedTracks = p to tracks
                 scope.launch { pendingPlace = p to viewModel.describePoint(p) }
                 scope.launch { val r = viewModel.roadAt(p, roadName, mapRoad); if (pendingPlace?.first == p || pendingPlace == null) roadInfo = r }
             },
@@ -702,6 +705,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             RailPanel.PHONE -> phoneTab = PhoneTab.FAVORITES
             RailPanel.SETTINGS -> { settingsOnHelp = appUpdate is com.curveon.data.update.UpdateState.Available; showSettings = true }
         }
+    }
+    // A GPX file opened from another app: straight to its list.
+    val showGpxPanel by viewModel.showGpxPanel.collectAsStateWithLifecycle()
+    LaunchedEffect(showGpxPanel) {
+        if (!showGpxPanel) return@LaunchedEffect
+        if (activePanel != RailPanel.GPX) pressRail(RailPanel.GPX)
+        tracksTab = TracksTab.GPX
+        viewModel.gpxPanelShown()
     }
     val rail: @Composable () -> Unit = {
         Rail(
@@ -1016,6 +1027,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             PlaceActionDialog(
                 name = name,
                 road = roadInfo,
+                tracks = pressedTracks?.takeIf { it.first == point }?.second.orEmpty(),
                 onAddStop = if (isNavigating || planning) ({ viewModel.addStop(point, name); pendingPlace = null }) else null,
                 onGoHere = {
                     if (planning) viewModel.setPreviewDestination(point, name) else viewModel.previewDestination(point, name)

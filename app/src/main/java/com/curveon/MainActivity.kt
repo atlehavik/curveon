@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         current = java.lang.ref.WeakReference(this)
+        if (savedInstanceState == null) openGpxFrom(intent)
 
         // The language may just have changed (the screen restarts then): redo texts made earlier.
         dashboardViewModel.refreshTexts()
@@ -101,6 +102,22 @@ class MainActivity : ComponentActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        openGpxFrom(intent)
+    }
+
+    /** A GPX file opened or shared from another app: import it and show it in GPX & rides. */
+    private fun openGpxFrom(intent: android.content.Intent?) {
+        val uri = when (intent?.action) {
+            android.content.Intent.ACTION_VIEW -> intent.data
+            android.content.Intent.ACTION_SEND ->
+                androidx.core.content.IntentCompat.getParcelableExtra(intent, android.content.Intent.EXTRA_STREAM, android.net.Uri::class.java)
+            else -> null
+        } ?: return
+        dashboardViewModel.openGpx(uri)
     }
 
     override fun onStart() {

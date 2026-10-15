@@ -1616,6 +1616,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    private val _showGpxPanel = MutableStateFlow(false)
+    /** A GPX file was opened from another app: show GPX & rides (the screen resets it once open). */
+    val showGpxPanel: StateFlow<Boolean> = _showGpxPanel.asStateFlow()
+    fun gpxPanelShown() { _showGpxPanel.value = false }
+
+    /** A GPX file opened or shared from another app: imported, and GPX & rides shows it. */
+    fun openGpx(uri: Uri) {
+        _gpxMessage.value = null
+        importGpx(uri)
+        _showGpxPanel.value = true
+    }
+
     // Declared after gpxImporter and _gpxMessage so they exist when this runs.
     init {
         importGpxInbox(); connectObd()

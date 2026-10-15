@@ -161,8 +161,11 @@ fun CurveonMapView(
     /** Test: the arrow's tip, not its middle, where the rider is. */
     /** Changes when the offline map file was downloaded/replaced/deleted: reload the style. */
     mapVersion: Int = 0,
-    /** A finger held on the map: the place, the road there as the map labels it, and its number, class and name (null if none). */
-    onLongPress: (GeoPoint, String?, com.curveon.data.road.MapRoad?) -> Unit = { _, _, _ -> },
+    /**
+     * A finger held on the map: the place, the road there as the map labels it, its number, class
+     * and name (null if none), and the GPX tracks shown there (name and colour, "#RRGGBB").
+     */
+    onLongPress: (GeoPoint, String?, com.curveon.data.road.MapRoad?, List<Pair<String, String>>) -> Unit = { _, _, _, _ -> },
     /** Picking a place on the map: a tap goes here instead of opening waypoints. */
     onTap: ((GeoPoint) -> Unit)? = null,
     /** The place picked so far, shown as a pin. */
@@ -332,7 +335,13 @@ fun CurveonMapView(
                             val roadLayers = m.style?.layers?.map { it.id }?.filter { it.startsWith("roads_") }.orEmpty().toTypedArray()
                             m.queryRenderedFeatures(RectF(pt.x - 20, pt.y - 20, pt.x + 20, pt.y + 20), *roadLayers)
                         }.getOrNull().orEmpty()
-                        onLongPressState.value(at, roadLabel(roads), mapRoad(roads))
+                        // And the GPX tracks drawn there, so the card can say which one this is.
+                        val tracks = if (!canQuery) emptyList() else runCatching {
+                            m.queryRenderedFeatures(RectF(pt.x - 20, pt.y - 20, pt.x + 20, pt.y + 20), "$GPX-line")
+                                .mapNotNull { f -> f.getStringProperty("name")?.let { it to (f.getStringProperty("color") ?: "#FFFFFF") } }
+                                .distinctBy { it.first }.take(3)
+                        }.getOrNull().orEmpty()
+                        onLongPressState.value(at, roadLabel(roads), mapRoad(roads), tracks)
                     }
                 }
                 true
@@ -555,6 +564,7 @@ fun CurveonMapView(
         s.getSourceAs<GeoJsonSource>(GPX)?.setGeoJson(FeatureCollection.fromFeatures(gpxTracks.filter { it.points.size >= 2 }.map { t ->
             Feature.fromGeometry(LineString.fromLngLats(t.points.map { Point.fromLngLat(it.longitude, it.latitude) })).also {
                 it.addStringProperty("color", hex(t.color))
+                it.addStringProperty("name", t.name)
             }
         }))
     }

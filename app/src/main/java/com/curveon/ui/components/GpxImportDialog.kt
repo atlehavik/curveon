@@ -297,7 +297,7 @@ private fun GroupRow(
             }
             RowMenu(menu)
         }
-        if (paletteOpen) Palette(selected = if (g.sameColor) GpxGroups.groupColor(g) else null, onColor = onColor, ownColors = colors)
+        if (paletteOpen) Palette(selected = if (g.sameColor) GpxGroups.groupColor(g) else null, onColor = onColor, ownColors = true)
     }
 }
 
@@ -355,19 +355,22 @@ private fun TrackRow(
     }
 }
 
-/** The colour choices; with [ownColors] (a group) the first choice is "each track its own colour". */
+/**
+ * The colour choices; with [ownColors] (a group) the first choice is "each track its own colour",
+ * always drawn in many colours so it reads as that even while the group is all one colour.
+ */
 @Composable
-private fun Palette(selected: Int?, onColor: (Int?) -> Unit, ownColors: List<Int>? = null) {
+private fun Palette(selected: Int?, onColor: (Int?) -> Unit, ownColors: Boolean = false) {
     Row(
         Modifier.padding(start = 50.dp, bottom = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically
     ) {
-        if (ownColors != null) {
+        if (ownColors) {
             Box(
                 Modifier.size(32.dp).clip(CircleShape)
                     .border(if (selected == null) 3.dp else 1.dp, Color.White, CircleShape).clickable { onColor(null) },
                 contentAlignment = Alignment.Center
-            ) { ColorSwatch(ownColors, 24.dp) }
+            ) { ColorSwatch(GpxOverlay.PALETTE, 24.dp) }
         }
         GpxOverlay.PALETTE.forEach { c ->
             Box(
