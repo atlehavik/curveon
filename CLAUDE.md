@@ -30,6 +30,12 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   `adb -s <ip:port> tcpip 5555` and use `<ip>:5555` from then on: that survives wifi drops until a
   reboot. With several devices, pick the X7 with `-s <ip:port>` / `ANDROID_SERIAL`.
 - Phone: `./gradlew :companion:installDebug` (package `com.curveon.companion`).
+- **Curveon on the Pixel is release-signed** (since 2026-10-15), so it can also update itself from
+  GitHub releases: install it with `./gradlew :app:assembleRelease` (signing env from
+  `~/.curveon-signing/signing.env`) and `adb install -r app/build/outputs/apk/release/app-release.apk`,
+  never `installDebug` (Android refuses a debug build over it). Release builds have no DEV aids
+  (demo ride) and no `run-as`. The Pixel is found on wifi like the X7 (`adb connect <ip>:5555`,
+  last seen at 192.168.86.199); the X7 stays on debug builds.
 - Tests: `./gradlew test`. `:routing:test` routes over real Norway data.
 - Large data (pmtiles, BRouter segments, search index, OSM extracts) lives outside the repo in
   `~/develop/Curveon-data`; on the tablet it goes under `Android/data/com.curveon.tablet/files/`.
