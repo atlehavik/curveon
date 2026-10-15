@@ -99,27 +99,6 @@ fun CrossedIcon(crossed: Boolean, modifier: Modifier = Modifier, icon: @Composab
     ) { icon() }
 }
 
-/** A row of mutually exclusive choices (km/h | mph, Auto | Day | Night, …). */
-@Composable
-fun <T> Segmented(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier.clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant).padding(3.dp),
-        horizontalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        options.forEach { o ->
-            val on = o == selected
-            Box(
-                Modifier.clip(RoundedCornerShape(10.dp)).background(if (on) ElectricCyan else androidx.compose.ui.graphics.Color.Transparent)
-                    .clickable { onSelect(o) }.padding(horizontal = 16.dp, vertical = 10.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(label(o), color = if (on) androidx.compose.ui.graphics.Color(0xFF00363D) else TextPrimary,
-                    fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
-
 /** The lengths a drawn loop can be held to; null = the way round the whole area. */
 val LOOP_MAX_KM = listOf(null, 50, 80, 100, 150, 200, 300)
 

@@ -59,8 +59,11 @@
     <string name="settings_navigation">Navigasjon</string>
     <string name="settings_maps_data">Kart og data</string>
     <string name="settings_language">Språk</string>
+    <string name="settings_language_hint">All tekst i Curveon</string>
     <string name="settings_speed">Fart</string>
+    <string name="settings_speed_hint">Fart og fartsgrenser; høyde i fot med mph</string>
     <string name="settings_map">Kart</string>
+    <string name="settings_map_hint">Auto bytter til nattkart når sola går ned</string>
     <string name="settings_screen_lock">Skjermretning</string>
     <string name="settings_screen_lock_hint">Låst snur den seg ikke på humper</string>
     <string name="screen_lock_auto">Snur seg</string>
@@ -80,6 +83,7 @@
     <string name="altitude_m">%1$d moh.</string>
     <string name="altitude_ft">%1$d fot</string>
     <string name="settings_surfaces">Veidekke</string>
+    <string name="settings_surfaces_hint">Grusvei og mykt underlag stiplet på kartet</string>
     <string name="settings_surfaces_off">Av</string>
     <string name="settings_surfaces_dashed">Stiplet</string>
     <string name="surface_soft">Jord, ulendt eller ukjent</string>

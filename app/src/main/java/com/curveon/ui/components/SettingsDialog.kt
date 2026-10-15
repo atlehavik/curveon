@@ -149,29 +149,29 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
         val pageFor: @Composable (SettingsTab) -> Unit = { which ->
                 when (which) {
                     SettingsTab.DISPLAY -> Page {
-                        if (AppLanguage.canChoose) Setting(stringResource(R.string.settings_language)) {
-                            Segmented(AppLanguage.entries, state.language, { it.label }, actions.onLanguage)
+                        if (AppLanguage.canChoose) Setting(stringResource(R.string.settings_language), stringResource(R.string.settings_language_hint)) {
+                            Choice(AppLanguage.entries, state.language, { it.label }, actions.onLanguage)
                         }
-                        Setting(stringResource(R.string.settings_speed)) {
-                            Segmented(listOf(false, true), state.useMph, { if (it) "mph" else "km/h" }, actions.onUnits)
+                        Setting(stringResource(R.string.settings_speed), stringResource(R.string.settings_speed_hint)) {
+                            Choice(listOf(false, true), state.useMph, { if (it) "mph" else "km/h" }, actions.onUnits)
                         }
                         Setting(stringResource(R.string.settings_screen_lock), stringResource(R.string.settings_screen_lock_hint)) {
-                            Segmented(com.curveon.ScreenLock.entries, state.screenLock, { stringResource(it.label) }, actions.onScreenLock)
+                            Choice(com.curveon.ScreenLock.entries, state.screenLock, { stringResource(it.label) }, actions.onScreenLock)
                         }
-                        Setting(stringResource(R.string.settings_map)) {
-                            Segmented(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
+                        Setting(stringResource(R.string.settings_map), stringResource(R.string.settings_map_hint)) {
+                            Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
                         }
-                        Setting(stringResource(R.string.settings_surfaces), below = { SurfaceKey() }) {
-                            Segmented(listOf(false, true), state.showSurfaces,
+                        Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = { SurfaceKey() }) {
+                            Choice(listOf(false, true), state.showSurfaces,
                                 { stringResource(if (it) R.string.settings_surfaces_dashed else R.string.settings_surfaces_off) }, actions.onShowSurfaces)
                         }
-                        Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint), small = true) {
+                        Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint)) {
                             CockpitSwitch(state.showAltitude, actions.onShowAltitude)
                         }
-                        Setting(stringResource(R.string.settings_road_info), stringResource(R.string.settings_road_info_hint), small = true) {
+                        Setting(stringResource(R.string.settings_road_info), stringResource(R.string.settings_road_info_hint)) {
                             CockpitSwitch(state.showRoadInfo, actions.onShowRoadInfo)
                         }
-                        Setting(stringResource(R.string.settings_map_media), stringResource(R.string.settings_map_media_hint), small = true) {
+                        Setting(stringResource(R.string.settings_map_media), stringResource(R.string.settings_map_media_hint)) {
                             CockpitSwitch(state.showMapMedia, actions.onShowMapMedia)
                         }
                         SectionTitle(stringResource(R.string.settings_map_layers))
@@ -179,11 +179,11 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         MapLayerChips(state.mapLayers, actions.onMapLayer)
                     }
                     SettingsTab.NAVIGATION -> Page {
-                        Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint), small = true) {
+                        Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint)) {
                             CockpitSwitch(state.autoZoom, actions.onAutoZoom)
                         }
                         Setting(stringResource(R.string.settings_arrow), stringResource(R.string.settings_arrow_hint)) {
-                            Segmented(com.curveon.data.location.ArrowPlacement.entries, state.arrowPlacement, {
+                            Choice(com.curveon.data.location.ArrowPlacement.entries, state.arrowPlacement, {
                                 stringResource(when (it) {
                                     com.curveon.data.location.ArrowPlacement.STANDARD -> R.string.settings_arrow_standard
                                     com.curveon.data.location.ArrowPlacement.NO_LEAD -> R.string.settings_arrow_no_lead
@@ -191,22 +191,22 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                                 })
                             }, actions.onArrowPlacement)
                         }
-                        Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint), small = true) {
+                        Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
                         }
                         val o = state.offRoute
                         SectionTitle(stringResource(R.string.settings_wrong_turn_title))
                         Setting(stringResource(R.string.settings_off_route), stringResource(R.string.settings_off_route_hint)) {
-                            Segmented(listOf(25, 40, 60, 100), o.offRouteMeters, { stringResource(R.string.distance_m, it.toDouble()) }, { actions.onOffRoute(o.copy(offRouteMeters = it)) })
+                            Choice(listOf(25, 40, 60, 100), o.offRouteMeters, { stringResource(R.string.distance_m, it.toDouble()) }, { actions.onOffRoute(o.copy(offRouteMeters = it)) })
                         }
                         Text(stringResource(R.string.settings_rejoin_explain), color = TextMuted, fontSize = 13.sp)
                         Setting(stringResource(R.string.settings_rejoin_minutes), stringResource(R.string.settings_rejoin_minutes_hint)) {
-                            Segmented(listOf(1, 3, 5, 10), o.maxExtraMinutes, { stringResource(R.string.minutes_short, it) }, { actions.onOffRoute(o.copy(maxExtraMinutes = it)) })
+                            Choice(listOf(1, 3, 5, 10), o.maxExtraMinutes, { stringResource(R.string.minutes_short, it) }, { actions.onOffRoute(o.copy(maxExtraMinutes = it)) })
                         }
                         Setting(stringResource(R.string.settings_rejoin_percent), stringResource(R.string.settings_rejoin_percent_hint)) {
-                            Segmented(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
+                            Choice(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
                         }
-                        if (com.curveon.BuildConfig.DEV) Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint), small = true) {
+                        if (com.curveon.BuildConfig.DEV) Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
                             CockpitSwitch(state.demoMode, actions.onDemoMode, accent = NeonAmber)
                         }
                     }
@@ -324,7 +324,7 @@ private fun PendingRow(id: String, name: String, download: MapDownloadState, act
 /** Settings → Engine: the dashboard's engine panel on or off, the OBD2 adapter, and what it shows. */
 @Composable
 private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsActions) {
-    Setting(stringResource(R.string.settings_obd_show), stringResource(R.string.settings_obd_show_hint), small = true) {
+    Setting(stringResource(R.string.settings_obd_show), stringResource(R.string.settings_obd_show_hint)) {
         CockpitSwitch(state.obdEnabled, actions.onObd)
     }
     if (!state.obdEnabled) return
@@ -368,7 +368,7 @@ private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsAc
             com.curveon.data.obd.ObdValue.RPM -> R.string.obd_rpm
             com.curveon.data.obd.ObdValue.COOLANT -> R.string.obd_coolant
             com.curveon.data.obd.ObdValue.VOLTAGE -> R.string.obd_battery
-        }), small = true) {
+        })) {
             CockpitSwitch(v in state.obdValues, { actions.onObdValue(v) })
         }
     }
@@ -499,22 +499,53 @@ private fun SectionTitle(text: String) {
     Text(text.uppercase(), color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
 }
 
-/** One setting: title (and an optional one-line hint) on the left, the control on the right. */
+/**
+ * One setting: title (and an optional hint) on the left, the control (a switch or a [Choice]) on
+ * the right, on the phone as on the tablet.
+ */
 @Composable
-private fun Setting(title: String, hint: String? = null, below: (@Composable () -> Unit)? = null, small: Boolean = false, control: @Composable () -> Unit) {
-    // Narrow: a wide choice goes under its title instead of beside it (a switch still fits beside).
-    if (isNarrowScreen() && !small) Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-        if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp)
-        below?.invoke()
-        control()
-    } else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+private fun Setting(title: String, hint: String? = null, below: (@Composable () -> Unit)? = null, control: @Composable () -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp, maxLines = if (isNarrowScreen()) 3 else 1)
+            if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp, maxLines = if (isNarrowScreen()) 3 else 2)
             below?.invoke()
         }
         control()
+    }
+}
+
+/**
+ * One of several choices (km/h or mph, Auto / Day / Night, …): a button showing the chosen one,
+ * tap for the list. Always as wide as the longest choice, so it doesn't jump when the choice changes.
+ */
+@Composable
+private fun <T> Choice(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            Modifier.height(44.dp).clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant)
+                .border(1.dp, CockpitBorder, RoundedCornerShape(12.dp))
+                .clickable { open = true }.padding(start = 14.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box {
+                // Every choice laid out but unseen: the button takes the width of the longest.
+                options.forEach { Text(label(it), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, color = Color.Transparent) }
+                Text(label(selected), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+            Icon(Icons.Default.ArrowDropDown, null, tint = TextSecondary, modifier = Modifier.padding(start = 4.dp))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CockpitSurface) {
+            options.forEach { o ->
+                val on = o == selected
+                DropdownMenuItem(
+                    text = { Text(label(o), color = if (on) ElectricCyan else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                    trailingIcon = { if (on) Icon(Icons.Default.Check, null, tint = ElectricCyan) },
+                    onClick = { open = false; onSelect(o) }
+                )
+            }
+        }
     }
 }
 

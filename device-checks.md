@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-15 — Settings: choices as drop-down buttons on the right
+
+- [ ] Settings → Display and Navigation, on the X7 and on the Pixel (upright and sideways): every
+      choice (language, km/h/mph, screen, map, road surfaces, rider arrow, off route, carry on…) is
+      a button on the right, in line with the switches, with title and hint on the left.
+- [ ] Each button is as wide as its longest choice: picking another doesn't change its width, and
+      no text is cut off (try Norsk and English).
+- [ ] Tapping opens the list, the chosen one is cyan with a tick; picking one closes the list.
+
 ## 2026-10-15 — Curveon on GitHub in Settings → Help
 
 - [ ] Settings → Help → Curveon on GitHub opens the GitHub page in the browser.

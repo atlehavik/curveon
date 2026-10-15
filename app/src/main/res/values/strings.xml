@@ -60,8 +60,11 @@
     <string name="settings_navigation">Navigation</string>
     <string name="settings_maps_data">Maps &amp; data</string>
     <string name="settings_language">Language</string>
+    <string name="settings_language_hint">All text in Curveon</string>
     <string name="settings_speed">Speed</string>
+    <string name="settings_speed_hint">Speed and speed limits; height in feet with mph</string>
     <string name="settings_map">Map</string>
+    <string name="settings_map_hint">Auto turns to the night map after sunset</string>
     <string name="settings_screen_lock">Screen</string>
     <string name="settings_screen_lock_hint">Locked, it doesn\'t turn with bumps</string>
     <string name="screen_lock_auto">Turns</string>
@@ -81,6 +84,7 @@
     <string name="altitude_m">%1$d m a.s.l.</string>
     <string name="altitude_ft">%1$d ft</string>
     <string name="settings_surfaces">Road surfaces</string>
+    <string name="settings_surfaces_hint">Gravel and soft roads drawn dashed on the map</string>
     <string name="settings_surfaces_off">Off</string>
     <string name="settings_surfaces_dashed">Dashed</string>
     <string name="surface_soft">Dirt, rough or unknown</string>
