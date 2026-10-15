@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-15 — Halo round the rider arrow: how sure the GPS is
+
+A see-through disc under the arrow, as wide as the GPS's accuracy: normally a small ring just round
+the arrow; wider where the fix is poor, and growing in tunnels while the position is guessed (up
+to 300 m). Cyan on the night map, the route's blue on the day map. Looked at on the X7, standing
+still, in both. Installed on the X7 and the Pixel.
+
+- [ ] Riding, day and night: the ring is easy to see but doesn't hide the road under the arrow.
+- [ ] 3D: the halo lies flat on the road (an oval), centred on the arrow.
+- [ ] Through a tunnel: the halo grows while dead reckoning, and shrinks once GPS is back.
+- [ ] Poor GPS (deep valley, town): the halo is visibly bigger.
+
 ## 2026-10-15 — Curveon sleeps out of sight; the trip being planned is kept
 
 Out of sight with no trip being navigated (another app, screen off), Curveon now sleeps: no GPS,

@@ -28,7 +28,9 @@ class RiderMotion {
         /** When the position was measured (System.nanoTime() base). */
         val atNanos: Long,
         val route: Route? = null,
-        val along: Double? = null
+        val along: Double? = null,
+        /** How far off the position may be (metres, the receiver's ~68 % radius): the halo round the arrow. */
+        val accuracyM: Double = 10.0
     )
 
     data class Pose(val lat: Double, val lon: Double, val bearingDeg: Double)

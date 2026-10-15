@@ -728,6 +728,7 @@ fun CurveonMapView(
     // targets, so changing speed or mode doesn't jolt the view.
     val motion = remember { com.curveon.data.location.RiderMotion() }
     LaunchedEffect(riderFix) { riderFix?.let { motion.onFix(it, System.nanoTime()) }; wake.trySend(Unit) }
+    val accuracyState = rememberUpdatedState(riderFix?.accuracyM ?: 10.0)
     LaunchedEffect(headingDeg, speedKmh, currentTurnInstruction, bottomClearance) { wake.trySend(Unit) }
     DisposableEffect(mapView) {
         val onLayout = android.view.View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> wake.trySend(Unit) }
@@ -813,7 +814,20 @@ fun CurveonMapView(
             val p = m.projection.toScreenLocation(target)
             if (!follow) riderScreen = androidx.compose.ui.geometry.Offset(p.x, p.y) // only shown once panned away
             val cam = m.cameraPosition
-            val newPuck = Puck(p.x, p.y, ((pose?.bearingDeg ?: headingState.value.toDouble()) - cam.bearing).toFloat(), cam.tilt.toFloat())
+            // The halo: the GPS's accuracy on the map, sideways (rx) and along the view (ry, shorter in
+            // 3D), never smaller than a ring just round the arrow.
+            val here = com.curveon.routing.LatLon(target.latitude, target.longitude)
+            fun reach(bearing: Double): Float {
+                val q = m.projection.toScreenLocation(com.curveon.routing.Geo.destination(here, bearing, accuracyState.value).let { LatLng(it.lat, it.lon) })
+                return kotlin.math.hypot(q.x - p.x, q.y - p.y)
+            }
+            var rx = reach(cam.bearing + 90)
+            var ry = (reach(cam.bearing) + reach(cam.bearing + 180)) / 2
+            val minR = HALO_MIN_DP * mapView.resources.displayMetrics.density
+            if (rx < minR) { ry = if (rx > 0f) ry * minR / rx else minR; rx = minR }
+            val maxR = maxOf(mapView.width, mapView.height).toFloat()
+            val newPuck = Puck(p.x, p.y, ((pose?.bearingDeg ?: headingState.value.toDouble()) - cam.bearing).toFloat(), cam.tilt.toFloat(),
+                rx.coerceAtMost(maxR), ry.coerceAtMost(maxR))
             idle = settled && !moving && newPuck == puck
             puck = newPuck
             if (pose != null && now - lastTrace > 200_000_000L) {
@@ -923,7 +937,10 @@ fun CurveonMapView(
             .testTag("map_container")
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
-        if (hasGpsFix && style != null) RiderArrow { puck }
+        if (hasGpsFix && style != null) {
+            RiderHalo(dark) { puck }
+            RiderArrow { puck }
+        }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, Modifier.matchParentSize()) }
 
         // Compass button: north up → heading up → 3D. Once the rider pans the map away, a second
@@ -1290,7 +1307,31 @@ private fun followZoom(speedKmh: Float, toTurnMeters: Int?, threeD: Boolean): Do
 private fun ease(from: Double, to: Double, dt: Double, tau: Double) = from + (to - from) * (1 - kotlin.math.exp(-dt / tau))
 
 /** The rider arrow on screen: position in px, rotation from screen-up, and the map's tilt. */
-private data class Puck(val x: Float, val y: Float, val rotation: Float, val tilt: Float)
+/** Where the arrow is drawn, and the halo's radii round it (px). */
+private data class Puck(val x: Float, val y: Float, val rotation: Float, val tilt: Float, val haloRx: Float = 0f, val haloRy: Float = 0f)
+
+/** The smallest halo: a ring just outside the arrow (44 dp, its tip ~21 dp from the middle). */
+private const val HALO_MIN_DP = 27f
+
+/**
+ * A see-through disc under the arrow, as big as the GPS's accuracy: a small ring round the arrow
+ * normally, wider where the fix is poor or the position is guessed (tunnels). Cyan like the arrow
+ * on the dark map; the deeper blue of the route on the light one, where cyan would fade into it.
+ */
+@Composable
+private fun RiderHalo(dark: Boolean, puck: () -> Puck?) {
+    val fill = if (dark) Color(0x3300E5FF) else Color(0x2E0091EA)
+    val edge = if (dark) Color(0x8000E5FF) else Color(0x990091EA)
+    val stroke = with(androidx.compose.ui.platform.LocalDensity.current) { 1.5.dp.toPx() }
+    androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+        val p = puck() ?: return@Canvas
+        if (p.haloRx <= 0f) return@Canvas
+        val topLeft = androidx.compose.ui.geometry.Offset(p.x - p.haloRx, p.y - p.haloRy)
+        val size = androidx.compose.ui.geometry.Size(2 * p.haloRx, 2 * p.haloRy)
+        drawOval(fill, topLeft, size)
+        drawOval(edge, topLeft, size, style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
+    }
+}
 
 /**
  * The rider arrow, drawn over the map. Read through [puck] inside the layer block, so moving it

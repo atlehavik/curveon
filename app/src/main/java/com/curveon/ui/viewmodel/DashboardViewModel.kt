@@ -960,7 +960,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             headingDeg = heading.toDouble(), speedMps = tripTracker.speedKmh / 3.6,
             atNanos = fix.atNanos,
             route = if (onRoad != null) nav.route else null,
-            along = if (onRoad != null) nav.progress?.distanceAlongRoute else null
+            along = if (onRoad != null) nav.progress?.distanceAlongRoute else null,
+            // In a tunnel the guess drifts: the halo grows with the distance ridden since the last real fix.
+            accuracyM = if (estimated) minOf(DR_MAX_ACCURACY_M, 15.0 + 0.1 * tripTracker.speedKmh / 3.6 * (System.currentTimeMillis() - lastRealFixAt) / 1000.0)
+                else (fix.accuracyMeters ?: 10f).toDouble()
         )
         val stats = tripTracker.stats
         _telemetry.value = _telemetry.value.copy(
@@ -1779,6 +1782,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         private const val SNAP_LEAVE_M = 20.0
         private const val SNAP_LEAVE_TURNING_M = 7.0
         private const val SNAP_JOIN_M = 12.0
+        /** The tunnel halo stops growing here: it says "roughly here", not "anywhere". */
+        private const val DR_MAX_ACCURACY_M = 300.0
         private const val DR_MAX_MS = 15 * 60_000L // longest Norwegian road tunnel (Lærdal, 24.5 km) at low speed
 
         fun routeOptions(
