@@ -43,6 +43,9 @@ Notater fra samtalen 2026-10-11/12. Ikke committet.
 
 ## Andre ting å vurdere
 
+- **Selvoppdatering fra GitHub** (`AppUpdates`, `REQUEST_INSTALL_PACKAGES` i manifestet) er ikke lov på Play:
+  fjern tillatelsen og skjul «Se etter oppdatering» i Play-bygget (f.eks. egen flavor).
+
 - **Play App Signing** signerer på nytt med en annen nøkkel. Den som har installert APK fra GitHub må avinstallere før Play-versjonen.
 - Release-APK-en kan ikke installeres over ride-bygget på din X7 (annen nøkkel) uten å miste nedlastede kart. Behold ride-bygget på egen tablet.
 - Tablet-APK er stor (ca. 99 MB): ikke minifisert, alle ABI-er. R8 + resource shrinking kan krympe den, men må testes på enhet
