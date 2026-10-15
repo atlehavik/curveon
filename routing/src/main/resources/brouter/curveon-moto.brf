@@ -221,6 +221,13 @@ assign avoid_factor =
 
 assign road_cost = multiply class_cost multiply surface_factor multiply track_factor avoid_factor
 
+# A ferry never costs less than the trunk road it sails beside, as dear as Avoid trunk makes it:
+# otherwise avoiding the E39 sends the ride onto the Hurtigruten (Bergen-Måløy) instead.
+assign trunk_cost =
+  multiply ( if fastest then 1.15 else if curvy then 2.0 else 3.5 )
+           ( if avoid_trunk then 5.0 else 1.0 )
+assign ferry_cost = if route=ferry then max road_cost trunk_cost else road_cost
+
 # Roads a motorcycle physically can use but may not be allowed on (private farm/cabin roads):
 # very expensive instead of forbidden, so a ride can start or end on one. Cycle paths and
 # footpaths are against the law to ride: never used, except (look_past_paths) to get away from or
@@ -235,7 +242,7 @@ assign costfactor =
     else 10000
   )
   else if isbadoneway then 10000
-  else min 9999 road_cost
+  else min 9999 ferry_cost
 
 # way priorities used for turn instruction generation
 assign priorityclassifier =
