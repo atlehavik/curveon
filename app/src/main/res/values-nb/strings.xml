@@ -93,7 +93,7 @@
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom inn i lav fart, ut på raske veier</string>
     <string name="settings_arrow">Pila</string>
-    <string name="settings_arrow_hint">Sekunder foran GPS-en, for å ta igjen forsinkelsen: − flytter pila bakover, + framover (standard +1,75)</string>
+    <string name="settings_arrow_hint">Sekunder foran GPS-en, for å ta igjen forsinkelsen: − flytter pila bakover, + framover (standard +1,5)</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Flytt pila bakover</string>
     <string name="settings_arrow_ahead">Flytt pila framover</string>

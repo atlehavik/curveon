@@ -95,14 +95,13 @@ you. Installed on the X7 and the Pixel:
 - [ ] At home, Rides → today's Svortland loop → "Ride again": the preview should be the whole loop
   (~32 km), not a few km. Try "Ride the other way" too.
 
-## 2026-10-15 — Rider arrow: +1.75 s ahead of the GPS by default
+## 2026-10-15 — Rider arrow: +1.5 s ahead of the GPS by default
 
-Testing on the road, +1.75 s put the arrow where the bike is (+0.25 s left it behind at junctions).
+Testing on the road, +1.5 s put the arrow where the bike is (+1.75 was close; +0.25 left it behind at junctions).
 That is now the standard, and the setting stays (Settings → Navigation → "Rider arrow", no longer
 "test"). A value already picked by hand is kept; only devices still on the old standard move.
 
 - [ ] At 40 and at 80 km/h, passing a junction: the arrow passes it with you.
-- [ ] Pixel: still to be installed (it was off the wifi).
 
 ## 2026-10-14 — Road number signs and priority roads
 
