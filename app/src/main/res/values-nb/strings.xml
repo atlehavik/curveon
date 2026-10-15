@@ -40,10 +40,10 @@
 
     <!-- Route options -->
     <string name="gravel_reach_km">Omvei inntil %1$d km</string>
-    <string name="gravel_reach_any">Grus når det lønner seg</string>
+    <string name="gravel_reach_any">Omvei inntil dobbel lengde</string>
     <string name="gravel_reach_title">Hvor langt fra vanlig rute for å finne grus?</string>
     <string name="gravel_reach_item_km">Inntil %1$d km</string>
-    <string name="gravel_reach_item_any">Ingen fast grense: grus når den er verdt omveien (inntil ca. dobbelt så langt)</string>
+    <string name="gravel_reach_item_any">Inntil dobbel lengde</string>
     <string name="surface_tarmac_only">Kun asfalt</string>
     <string name="ferries_ok">Ferjer OK</string>
     <string name="no_ferries">Ingen ferjer</string>

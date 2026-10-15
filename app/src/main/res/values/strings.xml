@@ -41,10 +41,10 @@
 
     <!-- Route options -->
     <string name="gravel_reach_km">Detour up to %1$d km</string>
-    <string name="gravel_reach_any">Gravel when worth it</string>
+    <string name="gravel_reach_any">Detour up to double length</string>
     <string name="gravel_reach_title">How far off the usual route to find gravel?</string>
     <string name="gravel_reach_item_km">Up to %1$d km</string>
-    <string name="gravel_reach_item_any">No fixed limit: gravel when worth the detour (up to about twice as far)</string>
+    <string name="gravel_reach_item_any">Up to double length</string>
     <string name="surface_tarmac_only">Tarmac only</string>
     <string name="ferries_ok">Ferries OK</string>
     <string name="no_ferries">No ferries</string>
