@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.1.1",
+    "en": [
+      "Avoiding E-roads no longer sends the ride onto the Hurtigruten",
+      "Settings: every choice is a drop-down button on the right, with a short hint",
+      "Planning a trip: the zoom-to-trip button no longer hides behind the road number",
+      "Gravel: the detour choice says what it means: how far off the usual route to find gravel"
+    ],
+    "nb": [
+      "Unngå E-vei sender ikke lenger turen med Hurtigruten",
+      "Innstillinger: hvert valg er en nedtrekksknapp til høyre, med en kort forklaring",
+      "Planlegge tur: knappen for å vise hele turen skjules ikke lenger bak veinummeret",
+      "Grus: omveivalget sier hva det betyr, hvor langt fra vanlig rute for å finne grus"
+    ]
+  },
+  {
     "version": "1.1",
     "en": [
       "Curveon updates itself: it looks for a new version when it starts, and in Settings → Help",
