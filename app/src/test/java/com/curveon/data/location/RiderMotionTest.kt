@@ -57,11 +57,22 @@ class RiderMotionTest {
         assertEquals(25.0 * (0.5 + RiderMotion.LEAD_S), d, 0.5)
     }
 
+    @Test fun `a negative lead puts the arrow behind the fix`() {
+        val m = RiderMotion()
+        val old = RiderMotion.LEAD_S
+        try {
+            RiderMotion.LEAD_S = -1.0
+            m.onFix(fixAt(2.0, 20.0, true), 2_000_000_000L)
+            // A quarter second after the fix (40 m on), a second behind: 15 m back from the fix.
+            assertEquals(40.0 + 20.0 * (0.25 - 1.0), distanceAlong(m.sample(2_250_000_000L)!!), 0.5)
+        } finally { RiderMotion.LEAD_S = old }
+    }
+
     @Test fun `does not run away when the fixes stop`() {
         val m = RiderMotion()
         m.onFix(fixAt(0.0, 25.0, false), 0L)
         val d = distanceAlong(m.sample(30_000_000_000L)!!)
-        assertEquals(25.0 * RiderMotion.MAX_AHEAD_S, d, 0.5)
+        assertEquals(25.0 * (RiderMotion.MAX_AHEAD_S + RiderMotion.LEAD_S), d, 0.5)
     }
 
     @Test fun `a slightly wrong guess fades out instead of jumping`() {

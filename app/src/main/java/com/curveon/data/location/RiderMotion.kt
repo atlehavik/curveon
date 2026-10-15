@@ -8,15 +8,6 @@ import kotlin.math.cos
 import kotlin.math.exp
 
 /**
- * Where the rider arrow sits relative to the GPS (a test, Settings → Navigation): [STANDARD] carries
- * it [RiderMotion.LEAD_S] ahead with its middle on the spot, [NO_LEAD] without that lead, [TIP] also
- * puts its tip rather than its middle on the spot.
- */
-enum class ArrowPlacement(val leadS: Double, val tipOnSpot: Boolean) {
-    STANDARD(0.25, false), NO_LEAD(0.0, false), TIP(0.0, true)
-}
-
-/**
  * Where to draw the rider right now, between GPS fixes. The receiver gives one fix a second, and
  * that fix is already a little old when it arrives; moving the arrow (and the map) only when a fix
  * comes in makes it hop along a second behind the bike. Instead the last fix is carried forward at
@@ -95,7 +86,9 @@ class RiderMotion {
     /** The fix carried forward to [nowNanos]: position and the direction of travel there. */
     private fun predict(f: Fix, nowNanos: Long): Pair<LatLon, Double> {
         val moving = f.speedMps >= MIN_SPEED_MPS
-        val dt = if (!moving) 0.0 else ((nowNanos - f.atNanos) / 1e9 + LEAD_S).coerceIn(0.0, MAX_AHEAD_S)
+        // The fix's age (never more than MAX_AHEAD_S) plus the lead; a negative lead (set by hand,
+        // Settings → Navigation) can put the arrow behind the fix.
+        val dt = if (!moving) 0.0 else ((nowNanos - f.atNanos) / 1e9).coerceIn(0.0, MAX_AHEAD_S) + LEAD_S
         val ahead = f.speedMps * dt
         val route = f.route
         val along = f.along
@@ -114,8 +107,15 @@ class RiderMotion {
     }
 
     companion object {
-        /** The receiver's own delay between measuring and reporting, on top of the fix's age. */
-        var LEAD_S = 0.25
+        /**
+         * The receiver's own delay between measuring and reporting, on top of the fix's age. A test:
+         * the rider sets it in Settings → Navigation, [MIN_LEAD_S]…[MAX_LEAD_S] in [LEAD_STEP_S] steps.
+         */
+        var LEAD_S = DEFAULT_LEAD_S
+        const val DEFAULT_LEAD_S = 0.25
+        const val MAX_LEAD_S = 3.0
+        const val MIN_LEAD_S = -3.0
+        const val LEAD_STEP_S = 0.25
         /** Never guess further ahead than this: GPS gone means wait, not run away. */
         const val MAX_AHEAD_S = 2.0
         const val CORRECTION_TAU_S = 0.35

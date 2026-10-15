@@ -244,16 +244,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _mapVersion.value++
     }
 
-    /** Test: how far ahead of the GPS the rider arrow sits (see [com.curveon.data.location.ArrowPlacement]). */
-    private val _arrowPlacement = MutableStateFlow(
-        runCatching { com.curveon.data.location.ArrowPlacement.valueOf(settings.getString("arrowPlacement", null)!!) }
-            .getOrDefault(com.curveon.data.location.ArrowPlacement.STANDARD)
-    ).also { RiderMotion.LEAD_S = it.value.leadS }
-    val arrowPlacement: StateFlow<com.curveon.data.location.ArrowPlacement> = _arrowPlacement.asStateFlow()
-    fun setArrowPlacement(p: com.curveon.data.location.ArrowPlacement) {
-        _arrowPlacement.value = p
-        RiderMotion.LEAD_S = p.leadS
-        settings.edit().putString("arrowPlacement", p.name).apply()
+    /** Test: how many seconds ahead of the GPS the rider arrow sits ([RiderMotion.LEAD_S]; negative = behind). */
+    private val _arrowLead = MutableStateFlow(
+        settings.getFloat("arrowLeadS", RiderMotion.DEFAULT_LEAD_S.toFloat()).toDouble()
+            .coerceIn(RiderMotion.MIN_LEAD_S, RiderMotion.MAX_LEAD_S)
+    ).also { RiderMotion.LEAD_S = it.value }
+    val arrowLead: StateFlow<Double> = _arrowLead.asStateFlow()
+    fun setArrowLead(s: Double) {
+        val v = s.coerceIn(RiderMotion.MIN_LEAD_S, RiderMotion.MAX_LEAD_S)
+        _arrowLead.value = v
+        RiderMotion.LEAD_S = v
+        settings.edit().putFloat("arrowLeadS", v.toFloat()).apply()
+        // In the trace, so a ride can be read back knowing which lead was on where.
+        NavTrace.event("arrow lead $v s")
     }
 
     private val _autoZoom = MutableStateFlow(settings.getBoolean("autoZoom", true))
@@ -726,6 +729,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         // rider connects the tablet over USB to copy maps, routing data and the search index.
         offlineMaps.mapsDir; navigator.routingData.segmentsDir; placeSearch.indexDir
         NavTrace.start(application)
+        NavTrace.event("arrow lead ${RiderMotion.LEAD_S} s")
         updateMapDark()
         startDeadReckoning()
         watchCurrentRoad()

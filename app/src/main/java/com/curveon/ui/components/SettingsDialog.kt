@@ -57,7 +57,7 @@ data class SettingsState(
     val obdValues: List<com.curveon.data.obd.ObdValue>,
     val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
-    val arrowPlacement: com.curveon.data.location.ArrowPlacement = com.curveon.data.location.ArrowPlacement.STANDARD,
+    val arrowLead: Double = com.curveon.data.location.RiderMotion.DEFAULT_LEAD_S,
     val showSurfaces: Boolean,
     val showAltitude: Boolean,
     val showRoadInfo: Boolean = true,
@@ -88,7 +88,7 @@ class SettingsActions(
     val onObdDevice: (String?) -> Unit,
     val onObdValue: (com.curveon.data.obd.ObdValue) -> Unit,
     val onAutoZoom: (Boolean) -> Unit,
-    val onArrowPlacement: (com.curveon.data.location.ArrowPlacement) -> Unit = {},
+    val onArrowLead: (Double) -> Unit = {},
     val onShowSurfaces: (Boolean) -> Unit,
     val onShowAltitude: (Boolean) -> Unit,
     val onShowRoadInfo: (Boolean) -> Unit = {},
@@ -183,13 +183,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             CockpitSwitch(state.autoZoom, actions.onAutoZoom)
                         }
                         Setting(stringResource(R.string.settings_arrow), stringResource(R.string.settings_arrow_hint)) {
-                            Choice(com.curveon.data.location.ArrowPlacement.entries, state.arrowPlacement, {
-                                stringResource(when (it) {
-                                    com.curveon.data.location.ArrowPlacement.STANDARD -> R.string.settings_arrow_standard
-                                    com.curveon.data.location.ArrowPlacement.NO_LEAD -> R.string.settings_arrow_no_lead
-                                    com.curveon.data.location.ArrowPlacement.TIP -> R.string.settings_arrow_tip
-                                })
-                            }, actions.onArrowPlacement)
+                            ArrowLeadStepper(state.arrowLead, actions.onArrowLead)
                         }
                         Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
@@ -545,6 +539,36 @@ private fun <T> Choice(options: List<T>, selected: T, label: @Composable (T) -> 
                     onClick = { open = false; onSelect(o) }
                 )
             }
+        }
+    }
+}
+
+/** − and + around the arrow's lead in seconds ("+0.25 s" ahead, "−1.50 s" behind). */
+@Composable
+private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
+    val m = com.curveon.data.location.RiderMotion
+    // In whole steps, so repeated taps don't drift off the 0.25 grid.
+    val step = Math.round(leadS / m.LEAD_STEP_S).toInt()
+    fun set(n: Int) = onChange(n * m.LEAD_STEP_S)
+    Row(
+        Modifier.height(44.dp).clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant)
+            .border(1.dp, CockpitBorder, RoundedCornerShape(12.dp)),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = { set(step - 1) }, enabled = leadS > m.MIN_LEAD_S) {
+            Icon(Icons.Default.Remove, stringResource(R.string.settings_arrow_back), tint = TextPrimary)
+        }
+        val v = step * m.LEAD_STEP_S
+        Text(
+            stringResource(R.string.settings_arrow_seconds, (if (v > 0) "+" else if (v < 0) "−" else "") +
+                String.format(java.util.Locale.getDefault(), "%.2f", kotlin.math.abs(v))),
+            color = if (step == Math.round(m.DEFAULT_LEAD_S / m.LEAD_STEP_S).toInt()) TextPrimary else ElectricCyan,
+            fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.widthIn(min = 72.dp)
+        )
+        IconButton(onClick = { set(step + 1) }, enabled = leadS < m.MAX_LEAD_S) {
+            Icon(Icons.Default.Add, stringResource(R.string.settings_arrow_ahead), tint = TextPrimary)
         }
     }
 }

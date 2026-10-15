@@ -92,7 +92,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val poiCategories by viewModel.poiCategories.collectAsStateWithLifecycle()
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
     val mapAutoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
-    val arrowPlacement by viewModel.arrowPlacement.collectAsStateWithLifecycle()
+    val arrowLead by viewModel.arrowLead.collectAsStateWithLifecycle()
     val showSurfaces by viewModel.showSurfaces.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
@@ -626,7 +626,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onPoiClick = { shownPoi = it },
             onViewport = viewModel::setViewport,
             autoZoom = mapAutoZoom,
-            arrowTipOnSpot = arrowPlacement.tipOnSpot,
             mapVersion = mapVersion,
             overlays = mapOverlays
         )
@@ -875,7 +874,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obdEnabled = telemetry.isObdEnabled,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
-                    autoZoom = autoZoom, arrowPlacement = arrowPlacement, showSurfaces = showSurfaces, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    autoZoom = autoZoom, arrowLead = arrowLead, showSurfaces = showSurfaces, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, demoMode = demoMode,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
@@ -894,7 +893,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onObdDevice = viewModel::setObdDevice,
                     onObdValue = viewModel::toggleObdValue,
                     onAutoZoom = viewModel::setAutoZoom,
-                    onArrowPlacement = viewModel::setArrowPlacement,
+                    onArrowLead = viewModel::setArrowLead,
                     onShowSurfaces = viewModel::setShowSurfaces,
                     onShowAltitude = viewModel::setShowAltitude,
                     onShowRoadInfo = viewModel::setShowRoadInfo,

@@ -158,7 +158,6 @@ fun CurveonMapView(
     /** Zoom follows speed (in when slow and twisty, out on fast roads). */
     autoZoom: Boolean = true,
     /** Test: the arrow's tip, not its middle, where the rider is. */
-    arrowTipOnSpot: Boolean = false,
     /** Changes when the offline map file was downloaded/replaced/deleted: reload the style. */
     mapVersion: Int = 0,
     /** A finger held on the map: the place, the road there as the map labels it, and its number, class and name (null if none). */
@@ -921,7 +920,7 @@ fun CurveonMapView(
             .testTag("map_container")
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
-        if (hasGpsFix && style != null) RiderArrow(arrowTipOnSpot) { puck }
+        if (hasGpsFix && style != null) RiderArrow { puck }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, Modifier.matchParentSize()) }
 
         // Compass button: north up → heading up → 3D. Once the rider pans the map away, a second
@@ -1295,7 +1294,7 @@ private data class Puck(val x: Float, val y: Float, val rotation: Float, val til
  * every frame only redraws the arrow. Tilted with the map in 3D so it lies on the road.
  */
 @Composable
-private fun RiderArrow(tipOnSpot: Boolean, puck: () -> Puck?) {
+private fun RiderArrow(puck: () -> Puck?) {
     val size = 44.dp
     val half = with(androidx.compose.ui.platform.LocalDensity.current) { size.toPx() / 2 }
     androidx.compose.foundation.Image(
@@ -1314,9 +1313,6 @@ private fun RiderArrow(tipOnSpot: Boolean, puck: () -> Puck?) {
                 }
             }
             .graphicsLayer { rotationZ = puck()?.rotation ?: 0f }
-            // Inside the turn, so it moves back along the arrow: the tip (1/48 from the top of
-            // ic_nav_arrow) lands on the spot.
-            .graphicsLayer { translationY = if (tipOnSpot) half * 23f / 24f else 0f }
     )
 }
 
