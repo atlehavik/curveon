@@ -198,7 +198,7 @@ fun SurfaceChip(surface: SurfacePreference, onSurface: (SurfacePreference) -> Un
 /** How far off the ordinary route gravel may take the trip; null = as far as it likes. */
 val GRAVEL_REACH_KM = listOf(1, 3, 5, 10, 20, null)
 
-/** "Gravel within 5 km of the route" / "Gravel anywhere"; tap for the list. */
+/** "Detour up to 5 km" / "Any detour" (to find gravel, beside the Gravel chip); tap for the list. */
 @Composable
 fun GravelReachChip(reachKm: Int?, onPick: (Int?) -> Unit) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -208,9 +208,13 @@ fun GravelReachChip(reachKm: Int?, onPick: (Int?) -> Unit) {
             Icon(Icons.Default.AltRoute, null, tint = NeonAmber)
         }
         androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+            // The question first, so the distances make sense on their own.
+            Text(stringResource(R.string.gravel_reach_title), color = TextSecondary, fontSize = 14.sp,
+                modifier = Modifier.widthIn(max = 280.dp).padding(horizontal = 12.dp, vertical = 8.dp))
             GRAVEL_REACH_KM.forEach { km ->
+                val item = if (km == null) stringResource(R.string.gravel_reach_item_any) else stringResource(R.string.gravel_reach_item_km, km)
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(label(km), color = if (km == reachKm) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                    text = { Text(item, color = if (km == reachKm) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
                     onClick = { open = false; onPick(km) }
                 )
             }

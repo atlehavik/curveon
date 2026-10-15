@@ -973,8 +973,8 @@ fun CurveonMapView(
             }
         }
 
-        // Zoom to extents: the whole trip being planned, at a tap.
-        if (inPreview && hasPreviewTrip) Box(Modifier.align(Alignment.TopEnd).padding(top = 92.dp, end = 14.dp)) {
+        // Zoom to extents: the whole trip being planned, at a tap; under the speed and road cards.
+        if (inPreview && hasPreviewTrip) Box(Modifier.align(Alignment.TopEnd).padding(top = maxOf(buttonsTopInset, 92.dp), end = 14.dp)) {
             MapButton(onClick = { fitTick++ }, tag = "map_fit_trip_btn") {
                 Icon(Icons.Default.ZoomOutMap, stringResource(R.string.map_fit_trip), tint = TextPrimary, modifier = Modifier.size(24.dp))
             }

@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-15 — Route preview: zoom-to-trip button and gravel detour menu
+
+- [ ] Plan a trip on the Pixel (upright) while on a numbered road: the zoom-to-trip button sits
+      under the road number card, not behind it.
+- [ ] Pick Grus: the chip beside it reads "Omvei inntil 5 km" / "Fri omvei"; its menu starts with
+      "Hvor langt fra vanlig rute for å finne grus?" and lists "Inntil 1 km" … "Så langt det trengs".
+
 ## 2026-10-15 — Settings: choices as drop-down buttons on the right
 
 - [ ] Settings → Display and Navigation, on the X7 and on the Pixel (upright and sideways): every
