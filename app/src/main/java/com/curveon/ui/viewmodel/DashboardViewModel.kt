@@ -23,6 +23,8 @@ import com.curveon.data.ride.LeanSensor
 import com.curveon.data.ride.RideRecorder
 import com.curveon.data.routing.CameraAlert
 import com.curveon.data.routing.FuelHint
+import com.curveon.data.routing.NavAlerts
+import com.curveon.data.routing.NavCues
 import com.curveon.data.routing.NavigationGoal
 import com.curveon.data.routing.NavigationState
 import com.curveon.data.routing.Navigator
@@ -38,6 +40,7 @@ import com.curveon.data.update.AppUpdates
 import com.curveon.data.update.Changelog
 import com.curveon.data.update.ChangelogEntry
 import com.curveon.data.update.UpdateState
+import com.curveon.protocol.Message
 import com.curveon.routing.Geo
 import com.curveon.routing.LatLon
 import com.curveon.routing.Maneuver
@@ -506,6 +509,32 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val locationSource = LocationSource(application)
     private val tripTracker = TripTracker()
+
+    /** Navigation sounds in the rider's headset (Settings → Navigation → Sound). */
+    private val navCues = NavCues().apply {
+        alerts = runCatching { NavAlerts.valueOf(settings.getString("navAlerts", null) ?: "") }
+            .getOrDefault(NavAlerts.SOUNDS)
+        offRouteAlerts = settings.getBoolean("offRouteAlerts", true)
+    }
+    private val _navAlerts = MutableStateFlow(navCues.alerts)
+    val navAlerts: StateFlow<NavAlerts> = _navAlerts.asStateFlow()
+    private val _offRouteAlerts = MutableStateFlow(navCues.offRouteAlerts)
+    val offRouteAlerts: StateFlow<Boolean> = _offRouteAlerts.asStateFlow()
+
+    /** Choosing sounds plays one, so the rider hears what they picked. */
+    fun setNavAlerts(a: NavAlerts) {
+        navCues.alerts = a
+        _navAlerts.value = a
+        settings.edit().putString("navAlerts", a.name).apply()
+        if (a == NavAlerts.SOUNDS) phoneCompanion.playCue(Message.NavCue.PREPARE, Message.CueSide.RIGHT)
+    }
+
+    fun setOffRouteAlerts(on: Boolean) {
+        navCues.offRouteAlerts = on
+        _offRouteAlerts.value = on
+        settings.edit().putBoolean("offRouteAlerts", on).apply()
+        if (on) phoneCompanion.playCue(Message.NavCue.OFF_ROUTE, Message.CueSide.CENTER)
+    }
     private var gpsJob: Job? = null
 
     /**
@@ -883,6 +912,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     demoTrip = title
                 }
                 if (route == null) { _fuelHint.value = null; _cameraAlert.value = null; _giveWayAlert.value = null; routeGiveWays.value = emptyList() }
+            }
+        }
+        // While navigating: the sounds for turns, arriving and riding off the route.
+        viewModelScope.launch {
+            navigator.state.collect { s ->
+                val route = s.route ?: return@collect navCues.reset()
+                val p = s.progress ?: return@collect
+                navCues.update(route, p, tripTracker.speedKmh / 3.6, s.wrongTurn != null, s.approach != null, System.currentTimeMillis())
+                    .forEach { (cue, side) -> phoneCompanion.playCue(cue, side) }
             }
         }
         // While navigating: next fuel and camera ahead on the route.

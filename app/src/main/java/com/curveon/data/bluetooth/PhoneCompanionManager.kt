@@ -519,6 +519,18 @@ class PhoneCompanionManager(
         send(Message.MediaCommand(Message.MediaAction.PLAY_PAUSE))
     }
 
+    /** Sounds played on this device: Curveon on the phone, or no phone linked to the tablet. */
+    private val localCues by lazy { com.curveon.phone.CuePlayer(context) }
+
+    /**
+     * A navigation sound for the rider's headset: the linked phone plays it when there is one
+     * (the tablet's own speaker is no use on the bike), otherwise this device does.
+     */
+    fun playCue(cue: Message.NavCue, side: Message.CueSide) {
+        val viaPhone = !isThisDevice && _connectionState.value == CompanionConnectionState.CONNECTED && writer != null
+        if (viaPhone) send(Message.PlayCue(cue, side)) else localCues.play(cue, side)
+    }
+
     fun skipNext() = send(Message.MediaCommand(Message.MediaAction.NEXT))
 
     fun skipPrevious() = send(Message.MediaCommand(Message.MediaAction.PREVIOUS))

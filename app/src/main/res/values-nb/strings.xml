@@ -659,6 +659,13 @@
     <!-- Settings: off route -->
     <string name="settings_off_route">Utenfor ruten etter</string>
     <string name="settings_off_route_hint">Avstand fra ruten før navigasjonen reagerer</string>
+    <string name="settings_sound_title">Lyd</string>
+    <string name="settings_nav_alerts">Navigeringslyder</string>
+    <string name="settings_nav_alerts_hint">En myk lyd før hver sving og et tikk ved den, i øret du svinger mot</string>
+    <string name="nav_alerts_off">Av</string>
+    <string name="nav_alerts_sounds">Lyder</string>
+    <string name="settings_off_route_alerts">Lyd ved feilkjøring</string>
+    <string name="settings_off_route_alerts_hint">En dyp lyd når du forlater ruten, en lys når du er tilbake eller har fått ny rute</string>
     <string name="settings_wrong_turn_title">Når du kjører feil</string>
     <string name="settings_rejoin_explain">Kjører du feil, regner Curveon ut om du kan kjøre videre og slutte deg til ruten lenger fram i stedet for å snu. Er omveien liten nok, kjører den bare videre uten å spørre; ellers får du valget. Under ett minutt spør den aldri.</string>
     <string name="settings_rejoin_minutes">Kjør videre uten å spørre: maks ekstra tid</string>

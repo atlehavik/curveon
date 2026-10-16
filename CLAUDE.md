@@ -60,6 +60,11 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   reports show that something must change, and the fix (e.g. another driver path or library) costs
   more battery than today, crash-freedom weighs heavier: a crash while riding is worse than the
   extra battery. Say what the change costs.
+- **Google Play rules.** Every choice (permissions, libraries and their licences, what is downloaded
+  after install, foreground services, background work, data collected) is weighed against Google
+  Play's developer policies and technical requirements (e.g. 16 KB page-aligned native libraries),
+  even though releases go out on GitHub today. Say when a choice breaks or risks a Play rule, and
+  note it in [google-play.md](google-play.md).
 - **New visual elements: test for overlap.** Before a new visual element goes in, try it in the
   phone-size emulator (Pixel, see Build and run) in both portrait and landscape, while navigating and
   not navigating, and with the music player on and off. Overlap with other elements is the main

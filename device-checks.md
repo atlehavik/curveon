@@ -6,6 +6,22 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Navigation sounds and wrong-turn sounds
+
+Curveon must be updated on both devices, and the companion on the Pixel (older companions ignore the sounds).
+
+- [ ] Settings → Navigation → Sound: choosing "Sounds" plays the heads-up in the right ear, turning
+      "Wrong-turn sounds" on plays the low off-route sound. In the helmet (via the phone when the X7 is
+      linked, straight from the phone when Curveon runs on it alone).
+- [ ] Riding (or demo ride): two soft notes ~12 s before a turn and a tick ~3 s before it, in the ear
+      of the turn. Too early, too late, too loud, too quiet? Music dips briefly rather than pausing.
+- [ ] Ride off the route: one low double sound, a light one when the new route is ready or you are
+      back on it, and a "question" sound when Curveon asks whether to turn back.
+- [ ] Intercom: is the start of the sound cut off when nothing else is playing? (There is 0.3 s of
+      silence first for the headset to wake up.)
+- [ ] During a phone call: no sounds.
+- [ ] Listen on the PC first if you like: `~/develop/Curveon-data/cue-sounds/*.wav`.
+
 ## 2026-10-16 — Map drawn with OpenGL instead of Vulkan (Pixel crashes)
 
 - [ ] Pixel: use the map as when it crashed today (pan, zoom, plan, navigate a while). No more

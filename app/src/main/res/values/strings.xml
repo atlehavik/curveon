@@ -661,6 +661,13 @@
     <!-- Settings: off route -->
     <string name="settings_off_route">Off route after</string>
     <string name="settings_off_route_hint">Distance from the line before navigation reacts</string>
+    <string name="settings_sound_title">Sound</string>
+    <string name="settings_nav_alerts">Navigation sounds</string>
+    <string name="settings_nav_alerts_hint">A soft sound before each turn and a tick at it, in the ear you turn towards</string>
+    <string name="nav_alerts_off">Off</string>
+    <string name="nav_alerts_sounds">Sounds</string>
+    <string name="settings_off_route_alerts">Wrong-turn sounds</string>
+    <string name="settings_off_route_alerts_hint">A low sound when you leave the route, a light one when you are back on track or have a new route</string>
     <string name="settings_wrong_turn_title">If you ride off the route</string>
     <string name="settings_rejoin_explain">Off the route, Curveon works out whether you can carry on and join the route further ahead instead of turning round. If that detour is small enough it just carries on, without asking; otherwise you get the choice. Under a minute never asks.</string>
     <string name="settings_rejoin_minutes">Carry on without asking: max extra time</string>

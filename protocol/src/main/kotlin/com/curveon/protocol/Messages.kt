@@ -227,6 +227,16 @@ sealed interface Message {
         override fun toJson() = obj("place_call").put("number", number)
     }
 
+    /** Play a short navigation sound in the rider's headset, in the ear given by [side]. */
+    data class PlayCue(val cue: NavCue, val side: CueSide = CueSide.CENTER) : Message {
+        override fun toJson() = obj("play_cue").put("cue", cue.name).put("side", side.name)
+    }
+
+    /** The navigation sounds: before a turn, at it, arriving, and leaving and rejoining the route. */
+    enum class NavCue { PREPARE, TURN, ARRIVE, OFF_ROUTE, BACK_ON_ROUTE, CHOOSE }
+
+    enum class CueSide { LEFT, CENTER, RIGHT }
+
     companion object {
         private fun obj(type: String) = JSONObject().put("type", type)
 
@@ -284,6 +294,10 @@ sealed interface Message {
             "request_phone_book" -> RequestPhoneBook
             "request_photos" -> RequestContactPhotos(o.optJSONArray("keys")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "place_call" -> PlaceCall(o.getString("number"))
+            // A cue this version doesn't know (from a newer tablet) is skipped.
+            "play_cue" -> runCatching { NavCue.valueOf(o.getString("cue")) }.getOrNull()?.let { cue ->
+                PlayCue(cue, runCatching { CueSide.valueOf(o.optString("side")) }.getOrDefault(CueSide.CENTER))
+            }
             else -> null // unknown types from a newer peer are ignored
         }
     }

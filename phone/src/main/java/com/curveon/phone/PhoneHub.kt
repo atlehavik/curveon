@@ -55,6 +55,9 @@ object PhoneHub {
     /** Set by [CompanionService]; contacts, call log and dialing. */
     @Volatile var phoneBook: PhoneBook? = null
 
+    /** Set by [CompanionService]; navigation sounds from the tablet, played in the rider's headset. */
+    @Volatile var cues: CuePlayer? = null
+
     fun update(block: (Status) -> Status) {
         _status.value = block(_status.value)
     }
@@ -132,6 +135,7 @@ object PhoneHub {
             is Message.RequestPhoneBook -> phoneBook?.sendPhoneBook()
             is Message.RequestContactPhotos -> phoneBook?.sendPhotos(message.keys)
             is Message.PlaceCall -> phoneBook?.placeCall(message.number)
+            is Message.PlayCue -> cues?.play(message.cue, message.side)
             else -> Unit
         }
     }

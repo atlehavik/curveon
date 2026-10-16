@@ -48,6 +48,7 @@ class CompanionService : Service() {
             running = true
             PhoneHub.voice = VoiceReplier(this)
             PhoneHub.phoneBook = PhoneBook(this)
+            PhoneHub.cues = CuePlayer(this)
             PhoneHub.update { it.copy(serviceRunning = true, lastEvent = "Waiting for the tablet…") }
             thread(name = "curveon-bt-server", isDaemon = true) { acceptLoop() }
             registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -62,6 +63,8 @@ class CompanionService : Service() {
         PhoneHub.voice = null
         PhoneHub.phoneBook?.shutdown()
         PhoneHub.phoneBook = null
+        PhoneHub.cues?.shutdown()
+        PhoneHub.cues = null
         PhoneHub.update { it.copy(serviceRunning = false, tabletName = null, lastEvent = "Stopped") }
         super.onDestroy()
     }

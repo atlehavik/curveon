@@ -50,4 +50,6 @@ Notater fra samtalen 2026-10-11/12. Ikke committet.
 - Release-APK-en kan ikke installeres over ride-bygget på din X7 (annen nøkkel) uten å miste nedlastede kart. Behold ride-bygget på egen tablet.
 - Tablet-APK er stor (ca. 99 MB): ikke minifisert, alle ABI-er. R8 + resource shrinking kan krympe den, men må testes på enhet
   (MapLibre, Room, refleksjon). Kan også fjerne ca. 20 `Log.d/v/i`-kall.
+- **Lyd og stemme (planlagt, se `docs/audio.md`):** stemmemodeller lastes ned som data (lov). sherpa-onnx-bibliotekene
+  må være 16 KB-justert (sjekk med `zipalign -c -P 16`). eSpeak NG gjør APK-ene GPL-3 (lov på Play). Ingen nye tillatelser.
 - Lisens og tredjepartsnotiser finnes (MIT, `THIRD_PARTY_LICENSES.md`). Sjekk at OSM/Overture-kreditering vises i appen.

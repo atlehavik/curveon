@@ -68,6 +68,8 @@ data class SettingsState(
     val showMapMedia: Boolean = true,
     val autoFollowTracks: Boolean,
     val offRoute: com.curveon.data.routing.OffRouteSettings,
+    val navAlerts: com.curveon.data.routing.NavAlerts = com.curveon.data.routing.NavAlerts.SOUNDS,
+    val offRouteAlerts: Boolean = true,
     val isNavigating: Boolean,
     val demoMode: Boolean,
     val maps: List<InstalledMap>,
@@ -102,6 +104,8 @@ class SettingsActions(
     val onShowMapMedia: (Boolean) -> Unit = {},
     val onAutoFollow: (Boolean) -> Unit,
     val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
+    val onNavAlerts: (com.curveon.data.routing.NavAlerts) -> Unit = {},
+    val onOffRouteAlerts: (Boolean) -> Unit = {},
     val onDemoMode: (Boolean) -> Unit,
     val onDownloadMap: (String) -> Unit,
     val onCancelMapDownload: (String) -> Unit,
@@ -204,6 +208,15 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
+                        }
+                        SectionTitle(stringResource(R.string.settings_sound_title))
+                        Setting(stringResource(R.string.settings_nav_alerts), stringResource(R.string.settings_nav_alerts_hint)) {
+                            Choice(com.curveon.data.routing.NavAlerts.entries, state.navAlerts, {
+                                stringResource(if (it == com.curveon.data.routing.NavAlerts.OFF) R.string.nav_alerts_off else R.string.nav_alerts_sounds)
+                            }, actions.onNavAlerts)
+                        }
+                        Setting(stringResource(R.string.settings_off_route_alerts), stringResource(R.string.settings_off_route_alerts_hint)) {
+                            CockpitSwitch(state.offRouteAlerts, actions.onOffRouteAlerts)
                         }
                         val o = state.offRoute
                         SectionTitle(stringResource(R.string.settings_wrong_turn_title))

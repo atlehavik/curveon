@@ -35,6 +35,8 @@ class ProtocolTest {
         Message.StartVoiceReply("k1"),
         Message.CancelVoiceReply("k1"),
         Message.SendReply("k1", "Ja, 20 minutter"),
+        Message.PlayCue(Message.NavCue.PREPARE, Message.CueSide.LEFT),
+        Message.PlayCue(Message.NavCue.OFF_ROUTE),
         Message.Contacts(listOf(
             Message.Contact(7, "Kari Nordmann", true, "7:12", listOf(Message.PhoneNumber("+47 912 34 567", "Mobile"))),
             Message.Contact(8, "Ola", false, null, listOf(Message.PhoneNumber("22 33 44 55", "Work"), Message.PhoneNumber("900 00 000", "Mobile")))
