@@ -233,6 +233,18 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     /** Gravel and softer roads in the area, from the routing data (the map tiles don't know surfaces). Blocking. */
     fun surfaceWays(south: Double, west: Double, north: Double, east: Double) = surfaces.ways(south, west, north, east)
 
+    // Its own reader: counting a whole file would otherwise keep the map's dashes waiting on the shared one.
+    private val heat by lazy {
+        com.curveon.routing.GravelHeat(routingData.segmentsDir, File(context.filesDir, "gravel-heat"),
+            com.curveon.routing.SurfaceReader(routingData.segmentsDir, File(ProfileInstaller.install(profileDir), "lookups.dat")))
+    }
+
+    /** The routing data files covering the area, for the gravel heat map (any country that is on the device). */
+    fun gravelHeatTiles(south: Double, west: Double, north: Double, east: Double) = heat.tiles(south, west, north, east)
+
+    /** How much gravel each part of one routing data file has; counted once (seconds), then kept. Blocking. */
+    fun gravelHeat(tile: String) = heat.cells(tile)
+
     // ------------------------------------------------------------------ preview
 
     fun previewDestination(name: String, destination: LatLon, options: RouteOptions, stops: List<Stop> = emptyList(), start: Stop? = null) =

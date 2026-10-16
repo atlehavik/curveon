@@ -6,6 +6,21 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Gravel colours and the gravel heat map
+
+- [ ] Settings → Display → Road surfaces: pick Orange / Yellow / Green; the dashes on the map
+      change colour (and get a bit wider). With "Only while planning" on they stay quiet until a
+      trip is being planned (preview open, picking places, drawing a roundtrip area).
+- [ ] Planning a trip: the flame button top right (under "show the whole trip") turns the gravel
+      heat map on/off. Zoom out to ~50–200 km across: warm where there is much gravel; it fades
+      out as the dashes take over around zoom 11–12.
+- [ ] First time per 5°×5° routing file the note "Counting gravel here (once)…" shows; on the X7
+      that took ~50 s per file. Afterwards it is instant (cache in `files/gravel-heat/`).
+- [ ] Abroad (a country downloaded under Maps & data): the heat map works there too. Where no
+      routing data is on the device it says so instead.
+- [ ] While a file is being counted, the dashes still load when zooming in (they have their own
+      reader now).
+
 ## 2026-10-16 — Give way signs without a route, and standing on the map
 
 Riding without a route, Curveon looks ~150 m along the road you are on (a short route straight

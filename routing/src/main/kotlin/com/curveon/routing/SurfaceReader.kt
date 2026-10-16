@@ -64,6 +64,10 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
         return out
     }
 
+    /** The marked ways starting in one 1/32° cell, read afresh (not kept); null without a segment file. */
+    @Synchronized
+    internal fun cellWays(lonIdx: Int, latIdx: Int): List<SurfaceWay>? = runCatching { decodeCell(lonIdx, latIdx) }.getOrDefault(emptyList())
+
     private fun osmFile(lonDegree: Int, latDegree: Int): OsmFile? {
         val key = lonDegree.toLong() shl 32 or latDegree.toLong()
         osmFiles[key]?.let { return it }

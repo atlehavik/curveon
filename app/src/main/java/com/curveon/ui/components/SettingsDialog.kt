@@ -59,6 +59,8 @@ data class SettingsState(
     val autoZoom: Boolean,
     val arrowLead: Double = com.curveon.data.location.RiderMotion.DEFAULT_LEAD_S,
     val showSurfaces: Boolean,
+    val surfacePalette: SurfacePalette = SurfacePalette.QUIET,
+    val surfacePaletteWhilePlanning: Boolean = false,
     val showAltitude: Boolean,
     val showRoadInfo: Boolean = true,
     val showMapMedia: Boolean = true,
@@ -90,6 +92,8 @@ class SettingsActions(
     val onAutoZoom: (Boolean) -> Unit,
     val onArrowLead: (Double) -> Unit = {},
     val onShowSurfaces: (Boolean) -> Unit,
+    val onSurfacePalette: (SurfacePalette) -> Unit = {},
+    val onSurfacePaletteWhilePlanning: (Boolean) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
     val onShowRoadInfo: (Boolean) -> Unit = {},
     val onShowMapMedia: (Boolean) -> Unit = {},
@@ -161,7 +165,10 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_map), stringResource(R.string.settings_map_hint)) {
                             Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
                         }
-                        Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = { SurfaceKey() }) {
+                        Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = {
+                            if (state.showSurfaces) SurfaceColours(state.surfacePalette, state.surfacePaletteWhilePlanning,
+                                actions.onSurfacePalette, actions.onSurfacePaletteWhilePlanning)
+                        }) {
                             Choice(listOf(false, true), state.showSurfaces,
                                 { stringResource(if (it) R.string.settings_surfaces_dashed else R.string.settings_surfaces_off) }, actions.onShowSurfaces)
                         }
@@ -574,21 +581,47 @@ private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
     }
 }
 
-/** What the map's dashes mean: a sample of each, as drawn on the dark map. */
+/**
+ * The dashes' colours: one chip per set, each showing gravel and soft ground as drawn on the dark
+ * map (so it doubles as the key), and whether the colours are only for planning.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SurfaceKey() {
-    Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        DashSample(SurfaceColors.GRAVEL_DARK)
+private fun SurfaceColours(palette: SurfacePalette, whilePlanning: Boolean, onPalette: (SurfacePalette) -> Unit, onWhilePlanning: (Boolean) -> Unit) {
+    Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        DashSample(palette.gravelDark)
         Text(stringResource(R.string.surface_gravel), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, end = 16.dp))
-        DashSample(SurfaceColors.SOFT_DARK)
+        DashSample(palette.softDark)
         Text(stringResource(R.string.surface_soft), color = TextMuted, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 6.dp))
+    }
+    FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SurfacePalette.entries.forEach { p ->
+            val selected = p == palette
+            Row(
+                Modifier.clip(RoundedCornerShape(22.dp))
+                    .background(if (selected) ElectricCyan.copy(alpha = 0.16f) else CockpitSurfaceVariant)
+                    .border(1.5.dp, if (selected) ElectricCyan else CockpitBorder, RoundedCornerShape(22.dp))
+                    .clickable { onPalette(p) }.padding(horizontal = 12.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DashSample(p.gravelDark, width = 10.dp)
+                Spacer(Modifier.width(4.dp))
+                DashSample(p.softDark, width = 10.dp)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(p.label), color = if (selected) TextPrimary else TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+    if (palette != SurfacePalette.QUIET) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.settings_surfaces_planning_only), color = TextSecondary, fontSize = 14.sp, modifier = Modifier.weight(1f, fill = false).padding(end = 12.dp))
+        CockpitSwitch(whilePlanning, onWhilePlanning)
     }
 }
 
 @Composable
-private fun DashSample(hex: String) {
+private fun DashSample(hex: String, width: androidx.compose.ui.unit.Dp = 30.dp) {
     val color = Color(android.graphics.Color.parseColor(hex))
-    androidx.compose.foundation.Canvas(Modifier.size(width = 30.dp, height = 6.dp)) {
+    androidx.compose.foundation.Canvas(Modifier.size(width = width, height = 6.dp)) {
         drawLine(
             color, androidx.compose.ui.geometry.Offset(0f, size.height / 2), androidx.compose.ui.geometry.Offset(size.width, size.height / 2),
             strokeWidth = size.height,

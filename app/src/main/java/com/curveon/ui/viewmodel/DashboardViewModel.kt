@@ -268,6 +268,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _showSurfaces = MutableStateFlow(settings.getBoolean("showSurfaces", true))
     val showSurfaces: StateFlow<Boolean> = _showSurfaces.asStateFlow()
     fun setShowSurfaces(on: Boolean) { _showSurfaces.value = on; settings.edit().putBoolean("showSurfaces", on).apply() }
+    /** The dashes' colours, and whether they only take them while planning (quiet otherwise). */
+    private val _surfacePalette = MutableStateFlow(runCatching { com.curveon.ui.components.SurfacePalette.valueOf(settings.getString("surfacePalette", null)!!) }
+        .getOrDefault(com.curveon.ui.components.SurfacePalette.QUIET))
+    val surfacePalette: StateFlow<com.curveon.ui.components.SurfacePalette> = _surfacePalette.asStateFlow()
+    fun setSurfacePalette(p: com.curveon.ui.components.SurfacePalette) { _surfacePalette.value = p; settings.edit().putString("surfacePalette", p.name).apply() }
+    private val _surfacePaletteWhilePlanning = MutableStateFlow(settings.getBoolean("surfacePaletteWhilePlanning", false))
+    val surfacePaletteWhilePlanning: StateFlow<Boolean> = _surfacePaletteWhilePlanning.asStateFlow()
+    fun setSurfacePaletteWhilePlanning(on: Boolean) { _surfacePaletteWhilePlanning.value = on; settings.edit().putBoolean("surfacePaletteWhilePlanning", on).apply() }
+    /** The gravel heat map while planning (its button on the map). */
+    private val _showGravelHeat = MutableStateFlow(settings.getBoolean("gravelHeat", false))
+    val showGravelHeat: StateFlow<Boolean> = _showGravelHeat.asStateFlow()
+    fun setShowGravelHeat(on: Boolean) { _showGravelHeat.value = on; settings.edit().putBoolean("gravelHeat", on).apply() }
     /** Settings → Display: the height above sea level under the speed. */
     private val _showAltitude = MutableStateFlow(settings.getBoolean("showAltitude", false))
     val showAltitude: StateFlow<Boolean> = _showAltitude.asStateFlow()
@@ -1126,6 +1138,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Gravel and soft roads for the map, read off the main thread. */
     suspend fun surfaceWays(south: Double, west: Double, north: Double, east: Double) =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { navigator.surfaceWays(south, west, north, east) }
+
+    val gravelHeat = object : com.curveon.ui.components.GravelHeatSource {
+        override suspend fun tiles(south: Double, west: Double, north: Double, east: Double) =
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { navigator.gravelHeatTiles(south, west, north, east) }
+        override suspend fun cells(tile: String) =
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { navigator.gravelHeat(tile) }
+    }
 
     /** A name for a point picked on the map: "Voss", "Near Voss", or "Map point" out in the wild. */
     suspend fun describePoint(point: GeoPoint): String {

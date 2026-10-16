@@ -16,10 +16,12 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +56,7 @@ import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.HeatmapLayer
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.*
@@ -92,13 +95,26 @@ private const val POI_ICON_ZOOM = 11f
 /** A marked part of the route shorter than this on screen is a tap, not a part. */
 private const val MIN_SECTION_DP = 24f
 private const val SURFACE = "curveon-surface"
+private const val HEAT = "curveon-gravel-heat"
 
-/** The road surface dashes, also shown as the key in Settings. */
-internal object SurfaceColors {
-    const val GRAVEL_LIGHT = "#9AA0A6"
-    const val GRAVEL_DARK = "#8A919C"
-    const val SOFT_LIGHT = "#B39A82"
-    const val SOFT_DARK = "#8F7458"
+/**
+ * The road surface dashes' colours, picked in Settings (where the dark ones are the key). Quiet
+ * sits with the map's own roads; the others stand out, for when gravel is what the trip is about.
+ * Orange and purple are the route's own gravel and track colours.
+ */
+enum class SurfacePalette(val label: Int, val gravelDark: String, val softDark: String, val gravelLight: String, val softLight: String) {
+    QUIET(R.string.surface_palette_quiet, "#8A919C", "#8F7458", "#9AA0A6", "#B39A82"),
+    ROUTE(R.string.surface_palette_route, GRAVEL_COLOR, TRACK_COLOR, "#F57C00", "#AA00FF"),
+    YELLOW(R.string.surface_palette_yellow, "#FFD600", "#FF6E40", "#F9A825", "#E64A19"),
+    GREEN(R.string.surface_palette_green, "#76FF03", "#FFC400", "#2E9E3E", "#EF6C00");
+}
+
+/** How much gravel there is where, for the heat map while planning (see [com.curveon.routing.GravelHeat]). */
+interface GravelHeatSource {
+    /** The routing data files covering the area (only those on the device). */
+    suspend fun tiles(south: Double, west: Double, north: Double, east: Double): List<String>
+    /** One file's cells; seconds the first time, then at once. */
+    suspend fun cells(tile: String): List<com.curveon.routing.HeatCell>
 }
 /** Gravel and soft roads from this zoom in (about 10 km across the X7's map); further out they would clutter. */
 private const val SURFACE_ZOOM = 11f
@@ -187,6 +203,15 @@ fun CurveonMapView(
     surfaceWays: (suspend (Double, Double, Double, Double) -> List<com.curveon.routing.SurfaceWay>)? = null,
     /** Settings → Display: draw the road surfaces at all. */
     showSurfaces: Boolean = true,
+    /** Settings → Display: the dashes' colours, and whether only while planning (quiet otherwise). */
+    surfacePalette: SurfacePalette = SurfacePalette.QUIET,
+    surfacePaletteWhilePlanning: Boolean = false,
+    /** Where the gravel is, as a heat map, with its button while planning (and [showGravelHeat] on). */
+    gravelHeat: GravelHeatSource? = null,
+    showGravelHeat: Boolean = false,
+    /** A trip is being planned (its sheet is open, even before a route has come back). */
+    planningTrip: Boolean = false,
+    onShowGravelHeat: ((Boolean) -> Unit)? = null,
     /** An area drawn with a finger (closed back to its start), shown dashed. */
     sketch: List<GeoPoint> = emptyList(),
     /** Drawing an area: one finger draws (two still move the map), and the stroke comes here on letting go. */
@@ -922,6 +947,52 @@ fun CurveonMapView(
     }
     LaunchedEffect(style) { surfaceBounds = null }
 
+    // Planning a trip: a preview, editing it, picking places or drawing an area on the map.
+    val planning = planningTrip || previewRoutes.isNotEmpty() || editor != null || onTap != null || onSketch != null
+    val palette = if (surfacePaletteWhilePlanning && !planning) SurfacePalette.QUIET else surfacePalette
+    LaunchedEffect(style, palette) {
+        val s = style ?: return@LaunchedEffect
+        // The bright colours a little wider too, so they read at a glance.
+        val wide = if (palette == SurfacePalette.QUIET) 1f else 1.3f
+        s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(if (dark) palette.gravelDark else palette.gravelLight), lineWidth(surfaceWidth(2.8f * wide)))
+        s.getLayer("$SURFACE-soft")?.setProperties(lineColor(if (dark) palette.softDark else palette.softLight), lineWidth(surfaceWidth(2.2f * wide)))
+    }
+
+    // Gravel heat map while planning: counted per routing data file in the background (once), shown
+    // for the files in view as they come.
+    val heatOn = showGravelHeat && planning && gravelHeat != null
+    val heatCells = remember { mutableStateMapOf<String, List<com.curveon.routing.HeatCell>>() }
+    val heatCounting = remember { mutableStateListOf<String>() }
+    var heatTiles by remember { mutableStateOf<List<String>?>(null) }
+    val heatScope = rememberCoroutineScope()
+    LaunchedEffect(style, heatOn) {
+        style?.getLayer("$HEAT-layer")?.setProperties(visibility(if (heatOn) Property.VISIBLE else Property.NONE))
+    }
+    LaunchedEffect(style, cameraIdleTick, heatOn) {
+        val m = map ?: return@LaunchedEffect
+        val source = gravelHeat?.takeIf { heatOn } ?: run { heatTiles = null; return@LaunchedEffect }
+        val b = m.projection.visibleRegion.latLngBounds
+        val tiles = source.tiles(b.latitudeSouth, b.longitudeWest, b.latitudeNorth, b.longitudeEast)
+        heatTiles = tiles
+        tiles.filter { it !in heatCells && it !in heatCounting }.forEach { tile ->
+            heatCounting += tile
+            heatScope.launch {
+                runCatching { source.cells(tile) }.onSuccess { heatCells[tile] = it }
+                    .onFailure { android.util.Log.w("CurveonMap", "Gravel heat $tile not counted", it) }
+                heatCounting -= tile
+            }
+        }
+    }
+    val heatShown = heatTiles.orEmpty().filter { it in heatCells }
+    LaunchedEffect(style, heatShown) {
+        val s = style ?: return@LaunchedEffect
+        val cells = heatShown.flatMap { heatCells[it].orEmpty() }
+        val features = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            FeatureCollection.fromFeatures(cells.map { c -> Feature.fromGeometry(Point.fromLngLat(c.lon, c.lat)).apply { addNumberProperty("w", c.weight) } })
+        }
+        if (style === s && s.isFullyLoaded) s.getSourceAs<GeoJsonSource>(HEAT)?.setGeoJson(features)
+    }
+
     // Road name after the next turn, read from the vector tiles once that spot is on screen.
     LaunchedEffect(map, style, roadNameProbe, cameraIdleTick, canQuery) {
         if (!canQuery) return@LaunchedEffect
@@ -1021,9 +1092,29 @@ fun CurveonMapView(
         }
 
         // Zoom to extents: the whole trip being planned, at a tap; under the speed and road cards.
-        if (inPreview && hasPreviewTrip) Box(Modifier.align(Alignment.TopEnd).padding(top = maxOf(buttonsTopInset, 92.dp), end = 14.dp)) {
-            MapButton(onClick = { fitTick++ }, tag = "map_fit_trip_btn") {
+        // Under it while planning: the gravel heat map on and off.
+        if (planning) Column(
+            Modifier.align(Alignment.TopEnd).padding(top = maxOf(buttonsTopInset, 92.dp), end = 14.dp),
+            horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (inPreview && hasPreviewTrip) MapButton(onClick = { fitTick++ }, tag = "map_fit_trip_btn") {
                 Icon(Icons.Default.ZoomOutMap, stringResource(R.string.map_fit_trip), tint = TextPrimary, modifier = Modifier.size(24.dp))
+            }
+            // What the heat map is up to, to the left of its button.
+            if (gravelHeat != null && onShowGravelHeat != null) Row(verticalAlignment = Alignment.CenterVertically) {
+                val note = when {
+                    !heatOn || heatTiles == null -> null
+                    heatTiles!!.any { it in heatCounting } -> stringResource(R.string.map_gravel_heat_counting)
+                    heatTiles!!.isEmpty() -> stringResource(R.string.map_gravel_heat_none)
+                    else -> null
+                }
+                if (note != null) Text(note, color = TextPrimary, fontSize = 13.sp,
+                    modifier = Modifier.padding(end = 10.dp).widthIn(max = 240.dp).clip(RoundedCornerShape(10.dp))
+                        .background(CockpitSurface.copy(alpha = 0.92f)).padding(horizontal = 10.dp, vertical = 6.dp))
+                MapButton(onClick = { onShowGravelHeat(!showGravelHeat) }, highlighted = showGravelHeat, tag = "map_gravel_heat_btn") {
+                    Icon(Icons.Default.Whatshot, stringResource(R.string.map_gravel_heat),
+                        tint = if (showGravelHeat) Color(0xFF00363D) else TextPrimary, modifier = Modifier.size(24.dp))
+                }
             }
         }
 
@@ -1137,25 +1228,44 @@ private fun arrowBitmap(): android.graphics.Bitmap {
  * the road names, in quiet colours that sit with the map's own roads. Wider for bigger roads, like
  * the map draws them.
  */
+private fun surfaceWidth(base: Float) = E.interpolate(E.linear(), E.zoom(),
+    E.stop(SURFACE_ZOOM, E.product(E.literal(base * 0.6f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
+    E.stop(14, E.product(E.literal(base), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
+    E.stop(18, E.product(E.literal(base * 3f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))))
+
 private fun addSurfaceLayers(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(SURFACE))
-    fun width(base: Float) = E.interpolate(E.linear(), E.zoom(),
-        E.stop(SURFACE_ZOOM, E.product(E.literal(base * 0.6f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
-        E.stop(14, E.product(E.literal(base), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
-        E.stop(18, E.product(E.literal(base * 3f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))))
+    s.addSource(GeoJsonSource(HEAT))
+    fun width(base: Float) = surfaceWidth(base)
     val gravel = E.eq(E.get("kind"), E.literal("gravel"))
     val soft = E.eq(E.get("kind"), E.literal("soft"))
     val layers = listOf(
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
-            lineColor(if (dark) SurfaceColors.SOFT_DARK else SurfaceColors.SOFT_LIGHT), lineWidth(width(2.2f)), lineDasharray(arrayOf(2f, 1.5f))
+            lineColor(if (dark) SurfacePalette.QUIET.softDark else SurfacePalette.QUIET.softLight), lineWidth(width(2.2f)), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),
         LineLayer("$SURFACE-gravel", SURFACE).withProperties(
-            lineColor(if (dark) SurfaceColors.GRAVEL_DARK else SurfaceColors.GRAVEL_LIGHT), lineWidth(width(2.8f)), lineDasharray(arrayOf(2.5f, 1.5f))
+            lineColor(if (dark) SurfacePalette.QUIET.gravelDark else SurfacePalette.QUIET.gravelLight), lineWidth(width(2.8f)), lineDasharray(arrayOf(2.5f, 1.5f))
         ).withFilter(gravel)
     )
     // Under the downloaded map's first label layer, so road names stay on top (the online map's
     // layers, labels included, all lie underneath).
     val firstLabel = s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer && !it.id.startsWith("online-") }?.id
+    // Gravel heat: warm where there is much gravel per 1/16° square (about 6 km of gravel road
+    // counts as a lot), the squares' blobs overlapping into one surface, fading out as the dashes take over when zoomed in.
+    val heat = HeatmapLayer("$HEAT-layer", HEAT).withProperties(
+        heatmapWeight(E.interpolate(E.linear(), E.get("w"), E.stop(0, 0f), E.stop(6, 1f))),
+        heatmapIntensity(E.interpolate(E.linear(), E.zoom(), E.stop(4, 0.8f), E.stop(8, 1.5f), E.stop(11, 2.5f))),
+        heatmapRadius(E.interpolate(E.exponential(2f), E.zoom(), E.stop(4, 6f), E.stop(7, 20f), E.stop(10, 90f), E.stop(12, 220f))),
+        heatmapOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(10, if (dark) 0.8f else 0.7f), E.stop(12.5, 0f))),
+        heatmapColor(E.interpolate(E.linear(), E.heatmapDensity(),
+            E.stop(0, E.rgba(0, 0, 0, 0)),
+            E.stop(0.15, E.rgba(255, 145, 0, 0.25)),
+            E.stop(0.4, E.rgba(255, 145, 0, 0.6)),
+            E.stop(0.7, E.rgba(255, 61, 0, 0.8)),
+            E.stop(1, E.rgba(255, 234, 0, 0.9)))),
+        visibility(Property.NONE)
+    ).also { it.maxZoom = 13f }
+    if (firstLabel != null) s.addLayerBelow(heat, firstLabel) else s.addLayer(heat)
     layers.forEach { l ->
         l.minZoom = SURFACE_ZOOM
         if (firstLabel != null) s.addLayerBelow(l, firstLabel) else s.addLayer(l)

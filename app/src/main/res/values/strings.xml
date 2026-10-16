@@ -91,6 +91,11 @@
     <string name="settings_surfaces_off">Off</string>
     <string name="settings_surfaces_dashed">Dashed</string>
     <string name="surface_soft">Dirt, rough or unknown</string>
+    <string name="surface_palette_quiet">Quiet</string>
+    <string name="surface_palette_route">Orange</string>
+    <string name="surface_palette_yellow">Yellow</string>
+    <string name="surface_palette_green">Green</string>
+    <string name="settings_surfaces_planning_only">Only while planning a trip (quiet otherwise)</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom in when slow, out on fast roads</string>
     <string name="settings_arrow">Rider arrow</string>
@@ -232,6 +237,9 @@
     <string name="map_north_up">North up – tap for heading up</string>
     <string name="map_3d">3D – tap for north up</string>
     <string name="map_fit_trip">Show the whole trip</string>
+    <string name="map_gravel_heat">Where the gravel is</string>
+    <string name="map_gravel_heat_counting">Counting gravel here (once)…</string>
+    <string name="map_gravel_heat_none">No routing data here for the gravel map: download the country\'s map</string>
     <string name="map_follow_me">Follow me</string>
     <string name="map_zoom_in">Zoom in</string>
     <string name="map_zoom_out">Zoom out</string>
