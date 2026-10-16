@@ -37,6 +37,7 @@ class ProtocolTest {
         Message.SendReply("k1", "Ja, 20 minutter"),
         Message.PlayCue(Message.NavCue.PREPARE, Message.CueSide.LEFT),
         Message.PlayCue(Message.NavCue.OFF_ROUTE),
+        Message.SpeechVoice("nb-NO", Message.VoiceAvailability.ONLINE_ONLY),
         Message.Speak("Om 300 meter, sving til høyre", "nb-NO", false, Message.NavCue.PREPARE, Message.CueSide.RIGHT),
         Message.Contacts(listOf(
             Message.Contact(7, "Kari Nordmann", true, "7:12", listOf(Message.PhoneNumber("+47 912 34 567", "Mobile"))),

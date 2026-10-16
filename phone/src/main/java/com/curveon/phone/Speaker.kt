@@ -4,12 +4,15 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
 import android.util.Log
+import com.curveon.protocol.Message.VoiceAvailability
 import java.util.Locale
 
 /**
@@ -18,7 +21,11 @@ import java.util.Locale
  * [CuePlayer] sounds: music dips, and nothing is said while a call has the audio. When the engine
  * has no voice for the language, [speak]'s fallback runs instead (the sound for the same thing).
  */
-class Speaker(context: Context) {
+class Speaker(
+    context: Context,
+    /** After each thing to say: how the language could be spoken, so the rider can be told to download it. */
+    private val onVoice: (language: String, VoiceAvailability) -> Unit = { _, _ -> }
+) {
 
     private val main = Handler(Looper.getMainLooper())
     private val audio = context.getSystemService(AudioManager::class.java)
@@ -59,8 +66,8 @@ class Speaker(context: Context) {
             override fun onDone(id: String) = finished(id)
             override fun onStop(id: String, interrupted: Boolean) = finished(id)
             @Deprecated("Deprecated in Java")
-            override fun onError(id: String) = finished(id)
-            override fun onError(id: String, errorCode: Int) = finished(id)
+            override fun onError(id: String) = failed(id)
+            override fun onError(id: String, errorCode: Int) = failed(id)
         })
     }
 
@@ -78,10 +85,14 @@ class Speaker(context: Context) {
             if (waiting.size < 4) waiting += { say(text, languageTag, interrupt, fallback) }
             return
         }
-        if (!ready || !useLanguage(languageTag)) return fallback()
+        val availability = if (ready) useLanguage(languageTag) else VoiceAvailability.MISSING
+        onVoice(languageTag, availability)
+        // Only an online voice and no connection: it would fail, so the sound instead.
+        if (availability == VoiceAvailability.MISSING || (availability == VoiceAvailability.ONLINE_ONLY && !online())) return fallback()
         if (audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return
         val id = "u${++ids}"
         lastId = id
+        fallbacks[id] = fallback
         // A moment of silence first, for a headset that has gone quiet.
         tts.playSilentUtterance(LEAD_IN_MS, if (interrupt) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, "s$ids")
         tts.speak(text, TextToSpeech.QUEUE_ADD, null, id)
@@ -92,22 +103,39 @@ class Speaker(context: Context) {
         audio.abandonAudioFocusRequest(focus)
     }
 
+    /** Couldn't be said after all (e.g. the online voice lost its connection): the sound instead. */
+    private fun failed(id: String) {
+        fallbacks.remove(id)?.let { main.post(it) }
+        finished(id)
+    }
+
     private fun finished(id: String) {
+        fallbacks.remove(id)
         if (id != lastId) return
         // Let the last of it reach the headset before the music comes back up.
         main.postDelayed({ if (lastId == id) { lastId = null; audio.abandonAudioFocusRequest(focus) } }, TAIL_MS)
     }
 
+    private val fallbacks = java.util.concurrent.ConcurrentHashMap<String, () -> Unit>()
+
+    /** The language set up with a voice on the phone; others are looked at again each time (it may have been downloaded since). */
     private var language: String? = null
 
-    private fun useLanguage(tag: String): Boolean {
-        if (tag == language) return true
+    private fun useLanguage(tag: String): VoiceAvailability {
+        if (tag == language) return VoiceAvailability.OFFLINE
         val ok = candidates(tag).any { tts.setLanguage(it) >= TextToSpeech.LANG_AVAILABLE }
-        if (!ok) { Log.w(TAG, "No voice for $tag"); return false }
-        language = tag
+        if (!ok) { Log.w(TAG, "No voice for $tag"); return VoiceAvailability.MISSING }
         offlineVoice(tts.voice?.locale ?: Locale.forLanguageTag(tag))?.let { tts.voice = it }
         Log.i(TAG, "Speaking $tag with ${tts.voice?.name}")
-        return true
+        if (tts.voice?.isNetworkConnectionRequired == true) return VoiceAvailability.ONLINE_ONLY
+        language = tag
+        return VoiceAvailability.OFFLINE
+    }
+
+    private fun online(): Boolean {
+        val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: return false
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
     /**

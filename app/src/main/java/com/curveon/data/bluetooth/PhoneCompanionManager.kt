@@ -474,6 +474,8 @@ class PhoneCompanionManager(
                 if (decoded.isNotEmpty()) _photos.value = _photos.value + decoded
             }
             is Message.PhoneError -> _phoneErrors.tryEmit(msg.text)
+            // Curveon as its own companion speaks on this device too.
+            is Message.SpeechVoice -> _speechVoice.value = VoiceStatus(msg.language, msg.availability, onThisDevice = isThisDevice)
             else -> Unit
         }
     }
@@ -530,7 +532,13 @@ class PhoneCompanionManager(
         if (viaPhone) send(Message.PlayCue(cue, side)) else localCues.play(cue, side)
     }
 
-    private val localSpeaker by lazy { com.curveon.phone.Speaker(context) }
+    private val localSpeaker by lazy { com.curveon.phone.Speaker(context) { lang, a -> _speechVoice.value = VoiceStatus(lang, a, onThisDevice = true) } }
+
+    /** How the voice was last found where speech plays, for Settings to suggest downloading it. */
+    data class VoiceStatus(val language: String, val availability: Message.VoiceAvailability, val onThisDevice: Boolean)
+
+    private val _speechVoice = MutableStateFlow<VoiceStatus?>(null)
+    val speechVoice: StateFlow<VoiceStatus?> = _speechVoice.asStateFlow()
 
     /** Spoken navigation, where [playCue] plays; [cue] is played instead when there is no voice for [language]. */
     fun speak(text: String, language: String, interrupt: Boolean, cue: Message.NavCue, side: Message.CueSide) {

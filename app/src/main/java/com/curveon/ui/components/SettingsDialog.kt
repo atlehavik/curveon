@@ -70,6 +70,9 @@ data class SettingsState(
     val offRoute: com.curveon.data.routing.OffRouteSettings,
     val navAlerts: com.curveon.data.routing.NavAlerts = com.curveon.data.routing.NavAlerts.SOUNDS,
     val offRouteAlerts: Boolean = true,
+    val voiceHeadsUp: Boolean = true,
+    /** The voice where speech plays, when it is not downloaded there: Settings suggests getting it. */
+    val voiceMissing: com.curveon.data.bluetooth.PhoneCompanionManager.VoiceStatus? = null,
     val isNavigating: Boolean,
     val demoMode: Boolean,
     val maps: List<InstalledMap>,
@@ -106,6 +109,9 @@ class SettingsActions(
     val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
     val onNavAlerts: (com.curveon.data.routing.NavAlerts) -> Unit = {},
     val onOffRouteAlerts: (Boolean) -> Unit = {},
+    val onVoiceHeadsUp: (Boolean) -> Unit = {},
+    /** Opens the text-to-speech engine's voice download on this device. */
+    val onInstallVoice: () -> Unit = {},
     val onDemoMode: (Boolean) -> Unit,
     val onDownloadMap: (String) -> Unit,
     val onCancelMapDownload: (String) -> Unit,
@@ -220,6 +226,12 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                                     com.curveon.data.routing.NavAlerts.VOICE -> R.string.nav_alerts_voice
                                 })
                             }, actions.onNavAlerts)
+                        }
+                        if (voice) {
+                            state.voiceMissing?.let { VoiceDownloadTip(it, actions.onInstallVoice) }
+                            Setting(stringResource(R.string.settings_voice_heads_up), stringResource(R.string.settings_voice_heads_up_hint)) {
+                                CockpitSwitch(state.voiceHeadsUp, actions.onVoiceHeadsUp)
+                            }
                         }
                         Setting(stringResource(R.string.settings_off_route_alerts), stringResource(R.string.settings_off_route_alerts_hint)) {
                             CockpitSwitch(state.offRouteAlerts, actions.onOffRouteAlerts)
@@ -660,5 +672,25 @@ private fun DashSample(hex: String, width: androidx.compose.ui.unit.Dp = 30.dp) 
             strokeWidth = size.height,
             pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(size.height * 1.6f, size.height * 1.1f))
         )
+    }
+}
+
+/**
+ * The voice for spoken navigation isn't on the device that speaks (the phone, or this one): say
+ * where to download it, so it also talks without coverage. On this device a button goes there.
+ */
+@Composable
+private fun VoiceDownloadTip(status: com.curveon.data.bluetooth.PhoneCompanionManager.VoiceStatus, onInstall: () -> Unit) {
+    val missing = status.availability == com.curveon.protocol.Message.VoiceAvailability.MISSING
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(NeonAmber.copy(alpha = 0.12f))
+            .border(1.dp, NeonAmber.copy(alpha = 0.5f), RoundedCornerShape(12.dp)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(stringResource(if (missing) R.string.voice_missing else R.string.voice_online_only), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(if (status.onThisDevice) R.string.voice_download_where_here else R.string.voice_download_where_phone), color = TextSecondary, fontSize = 13.sp)
+        if (status.onThisDevice) TextButton(onClick = onInstall, contentPadding = PaddingValues(0.dp)) {
+            Text(stringResource(R.string.voice_download), color = NeonAmber, fontWeight = FontWeight.Bold)
+        }
     }
 }

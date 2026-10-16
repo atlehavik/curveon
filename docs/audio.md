@@ -111,10 +111,14 @@ Under **Innstillinger → Navigasjon → Lyd**:
 
 1. Lyder for navigering og feilkjøring, på mobil og via companion (melding i `:protocol`).
 2. Tale med telefonens innebygde tale: gir Stemme-valget raskt, og vi lager ordlyden på begge språk.
-3. Piper-stemmer via sherpa-onnx, med nedlasting i Innstillinger og egne kopier på GitHub-releases.
-4. Senere: trene en egen dansk stemme.
+3. ~~Piper-stemmer via sherpa-onnx~~ (strøket 2026-10-16).
+4. ~~Trene en egen dansk stemme~~ (strøket; dansk bruker Androids stemme).
 
 ## Beslutninger
+
+- 2026-10-16: **sherpa-onnx og Piper-stemmer er strøket.** Androids innebygde talemotor (Googles
+  norske stemme) var veldig bra. Det som står om sherpa-onnx, Piper, lisenser og hosting under
+  «Stemme» er beholdt som bakgrunn, men skal ikke bygges. GPL-3 blir dermed ikke aktuelt.
 
 - 2026-10-16: GPL-3 for APK-ene (pga. eSpeak NG) er greit. Alle forslagene over er godkjent; steg 1 startet.
 
@@ -155,6 +159,16 @@ Under **Innstillinger → Navigasjon → Lyd**:
 - `<queries>` for `TTS_SERVICE` i `:phone`-manifestet (kreves fra Android 11 for å finne motoren).
   Ingen nye tillatelser.
 - Prøvd på X7: norsk Google-stemme, `nb-no-x-tfs-local` (offline). Ikke prøvd via companion ennå.
+
+### Etter første test av stemmen (2026-10-16)
+
+- Valg «Forvarsel» (på/av) når Stemme er valgt: av gir bare «Sving til høyre …» ved svingen, ingen
+  «Om 300 meter». (Lyder er uberørt.)
+- Tips om offline-stemme: talemotoren melder etter hver setning om stemmen er nedlastet
+  (`Message.SpeechVoice`: OFFLINE / ONLINE_ONLY / MISSING). Er den ikke det, viser Innstillinger hvor
+  den lastes ned (på telefonen, eller her med en knapp som åpner talemotorens nedlasting).
+  Kun-nett-stemme uten dekning gir lyden i stedet; feiler talen underveis, spilles lyden.
+  Companion trenger `ACCESS_NETWORK_STATE` (vanlig tillatelse, ingen Play-erklæring).
 
 ## Åpne spørsmål
 

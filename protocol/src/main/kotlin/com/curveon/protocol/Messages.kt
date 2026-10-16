@@ -180,6 +180,16 @@ sealed interface Message {
         override fun toJson() = obj("phone_error").put("text", text)
     }
 
+    /**
+     * How the phone can speak [language] (sent after each [Speak]): with a voice on the phone, only
+     * with a connection, or not at all (the sounds play instead). Lets the tablet suggest a download.
+     */
+    data class SpeechVoice(val language: String, val availability: VoiceAvailability) : Message {
+        override fun toJson() = obj("speech_voice").put("lang", language).put("availability", availability.name)
+    }
+
+    enum class VoiceAvailability { OFFLINE, ONLINE_ONLY, MISSING }
+
     // ---- tablet -> phone ----
     data class MediaCommand(val command: MediaAction) : Message {
         override fun toJson() = obj("media_command").put("command", command.name)
@@ -307,6 +317,8 @@ sealed interface Message {
             "request_phone_book" -> RequestPhoneBook
             "request_photos" -> RequestContactPhotos(o.optJSONArray("keys")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "place_call" -> PlaceCall(o.getString("number"))
+            "speech_voice" -> runCatching { VoiceAvailability.valueOf(o.getString("availability")) }.getOrNull()
+                ?.let { SpeechVoice(o.getString("lang"), it) }
             "speak" -> Speak(
                 o.getString("text"), o.getString("lang"), o.optBoolean("interrupt"),
                 runCatching { NavCue.valueOf(o.getString("cue")) }.getOrDefault(NavCue.PREPARE),

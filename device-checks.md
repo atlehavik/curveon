@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Night rider marker orange, voice heads-up choice, offline voice tip
+
+- [ ] Night map: the rider arrow, its ring and the edge glow are orange; the cyan route stands out
+      from it. On a gravel (orange) route the arrow stays cyan. Day map unchanged.
+- [ ] Settings → Navigation → Sound with Voice: "Forvarsel" switch. Off: only "Sving til høyre …" at
+      the turn, no "Om 300 meter".
+- [ ] Without an offline voice for the language (e.g. switch Curveon to English if no English voice is
+      downloaded), choosing Voice shows an amber tip with where to download it; on Curveon's own device
+      also a "Last ned stemme" button that opens the download. Gone once it is downloaded and Voice
+      is chosen again.
+- [ ] Settings page at phone size (portrait and landscape): the new rows and the tip fit.
+
 ## 2026-10-16 — Spoken navigation (Android text-to-speech), tick earlier, new icon
 
 Update Curveon on both devices and the companion on the Pixel.

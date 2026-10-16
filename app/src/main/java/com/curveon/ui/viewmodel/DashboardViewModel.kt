@@ -519,6 +519,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val navSpeech = NavSpeech(application)
     private val _navAlerts = MutableStateFlow(navCues.alerts)
     val navAlerts: StateFlow<NavAlerts> = _navAlerts.asStateFlow()
+    private val _voiceHeadsUp = MutableStateFlow(settings.getBoolean("voiceHeadsUp", true))
+    /** Spoken: "In 300 metres, …" before the turn as well as at it, or only at it. */
+    val voiceHeadsUp: StateFlow<Boolean> = _voiceHeadsUp.asStateFlow()
+    fun setVoiceHeadsUp(on: Boolean) {
+        _voiceHeadsUp.value = on
+        settings.edit().putBoolean("voiceHeadsUp", on).apply()
+    }
+
+    /** The voice's language where speech plays, and whether it is downloaded there (Settings suggests it). */
+    val speechVoice = phoneCompanion.speechVoice
+    fun speechLanguage() = navSpeech.language(_telemetry.value.useMph)
+
     private val _offRouteAlerts = MutableStateFlow(navCues.offRouteAlerts)
     val offRouteAlerts: StateFlow<Boolean> = _offRouteAlerts.asStateFlow()
 
@@ -538,6 +550,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Spoken or as a sound, as chosen; [p] and [road] give the words for turns. */
     private fun tell(c: com.curveon.data.routing.Cue, p: com.curveon.routing.NavigationProgress?, road: String?) {
         val mph = _telemetry.value.useMph
+        if (navCues.alerts == NavAlerts.VOICE && c.sound == Message.NavCue.PREPARE && !_voiceHeadsUp.value) return
         val text = navSpeech.text(c, p, road, mph).takeIf { navCues.alerts == NavAlerts.VOICE }
             ?: return phoneCompanion.playCue(c.sound, c.side)
         phoneCompanion.speak(text, navSpeech.language(mph), c.sound == Message.NavCue.TURN, c.sound, c.side)

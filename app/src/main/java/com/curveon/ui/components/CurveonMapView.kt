@@ -1051,11 +1051,14 @@ fun CurveonMapView(
             .testTag("map_container")
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
+        // At night the rider is orange, so it stands out from the cyan route; cyan again on an orange (gravel) route.
+        val riderOrange = dark && !(routePoints.size >= 2 && groundPreference == GroundPreference.GRAVEL)
+        val riderColor = if (riderOrange) NeonAmber else ElectricCyan
         if (hasGpsFix && style != null) {
-            RiderHalo(dark) { puck }
-            RiderArrow { puck }
+            RiderHalo(dark, riderColor) { puck }
+            RiderArrow(riderOrange) { puck }
         }
-        if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, Modifier.matchParentSize()) }
+        if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, riderColor, Modifier.matchParentSize()) }
 
         // Compass button: north up → heading up → 3D. Once the rider pans the map away, a second
         // button brings the camera back to them; it hides again while following. +/- are always
@@ -1536,13 +1539,13 @@ private const val HALO_MIN_DP = 27f
 
 /**
  * A see-through disc under the arrow, as big as the GPS's accuracy: a small ring round the arrow
- * normally, wider where the fix is poor or the position is guessed (tunnels). Cyan like the arrow
+ * normally, wider where the fix is poor or the position is guessed (tunnels). The arrow's [color]
  * on the dark map; the deeper blue of the route on the light one, where cyan would fade into it.
  */
 @Composable
-private fun RiderHalo(dark: Boolean, puck: () -> Puck?) {
-    val fill = if (dark) Color(0x3300E5FF) else Color(0x2E0091EA)
-    val edge = if (dark) Color(0x8000E5FF) else Color(0x990091EA)
+private fun RiderHalo(dark: Boolean, color: Color, puck: () -> Puck?) {
+    val fill = if (dark) color.copy(alpha = 0.2f) else Color(0x2E0091EA)
+    val edge = if (dark) color.copy(alpha = 0.5f) else Color(0x990091EA)
     val stroke = with(androidx.compose.ui.platform.LocalDensity.current) { 1.5.dp.toPx() }
     androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
         val p = puck() ?: return@Canvas
@@ -1559,11 +1562,11 @@ private fun RiderHalo(dark: Boolean, puck: () -> Puck?) {
  * every frame only redraws the arrow. Tilted with the map in 3D so it lies on the road.
  */
 @Composable
-private fun RiderArrow(puck: () -> Puck?) {
+private fun RiderArrow(orange: Boolean, puck: () -> Puck?) {
     val size = 44.dp
     val half = with(androidx.compose.ui.platform.LocalDensity.current) { size.toPx() / 2 }
     androidx.compose.foundation.Image(
-        painter = androidx.compose.ui.res.painterResource(com.curveon.R.drawable.ic_nav_arrow),
+        painter = androidx.compose.ui.res.painterResource(if (orange) com.curveon.R.drawable.ic_nav_arrow_night else com.curveon.R.drawable.ic_nav_arrow),
         contentDescription = null,
         modifier = Modifier
             .size(size)
@@ -1605,7 +1608,7 @@ private fun MapButton(
  * map's light blue water, so there it sits in a dark ring, like the rider arrow's dark outline.
  */
 @Composable
-private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Boolean, modifier: Modifier) {
+private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Boolean, color: Color, modifier: Modifier) {
     androidx.compose.foundation.Canvas(modifier) {
         val w = size.width; val h = size.height
         val margin = 12.dp.toPx()
@@ -1627,13 +1630,13 @@ private fun RiderEdgeGlow(rider: androidx.compose.ui.geometry.Offset, dark: Bool
         val r = radius * 0.55f
         val at = edge + d / d.getDistance() * (r * 0.3f)
         val stops = if (dark) arrayOf(
-            0f to ElectricCyan.copy(alpha = near),
-            0.35f to ElectricCyan.copy(alpha = 0.8f * near),
-            0.7f to ElectricCyan.copy(alpha = 0.2f * near),
+            0f to color.copy(alpha = near),
+            0.35f to color.copy(alpha = 0.8f * near),
+            0.7f to color.copy(alpha = 0.2f * near),
             1f to Color.Transparent
         ) else arrayOf(
-            0f to ElectricCyan.copy(alpha = near),
-            0.35f to ElectricCyan.copy(alpha = 0.9f * near),
+            0f to color.copy(alpha = near),
+            0.35f to color.copy(alpha = 0.9f * near),
             0.55f to CockpitBackground.copy(alpha = 0.6f * near),
             1f to Color.Transparent
         )

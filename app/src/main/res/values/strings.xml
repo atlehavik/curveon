@@ -678,6 +678,13 @@
     <string name="speak_new_route">New route ready</string>
     <string name="speak_back_on_route">Back on the route</string>
     <string name="speak_choose">Turn back or carry on? Choose on the screen</string>
+    <string name="settings_voice_heads_up">Heads-up</string>
+    <string name="settings_voice_heads_up_hint">\"In 300 metres, …\" before the turn as well. Off: only at the turn</string>
+    <string name="voice_online_only">The voice needs a connection</string>
+    <string name="voice_missing">No voice for this language, so you get the sounds</string>
+    <string name="voice_download_where_phone">Download it on the phone so it also talks without coverage: Settings → System → Languages → Text-to-speech → ⚙ by the engine → Install voice data</string>
+    <string name="voice_download_where_here">Download it so it also talks without coverage: Settings → System → Languages → Text-to-speech → ⚙ by the engine → Install voice data</string>
+    <string name="voice_download">Download voice</string>
     <string name="settings_off_route_alerts">Wrong-turn sounds</string>
     <string name="settings_off_route_alerts_hint">A low sound when you leave the route, a light one when you are back on track or have a new route</string>
     <string name="settings_wrong_turn_title">If you ride off the route</string>

@@ -49,7 +49,7 @@ class CompanionService : Service() {
             PhoneHub.voice = VoiceReplier(this)
             PhoneHub.phoneBook = PhoneBook(this)
             PhoneHub.cues = CuePlayer(this)
-            PhoneHub.speaker = Speaker(this)
+            PhoneHub.speaker = Speaker(this) { lang, availability -> PhoneHub.broadcast(Message.SpeechVoice(lang, availability)) }
             PhoneHub.update { it.copy(serviceRunning = true, lastEvent = "Waiting for the tablet…") }
             thread(name = "curveon-bt-server", isDaemon = true) { acceptLoop() }
             registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))

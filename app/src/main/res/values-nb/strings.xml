@@ -676,6 +676,13 @@
     <string name="speak_new_route">Ny rute er klar</string>
     <string name="speak_back_on_route">Tilbake på ruten</string>
     <string name="speak_choose">Snu eller kjøre videre? Velg på skjermen</string>
+    <string name="settings_voice_heads_up">Forvarsel</string>
+    <string name="settings_voice_heads_up_hint">«Om 300 meter, …» også før svingen. Av: bare ved svingen</string>
+    <string name="voice_online_only">Stemmen krever nett</string>
+    <string name="voice_missing">Ingen stemme for språket, så du får lydene</string>
+    <string name="voice_download_where_phone">Last den ned på telefonen, så den snakker også uten dekning: Innstillinger → System → Språk → Tekst-til-tale → ⚙ ved talemotoren → Installer stemmedata</string>
+    <string name="voice_download_where_here">Last den ned, så den snakker også uten dekning: Innstillinger → System → Språk → Tekst-til-tale → ⚙ ved talemotoren → Installer stemmedata</string>
+    <string name="voice_download">Last ned stemme</string>
     <string name="settings_off_route_alerts">Lyd ved feilkjøring</string>
     <string name="settings_off_route_alerts_hint">En dyp lyd når du forlater ruten, en lys når du er tilbake eller har fått ny rute</string>
     <string name="settings_wrong_turn_title">Når du kjører feil</string>

@@ -921,6 +921,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     navAlerts = viewModel.navAlerts.collectAsStateWithLifecycle().value,
                     offRouteAlerts = viewModel.offRouteAlerts.collectAsStateWithLifecycle().value,
+                    voiceHeadsUp = viewModel.voiceHeadsUp.collectAsStateWithLifecycle().value,
+                    voiceMissing = viewModel.speechVoice.collectAsStateWithLifecycle().value?.takeIf {
+                        it.availability != com.curveon.protocol.Message.VoiceAvailability.OFFLINE && it.language == viewModel.speechLanguage()
+                    },
                     isNavigating = navigationSummary != null, demoMode = demoMode,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
                     mapLayers = mapLayers,
@@ -950,6 +954,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onOffRoute = viewModel::setOffRouteSettings,
                     onNavAlerts = viewModel::setNavAlerts,
                     onOffRouteAlerts = viewModel::setOffRouteAlerts,
+                    onVoiceHeadsUp = viewModel::setVoiceHeadsUp,
+                    onInstallVoice = {
+                        runCatching { context.startActivity(android.content.Intent(android.speech.tts.TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
+                            .onFailure { runCatching { context.startActivity(android.content.Intent("com.android.settings.TTS_SETTINGS")) } }
+                    },
                     onDemoMode = viewModel::setDemoMode,
                     onDownloadMap = viewModel::downloadMap,
                     onCancelMapDownload = viewModel::cancelMapDownload,

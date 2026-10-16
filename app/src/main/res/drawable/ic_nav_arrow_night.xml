@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rider position arrow on the night map (orange, so it stands out from the cyan route), pointing up at bearing 0 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="44dp"
+    android:height="44dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#3D2200"
+        android:pathData="M24,1 L44,45 L24,35 L4,45 Z" />
+    <path
+        android:fillColor="#FF9100"
+        android:pathData="M24,6 L39.5,40 L24,32 L8.5,40 Z" />
+</vector>
