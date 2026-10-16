@@ -97,7 +97,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val surfacePalette by viewModel.surfacePalette.collectAsStateWithLifecycle()
     val surfacePaletteWhilePlanning by viewModel.surfacePaletteWhilePlanning.collectAsStateWithLifecycle()
     val showGravelHeat by viewModel.showGravelHeat.collectAsStateWithLifecycle()
-    val gravelHeatOnMap by viewModel.gravelHeatOnMap.collectAsStateWithLifecycle()
+    val gravelHeatButton by viewModel.gravelHeatButton.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
     val showMapMedia by viewModel.showMapMedia.collectAsStateWithLifecycle()
@@ -159,7 +159,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** Editing on the map: the next drag along the line marks the part of the route to change. */
     var marking by remember { mutableStateOf(false) }
     /** Editing on the map: the route locked against dragging, so a pan can't bend it (kept between edits). */
-    var routeLocked by remember { mutableStateOf(false) }
+    var routeLocked by remember { mutableStateOf(viewModel.routeLocked) }
+    /** The help bubble for planning on the map: again each time point by point starts, unless hidden for good. */
+    var showPbpHelp by remember { mutableStateOf(false) }
     // The route preview folded down to a bar so more of the route shows; open again for each new plan.
     var previewMinimized by remember { mutableStateOf(false) }
     LaunchedEffect(preview == null) { if (preview == null) previewMinimized = false }
@@ -324,6 +326,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val selectedCandidate = preview?.candidates?.getOrNull(preview!!.selected)
     // Point by point shows the trip's points the same way, so they can be dragged while building it
     // (and the map stays where the rider is tapping instead of fitting the whole trip each time).
+    val planningOnMap = chaining && planGoal != null
+    LaunchedEffect(planningOnMap) { showPbpHelp = planningOnMap && !viewModel.pointByPointHelpHidden }
     val editor = if (!chaining || planGoal == null) null else remember(planGoal, selectedCandidate, marking, routeLocked) {
         var number = 0
         val handles = buildList {
@@ -471,8 +475,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 marking = marking.takeIf { planGoal != null },
                 onMark = { marking = !marking },
                 locked = routeLocked.takeIf { planGoal != null },
-                onLock = { routeLocked = !routeLocked },
+                onLock = { routeLocked = !routeLocked; viewModel.setRouteLocked(routeLocked) },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
+            )
+            // How it works, the first times: over the bar, until "Don't show again".
+            if (chaining && planGoal != null && showPbpHelp) PointByPointHelp(
+                onOk = { showPbpHelp = false },
+                onNever = { showPbpHelp = false; viewModel.hidePointByPointHelp() },
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 120.dp, start = 12.dp, end = 12.dp)
             )
         } else if (!searchGrowIn) { // nor while the search is back up over the map
             Column(
@@ -606,9 +616,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             showSurfaces = showSurfaces,
             surfacePalette = surfacePalette,
             surfacePaletteWhilePlanning = surfacePaletteWhilePlanning,
-            gravelHeat = viewModel.gravelHeat,
+            gravelHeat = viewModel.gravelHeat.takeIf { gravelHeatButton != com.curveon.ui.components.GravelHeatButton.OFF },
             showGravelHeat = showGravelHeat,
-            gravelHeatOnMap = gravelHeatOnMap,
+            gravelHeatOnMap = gravelHeatButton == com.curveon.ui.components.GravelHeatButton.MAP,
             planningTrip = preview != null || mapPick != null || sketching,
             onShowGravelHeat = viewModel::setShowGravelHeat,
             roadNameProbe = roadNameProbe,
@@ -907,7 +917,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, arrowLead = arrowLead, showSurfaces = showSurfaces, surfacePalette = surfacePalette,
-                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, gravelHeatOnMap = gravelHeatOnMap, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, demoMode = demoMode,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
@@ -930,7 +940,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onShowSurfaces = viewModel::setShowSurfaces,
                     onSurfacePalette = viewModel::setSurfacePalette,
                     onSurfacePaletteWhilePlanning = viewModel::setSurfacePaletteWhilePlanning,
-                    onGravelHeatOnMap = viewModel::setGravelHeatOnMap,
+                    onGravelHeatButton = viewModel::setGravelHeatButton,
                     onShowAltitude = viewModel::setShowAltitude,
                     onShowRoadInfo = viewModel::setShowRoadInfo,
                     onShowMapMedia = viewModel::setShowMapMedia,

@@ -725,3 +725,31 @@ private fun roadSurface(road: com.curveon.data.routing.RoadInfo): String? = when
     }
     else -> road.surface
 }?.let { s -> road.tracktype?.removePrefix("grade")?.let { g -> stringResource(R.string.road_track_grade, s, g) } ?: s }
+
+/**
+ * How planning on the map works, in three short lines over the pick bar: shown each time the rider
+ * plans point by point, until they say not to show it again.
+ */
+@Composable
+fun PointByPointHelp(onOk: () -> Unit, onNever: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier.widthIn(max = 440.dp).clip(RoundedCornerShape(20.dp)).background(CockpitSurface.copy(alpha = 0.97f))
+            .border(1.5.dp, ElectricCyan, RoundedCornerShape(20.dp)).padding(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 6.dp)
+            .testTag("pbp_help"),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(stringResource(R.string.pbp_help_title), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black)
+        @Composable fun line(icon: androidx.compose.ui.graphics.vector.ImageVector, text: Int) = Row(verticalAlignment = Alignment.Top) {
+            Icon(icon, null, tint = ElectricCyan, modifier = Modifier.padding(top = 1.dp, end = 10.dp).size(18.dp))
+            Text(stringResource(text), color = TextSecondary, fontSize = 14.sp)
+        }
+        line(Icons.Default.TouchApp, R.string.pbp_help_tap)
+        line(Icons.Default.Lock, R.string.pbp_help_lock)
+        line(Icons.Default.LinearScale, R.string.pbp_help_mark)
+        line(Icons.Default.Check, R.string.pbp_help_done)
+        Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(onClick = onNever) { Text(stringResource(R.string.pbp_help_never), color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+            TextButton(onClick = onOk) { Text(stringResource(R.string.ok), color = ElectricCyan, fontSize = 15.sp, fontWeight = FontWeight.Black) }
+        }
+    }
+}

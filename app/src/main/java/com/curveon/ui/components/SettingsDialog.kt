@@ -61,7 +61,7 @@ data class SettingsState(
     val showSurfaces: Boolean,
     val surfacePalette: SurfacePalette = SurfacePalette.QUIET,
     val surfacePaletteWhilePlanning: Boolean = false,
-    val gravelHeatOnMap: Boolean = false,
+    val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,
     val showAltitude: Boolean,
     val showRoadInfo: Boolean = true,
     val showMapMedia: Boolean = true,
@@ -95,7 +95,7 @@ class SettingsActions(
     val onShowSurfaces: (Boolean) -> Unit,
     val onSurfacePalette: (SurfacePalette) -> Unit = {},
     val onSurfacePaletteWhilePlanning: (Boolean) -> Unit = {},
-    val onGravelHeatOnMap: (Boolean) -> Unit = {},
+    val onGravelHeatButton: (GravelHeatButton) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
     val onShowRoadInfo: (Boolean) -> Unit = {},
     val onShowMapMedia: (Boolean) -> Unit = {},
@@ -175,8 +175,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                                 { stringResource(if (it) R.string.settings_surfaces_dashed else R.string.settings_surfaces_off) }, actions.onShowSurfaces)
                         }
                         Setting(stringResource(R.string.settings_gravel_heat), stringResource(R.string.settings_gravel_heat_hint)) {
-                            Choice(listOf(false, true), state.gravelHeatOnMap,
-                                { stringResource(if (it) R.string.settings_gravel_heat_map else R.string.settings_gravel_heat_planning) }, actions.onGravelHeatOnMap)
+                            Choice(GravelHeatButton.entries, state.gravelHeatButton, { stringResource(it.label) }, actions.onGravelHeatButton)
                         }
                         Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint)) {
                             CockpitSwitch(state.showAltitude, actions.onShowAltitude)

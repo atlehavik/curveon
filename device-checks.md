@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Planning on the map: help bubble, padlock on by default
+
+- [ ] Point by point (or Pick on map while planning): a help bubble over the bar explains tapping,
+      the padlock, the dotted-line button and undo/done. OK closes it until the next time;
+      "Don't show again" for good.
+- [ ] The padlock starts closed (the line can't be dragged by accident) and remembers what you chose.
+      The bar now says "Tap to add a point; the line stays put" instead of "Route locked".
+- [ ] The flame (gravel heat map) button is gone until Settings → Display → Gravel heat map is set
+      to "While planning" or "Also on the map" (default Off).
+
 ## 2026-10-16 — Gravel colours and the gravel heat map
 
 - [ ] Settings → Display → Road surfaces: pick Orange / Yellow / Green; the dashes on the map

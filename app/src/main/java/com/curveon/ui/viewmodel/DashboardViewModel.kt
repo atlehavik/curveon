@@ -280,10 +280,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _showGravelHeat = MutableStateFlow(settings.getBoolean("gravelHeat", false))
     val showGravelHeat: StateFlow<Boolean> = _showGravelHeat.asStateFlow()
     fun setShowGravelHeat(on: Boolean) { _showGravelHeat.value = on; settings.edit().putBoolean("gravelHeat", on).apply() }
-    /** Settings → Display: the heat map button also on the ordinary map, not only while planning. */
-    private val _gravelHeatOnMap = MutableStateFlow(settings.getBoolean("gravelHeatOnMap", false))
-    val gravelHeatOnMap: StateFlow<Boolean> = _gravelHeatOnMap.asStateFlow()
-    fun setGravelHeatOnMap(on: Boolean) { _gravelHeatOnMap.value = on; settings.edit().putBoolean("gravelHeatOnMap", on).apply() }
+    /** Settings → Display: where the heat map button shows (off by default: not every rider looks for gravel). */
+    private val _gravelHeatButton = MutableStateFlow(runCatching { com.curveon.ui.components.GravelHeatButton.valueOf(settings.getString("gravelHeatButton", null)!!) }
+        .getOrDefault(com.curveon.ui.components.GravelHeatButton.OFF))
+    val gravelHeatButton: StateFlow<com.curveon.ui.components.GravelHeatButton> = _gravelHeatButton.asStateFlow()
+    fun setGravelHeatButton(b: com.curveon.ui.components.GravelHeatButton) { _gravelHeatButton.value = b; settings.edit().putString("gravelHeatButton", b.name).apply() }
+
+    /** Point by point on the map: the line locked against dragging (on unless the rider unlocked it). */
+    val routeLocked: Boolean get() = settings.getBoolean("routeLocked", true)
+    fun setRouteLocked(on: Boolean) = settings.edit().putBoolean("routeLocked", on).apply()
+    /** The help bubble for planning on the map, until the rider says not to show it again. */
+    val pointByPointHelpHidden: Boolean get() = settings.getBoolean("pointByPointHelpHidden", false)
+    fun hidePointByPointHelp() = settings.edit().putBoolean("pointByPointHelpHidden", true).apply()
     /** Settings → Display: the height above sea level under the speed. */
     private val _showAltitude = MutableStateFlow(settings.getBoolean("showAltitude", false))
     val showAltitude: StateFlow<Boolean> = _showAltitude.asStateFlow()

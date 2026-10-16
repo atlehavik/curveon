@@ -98,6 +98,7 @@
     <string name="settings_surfaces_planning_only">Only while planning a trip (quiet otherwise)</string>
     <string name="settings_gravel_heat">Gravel heat map</string>
     <string name="settings_gravel_heat_hint">The flame button top left shows where the gravel is; hidden while riding</string>
+    <string name="settings_gravel_heat_off">Off</string>
     <string name="settings_gravel_heat_planning">While planning</string>
     <string name="settings_gravel_heat_map">Also on the map</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
@@ -619,9 +620,16 @@
     <string name="edit_on_map">Edit on map</string>
     <string name="edit_route_mark">Mark the part to change</string>
     <string name="edit_route_mark_hint">Drag along the part to change</string>
-    <string name="edit_route_lock">Lock the route (move the map only)</string>
-    <string name="edit_route_unlock">Unlock the route</string>
-    <string name="edit_route_locked_hint">Route locked: tap to add a point</string>
+    <string name="edit_route_lock">Hold the line still (dragging moves the map)</string>
+    <string name="edit_route_unlock">Let the line be dragged</string>
+    <string name="edit_route_locked_hint">Tap to add a point; the line stays put</string>
+    <string name="pbp_help_title">Planning on the map</string>
+    <string name="pbp_help_tap">Tap the map to add a point; the route goes through it.</string>
+    <string name="pbp_help_lock">The padlock decides what dragging does: closed moves the map, open bends the line where you drag.</string>
+    <string name="pbp_help_mark">The dotted line button: drag along a part of the route to change just that part.</string>
+    <string name="pbp_help_done">Undo takes back the last change; the tick finishes.</string>
+    <string name="pbp_help_never">Don\'t show again</string>
+    <string name="ok">OK</string>
     <string name="undo">Undo</string>
     <string name="done">Done</string>
     <string name="change_place">Change place</string>

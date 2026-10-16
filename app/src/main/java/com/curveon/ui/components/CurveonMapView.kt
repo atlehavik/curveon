@@ -109,6 +109,11 @@ enum class SurfacePalette(val label: Int, val gravelDark: String, val softDark: 
     GREEN(R.string.surface_palette_green, "#76FF03", "#FFC400", "#2E9E3E", "#EF6C00");
 }
 
+/** Settings → Display: where the gravel heat map's button shows; off for riders who don't look for gravel. */
+enum class GravelHeatButton(val label: Int) {
+    OFF(R.string.settings_gravel_heat_off), PLANNING(R.string.settings_gravel_heat_planning), MAP(R.string.settings_gravel_heat_map)
+}
+
 /** How much gravel there is where, for the heat map while planning (see [com.curveon.routing.GravelHeat]). */
 interface GravelHeatSource {
     /** The routing data files covering the area (only those on the device). */

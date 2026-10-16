@@ -97,6 +97,7 @@
     <string name="settings_surfaces_planning_only">Bare når jeg planlegger tur (ellers diskret)</string>
     <string name="settings_gravel_heat">Gruskart</string>
     <string name="settings_gravel_heat_hint">Flammeknappen øverst til venstre viser hvor grusen er; skjult mens du kjører</string>
+    <string name="settings_gravel_heat_off">Av</string>
     <string name="settings_gravel_heat_planning">Ved planlegging</string>
     <string name="settings_gravel_heat_map">Også på kartet</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
@@ -617,9 +618,16 @@
     <string name="edit_on_map">Endre i kartet</string>
     <string name="edit_route_mark">Marker delen som skal endres</string>
     <string name="edit_route_mark_hint">Dra langs delen du vil endre</string>
-    <string name="edit_route_lock">Lås ruta (flytt bare kartet)</string>
-    <string name="edit_route_unlock">Lås opp ruta</string>
-    <string name="edit_route_locked_hint">Ruta er låst: trykk for nytt punkt</string>
+    <string name="edit_route_lock">Hold streken fast (dra flytter kartet)</string>
+    <string name="edit_route_unlock">La streken kunne dras</string>
+    <string name="edit_route_locked_hint">Trykk for nytt punkt; streken står fast</string>
+    <string name="pbp_help_title">Planlegge på kartet</string>
+    <string name="pbp_help_tap">Trykk på kartet for å legge til et punkt; ruta går innom det.</string>
+    <string name="pbp_help_lock">Hengelåsen bestemmer hva et drag gjør: lukket flytter kartet, åpen bøyer streken der du drar.</string>
+    <string name="pbp_help_mark">Prikk-knappen: dra langs en del av ruta for å endre bare den delen.</string>
+    <string name="pbp_help_done">Angre tar tilbake siste endring; haken avslutter.</string>
+    <string name="pbp_help_never">Ikke vis igjen</string>
+    <string name="ok">OK</string>
     <string name="undo">Angre</string>
     <string name="done">Ferdig</string>
     <string name="change_place">Bytt sted</string>
