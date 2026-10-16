@@ -89,7 +89,8 @@ object GiveWay {
                         else -> true
                     }
                 }
-                if (applies) found += GiveWayOnRoute(along, s.stop)
+                if (applies && !(priorityRoad != null && offPriorityRoad(route, along, dx / dLen, dy / dLen, kx, priorityRoad)))
+                    found += GiveWayOnRoute(along, s.stop)
             }
         }
         // One per junction (a sign on each side, or give way under stop): stop wins.
@@ -145,6 +146,22 @@ object GiveWay {
         return out
     }
 
+    /**
+     * Whether the route reaches a sign [along] metres on just after turning off a priority road
+     * across the sign's road (direction ([ux], [uy])): the rider on a priority road has right of way,
+     * and the register now and then has such a sign facing the wrong way. A sign along the priority
+     * road itself (where it ends, a roundabout) still counts.
+     */
+    private fun offPriorityRoad(route: Route, along: Double, ux: Double, uy: Double, kx: Double, priorityRoad: (Double, Double) -> RoadPiece?): Boolean =
+        TURNED_OFF_BACK_M.any { back ->
+            val p = pointAt(route, along - back) ?: return@any false
+            val piece = priorityRoad(p.lat, p.lon) ?: return@any false
+            if (offset(piece, p, kx, line = false) >= ON_PRIORITY_M) return@any false
+            val px = (piece.lon2 - piece.lon1) * kx; val py = (piece.lat2 - piece.lat1) * KY
+            val pLen = hypot(px, py)
+            pLen > 0.0 && abs(px * ux + py * uy) / pLen < cos(Math.toRadians(MAX_ANGLE_DEG))
+        }
+
     /** How far [p] is from [piece] (metres); with [line], signed (> 0 left) from the line through it. */
     private fun offset(piece: RoadPiece, p: LatLon, kx: Double, line: Boolean): Double {
         val ax = (piece.lon1 - p.lon) * kx; val ay = (piece.lat1 - p.lat) * KY
@@ -187,6 +204,8 @@ object GiveWay {
     /** On the priority road's line: the junction itself. */
     private const val AT_LINE_M = 3.0
     private const val PRIORITY_STEP_M = 5.0
+    /** Looked back this far from a sign for the priority road the route turned off. */
+    private val TURNED_OFF_BACK_M = listOf(10.0, 20.0)
     /** How far the route must carry on along the priority road. */
     private const val STAYS_M = 25.0
 }

@@ -102,6 +102,19 @@ class GiveWayTest {
     }
 
     @Test
+    fun turningOffAPriorityRoadPastASignFacingTheRiderDoesNot() {
+        // The side road's sign registered facing away from the junction (as at KV1030 by Stavlandsvegen).
+        val fiveEast = LatLon(60.005, 5.0 + 5 / (111_320.0 * kotlin.math.cos(Math.toRadians(60.005))))
+        val fifteenEast = LatLon(60.005, 5.0 + 15 / (111_320.0 * kotlin.math.cos(Math.toRadians(60.005))))
+        val intoSideRoad = route(south, junction, east)
+        val wrongWay = sign(202, 0, at = fiveEast, on = fifteenEast)
+        assertEquals(1, GiveWay.alongRoute(intoSideRoad, listOf(wrongWay)).size)
+        assertTrue(GiveWay.alongRoute(intoSideRoad, listOf(wrongWay), priority).isEmpty())
+        // A sign along the priority road itself (it ends, a roundabout) still counts.
+        assertEquals(1, GiveWay.alongRoute(route(south, north), listOf(sign(202, 0)), priority).size)
+    }
+
+    @Test
     fun aPriorityRoadAndItsOwnSignAreOneJunction() {
         assertEquals(1, GiveWay.alongRoute(route(east, junction, north), listOf(sign(202, 1)), priority).size)
     }
