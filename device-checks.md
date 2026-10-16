@@ -6,6 +6,21 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Spoken navigation (Android text-to-speech), tick earlier, new icon
+
+Update Curveon on both devices and the companion on the Pixel.
+
+- [ ] Settings → Navigation → Sound → Voice: says "Om 300 meter, sving til høyre" in the helmet.
+      With the X7 linked it comes from the Pixel (`adb -s <pixel> logcat -s Speaker` shows
+      "Speaking nb-NO with …-local"); Curveon alone on the Pixel says it too.
+- [ ] Offline: on the Pixel, Settings → System → Languages → Text-to-speech → Speech Services by
+      Google → Install voice data → Norsk (Bokmål). With it the log says `-local`, and it talks
+      without coverage. Without it (and offline) you get the sounds instead.
+- [ ] Demo ride with Voice: heads-up "Om … meter, sving … inn på <vei>, deretter …", at the turn
+      "Sving til høyre", "Du er fremme". Words clear through the intercom? Too long, too early, too late?
+- [ ] Sounds: does the tick now come before you start turning (it is 2 s earlier)?
+- [ ] New launcher icon (cyan tyre) on both devices and on the companion.
+
 ## 2026-10-16 — Navigation sounds and wrong-turn sounds
 
 Curveon must be updated on both devices, and the companion on the Pixel (older companions ignore the sounds).

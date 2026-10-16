@@ -527,9 +527,18 @@ class PhoneCompanionManager(
      * (the tablet's own speaker is no use on the bike), otherwise this device does.
      */
     fun playCue(cue: Message.NavCue, side: Message.CueSide) {
-        val viaPhone = !isThisDevice && _connectionState.value == CompanionConnectionState.CONNECTED && writer != null
         if (viaPhone) send(Message.PlayCue(cue, side)) else localCues.play(cue, side)
     }
+
+    private val localSpeaker by lazy { com.curveon.phone.Speaker(context) }
+
+    /** Spoken navigation, where [playCue] plays; [cue] is played instead when there is no voice for [language]. */
+    fun speak(text: String, language: String, interrupt: Boolean, cue: Message.NavCue, side: Message.CueSide) {
+        if (viaPhone) send(Message.Speak(text, language, interrupt, cue, side))
+        else localSpeaker.speak(text, language, interrupt) { localCues.play(cue, side) }
+    }
+
+    private val viaPhone get() = !isThisDevice && _connectionState.value == CompanionConnectionState.CONNECTED && writer != null
 
     fun skipNext() = send(Message.MediaCommand(Message.MediaAction.NEXT))
 

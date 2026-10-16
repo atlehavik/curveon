@@ -126,8 +126,9 @@ Under **Innstillinger → Navigasjon → Lyd**:
 - `CueSounds` (`:phone`) lager lydene i kode (44,1 kHz stereo, 0,3 s stillhet først, panorert med
   30 % i det andre øret). `CuePlayer` spiller dem som navigasjonslyd med `MAY_DUCK`, og hopper over
   når den ikke får lydfokus (samtale).
-- `NavCues` (`app`, `data/routing`) bestemmer når: forvarsel ved `fart × 12 s` (80–600 m), tikk ved
-  `fart × 3 s` (20–120 m), fart regnes som minst 30 km/t. Forvarsel droppes hvis det ville kommet
+- `NavCues` (`app`, `data/routing`) bestemmer når: forvarsel ved `fart × (12 + 2) s` (80–600 m), tikk ved
+  `fart × (3 + 2) s` (30–160 m); de 2 s dekker GPS-forsinkelse, 1 Hz-fixer, stillheten først og
+  Bluetooth (tikket kom for sent på demotur 2026-10-16). Fart regnes som minst 30 km/t. Forvarsel droppes hvis det ville kommet
   under 3 s før tikket. Feilkjøring: én lyd, ikke igjen på 30 s; «tilbake» når ruten er funnet eller
   rytteren er tilbake; spørsmålslyd når `wrongTurn` vises. Ikke mens rytteren kjører til starten
   (`approach`). Testet i `NavCuesTest` og `CueSoundsTest`.
@@ -137,6 +138,25 @@ Under **Innstillinger → Navigasjon → Lyd**:
   feilkjøring» (på/av). Begge på som standard. Valget spiller en prøvelyd.
 - Lydene som WAV for å lytte på PC: `~/develop/Curveon-data/cue-sounds/`.
 
+- Demotur 2026-10-16: lydene hørtes bra ut, men tikket kom når svingen var i gang. Flyttet 2 s
+  tidligere (`LAG_S`). Feiltilstandene er ikke prøvd ennå.
+
+### Steg 2: tale med Androids innebygde talemotor (ferdig 2026-10-16, venter på test)
+
+- Valget «Stemme» under Navigeringslyder. Alt som ellers gir lyd, blir sagt; feilkjøring også.
+- `Message.Speak(text, language, interrupt, cue, side)`: teksten lages på enheten som navigerer
+  (`NavSpeech` i `app`), på språket appen vises på (nb-NO, en-GB, en-US med mph). Den bruker de samme
+  svingtekstene som skjermen: «Om 300 meter, sving til høyre inn på Stavlandsvegen, deretter hold til
+  venstre». Ved svingen: «Sving til høyre». Avstander rundes til 10/50/100 m (fot/miles med mph).
+- `Speaker` (`:phone`) bruker `TextToSpeech`, startes først når noe skal sies, og velger en
+  nedlastet offline-stemme når den finnes (Google velger ellers nettstemmen når det er dekning).
+  Mangler stemmen for språket, spilles lyden i stedet (`cue`). Tikket ved svingen avbryter et
+  forvarsel som fortsatt leses opp. 0,3 s stillhet først, som for lydene.
+- `<queries>` for `TTS_SERVICE` i `:phone`-manifestet (kreves fra Android 11 for å finne motoren).
+  Ingen nye tillatelser.
+- Prøvd på X7: norsk Google-stemme, `nb-no-x-tfs-local` (offline). Ikke prøvd via companion ennå.
+
 ## Åpne spørsmål
 
 - Treffer tidspunktene og volumet på hjelmen? Justeres etter test.
+- Er setningene for lange når svingene kommer tett? Forvarselet kan da kortes ned (uten vei/«deretter»).

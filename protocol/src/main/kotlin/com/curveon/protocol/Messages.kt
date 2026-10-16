@@ -232,6 +232,19 @@ sealed interface Message {
         override fun toJson() = obj("play_cue").put("cue", cue.name).put("side", side.name)
     }
 
+    /**
+     * Say [text] in the rider's headset, in [language] (e.g. "nb-NO"), with the phone's own
+     * text-to-speech. [interrupt] cuts off what is being said. Without a voice for the language the
+     * phone plays [cue] instead (also what an older phone that doesn't know this message misses).
+     */
+    data class Speak(
+        val text: String, val language: String, val interrupt: Boolean = false,
+        val cue: NavCue, val side: CueSide = CueSide.CENTER
+    ) : Message {
+        override fun toJson() = obj("speak").put("text", text).put("lang", language).put("interrupt", interrupt)
+            .put("cue", cue.name).put("side", side.name)
+    }
+
     /** The navigation sounds: before a turn, at it, arriving, and leaving and rejoining the route. */
     enum class NavCue { PREPARE, TURN, ARRIVE, OFF_ROUTE, BACK_ON_ROUTE, CHOOSE }
 
@@ -294,6 +307,11 @@ sealed interface Message {
             "request_phone_book" -> RequestPhoneBook
             "request_photos" -> RequestContactPhotos(o.optJSONArray("keys")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "place_call" -> PlaceCall(o.getString("number"))
+            "speak" -> Speak(
+                o.getString("text"), o.getString("lang"), o.optBoolean("interrupt"),
+                runCatching { NavCue.valueOf(o.getString("cue")) }.getOrDefault(NavCue.PREPARE),
+                runCatching { CueSide.valueOf(o.optString("side")) }.getOrDefault(CueSide.CENTER)
+            )
             // A cue this version doesn't know (from a newer tablet) is skipped.
             "play_cue" -> runCatching { NavCue.valueOf(o.getString("cue")) }.getOrNull()?.let { cue ->
                 PlayCue(cue, runCatching { CueSide.valueOf(o.optString("side")) }.getOrDefault(CueSide.CENTER))

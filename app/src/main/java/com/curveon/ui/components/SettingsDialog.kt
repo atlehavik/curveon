@@ -210,9 +210,15 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
                         }
                         SectionTitle(stringResource(R.string.settings_sound_title))
-                        Setting(stringResource(R.string.settings_nav_alerts), stringResource(R.string.settings_nav_alerts_hint)) {
+                        val voice = state.navAlerts == com.curveon.data.routing.NavAlerts.VOICE
+                        Setting(stringResource(R.string.settings_nav_alerts),
+                            stringResource(if (voice) R.string.settings_nav_alerts_voice_hint else R.string.settings_nav_alerts_hint)) {
                             Choice(com.curveon.data.routing.NavAlerts.entries, state.navAlerts, {
-                                stringResource(if (it == com.curveon.data.routing.NavAlerts.OFF) R.string.nav_alerts_off else R.string.nav_alerts_sounds)
+                                stringResource(when (it) {
+                                    com.curveon.data.routing.NavAlerts.OFF -> R.string.nav_alerts_off
+                                    com.curveon.data.routing.NavAlerts.SOUNDS -> R.string.nav_alerts_sounds
+                                    com.curveon.data.routing.NavAlerts.VOICE -> R.string.nav_alerts_voice
+                                })
                             }, actions.onNavAlerts)
                         }
                         Setting(stringResource(R.string.settings_off_route_alerts), stringResource(R.string.settings_off_route_alerts_hint)) {

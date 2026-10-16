@@ -516,6 +516,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             .getOrDefault(NavAlerts.SOUNDS)
         offRouteAlerts = settings.getBoolean("offRouteAlerts", true)
     }
+    private val navSpeech = NavSpeech(application)
     private val _navAlerts = MutableStateFlow(navCues.alerts)
     val navAlerts: StateFlow<NavAlerts> = _navAlerts.asStateFlow()
     private val _offRouteAlerts = MutableStateFlow(navCues.offRouteAlerts)
@@ -526,14 +527,27 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         navCues.alerts = a
         _navAlerts.value = a
         settings.edit().putString("navAlerts", a.name).apply()
-        if (a == NavAlerts.SOUNDS) phoneCompanion.playCue(Message.NavCue.PREPARE, Message.CueSide.RIGHT)
+        val mph = _telemetry.value.useMph
+        when (a) {
+            NavAlerts.SOUNDS -> phoneCompanion.playCue(Message.NavCue.PREPARE, Message.CueSide.RIGHT)
+            NavAlerts.VOICE -> phoneCompanion.speak(navSpeech.sample(mph), navSpeech.language(mph), true, Message.NavCue.PREPARE, Message.CueSide.RIGHT)
+            NavAlerts.OFF -> Unit
+        }
+    }
+
+    /** Spoken or as a sound, as chosen; [p] and [road] give the words for turns. */
+    private fun tell(c: com.curveon.data.routing.Cue, p: com.curveon.routing.NavigationProgress?, road: String?) {
+        val mph = _telemetry.value.useMph
+        val text = navSpeech.text(c, p, road, mph).takeIf { navCues.alerts == NavAlerts.VOICE }
+            ?: return phoneCompanion.playCue(c.sound, c.side)
+        phoneCompanion.speak(text, navSpeech.language(mph), c.sound == Message.NavCue.TURN, c.sound, c.side)
     }
 
     fun setOffRouteAlerts(on: Boolean) {
         navCues.offRouteAlerts = on
         _offRouteAlerts.value = on
         settings.edit().putBoolean("offRouteAlerts", on).apply()
-        if (on) phoneCompanion.playCue(Message.NavCue.OFF_ROUTE, Message.CueSide.CENTER)
+        if (on) tell(com.curveon.data.routing.Cue(Message.NavCue.OFF_ROUTE), null, null)
     }
     private var gpsJob: Job? = null
 
@@ -919,8 +933,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             navigator.state.collect { s ->
                 val route = s.route ?: return@collect navCues.reset()
                 val p = s.progress ?: return@collect
-                navCues.update(route, p, tripTracker.speedKmh / 3.6, s.wrongTurn != null, s.approach != null, System.currentTimeMillis())
-                    .forEach { (cue, side) -> phoneCompanion.playCue(cue, side) }
+                val cues = navCues.update(route, p, tripTracker.speedKmh / 3.6, s.wrongTurn != null, s.approach != null, System.currentTimeMillis())
+                if (cues.isEmpty()) return@collect
+                val idx = route.maneuvers.indexOf(p.nextManeuver)
+                val road = currentTurnInstruction.value?.takeIf { it.index == idx }?.streetName?.takeIf { it.isNotEmpty() }
+                cues.forEach { tell(it, p, road) }
             }
         }
         // While navigating: next fuel and camera ahead on the route.
