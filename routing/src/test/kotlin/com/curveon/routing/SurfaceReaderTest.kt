@@ -18,12 +18,22 @@ class SurfaceReaderTest {
         assertEquals(SurfaceKind.GRAVEL to 0, SurfaceReader.classify("track", null, "grade2"))
         assertEquals(SurfaceKind.SOFT to 0, SurfaceReader.classify("track", null, null))
         assertEquals(SurfaceKind.SOFT to 0, SurfaceReader.classify("service", "dirt", null))
-        assertEquals(null, SurfaceReader.classify("track", "asphalt", null))
         assertEquals(SurfaceKind.PAVED to 1, SurfaceReader.classify("residential", null, null))
         assertEquals(SurfaceKind.PAVED to 1, SurfaceReader.classify("unclassified", "asphalt", null))
-        assertEquals(null, SurfaceReader.classify("service", null, null))
+        assertEquals(SurfaceKind.ACCESS to 0, SurfaceReader.classify("service", null, null))
+        assertEquals(SurfaceKind.ACCESS to 0, SurfaceReader.classify("track", "asphalt", null))
         assertEquals(null, SurfaceReader.classify("secondary", null, null))
         assertEquals(null, SurfaceReader.classify("path", "gravel", null))
+    }
+
+    @Test
+    fun `keeps only the access roads that lead to gravel`() {
+        fun way(kind: SurfaceKind, vararg c: Double) = SurfaceWay(kind, 0, c)
+        val gravel = way(SurfaceKind.GRAVEL, 5.0, 60.0, 5.01, 60.0)
+        val toGravel = way(SurfaceKind.ACCESS, 5.02, 60.0, 5.01, 60.0)
+        val further = way(SurfaceKind.ACCESS, 5.03, 60.01, 5.025, 60.005, 5.02, 60.0)
+        val driveway = way(SurfaceKind.ACCESS, 6.0, 61.0, 6.01, 61.0)
+        assertEquals(listOf(gravel, toGravel, further), SurfaceReader.leadingToGravel(listOf(gravel, driveway, further, toGravel)).sortedBy { it.coords[0] })
     }
 
     @Test

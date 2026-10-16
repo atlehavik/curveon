@@ -934,7 +934,8 @@ fun CurveonMapView(
         val dLon = (b.longitudeEast - b.longitudeWest) * 0.3
         val area = LatLngBounds.from(b.latitudeNorth + dLat, b.longitudeEast + dLon, b.latitudeSouth - dLat, b.longitudeWest - dLon)
         val ways = runCatching { fetch(area.latitudeSouth, area.longitudeWest, area.latitudeNorth, area.longitudeEast) }
-            .onFailure { android.util.Log.w("CurveonMap", "Surfaces not read", it) }.getOrNull() ?: return@LaunchedEffect
+            .onFailure { android.util.Log.w("CurveonMap", "Surfaces not read", it) }.getOrNull()
+            ?.let { com.curveon.routing.SurfaceReader.leadingToGravel(it) } ?: return@LaunchedEffect
         val features = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
             FeatureCollection.fromFeatures(ways.map { w ->
                 Feature.fromGeometry(LineString.fromLngLats((w.coords.indices step 2).map { Point.fromLngLat(w.coords[it], w.coords[it + 1]) })).apply {
@@ -942,6 +943,7 @@ fun CurveonMapView(
                         com.curveon.routing.SurfaceKind.GRAVEL -> "gravel"
                         com.curveon.routing.SurfaceKind.SOFT -> "soft"
                         com.curveon.routing.SurfaceKind.PAVED -> "paved"
+                        com.curveon.routing.SurfaceKind.ACCESS -> "access"
                     })
                     addNumberProperty("rank", w.rank)
                 }
@@ -1247,19 +1249,22 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
     fun width(base: Float) = surfaceWidth(base)
     val gravel = E.eq(E.get("kind"), E.literal("gravel"))
     val soft = E.eq(E.get("kind"), E.literal("soft"))
-    val paved = E.eq(E.get("kind"), E.literal("paved"))
     // Small tarmac roads like the map's own minor roads (white in a grey casing), until the map's
-    // own are wide enough to see, so a gravel road visibly starts somewhere.
-    val pavedFade = E.interpolate(E.linear(), E.zoom(), E.stop(13.2, 1f), E.stop(14, 0f))
-    val layers = listOf(
-        LineLayer("$SURFACE-paved-casing", SURFACE).withProperties(
-            lineColor("#A3A3A3"), lineOpacity(pavedFade), lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
-            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(14, 3.4f)))
-        ).withFilter(paved).also { it.maxZoom = 14f },
-        LineLayer("$SURFACE-paved", SURFACE).withProperties(
-            lineColor(if (dark) "#EBEBEB" else "#FFFFFF"), lineOpacity(pavedFade), lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
-            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(14, 2f)))
-        ).withFilter(paved).also { it.maxZoom = 14f },
+    // own are wide enough to see, so a gravel road visibly starts somewhere: small roads until
+    // zoom 14, access roads leading to gravel (the map draws those even later) until 15.5.
+    fun tarmac(kind: String, fadeFrom: Float, until: Float) = listOf(
+        LineLayer("$SURFACE-$kind-casing", SURFACE).withProperties(
+            lineColor("#A3A3A3"), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(15, 3.6f)))
+        ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until },
+        LineLayer("$SURFACE-$kind", SURFACE).withProperties(
+            lineColor(if (dark) "#EBEBEB" else "#FFFFFF"), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(15, 2.2f)))
+        ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until }
+    )
+    val layers = tarmac("access", 14.8f, 15.6f) + tarmac("paved", 13.2f, 14f) + listOf(
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
             lineColor(if (dark) SurfacePalette.QUIET.softDark else SurfacePalette.QUIET.softLight), lineWidth(width(2.2f)), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),

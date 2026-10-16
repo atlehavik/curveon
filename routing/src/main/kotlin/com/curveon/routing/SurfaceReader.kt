@@ -22,7 +22,13 @@ enum class SurfaceKind {
      * and draw them barely visible until ~13, so they are drawn with the dashes to show where the
      * gravel roads start.
      */
-    PAVED
+    PAVED,
+    /**
+     * A tarmac (or not stated) service or access road, or a tarmac track: the map draws these only
+     * when zoomed far in. Shown only where they lead to gravel (see [SurfaceReader.leadingToGravel]),
+     * not every driveway.
+     */
+    ACCESS
 }
 
 /**
@@ -232,8 +238,32 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
                 // No surface: only tracks are taken to be unpaved (as the router does).
                 highway == "track" -> if (tracktype == "grade1" || tracktype == "grade2") SurfaceKind.GRAVEL else SurfaceKind.SOFT
                 else -> null
-            } ?: return if (rank == 1) SurfaceKind.PAVED to 1 else null
+            } ?: return when {
+                rank == 1 -> SurfaceKind.PAVED to 1
+                highway == "service" || highway == "track" -> SurfaceKind.ACCESS to 0
+                else -> null
+            }
             return kind to rank
+        }
+
+        /**
+         * [ways] without the [SurfaceKind.ACCESS] roads that don't lead to gravel or soft ground,
+         * directly or through other access roads (ways meet where their ends are the same point).
+         */
+        fun leadingToGravel(ways: List<SurfaceWay>): List<SurfaceWay> {
+            fun key(c: DoubleArray, i: Int) = Math.round(c[i] * 1e6) * 1_000_000_000L + Math.round(c[i + 1] * 1e6)
+            fun ends(w: SurfaceWay) = listOf(key(w.coords, 0), key(w.coords, w.coords.size - 2))
+            val reached = HashSet<Long>()
+            ways.filter { it.kind == SurfaceKind.GRAVEL || it.kind == SurfaceKind.SOFT }.forEach { reached += ends(it) }
+            var open = ways.filter { it.kind == SurfaceKind.ACCESS }
+            val kept = HashSet<SurfaceWay>()
+            while (true) {
+                val (touching, rest) = open.partition { w -> ends(w).any { it in reached } }
+                if (touching.isEmpty()) break
+                touching.forEach { kept += it; reached += ends(it) }
+                open = rest
+            }
+            return ways.filter { it.kind != SurfaceKind.ACCESS || it in kept }
         }
 
         private fun toILon(lon: Double) = ((lon + 180.0) * 1_000_000).toInt()

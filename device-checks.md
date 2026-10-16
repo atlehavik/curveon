@@ -19,7 +19,10 @@ Commands assume the device is connected over USB. With both connected, pick one 
       riding (gone from 10 km/h, back once stopped).
 - [ ] Zooming in from ~zoom 10: as soon as the gravel dashes appear (zoom 11), the small tarmac
       roads leading to them are drawn too (white with a grey edge), so gravel roads no longer seem
-      to start nowhere. Try a spot like the KV 10122 one. Service roads/driveways are not added.
+      to start nowhere. Try a spot like the KV 10122 one.
+- [ ] Access/private roads ("Adkomst- eller privatvei", e.g. by Jerstad towards Heimrehølen) that
+      lead to a gravel road now show with it (until ~zoom 15.5, where the map draws them itself).
+      Driveways that lead to no gravel stay out.
 - [ ] First time per 5°×5° routing file the note "Counting gravel here (once)…" shows; on the X7
       that took ~50 s per file. Afterwards it is instant (cache in `files/gravel-heat/`).
 - [ ] Abroad (a country downloaded under Maps & data): the heat map works there too. Where no
