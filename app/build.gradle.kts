@@ -29,7 +29,8 @@ android {
   }
 
   buildTypes {
-    // DEV: developer aids (demo ride, demo data, fake OBD values) that public releases leave out.
+    // DEV: developer aids (demo data, fake OBD values) that public releases leave out. The demo
+    // ride is in every build.
     debug { buildConfigField("boolean", "DEV", "true") }
     // Like release (not debuggable, so ART runs routing at full speed) but signed with the debug
     // key, so it installs over a debug build and keeps the app's data. For the bike tablet.

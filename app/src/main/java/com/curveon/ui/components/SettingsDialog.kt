@@ -200,7 +200,8 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_rejoin_percent), stringResource(R.string.settings_rejoin_percent_hint)) {
                             Choice(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
                         }
-                        if (com.curveon.BuildConfig.DEV) Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
+                        // Kept in public releases too: handy for showing and trying Curveon.
+                        Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
                             CockpitSwitch(state.demoMode, actions.onDemoMode, accent = NeonAmber)
                         }
                     }
