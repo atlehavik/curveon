@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.1.2",
+    "en": [
+      "Navigating in Norway: a give way or stop sign by the speed before junctions where you give way (signed ones, and onto priority roads), with the distance",
+      "Curveon sleeps when no trip is being navigated and it is out of sight: no battery used until you open it again, and the trip you were planning is kept",
+      "A see-through halo under the rider arrow shows how sure the GPS is",
+      "The rider arrow keeps level with the bike at junctions (1.5 s ahead of the GPS; adjustable in Settings → Navigation)",
+      "GPX files open in Curveon from other apps (Files, e-mail, sharing)",
+      "Holding a finger on a GPX track names the track",
+      "Point by point from a place held on the map: start there, or from your position",
+      "Waypoint cards on an upright phone are tidier"
+    ],
+    "nb": [
+      "Navigering i Norge: et vikeplikt- eller stoppskilt ved farten før kryss der du har vikeplikt (skiltede, og inn på forkjørsvei), med avstanden",
+      "Curveon sover når ingen tur navigeres og den ikke vises: bruker ikke batteri før du åpner den igjen, og turen du planla tas vare på",
+      "En gjennomsiktig ring under kjørepilen viser hvor sikker GPS-en er",
+      "Kjørepilen holder følge med sykkelen i kryss (1,5 s foran GPS-en; kan justeres i Innstillinger → Navigasjon)",
+      "GPX-filer åpnes i Curveon fra andre apper (Filer, e-post, deling)",
+      "Hold fingeren på et GPX-spor for å se navnet på sporet",
+      "Punkt for punkt fra et sted du holder på kartet: start der, eller fra din posisjon",
+      "Veipunktkort på mobil i høyformat er ryddigere"
+    ]
+  },
+  {
     "version": "1.1.1",
     "en": [
       "Avoiding E-roads no longer sends the ride onto the Hurtigruten",
