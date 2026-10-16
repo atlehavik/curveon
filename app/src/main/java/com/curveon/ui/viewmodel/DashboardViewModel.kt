@@ -281,7 +281,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val showGravelHeat: StateFlow<Boolean> = _showGravelHeat.asStateFlow()
     fun setShowGravelHeat(on: Boolean) { _showGravelHeat.value = on; settings.edit().putBoolean("gravelHeat", on).apply() }
     /** Settings → Display: where the heat map button shows (off by default: not every rider looks for gravel). */
-    private val _gravelHeatButton = MutableStateFlow(runCatching { com.curveon.ui.components.GravelHeatButton.valueOf(settings.getString("gravelHeatButton", null)!!) }
+    private val _gravelHeatButton = MutableStateFlow(runCatching { com.curveon.ui.components.GravelHeatButton.valueOf(settings.getString("gravelHeatButton", null)!!.replace("PLANNING", "MAP")) }
         .getOrDefault(com.curveon.ui.components.GravelHeatButton.OFF))
     val gravelHeatButton: StateFlow<com.curveon.ui.components.GravelHeatButton> = _gravelHeatButton.asStateFlow()
     fun setGravelHeatButton(b: com.curveon.ui.components.GravelHeatButton) { _gravelHeatButton.value = b; settings.edit().putString("gravelHeatButton", b.name).apply() }

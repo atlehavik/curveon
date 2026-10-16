@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -168,14 +169,18 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
                         }
                         Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = {
-                            if (state.showSurfaces) SurfaceColours(state.surfacePalette, state.surfacePaletteWhilePlanning,
-                                actions.onSurfacePalette, actions.onSurfacePaletteWhilePlanning)
+                            if (state.showSurfaces) SurfaceColours(state.surfacePalette, state.surfacePaletteWhilePlanning, actions.onSurfacePaletteWhilePlanning)
                         }) {
-                            Choice(listOf(false, true), state.showSurfaces,
-                                { stringResource(if (it) R.string.settings_surfaces_dashed else R.string.settings_surfaces_off) }, actions.onShowSurfaces)
+                            // Standard (no dashes) or one of the dash colours, each shown as drawn.
+                            Choice(listOf<SurfacePalette?>(null) + SurfacePalette.entries, state.surfacePalette.takeIf { state.showSurfaces },
+                                { stringResource(it?.label ?: R.string.settings_surfaces_off) },
+                                { p -> actions.onShowSurfaces(p != null); if (p != null) actions.onSurfacePalette(p) },
+                                icon = { PaletteSample(it) })
                         }
                         Setting(stringResource(R.string.settings_gravel_heat), stringResource(R.string.settings_gravel_heat_hint)) {
-                            Choice(GravelHeatButton.entries, state.gravelHeatButton, { stringResource(it.label) }, actions.onGravelHeatButton)
+                            CockpitSwitch(state.gravelHeatButton == GravelHeatButton.MAP, onCheckedChange = {
+                                actions.onGravelHeatButton(if (it) GravelHeatButton.MAP else GravelHeatButton.OFF)
+                            })
                         }
                         Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint)) {
                             CockpitSwitch(state.showAltitude, actions.onShowAltitude)
@@ -527,7 +532,7 @@ private fun Setting(title: String, hint: String? = null, below: (@Composable () 
  * tap for the list. Always as wide as the longest choice, so it doesn't jump when the choice changes.
  */
 @Composable
-private fun <T> Choice(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) {
+private fun <T> Choice(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit, icon: (@Composable (T) -> Unit)? = null) {
     var open by remember { mutableStateOf(false) }
     Box {
         Row(
@@ -538,8 +543,16 @@ private fun <T> Choice(options: List<T>, selected: T, label: @Composable (T) -> 
         ) {
             Box {
                 // Every choice laid out but unseen: the button takes the width of the longest.
-                options.forEach { Text(label(it), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, color = Color.Transparent) }
-                Text(label(selected), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                options.forEach {
+                    Row(Modifier.alpha(0f), verticalAlignment = Alignment.CenterVertically) {
+                        icon?.invoke(it)
+                        Text(label(it), fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    icon?.invoke(selected)
+                    Text(label(selected), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
             }
             Icon(Icons.Default.ArrowDropDown, null, tint = TextSecondary, modifier = Modifier.padding(start = 4.dp))
         }
@@ -547,7 +560,12 @@ private fun <T> Choice(options: List<T>, selected: T, label: @Composable (T) -> 
             options.forEach { o ->
                 val on = o == selected
                 DropdownMenuItem(
-                    text = { Text(label(o), color = if (on) ElectricCyan else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            icon?.invoke(o)
+                            Text(label(o), color = if (on) ElectricCyan else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                    },
                     trailingIcon = { if (on) Icon(Icons.Default.Check, null, tint = ElectricCyan) },
                     onClick = { open = false; onSelect(o) }
                 )
@@ -587,40 +605,31 @@ private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
 }
 
 /**
- * The dashes' colours: one chip per set, each showing gravel and soft ground as drawn on the dark
- * map (so it doubles as the key), and whether the colours are only for planning.
+ * The key under the dash colours chosen above: gravel and soft ground as drawn on the dark map,
+ * and whether the colours are only for planning.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SurfaceColours(palette: SurfacePalette, whilePlanning: Boolean, onPalette: (SurfacePalette) -> Unit, onWhilePlanning: (Boolean) -> Unit) {
+private fun SurfaceColours(palette: SurfacePalette, whilePlanning: Boolean, onWhilePlanning: (Boolean) -> Unit) {
     Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         DashSample(palette.gravelDark)
         Text(stringResource(R.string.surface_gravel), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, end = 16.dp))
         DashSample(palette.softDark)
         Text(stringResource(R.string.surface_soft), color = TextMuted, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 6.dp))
     }
-    FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SurfacePalette.entries.forEach { p ->
-            val selected = p == palette
-            Row(
-                Modifier.clip(RoundedCornerShape(22.dp))
-                    .background(if (selected) ElectricCyan.copy(alpha = 0.16f) else CockpitSurfaceVariant)
-                    .border(1.5.dp, if (selected) ElectricCyan else CockpitBorder, RoundedCornerShape(22.dp))
-                    .clickable { onPalette(p) }.padding(horizontal = 12.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                DashSample(p.gravelDark, width = 10.dp)
-                Spacer(Modifier.width(4.dp))
-                DashSample(p.softDark, width = 10.dp)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(p.label), color = if (selected) TextPrimary else TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
     if (palette != SurfacePalette.QUIET) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.settings_surfaces_planning_only), color = TextSecondary, fontSize = 14.sp, modifier = Modifier.weight(1f, fill = false).padding(end = 12.dp))
         CockpitSwitch(whilePlanning, onWhilePlanning)
     }
+}
+
+/** A dash colour set in the Veidekke list: gravel then soft ground, as drawn on the dark map; blank for Standard, to line up. */
+@Composable
+private fun PaletteSample(p: SurfacePalette?) {
+    if (p == null) { Spacer(Modifier.width(32.dp)); return }
+    DashSample(p.gravelDark, width = 10.dp)
+    Spacer(Modifier.width(4.dp))
+    DashSample(p.softDark, width = 10.dp)
+    Spacer(Modifier.width(8.dp))
 }
 
 @Composable
