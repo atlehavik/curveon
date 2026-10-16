@@ -512,7 +512,7 @@
 
     <!-- Phone link -->
     <string name="link_connected">Koblet til %1$s</string>
-    <string name="link_disconnected">%1$s svarer ikke. Åpne Curveon Companion på telefonen og trykk Start deling.</string>
+    <string name="link_disconnected">%1$s svarer ikke. Åpne Curveon Companion på telefonen og trykk Start deling. Hjelper ikke det, slå Bluetooth av og på på nettbrettet og telefonen.</string>
     <string name="link_unreachable">Bluetooth på %1$s svarer ikke i det hele tatt. Hvis Curveon Companion deler, slå Bluetooth av og på på nettbrettet (eller telefonen).</string>
     <string name="link_pick">Velg telefonen din nedenfor. Den må først være paret i Androids Bluetooth-innstillinger.</string>
     <string name="link_no_permission">Curveon trenger tillatelse til å bruke Bluetooth.</string>

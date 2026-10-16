@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Stop sharing ends the link at once, Bluetooth tip, give way off a priority road
+
+- [ ] Companion linked to the X7: tap Stop sharing on the Pixel. The X7 says the phone isn't
+      answering within a few seconds, and Play on the X7 no longer starts Spotify on the Pixel.
+      Start sharing again: the X7 links up again.
+- [ ] Phone not answering (Settings → Phone on the X7): the hint also says to turn Bluetooth off
+      and on on the tablet and the phone if it keeps failing (English and Norwegian).
+- [ ] Planned route turning left from Stavlandsvegen onto KV1030 (Svortland): no give way sign at
+      the turn.
+
 ## 2026-10-16 — Night rider marker orange, voice heads-up choice, offline voice tip
 
 - [ ] Night map: the rider arrow, its ring and the edge glow are orange; the cyan route stands out

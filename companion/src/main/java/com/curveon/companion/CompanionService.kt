@@ -34,6 +34,8 @@ class CompanionService : Service() {
 
     @Volatile private var running = false
     private var serverSocket: BluetoothServerSocket? = null
+    /** The tablet's connection; closed on stop so the tablet hears at once and nothing more comes through. */
+    @Volatile private var clientSocket: BluetoothSocket? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -60,6 +62,7 @@ class CompanionService : Service() {
     override fun onDestroy() {
         running = false
         runCatching { serverSocket?.close() }
+        runCatching { clientSocket?.close() }
         runCatching { unregisterReceiver(batteryReceiver) }
         PhoneHub.voice = null
         PhoneHub.phoneBook?.shutdown()
@@ -126,6 +129,8 @@ class CompanionService : Service() {
 
     @SuppressLint("MissingPermission")
     private fun serve(socket: BluetoothSocket) {
+        clientSocket = socket
+        if (!running) runCatching { socket.close() }
         val name = runCatching { socket.remoteDevice.name }.getOrNull() ?: "tablet"
         val writer = MessageWriter(socket.outputStream)
         val sink: (Message) -> Unit = writer::write
@@ -137,6 +142,7 @@ class CompanionService : Service() {
             val reader = MessageReader(socket.inputStream)
             while (running) {
                 val msg = reader.read() ?: break
+                if (!running) break
                 when (msg) {
                     is Message.Ping -> writer.write(Message.Ping)
                     is Message.Hello -> Unit
@@ -148,6 +154,7 @@ class CompanionService : Service() {
         } finally {
             PhoneHub.removeTablet(sink)
             runCatching { socket.close() }
+            clientSocket = null
         }
     }
 

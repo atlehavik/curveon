@@ -514,7 +514,7 @@
 
     <!-- Phone link -->
     <string name="link_connected">Connected to %1$s</string>
-    <string name="link_disconnected">%1$s is not answering. Open Curveon Companion on the phone and tap Start sharing.</string>
+    <string name="link_disconnected">%1$s is not answering. Open Curveon Companion on the phone and tap Start sharing. If it keeps failing, turn Bluetooth off and on on this tablet and the phone.</string>
     <string name="link_unreachable">%1$s\'s Bluetooth doesn\'t answer at all. If Curveon Companion is sharing, turn Bluetooth off and on on this tablet (or the phone).</string>
     <string name="link_pick">Pick your phone below. It must be paired in Android\'s Bluetooth settings first.</string>
     <string name="link_no_permission">Curveon needs permission to use Bluetooth.</string>
