@@ -1,5 +1,30 @@
 [
   {
+    "version": "1.2",
+    "en": [
+      "Spoken navigation: \"In 300 metres, turn right onto …\" in the language Curveon is shown in, with Android's own voice (Settings → Navigation → Sound). In the helmet through the phone when the tablet is linked to it",
+      "Navigation sounds: soft notes before a turn and a tick at it, in the ear you turn towards, a chime on arriving, and sounds for leaving and getting back on the route",
+      "Gravel your way: gravel and dirt roads Quiet, Orange, Yellow or Green, optionally only while planning (Settings → Display → Road surfaces); the start of a gravel road shows even up a private road",
+      "Give way signs also without a route, on the road card; none any more when you turn off a priority road",
+      "At night the rider arrow is orange, so it stands out from the route",
+      "Planning on the map: the line can't be dragged by accident until you open the padlock",
+      "The map no longer crashes on some phones (Pixel); crash reports are kept on the device",
+      "Demo ride in Settings → Navigation",
+      "Curveon Companion: Stop sharing ends the link to the tablet at once"
+    ],
+    "nb": [
+      "Talenavigasjon: «Om 300 meter, sving til høyre inn på …» på språket Curveon vises på, med Androids egen stemme (Innstillinger → Navigasjon → Lyd). I hjelmen gjennom telefonen når nettbrettet er koblet til den",
+      "Navigasjonslyder: myke toner før en sving og et tikk i svingen, i øret du svinger mot, en klokke ved ankomst, og lyder når du kjører av og tilbake på ruten",
+      "Grus som du vil: grus- og jordveier dempet, oransje, gul eller grønn, eventuelt bare når du planlegger (Innstillinger → Skjerm → Veidekke); starten på en grusvei vises også oppover en privat vei",
+      "Vikepliktskilt også uten rute, på veikortet; ikke lenger når du svinger av en forkjørsvei",
+      "Om natten er kjørepilen oransje, så den skiller seg fra ruten",
+      "Planlegging på kartet: linjen kan ikke dras ved et uhell før du åpner hengelåsen",
+      "Kartet krasjer ikke lenger på enkelte telefoner (Pixel); krasjrapporter tas vare på i enheten",
+      "Demotur i Innstillinger → Navigasjon",
+      "Curveon Companion: Stopp deling kobler fra nettbrettet med en gang"
+    ]
+  },
+  {
     "version": "1.1.2",
     "en": [
       "Navigating in Norway: a give way or stop sign by the speed before junctions where you give way (signed ones, and onto priority roads), with the distance",
