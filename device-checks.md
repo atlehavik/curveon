@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Map drawn with OpenGL instead of Vulkan (Pixel crashes)
+
+- [ ] Pixel: use the map as when it crashed today (pan, zoom, plan, navigate a while). No more
+      crashes; `crashes/` on the device stays without new `-native` reports.
+- [ ] Both: the map looks and moves as before (labels, route line, surface dashes, heat map).
+
 ## 2026-10-16 — Crash reports kept on the device
 
 - [ ] After a crash, open Curveon again, then

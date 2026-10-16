@@ -42,6 +42,9 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   ANRs are copied from Android on the next start; a native one's `.txt` has the crashing thread's
   stack, and the whole tombstone (all threads, recent log) is in the `.pb` next to it. Look here
   first when the rider says the app crashed.
+- **Map renderer: OpenGL ES** (`android-sdk-opengl`), not MapLibre's default Vulkan: Vulkan crashed
+  in the Mali driver on the Pixel 9a (five times on 2026-10-16, `vkCmdBeginRenderPass`), and both
+  devices have Mali GPUs. Switching back is the artifact name in `gradle/libs.versions.toml`.
 - Tests: `./gradlew test`. `:routing:test` routes over real Norway data.
 - Large data (pmtiles, BRouter segments, search index, OSM extracts) lives outside the repo in
   `~/develop/Curveon-data`; on the tablet it goes under `Android/data/com.curveon.tablet/files/`.
@@ -52,6 +55,15 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
 - **Minimal UI.** Prefer few controls that do the right thing in context over new buttons: reuse an
   existing surface or gesture (tap a card, long-press the map, empty search state) and show
   info only when it matters. Rail screens open as a `CockpitDialog`.
+- **Battery and responsiveness.** Every choice in the app (libraries, renderers, polling, sensors,
+  background work) is weighed for battery use and for how responsive the app stays. When crash
+  reports show that something must change, and the fix (e.g. another driver path or library) costs
+  more battery than today, crash-freedom weighs heavier: a crash while riding is worse than the
+  extra battery. Say what the change costs.
+- **New visual elements: test for overlap.** Before a new visual element goes in, try it in the
+  phone-size emulator (Pixel, see Build and run) in both portrait and landscape, while navigating and
+  not navigating, and with the music player on and off. Overlap with other elements is the main
+  thing to look for every time; check the X7 layout too.
 - **Every text in two languages.** The rider picks English or Norwegian in Settings → Display. Any
   text the rider can see goes in `res/values/strings.xml` (English) *and* `res/values-nb/strings.xml`
   (Norwegian Bokmål), never as a literal in Kotlin: `stringResource(R.string.x)` in Compose,
