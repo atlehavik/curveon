@@ -192,6 +192,8 @@
     <!-- Dashboard cards -->
     <string name="speed_camera">Fotoboks</string>
     <string name="speed_camera_in">Fotoboks %1$d m</string>
+    <string name="give_way">Vikeplikt</string>
+    <string name="stop_sign">Stopp</string>
     <string name="gps_estimating">Ingen GPS – anslår posisjon</string>
     <string name="gps_searching">Søker etter GPS…</string>
     <string name="rpm_and">%1$d o/min · %2$s</string>
@@ -745,6 +747,7 @@
     <string name="help_end_trip">Avslutt turen</string>
     <string name="help_fuel">Neste drivstoff på ruten, oransje når det er langt; trykk for å stoppe der</string>
     <string name="help_camera">Fotoboks foran</string>
+    <string name="help_give_way">Kryss foran der du har vikeplikt eller stopplikt (under navigering)</string>
     <string name="help_hold_map">Hold fingeren på et sted: kjør dit, legg til stopp, lagre som favoritt og se hva som er kjent om veien</string>
     <string name="help_hold_line">Hold på rutelinjen mens du planlegger for å endre ruten i kartet</string>
     <string name="help_draw">Tegn et område med fingeren for en rundtur gjennom det (Hvor skal du? → Rundtur)</string>

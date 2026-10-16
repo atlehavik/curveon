@@ -111,12 +111,27 @@ private val EDIT_SYMBOLS = listOf(
     sym(Icons.Default.Undo, TextPrimary, R.string.help_undo),
     sym(Icons.Default.Check, ElectricCyan, R.string.help_done, filled = true)
 )
+/** The give way sign's outline (a triangle pointing down), for the list of symbols. */
+private val GiveWayOutline: ImageVector by lazy {
+    ImageVector.Builder("GiveWay", 24.dp, 24.dp, 24f, 24f).apply {
+        addPath(
+            androidx.compose.ui.graphics.vector.PathParser().parsePathString(
+                "M2,4 L22,4 L12,21.3 Z M6.2,6.4 L12,16.4 L17.8,6.4 Z"
+            ).toNodes(),
+            fill = androidx.compose.ui.graphics.SolidColor(Color.Black),
+            pathFillType = androidx.compose.ui.graphics.PathFillType.EvenOdd
+        )
+    }.build()
+}
+
 private val RIDE_SYMBOLS = listOf(
     sym(Icons.Default.AddLocationAlt, NeonAmber, R.string.help_add_stop),
     sym(Icons.Default.Close, WarningRed, R.string.help_end_trip),
     sym(Icons.Default.LocalGasStation, EcoGreen, R.string.help_fuel),
-    sym(Icons.Default.PhotoCamera, NeonAmber, R.string.help_camera)
+    sym(Icons.Default.PhotoCamera, NeonAmber, R.string.help_camera),
+    sym(GiveWayOutline, WarningRed, R.string.help_give_way)
 )
+
 private val GESTURE_SYMBOLS = listOf(
     sym(Icons.Default.TouchApp, ElectricCyan, R.string.help_hold_map),
     sym(Icons.Default.Gesture, ElectricCyan, R.string.help_hold_line),

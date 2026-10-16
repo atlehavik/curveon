@@ -66,6 +66,67 @@ class SpeedLimits(private val context: Context) {
     fun isPriorityRoad(lat: Double, lon: Double, headingDeg: Double?): Boolean =
         nearest(PRIORITY, lat, lon, headingDeg) != null
 
+    /** The piece of priority road nearest [lat], [lon] within ~20 m, whichever way it runs; null if none. */
+    fun priorityRoadNear(lat: Double, lon: Double): com.curveon.routing.RoadPiece? {
+        if (open().isEmpty()) return null
+        val kx = cos(Math.toRadians(lat)) * 111_320.0
+        var best: com.curveon.routing.RoadPiece? = null
+        var bestD = MAX_OFFSET_M
+        val cy = floor(lat * 100).toInt()
+        val cx = floor(lon * 100).toInt()
+        for (dy in -1..1) for (dx in -1..1) for (r in runs(PRIORITY, cy + dy, cx + dx)) {
+            for (i in 0 until r.lat.size - 1) {
+                val ax = (r.lon[i] - lon) * kx; val ay = (r.lat[i] - lat) * KY
+                val sx = (r.lon[i + 1] - r.lon[i]) * kx; val sy = (r.lat[i + 1] - r.lat[i]) * KY
+                val len2 = sx * sx + sy * sy
+                val t = if (len2 == 0.0) 0.0 else (-(ax * sx + ay * sy) / len2).coerceIn(0.0, 1.0)
+                val d = hypot(ax + t * sx, ay + t * sy)
+                if (d < bestD) {
+                    bestD = d
+                    best = com.curveon.routing.RoadPiece(r.lat[i], r.lon[i], r.lat[i + 1], r.lon[i + 1])
+                }
+            }
+        }
+        return best
+    }
+
+    /**
+     * The give way and stop signs (Norway: from NVDB) on or right next to [points], e.g. a route's;
+     * empty without a file that has them.
+     */
+    fun giveWaySigns(points: List<com.curveon.routing.LatLon>): List<com.curveon.routing.GiveWaySign> {
+        if (open().isEmpty() || points.isEmpty()) return emptyList()
+        // Every square the line touches, also a little to each side of it.
+        val cells = LinkedHashSet<Pair<Int, Int>>()
+        fun add(lat: Double, lon: Double) {
+            for (dy in listOf(-0.0002, 0.0002)) for (dx in listOf(-0.0004, 0.0004))
+                cells += floor((lat + dy) * 100).toInt() to floor((lon + dx) * 100).toInt()
+        }
+        for (i in points.indices) {
+            val p = points[i]
+            add(p.lat, p.lon)
+            val q = points.getOrNull(i + 1) ?: continue
+            val steps = (maxOf(abs(q.lat - p.lat), abs(q.lon - p.lon) / 2) / 0.003).toInt()
+            for (k in 1..steps) add(p.lat + (q.lat - p.lat) * k / (steps + 1), p.lon + (q.lon - p.lon) * k / (steps + 1))
+        }
+        val out = LinkedHashMap<List<Double>, com.curveon.routing.GiveWaySign>() // one stored in several squares
+        val runs = ArrayList<Run>()
+        for ((cy, cx) in cells) {
+            runs.clear()
+            val key = (cy + 9000).toLong() * 100_000 + (cx + 18000)
+            for (db in open()) runCatching {
+                db.rawQuery("SELECT data FROM $GIVEWAY WHERE cell = ?", arrayOf(key.toString())).use { c ->
+                    if (c.moveToFirst()) decode(c.getBlob(0), cy, cx, runs)
+                }
+            }
+            for (r in runs) if (r.lat.size >= 2) {
+                val sign = com.curveon.routing.GiveWaySign(r.lat[0], r.lon[0], r.lat[1], r.lon[1], r.value)
+                out[listOf(sign.lat, sign.lon, sign.lat2, sign.lon2, r.value.toDouble())] = sign
+            }
+        }
+        return out.values.toList()
+    }
+
     private fun nearest(table: String, lat: Double, lon: Double, headingDeg: Double?): Int? {
         if (open().isEmpty()) return null
         val kx = cos(Math.toRadians(lat)) * 111_320.0
@@ -207,6 +268,7 @@ class SpeedLimits(private val context: Context) {
         private const val CELLS = "cells"
         private const val REFS = "refs"
         private const val PRIORITY = "priority"
+        private const val GIVEWAY = "giveway"
         private val TABLES = listOf(CELLS, REFS, PRIORITY)
     }
 }

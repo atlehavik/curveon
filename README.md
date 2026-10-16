@@ -50,7 +50,7 @@ and the choices update in place.
 ### On the road
 
 A big turn card with road numbers, your speed next to the speed limit, the road you are on, and
-warnings for speed cameras. Your music, the latest message (reply by voice through your headset)
+warnings for speed cameras. In Norway, a give way or stop sign shows before each junction where you give way. Your music, the latest message (reply by voice through your headset)
 and, if you like, engine data such as revs sit beside the map.
 
 <img src="docs/screenshots/ride-dashboard.png" alt="Riding with the dashboard: turn card, speed limit, revs, a message and music">

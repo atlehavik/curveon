@@ -193,6 +193,9 @@
     <!-- Dashboard cards -->
     <string name="speed_camera">Speed camera</string>
     <string name="speed_camera_in">Speed camera %1$d m</string>
+    <string name="give_way">Give way</string>
+    <string name="stop_sign">Stop</string>
+    <string name="give_way_in" translatable="false">%1$d m</string>
     <string name="gps_estimating">No GPS – estimating position</string>
     <string name="gps_searching">Searching for GPS…</string>
     <string name="rpm_and">%1$d rpm · %2$s</string>
@@ -746,6 +749,7 @@
     <string name="help_end_trip">End the trip</string>
     <string name="help_fuel">Next fuel on the route, amber when the gap is long; tap to stop there</string>
     <string name="help_camera">Speed camera ahead</string>
+    <string name="help_give_way">Junction ahead where you give way or stop (when navigating)</string>
     <string name="help_hold_map">Hold a finger on a place: go there, add a stop, save a favourite, and see what is known about the road</string>
     <string name="help_hold_line">Hold the route line while planning to change the route on the map</string>
     <string name="help_draw">Draw an area with a finger for a roundtrip through it (Where to? → Roundtrip)</string>

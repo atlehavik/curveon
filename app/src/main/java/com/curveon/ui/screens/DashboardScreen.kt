@@ -109,6 +109,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val mapTheme by viewModel.mapTheme.collectAsStateWithLifecycle()
     val fuelHint by viewModel.fuelHint.collectAsStateWithLifecycle()
     val cameraAlert by viewModel.cameraAlert.collectAsStateWithLifecycle()
+    val giveWayAlert by viewModel.giveWayAlert.collectAsStateWithLifecycle()
     val obdState by viewModel.obd.state.collectAsStateWithLifecycle()
     val obdValues by viewModel.obdValues.collectAsStateWithLifecycle()
     val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
@@ -419,7 +420,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
         MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
-            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude)
+            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, giveWay = giveWayAlert)
         // The road's number and priority sign in a card of their own: top middle in landscape, under
         // the speed in portrait or when the middle has no room between the trip bar and the speed.
         currentRoad?.let { road ->

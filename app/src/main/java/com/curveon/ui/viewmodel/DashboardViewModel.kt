@@ -80,7 +80,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val offlineMaps = OfflineMaps(application)
     private val navigator = Navigator(application, viewModelScope)
     private val placeSearch = PlaceSearch(application)
-    private val hazards = RouteHazards(placeSearch)
+    private val hazards by lazy { RouteHazards(placeSearch, speedLimits) }
     private val recentDestinations = RecentDestinations(application)
     private val favoritePlaces = com.curveon.data.routing.FavoritePlaces(application)
     private val _favorites = MutableStateFlow(favoritePlaces.all())
@@ -693,6 +693,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _cameraAlert = MutableStateFlow<CameraAlert?>(null)
     val cameraAlert: StateFlow<CameraAlert?> = _cameraAlert.asStateFlow()
+    /** While navigating: a junction just ahead where the rider gives way or stops. */
+    private val _giveWayAlert = MutableStateFlow<com.curveon.data.routing.GiveWayAlert?>(null)
+    val giveWayAlert: StateFlow<com.curveon.data.routing.GiveWayAlert?> = _giveWayAlert.asStateFlow()
 
     // ---------------------------------------------------------------- day / night
 
@@ -814,7 +817,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 _cameraAlert.value = if (t.speedKmh < 15f) null else hazards.cameraAheadFreeRide(here, t.headingDeg.toDouble())
             }
         }
-        // New route: load fuel and cameras along it; forget road names of the old one.
+        // New route: load fuel, cameras and give way signs along it; forget road names of the old one.
         viewModelScope.launch {
             navigator.state.map { it.route }.distinctUntilChanged().collect { route ->
                 if (route != null) NavTrace.route(route.points.map { LatLon(it.lat, it.lon) }) else NavTrace.event("route cleared")
@@ -826,7 +829,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     startDemoRide(newTrip = !_isDemoRiding.value || title != demoTrip)
                     demoTrip = title
                 }
-                if (route == null) { _fuelHint.value = null; _cameraAlert.value = null }
+                if (route == null) { _fuelHint.value = null; _cameraAlert.value = null; _giveWayAlert.value = null }
             }
         }
         // While navigating: next fuel and camera ahead on the route.
@@ -834,6 +837,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             navigator.state.mapNotNull { it.progress }.collect { p ->
                 _fuelHint.value = hazards.nextFuel(p.distanceAlongRoute, p.remainingDistance)
                 _cameraAlert.value = hazards.cameraAhead(p.distanceAlongRoute)
+                _giveWayAlert.value = hazards.giveWayAhead(p.distanceAlongRoute)
             }
         }
     }

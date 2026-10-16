@@ -33,6 +33,8 @@ import java.util.Locale
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -73,13 +75,15 @@ private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorde
 /**
  * Speed, the signed limit when known and the clock, in the map's top-right corner (always, not
  * only in full screen: the dashboard's side has the engine panel and music). A speed camera ahead
- * adds a line underneath, as does a lost GPS fix.
+ * adds a line underneath, as does a lost GPS fix, and a junction where the rider gives way its sign.
  */
 @Composable
 fun MapSpeedCluster(
     telemetry: TelemetryData,
     camera: com.curveon.data.routing.CameraAlert?,
     modifier: Modifier = Modifier,
+    /** While navigating: a junction just ahead where the rider gives way or stops. */
+    giveWay: com.curveon.data.routing.GiveWayAlert? = null,
     /** Settings → Display: the height above sea level under the speed. */
     showAltitude: Boolean = false
 ) {
@@ -116,6 +120,17 @@ fun MapSpeedCluster(
             }
             telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
             !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
+        }
+        giveWay?.let { g ->
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp).testTag("give_way")) {
+                if (g.stop) StopSign(30.dp) else GiveWaySign(30.dp)
+                // At the junction the sign says it all.
+                if (g.distanceMeters >= 10) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.give_way_in, (g.distanceMeters / 10).toInt() * 10),
+                        color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+            }
         }
         if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
             Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
@@ -175,6 +190,54 @@ fun PriorityRoadSign(size: Dp, modifier: Modifier = Modifier) {
         drawPath(diamond(0f), Color(0xFF1A1A1A))
         drawPath(diamond(w * 0.03f), Color.White)
         drawPath(diamond(w * 0.2f), Color(0xFFFFC20E))
+    }
+}
+
+/** The give way sign: a white triangle pointing down with a red edge. */
+@Composable
+fun GiveWaySign(size: Dp, modifier: Modifier = Modifier) {
+    val label = stringResource(R.string.give_way)
+    androidx.compose.foundation.Canvas(modifier.size(size).semantics { contentDescription = label }) {
+        val w = this.size.width
+        val h = w * 0.87f
+        val top = (w - h) / 2
+        fun triangle(inset: Float) = androidx.compose.ui.graphics.Path().apply {
+            // The centre of the triangle is a third of its height from the top edge.
+            val cy = top + h / 3
+            val k = 1 - inset / (h / 3) // shrink towards the centre by [inset] at the top edge
+            moveTo(w / 2 + (0 - w / 2) * k, cy + (top - cy) * k)
+            lineTo(w / 2 + (w - w / 2) * k, cy + (top - cy) * k)
+            lineTo(w / 2, cy + (top + h - cy) * k)
+            close()
+        }
+        drawPath(triangle(0f), Color.White)
+        drawPath(triangle(w * 0.035f), Color(0xFFD52B1E))
+        drawPath(triangle(w * 0.15f), Color.White)
+    }
+}
+
+/** The stop sign: a red octagon with a white edge and STOP. */
+@Composable
+fun StopSign(size: Dp, modifier: Modifier = Modifier) {
+    val label = stringResource(R.string.stop_sign)
+    Box(modifier.size(size).semantics { contentDescription = label }, contentAlignment = Alignment.Center) {
+        androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
+            fun octagon(inset: Float) = androidx.compose.ui.graphics.Path().apply {
+                val c = this@Canvas.size.width / 2
+                val r = (c - inset) / kotlin.math.cos(Math.PI / 8).toFloat()
+                for (i in 0 until 8) {
+                    val a = Math.PI / 8 + i * Math.PI / 4
+                    val x = c + r * kotlin.math.cos(a).toFloat(); val y = c + r * kotlin.math.sin(a).toFloat()
+                    if (i == 0) moveTo(x, y) else lineTo(x, y)
+                }
+                close()
+            }
+            drawPath(octagon(0f), Color.White)
+            drawPath(octagon(this.size.width * 0.06f), Color(0xFFD52B1E))
+        }
+        // The word on the sign itself, the same everywhere.
+        Text("STOP", color = Color.White, fontSize = (size.value * 0.27f).sp, lineHeight = (size.value * 0.3f).sp,
+            fontWeight = FontWeight.Black, maxLines = 1)
     }
 }
 

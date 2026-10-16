@@ -35,7 +35,7 @@ class AppUpdatesTest {
         assertEquals(en.map { it.version }, nb.map { it.version })
         en.zip(nb).forEach { (e, n) -> assertEquals("lines in ${e.version}", e.changes.size, n.changes.size) }
         en.zipWithNext().forEach { (newer, older) -> assertTrue(AppUpdates.isNewer(newer.version, older.version)) }
-        assertEquals(listOf("1.1"), Changelog.since(en, "1.0").map { it.version })
+        assertEquals(en.map { it.version }.takeWhile { it != "1.0" }, Changelog.since(en, "1.0").map { it.version })
     }
 
     @Test

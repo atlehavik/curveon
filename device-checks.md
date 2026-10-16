@@ -6,6 +6,26 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Give way and stop signs while navigating
+
+Navigating in Norway, a junction where you give way (or must stop) shows its sign under the speed,
+with the distance, from 200 m before it until you are there. Two sources, both in the new
+norway.sqlite from NVDB: the signs themselves (202 Vikeplikt, 204 Stopp, ~67 000), those facing
+traffic on the road you ride and those for a side road you come out of; and turning onto a
+priority road (forkjørsveg) out of another road, since such side roads often have no sign. Riding
+straight across a priority road is left out (can't be told from a bridge over it), as are private
+roads and junctions under the right-hand rule. Checked in the emulator (demo ride, Bømlo): Kv1164
+onto Fv541 shows the triangle with the same distance as the turn card, gone once on Fv541.
+
+- [ ] Real ride with a route: out of a side road onto a fylkesveg, and into a roundabout: the
+      triangle shows ~200 m before and goes away at the junction.
+- [ ] Out of a side road onto a priority road (the yellow diamond shows once on it): the triangle
+      before the turn, with the same distance as the turn card.
+- [ ] Riding along a priority road past side roads: no sign (those are for the side roads).
+- [ ] Turning off a main road into a side road: no sign (its sign faces the other way).
+- [ ] Any sign shown where there is none, or missing where there is one: note the place (or send
+      the nav trace) so the direction rules can be tuned.
+
 ## 2026-10-15 — Point by point: start where the finger was held, or from my position
 
 A finger held on the map → Point by point now asks first: **Start here** (the trip starts at that
@@ -146,7 +166,7 @@ That is now the standard, and the setting stays (Settings → Navigation → "Ri
 ## 2026-10-14 — Road number signs and priority roads
 
 Installed on the X7 and tried on the demo ride with a Vestland-only data file
-(`speedlimits/zz-test-vestland.sqlite`, delete it once the new norway.sqlite is out): "Fv4998" and
+(`speedlimits/zz-test-vestland.sqlite`, deleted from the X7 on 2026-10-16): "Fv4998" and
 the priority road sign in a card of their own (top middle in landscape, under the speed in
 portrait); in the turn card "270 m [Fv5012]". Settings → Display → Road info hides and shows them.
 
