@@ -31,6 +31,7 @@ class RideService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashLog.install(this)
         running = true
     }
 

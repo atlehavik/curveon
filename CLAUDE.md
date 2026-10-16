@@ -34,20 +34,24 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   GitHub releases: install it with `./gradlew :app:assembleRelease` (signing env from
   `~/.curveon-signing/signing.env`) and `adb install -r app/build/outputs/apk/release/app-release.apk`,
   never `installDebug` (Android refuses a debug build over it). Release builds have no DEV aids
-  (demo ride) and no `run-as`. The Pixel is found on wifi like the X7 (`adb connect <ip>:5555`,
+  (demo data, fake OBD) and no `run-as`, but do have the demo ride (Settings → Navigation). The Pixel is found on wifi like the X7 (`adb connect <ip>:5555`,
   last seen at 192.168.86.199); the X7 stays on debug builds.
+- **Crash reports** (`CrashLog.kt`): one `.txt` per crash under
+  `Android/data/com.curveon.tablet/files/crashes/` on the device, also on release builds:
+  `adb -s <device> pull /sdcard/Android/data/com.curveon.tablet/files/crashes`. Native crashes and
+  ANRs are copied from Android on the next start; a native one's `.txt` has the crashing thread's
+  stack, and the whole tombstone (all threads, recent log) is in the `.pb` next to it. Look here
+  first when the rider says the app crashed.
 - Tests: `./gradlew test`. `:routing:test` routes over real Norway data.
 - Large data (pmtiles, BRouter segments, search index, OSM extracts) lives outside the repo in
   `~/develop/Curveon-data`; on the tablet it goes under `Android/data/com.curveon.tablet/files/`.
 
 ## How to work here
 
-- **Offline first.** The rider is normally without a connection in Norway; anything online is an
-  extra, never a requirement.
+- **Offline first.** The rider can be offline. Application must work online, but maps and other large rescourses must have option do be downloaded. Smaller rescourses (file size) should be included in online version if user is physically present in the country the rescourses include. All rescourses for a country should be included when downloading offline map for said country.
 - **Minimal UI.** Prefer few controls that do the right thing in context over new buttons: reuse an
   existing surface or gesture (tap a card, long-press the map, empty search state) and show
   info only when it matters. Rail screens open as a `CockpitDialog`.
-- **No voice guidance** (deliberately not planned).
 - **Every text in two languages.** The rider picks English or Norwegian in Settings → Display. Any
   text the rider can see goes in `res/values/strings.xml` (English) *and* `res/values-nb/strings.xml`
   (Norwegian Bokmål), never as a literal in Kotlin: `stringResource(R.string.x)` in Compose,

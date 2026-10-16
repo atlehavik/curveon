@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Crash reports kept on the device
+
+- [ ] After a crash, open Curveon again, then
+      `adb pull /sdcard/Android/data/com.curveon.tablet/files/crashes`: a `.txt` per crash with
+      the time, version and stack (a native one also has a `.pb`). Tell Claude, who can read them.
+
 ## 2026-10-16 — Planning on the map: help bubble, padlock on by default
 
 - [ ] Point by point (or Pick on map while planning): a help bubble over the bar explains tapping,
