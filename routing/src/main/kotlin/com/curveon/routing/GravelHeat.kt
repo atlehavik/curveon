@@ -99,6 +99,7 @@ class GravelHeat(private val segmentDir: File, private val cacheDir: File, priva
          * closed to traffic), and soft or unknown ground least.
          */
         internal fun weight(way: SurfaceWay) = when {
+            way.kind == SurfaceKind.PAVED -> 0.0
             way.kind == SurfaceKind.GRAVEL && way.rank >= 1 -> 1.0
             way.kind == SurfaceKind.GRAVEL -> 0.5
             else -> 0.25

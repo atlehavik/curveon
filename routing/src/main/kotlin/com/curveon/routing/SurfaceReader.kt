@@ -16,11 +16,17 @@ enum class SurfaceKind {
     /** Gravel, compacted, fine gravel, or a solid (grade 1–2) track. */
     GRAVEL,
     /** Anything softer, rougher or unknown: dirt, ground, grass, sand, "unpaved", tracks of grade 3–5 or no grade. */
-    SOFT
+    SOFT,
+    /**
+     * A small tarmac road (unclassified, residential): the map's tiles only have these from zoom 12
+     * and draw them barely visible until ~13, so they are drawn with the dashes to show where the
+     * gravel roads start.
+     */
+    PAVED
 }
 
 /**
- * One unpaved stretch of road between two junctions.
+ * One unpaved (or small tarmac, [SurfaceKind.PAVED]) stretch of road between two junctions.
  *
  * @param rank how big the road is (2 = primary/secondary/tertiary, 1 = unclassified/residential, 0 = service/track)
  * @param coords lon, lat, lon, lat, ...
@@ -226,7 +232,7 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
                 // No surface: only tracks are taken to be unpaved (as the router does).
                 highway == "track" -> if (tracktype == "grade1" || tracktype == "grade2") SurfaceKind.GRAVEL else SurfaceKind.SOFT
                 else -> null
-            } ?: return null
+            } ?: return if (rank == 1) SurfaceKind.PAVED to 1 else null
             return kind to rank
         }
 

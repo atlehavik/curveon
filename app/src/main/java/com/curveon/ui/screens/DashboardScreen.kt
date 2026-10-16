@@ -97,6 +97,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val surfacePalette by viewModel.surfacePalette.collectAsStateWithLifecycle()
     val surfacePaletteWhilePlanning by viewModel.surfacePaletteWhilePlanning.collectAsStateWithLifecycle()
     val showGravelHeat by viewModel.showGravelHeat.collectAsStateWithLifecycle()
+    val gravelHeatOnMap by viewModel.gravelHeatOnMap.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
     val showMapMedia by viewModel.showMapMedia.collectAsStateWithLifecycle()
@@ -607,6 +608,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             surfacePaletteWhilePlanning = surfacePaletteWhilePlanning,
             gravelHeat = viewModel.gravelHeat,
             showGravelHeat = showGravelHeat,
+            gravelHeatOnMap = gravelHeatOnMap,
             planningTrip = preview != null || mapPick != null || sketching,
             onShowGravelHeat = viewModel::setShowGravelHeat,
             roadNameProbe = roadNameProbe,
@@ -905,7 +907,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, arrowLead = arrowLead, showSurfaces = showSurfaces, surfacePalette = surfacePalette,
-                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, gravelHeatOnMap = gravelHeatOnMap, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     isNavigating = navigationSummary != null, demoMode = demoMode,
                     maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
@@ -928,6 +930,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onShowSurfaces = viewModel::setShowSurfaces,
                     onSurfacePalette = viewModel::setSurfacePalette,
                     onSurfacePaletteWhilePlanning = viewModel::setSurfacePaletteWhilePlanning,
+                    onGravelHeatOnMap = viewModel::setGravelHeatOnMap,
                     onShowAltitude = viewModel::setShowAltitude,
                     onShowRoadInfo = viewModel::setShowRoadInfo,
                     onShowMapMedia = viewModel::setShowMapMedia,

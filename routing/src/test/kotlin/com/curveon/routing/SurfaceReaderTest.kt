@@ -19,7 +19,10 @@ class SurfaceReaderTest {
         assertEquals(SurfaceKind.SOFT to 0, SurfaceReader.classify("track", null, null))
         assertEquals(SurfaceKind.SOFT to 0, SurfaceReader.classify("service", "dirt", null))
         assertEquals(null, SurfaceReader.classify("track", "asphalt", null))
-        assertEquals(null, SurfaceReader.classify("residential", null, null))
+        assertEquals(SurfaceKind.PAVED to 1, SurfaceReader.classify("residential", null, null))
+        assertEquals(SurfaceKind.PAVED to 1, SurfaceReader.classify("unclassified", "asphalt", null))
+        assertEquals(null, SurfaceReader.classify("service", null, null))
+        assertEquals(null, SurfaceReader.classify("secondary", null, null))
         assertEquals(null, SurfaceReader.classify("path", "gravel", null))
     }
 

@@ -209,6 +209,8 @@ fun CurveonMapView(
     /** Where the gravel is, as a heat map, with its button while planning (and [showGravelHeat] on). */
     gravelHeat: GravelHeatSource? = null,
     showGravelHeat: Boolean = false,
+    /** Settings → Display: the heat map button also on the ordinary map (not while riding). */
+    gravelHeatOnMap: Boolean = false,
     /** A trip is being planned (its sheet is open, even before a route has come back). */
     planningTrip: Boolean = false,
     onShowGravelHeat: ((Boolean) -> Unit)? = null,
@@ -936,7 +938,11 @@ fun CurveonMapView(
         val features = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
             FeatureCollection.fromFeatures(ways.map { w ->
                 Feature.fromGeometry(LineString.fromLngLats((w.coords.indices step 2).map { Point.fromLngLat(w.coords[it], w.coords[it + 1]) })).apply {
-                    addStringProperty("kind", if (w.kind == com.curveon.routing.SurfaceKind.GRAVEL) "gravel" else "soft")
+                    addStringProperty("kind", when (w.kind) {
+                        com.curveon.routing.SurfaceKind.GRAVEL -> "gravel"
+                        com.curveon.routing.SurfaceKind.SOFT -> "soft"
+                        com.curveon.routing.SurfaceKind.PAVED -> "paved"
+                    })
                     addNumberProperty("rank", w.rank)
                 }
             })
@@ -960,7 +966,11 @@ fun CurveonMapView(
 
     // Gravel heat map while planning: counted per routing data file in the background (once), shown
     // for the files in view as they come.
-    val heatOn = showGravelHeat && planning && gravelHeat != null
+    // Riding (from 10 km/h, until stopped again) hides the button on the ordinary map.
+    var moving by remember { mutableStateOf(false) }
+    if (speedKmh >= 10f) moving = true else if (speedKmh < 3f) moving = false
+    val heatButton = gravelHeat != null && onShowGravelHeat != null && (planning || (gravelHeatOnMap && !navigating && !moving))
+    val heatOn = showGravelHeat && heatButton
     val heatCells = remember { mutableStateMapOf<String, List<com.curveon.routing.HeatCell>>() }
     val heatCounting = remember { mutableStateListOf<String>() }
     var heatTiles by remember { mutableStateOf<List<String>?>(null) }
@@ -1092,30 +1102,28 @@ fun CurveonMapView(
         }
 
         // Zoom to extents: the whole trip being planned, at a tap; under the speed and road cards.
-        // Under it while planning: the gravel heat map on and off.
-        if (planning) Column(
-            Modifier.align(Alignment.TopEnd).padding(top = maxOf(buttonsTopInset, 92.dp), end = 14.dp),
-            horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            if (inPreview && hasPreviewTrip) MapButton(onClick = { fitTick++ }, tag = "map_fit_trip_btn") {
+        if (inPreview && hasPreviewTrip) Box(Modifier.align(Alignment.TopEnd).padding(top = maxOf(buttonsTopInset, 92.dp), end = 14.dp)) {
+            MapButton(onClick = { fitTick++ }, tag = "map_fit_trip_btn") {
                 Icon(Icons.Default.ZoomOutMap, stringResource(R.string.map_fit_trip), tint = TextPrimary, modifier = Modifier.size(24.dp))
             }
-            // What the heat map is up to, to the left of its button.
-            if (gravelHeat != null && onShowGravelHeat != null) Row(verticalAlignment = Alignment.CenterVertically) {
-                val note = when {
-                    !heatOn || heatTiles == null -> null
-                    heatTiles!!.any { it in heatCounting } -> stringResource(R.string.map_gravel_heat_counting)
-                    heatTiles!!.isEmpty() -> stringResource(R.string.map_gravel_heat_none)
-                    else -> null
-                }
-                if (note != null) Text(note, color = TextPrimary, fontSize = 13.sp,
-                    modifier = Modifier.padding(end = 10.dp).widthIn(max = 240.dp).clip(RoundedCornerShape(10.dp))
-                        .background(CockpitSurface.copy(alpha = 0.92f)).padding(horizontal = 10.dp, vertical = 6.dp))
-                MapButton(onClick = { onShowGravelHeat(!showGravelHeat) }, highlighted = showGravelHeat, tag = "map_gravel_heat_btn") {
-                    Icon(Icons.Default.Whatshot, stringResource(R.string.map_gravel_heat),
-                        tint = if (showGravelHeat) Color(0xFF00363D) else TextPrimary, modifier = Modifier.size(24.dp))
-                }
+        }
+
+        // The gravel heat map on and off, top left where nothing else is while planning or browsing
+        // (the trip bar is there only while navigating); what it is up to beside it.
+        if (heatButton) Row(Modifier.align(Alignment.TopStart).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            MapButton(onClick = { onShowGravelHeat?.invoke(!showGravelHeat) }, highlighted = showGravelHeat, tag = "map_gravel_heat_btn") {
+                Icon(Icons.Default.Whatshot, stringResource(R.string.map_gravel_heat),
+                    tint = if (showGravelHeat) Color(0xFF00363D) else TextPrimary, modifier = Modifier.size(24.dp))
             }
+            val note = when {
+                !heatOn || heatTiles == null -> null
+                heatTiles!!.any { it in heatCounting } -> stringResource(R.string.map_gravel_heat_counting)
+                heatTiles!!.isEmpty() -> stringResource(R.string.map_gravel_heat_none)
+                else -> null
+            }
+            if (note != null) Text(note, color = TextPrimary, fontSize = 13.sp,
+                modifier = Modifier.padding(start = 10.dp).widthIn(max = 240.dp).clip(RoundedCornerShape(10.dp))
+                    .background(CockpitSurface.copy(alpha = 0.92f)).padding(horizontal = 10.dp, vertical = 6.dp))
         }
 
         overlays()
@@ -1239,7 +1247,19 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
     fun width(base: Float) = surfaceWidth(base)
     val gravel = E.eq(E.get("kind"), E.literal("gravel"))
     val soft = E.eq(E.get("kind"), E.literal("soft"))
+    val paved = E.eq(E.get("kind"), E.literal("paved"))
+    // Small tarmac roads like the map's own minor roads (white in a grey casing), until the map's
+    // own are wide enough to see, so a gravel road visibly starts somewhere.
+    val pavedFade = E.interpolate(E.linear(), E.zoom(), E.stop(13.2, 1f), E.stop(14, 0f))
     val layers = listOf(
+        LineLayer("$SURFACE-paved-casing", SURFACE).withProperties(
+            lineColor("#A3A3A3"), lineOpacity(pavedFade), lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(14, 3.4f)))
+        ).withFilter(paved).also { it.maxZoom = 14f },
+        LineLayer("$SURFACE-paved", SURFACE).withProperties(
+            lineColor(if (dark) "#EBEBEB" else "#FFFFFF"), lineOpacity(pavedFade), lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(14, 2f)))
+        ).withFilter(paved).also { it.maxZoom = 14f },
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
             lineColor(if (dark) SurfacePalette.QUIET.softDark else SurfacePalette.QUIET.softLight), lineWidth(width(2.2f)), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),

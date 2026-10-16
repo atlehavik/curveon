@@ -280,6 +280,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _showGravelHeat = MutableStateFlow(settings.getBoolean("gravelHeat", false))
     val showGravelHeat: StateFlow<Boolean> = _showGravelHeat.asStateFlow()
     fun setShowGravelHeat(on: Boolean) { _showGravelHeat.value = on; settings.edit().putBoolean("gravelHeat", on).apply() }
+    /** Settings → Display: the heat map button also on the ordinary map, not only while planning. */
+    private val _gravelHeatOnMap = MutableStateFlow(settings.getBoolean("gravelHeatOnMap", false))
+    val gravelHeatOnMap: StateFlow<Boolean> = _gravelHeatOnMap.asStateFlow()
+    fun setGravelHeatOnMap(on: Boolean) { _gravelHeatOnMap.value = on; settings.edit().putBoolean("gravelHeatOnMap", on).apply() }
     /** Settings → Display: the height above sea level under the speed. */
     private val _showAltitude = MutableStateFlow(settings.getBoolean("showAltitude", false))
     val showAltitude: StateFlow<Boolean> = _showAltitude.asStateFlow()

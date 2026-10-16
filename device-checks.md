@@ -11,9 +11,15 @@ Commands assume the device is connected over USB. With both connected, pick one 
 - [ ] Settings → Display → Road surfaces: pick Orange / Yellow / Green; the dashes on the map
       change colour (and get a bit wider). With "Only while planning" on they stay quiet until a
       trip is being planned (preview open, picking places, drawing a roundtrip area).
-- [ ] Planning a trip: the flame button top right (under "show the whole trip") turns the gravel
-      heat map on/off. Zoom out to ~50–200 km across: warm where there is much gravel; it fades
-      out as the dashes take over around zoom 11–12.
+- [ ] The flame button (gravel heat map) sits top left on the map, on the Pixel in landscape too
+      (it used to overlap there). Zoom out to ~50–200 km across: warm where there is much gravel;
+      it fades out as the dashes take over around zoom 11–12.
+- [ ] Settings → Display → Gravel heat map: "While planning" shows the button only while
+      planning; "Also on the map" shows it on the ordinary map too, but not while navigating or
+      riding (gone from 10 km/h, back once stopped).
+- [ ] Zooming in from ~zoom 10: as soon as the gravel dashes appear (zoom 11), the small tarmac
+      roads leading to them are drawn too (white with a grey edge), so gravel roads no longer seem
+      to start nowhere. Try a spot like the KV 10122 one. Service roads/driveways are not added.
 - [ ] First time per 5°×5° routing file the note "Counting gravel here (once)…" shows; on the X7
       that took ~50 s per file. Afterwards it is instant (cache in `files/gravel-heat/`).
 - [ ] Abroad (a country downloaded under Maps & data): the heat map works there too. Where no
