@@ -86,6 +86,12 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
 - Bluetooth, real calls, tunnel dead reckoning and gyro lean can't be verified in the emulator;
   say so rather than claiming they work.
 - Commit messages describe the change from the rider's point of view (see `git log`).
+- **Changelog and release notes** (`app/src/main/assets/changelog.json`, the GitHub release text)
+  are what riders read on their phones before updating. Write them easy to read and a little
+  enthusiastic, in whole sentences that say what changed and why it is nice for the rider. Don't
+  strip them down so far that the change is hard to understand, and keep them non-technical (no
+  driver names, data sources or internals; "the map no longer crashes", not "OpenGL instead of
+  Vulkan"). Norwegian written naturally, not translated word for word.
 - Installing a new build on the X7 (over wifi, see above) and/or Pixel is always allowed whenever they are reachable
   (`adb devices`); do it after each change without asking.
 - Committing and pushing are always allowed once a build has been installed on the devices (X7 or
