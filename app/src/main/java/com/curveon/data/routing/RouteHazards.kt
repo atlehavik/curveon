@@ -19,8 +19,11 @@ data class FuelHint(val name: String, val point: LatLon, val distanceMeters: Dou
 
 data class CameraAlert(val distanceMeters: Double, val maxSpeedKmh: Int?)
 
-/** A junction ahead where the rider gives way (or stops, [stop]), [distanceMeters] away. */
-data class GiveWayAlert(val distanceMeters: Double, val stop: Boolean)
+/**
+ * A junction ahead where the rider gives way (or stops, [stop]), [distanceMeters] away, at [lat],
+ * [lon], approached heading [bearingDeg].
+ */
+data class GiveWayAlert(val distanceMeters: Double, val stop: Boolean, val lat: Double = 0.0, val lon: Double = 0.0, val bearingDeg: Double = 0.0)
 
 /**
  * Fuel stations, speed cameras and give way signs for the active route, and cameras ahead when free
@@ -55,9 +58,7 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
         cameras = search.camerasInBox(box[0], box[1], box[2], box[3])
             .mapNotNull { p -> corridor.alongDistance(p.lat, p.lon, CAMERA_MAX_OFFSET_M)?.let { AlongPoi(p, it) } }
             .sortedBy { it.along }
-        giveWays = runCatching {
-            GiveWay.alongRoute(route, speedLimits.giveWaySigns(route.points.map { LatLon(it.lat, it.lon) }), speedLimits::priorityRoadNear)
-        }.getOrDefault(emptyList())
+        giveWays = giveWaysOn(route)
         ready = true
     }
 
@@ -77,8 +78,25 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
 
     /** The next junction where the rider gives way, from a little before it until it is reached. */
     fun giveWayAhead(along: Double): GiveWayAlert? =
-        giveWays.firstOrNull { it.along > along - GIVE_WAY_PAST_M && it.along - along < GIVE_WAY_WARN_M }
-            ?.let { GiveWayAlert((it.along - along).coerceAtLeast(0.0), it.stop) }
+        giveWaysAhead(along, GIVE_WAY_WARN_M).firstOrNull()
+
+    /** The junctions where the rider gives way in the next [withinM] metres of the route, for signs on the map. */
+    fun giveWaysAhead(along: Double, withinM: Double): List<GiveWayAlert> =
+        giveWays.filter { it.along > along - GIVE_WAY_PAST_M && it.along - along < withinM }.map { it.alert(along) }
+
+    /**
+     * Not navigating: the first junction where the rider gives way along [probe] (the next stretch
+     * of the road they are on, starting where they are), if it is close.
+     */
+    suspend fun giveWayFreeRide(probe: Route): GiveWayAlert? = withContext(Dispatchers.Default) {
+        giveWaysOn(probe).firstOrNull { it.along < GIVE_WAY_FREE_M }?.alert(0.0)
+    }
+
+    private fun giveWaysOn(route: Route): List<GiveWayOnRoute> = runCatching {
+        GiveWay.alongRoute(route, speedLimits.giveWaySigns(route.points.map { LatLon(it.lat, it.lon) }), speedLimits::priorityRoadNear)
+    }.getOrDefault(emptyList())
+
+    private fun GiveWayOnRoute.alert(from: Double) = GiveWayAlert((along - from).coerceAtLeast(0.0), stop, lat, lon, bearingDeg)
 
     /** Free riding: a camera within warning distance roughly straight ahead. */
     suspend fun cameraAheadFreeRide(position: LatLon, headingDeg: Double): CameraAlert? {
@@ -99,6 +117,8 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
         private const val CAMERA_MAX_OFFSET_M = 40.0
         private const val CAMERA_WARN_M = 600.0
         private const val GIVE_WAY_WARN_M = 200.0
+        /** Not navigating, only what is close: further on, where the rider goes is a guess. */
+        private const val GIVE_WAY_FREE_M = 120.0
         /** A sign stands a little before the junction: keep showing it until the rider is there. */
         private const val GIVE_WAY_PAST_M = 10.0
         /** Many bikes have 250–350 km range; warn when the next pump is more than 120 km away. */

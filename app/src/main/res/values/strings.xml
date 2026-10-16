@@ -749,7 +749,7 @@
     <string name="help_end_trip">End the trip</string>
     <string name="help_fuel">Next fuel on the route, amber when the gap is long; tap to stop there</string>
     <string name="help_camera">Speed camera ahead</string>
-    <string name="help_give_way">Junction ahead where you give way or stop (when navigating)</string>
+    <string name="help_give_way">Junction ahead where you give way or stop: by the speed when navigating, by the road number otherwise, and as a sign on the map</string>
     <string name="help_hold_map">Hold a finger on a place: go there, add a stop, save a favourite, and see what is known about the road</string>
     <string name="help_hold_line">Hold the route line while planning to change the route on the map</string>
     <string name="help_draw">Draw an area with a finger for a roundtrip through it (Where to? → Roundtrip)</string>

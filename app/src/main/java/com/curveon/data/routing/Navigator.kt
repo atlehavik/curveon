@@ -982,6 +982,18 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }.getOrNull()
     }
 
+    /**
+     * Not navigating: the way the road the rider is on goes for the next ~[aheadM] metres, as a
+     * short route towards a point straight ahead (the router keeps to roads). Null when unknown.
+     */
+    suspend fun probeAhead(position: LatLon, headingDeg: Double, aheadM: Double = 150.0): Route? = withContext(Dispatchers.Default) {
+        if (!routingData.isReady()) return@withContext null
+        runCatching {
+            engine.route(listOf(position, Geo.destination(position, headingDeg, aheadM)), RouteOptions(RoadStyle.FASTEST), viaCatchingRangeMeters = 80.0)
+                .takeIf { r -> r.points.firstOrNull()?.let { Geo.distance(it.lat, it.lon, position.lat, position.lon) < 30 } == true }
+        }.getOrNull()
+    }
+
     private fun message(e: Throwable): String = when {
         e is NoAdventureException -> e.directMinutes?.let { context.getString(R.string.nav_adventure_too_short, it) } ?: context.getString(R.string.nav_no_adventure)
         e is NoRoundtripException -> context.getString(if (e.inArea) R.string.nav_no_area_roundtrip else R.string.nav_no_roundtrip)

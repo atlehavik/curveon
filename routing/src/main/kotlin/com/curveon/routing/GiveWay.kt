@@ -17,8 +17,11 @@ data class GiveWaySign(val lat: Double, val lon: Double, val lat2: Double, val l
     val kind get() = value % 10
 }
 
-/** A sign the route meets, [along] metres from its start (the junction is there or just after). */
-data class GiveWayOnRoute(val along: Double, val stop: Boolean)
+/**
+ * A junction the route meets where the rider gives way, [along] metres from its start (at [lat],
+ * [lon], or just after for a sign standing before it), approached heading [bearingDeg].
+ */
+data class GiveWayOnRoute(val along: Double, val stop: Boolean, val lat: Double = 0.0, val lon: Double = 0.0, val bearingDeg: Double = 0.0)
 
 /** A piece of road from the register, from ([lat1], [lon1]) to ([lat2], [lon2]). */
 data class RoadPiece(val lat1: Double, val lon1: Double, val lat2: Double, val lon2: Double)
@@ -98,7 +101,12 @@ object GiveWay {
                 if (g.stop && !last.stop) out[out.size - 1] = last.copy(stop = true)
             } else out += g
         }
-        return out
+        // Where each is and which way the route comes to it, for a sign on the map.
+        return out.map { g ->
+            val at = pointAt(route, g.along) ?: return@map g
+            val from = pointAt(route, maxOf(0.0, g.along - 15)) ?: at
+            g.copy(lat = at.lat, lon = at.lon, bearingDeg = if (from == at) 0.0 else Geo.bearing(from.lat, from.lon, at.lat, at.lon))
+        }
     }
 
     /**

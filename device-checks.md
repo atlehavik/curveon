@@ -6,6 +6,24 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-16 — Give way signs without a route, and standing on the map
+
+Riding without a route, Curveon looks ~150 m along the road you are on (a short route straight
+ahead, every 2 s from 10 km/h) and, if the next junction is one where you give way, shows its
+sign and the distance in the road card (top middle, by the road number and priority sign; shown
+even with Road info off). Standing still at the junction keeps it. The sign also stands on the map,
+on the right of the road ~14 m before the junction: the one just ahead when riding freely, and
+those on the next kilometre of the route when navigating. Checked in the emulator with GPS fixes
+along Kv1164 onto Fv541 (Bømlo): 90 m, 70 m, 40 m, then gone on Fv541; the sign on its pole by
+the junction.
+
+- [ ] Real ride without a route: out of a side road onto a bigger one, the sign shows in time
+      (~100 m before) and goes once you are through.
+- [ ] Riding along a main road past side roads: nothing shows.
+- [ ] Where the road forks or bends hard just ahead, a wrong sign may show (the look-ahead goes
+      straight on): note where.
+- [ ] Heading-up and 3D map: the sign on the map stands upright beside the road.
+
 ## 2026-10-16 — Give way and stop signs while navigating
 
 Navigating in Norway, a junction where you give way (or must stop) shows its sign under the speed,

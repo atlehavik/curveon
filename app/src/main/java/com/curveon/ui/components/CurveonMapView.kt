@@ -79,6 +79,9 @@ private const val FRAME_NS = 25_000_000L
 private const val MAX_FPS = 30
 private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
+private const val GIVE_WAY = "curveon-give-way"
+private const val GIVE_WAY_IMAGE = "curveon-give-way-sign"
+private const val STOP_SIGN_IMAGE = "curveon-stop-sign"
 private const val HINT = "curveon-track-hint"
 private const val SKETCH = "curveon-sketch"
 private const val ROUTE_SURFACE = "curveon-route-surface"
@@ -152,6 +155,8 @@ fun CurveonMapView(
     onRoadHere: ((com.curveon.data.road.MapRoad?) -> Unit)? = null,
     gpxTracks: List<com.curveon.data.gpx.OverlayTrack> = emptyList(),
     gpxPois: List<com.curveon.data.gpx.GpxPoi> = emptyList(),
+    /** Give way and stop signs that apply to the rider, stood beside the road before their junctions. */
+    giveWaySigns: List<com.curveon.data.routing.GiveWayAlert> = emptyList(),
     trackHint: com.curveon.data.gpx.TrackHint? = null,
     onPoiClick: (com.curveon.data.gpx.GpxPoi) -> Unit = {},
     /** Where the map is looking once it settles: south, north, west, east, and the zoom. */
@@ -237,6 +242,7 @@ fun CurveonMapView(
     val onViewportState = rememberUpdatedState(onViewport)
     val poisState = rememberUpdatedState(gpxPois)
     val poiBadges = rememberPoiBadges()
+    val signImages = remember { roadSignImages(context.resources.displayMetrics.density) }
 
     val mapView = remember {
         MapLibre.getInstance(context)
@@ -526,6 +532,7 @@ fun CurveonMapView(
         m.setStyle(Style.Builder().fromJson(json)) { s ->
             addOverlayLayers(s, dark)
             poiBadges.forEach { (name, bmp) -> s.addImage(name, bmp) }
+            signImages.forEach { (name, bmp) -> s.addImage(name, bmp) }
             style = s
         }
     }
@@ -587,6 +594,17 @@ fun CurveonMapView(
             kotlinx.coroutines.delay(800)
             lifecycleOwner.lifecycle.untilStarted()
         }
+    }
+    // Give way signs: on the right of the road, a few metres before the junction, as they stand.
+    LaunchedEffect(style, giveWaySigns) {
+        val s = style ?: return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(GIVE_WAY)?.setGeoJson(FeatureCollection.fromFeatures(giveWaySigns.map { g ->
+            val back = com.curveon.routing.Geo.destination(com.curveon.routing.LatLon(g.lat, g.lon), g.bearingDeg + 180, 14.0)
+            val at = com.curveon.routing.Geo.destination(back, g.bearingDeg + 90, 6.0)
+            Feature.fromGeometry(Point.fromLngLat(at.lon, at.lat)).also {
+                it.addStringProperty("icon", if (g.stop) STOP_SIGN_IMAGE else GIVE_WAY_IMAGE)
+            }
+        }))
     }
     LaunchedEffect(style, gpxPois) {
         val s = style ?: return@LaunchedEffect
@@ -1052,6 +1070,54 @@ private const val AMBIENT_CACHE_BYTES = 300L * 1024 * 1024
 private fun hex(argb: Int) = String.format("#%06X", argb and 0xFFFFFF)
 
 /** White chevron used (tinted per track) to show a track's direction. */
+/** The give way and stop signs on a short pole, for standing on the map ([density]: px per dp). */
+private fun roadSignImages(density: Float): Map<String, android.graphics.Bitmap> {
+    val w = (26 * density).toInt()
+    val h = (40 * density).toInt()
+    val red = android.graphics.Color.rgb(0xD5, 0x2B, 0x1E)
+    fun sign(plate: android.graphics.Canvas.(android.graphics.Paint) -> Unit): android.graphics.Bitmap {
+        val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp)
+        val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        // The pole: grey, from under the plate to the ground (the bottom, where the sign stands).
+        p.color = android.graphics.Color.rgb(0x8A, 0x93, 0x9E)
+        c.drawRect(w / 2f - 1.5f * density, w * 0.6f, w / 2f + 1.5f * density, h.toFloat(), p)
+        c.plate(p)
+        return bmp
+    }
+    val giveWay = sign { p ->
+        fun tri(inset: Float) = android.graphics.Path().apply {
+            val top = w * 0.07f; val ht = w * 0.87f; val cy = top + ht / 3; val k = 1 - inset / (ht / 3)
+            moveTo(w / 2f - w / 2f * k, cy + (top - cy) * k)
+            lineTo(w / 2f + w / 2f * k, cy + (top - cy) * k)
+            lineTo(w / 2f, cy + (top + ht - cy) * k)
+            close()
+        }
+        p.color = android.graphics.Color.WHITE; drawPath(tri(0f), p)
+        p.color = red; drawPath(tri(w * 0.05f), p)
+        p.color = android.graphics.Color.WHITE; drawPath(tri(w * 0.17f), p)
+    }
+    val stop = sign { p ->
+        fun oct(inset: Float) = android.graphics.Path().apply {
+            val c = w / 2f
+            val r = (c - inset) / kotlin.math.cos(Math.PI / 8).toFloat()
+            for (i in 0 until 8) {
+                val a = Math.PI / 8 + i * Math.PI / 4
+                val x = c + r * kotlin.math.cos(a).toFloat(); val y = c + r * kotlin.math.sin(a).toFloat()
+                if (i == 0) moveTo(x, y) else lineTo(x, y)
+            }
+            close()
+        }
+        p.color = android.graphics.Color.WHITE; drawPath(oct(0f), p)
+        p.color = red; drawPath(oct(w * 0.07f), p)
+        p.color = android.graphics.Color.WHITE
+        p.textAlign = android.graphics.Paint.Align.CENTER; p.textSize = w * 0.28f
+        p.typeface = android.graphics.Typeface.DEFAULT_BOLD
+        drawText("STOP", w / 2f, w / 2f + p.textSize * 0.36f, p)
+    }
+    return mapOf(GIVE_WAY_IMAGE to giveWay, STOP_SIGN_IMAGE to stop)
+}
+
 private fun arrowBitmap(): android.graphics.Bitmap {
     val size = 48
     val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
@@ -1225,6 +1291,13 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             lineColor("#FF9100"), lineWidth(5f), lineOpacity(0.9f),
             lineDasharray(arrayOf(1.2f, 1.2f)), lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
+    )
+    s.addSource(GeoJsonSource(GIVE_WAY))
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$GIVE_WAY-signs", GIVE_WAY).withProperties(
+            iconImage(org.maplibre.android.style.expressions.Expression.get("icon")),
+            iconAnchor(Property.ICON_ANCHOR_BOTTOM), iconAllowOverlap(true), iconIgnorePlacement(true)
+        ).also { it.minZoom = 13f }
     )
     s.addSource(GeoJsonSource(PICK))
     s.addLayer(

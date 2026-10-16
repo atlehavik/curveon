@@ -747,7 +747,7 @@
     <string name="help_end_trip">Avslutt turen</string>
     <string name="help_fuel">Neste drivstoff på ruten, oransje når det er langt; trykk for å stoppe der</string>
     <string name="help_camera">Fotoboks foran</string>
-    <string name="help_give_way">Kryss foran der du har vikeplikt eller stopplikt (under navigering)</string>
+    <string name="help_give_way">Kryss foran der du har vikeplikt eller stopplikt: ved farten under navigering, ellers ved vegnummeret, og som skilt på kartet</string>
     <string name="help_hold_map">Hold fingeren på et sted: kjør dit, legg til stopp, lagre som favoritt og se hva som er kjent om veien</string>
     <string name="help_hold_line">Hold på rutelinjen mens du planlegger for å endre ruten i kartet</string>
     <string name="help_draw">Tegn et område med fingeren for en rundtur gjennom det (Hvor skal du? → Rundtur)</string>

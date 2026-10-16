@@ -88,6 +88,9 @@ class GiveWayTest {
         val found = GiveWay.alongRoute(route(east, junction, north), emptyList(), priority)
         assertEquals(1, found.size)
         assertEquals(Geo.distance(east, junction), found[0].along, 5.0)
+        // Where it is and the way the route comes to it (west), for its sign on the map.
+        assertEquals(0.0, Geo.distance(LatLon(found[0].lat, found[0].lon), junction), 5.0)
+        assertEquals(270.0, found[0].bearingDeg, 10.0)
     }
 
     @Test

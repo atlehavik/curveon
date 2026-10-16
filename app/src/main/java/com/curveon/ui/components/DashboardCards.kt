@@ -243,10 +243,11 @@ fun StopSign(size: Dp, modifier: Modifier = Modifier) {
 
 /**
  * The road the rider is on, in a little card of its own: its number and, on a priority road, the
- * priority sign (Settings → Display → Road info).
+ * priority sign (Settings → Display → Road info). Riding without a route, a junction just ahead
+ * where the rider gives way adds its sign and how far it is.
  */
 @Composable
-fun CurrentRoadCard(road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier) {
+fun CurrentRoadCard(road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier, giveWay: com.curveon.data.routing.GiveWayAlert? = null) {
     Row(
         modifier
             .clip(RoundedCornerShape(16.dp))
@@ -259,6 +260,16 @@ fun CurrentRoadCard(road: com.curveon.data.road.CurrentRoad, modifier: Modifier 
     ) {
         road.ref?.let { RoadShield(it, 26.dp) }
         if (road.priority) PriorityRoadSign(30.dp)
+        giveWay?.let { g ->
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("free_give_way")) {
+                if (g.stop) StopSign(30.dp) else GiveWaySign(30.dp)
+                if (g.distanceMeters >= 10) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.give_way_in, (g.distanceMeters / 10).toInt() * 10),
+                        color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+            }
+        }
     }
 }
 

@@ -97,7 +97,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
     val showMapMedia by viewModel.showMapMedia.collectAsStateWithLifecycle()
-    val currentRoad by viewModel.currentRoad.collectAsStateWithLifecycle()
+    val roadHere by viewModel.currentRoad.collectAsStateWithLifecycle()
+    val freeGiveWay by viewModel.freeGiveWay.collectAsStateWithLifecycle()
+    val mapGiveWays by viewModel.mapGiveWays.collectAsStateWithLifecycle()
+    // The road card: the road's number and priority sign, and riding freely a give way just ahead.
+    val currentRoad = roadHere ?: freeGiveWay?.let { com.curveon.data.road.CurrentRoad(null, false) }
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
@@ -424,7 +428,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         // The road's number and priority sign in a card of their own: top middle in landscape, under
         // the speed in portrait or when the middle has no room between the trip bar and the speed.
         currentRoad?.let { road ->
-            CurrentRoadCard(road, (if (roadCentred) Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
+            CurrentRoadCard(road, giveWay = freeGiveWay, modifier = (if (roadCentred) Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
                 else Modifier.align(Alignment.TopEnd).padding(top = 14.dp + speedSize.height + 8.dp, end = 14.dp))
                 .onSizeChanged { roadSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } })
         }
@@ -567,6 +571,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             speedLimitKmh = telemetry.speedLimitKmh,
             hasGpsFix = telemetry.hasGpsFix,
             routePoints = routePoints,
+            giveWaySigns = mapGiveWays,
             groundPreference = groundPreference,
             currentTurnInstruction = currentTurnInstruction,
             isFullScreen = isFullScreenMap,

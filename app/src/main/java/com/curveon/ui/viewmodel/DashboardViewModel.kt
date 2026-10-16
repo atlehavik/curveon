@@ -38,6 +38,7 @@ import com.curveon.data.update.AppUpdates
 import com.curveon.data.update.Changelog
 import com.curveon.data.update.ChangelogEntry
 import com.curveon.data.update.UpdateState
+import com.curveon.routing.Geo
 import com.curveon.routing.LatLon
 import com.curveon.routing.Maneuver
 import com.curveon.routing.ManeuverType
@@ -696,6 +697,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** While navigating: a junction just ahead where the rider gives way or stops. */
     private val _giveWayAlert = MutableStateFlow<com.curveon.data.routing.GiveWayAlert?>(null)
     val giveWayAlert: StateFlow<com.curveon.data.routing.GiveWayAlert?> = _giveWayAlert.asStateFlow()
+    /** Not navigating: the junction just ahead where the rider gives way, as last found ([freeGiveWay] keeps its distance current). */
+    private val freeGiveWayAt = MutableStateFlow<com.curveon.data.routing.GiveWayAlert?>(null)
+    /** Not navigating: a junction just ahead where the rider gives way, for the road card. */
+    val freeGiveWay: StateFlow<com.curveon.data.routing.GiveWayAlert?> = combine(freeGiveWayAt, _currentLocation) { g, here ->
+        g ?: return@combine null
+        val d = Geo.distance(here.latitude, here.longitude, g.lat, g.lon)
+        // Gone once ridden past (it is behind) or away from.
+        val behind = d > 15 && kotlin.math.abs(Geo.angleDiff(Geo.bearing(here.latitude, here.longitude, g.lat, g.lon), g.bearingDeg)) > 100
+        if (behind || d > 200) null else g.copy(distanceMeters = d)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    /** While navigating: the junctions on the route in the next kilometre where the rider gives way. */
+    private val routeGiveWays = MutableStateFlow<List<com.curveon.data.routing.GiveWayAlert>>(emptyList())
+    /** Give way and stop signs to stand on the map: those on the route ahead, or the one just ahead when riding freely. */
+    val mapGiveWays: StateFlow<List<com.curveon.data.routing.GiveWayAlert>> = combine(routeGiveWays, freeGiveWay) { route, free ->
+        route.ifEmpty { listOfNotNull(free) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     // ---------------------------------------------------------------- day / night
 
@@ -817,6 +834,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 _cameraAlert.value = if (t.speedKmh < 15f) null else hazards.cameraAheadFreeRide(here, t.headingDeg.toDouble())
             }
         }
+        // Not navigating: a junction just ahead on the road the rider is on where they give way.
+        viewModelScope.launch {
+            while (true) {
+                delay(2_000)
+                untilAwake()
+                val t = _telemetry.value
+                if (navigator.state.value.isNavigating || !t.hasGpsFix) { freeGiveWayAt.value = null; continue }
+                if (t.speedKmh < 10f) continue // waiting at the junction (or heading unknown): keep it
+                val here = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
+                freeGiveWayAt.value = navigator.probeAhead(here, t.headingDeg.toDouble())?.let { hazards.giveWayFreeRide(it) }
+            }
+        }
         // New route: load fuel, cameras and give way signs along it; forget road names of the old one.
         viewModelScope.launch {
             navigator.state.map { it.route }.distinctUntilChanged().collect { route ->
@@ -829,7 +858,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     startDemoRide(newTrip = !_isDemoRiding.value || title != demoTrip)
                     demoTrip = title
                 }
-                if (route == null) { _fuelHint.value = null; _cameraAlert.value = null; _giveWayAlert.value = null }
+                if (route == null) { _fuelHint.value = null; _cameraAlert.value = null; _giveWayAlert.value = null; routeGiveWays.value = emptyList() }
             }
         }
         // While navigating: next fuel and camera ahead on the route.
@@ -838,6 +867,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 _fuelHint.value = hazards.nextFuel(p.distanceAlongRoute, p.remainingDistance)
                 _cameraAlert.value = hazards.cameraAhead(p.distanceAlongRoute)
                 _giveWayAlert.value = hazards.giveWayAhead(p.distanceAlongRoute)
+                routeGiveWays.value = hazards.giveWaysAhead(p.distanceAlongRoute, MAP_GIVE_WAY_M)
             }
         }
     }
@@ -1788,6 +1818,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     companion object {
+        /** How far along the route give way signs stand on the map. */
+        private const val MAP_GIVE_WAY_M = 1_000.0
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
         /** Search data bigger than this (compressed) isn't offered on its own: it comes with the country's map. */
         private const val SEARCH_OFFER_MAX_BYTES = 120_000_000L
