@@ -2,10 +2,12 @@
   {
     "version": "1.2.2",
     "en": [
-      "Speed cameras are only shown on the map when you have zoomed in close, where the houses show up, so they no longer clutter the zoomed-out map"
+      "Speed cameras are only shown on the map when you have zoomed in close, where the houses show up, so they no longer clutter the zoomed-out map",
+      "Turning a GPX track into an adjustable route from the ride sheet now shows that it is working, just like it does from the GPX list, so you know something is happening"
     ],
     "nb": [
-      "Fotobokser vises bare på kartet når du har zoomet helt inn, der husene dukker opp, så de ikke lenger roter til kartet når du er zoomet ut"
+      "Fotobokser vises bare på kartet når du har zoomet helt inn, der husene dukker opp, så de ikke lenger roter til kartet når du er zoomet ut",
+      "Når du gjør en GPX-tur om til en justerbar rute fra kjør-dialogen, ser du nå at noe jobbes med, akkurat som fra GPX-listen, så du vet at det skjer noe"
     ]
   },
   {

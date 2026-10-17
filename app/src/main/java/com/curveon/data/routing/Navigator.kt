@@ -478,7 +478,12 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private fun convertTrack(g: NavigationGoal.Track, fromPreview: Boolean) {
         if (g.points.size < 2) return
         scope.launch {
-            _state.value = _state.value.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_converting, g.name)))
+            val converting = context.getString(R.string.nav_converting, g.name)
+            // The status card is hidden under the trip sheet, so from there the sheet shows the progress.
+            _state.value = _state.value.let { s ->
+                if (fromPreview && s.preview != null) s.copy(preview = s.preview.copy(fetching = converting))
+                else s.copy(status = RoutingStatus.Calculating(converting))
+            }
             val first = g.points.first()
             val last = g.points.last()
             val tiles = tilesAround(g.points)
