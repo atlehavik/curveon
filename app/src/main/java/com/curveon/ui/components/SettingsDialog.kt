@@ -32,6 +32,7 @@ import com.curveon.data.map.InstalledMap
 import com.curveon.data.map.MapDownloadState
 import com.curveon.data.update.UpdateState
 import com.curveon.ui.theme.*
+import com.curveon.ui.viewmodel.MapDetail
 import com.curveon.ui.viewmodel.MapTheme
 
 private val OnCyan = Color(0xFF00363D)
@@ -50,6 +51,7 @@ data class SettingsState(
     val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
+    val mapDetail: MapDetail = MapDetail.RESPONSE,
     val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
     val obd: com.curveon.data.obd.ObdState,
@@ -92,6 +94,7 @@ class SettingsActions(
     val onLanguage: (AppLanguage) -> Unit,
     val onUnits: (Boolean) -> Unit,
     val onMapTheme: (MapTheme) -> Unit,
+    val onMapDetail: (MapDetail) -> Unit = {},
     val onScreenLock: (com.curveon.ScreenLock) -> Unit,
     val onObd: (Boolean) -> Unit,
     val onObdDevice: (String?) -> Unit,
@@ -177,6 +180,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_map), stringResource(R.string.settings_map_hint)) {
                             Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
+                        }
+                        Setting(stringResource(R.string.settings_map_detail), stringResource(R.string.settings_map_detail_hint)) {
+                            Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)
                         }
                         Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = {
                             if (state.showSurfaces) SurfaceColours(state.surfacePalette, state.surfacePaletteWhilePlanning, actions.onSurfacePaletteWhilePlanning)

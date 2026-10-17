@@ -74,6 +74,14 @@ data class NavigationSummary(
 
 enum class MapTheme(val label: Int) { AUTO(com.curveon.R.string.map_theme_auto), DAY(com.curveon.R.string.map_theme_day), NIGHT(com.curveon.R.string.map_theme_night) }
 
+/**
+ * How far out the map shows gravel and small roads: [RESPONSE] from zoom 11, as before, or [DETAIL]
+ * from 10, which has more to read and draw and so responds a little slower.
+ */
+enum class MapDetail(val label: Int, val surfaceZoom: Float) {
+    RESPONSE(com.curveon.R.string.map_detail_response, 11f), DETAIL(com.curveon.R.string.map_detail_detail, 10f)
+}
+
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
 
     private val app: Context = application
@@ -814,6 +822,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _mapTheme = MutableStateFlow(MapTheme.valueOf(settings.getString("mapTheme", MapTheme.AUTO.name)!!))
     val mapTheme: StateFlow<MapTheme> = _mapTheme.asStateFlow()
+
+    private val _mapDetail = MutableStateFlow(MapDetail.valueOf(settings.getString("mapDetail", MapDetail.RESPONSE.name)!!))
+    val mapDetail: StateFlow<MapDetail> = _mapDetail.asStateFlow()
+    fun setMapDetail(detail: MapDetail) { _mapDetail.value = detail; settings.edit().putString("mapDetail", detail.name).apply() }
 
     private val _mapDark = MutableStateFlow(true)
     val mapDark: StateFlow<Boolean> = _mapDark.asStateFlow()

@@ -24,6 +24,13 @@ enum class SurfaceKind {
      */
     PAVED,
     /**
+     * A country road (`unclassified`) with tarmac or no surface stated: the small roads that string
+     * the gravel together. Drawn like [PAVED] in the quiet colours, and in the palette's colour
+     * as a solid line (not dashed: it is not gravel) in the bright ones, so they can be found.
+     * Residential streets stay [PAVED], not to clutter every housing estate.
+     */
+    COUNTRY,
+    /**
      * A tarmac (or not stated) service or access road, or a tarmac track: the map draws these only
      * when zoomed far in. Shown only where they lead to gravel (see [SurfaceReader.leadingToGravel]),
      * not every driveway.
@@ -294,6 +301,7 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
                 highway == "track" -> if (tracktype == "grade1" || tracktype == "grade2") SurfaceKind.GRAVEL else SurfaceKind.SOFT
                 else -> null
             } ?: return when {
+                highway == "unclassified" -> SurfaceKind.COUNTRY to 1
                 rank == 1 -> SurfaceKind.PAVED to 1
                 highway == "service" || highway == "track" -> SurfaceKind.ACCESS to 0
                 else -> null

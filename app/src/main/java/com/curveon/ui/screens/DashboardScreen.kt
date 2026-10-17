@@ -118,6 +118,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val roadNameProbe by viewModel.roadNameProbe.collectAsStateWithLifecycle()
     val mapDark by viewModel.mapDark.collectAsStateWithLifecycle()
     val mapTheme by viewModel.mapTheme.collectAsStateWithLifecycle()
+    val mapDetail by viewModel.mapDetail.collectAsStateWithLifecycle()
     val fuelHint by viewModel.fuelHint.collectAsStateWithLifecycle()
     val cameraAlert by viewModel.cameraAlert.collectAsStateWithLifecycle()
     val obdState by viewModel.obd.state.collectAsStateWithLifecycle()
@@ -620,6 +621,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             previewSheetMinimized = previewMinimized,
             surfaceWays = viewModel::surfaceWays,
             showSurfaces = showSurfaces,
+            surfaceZoom = mapDetail.surfaceZoom,
             surfacePalette = surfacePalette,
             surfacePaletteWhilePlanning = surfacePaletteWhilePlanning,
             gravelHeat = viewModel.gravelHeat.takeIf { gravelHeatButton != com.curveon.ui.components.GravelHeatButton.OFF },
@@ -918,7 +920,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             SettingsDialog(
                 state = SettingsState(
                     language = remember { com.curveon.AppLanguage.current(context) },
-                    useMph = telemetry.useMph, mapTheme = mapTheme, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
+                    useMph = telemetry.useMph, mapTheme = mapTheme, mapDetail = mapDetail, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
                     obdEnabled = telemetry.isObdEnabled,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
@@ -943,6 +945,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onLanguage = { com.curveon.AppLanguage.set(context, it) },
                     onUnits = viewModel::setUseMph,
                     onMapTheme = viewModel::setMapTheme,
+                    onMapDetail = viewModel::setMapDetail,
                     onScreenLock = viewModel::setScreenLock,
                     onObd = viewModel::setObd,
                     onObdDevice = viewModel::setObdDevice,

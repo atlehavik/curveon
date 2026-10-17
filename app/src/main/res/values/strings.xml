@@ -73,6 +73,10 @@
     <string name="screen_lock_auto">Turns</string>
     <string name="screen_lock_landscape">Landscape</string>
     <string name="screen_lock_portrait">Portrait</string>
+    <string name="settings_map_detail">Map detail</string>
+    <string name="settings_map_detail_hint">More detail shows gravel and small roads one zoom step further out, but the map responds a little slower</string>
+    <string name="map_detail_response">Fast</string>
+    <string name="map_detail_detail">Detailed</string>
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Day</string>
     <string name="map_theme_night">Night</string>

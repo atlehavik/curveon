@@ -6,6 +6,22 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — Country roads in the palette colour
+
+- [ ] Settings → Display → Road surfaces: pick Orange, Yellow or Green. The small country roads
+      (the thin ones that string gravel together) should show as a solid line in the gravel colour
+      with a dark edge, not dashed, from zoom 11 (10 with Map detail "Detailed") until about zoom
+      15. In a housing estate the streets should stay plain white as before. With "Quiet" nothing
+      changes. Is the line too thick or too loud between the dashes? Say so and the widths change.
+
+## 2026-10-17 — Map detail (gravel and small roads further out)
+
+- [ ] Settings → Display → Map detail, switch to "Detailed" (the default is "Fast"): gravel and dirt dashes and the small
+      tarmac roads between them show from zoom 10, with the gravel heat gone by then. Pan around a
+      gravel-rich area (Telemark, Hardanger) on the X7 and watch for lag or stutter; if it is slow,
+      switch back to "Fast" (zoom 11, as before) and tell me, and the zoom can change.
+      Roads leading to gravel (the thin ones up a driveway) keep showing from 11 either way.
+
 ## 2026-10-17 — Map stays put, adventure time is a ceiling
 
 - [ ] Planning a trip, editing a route, cancelling a preview: pan/zoom the map somewhere else. It

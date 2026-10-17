@@ -72,6 +72,10 @@
     <string name="screen_lock_auto">Snur seg</string>
     <string name="screen_lock_landscape">Liggende</string>
     <string name="screen_lock_portrait">Stående</string>
+    <string name="settings_map_detail">Kartdetaljer</string>
+    <string name="settings_map_detail_hint">Flere detaljer viser grus og småveier ett zoomtrinn lenger ut, men kartet responderer litt tregere</string>
+    <string name="map_detail_response">Rask</string>
+    <string name="map_detail_detail">Detaljert</string>
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Natt</string>

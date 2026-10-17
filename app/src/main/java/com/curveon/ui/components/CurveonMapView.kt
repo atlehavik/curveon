@@ -120,7 +120,11 @@ interface GravelHeatSource {
     /** One file's cells; seconds the first time, then at once. */
     suspend fun cells(tile: String): List<com.curveon.routing.HeatCell>
 }
-/** Gravel and soft roads from this zoom in (about 10 km across the X7's map); further out they would clutter. */
+/**
+ * Gravel and soft roads from this zoom in (about 10 km across the X7's map) when the map is set to
+ * respond fast, one step further out with more detail ([com.curveon.ui.viewmodel.MapDetail]). Further out they would clutter. The line widths
+ * start here either way (they hold their width below it).
+ */
 private const val SURFACE_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
 /** 3D tilt; car navigators sit around 45–50 (Mapbox's navigation camera: 45). */
@@ -218,6 +222,8 @@ fun CurveonMapView(
     surfaceWays: (suspend (Double, Double, Double, Double) -> List<com.curveon.routing.SurfaceWay>)? = null,
     /** Settings → Display: draw the road surfaces at all. */
     showSurfaces: Boolean = true,
+    /** Settings → Display → Map detail: the zoom the gravel dashes and small roads start at. */
+    surfaceZoom: Float = SURFACE_ZOOM,
     /** Settings → Display: the dashes' colours, and whether only while planning (quiet otherwise). */
     surfacePalette: SurfacePalette = SurfacePalette.QUIET,
     surfacePaletteWhilePlanning: Boolean = false,
@@ -947,11 +953,19 @@ fun CurveonMapView(
         val v = if (showSurfaces) Property.VISIBLE else Property.NONE
         s.layers.filter { it.id.startsWith(SURFACE) }.forEach { it.setProperties(visibility(v)) }
     }
-    LaunchedEffect(style, cameraIdleTick, showSurfaces) {
+    // The zoom the dashes and small roads start at. The tarmac roads leading to gravel (access) hold
+    // to the ordinary one: the map has those itself, if only close up. The gravel heat fades out as the dashes come in.
+    LaunchedEffect(style, surfaceZoom) {
+        val s = style ?: return@LaunchedEffect
+        s.layers.filter { it.id.startsWith(SURFACE) && !it.id.startsWith("$SURFACE-access") }.forEach { it.setMinZoom(surfaceZoom) }
+        s.getLayer("$HEAT-layer")?.setProperties(heatmapOpacity(E.interpolate(E.linear(), E.zoom(),
+            E.stop(surfaceZoom, if (dark) 0.8f else 0.7f), E.stop(surfaceZoom + 1.5f, 0f))))
+    }
+    LaunchedEffect(style, cameraIdleTick, showSurfaces, surfaceZoom) {
         val m = map ?: return@LaunchedEffect
         val s = style ?: return@LaunchedEffect
         val fetch = surfaceWays?.takeIf { showSurfaces } ?: return@LaunchedEffect
-        if (m.cameraPosition.zoom < SURFACE_ZOOM) return@LaunchedEffect
+        if (m.cameraPosition.zoom < surfaceZoom) return@LaunchedEffect
         val b = m.projection.visibleRegion.latLngBounds
         val have = surfaceBounds
         if (have != null && have.contains(b.northEast) && have.contains(b.southWest) && s.getSource(SURFACE) != null) return@LaunchedEffect
@@ -969,6 +983,7 @@ fun CurveonMapView(
                         com.curveon.routing.SurfaceKind.GRAVEL -> "gravel"
                         com.curveon.routing.SurfaceKind.SOFT -> "soft"
                         com.curveon.routing.SurfaceKind.PAVED -> "paved"
+                        com.curveon.routing.SurfaceKind.COUNTRY -> "country"
                         com.curveon.routing.SurfaceKind.ACCESS -> "access"
                     })
                     addNumberProperty("rank", w.rank)
@@ -990,6 +1005,19 @@ fun CurveonMapView(
         val wide = if (palette == SurfacePalette.QUIET) 1f else 1.3f
         s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(if (dark) palette.gravelDark else palette.gravelLight), lineWidth(surfaceWidth(2.8f * wide)))
         s.getLayer("$SURFACE-soft")?.setProperties(lineColor(if (dark) palette.softDark else palette.softLight), lineWidth(surfaceWidth(2.2f * wide)))
+        // Country roads: quiet like the map's own small roads, or a solid line in the gravel colour
+        // (kept until the map's own roads are wide enough to see) so they can be found between the dashes.
+        val bright = palette != SurfacePalette.QUIET
+        val fade = if (bright) 14.8f to 15.6f else 13.2f to 14f
+        val countryOpacity = E.interpolate(E.linear(), E.zoom(), E.stop(fade.first, 1f), E.stop(fade.second, 0f))
+        s.getLayer("$SURFACE-country-casing")?.setProperties(
+            lineColor(if (!bright) "#A3A3A3" else if (dark) "#000000" else "#202020"), lineOpacity(countryOpacity),
+            lineWidth(if (bright) E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 2.8f), E.stop(13, 3.8f), E.stop(15, 5f))
+                else E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(15, 3.6f))))
+        s.getLayer("$SURFACE-country")?.setProperties(
+            lineColor(if (!bright) (if (dark) "#EBEBEB" else "#FFFFFF") else if (dark) palette.gravelDark else palette.gravelLight), lineOpacity(countryOpacity),
+            lineWidth(if (bright) E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.4f), E.stop(13, 2.2f), E.stop(15, 3.2f))
+                else E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(15, 2.2f))))
         // The same over the route and GPX tracks, with its dark edge a little wider than the dash.
         s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(if (dark) palette.gravelDark else palette.gravelLight), lineWidth(surfaceWidth(2.8f * wide)))
         s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(if (dark) palette.softDark else palette.softLight), lineWidth(surfaceWidth(2.2f * wide)))
@@ -1326,7 +1354,7 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
             lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(15, 2.2f)))
         ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until }
     )
-    val layers = tarmac("access", 14.8f, 15.6f) + tarmac("paved", 13.2f, 14f) + listOf(
+    val layers = tarmac("access", 14.8f, 15.6f) + tarmac("paved", 13.2f, 14f) + tarmac("country", 13.2f, 15.6f) + listOf(
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
             lineColor(if (dark) SurfacePalette.QUIET.softDark else SurfacePalette.QUIET.softLight), lineWidth(width(2.2f)), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),
