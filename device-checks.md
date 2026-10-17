@@ -6,6 +6,10 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — Speed cameras only when zoomed in (1.2.2)
+
+- [ ] Settings → Display → Map layers: Speed cameras on. Zoomed out over a city (e.g. Bergen) no red dots; zoom in to where houses appear and they show.
+
 ## 2026-10-17 — Select buttons stay put in Trips and Planned (1.2.1)
 
 - [ ] Pixel, upright: GPX and trips → Trips (and Planned): scroll down, the select button stays in its row above the list; select two, the Alle / merge / delete buttons stay too.

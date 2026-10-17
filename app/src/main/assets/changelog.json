@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.2",
+    "en": [
+      "Speed cameras are only shown on the map when you have zoomed in close, where the houses show up, so they no longer clutter the zoomed-out map"
+    ],
+    "nb": [
+      "Fotobokser vises bare på kartet når du har zoomet helt inn, der husene dukker opp, så de ikke lenger roter til kartet når du er zoomet ut"
+    ]
+  },
+  {
     "version": "1.2.1",
     "en": [
       "Fuel gauge setup (Settings → Engine): a step-by-step checklist that teaches Curveon which value from your bike is the fuel level. Register empty, a litre or two, half and full whenever you refuel; the gauge then shows litres, gets more exact with every level, and it is all kept for next time",

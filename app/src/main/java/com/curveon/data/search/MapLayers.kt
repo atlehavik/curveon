@@ -5,11 +5,12 @@ import com.curveon.data.gpx.PoiKind
 
 /**
  * Kinds of place the rider can have on the map at all times (Settings → Display), taken from the
- * offline search index of the downloaded countries. [maxWidthKm] keeps a layer off until the part of the map in view is small enough for it to be readable.
+ * offline search index of the downloaded countries. [maxWidthKm] keeps a layer off until the part of the map in view is small enough for it to be readable;
+ * [minZoom] until the map is zoomed in at least that far (13 is where houses appear).
  */
-enum class MapLayer(val label: Int, val icon: PoiKind, val maxWidthKm: Double, val kinds: List<String>) {
+enum class MapLayer(val label: Int, val icon: PoiKind, val maxWidthKm: Double, val kinds: List<String>, val minZoom: Double = 0.0) {
     FUEL(R.string.poi_fuel, PoiKind.FUEL, 40.0, listOf("fuel")),
-    CAMERAS(R.string.layer_cameras, PoiKind.CAMERA, 25.0, emptyList()),
+    CAMERAS(R.string.layer_cameras, PoiKind.CAMERA, 25.0, emptyList(), minZoom = 13.0),
     VIEWPOINTS(R.string.layer_viewpoints, PoiKind.SCENIC, 80.0, listOf("viewpoint")),
     PASSES(R.string.layer_passes, PoiKind.PASS, 250.0, listOf("pass")),
     CAMPING(R.string.poi_camping, PoiKind.CAMPING, 40.0, listOf("camp_site")),

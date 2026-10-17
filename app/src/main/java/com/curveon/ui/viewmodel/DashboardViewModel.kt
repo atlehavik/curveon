@@ -534,7 +534,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             // and judged by those no kind of place would show while riding.
             val widthKm = v.widthKm.takeIf { it > 0 }
                 ?: (com.curveon.routing.Geo.distance((v.south + v.north) / 2, v.west, (v.south + v.north) / 2, v.east) / 1000)
-            val now = layers.filter { widthKm <= it.maxWidthKm }
+            val now = layers.filter { widthKm <= it.maxWidthKm && v.zoom >= it.minZoom }
             // And looked up only a little beyond what is wide on the screen, around where the camera is.
             val half = widthKm * 2.0
             val dLat = half / 111.0
