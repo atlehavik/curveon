@@ -6,6 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Adventure finds more routes; white Hjelpepunkt button (1.2.2)
+
+- [ ] Pixel: plan an adventure with an area and a long time (e.g. the Hallingdal → Gudbrandsdalen oval, 7 h), then shuffle a few times: each shuffle should give a different route near the asked time (before, the first try could come out at half the time, and later tries added nothing).
+- [ ] While riding, tap the map for a new stop: the Hjelpepunkt button in the "Stopp på veien, eller nytt mål?" bar is white with black text and stands out from the map.
+
 ## 2026-10-17 — Fuel gauge setup: tank twice, engine off (1.2.2)
 
 - [ ] Settings → Engine → Fuel gauge setup, X7 or Pixel with the OBD2 adapter on the bike, engine **off**, ignition on,

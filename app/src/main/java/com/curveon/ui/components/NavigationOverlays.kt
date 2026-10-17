@@ -577,7 +577,7 @@ fun MapPickBar(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    PillButton(Icons.Default.RadioButtonUnchecked, stringResource(R.string.pick_shaping_point), CockpitSurfaceVariant, TextPrimary,
+                    PillButton(Icons.Default.RadioButtonUnchecked, stringResource(R.string.pick_shaping_point), Color.White, Color.Black,
                         Modifier.testTag("map_pick_via"), onShapingPoint)
                     PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.pick_along_the_way), NeonAmber, Color.Black,
                         Modifier.testTag("map_pick_along"), onAlongTheWay)

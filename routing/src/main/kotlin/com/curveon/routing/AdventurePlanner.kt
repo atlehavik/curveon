@@ -343,6 +343,10 @@ class AdventurePlanner(
         // Strictest first: no anchor where the road in and the road out ride the same stretch; looser only when
         // that finds no walk at all. A walk that falls short of the asked time is better than one that fills it
         // with riding in and out of dead ends.
+        // A level that finds only a handful of walks is not enough to choose from: the next, looser one adds to them
+        // (the score still counts riding in and out of dead ends against a walk).
+        val all = LinkedHashMap<List<Int>, Walk>()
+        var loosest = 3
         for (maxShared in listOf(3, 10, Int.MAX_VALUE)) for (edges in listOf(others, allEdges)) {
             // Over the ceiling a little rather than nothing at all (the trip can be too close to the quickest way for more room).
             val found = listOf(CLOSE_WALK, LOOSE_CEILING).firstNotNullOfOrNull { over ->
@@ -350,10 +354,15 @@ class AdventurePlanner(
             } ?: continue
             // The quickest way itself is no adventure: it only does when it is what the time asks for.
             if (edges === allEdges && found.none { it.seconds >= targetS * NEAR_FULL }) continue
-            log("  walks found allowing %s shared".format(if (maxShared == Int.MAX_VALUE) "any" else "< $maxShared cells"))
-            return found
+            found.forEach { w -> all.putIfAbsent(w.steps.map { System.identityHashCode(it.second) }, w) }
+            loosest = maxShared
+            if (all.size >= ENOUGH_WALKS) {
+                log("  walks found allowing %s shared".format(if (maxShared == Int.MAX_VALUE) "any" else "< $maxShared cells"))
+                return all.values.sortedByDescending { it.score }
+            }
         }
-        return emptyList()
+        if (all.isNotEmpty()) log("  only %d walks, allowing %s shared".format(all.size, if (loosest == Int.MAX_VALUE) "any" else "< $loosest cells"))
+        return all.values.sortedByDescending { it.score }
     }
 
     private fun walksOver(nodeCount: Int, edges: List<Edge>, targetS: Double, options: RouteOptions, random: Random, maxShared: Int, over: Double): List<Walk> {
@@ -540,6 +549,8 @@ class AdventurePlanner(
         const val OUTSIDE_SLACK_M = 1_500.0
 
         const val WALK_ATTEMPTS = 20_000
+        /** Fewer walks than this at a strict level: the looser levels are tried too and their walks added. */
+        const val ENOUGH_WALKS = 150
         /** A walk shorter than this part of the asked time isn't worth taking. */
         const val MIN_FILL = 0.4
         /** From this part of the asked time a walk is likely to finish (and the quickest way itself passes for a trip); before it only rarely. */
