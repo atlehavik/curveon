@@ -92,6 +92,13 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   strip them down so far that the change is hard to understand, and keep them non-technical (no
   driver names, data sources or internals; "the map no longer crashes", not "OpenGL instead of
   Vulkan"). Norwegian written naturally, not translated word for word.
+  **A released version's entry is frozen.** Before adding a changelog point, find the newest
+  released version (`gh release list --repo atlehavik/curveon -L 1`; local tags may be missing). If
+  the entry for `versionName` is that version, it has been released: never add to it. Start the
+  next patch version instead (new entry at the top of `changelog.json`, and `versionCode` +
+  `versionName` raised in `app/build.gradle.kts`) and put the point there; later changes go in the
+  same entry until it is released. Never edit an already released entry, not even a typo, unless the
+  rider asks.
 - **Installing:** a device connected by USB (`adb devices` lists it with a `usb:` transport, e.g. the X7 at
   the desk) and the Pixel (over wifi) can always be installed on, after each change, without asking. The X7 when
   it is reached only over wifi (on the handlebars) is not: say what is waiting to be installed and end the

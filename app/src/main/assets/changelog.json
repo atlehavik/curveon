@@ -2,20 +2,33 @@
   {
     "version": "1.2.1",
     "en": [
+      "Fuel gauge setup (Settings → Engine): a step-by-step checklist that teaches Curveon which value from your bike is the fuel level. Register empty, a litre or two, half and full whenever you refuel; the gauge then shows litres, gets more exact with every level, and it is all kept for next time",
+      "While a demo ride is on, a clear DEMO tag follows the rider arrow on the map, so you never mistake it for a real ride",
+      "Yellow and Green gravel now look yellow and green on the light map too, and Settings shows the colours as the map you are using draws them",
+      "Gravel dashes over your route and GPX tracks are slimmer, so the route is easy to follow on gravel roads",
+      "A route with lots of waypoints (like a TET track) no longer fills the planner with a long row of fake stops: only the stops you added yourself are listed",
+      "Map detail (Settings → Display): choose Detailed to see gravel and small roads one zoom step further out, so you can plan a gravel route without zooming in so far. The map responds a little slower with it, so Fast is the default",
+      "Country roads are easy to find: with the Orange, Yellow or Green road surface colours, the small country roads between the gravel get a solid line in the same colour, and stay visible until the map's own roads take over. Streets in housing estates stay as they were",
+      "You can see when a ride is being recorded: a small red dot on the GPX button and on Rides when you have stood still for a while with the recording going. Stop the ride yourself from Rides, and pick several rides to merge them into one, for example when a lunch stop split the day's ride in two",
+      "A GPX track or an earlier ride can be turned into an ordinary route (the button at the top of the preview), so you can adjust it, add stops and save the adjusted route as a new GPX track",
       "In Trips and Planned, the select, merge and delete buttons no longer scroll away with the list: they stay in place on a phone held upright, and sit in the title bar on a wide screen, so the list keeps all the room it can get"
     ],
     "nb": [
+      "Oppsett av drivstoffmåler (Innstillinger → Motor): en steg-for-steg-sjekkliste som lærer Curveon hvilken verdi fra motorsykkelen som er drivstoffnivået. Registrer tom, en liter eller to, halv og full hver gang du tanker; da viser måleren liter, blir mer nøyaktig for hvert nivå, og alt huskes til neste gang",
+      "Mens demoturen går følger et tydelig DEMO-merke rytterpilen på kartet, så du aldri tar den for en ekte tur",
+      "Gul og grønn grus ser nå gul og grønn ut også på det lyse kartet, og Innstillinger viser fargene slik kartet du bruker tegner dem",
+      "Grusstripene over ruten din og GPX-spor er slankere, så ruten er lett å følge på grusveier",
+      "En rute med mange hjelpepunkter (som et TET-spor) fyller ikke lenger planleggeren med en lang rad falske stopp: bare stoppene du la til selv vises",
+      "Kartdetaljer (Innstillinger → Visning): velg Detaljert for å se grus og småveier ett zoomtrinn lenger ut, så du slipper å zoome så langt inn når du planlegger en grustur. Kartet responderer litt tregere med det, så Rask er standard",
+      "Landeveiene er lette å finne: med fargene Oransje, Gul eller Grønn for veidekke får de små landeveiene mellom grusveiene en hel linje i samme farge, og de blir synlige helt til kartets egne veier tar over. Gater i boligfelt er som før",
+      "Du ser når en tur tas opp: en liten rød prikk på GPX-knappen og på Turer når du har stått stille en stund mens opptaket pågår. Du kan stoppe turen selv fra Turer, og velge flere turer og slå dem sammen til én, for eksempel når en matpause delte dagens tur i to",
+      "Et GPX-spor eller en tidligere tur kan gjøres om til en vanlig rute (knappen øverst i forhåndsvisningen), så du kan justere den, legge til stopp og lagre den justerte ruten som nytt GPX-spor",
       "I Turer og Planlagte ruller ikke lenger velg-, slå sammen- og slett-knappene bort med listen: de blir stående på plass på mobil i høyformat, og ligger i tittellinjen på bred skjerm, så listen beholder all plassen den kan få"
     ]
   },
   {
     "version": "1.2",
     "en": [
-      "Fuel gauge setup (Settings → Engine): a step-by-step checklist that teaches Curveon which value from your bike is the fuel level. Register empty, a litre or two, half and full whenever you refuel; the gauge then shows litres, gets more exact with every level, and it is all kept for next time",
-      "While a demo ride is on, a clear DEMO tag follows the rider arrow on the map, so you never mistake it for a real ride",
-      "Yellow and Green gravel now look yellow and green on the light map too, and Settings shows the colours as the map you are using draws them",
-      "Gravel dashes over your route and GPX tracks are slimmer, so the route is easy to follow on gravel roads",
-      "A route with lots of waypoints (like a TET track) no longer fills the planner with a long row of fake stops: only the stops you added yourself are listed",
       "Spoken navigation: \"In 300 metres, turn right onto …\" in the language Curveon is shown in, with Android's own voice (Settings → Navigation → Sound). In the helmet through the phone when the tablet is linked to it",
       "Navigation sounds: soft notes before a turn and a tick at it, in the ear you turn towards, a chime on arriving, and sounds for leaving and getting back on the route",
       "Gravel your way: gravel and dirt roads Quiet, Orange, Yellow or Green, optionally only while planning (Settings → Display → Road surfaces); the start of a gravel road shows even up a private road",
@@ -24,18 +37,9 @@
       "Planning on the map: the line can't be dragged by accident until you open the padlock",
       "The map no longer crashes on some phones (Pixel); crash reports are kept on the device",
       "Demo ride in Settings → Navigation",
-      "Curveon Companion: Stop sharing ends the link to the tablet at once",
-      "Map detail (Settings → Display): choose Detailed to see gravel and small roads one zoom step further out, so you can plan a gravel route without zooming in so far. The map responds a little slower with it, so Fast is the default",
-      "Country roads are easy to find: with the Orange, Yellow or Green road surface colours, the small country roads between the gravel get a solid line in the same colour, and stay visible until the map's own roads take over. Streets in housing estates stay as they were",
-      "You can see when a ride is being recorded: a small red dot on the GPX button and on Rides when you have stood still for a while with the recording going. Stop the ride yourself from Rides, and pick several rides to merge them into one, for example when a lunch stop split the day's ride in two",
-      "A GPX track or an earlier ride can be turned into an ordinary route (the button at the top of the preview), so you can adjust it, add stops and save the adjusted route as a new GPX track"
+      "Curveon Companion: Stop sharing ends the link to the tablet at once"
     ],
     "nb": [
-      "Oppsett av drivstoffmåler (Innstillinger → Motor): en steg-for-steg-sjekkliste som lærer Curveon hvilken verdi fra motorsykkelen som er drivstoffnivået. Registrer tom, en liter eller to, halv og full hver gang du tanker; da viser måleren liter, blir mer nøyaktig for hvert nivå, og alt huskes til neste gang",
-      "Mens demoturen går følger et tydelig DEMO-merke rytterpilen på kartet, så du aldri tar den for en ekte tur",
-      "Gul og grønn grus ser nå gul og grønn ut også på det lyse kartet, og Innstillinger viser fargene slik kartet du bruker tegner dem",
-      "Grusstripene over ruten din og GPX-spor er slankere, så ruten er lett å følge på grusveier",
-      "En rute med mange hjelpepunkter (som et TET-spor) fyller ikke lenger planleggeren med en lang rad falske stopp: bare stoppene du la til selv vises",
       "Talenavigasjon: «Om 300 meter, sving til høyre inn på …» på språket Curveon vises på, med Androids egen stemme (Innstillinger → Navigasjon → Lyd). I hjelmen gjennom telefonen når nettbrettet er koblet til den",
       "Navigasjonslyder: myke toner før en sving og et tikk i svingen, i øret du svinger mot, en klokke ved ankomst, og lyder når du kjører av og tilbake på ruten",
       "Grus som du vil: grus- og jordveier dempet, oransje, gul eller grønn, eventuelt bare når du planlegger (Innstillinger → Skjerm → Veidekke); starten på en grusvei vises også oppover en privat vei",
@@ -44,11 +48,7 @@
       "Planlegging på kartet: linjen kan ikke dras ved et uhell før du åpner hengelåsen",
       "Kartet krasjer ikke lenger på enkelte telefoner (Pixel); krasjrapporter tas vare på i enheten",
       "Demotur i Innstillinger → Navigasjon",
-      "Curveon Companion: Stopp deling kobler fra nettbrettet med en gang",
-      "Kartdetaljer (Innstillinger → Visning): velg Detaljert for å se grus og småveier ett zoomtrinn lenger ut, så du slipper å zoome så langt inn når du planlegger en grustur. Kartet responderer litt tregere med det, så Rask er standard",
-      "Landeveiene er lette å finne: med fargene Oransje, Gul eller Grønn for veidekke får de små landeveiene mellom grusveiene en hel linje i samme farge, og de blir synlige helt til kartets egne veier tar over. Gater i boligfelt er som før",
-      "Du ser når en tur tas opp: en liten rød prikk på GPX-knappen og på Turer når du har stått stille en stund mens opptaket pågår. Du kan stoppe turen selv fra Turer, og velge flere turer og slå dem sammen til én, for eksempel når en matpause delte dagens tur i to",
-      "Et GPX-spor eller en tidligere tur kan gjøres om til en vanlig rute (knappen øverst i forhåndsvisningen), så du kan justere den, legge til stopp og lagre den justerte ruten som nytt GPX-spor"
+      "Curveon Companion: Stopp deling kobler fra nettbrettet med en gang"
     ]
   },
   {

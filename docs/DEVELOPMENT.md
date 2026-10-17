@@ -111,7 +111,9 @@ downloads the APK and hands it to Android's installer. For a release it can find
 
 1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`.
 2. Add the version, newest first, to `app/src/main/assets/changelog.json` (English and Norwegian):
-   it is shown once after the update, and under Settings → Help → What's new.
+   it is shown once after the update, and under Settings → Help → What's new. Only the version
+   being prepared gets new points: once a version is released its entry never changes (changes made
+   after a release start the next version's entry).
 3. `./gradlew :app:assembleRelease` with `KEYSTORE_PATH`, `STORE_PASSWORD` and `KEY_PASSWORD` set
    for the release key (the maintainer keeps them in `~/.curveon-signing/signing.env`).
 4. Release tagged `v<versionName>` (e.g. `v1.1`) with the APK named `Curveon-<versionName>.apk`:
