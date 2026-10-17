@@ -82,12 +82,12 @@ fun ColumnScope.PlannedTripsPage(
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
             Text(stringResource(R.string.planned_empty), color = TextMuted, fontSize = 14.sp, modifier = Modifier.padding(24.dp))
         }
-    } else LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (trips.isNotEmpty()) item {
-            val sel = selection
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+    } else {
+        // Fixed row on a phone held upright, the frame's title bar on a wide screen: never scrolls away.
+        val pickedNow = selection
+        if (trips.isNotEmpty()) PageToolbar(pickedNow?.let { pluralStringResource(R.plurals.rides_selected, it.size, it.size) }) {
+            val sel = pickedNow
                 if (sel != null) {
-                    Text(pluralStringResource(R.plurals.rides_selected, sel.size, sel.size), color = TextSecondary, fontSize = 13.sp, modifier = Modifier.weight(1f))
                     val all = sel.size == trips.size
                     PillButton(if (all) Icons.Default.RemoveDone else Icons.Default.DoneAll,
                         stringResource(if (all) R.string.rides_select_none else R.string.rides_select_all), CockpitSurfaceVariant, TextPrimary) {
@@ -101,8 +101,8 @@ fun ColumnScope.PlannedTripsPage(
                     Icons.Default.Checklist, stringResource(R.string.rides_select), 48.dp,
                     if (sel != null) ElectricCyan else CockpitSurfaceVariant, if (sel != null) Color(0xFF00363D) else TextPrimary
                 ) { selection = if (sel == null) emptySet() else null }
-            }
         }
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(rows, key = { if (it is RouteGroup) "g${it.id}" else "t${(it as RouteItem).id}" }) { row ->
             if (row is RouteGroup) {
                 val members = byGroup[row.id].orEmpty()
@@ -187,6 +187,7 @@ fun ColumnScope.PlannedTripsPage(
                     }
                 }
             }
+        }
         }
     }
 

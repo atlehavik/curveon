@@ -111,13 +111,9 @@ fun RideLogDialog(
     val body: @Composable ColumnScope.() -> Unit = {
       // Everything scrolls together: with a short screen (a phone held sideways) the lists would
       // otherwise be left a line or two between the switches.
-      LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (embedded && history.isNotEmpty()) item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
-                if (subtitle != null) Text(subtitle, color = TextSecondary, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                toolbar()
-            }
-        }
+      // The select buttons stay put (a fixed row, or in the frame's title bar), not in the list.
+      if (embedded && history.isNotEmpty()) PageToolbar(subtitle, toolbar)
+      LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // Keep rides at all? Off also turns the GPX auto-save off (it is greyed out below).
         item { Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitSurfaceVariant)
@@ -260,7 +256,7 @@ fun RideLogDialog(
         }
       }
     }
-    if (embedded) Column(Modifier.fillMaxSize(), content = body) else CockpitDialog(
+    if (embedded) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(8.dp), content = body) else CockpitDialog(
         title = stringResource(R.string.rides), icon = Icons.Default.History, accent = ElectricCyan, onDismiss = onDismiss, tag = "rides_dialog", sideBar = sideBar,
         subtitle = subtitle, actions = toolbar, content = body
     )

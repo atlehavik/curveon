@@ -6,6 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — Select buttons stay put in Trips and Planned (1.2.1)
+
+- [ ] Pixel, upright: GPX and trips → Trips (and Planned): scroll down, the select button stays in its row above the list; select two, the Alle / merge / delete buttons stay too.
+- [ ] Pixel, sideways: the same buttons sit in the title bar, with "2 valgt" under the title.
+
 ## 2026-10-17 — Gravel colours, slimmer dashes, DEMO tab, fuel gauge setup
 
 - [ ] Settings → Display → Road surfaces: pick Yellow, then Green. On the light map and on the dark map

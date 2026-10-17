@@ -16,6 +16,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -176,7 +178,11 @@ fun <T> PagedCockpitDialog(
     actions: @Composable RowScope.() -> Unit = {},
     page: @Composable ColumnScope.(T) -> Unit
 ) {
-    CockpitDialog(title = title, icon = icon, accent = accent, onDismiss = onDismiss, tag = tag, header = header, actions = actions) {
+    val slot = androidx.compose.runtime.remember { HeaderSlot() }
+    CockpitDialog(
+        title = title, icon = icon, accent = accent, onDismiss = onDismiss, tag = tag, header = header, subtitle = slot.subtitle,
+        actions = { actions(); slot.actions?.invoke(this) }
+    ) { CompositionLocalProvider(LocalHeaderSlot provides slot) {
         val tabs: @Composable () -> Unit = { DialogTabs(pages, selected, pageLabel, pageIcon, onSelect, width = tabsWidth, badge = pageBadge) }
         val pageColumn: @Composable (T) -> Unit = { which ->
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) { page(which) }
@@ -203,7 +209,34 @@ fun <T> PagedCockpitDialog(
             tabs()
             Box(Modifier.weight(1f).fillMaxHeight().padding(start = 18.dp)) { pageColumn(selected) }
         }
+    } }
+}
+
+/** What an open page hands to its frame's title bar (see [PageToolbar]). */
+class HeaderSlot {
+    var subtitle by androidx.compose.runtime.mutableStateOf<String?>(null)
+    var actions by androidx.compose.runtime.mutableStateOf<(@Composable RowScope.() -> Unit)?>(null)
+}
+
+private val LocalHeaderSlot = compositionLocalOf<HeaderSlot?> { null }
+
+/**
+ * A page's own buttons (select, delete…) that must not scroll away with the list. Upright on a
+ * phone they sit as a fixed row above the list; on a wide screen, where the list needs every
+ * line it can get, they move up into the frame's title bar (with [subtitle] under the title).
+ */
+@Composable
+fun ColumnScope.PageToolbar(subtitle: String?, actions: @Composable RowScope.() -> Unit) {
+    val slot = LocalHeaderSlot.current
+    if (slot == null || isNarrowScreen()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
+            if (subtitle != null) Text(subtitle, color = TextSecondary, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            actions()
+        }
+        return
     }
+    androidx.compose.runtime.SideEffect { slot.subtitle = subtitle; slot.actions = actions }
+    androidx.compose.runtime.DisposableEffect(slot) { onDispose { slot.subtitle = null; slot.actions = null } }
 }
 
 /** Narrower than a 7" tablet held upright: a phone held upright. Dialogs stack instead of sitting side by side. */

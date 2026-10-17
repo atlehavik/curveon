@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.1",
+    "en": [
+      "In Trips and Planned, the select, merge and delete buttons no longer scroll away with the list: they stay in place on a phone held upright, and sit in the title bar on a wide screen, so the list keeps all the room it can get"
+    ],
+    "nb": [
+      "I Turer og Planlagte ruller ikke lenger velg-, slå sammen- og slett-knappene bort med listen: de blir stående på plass på mobil i høyformat, og ligger i tittellinjen på bred skjerm, så listen beholder all plassen den kan få"
+    ]
+  },
+  {
     "version": "1.2",
     "en": [
       "Fuel gauge setup (Settings → Engine): a step-by-step checklist that teaches Curveon which value from your bike is the fuel level. Register empty, a litre or two, half and full whenever you refuel; the gauge then shows litres, gets more exact with every level, and it is all kept for next time",
