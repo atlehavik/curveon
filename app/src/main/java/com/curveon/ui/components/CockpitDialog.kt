@@ -185,9 +185,19 @@ fun <T> PagedCockpitDialog(
             tabs()
             val index = pages.indexOf(selected).coerceAtLeast(0)
             val pager = androidx.compose.foundation.pager.rememberPagerState(initialPage = index) { pages.size }
-            // A tap on a tab scrolls to its page; a swipe lights its tab once it has settled.
-            LaunchedEffect(index) { if (pager.currentPage != index) pager.animateScrollToPage(index) }
-            LaunchedEffect(pager) { androidx.compose.runtime.snapshotFlow { pager.settledPage }.collect { pages.getOrNull(it)?.let(onSelect) } }
+            // A tap on a tab scrolls to its page; a swipe lights the next tab as soon as the page is
+            // more than half across, not after it has settled. The tabs passed on the way of a tapped
+            // tab's scroll don't light up (they would send the scroll back).
+            val tapScrolling = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            LaunchedEffect(index) {
+                if (pager.currentPage != index) {
+                    tapScrolling.value = true
+                    try { pager.animateScrollToPage(index) } finally { tapScrolling.value = false }
+                }
+            }
+            LaunchedEffect(pager) {
+                androidx.compose.runtime.snapshotFlow { pager.currentPage }.collect { if (!tapScrolling.value) pages.getOrNull(it)?.let(onSelect) }
+            }
             androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), pageSpacing = 12.dp) { pageColumn(pages[it]) }
         } else Row(Modifier.fillMaxSize()) {
             tabs()

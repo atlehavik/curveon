@@ -2,6 +2,7 @@
   {
     "version": "1.2",
     "en": [
+      "A route with lots of waypoints (like a TET track) no longer fills the planner with a long row of fake stops: only the stops you added yourself are listed",
       "Spoken navigation: \"In 300 metres, turn right onto …\" in the language Curveon is shown in, with Android's own voice (Settings → Navigation → Sound). In the helmet through the phone when the tablet is linked to it",
       "Navigation sounds: soft notes before a turn and a tick at it, in the ear you turn towards, a chime on arriving, and sounds for leaving and getting back on the route",
       "Gravel your way: gravel and dirt roads Quiet, Orange, Yellow or Green, optionally only while planning (Settings → Display → Road surfaces); the start of a gravel road shows even up a private road",
@@ -17,6 +18,7 @@
       "A GPX track or an earlier ride can be turned into an ordinary route (the button at the top of the preview), so you can adjust it, add stops and save the adjusted route as a new GPX track"
     ],
     "nb": [
+      "En rute med mange hjelpepunkter (som et TET-spor) fyller ikke lenger planleggeren med en lang rad falske stopp: bare stoppene du la til selv vises",
       "Talenavigasjon: «Om 300 meter, sving til høyre inn på …» på språket Curveon vises på, med Androids egen stemme (Innstillinger → Navigasjon → Lyd). I hjelmen gjennom telefonen når nettbrettet er koblet til den",
       "Navigasjonslyder: myke toner før en sving og et tikk i svingen, i øret du svinger mot, en klokke ved ankomst, og lyder når du kjører av og tilbake på ruten",
       "Grus som du vil: grus- og jordveier dempet, oransje, gul eller grønn, eventuelt bare når du planlegger (Innstillinger → Skjerm → Veidekke); starten på en grusvei vises også oppover en privat vei",

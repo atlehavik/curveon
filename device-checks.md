@@ -6,6 +6,25 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — Waypoints hidden in the route planner
+
+- [ ] Plan a TET route (e.g. N-01) on the Pixel and the X7: the chip row in the planner shows only
+      "Juster ruten" (and the start chip), no row of white waypoint chips. A stop you added with
+      "Legg til stopp" still shows as a numbered chip; route line and the map are unchanged.
+
+## 2026-10-17 — Snappier app (tabs, map, routes, GPX)
+
+- [ ] On a phone held upright: swipe between the Settings pages. The lit tab changes as soon as the
+      next page is more than half across, not after it stops. Tapping a far tab still glides straight
+      to it without the lit tab flickering past the ones in between.
+- [ ] Plan or ride a long route (e.g. TET N-01) on the X7: the route line, A/B pins and the speed card
+      should look as before, and the screen should not hitch when the route appears or when a GPX
+      group is switched on or off. Measured on the X7 with demo ride: the garbage collector ran
+      about half as much, and the main thread had far less to do while a route was shown.
+- [ ] The X7 is on the `ride` build now (`./gradlew :app:installRide`): not debuggable, so it starts in
+      0.8 s instead of 2.8 s and routes a 1558 km GPX track in 31 s instead of 43 s. It installs over the
+      debug build and keeps the data; use it for the handlebars, `installDebug` only when debugging.
+
 ## 2026-10-17 — GPX ride button: ride or convert
 
 - [ ] In the GPX list, tap the cyan ride button: a menu with "Kjør GPX herfra" (as before) and

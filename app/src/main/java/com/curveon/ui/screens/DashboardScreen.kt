@@ -53,9 +53,14 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier) {
-    val telemetry by viewModel.telemetry.collectAsStateWithLifecycle()
-    val currentLocation by viewModel.currentLocation.collectAsStateWithLifecycle()
-    val riderFix by viewModel.riderFix.collectAsStateWithLifecycle()
+    // The GPS fix (about once a second) changes these: they are read only where they are drawn (the map,
+    // the speed) and through derivedStateOf, so a fix redraws those and not this whole screen.
+    val telemetryState = viewModel.telemetry.collectAsStateWithLifecycle()
+    val currentLocationState = viewModel.currentLocation.collectAsStateWithLifecycle()
+    val riderFixState = viewModel.riderFix.collectAsStateWithLifecycle()
+    val useMph by remember { derivedStateOf { telemetryState.value.useMph } }
+    val obdEnabled by remember { derivedStateOf { telemetryState.value.isObdEnabled } }
+    val speedBelowStanding by remember { derivedStateOf { telemetryState.value.speedKmh < 3f } }
     val routePoints by viewModel.activeRoutePoints.collectAsStateWithLifecycle()
     val groundPreference by viewModel.groundPreference.collectAsStateWithLifecycle()
     val currentTurnInstruction by viewModel.currentTurnInstruction.collectAsStateWithLifecycle()
@@ -443,7 +448,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onOpen = { showRouteMenu = true }
             )
         }
-        MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
+        MapSpeedCluster({ telemetryState.value }, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
             .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude)
         // The road's number and priority sign in a card of their own: top middle in landscape, under
         // the speed in portrait or when the middle has no room between the trip bar and the speed.
@@ -591,15 +596,54 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
 
+    // What the map is given of the trip being planned, worked out when the plan changes and not on every
+    // GPS fix: a long route is hundreds of thousands of points, and rebuilding and comparing them
+    // each second kept the phone busy (and the garbage collector running) for nothing.
+    val plan = preview
+    val mapPreviewRoutes = remember(editor != null, editLine, plan?.candidates, plan?.selected, plan?.suggestions, plan?.suggestion) {
+        if (editor != null) listOf(MapRoute(editLine, true)).filter { it.points.size >= 2 }
+        else plan?.candidates?.mapIndexedNotNull { i, c ->
+            c.route?.let { r ->
+                val selected = i == plan.selected
+                MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, selected,
+                    surfaces = if (selected) r.points.map { p -> if (p.highway == "track") SURFACE_TRACK else if (p.unpaved) SURFACE_GRAVEL else SURFACE_PAVED } else null)
+            }
+        }.orEmpty() +
+            // The other adventures found, grey beside the one shown, to compare and switch to.
+            plan?.suggestions.orEmpty().filterIndexed { i, _ -> i != plan?.suggestion }
+                .map { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, false) }
+    }
+    val mapMarkers = remember(editor != null, mapPick != null, plan == null, planStart, markers) {
+        if (editor != null) emptyList()
+        // Starting point by point somewhere else: its start shows until the first leg is planned.
+        else if (mapPick != null && plan == null) markers + listOfNotNull(planStart?.let { (p, _) ->
+            com.curveon.ui.components.MapPin(p, com.curveon.ui.components.PinKind.START, "A") })
+        else markers
+    }
+    val mapApproachTo = remember(plan?.candidates, plan?.selected, planGoal?.start == null, navState.approach) {
+        // The route starts on the nearest road the map joins up: show the way to it.
+        if (plan != null) plan.selectedRoute?.points?.firstOrNull()?.takeIf { planGoal?.start == null }?.let { GeoPoint(it.lat, it.lon) }
+        else navState.approach?.let { GeoPoint(it.lat, it.lon) }
+    }
+    val previewGoal = preview?.goal
+    val mapSketch = remember(previewGoal) {
+        when (val g = previewGoal) {
+            is com.curveon.data.routing.NavigationGoal.Roundtrip -> g.area
+            is com.curveon.data.routing.NavigationGoal.Adventure -> g.area
+            is com.curveon.data.routing.NavigationGoal.Destination -> g.loop?.area ?: g.adventure?.area
+            else -> null
+        }?.map { GeoPoint(it.lat, it.lon) }.orEmpty()
+    }
+
     // The map, as big as the layout allows.
     val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier.tourTarget(TourTarget.MAP)) {
         CurveonMapView(
-            location = currentLocation,
-            riderFix = riderFix,
-            headingDeg = telemetry.headingDeg,
-            speedKmh = telemetry.speedKmh,
-            speedLimitKmh = telemetry.speedLimitKmh,
-            hasGpsFix = telemetry.hasGpsFix,
+            location = currentLocationState.value,
+            riderFix = riderFixState.value,
+            headingDeg = telemetryState.value.headingDeg,
+            speedKmh = telemetryState.value.speedKmh,
+            speedLimitKmh = telemetryState.value.speedLimitKmh,
+            hasGpsFix = telemetryState.value.hasGpsFix,
             routePoints = routePoints,
             giveWaySigns = mapGiveWays,
             groundPreference = groundPreference,
@@ -609,26 +653,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             buttonsTopInset = buttonsTopInset,
             buttonsBottomInset = buttonsBottomInset,
             dark = mapDark,
-            previewRoutes = if (editor != null) listOf(MapRoute(editLine, true)).filter { it.points.size >= 2 }
-            else preview?.candidates?.mapIndexedNotNull { i, c ->
-                c.route?.let { r ->
-                    val selected = i == preview!!.selected
-                    MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, selected,
-                        surfaces = if (selected) r.points.map { p -> if (p.highway == "track") SURFACE_TRACK else if (p.unpaved) SURFACE_GRAVEL else SURFACE_PAVED } else null)
-                }
-            }.orEmpty() +
-                // The other adventures found, grey beside the one shown, to compare and switch to.
-                preview?.suggestions.orEmpty().filterIndexed { i, _ -> i != preview?.suggestion }
-                    .map { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, false) },
-            markers = if (editor != null) emptyList()
-                // Starting point by point somewhere else: its start shows until the first leg is planned.
-                else if (mapPick != null && preview == null) markers + listOfNotNull(planStart?.let { (p, _) ->
-                    com.curveon.ui.components.MapPin(p, com.curveon.ui.components.PinKind.START, "A") })
-                else markers,
+            previewRoutes = mapPreviewRoutes,
+            markers = mapMarkers,
             editor = editor,
             // The route starts on the nearest road the map joins up: show the way to it.
-            approachTo = if (preview != null) preview?.selectedRoute?.points?.firstOrNull()?.takeIf { planGoal?.start == null }?.let { GeoPoint(it.lat, it.lon) }
-                else navState.approach?.let { GeoPoint(it.lat, it.lon) },
+            approachTo = mapApproachTo,
             onEditRoute = if (planGoal != null && mapPick == null) editOnMap else null,
             previewSheetMinimized = previewMinimized,
             surfaceWays = viewModel::surfaceWays,
@@ -658,12 +687,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
             }) else null,
             pickedPoint = picked?.first,
-            sketch = when (val g = preview?.goal) {
-                is com.curveon.data.routing.NavigationGoal.Roundtrip -> g.area
-                is com.curveon.data.routing.NavigationGoal.Adventure -> g.area
-                is com.curveon.data.routing.NavigationGoal.Destination -> g.loop?.area ?: g.adventure?.area
-                else -> null
-            }?.map { GeoPoint(it.lat, it.lon) }.orEmpty(),
+            sketch = mapSketch,
             onSketchProgress = { stroke ->
                 sketchKm = if (stroke.size < 3) null
                 else ((stroke + stroke.first()).zipWithNext { a, b -> com.curveon.routing.Geo.distance(a.latitude, a.longitude, b.latitude, b.longitude) }.sum() / 1000).toInt()
@@ -726,7 +750,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
     // The engine panel (Settings → Engine), where the speed used to be.
-    val showEngine = telemetry.isObdEnabled && obdValues.isNotEmpty()
+    val showEngine = obdEnabled && obdValues.isNotEmpty()
     val enginePanel: @Composable (Modifier) -> Unit = { m ->
         EnginePanel(obdState, obdValues, onOpenSettings = { settingsOnEngine = true; showSettings = true }, modifier = m)
     }
@@ -768,7 +792,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // A ride is being recorded while the bike stands still (a few seconds, so not at every red light):
     // a red dot on the GPX button and the Rides page, as a reminder that it goes on until the long stop.
     var recordingResting by remember { mutableStateOf(false) }
-    val standing = currentRide != null && telemetry.speedKmh < 3f
+    val standing = currentRide != null && speedBelowStanding
     LaunchedEffect(standing) { if (standing) { kotlinx.coroutines.delay(5_000); recordingResting = true } else recordingResting = false }
     val rail: @Composable () -> Unit = {
         Rail(
@@ -941,8 +965,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             SettingsDialog(
                 state = SettingsState(
                     language = remember { com.curveon.AppLanguage.current(context) },
-                    useMph = telemetry.useMph, mapTheme = mapTheme, mapDetail = mapDetail, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
-                    obdEnabled = telemetry.isObdEnabled,
+                    useMph = useMph, mapTheme = mapTheme, mapDetail = mapDetail, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
+                    obdEnabled = obdEnabled,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, arrowLead = arrowLead, showSurfaces = showSurfaces, surfacePalette = surfacePalette,
@@ -1199,7 +1223,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
         shownPoi?.let { poi ->
             PoiDialog(
-                poi, from = currentLocation,
+                poi, from = currentLocationState.value,
                 onGo = { shownPoi = null; pickPlace(GeoPoint(poi.lat, poi.lon), poi.displayName(context)) },
                 onCall = { number -> if (phone.placeCall(number)) toast = context.getString(R.string.toast_calling, poi.displayName(context)) else toast = context.getString(R.string.toast_connect_phone_to_call) },
                 onDismiss = { shownPoi = null }

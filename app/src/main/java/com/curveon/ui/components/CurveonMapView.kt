@@ -605,7 +605,10 @@ fun CurveonMapView(
         }
         (s.getLayer("$ROUTE-line") as? LineLayer)?.setProperties(lineColor(color))
         if (previewRoutes.isEmpty()) {
-            s.getSourceAs<GeoJsonSource>(ROUTE)?.setGeoJson(lineFeatures(if (routePoints.size >= 2) listOf(routePoints) else emptyList()))
+            // A long route is a couple of hundred thousand points: made into GeoJSON off the main thread.
+            val features = withContext(Dispatchers.Default) { lineFeatures(if (routePoints.size >= 2) listOf(routePoints) else emptyList()) }
+            // A preview that came meanwhile draws the route line itself.
+            if (style === s && s.isFullyLoaded && previewRoutesState.value.isEmpty()) s.getSourceAs<GeoJsonSource>(ROUTE)?.setGeoJson(features)
         }
     }
 
@@ -613,24 +616,34 @@ fun CurveonMapView(
     // tracks coloured over it.
     LaunchedEffect(style, previewRoutes) {
         val s = style ?: return@LaunchedEffect
-        s.getSourceAs<GeoJsonSource>(ROUTE_SURFACE)?.setGeoJson(surfaceRuns(previewRoutes.firstOrNull { it.selected }))
         val selected = previewRoutes.filter { it.selected }.map { it.points }
         val others = previewRoutes.filter { !it.selected }.map { it.points }
-        s.getSourceAs<GeoJsonSource>(ALT)?.setGeoJson(lineFeatures(others))
-        s.getSourceAs<GeoJsonSource>(ROUTE)?.setGeoJson(
-            lineFeatures(if (previewRoutes.isNotEmpty()) selected else if (routePoints.size >= 2) listOf(routePoints) else emptyList())
-        )
+        val (runs, alt, line) = withContext(Dispatchers.Default) {
+            Triple(
+                surfaceRuns(previewRoutes.firstOrNull { it.selected }),
+                lineFeatures(others),
+                lineFeatures(if (previewRoutes.isNotEmpty()) selected else if (routePoints.size >= 2) listOf(routePoints) else emptyList())
+            )
+        }
+        if (style !== s || !s.isFullyLoaded) return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(ROUTE_SURFACE)?.setGeoJson(runs)
+        s.getSourceAs<GeoJsonSource>(ALT)?.setGeoJson(alt)
+        s.getSourceAs<GeoJsonSource>(ROUTE)?.setGeoJson(line)
     }
 
     // GPX overlays: tracks in their colour with direction arrows, and their waypoints.
     LaunchedEffect(style, gpxTracks) {
         val s = style ?: return@LaunchedEffect
-        s.getSourceAs<GeoJsonSource>(GPX)?.setGeoJson(FeatureCollection.fromFeatures(gpxTracks.filter { it.points.size >= 2 }.map { t ->
-            Feature.fromGeometry(LineString.fromLngLats(t.points.map { Point.fromLngLat(it.longitude, it.latitude) })).also {
-                it.addStringProperty("color", hex(t.color))
-                it.addStringProperty("name", t.name)
-            }
-        }))
+        // Every shown track, a country's worth of points at times: made into GeoJSON off the main thread.
+        val features = withContext(Dispatchers.Default) {
+            FeatureCollection.fromFeatures(gpxTracks.filter { it.points.size >= 2 }.map { t ->
+                Feature.fromGeometry(LineString.fromLngLats(t.points.map { Point.fromLngLat(it.longitude, it.latitude) })).also {
+                    it.addStringProperty("color", hex(t.color))
+                    it.addStringProperty("name", t.name)
+                }
+            })
+        }
+        if (style === s && s.isFullyLoaded) s.getSourceAs<GeoJsonSource>(GPX)?.setGeoJson(features)
     }
     // Where the map is looking, for the places kept on it. The following camera moves without ever
     // settling, so look now and then and report when the view has moved or zoomed enough to matter.

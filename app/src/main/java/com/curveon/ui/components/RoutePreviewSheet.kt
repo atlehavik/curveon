@@ -261,9 +261,8 @@ fun RoutePreviewSheet(
                     var number = 0
                     goal.stops.forEachIndexed { i, s ->
                         val leg = legs?.getOrNull(i)?.let { sec -> " · %d:%02d".format((sec / 3600).toInt(), ((sec % 3600) / 60).toInt()) } ?: ""
-                        // Points the route was dragged through: a quieter chip, no number.
-                        if (s.via) PlanChip(Icons.Default.Gesture, s.name, TextSecondary, "preview_stop_$i", onClick = { stopMenu = i })
-                        else PlanChip(null, "${++number}. ${s.name}$leg", NeonAmber, "preview_stop_$i", onClick = { stopMenu = i })
+                        // Points the route only runs through (GPX, or dragged on the map) are not stops: no chip.
+                        if (!s.via) PlanChip(null, "${++number}. ${s.name}$leg", NeonAmber, "preview_stop_$i", onClick = { stopMenu = i })
                     }
                 }
                 if (goal.start != null) Text(stringResource(R.string.preview_planned_hint), color = TextMuted, fontSize = 12.sp, maxLines = 1)

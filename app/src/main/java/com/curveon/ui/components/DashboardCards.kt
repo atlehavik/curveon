@@ -80,12 +80,14 @@ private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorde
  */
 @Composable
 fun MapSpeedCluster(
-    telemetry: TelemetryData,
+    /** Read here, so a GPS fix redraws just this card and not whatever holds it. */
+    telemetryNow: () -> TelemetryData,
     camera: com.curveon.data.routing.CameraAlert?,
     modifier: Modifier = Modifier,
     /** Settings → Display: the height above sea level under the speed. */
     showAltitude: Boolean = false
 ) {
+    val telemetry = telemetryNow()
     val limit = camera?.maxSpeedKmh ?: telemetry.speedLimitKmh
     val over = limit > 0 && telemetry.speedKmh > limit + 3
     val speedColor by animateColorAsState(if (over) WarningRed else TextPrimary, label = "speed")
@@ -135,17 +137,19 @@ fun MapSpeedCluster(
 /** HH:mm, next to the speed (so it doesn't take room from the rail's buttons). */
 @Composable
 fun Clock(fontSize: TextUnit, modifier: Modifier = Modifier) {
-    var now by remember { mutableStateOf(Date()) }
+    val format = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    // The text, not the time: a tick that stays within the minute changes nothing and redraws nothing.
+    var text by remember { mutableStateOf(format.format(Date())) }
     val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(Unit) {
         while (true) {
-            now = Date()
+            text = format.format(Date())
             delay(10_000)
             lifecycle.untilStarted()
         }
     }
     Text(
-        SimpleDateFormat("HH:mm", Locale.getDefault()).format(now),
+        text,
         color = TextSecondary, fontSize = fontSize, fontWeight = FontWeight.Bold, maxLines = 1,
         modifier = modifier.testTag("clock")
     )
