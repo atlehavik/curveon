@@ -68,6 +68,10 @@ fun RideLogDialog(
     /** (existing group or null, new group name or null); both null turns auto-saving off. */
     onAutoSave: (Long?, String?) -> Unit,
     onDelete: (Collection<Long>) -> Unit,
+    /** Ends the ride under way now. */
+    onStopRecording: () -> Unit = {},
+    /** Joins the picked rides (two or more) into one. */
+    onMerge: (Collection<Long>) -> Unit = {},
     onDismiss: () -> Unit,
     /** Page menu when shown inside the GPX & rides dialog. */
     sideBar: (@Composable () -> Unit)? = null,
@@ -80,6 +84,7 @@ fun RideLogDialog(
     /** Rides picked for deleting; null when not selecting. */
     var selection by remember { mutableStateOf<Set<Long>?>(null) }
     var confirmDelete by remember { mutableStateOf<Set<Long>?>(null) }
+    var confirmMerge by remember { mutableStateOf<Set<Long>?>(null) }
     val history = rides.filter { it.id != current?.id }
     val autoGroup = gpxGroups.firstOrNull { it.id == autoSaveGroup }?.takeIf { logRides }
     val groups = rememberRideGroups(history)
@@ -95,6 +100,7 @@ fun RideLogDialog(
                     stringResource(if (all) R.string.rides_select_none else R.string.rides_select_all), CockpitSurfaceVariant, TextPrimary) {
                     selection = if (all) emptySet() else history.map { it.id }.toSet()
                 }
+                if (sel.size >= 2) RoundButton(Icons.Default.CallMerge, stringResource(R.string.rides_merge), 48.dp, CockpitSurfaceVariant, TextPrimary) { confirmMerge = sel }
                 if (sel.isNotEmpty()) RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 48.dp, WarningRed, TextPrimary) { confirmDelete = sel }
             }
             if (history.isNotEmpty()) RoundButton(
@@ -171,7 +177,11 @@ fun RideLogDialog(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(ElectricCyan.copy(alpha = 0.1f))
                     .border(1.dp, ElectricCyan.copy(alpha = 0.5f), RoundedCornerShape(16.dp)).padding(14.dp)
             ) {
-                Text(stringResource(R.string.rides_recording, current.title.ifEmpty { stringResource(R.string.rides_this_ride) }), color = ElectricCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.rides_recording, current.title.ifEmpty { stringResource(R.string.rides_this_ride) }), color = ElectricCyan, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f))
+                    PillButton(Icons.Default.Stop, stringResource(R.string.rides_stop), CockpitSurface, WarningRed, onClick = onStopRecording)
+                }
                 Spacer(Modifier.height(8.dp))
                 Stats(current)
             }
@@ -266,6 +276,17 @@ fun RideLogDialog(
     if (pickingAutoGroup) {
         GroupPickerDialog(stringResource(R.string.rides_auto_save_pick), gpxGroups, current = autoGroup?.id, allowNone = false,
             onPick = { id, name -> onAutoSave(id, name) }, onDismiss = { pickingAutoGroup = false })
+    }
+    confirmMerge?.let { ids ->
+        AlertDialog(
+            onDismissRequest = { confirmMerge = null },
+            title = { HideSystemBars(); Text(stringResource(R.string.rides_merge_title, ids.size)) },
+            text = { Text(stringResource(R.string.rides_merge_text)) },
+            confirmButton = {
+                TextButton(onClick = { onMerge(ids); confirmMerge = null; selection = null }) { Text(stringResource(R.string.rides_merge), color = ElectricCyan) }
+            },
+            dismissButton = { TextButton(onClick = { confirmMerge = null }) { Text(stringResource(R.string.cancel)) } }
+        )
     }
     confirmDelete?.let { ids ->
         AlertDialog(

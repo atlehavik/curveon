@@ -753,6 +753,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         tracksTab = TracksTab.GPX
         viewModel.gpxPanelShown()
     }
+    // A ride is being recorded while the bike stands still (a few seconds, so not at every red light):
+    // a red dot on the GPX button and the Rides page, as a reminder that it goes on until the long stop.
+    var recordingResting by remember { mutableStateOf(false) }
+    val standing = currentRide != null && telemetry.speedKmh < 3f
+    LaunchedEffect(standing) { if (standing) { kotlinx.coroutines.delay(5_000); recordingResting = true } else recordingResting = false }
     val rail: @Composable () -> Unit = {
         Rail(
             flash = railFlash,
@@ -760,6 +765,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             isFullScreenMap = isFullScreenMap,
             unread = notifications.size,
             updateWaiting = appUpdate is com.curveon.data.update.UpdateState.Available,
+            recordingResting = recordingResting,
             active = activePanel,
             onPress = pressRail,
             onToggleMap = { viewModel.toggleFullScreenMap() }
@@ -837,7 +843,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         if (showGpx) PagedCockpitDialog(
             title = stringResource(R.string.tracks_title), icon = Icons.Default.Route, accent = ElectricCyan, onDismiss = { showGpx = false }, tag = "gpx_manager",
             pages = TracksTab.entries, selected = tracksTab, onSelect = { tracksTab = it },
-            pageLabel = { stringResource(it.label) }, pageIcon = { it.icon }, tabsWidth = 170.dp,
+            pageLabel = { stringResource(it.label) }, pageIcon = { it.icon }, pageBadge = { it == TracksTab.RIDES && recordingResting }, tabsWidth = 170.dp,
             actions = { if (tracksTab == TracksTab.GPX) GpxImportButton { importGpxLauncher.launch(arrayOf("*/*")) } }
         ) { which ->
             when (which) {
@@ -888,6 +894,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onLogRides = { viewModel.setLogRides(it) },
                     recordLean = recordLean,
                     onRecordLean = { viewModel.setRecordLean(it) },
+                    onStopRecording = viewModel::stopRide,
+                    onMerge = viewModel::mergeRides,
                     autoSaveGroup = autoSaveRidesGroup,
                     onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
                     onDelete = { viewModel.deleteRides(it) },
@@ -1224,6 +1232,8 @@ private fun Rail(
     unread: Int,
     /** A new version of the app is out: a dot on Settings. */
     updateWaiting: Boolean,
+    /** A ride is being recorded while standing still: a red dot on the GPX button. */
+    recordingResting: Boolean = false,
     /** The screen that is open: its button is lit. */
     active: RailPanel?,
     onPress: (RailPanel) -> Unit,
@@ -1236,7 +1246,10 @@ private fun Rail(
         RailButton(Icons.Default.TwoWheeler, stringResource(R.string.where_to), ElectricCyan, ElectricCyan, filled = active == RailPanel.SEARCH, flashKey = if (RailPanel.SEARCH in flash.first) flash.second else 0, tag = "rail_search", target = TourTarget.SEARCH, onClick = { onPress(RailPanel.SEARCH) })
     }
     val gpx: @Composable () -> Unit = {
-        RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, filled = active == RailPanel.GPX, flashKey = if (RailPanel.GPX in flash.first) flash.second else 0, tag = "rail_gpx", target = TourTarget.GPX, onClick = { onPress(RailPanel.GPX) })
+        Box {
+            RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, filled = active == RailPanel.GPX, flashKey = if (RailPanel.GPX in flash.first) flash.second else 0, tag = "rail_gpx", target = TourTarget.GPX, onClick = { onPress(RailPanel.GPX) })
+            if (recordingResting) RecordingDot(Modifier.align(Alignment.TopEnd).padding(6.dp).testTag("rail_gpx_recording"))
+        }
     }
     val phone: @Composable () -> Unit = {
         RailButton(Icons.Default.Phone, stringResource(R.string.phone), ElectricCyan, EcoGreen, filled = active == RailPanel.PHONE,

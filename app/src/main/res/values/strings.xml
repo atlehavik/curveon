@@ -491,6 +491,10 @@
     <string name="rides_copy_to_group">Copy to planned trips</string>
     <string name="toast_copied_to_planned">Copied to planned trips</string>
     <string name="rides_select">Select rides</string>
+    <string name="rides_stop">Stop</string>
+    <string name="rides_merge">Merge</string>
+    <string name="rides_merge_title">Merge %1$d rides into one?</string>
+    <string name="rides_merge_text">The rides are joined in the order they were ridden. The originals are removed; copies already kept as GPX tracks stay.</string>
     <string name="rides_select_all">All</string>
     <string name="rides_select_none">None</string>
     <plurals name="rides_selected">

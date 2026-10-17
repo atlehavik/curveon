@@ -489,6 +489,10 @@
     <string name="rides_copy_to_group">Kopier til planlagte turer</string>
     <string name="toast_copied_to_planned">Kopiert til planlagte turer</string>
     <string name="rides_select">Velg turer</string>
+    <string name="rides_stop">Stopp</string>
+    <string name="rides_merge">Slå sammen</string>
+    <string name="rides_merge_title">Slå sammen %1$d turer til én?</string>
+    <string name="rides_merge_text">Turene settes sammen i den rekkefølgen de ble kjørt. De opprinnelige fjernes; kopier som allerede er lagret i GPX-spor beholdes.</string>
     <string name="rides_select_all">Alle</string>
     <string name="rides_select_none">Ingen</string>
     <plurals name="rides_selected">

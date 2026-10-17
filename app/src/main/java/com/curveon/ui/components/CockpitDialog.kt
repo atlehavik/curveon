@@ -168,6 +168,8 @@ fun <T> PagedCockpitDialog(
     onSelect: (T) -> Unit,
     pageLabel: @Composable (T) -> String,
     pageIcon: (T) -> ImageVector,
+    /** Pages that show a red dot, e.g. one with a recording under way. */
+    pageBadge: (T) -> Boolean = { false },
     tabsWidth: androidx.compose.ui.unit.Dp = 210.dp,
     /** Replaces the title in the header (e.g. the phone's own tab buttons on a wide screen). */
     header: (@Composable RowScope.() -> Unit)? = null,
@@ -175,7 +177,7 @@ fun <T> PagedCockpitDialog(
     page: @Composable ColumnScope.(T) -> Unit
 ) {
     CockpitDialog(title = title, icon = icon, accent = accent, onDismiss = onDismiss, tag = tag, header = header, actions = actions) {
-        val tabs: @Composable () -> Unit = { DialogTabs(pages, selected, pageLabel, pageIcon, onSelect, width = tabsWidth) }
+        val tabs: @Composable () -> Unit = { DialogTabs(pages, selected, pageLabel, pageIcon, onSelect, width = tabsWidth, badge = pageBadge) }
         val pageColumn: @Composable (T) -> Unit = { which ->
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) { page(which) }
         }
@@ -205,7 +207,9 @@ fun isNarrowScreen(): Boolean = androidx.compose.ui.platform.LocalConfiguration.
 @Composable
 fun <T> DialogTabs(
     items: List<T>, selected: T, label: @Composable (T) -> String, icon: (T) -> ImageVector, onSelect: (T) -> Unit,
-    width: androidx.compose.ui.unit.Dp = 210.dp
+    width: androidx.compose.ui.unit.Dp = 210.dp,
+    /** Pages that show a red dot on their icon. */
+    badge: (T) -> Boolean = { false }
 ) {
     if (isNarrowScreen()) {
         Row(
@@ -221,7 +225,10 @@ fun <T> DialogTabs(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Only the open page is labelled, so all of them fit across.
-                    Icon(icon(t), label(t), tint = if (on) OnCyanText else TextSecondary, modifier = Modifier.size(22.dp))
+                    Box {
+                        Icon(icon(t), label(t), tint = if (on) OnCyanText else TextSecondary, modifier = Modifier.size(22.dp))
+                        if (badge(t)) RecordingDot(Modifier.align(Alignment.TopEnd))
+                    }
                     if (on) {
                         Spacer(Modifier.width(8.dp))
                         Text(label(t), color = OnCyanText, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
@@ -243,7 +250,10 @@ fun <T> DialogTabs(
                     .clickable { onSelect(t) }.padding(horizontal = 14.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(icon(t), null, tint = if (on) OnCyanText else TextSecondary)
+                Box {
+                    Icon(icon(t), null, tint = if (on) OnCyanText else TextSecondary)
+                    if (badge(t)) RecordingDot(Modifier.align(Alignment.TopEnd))
+                }
                 Spacer(Modifier.width(12.dp))
                 Text(label(t), color = if (on) OnCyanText else TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             }
@@ -252,6 +262,12 @@ fun <T> DialogTabs(
 }
 
 private val OnCyanText = Color(0xFF00363D)
+
+/** The small red dot of a recording under way, with a light edge so it reads on both cyan and dark. */
+@Composable
+fun RecordingDot(modifier: Modifier = Modifier) {
+    Box(modifier.size(10.dp).clip(androidx.compose.foundation.shape.CircleShape).background(WarningRed).border(1.5.dp, Color.White.copy(alpha = 0.85f), androidx.compose.foundation.shape.CircleShape))
+}
 
 /**
  * The app's on/off switch: a dark knob on a cyan (or [accent]) track when on, a grey knob on a

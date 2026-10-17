@@ -1207,10 +1207,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _currentRide.value = rideRecorder.current
     }
 
-    private fun saveRide(finish: Boolean) {
+    /** The rider ends the ride under way now, rather than waiting for the long stop. */
+    fun stopRide() {
+        saveRide(finish = true, byHand = true)
+        _currentRide.value = rideRecorder.current
+    }
+
+    /** Joins the rides picked in the ride log into one; the originals go (GPX copies already kept stay). */
+    fun mergeRides(ids: Collection<Long>) = viewModelScope.launch(Dispatchers.IO) {
+        val rides = ids.mapNotNull { rideDao.get(it) }
+        if (rides.size < 2) return@launch
+        rideDao.insert(RideRecorder.merge(rides))
+        rideDao.delete(rides.map { it.id })
+    }
+
+    private fun saveRide(finish: Boolean, byHand: Boolean = false) {
         val current = rideRecorder.current ?: return
         if (current.id == 0L) return
-        val ride = if (finish) rideRecorder.finish() else current
+        val ride = if (byHand) rideRecorder.stop() else if (finish) rideRecorder.finish() else current
         viewModelScope.launch(Dispatchers.IO) {
             if (ride == null) { rideDao.delete(current.id); return@launch } // too short to keep
             val pts = RideRecorder.parseTrack(ride.track)

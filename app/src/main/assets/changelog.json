@@ -12,7 +12,8 @@
       "Demo ride in Settings → Navigation",
       "Curveon Companion: Stop sharing ends the link to the tablet at once",
       "Map detail (Settings → Display): choose Detailed to see gravel and small roads one zoom step further out, so you can plan a gravel route without zooming in so far. The map responds a little slower with it, so Fast is the default",
-      "Country roads are easy to find: with the Orange, Yellow or Green road surface colours, the small country roads between the gravel get a solid line in the same colour, and stay visible until the map's own roads take over. Streets in housing estates stay as they were"
+      "Country roads are easy to find: with the Orange, Yellow or Green road surface colours, the small country roads between the gravel get a solid line in the same colour, and stay visible until the map's own roads take over. Streets in housing estates stay as they were",
+      "You can see when a ride is being recorded: a small red dot on the GPX button and on Rides when you have stood still for a while with the recording going. Stop the ride yourself from Rides, and pick several rides to merge them into one, for example when a lunch stop split the day's ride in two"
     ],
     "nb": [
       "Talenavigasjon: «Om 300 meter, sving til høyre inn på …» på språket Curveon vises på, med Androids egen stemme (Innstillinger → Navigasjon → Lyd). I hjelmen gjennom telefonen når nettbrettet er koblet til den",
@@ -25,7 +26,8 @@
       "Demotur i Innstillinger → Navigasjon",
       "Curveon Companion: Stopp deling kobler fra nettbrettet med en gang",
       "Kartdetaljer (Innstillinger → Visning): velg Detaljert for å se grus og småveier ett zoomtrinn lenger ut, så du slipper å zoome så langt inn når du planlegger en grustur. Kartet responderer litt tregere med det, så Rask er standard",
-      "Landeveiene er lette å finne: med fargene Oransje, Gul eller Grønn for veidekke får de små landeveiene mellom grusveiene en hel linje i samme farge, og de blir synlige helt til kartets egne veier tar over. Gater i boligfelt er som før"
+      "Landeveiene er lette å finne: med fargene Oransje, Gul eller Grønn for veidekke får de små landeveiene mellom grusveiene en hel linje i samme farge, og de blir synlige helt til kartets egne veier tar over. Gater i boligfelt er som før",
+      "Du ser når en tur tas opp: en liten rød prikk på GPX-knappen og på Turer når du har stått stille en stund mens opptaket pågår. Du kan stoppe turen selv fra Turer, og velge flere turer og slå dem sammen til én, for eksempel når en matpause delte dagens tur i to"
     ]
   },
   {

@@ -24,6 +24,8 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
     private var movingSince = 0L
     private var lastMovingAt = 0L
     private var lastSavedAt = 0L
+    /** The rider ended a ride by hand: no new one until the bike has stood still once. */
+    private var holdUntilStopped = false
 
     fun onFix(fix: GpsFix, speedKmh: Float, leanDeg: Float?): Event {
         val t = now()
@@ -32,6 +34,7 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
 
         var ride = current
         if (ride == null) {
+            if (holdUntilStopped) { if (!moving) holdUntilStopped = false; return Event.NONE }
             if (!moving) { movingSince = 0L; return Event.NONE }
             if (movingSince == 0L) movingSince = t
             if (t - movingSince < START_AFTER_MS) return Event.NONE
@@ -95,6 +98,9 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         return r?.takeIf { it.distanceMeters >= MIN_RIDE_M }
     }
 
+    /** [finish], for a ride the rider ended by hand: riding on does not start a new one straight away. */
+    fun stop(): Ride? = finish().also { holdUntilStopped = true }
+
     fun setId(id: Long) {
         current = current?.copy(id = id)
     }
@@ -120,6 +126,37 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         const val MIN_RIDE_M = 1_000.0
         const val POINT_SPACING_M = 20.0
         const val SAVE_EVERY_MS = 60_000L
+
+        /**
+         * Rides joined in time order into one, e.g. a day's ride split by a long lunch. The title runs
+         * from where the first began to where the last ended; every track point keeps its time
+         * counted from the first ride's start. Without an id: it is a new ride.
+         */
+        fun merge(rides: List<Ride>): Ride {
+            val sorted = rides.sortedBy { it.startMs }
+            val first = sorted.first()
+            val last = sorted.last()
+            val start = first.title.substringBefore(" → ")
+            val end = last.title.substringAfterLast(" → ")
+            val track = sorted.joinToString(";") { r ->
+                val shift = (r.startMs - first.startMs) / 1000.0
+                parseTrack(r.track).joinToString(";") {
+                    String.format(Locale.ROOT, "%.5f,%.5f,%.0f,%.1f", it.lat, it.lon, it.ele, it.secondsFromStart + shift)
+                }
+            }
+            return Ride(
+                title = if (start.isNotEmpty() && end.isNotEmpty() && start != end) "$start → $end" else start.ifEmpty { end },
+                startMs = first.startMs,
+                endMs = last.endMs,
+                distanceMeters = sorted.sumOf { it.distanceMeters },
+                movingMillis = sorted.sumOf { it.movingMillis },
+                maxSpeedKmh = sorted.maxOf { it.maxSpeedKmh },
+                ascentMeters = sorted.sumOf { it.ascentMeters },
+                maxLeanLeftDeg = sorted.maxOf { it.maxLeanLeftDeg },
+                maxLeanRightDeg = sorted.maxOf { it.maxLeanRightDeg },
+                track = track
+            )
+        }
 
         data class TrackPoint(val lat: Double, val lon: Double, val ele: Double, val secondsFromStart: Double)
 
