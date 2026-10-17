@@ -190,13 +190,6 @@ fun RoutePreviewSheet(
                     modifier = Modifier.graphicsLayer { alpha = pulse }.testTag("adventure_improving")
                 )
             }
-            // An adventure is given a time as a ceiling: say so when the area couldn't fill it without dead ends.
-            val askedMinutes = (goal as? NavigationGoal.Adventure)?.minutes ?: (goal as? NavigationGoal.Destination)?.adventure?.minutes
-            val rideMinutes = preview.selectedRoute?.let { (it.durationSeconds / 60).toInt() }
-            if (askedMinutes != null && rideMinutes != null && rideMinutes < askedMinutes * 0.85) Text(
-                stringResource(R.string.adventure_shorter, adventureTimeLabel(rideMinutes), adventureTimeLabel(askedMinutes)),
-                color = TextSecondary, fontSize = 13.sp, modifier = Modifier.testTag("adventure_shorter_note")
-            )
             // A loop: where it starts (here, or elsewhere to plan one away from home).
             if (goal is NavigationGoal.Roundtrip) PlanChip(
                 Icons.Default.TripOrigin,

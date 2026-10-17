@@ -413,7 +413,6 @@
     <string name="map_tilt_down">Tilt kartet ned, mot veien</string>
     <string name="adventure_improving">Leter etter en bedre tur …</string>
     <string name="adventure_suggestion">Tur %1$d · %2$s · %3$d km</string>
-    <string name="adventure_shorter">Turen tar %1$s av de %2$s du ga den. Mer ville bare blitt blindveier.</string>
     <string name="nav_adventure_progress">Finner veier… %1$d av %2$d</string>
     <string name="preview_loop_from">Rundtur fra %1$s</string>
     <string name="preview_area_roundtrip_title">Rundtur i området</string>
