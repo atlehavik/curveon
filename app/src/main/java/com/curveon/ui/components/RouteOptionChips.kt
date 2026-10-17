@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -151,7 +152,7 @@ fun defaultAdventureMinutes(curvyMinutes: Double, slowestMinutes: Double): Int {
 @Composable
 fun adventureTimeLabel(minutes: Int) = stringResource(R.string.adventure_time_hm, minutes / 60, minutes % 60)
 
-/** How long the adventure should take: "3:00 h", tap for the list. */
+/** The longest the adventure may take: "3:00 h", tap for the list (which says what the time means). */
 @Composable
 fun AdventureTimeChip(minutes: Int, onPick: (Int) -> Unit) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -160,6 +161,11 @@ fun AdventureTimeChip(minutes: Int, onPick: (Int) -> Unit) {
             Icon(Icons.Default.Schedule, null, tint = NeonAmber)
         }
         androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+            // What the time means: a ceiling, not a target.
+            Text(
+                stringResource(R.string.adventure_time_explain), color = TextSecondary, fontSize = 13.sp,
+                modifier = Modifier.widthIn(max = 240.dp).padding(horizontal = 16.dp, vertical = 8.dp).testTag("adventure_time_explain")
+            )
             adventureMinuteChoices(minutes).forEach { m ->
                 androidx.compose.material3.DropdownMenuItem(
                     text = { Text(adventureTimeLabel(m), color = if (m == minutes) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },

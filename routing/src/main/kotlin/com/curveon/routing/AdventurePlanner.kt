@@ -15,8 +15,8 @@ import kotlin.random.Random
 
 /**
  * Adventurous routing: from a start to a destination, but not the shortest way. The rider draws an
- * area to ride in and says how long (estimated riding time) the trip should take; we look for the
- * most fun roads inside the area that bring them to the destination in about that time.
+ * area to ride in and says how long (estimated riding time) the trip may take at most; we look for the
+ * most fun roads inside the area that bring them to the destination within that time.
  *
  * Routing is the expensive part, so it is done as little as possible and the thinking is done on
  * what it gave:
@@ -41,7 +41,9 @@ class AdventurePlanner(
     private val engine: BRouterEngine,
     private val log: (String) -> Unit = {},
     private val progress: (done: Int, total: Int) -> Unit = { _, _ -> },
-    private val cancelled: () -> Boolean = { false }
+    private val cancelled: () -> Boolean = { false },
+    /** Where the roads are: anchors are put on them (none in the sea) instead of anywhere. Without it they are spread at random. */
+    private val roads: SurfaceReader? = null
 ) {
 
     /** A road between two anchors, worked out once (from [a] to [b]). */
@@ -64,7 +66,14 @@ class AdventurePlanner(
         stroke: List<LatLon>,
         targetMinutes: Int,
         options: RouteOptions,
-        variant: Int = 0
+        variant: Int = 0,
+        /**
+         * More than 1: a first trip comes quickly from half the anchors, then each further round adds anchors
+         * (and the roads between them) to the same graph and looks again. A round that finds a better trip
+         * hands it to [onRoute]; the first trip is handed over too. The best one is also what [plan] returns.
+         */
+        rounds: Int = 1,
+        onRoute: (Route) -> Unit = {}
     ): Route {
         val area = SketchArea(stroke)
         if (area.outline.size < 3 || area.perimeterM < MIN_AREA_PERIMETER_M) throw NoAdventureException("The area is too small")
@@ -81,28 +90,69 @@ class AdventurePlanner(
         val threads = minOf(Runtime.getRuntime().availableProcessors(), (Runtime.getRuntime().maxMemory() / ROUTE_MEMORY_BYTES).toInt()).coerceAtLeast(2)
         val pool = Executors.newFixedThreadPool(threads)
         try {
-            val t0 = System.nanoTime()
-            val nodes = (listOf(start, destination) + anchors(area, start, destination, direct, targetS, Random(variant * 7919L + 1))).toMutableList()
-            val edges = buildGraph(pool, nodes, opts, direct, area)
-            log("  graph: %d anchors, %d roads (%.1f s)".format(nodes.size, edges.size, (System.nanoTime() - t0) / 1e9))
-
-            val walks = walks(nodes.size, edges, targetS, opts, Random(variant * 104_729L + 7))
-            if (walks.isEmpty()) throw NoAdventureException("No route found in that area")
-            log("  %d walks, best score %.0f".format(walks.size, walks.first().score))
-
-            // The best few again in the direction ridden: the answer is the best of what that really gave.
-            val assembled = walks.take(FINALISTS).map { w -> pool.submit(Callable { runCatching { assemble(nodes, w, opts) }.getOrNull() }) }
-                .mapNotNull { await(it) }
-            if (assembled.isEmpty()) throw NoAdventureException("No route found in that area")
-            assembled.forEach { r -> log("  -> %.0f km %.0f min curvy=%d unpaved=%.0f%% outside=%.0f%% twice=%.0f%% spur=%.0f m score=%.0f".format(
-                r.distanceMeters / 1000, r.durationSeconds / 60, r.curviness, r.unpavedMeters / r.distanceMeters * 100,
-                area.outsideShare(r) * 100, RoundtripPlanner.overlapFraction(r) * 100, Spurs.wastedMeters(r), score(r, area, targetS, opts))) }
-            // The asked time comes first: anything within reach of it beats anything further off.
-            val onTime = assembled.filter { abs(ln(it.durationSeconds / targetS)) <= ln(1 + CLOSE_ENOUGH) }
-            return (onTime.ifEmpty { assembled }).maxBy { score(it, area, targetS, opts) }
+            val began = System.nanoTime()
+            val nodes = mutableListOf(start, destination)
+            var edges: List<Edge> = emptyList()
+            var best: Route? = null
+            var bestWithin = false
+            var bestScore = 0.0
+            fun round(index: Int, share: Double): Pair<Route, Boolean>? {
+                val t0 = System.nanoTime()
+                val from = nodes.size
+                nodes += anchors(area, start, destination, direct, targetS, Random(variant * 7919L + 1 + index * 131L), share, nodes.toList(), withSpine = index == 0)
+                edges = buildGraph(pool, nodes, opts, direct, area, from, edges)
+                if (index == 0) directCells = edges.firstOrNull { it.a == 0 && it.b == 1 }?.cells.orEmpty()
+                log("  round %d graph: %d anchors, %d roads (%.1f s)".format(index + 1, nodes.size, edges.size, (System.nanoTime() - t0) / 1e9))
+                return search(pool, nodes, edges, opts, area, targetS, Random(variant * 104_729L + 7 + index * 977L))
+            }
+            val shares = if (rounds <= 1) listOf(1.0) else List(rounds) { ROUND_SHARE }
+            for ((index, share) in shares.withIndex()) {
+                if (index > 0 && (cancelled() || System.nanoTime() - began > ROUNDS_BUDGET_MS * 1_000_000)) break
+                // The first round answers for itself; a later one that fails or is cancelled leaves what there is.
+                val found = if (index == 0) round(index, share) else runCatching { round(index, share) }.getOrNull()
+                if (found == null) continue
+                val (route, within) = found
+                val points = score(route, area, targetS, opts)
+                val better = best == null || (within && !bestWithin) ||
+                    (within == bestWithin && if (within) points > bestScore + MIN_GAIN else route.durationSeconds < best!!.durationSeconds)
+                log("  round %d: %.0f km %.0f min score %.0f%s".format(index + 1, route.distanceMeters / 1000, route.durationSeconds / 60, points, if (better) " (better)" else ""))
+                if (better) { best = route; bestWithin = within; bestScore = points; onRoute(route) }
+            }
+            return best ?: throw NoAdventureException("No route found in that area")
         } finally {
             pool.shutdownNow()
         }
+    }
+
+    /** The best trip the graph gives, and whether it fits under the asked time (or null when there is none at all). */
+    private fun search(
+        pool: java.util.concurrent.ExecutorService, nodes: List<LatLon>, edges: List<Edge>, opts: RouteOptions, area: SketchArea,
+        targetS: Double, random: Random
+    ): Pair<Route, Boolean>? {
+        // The asked time is a ceiling. A walk adds up the roads as worked out; the trip as ridden can come out
+        // longer, so when nothing fits under the ceiling the walks are made again for a shorter goal (same
+        // graph, no new routing but for the roads ridden the other way round).
+        val ceiling = targetS * (1 + CLOSE_ENOUGH)
+        var goal = targetS
+        var nearest: Route? = null
+        repeat(GOAL_TRIES) {
+            val walks = walks(nodes.size, edges, goal, opts, random)
+            if (walks.isEmpty()) return@repeat
+            log("  %d walks for %.0f min, best score %.0f".format(walks.size, goal / 60, walks.first().score))
+            // The best few again in the direction ridden: the answer is the best of what that really gave.
+            val assembled = walks.take(FINALISTS).map { w -> pool.submit(Callable { runCatching { assemble(nodes, w, opts) }.getOrNull() }) }
+                .mapNotNull { await(it) }
+            assembled.forEach { r -> log("  -> %.0f km %.0f min curvy=%d unpaved=%.0f%% outside=%.0f%% twice=%.0f%% spur=%.0f m score=%.0f".format(
+                r.distanceMeters / 1000, r.durationSeconds / 60, r.curviness, r.unpavedMeters / r.distanceMeters * 100,
+                area.outsideShare(r) * 100, RoundtripPlanner.overlapFraction(r) * 100, Spurs.wastedMeters(r), score(r, area, targetS, opts))) }
+            if (assembled.isEmpty()) return@repeat
+            val within = assembled.filter { it.durationSeconds <= ceiling }
+            if (within.isNotEmpty()) return within.maxBy { score(it, area, targetS, opts) } to true
+            val shortest = assembled.minBy { it.durationSeconds }
+            if (nearest == null || shortest.durationSeconds < nearest!!.durationSeconds) nearest = shortest
+            goal *= targetS / shortest.durationSeconds * 0.95
+        }
+        return nearest?.let { it to false }
     }
 
     /**
@@ -110,7 +160,12 @@ class AdventurePlanner(
      * backbone) and the rest spread over the part of [area] that the time reaches at all (a trip that
      * must be at the destination in [targetS] can't get farther from the way there than that).
      */
-    private fun anchors(area: SketchArea, start: LatLon, destination: LatLon, direct: Route, targetS: Double, random: Random): List<LatLon> {
+    private fun anchors(
+        area: SketchArea, start: LatLon, destination: LatLon, direct: Route, targetS: Double, random: Random,
+        /** How much of the full number of anchors this round puts out. */
+        share: Double, /** Everything already out (start, destination and earlier anchors): new ones keep away from them. */ existing: List<LatLon>,
+        withSpine: Boolean
+    ): List<LatLon> {
         val straight = Geo.distance(start, destination)
         // Metres as the crow flies that the time buys (roads wind), start → anchor → destination at most.
         val reach = maxOf(straight * 1.05, targetS * direct.distanceMeters / direct.durationSeconds / ROAD_WINDING)
@@ -118,31 +173,38 @@ class AdventurePlanner(
         val minLat = area.outline.minOf { it.lat }; val maxLat = area.outline.maxOf { it.lat }
         val minLon = area.outline.minOf { it.lon }; val maxLon = area.outline.maxOf { it.lon }
         fun sample() = LatLon(minLat + random.nextDouble() * (maxLat - minLat), minLon + random.nextDouble() * (maxLon - minLon))
+        // Moved onto the nearest road, or thrown away when there is none near (sea, fjord, bare mountain).
+        fun onRoad(p: LatLon): LatLon? = if (roads == null) p else roads.nearestRoad(p.lat, p.lon, SNAP_M)
         // The size of what can be used from how much of the bounding box it fills.
         val boxM2 = Geo.distance(minLat, minLon, maxLat, minLon) * Geo.distance(minLat, minLon, minLat, maxLon)
         val fill = (0 until 600).count { val p = sample(); area.contains(p) && reachable(p) } / 600.0
         val usableM2 = (boxM2 * fill).coerceAtLeast(1.0)
         val count = (usableM2 / (ANCHOR_SPACING_M * ANCHOR_SPACING_M)).toInt().coerceIn(MIN_ANCHORS, MAX_ANCHORS)
         val apart = sqrt(usableM2 / count) * 0.7
+        val want = (count * share).toInt().coerceAtLeast(MIN_ROUND_ANCHORS)
         val out = ArrayList<LatLon>()
         // Along the quickest way, about every [apart] of it (not too many), where it is inside the area.
-        val spine = (direct.distanceMeters / (apart * 1.4)).toInt().coerceIn(0, MAX_SPINE)
+        val spine = if (withSpine) (direct.distanceMeters / (apart * 1.4)).toInt().coerceIn(0, MAX_SPINE) else 0
         for (k in 1..spine) {
             val p = Routes.pointAt(direct, direct.distanceMeters * k / (spine + 1)).first
             if (area.contains(p) || area.distanceToEdge(p) <= OUTSIDE_SLACK_M) out += p
         }
         val spineCount = out.size
-        repeat(4000) {
-            if (out.size >= count + spineCount) return out
-            val p = sample()
+        repeat(20_000) {
+            if (out.size >= want + spineCount) return out
+            val p = onRoad(sample()) ?: return@repeat
             // Drawn in from the edge a little, so the road the router snaps the point to lies inside too.
-            if (area.contains(p) && area.distanceToEdge(p) > EDGE_MARGIN_M && reachable(p) && (out + start + destination).all { Geo.distance(it, p) > apart }) out += p
+            if (area.contains(p) && area.distanceToEdge(p) > EDGE_MARGIN_M && reachable(p) && (out + existing).all { Geo.distance(it, p) > apart }) out += p
         }
         return out
     }
 
     /** Every anchor joined to its nearest few by a route; the quickest way start → destination is one too. */
-    private fun buildGraph(pool: java.util.concurrent.ExecutorService, nodes: MutableList<LatLon>, options: RouteOptions, direct: Route, area: SketchArea): List<Edge> {
+    private fun buildGraph(
+        pool: java.util.concurrent.ExecutorService, nodes: MutableList<LatLon>, options: RouteOptions, direct: Route, area: SketchArea,
+        /** Anchors from this one on are new: only roads to them are worked out; [existing] roads are kept. */
+        fromNode: Int, existing: List<Edge>
+    ): List<Edge> {
         val pairs = LinkedHashSet<Pair<Int, Int>>()
         // Roads can be as long as the anchors are far apart (a big area has few of them for its size).
         val nearest = nodes.indices.map { i -> nodes.indices.filter { it != i }.minOf { Geo.distance(nodes[i], nodes[it]) } }.sorted()
@@ -153,10 +215,12 @@ class AdventurePlanner(
                 .forEach { j -> pairs += minOf(i, j) to maxOf(i, j) }
         }
         pairs -= (0 to 1)
+        val have = existing.map { it.a to it.b }.toSet()
+        pairs.removeAll { (a, b) -> maxOf(a, b) < fromNode || (a to b) in have }
         // The start and the destination may lie well outside the area drawn: they are joined to the nearest anchors
         // however far, and first, or the trip could never get to the area (nor out of it).
         val ends = LinkedHashSet<Pair<Int, Int>>()
-        for (i in 0..1) nodes.indices.filter { it > 1 }.sortedBy { Geo.distance(nodes[i], nodes[it]) }.take(NEIGHBOURS)
+        for (i in 0..1) nodes.indices.filter { it >= fromNode }.sortedBy { Geo.distance(nodes[i], nodes[it]) }.take(NEIGHBOURS)
             .filter { Geo.distance(nodes[i], nodes[it]) <= END_EDGE_LIMIT_M }.forEach { j -> ends += i to j }
         val wanted = (ends + pairs.sortedBy { (a, b) -> Geo.distance(nodes[a], nodes[b]) }).take(MAX_EDGES)
         val done = AtomicInteger()
@@ -180,9 +244,9 @@ class AdventurePlanner(
             })
         }
         val edges = futures.mapNotNull { await(it) }.toMutableList()
-        edges += Edge(0, 1, direct)
+        if (existing.isEmpty()) edges += Edge(0, 1, direct)
         edges.forEach { e -> e.outside = outsideShare(e.route, area) }
-        return mendDeadEnds(pool, nodes, edges, options, area)
+        return mendDeadEnds(pool, nodes, existing + edges, options, area, fromNode)
     }
 
     /**
@@ -193,12 +257,13 @@ class AdventurePlanner(
      * the start and destination stay whatever they are.
      */
     private fun mendDeadEnds(
-        pool: java.util.concurrent.ExecutorService, nodes: MutableList<LatLon>, edges: List<Edge>, options: RouteOptions, area: SketchArea
+        pool: java.util.concurrent.ExecutorService, nodes: MutableList<LatLon>, edges: List<Edge>, options: RouteOptions, area: SketchArea,
+        fromNode: Int
     ): List<Edge> {
         var kept = edges.toList()
         fun stubCells(n: Int, roads: List<Edge>) =
             if (roads.size < 2) 0 else roads.minOf { e -> roads.minOf { f -> if (f === e) Int.MAX_VALUE else sharedStart(e.cellsFrom(n), f.cells) } }
-        for (n in 2 until nodes.size) {
+        for (n in maxOf(2, fromNode) until nodes.size) {
             if (System.nanoTime() > mendDeadline) break
             val roads = kept.filter { it.a == n || it.b == n }
             val stub = stubCells(n, roads)
@@ -266,28 +331,32 @@ class AdventurePlanner(
     /** After this the dead-end anchors are no longer moved and routed again (the graph is as good as it gets in the time). */
     @Volatile private var mendDeadline = Long.MAX_VALUE
 
+    /** The cells (~100 m) of the quickest way start → destination; set when the roads are known. */
+    @Volatile private var directCells: Set<Long> = emptySet()
+
     private class Walk(val steps: List<Pair<Int, Edge>>, val seconds: Double, val score: Double)
 
     /** Random walks over [edges] from node 0 (start) to node 1 (destination), best first. */
     private fun walks(nodeCount: Int, allEdges: List<Edge>, targetS: Double, options: RouteOptions, random: Random): List<Walk> {
         // Not the quickest way itself (that is what an adventure isn't), unless nothing else gets there.
         val others = allEdges.filter { !(it.a == 0 && it.b == 1) }
-        // Strictest first: no anchor where the road in and the road out ride the same stretch; looser only when that
-        // finds nothing near the asked time. When nothing does, the one coming closest to it.
-        var best: List<Walk> = emptyList()
-        var bestOff = Double.MAX_VALUE
+        // Strictest first: no anchor where the road in and the road out ride the same stretch; looser only when
+        // that finds no walk at all. A walk that falls short of the asked time is better than one that fills it
+        // with riding in and out of dead ends.
         for (maxShared in listOf(3, 10, Int.MAX_VALUE)) for (edges in listOf(others, allEdges)) {
-            val found = walksOver(nodeCount, edges, targetS, options, random, maxShared)
-            val off = found.minOfOrNull { abs(ln(it.seconds / targetS)) } ?: continue
+            // Over the ceiling a little rather than nothing at all (the trip can be too close to the quickest way for more room).
+            val found = listOf(CLOSE_WALK, LOOSE_CEILING).firstNotNullOfOrNull { over ->
+                walksOver(nodeCount, edges, targetS, options, random, maxShared, over).takeIf { it.isNotEmpty() }
+            } ?: continue
             // The quickest way itself is no adventure: it only does when it is what the time asks for.
-            if (edges === allEdges && off > ln(1 + NEAR_ENOUGH_WALK)) continue
-            if (off <= ln(1 + NEAR_ENOUGH_WALK)) { log("  walks found allowing %s shared".format(if (maxShared == Int.MAX_VALUE) "any" else "< $maxShared cells")); return found }
-            if (off < bestOff) { best = found; bestOff = off }
+            if (edges === allEdges && found.none { it.seconds >= targetS * NEAR_FULL }) continue
+            log("  walks found allowing %s shared".format(if (maxShared == Int.MAX_VALUE) "any" else "< $maxShared cells"))
+            return found
         }
-        return best
+        return emptyList()
     }
 
-    private fun walksOver(nodeCount: Int, edges: List<Edge>, targetS: Double, options: RouteOptions, random: Random, maxShared: Int): List<Walk> {
+    private fun walksOver(nodeCount: Int, edges: List<Edge>, targetS: Double, options: RouteOptions, random: Random, maxShared: Int, over: Double): List<Walk> {
         // How far the road in and the road out of an anchor ride the same stretch (remembered: the same pairs come up again and again).
         val shared = HashMap<Triple<Int, Edge, Edge>, Int>()
         fun turnsBack(node: Int, from: Edge, to: Edge) = maxShared != Int.MAX_VALUE &&
@@ -309,9 +378,9 @@ class AdventurePlanner(
             }
         }
         val found = HashMap<List<Int>, Walk>()
-        fun close(w: Walk) = abs(ln(w.seconds / targetS)) <= ln(1 + CLOSE_WALK)
-        for (tolerance in listOf(CLOSE_WALK, 0.12, 0.2, 0.35)) {
-            val lo = targetS * (1 - tolerance); val hi = targetS * (1 + tolerance)
+        // The asked time is a ceiling; a walk may fall well short of it when the roads don't fill it.
+        val lo = targetS * MIN_FILL; val hi = targetS * (1 + over)
+        run {
             repeat(WALK_ATTEMPTS) attempt@{
                 var node = 0
                 var arrived: Edge? = null
@@ -321,7 +390,8 @@ class AdventurePlanner(
                 val steps = ArrayList<Pair<Int, Edge>>()
                 while (steps.size < MAX_STEPS) {
                     val home = toDest[node]
-                    if (node == 1 || (home < Double.MAX_VALUE && seconds + home in lo..hi && random.nextDouble() < FINISH_CHANCE)) {
+                    if (node == 1 || (home < Double.MAX_VALUE && seconds + home in lo..hi &&
+                            random.nextDouble() < (if (seconds + home >= targetS * NEAR_FULL) FINISH_CHANCE else EARLY_FINISH_CHANCE))) {
                         // Finish: the quickest way on from here (it may share a road with what was ridden; that is scored).
                         var n = node
                         var t = seconds
@@ -351,16 +421,13 @@ class AdventurePlanner(
                     node = e.other(node); visited += node
                 }
             }
-            // Wider only when too few walks fit closely: a walk close to the time beats a fun one far from it.
-            if (found.values.count(::close) >= FINALISTS) break
         }
-        // The closer to the asked time the better, in steps; within a step the more fun first.
-        fun step(w: Walk) = listOf(CLOSE_WALK, 0.12, 0.2, 0.35).indexOfFirst { abs(ln(w.seconds / targetS)) <= ln(1 + it) }.let { if (it < 0) 4 else it }
-        return found.values.sortedWith(compareBy<Walk> { step(it) }.thenByDescending { it.score })
+        return found.values.sortedByDescending { it.score }
     }
 
     /** A walk's score from its roads alone, to pick which few are worth routing once more. */
     private fun walkScore(steps: List<Pair<Int, Edge>>, seconds: Double, targetS: Double, options: RouteOptions): Double {
+        val quickest = directCells
         val metres = steps.sumOf { it.second.metres }.coerceAtLeast(1.0)
         fun weighted(of: (Edge) -> Double) = steps.sumOf { of(it.second) * it.second.metres } / metres
         val cellCount = HashMap<Long, Int>()
@@ -374,8 +441,11 @@ class AdventurePlanner(
             val (node, out) = steps[i]
             wasted += 2 * CELL_M * sharedStart(steps[i - 1].second.cellsFrom(node), out.cells)
         }
-        return curves + surfaceScore(unpaved, options) - abs(ln(seconds / targetS)) * 400 - twice * 300 - weighted { it.outside } * 200 -
-            wasted / metres * 1500
+        // Riding the quickest way is no adventure: that part earns no bonus (it costs nothing either, for a long trip needs it).
+        val onQuickest = steps.sumOf { (_, e) -> e.metres * (e.cellList.count { c -> NEIGHBOURS_OF.any { c + it in quickest } }.toDouble() / e.cellList.size.coerceAtLeast(1)) }
+        val freshKm = (metres * (1 - twice) - wasted - onQuickest).coerceAtLeast(0.0) / 1000
+        return curves + funBonus(freshKm, curves, options) + surfaceScore(unpaved, options) - overTimePenalty(seconds, targetS) -
+            twice * 300 - weighted { it.outside } * 200 - wasted / metres * WASTE_WEIGHT
     }
 
     /** The walk as a trip, each road ridden the way the walk goes. */
@@ -392,6 +462,18 @@ class AdventurePlanner(
         return samples.count { val p = LatLon(it.lat, it.lon); !area.contains(p) && area.distanceToEdge(p) > OUTSIDE_SLACK_M }.toDouble() / samples.size
     }
 
+    /** Over the asked time costs, under it doesn't: the time is a ceiling (10% over: -76). */
+    private fun overTimePenalty(seconds: Double, targetS: Double) = maxOf(0.0, ln(seconds / targetS)) * 800
+
+    /**
+     * What more time is for: more road to ride that is new (not ridden twice, not a spur) and winding.
+     * Without it the shortest walk would win now that falling short of the time costs nothing.
+     */
+    private fun funBonus(freshKm: Double, curves: Double, options: RouteOptions): Double {
+        val share = if (options.roadStyle == RoadStyle.FASTEST) FASTEST_FUN_SHARE else maxOf(curves / 100, MIN_FUN_SHARE)
+        return freshKm * share * FUN_PER_KM
+    }
+
     private fun surfaceScore(unpavedShare: Double, options: RouteOptions) = when (options.surface) {
         SurfacePreference.PAVED -> -unpavedShare * 600
         SurfacePreference.MIXED -> 0.0
@@ -401,13 +483,15 @@ class AdventurePlanner(
 
     /** Higher is better, for the finished trips. The time comes first, then what makes a trip fun to ride. */
     private fun score(route: Route, area: SketchArea, targetS: Double, options: RouteOptions): Double {
-        val timePenalty = abs(ln(route.durationSeconds / targetS)) * 400                  // 10% off: -38
+        val timePenalty = overTimePenalty(route.durationSeconds, targetS)
         val outsidePenalty = area.outsideShare(route) * 200
         val twicePenalty = RoundtripPlanner.overlapFraction(route) * 300                  // 20% twice: -60
-        val spurPenalty = Spurs.wastedMeters(route) / route.distanceMeters * 1500
+        val spur = Spurs.wastedMeters(route)
+        val spurPenalty = spur / route.distanceMeters * WASTE_WEIGHT
         val curves = if (options.roadStyle == RoadStyle.FASTEST) 0.0 else route.curviness.toDouble()
+        val freshKm = (route.distanceMeters * (1 - RoundtripPlanner.overlapFraction(route)) - spur).coerceAtLeast(0.0) / 1000
         val ferries = if (options.avoidFerries) route.ferryCount * 60.0 else 0.0
-        return curves + surfaceScore(route.unpavedMeters / route.distanceMeters, options) - timePenalty - outsidePenalty - twicePenalty - spurPenalty - ferries
+        return curves + funBonus(freshKm, curves, options) + surfaceScore(route.unpavedMeters / route.distanceMeters, options) - timePenalty - outsidePenalty - twicePenalty - spurPenalty - ferries
     }
 
     private companion object {
@@ -422,7 +506,16 @@ class AdventurePlanner(
         const val ANCHOR_SPACING_M = 12_000.0
         const val MIN_ANCHORS = 18
         const val MAX_ANCHORS = 30
+        /** A round of a progressive plan puts out this share of the full number of anchors (at least [MIN_ROUND_ANCHORS]). */
+        const val ROUND_SHARE = 0.5
+        const val MIN_ROUND_ANCHORS = 6
+        /** A later round's trip replaces the earlier only when it scores this much better. */
+        const val MIN_GAIN = 25.0
+        /** Further rounds are not begun after this long. */
+        const val ROUNDS_BUDGET_MS = 60_000L
         const val EDGE_MARGIN_M = 800.0
+        /** An anchor is moved to the nearest road when there is one this close. */
+        const val SNAP_M = 6_000.0
         /** Each anchor is joined to this many of its nearest, no farther away than [MAX_EDGE_M]. */
         const val NEIGHBOURS = 6
         const val MAX_EDGE_M = 16_000.0
@@ -446,13 +539,26 @@ class AdventurePlanner(
         const val MAX_WINDING = 4.5
         const val OUTSIDE_SLACK_M = 1_500.0
 
-        const val WALK_ATTEMPTS = 4_000
+        const val WALK_ATTEMPTS = 20_000
+        /** A walk shorter than this part of the asked time isn't worth taking. */
+        const val MIN_FILL = 0.4
+        /** From this part of the asked time a walk is likely to finish (and the quickest way itself passes for a trip); before it only rarely. */
+        const val NEAR_FULL = 0.85
+        const val EARLY_FINISH_CHANCE = 0.04
+        /** How much over the asked time a walk may be when none fits under it. */
+        const val LOOSE_CEILING = 0.25
+        /** The walks are made again for a shorter goal this many times when the trips come out over the time. */
+        const val GOAL_TRIES = 3
+        /** Score per kilometre of new, winding road (at full curviness), and the least share of that any road gives. */
+        const val FUN_PER_KM = 4.0
+        const val MIN_FUN_SHARE = 0.15
+        const val FASTEST_FUN_SHARE = 0.3
+        /** Score lost per share of the trip that is dead ends ridden in and out. */
+        const val WASTE_WEIGHT = 3000.0
         const val MAX_STEPS = 40
         const val FINISH_CHANCE = 0.4
         /** A walk this close to the asked time competes on how fun it is. */
         const val CLOSE_WALK = 0.06
-        /** Walks this near the asked time are good enough to stop looking for ones that also avoid more riding in and out. */
-        const val NEAR_ENOUGH_WALK = 0.2
         private val NEIGHBOURS_OF = listOf(0L, 1L, -1L, ROW, -ROW, ROW + 1, ROW - 1, -ROW + 1, -ROW - 1)
         /** What a grid cell along a road stands for. */
         const val CELL_M = 100.0

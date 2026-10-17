@@ -116,4 +116,34 @@ class NavigationTrackerTest {
         val corner = Geo.destination(LatLon(60.0, 10.0), 0.0, 1000.0)
         assertEquals(90.0, tracker.update(Geo.destination(corner, 90.0, 300.0)).routeBearingDeg, 1.0)
     }
+
+    /** A straight road drawn with few points, like a tunnel: pieces of 2 km and more between them. */
+    private fun sparseRoute(vararg at: Double): Route {
+        val start = LatLon(60.0, 10.0)
+        val pts = at.map { d ->
+            val p = Geo.destination(start, 0.0, d)
+            RoutePoint(p.lat, p.lon, 0.0, d, d / 20.0, "tertiary", 80, unpaved = false, ferry = false)
+        }
+        val d = at.last()
+        val maneuvers = listOf(Maneuver(ManeuverType.DEPART, 0, 0.0), Maneuver(ManeuverType.ARRIVE, pts.lastIndex, d))
+        return Route(pts, maneuvers, d, d / 20.0, 0.0, 0, 0.0, 0)
+    }
+
+    @Test
+    fun `rides on through a piece of road longer than the search window`() {
+        // The 2019 m piece from 100 m to 2119 m is longer than the 2 km the tracker looks ahead.
+        val route = sparseRoute(0.0, 100.0, 2_119.0, 2_595.0, 3_652.0, 5_000.0)
+        val tracker = NavigationTracker(route)
+        var along = 0.0
+        var d = 23.0
+        while (d < 4_900.0) {
+            val p = tracker.update(Geo.destination(LatLon(60.0, 10.0), 0.0, d), 25.0)
+            assertFalse("off route at $d m", p.offRoute)
+            assertTrue("stuck at ${p.distanceAlongRoute} when at $d", p.distanceFromRoute < 2.0)
+            assertTrue(p.distanceAlongRoute >= along - 1.0)
+            assertEquals(d, p.distanceAlongRoute, 3.0)
+            along = p.distanceAlongRoute
+            d += 23.0
+        }
+    }
 }

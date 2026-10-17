@@ -34,6 +34,7 @@ class NavigationTracker(
 ) {
 
     private var lastIndex = 0
+    private var lastAlong = 0.0
     private var offRouteStreak = 0
 
     fun update(position: LatLon, accuracyMeters: Double = 10.0): NavigationProgress {
@@ -69,7 +70,7 @@ class NavigationTracker(
         val threshold = offRouteMeters + accuracyMeters.coerceAtMost(50.0)
         offRouteStreak = if (bestDist > threshold) offRouteStreak + 1 else 0
         val offRoute = offRouteStreak >= OFF_ROUTE_FIXES
-        if (!offRoute) lastIndex = bestIdx
+        if (!offRoute) { lastIndex = bestIdx; lastAlong = along }
 
         val next = route.maneuvers.firstOrNull { it.distanceFromStart > along + PASSED_MANEUVER_M && it.type != ManeuverType.DEPART }
             ?: route.maneuvers.last()
@@ -95,10 +96,14 @@ class NavigationTracker(
 
     private fun findSearchEnd(from: Int): Int {
         val pts = route.points
-        val limit = pts[from].distanceFromStart + SEARCH_AHEAD_M
+        // Ahead of where the rider was, not of where the road piece they are on starts: a tunnel is drawn
+        // with a few points, and a piece of 2 km or more would otherwise end the window before the next
+        // piece, leaving the rider stuck at its end (and "off route" a moment later).
+        val limit = maxOf(pts[from].distanceFromStart, lastAlong) + SEARCH_AHEAD_M
         var i = from
         while (i < pts.lastIndex && pts[i].distanceFromStart < limit) i++
-        return i
+        // Always the piece after the one the rider is on, however short the window.
+        return minOf(maxOf(i, from + 2), pts.lastIndex)
     }
 
     /** Returns (fraction along segment 0..1, distance in metres) using a local flat projection. */

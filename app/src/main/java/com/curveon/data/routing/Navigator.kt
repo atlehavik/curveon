@@ -160,7 +160,13 @@ data class RoutePreview(
     /** There is an earlier version of the trip to go back to. */
     val canUndo: Boolean = false,
     /** Routing data being fetched for this trip first, e.g. "Fetching routing data (1 of 2)…". */
-    val fetching: String? = null
+    val fetching: String? = null,
+    /** An adventure is still being worked on in the background: a better trip may come. */
+    val improving: Boolean = false,
+    /** The adventures found so far, each better than the one before; the rider switches between them. */
+    val suggestions: List<Route> = emptyList(),
+    /** Which of [suggestions] the trip on the map was made from. */
+    val suggestion: Int = 0
 ) {
     val selectedRoute get() = candidates.getOrNull(selected)?.route
     val calculating get() = candidates.any { it.route == null && it.error == null }
@@ -201,6 +207,13 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private var tracker: NavigationTracker? = null
     private var calcJob: Job? = null
     private var previewJob: Job? = null
+    /** An adventure being planned: it goes on after the first trip is shown, looking for a better one. */
+    private var adventureJob: Job? = null
+    /** The goals that the adventure being planned is for: the adventure and the trip made of its first result. Planning stops when the screen shows anything else. */
+    @Volatile private var watched: Set<NavigationGoal> = emptySet()
+    /** The adventures the planner has found for the one on screen, in the order found (guarded by `this`). */
+    private val suggestions = ArrayList<Route>()
+    @Volatile private var adventureRunning = false
     private var lastPosition: LatLon? = null
     private var lastHeading: Double? = null
     /** Where the rider was ~20 m ago, for a heading from how they actually moved. */
@@ -485,6 +498,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     fun cancelPreview() {
         pendingPreview = null
         previewJob?.cancel()
+        adventureJob?.cancel()
         _state.value = _state.value.copy(preview = null, status = RoutingStatus.Idle)
     }
 
@@ -519,7 +533,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         activate(goal, route)
     }
 
-    private fun preview(goal: NavigationGoal, keepSelection: Int? = null, keepHistory: Boolean = false) {
+    private fun preview(goal: NavigationGoal, keepSelection: Int? = null, keepHistory: Boolean = false, keepAdventure: Boolean = false) {
         pendingPreview = null
         if (!keepHistory) previewHistory.clear()
         val planned = goal as? NavigationGoal.Destination
@@ -530,6 +544,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val tiles = tilesAround(goalPoints(goal, from))
         if (!canRoute(tiles)) return fail(routingData.describe())
         previewJob?.cancel()
+        if (!keepAdventure) adventureJob?.cancel()
         val styles: List<RoadStyle?> = if (planned != null && planned.fixedLine == null) RoadStyle.entries else listOf(null)
         val selected = (keepSelection ?: styles.indexOf(preferredStyle)).coerceIn(0, styles.lastIndex)
         _state.value = _state.value.copy(
@@ -541,6 +556,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             try { fetchRoutingData(tiles) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
                 android.util.Log.w("Curveon", "Fetching routing data failed", e)
             }
+            // An adventure is planned in a job of its own: it goes on looking for a better trip once this one is shown.
+            if (goal is NavigationGoal.Adventure) return@launch startAdventure(goal, from)
             styles.mapIndexed { i, style ->
                 async(Dispatchers.Default) {
                     val t0 = System.nanoTime()
@@ -561,8 +578,6 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             // A loop found: on as an ordinary trip.
             val found = _state.value.preview?.takeIf { it.goal == goal }?.selectedRoute
             if (goal is NavigationGoal.Roundtrip && found != null) return@launch tripFromLoop(goal, found)
-            // An adventure found: on as an ordinary trip too, to drag on the map, add stops and so on.
-            if (goal is NavigationGoal.Adventure && found != null) return@launch tripFromAdventure(goal, found)
             // If the pre-selected style failed, fall back to one that worked.
             val p = _state.value.preview ?: return@launch
             if (p.selectedRoute == null) p.candidates.indexOfFirst { it.route != null }.takeIf { it >= 0 }?.let { selectCandidate(it) }
@@ -583,7 +598,13 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      * dragging it on the map, adding stops and so on. It remembers the adventure, so Shuffle, the
      * time and drawing the area again plan another.
      */
-    private suspend fun tripFromAdventure(g: NavigationGoal.Adventure, route: Route) {
+    private suspend fun tripFromAdventure(
+        g: NavigationGoal.Adventure, route: Route,
+        /** What must still be on screen for this to apply. */
+        expected: NavigationGoal = g,
+        /** Which of the suggestions this is, for the switcher in the sheet. */
+        index: Int = 0
+    ): NavigationGoal.Destination? {
         val count = (route.distanceMeters / ADVENTURE_VIA_SPACING_M).toInt().coerceIn(4, 16)
         var next = 0
         val points = buildList {
@@ -593,17 +614,83 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             }
         }
         val vias = points.map { Stop(describePlace(it), it, via = true) }
-        // Still the same adventure on screen?
-        if (_state.value.preview?.goal != g) return
+        // Still the same trip on screen?
+        if (_state.value.preview?.goal != expected) return null
         previewHistory.clear()
         val style = RoadStyle.entries.indexOf(g.options.roadStyle)
-        preview(NavigationGoal.Destination(g.name, g.destination, g.options, vias, g.start, adventure = g), keepSelection = style, keepHistory = true)
+        val trip = NavigationGoal.Destination(g.name, g.destination, g.options, vias, g.start, adventure = g)
+        watched = watched + trip
+        preview(trip, keepSelection = style, keepHistory = true, keepAdventure = true)
         // The adventure stays on the map until its own style's route through the points is in.
         synchronized(this) {
-            val p = _state.value.preview ?: return
-            if (p.candidates[style].route == null && p.candidates[style].error == null) _state.value = _state.value.copy(
-                preview = p.copy(candidates = p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) }))
+            val p = _state.value.preview ?: return trip
+            val candidates = if (p.candidates[style].route == null && p.candidates[style].error == null)
+                p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) } else p.candidates
+            _state.value = _state.value.copy(preview = p.copy(
+                candidates = candidates, suggestions = suggestions.toList(), suggestion = index, improving = adventureRunning))
         }
+        return trip
+    }
+
+    /**
+     * Plans an adventure in rounds (see [AdventurePlanner.plan]): the first trip is shown as soon as it is
+     * found and made an ordinary trip, and a better one found later is kept beside it ([RoutePreview.suggestions]),
+     * for the rider to switch between. Planning stops when the rider changes or leaves the trip.
+     */
+    private fun startAdventure(goal: NavigationGoal.Adventure, from: LatLon) {
+        adventureJob?.cancel()
+        watched = setOf(goal)
+        synchronized(this) { suggestions.clear() }
+        adventureRunning = true
+        adventureJob = scope.launch {
+            val routes = kotlinx.coroutines.channels.Channel<Route>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+            val t0 = System.nanoTime()
+            val planning = async(Dispatchers.Default) {
+                try {
+                    AdventurePlanner(engine, { android.util.Log.d("CurveonPlan", it) }, { done, total -> adventureProgress(goal, done, total) },
+                        { !isActive || _state.value.preview?.goal !in watched }, surfaces)
+                        .plan(from, goal.destination, goal.area, goal.minutes, goal.options, goal.variant, rounds = ADVENTURE_ROUNDS) { routes.trySend(it) }
+                } finally {
+                    routes.close()
+                }
+            }
+            var first = true
+            for (route in routes) {
+                if (first) {
+                    first = false
+                    android.util.Log.i("Curveon", "First adventure in %.1f s: %.0f km".format((System.nanoTime() - t0) / 1e9, route.distanceMeters / 1000))
+                    synchronized(this@Navigator) {
+                        val p = _state.value.preview?.takeIf { it.goal == goal } ?: return@synchronized
+                        _state.value = _state.value.copy(preview = p.copy(candidates = listOf(RouteCandidate(null, route)), fetching = null))
+                    }
+                    synchronized(this@Navigator) { suggestions += route }
+                    tripFromAdventure(goal, route)
+                } else synchronized(this@Navigator) {
+                    // A better one: kept beside the others and drawn grey on the map, for the rider to switch to.
+                    suggestions += route
+                    val p = _state.value.preview?.takeIf { it.goal in watched } ?: return@synchronized
+                    _state.value = _state.value.copy(preview = p.copy(suggestions = suggestions.toList()))
+                }
+            }
+            adventureRunning = false
+            val failure = try { planning.await(); null } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { e }
+            synchronized(this@Navigator) {
+                val p = _state.value.preview ?: return@synchronized
+                if (first && failure != null && p.goal == goal) {
+                    android.util.Log.i("Curveon", "Adventure failed: ${failure.message}")
+                    _state.value = _state.value.copy(preview = p.copy(candidates = listOf(RouteCandidate(null, null, message(failure))), fetching = null))
+                } else if (p.improving && p.goal in watched) _state.value = _state.value.copy(preview = p.copy(improving = false))
+            }
+        }
+    }
+
+    /** Show another of the adventures found for this trip (the first stays, to go back to). */
+    fun selectAdventureSuggestion(index: Int) {
+        val p = _state.value.preview ?: return
+        val route = p.suggestions.getOrNull(index) ?: return
+        if (index == p.suggestion) return
+        val g = previewedAdventure() ?: return
+        scope.launch { tripFromAdventure(g, route, expected = p.goal, index = index) }
     }
 
     /** Where a trip may go: its places, or for a loop the circle it can reach. */
@@ -654,7 +741,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             )
         }
         is NavigationGoal.Track -> TrackFollower(engine).route(from, goal.points, goal.options, fromStart = true)
-        is NavigationGoal.Adventure -> AdventurePlanner(engine, { android.util.Log.d("CurveonPlan", it) }, { done, total -> adventureProgress(goal, done, total) }, cancelled)
+        is NavigationGoal.Adventure -> AdventurePlanner(engine, { android.util.Log.d("CurveonPlan", it) }, { done, total -> adventureProgress(goal, done, total) }, cancelled, surfaces)
             .plan(from, goal.destination, goal.area, goal.minutes, goal.options, goal.variant)
     }
 
@@ -664,6 +751,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         pendingPreview = null
         calcJob?.cancel()
         previewJob?.cancel()
+        adventureJob?.cancel()
         arrivalJob?.cancel()
         arrivalJob = null
         tracker = null
@@ -680,6 +768,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     private fun activate(goal: NavigationGoal, route: Route) {
         previewJob?.cancel()
+        adventureJob?.cancel()
         followUntil = 0L
         arrivalJob?.cancel()
         arrivalJob = null
@@ -1020,6 +1109,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         private const val LOOP_VIA_SPACING_M = 8_000.0
         /** An adventure made into a trip gets about one via point this far apart: far enough to keep the roads it was made of, close enough to keep its shape. */
         private const val ADVENTURE_VIA_SPACING_M = 15_000.0
+        /** An adventure is planned in this many rounds: the first answers quickly, the others look for a better one. */
+        private const val ADVENTURE_ROUNDS = 3
         /** A route starting further away than this isn't "your road missing from the map" any more. */
         private const val MAX_APPROACH_M = 1_500.0
         /** Ridden this much further from the route's start than you began: you went elsewhere. */

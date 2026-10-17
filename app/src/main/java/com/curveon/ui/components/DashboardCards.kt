@@ -75,15 +75,14 @@ private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorde
 /**
  * Speed, the signed limit when known and the clock, in the map's top-right corner (always, not
  * only in full screen: the dashboard's side has the engine panel and music). A speed camera ahead
- * adds a line underneath, as does a lost GPS fix, and a junction where the rider gives way its sign.
+ * adds a line underneath, as does a lost GPS fix. (A junction where the rider gives way shows in the
+ * road card, see [CurrentRoadCard], not here.)
  */
 @Composable
 fun MapSpeedCluster(
     telemetry: TelemetryData,
     camera: com.curveon.data.routing.CameraAlert?,
     modifier: Modifier = Modifier,
-    /** While navigating: a junction just ahead where the rider gives way or stops. */
-    giveWay: com.curveon.data.routing.GiveWayAlert? = null,
     /** Settings → Display: the height above sea level under the speed. */
     showAltitude: Boolean = false
 ) {
@@ -120,17 +119,6 @@ fun MapSpeedCluster(
             }
             telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
             !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
-        }
-        giveWay?.let { g ->
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp).testTag("give_way")) {
-                if (g.stop) StopSign(30.dp) else GiveWaySign(30.dp)
-                // At the junction the sign says it all.
-                if (g.distanceMeters >= 10) {
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.give_way_in, (g.distanceMeters / 10).toInt() * 10),
-                        color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                }
-            }
         }
         if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
             Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
@@ -243,8 +231,8 @@ fun StopSign(size: Dp, modifier: Modifier = Modifier) {
 
 /**
  * The road the rider is on, in a little card of its own: its number and, on a priority road, the
- * priority sign (Settings → Display → Road info). Riding without a route, a junction just ahead
- * where the rider gives way adds its sign and how far it is.
+ * priority sign (Settings → Display → Road info). A junction just ahead where the rider gives way
+ * or stops adds its sign and how far it is, with or without a route: this card is the one place for it.
  */
 @Composable
 fun CurrentRoadCard(road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier, giveWay: com.curveon.data.routing.GiveWayAlert? = null) {

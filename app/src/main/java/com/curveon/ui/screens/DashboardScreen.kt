@@ -104,8 +104,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val roadHere by viewModel.currentRoad.collectAsStateWithLifecycle()
     val freeGiveWay by viewModel.freeGiveWay.collectAsStateWithLifecycle()
     val mapGiveWays by viewModel.mapGiveWays.collectAsStateWithLifecycle()
-    // The road card: the road's number and priority sign, and riding freely a give way just ahead.
-    val currentRoad = roadHere ?: freeGiveWay?.let { com.curveon.data.road.CurrentRoad(null, false) }
+    val giveWayAlert by viewModel.giveWayAlert.collectAsStateWithLifecycle()
+    // The road card: the road's number and priority sign, and a give way or stop just ahead (on the route
+    // when navigating, else on the road ridden): the one place for the junction's sign and its distance.
+    val giveWayAhead = giveWayAlert ?: freeGiveWay
+    val currentRoad = roadHere ?: giveWayAhead?.let { com.curveon.data.road.CurrentRoad(null, false) }
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
@@ -117,7 +120,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val mapTheme by viewModel.mapTheme.collectAsStateWithLifecycle()
     val fuelHint by viewModel.fuelHint.collectAsStateWithLifecycle()
     val cameraAlert by viewModel.cameraAlert.collectAsStateWithLifecycle()
-    val giveWayAlert by viewModel.giveWayAlert.collectAsStateWithLifecycle()
     val obdState by viewModel.obd.state.collectAsStateWithLifecycle()
     val obdValues by viewModel.obdValues.collectAsStateWithLifecycle()
     val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
@@ -432,11 +434,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
         MapSpeedCluster(telemetry, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
-            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, giveWay = giveWayAlert)
+            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude)
         // The road's number and priority sign in a card of their own: top middle in landscape, under
         // the speed in portrait or when the middle has no room between the trip bar and the speed.
         currentRoad?.let { road ->
-            CurrentRoadCard(road, giveWay = freeGiveWay, modifier = (if (roadCentred) Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
+            CurrentRoadCard(road, giveWay = giveWayAhead, modifier = (if (roadCentred) Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
                 else Modifier.align(Alignment.TopEnd).padding(top = 14.dp + speedSize.height + 8.dp, end = 14.dp))
                 .onSizeChanged { roadSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } })
         }
@@ -515,6 +517,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onMotorways = viewModel::setPreviewMotorways,
                     onRemoveStop = viewModel::removePreviewStop,
                     onShuffle = viewModel::shuffleRoundtrip,
+                    onSelectSuggestion = viewModel::selectAdventureSuggestion,
                     onAddStop = { searchPurpose = SearchPurpose.STOP },
                     onMoveStop = viewModel::movePreviewStop,
                     onEditStart = { searchPurpose = SearchPurpose.START },
@@ -600,7 +603,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, selected,
                         surfaces = if (selected) r.points.map { p -> if (p.highway == "track") SURFACE_TRACK else if (p.unpaved) SURFACE_GRAVEL else SURFACE_PAVED } else null)
                 }
-            }.orEmpty(),
+            }.orEmpty() +
+                // The other adventures found, grey beside the one shown, to compare and switch to.
+                preview?.suggestions.orEmpty().filterIndexed { i, _ -> i != preview?.suggestion }
+                    .map { r -> MapRoute(r.points.map { GeoPoint(it.lat, it.lon) }, false) },
             markers = if (editor != null) emptyList()
                 // Starting point by point somewhere else: its start shows until the first leg is planned.
                 else if (mapPick != null && preview == null) markers + listOfNotNull(planStart?.let { (p, _) ->

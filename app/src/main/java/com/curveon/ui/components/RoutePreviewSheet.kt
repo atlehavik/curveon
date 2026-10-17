@@ -28,6 +28,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -62,6 +63,8 @@ fun RoutePreviewSheet(
     onMotorways: (Boolean, Boolean) -> Unit,
     onRemoveStop: (Int) -> Unit,
     onShuffle: () -> Unit,
+    /** Show another of the adventures found while the first was on the map. */
+    onSelectSuggestion: (Int) -> Unit = {},
     onAddStop: () -> Unit = {},
     onMoveStop: (index: Int, delta: Int) -> Unit = { _, _ -> },
     onEditStart: () -> Unit = {},
@@ -161,6 +164,39 @@ fun RoutePreviewSheet(
             Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // An adventure goes on being worked on after the first trip is shown: the ones found so far to switch
+            // between (the others grey on the map), and a small sign of work while it keeps looking.
+            if (preview.suggestions.size >= 2) Row(
+                Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                preview.suggestions.forEachIndexed { i, r ->
+                    val on = i == preview.suggestion
+                    PlanChip(
+                        Icons.Default.Explore,
+                        stringResource(R.string.adventure_suggestion, i + 1, adventureTimeLabel((r.durationSeconds / 60).toInt()), (r.distanceMeters / 1000).toInt()),
+                        if (on) NeonAmber else TextSecondary, "preview_suggestion_$i", { onSelectSuggestion(i) }, outlined = !on
+                    )
+                }
+            }
+            if (preview.improving) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.CircularProgressIndicator(Modifier.size(12.dp), color = NeonAmber, strokeWidth = 2.dp)
+                val pulse by androidx.compose.animation.core.rememberInfiniteTransition(label = "improving").animateFloat(
+                    initialValue = 0.5f, targetValue = 1f,
+                    animationSpec = androidx.compose.animation.core.infiniteRepeatable(tween(900), androidx.compose.animation.core.RepeatMode.Reverse), label = "improvingAlpha"
+                )
+                Text(
+                    stringResource(R.string.adventure_improving), color = TextSecondary, fontSize = 13.sp,
+                    modifier = Modifier.graphicsLayer { alpha = pulse }.testTag("adventure_improving")
+                )
+            }
+            // An adventure is given a time as a ceiling: say so when the area couldn't fill it without dead ends.
+            val askedMinutes = (goal as? NavigationGoal.Adventure)?.minutes ?: (goal as? NavigationGoal.Destination)?.adventure?.minutes
+            val rideMinutes = preview.selectedRoute?.let { (it.durationSeconds / 60).toInt() }
+            if (askedMinutes != null && rideMinutes != null && rideMinutes < askedMinutes * 0.85) Text(
+                stringResource(R.string.adventure_shorter, adventureTimeLabel(rideMinutes), adventureTimeLabel(askedMinutes)),
+                color = TextSecondary, fontSize = 13.sp, modifier = Modifier.testTag("adventure_shorter_note")
+            )
             // A loop: where it starts (here, or elsewhere to plan one away from home).
             if (goal is NavigationGoal.Roundtrip) PlanChip(
                 Icons.Default.TripOrigin,

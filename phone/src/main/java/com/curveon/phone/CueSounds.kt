@@ -20,7 +20,12 @@ object CueSounds {
     /** Silence first: intercoms often need a moment to open the audio after a quiet spell. */
     const val LEAD_IN_S = 0.3
 
-    private class Note(val hz: Double, val at: Double, val length: Double, val gain: Double = 1.0, val bright: Double = 0.25)
+    /** [bell] sounds the note as a bell: partials that aren't whole multiples, ringing longer. */
+    private class Note(val hz: Double, val at: Double, val length: Double, val gain: Double = 1.0, val bright: Double = 0.25, val bell: Boolean = false)
+
+    /** A bell's partials as (times the pitch, level): the hum, the strike and the shimmer. */
+    private val BELL = listOf(1.0 to 1.0, 2.0 to 0.6, 2.76 to 0.5, 5.4 to 0.25)
+    private val BELL_LEVEL = BELL.sumOf { it.second }
 
     private fun notes(cue: NavCue): List<Note> = when (cue) {
         // Two soft rising notes: a turn is coming.
@@ -33,8 +38,9 @@ object CueSounds {
         NavCue.OFF_ROUTE -> listOf(Note(330.0, 0.0, 0.16, bright = 0.0), Note(294.0, 0.2, 0.22, bright = 0.0))
         // Light and quick, up: back on track (or a new route).
         NavCue.BACK_ON_ROUTE -> listOf(Note(784.0, 0.0, 0.12, gain = 0.8), Note(1047.0, 0.1, 0.2, gain = 0.8))
-        // Up a fourth and held, like a question: choose on the screen.
-        NavCue.CHOOSE -> listOf(Note(440.0, 0.0, 0.16), Note(587.0, 0.15, 0.4))
+        // A bell, struck twice and left to ring: look at the screen, there is a choice to make. Clearly
+        // unlike the soft tones, since it asks for the rider's eyes.
+        NavCue.CHOOSE -> listOf(Note(880.0, 0.0, 0.5, bell = true), Note(880.0, 0.28, 0.5, bell = true))
     }
 
     /** 16-bit stereo PCM (left, right interleaved) at [RATE]. */
@@ -53,7 +59,9 @@ object CueSounds {
                 // Ring out, and reach silence at the end so nothing clicks.
                 val release = exp(-t * 4.0 / n.length) * (1.0 - t / n.length)
                 val w = 2 * PI * n.hz * t
-                mono[start + i] += n.gain * attack * release * ((1 - n.bright) * sin(w) + n.bright * sin(2 * w))
+                val tone = if (n.bell) BELL.sumOf { (ratio, level) -> level * sin(w * ratio) } / BELL_LEVEL * 1.3
+                    else (1 - n.bright) * sin(w) + n.bright * sin(2 * w)
+                mono[start + i] += n.gain * attack * release * tone
             }
         }
         // Equal-power pan; the far ear still hears it, softly.

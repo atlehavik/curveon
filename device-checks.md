@@ -6,6 +6,47 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — Map stays put, adventure time is a ceiling
+
+- [ ] Planning a trip, editing a route, cancelling a preview: pan/zoom the map somewhere else. It
+      must not jump back to you after the preview/edit/pick ends; only starting navigation or the
+      "back to me" button moves it. Drawing an adventure area zooms out where the map already is.
+- [ ] Riding with places on the map (Settings → Display → On the map: speed cameras, fuel, …): they
+      should show while following the rider in 3D too, also at road speed. Before, the size of a 3D
+      view's bounds (reaching the horizon) switched every kind off. If still nothing: `adb logcat -s
+      Curveon:I | grep "Map places"` says how wide the map counts as, and which layers were on.
+- [ ] Long tunnel (a 2 km straight piece in the route, or 20+ km): the rider keeps moving along the
+      route with the "estimating" note the whole way, with no time limit; on coming out the real GPS
+      takes over, navigation is still running and the 3D view is still there. (The 17 Oct trip showed
+      the cause: the tracker got stuck at the end of a 2 km piece of the route and called it off
+      route; fixed, with a test.) If it still goes wrong, pull the navtrace
+      (`adb pull .../files/navtrace`): look for "route cleared" and rows with `est` = 1.
+- [ ] A give way / stop ahead while navigating and while riding freely: its sign and the distance
+      count down in the road card (with the road number and priority sign), and no longer under the
+      speed. Check the card shows up on its own when the road has no number.
+- [ ] Hold the 3D/N button: the map goes to 3D and + / − appear beside it (6 s after the last press
+      they go again). + looks more down on the map, − lower along the road; the angle is kept (also
+      after restarting the app) until changed. Tapping the button still cycles N → heading → 3D.
+- [ ] Zoom in (11 or closer) on a gravel or dirt road with a navigation route or a GPX track on top
+      of it: the dashes now show through the line (dark edge, in the colours picked in Settings →
+      Display → Road surfaces). Check it reads on both themes, and that turning road surfaces off
+      removes them from over the lines too.
+- [ ] Navigation sounds on, ride off the route so the "turn around or go on" dialog appears: a
+      bell (two strikes) rings, clearly different from the soft off-route tones. Listen to it in the
+      helmet through the intercom too: loud enough, not cut off at the start.
+- [ ] Adventure over the fjells east of Stord (start Bremnes, to Tveit, ring over Stord/Kvinnherad,
+      6 h): the trip should now go over the mountain roads east of the fjord instead of circling
+      once on the west side, and planning ("Finding roads…") should be quicker than before.
+- [ ] Adventure planning: a first trip should appear after a few seconds, with a small spinner and
+      "Looking for a better trip…" (pulsing) under the title while it keeps searching. Each better
+      trip found is added as a chip "Trip 2 · 5:50 h · 290 km" next to "Trip 1", and drawn grey on
+      the map. Tap the chips to switch back and forth (nothing is forgotten). Change the trip (drag
+      it, add a stop, shuffle) or close the sheet while it searches: the search stops. Check the chips
+      and the spinner don't overlap anything on the phone, portrait and landscape.
+- [ ] Draw an adventure area and ask for a long time: the trip may now be shorter than asked (with
+      a note "The trip takes … of the … you gave it") instead of filling the time with dead ends.
+      Check that planning takes no longer than before, and that the trip has fewer spurs.
+
 ## 2026-10-16 — Stop sharing ends the link at once, Bluetooth tip, give way off a priority road
 
 - [ ] Companion linked to the X7: tap Stop sharing on the Pixel. The X7 says the phone isn't

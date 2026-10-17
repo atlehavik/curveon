@@ -468,9 +468,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         settings.edit().putStringSet("mapLayers", _mapLayers.value.map { it.name }.toSet()).apply()
     }
 
-    private class Viewport(val south: Double, val north: Double, val west: Double, val east: Double, val zoom: Double)
+    /** [widthKm] is across the middle of the screen (0 when unknown), [centerLat]/[centerLon] where the camera looks. */
+    private class Viewport(
+        val south: Double, val north: Double, val west: Double, val east: Double, val zoom: Double,
+        val widthKm: Double, val centerLat: Double, val centerLon: Double
+    )
     private val _viewport = MutableStateFlow<Viewport?>(null)
-    fun setViewport(south: Double, north: Double, west: Double, east: Double, zoom: Double) { _viewport.value = Viewport(south, north, west, east, zoom) }
+    fun setViewport(south: Double, north: Double, west: Double, east: Double, zoom: Double, widthKm: Double, centerLat: Double, centerLon: Double) {
+        _viewport.value = Viewport(south, north, west, east, zoom, widthKm, centerLat, centerLon)
+    }
 
     /** The chosen kinds of place in the part of the map in view, from the offline search of the downloaded countries. */
     @OptIn(kotlinx.coroutines.FlowPreview::class, kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -479,19 +485,29 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .mapLatest { (layers, v) ->
             if (v == null || layers.isEmpty()) return@mapLatest emptyList()
             val app = getApplication<Application>()
-            val widthKm = com.curveon.routing.Geo.distance((v.south + v.north) / 2, v.west, (v.south + v.north) / 2, v.east) / 1000
+            // How zoomed in the map is, from the middle of the screen: the bounds of a tilted (3D) view reach the horizon,
+            // and judged by those no kind of place would show while riding.
+            val widthKm = v.widthKm.takeIf { it > 0 }
+                ?: (com.curveon.routing.Geo.distance((v.south + v.north) / 2, v.west, (v.south + v.north) / 2, v.east) / 1000)
             val now = layers.filter { widthKm <= it.maxWidthKm }
+            // And looked up only a little beyond what is wide on the screen, around where the camera is.
+            val half = widthKm * 2.0
+            val dLat = half / 111.0
+            val dLon = half / (111.0 * kotlin.math.cos(Math.toRadians(v.centerLat)).coerceAtLeast(0.2))
+            val south = maxOf(v.south, v.centerLat - dLat); val north = minOf(v.north, v.centerLat + dLat)
+            val west = maxOf(v.west, v.centerLon - dLon); val east = minOf(v.east, v.centerLon + dLon)
             val found = mutableListOf<com.curveon.data.gpx.GpxPoi>()
             val kinds = now.flatMap { it.kinds }
-            placeSearch.poisInBox(kinds, v.south, v.north, v.west, v.east).forEach { p ->
+            placeSearch.poisInBox(kinds, south, north, west, east).forEach { p ->
                 val kind = com.curveon.data.search.MapLayer.poiKind(p.kind)
                 found += com.curveon.data.gpx.GpxPoi(name = p.name, description = "", category = kind.category, lat = p.lat, lon = p.lon, kind = kind)
             }
-            if (com.curveon.data.search.MapLayer.CAMERAS in now) placeSearch.camerasInBox(v.south, v.north, v.west, v.east).take(400).forEach { p ->
+            if (com.curveon.data.search.MapLayer.CAMERAS in now) placeSearch.camerasInBox(south, north, west, east).take(400).forEach { p ->
                 val name = p.name + (p.maxSpeed?.let { " $it" } ?: "")
                 found += com.curveon.data.gpx.GpxPoi(name = name, description = "", category = com.curveon.data.gpx.PoiKind.CAMERA.category, lat = p.lat, lon = p.lon,
                     kind = com.curveon.data.gpx.PoiKind.CAMERA)
             }
+            android.util.Log.i("Curveon", "Map places: %.1f km wide, layers %s of %s, %d found".format(widthKm, now.map { it.name }, layers.map { it.name }, found.size))
             found
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -1044,6 +1060,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         var anchorAlong = 0.0
         var anchorTime = 0L
         var anchorSpeedMps = 0.0
+        var anchorRoute: com.curveon.routing.Route? = null
         while (true) {
             delay(1000)
             untilAwake()
@@ -1051,7 +1068,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val nav = navigator.state.value
             val route = nav.route
             val gap = now - lastRealFixAt
-            if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || gap > DR_MAX_MS || _isDemoRiding.value) {
+            if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || _isDemoRiding.value) {
                 anchorTime = 0L
                 if (_telemetry.value.isDeadReckoning) _telemetry.value = _telemetry.value.copy(isDeadReckoning = false)
                 continue
@@ -1061,8 +1078,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 if (anchorSpeedMps < 4.0) continue // stopped in the tunnel or parked: don't invent movement
                 anchorAlong = nav.progress?.distanceAlongRoute ?: continue
                 anchorTime = lastRealFixAt
+                anchorRoute = route
+            } else if (anchorRoute !== route) {
+                // Another route took over (a reroute): where we are on it, not how far along the old one, from now on.
+                anchorAlong = nav.progress?.distanceAlongRoute ?: continue
+                anchorTime = now
+                anchorRoute = route
             }
-            val along = anchorAlong + anchorSpeedMps * (now - anchorTime) / 1000.0
+            // However long the tunnel (no time limit: Lærdal is 24.5 km, and slow traffic makes it longer), the guess
+            // goes on until a real fix returns; it stops short of the end of the route, so it never "arrives" on its own.
+            val along = (anchorAlong + anchorSpeedMps * (now - anchorTime) / 1000.0).coerceAtMost((route.distanceMeters - DR_END_MARGIN_M).coerceAtLeast(0.0))
             val (p, bearing) = Routes.pointAt(route, along)
             handleFix(GpsFix(p.lat, p.lon, null, anchorSpeedMps.toFloat(), bearing.toFloat(), 25f, now), estimated = true)
         }
@@ -1545,6 +1570,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         navigator.replacePreviewStop(index, Stop(name, LatLon(point.latitude, point.longitude), via))
 
     fun shuffleRoundtrip() = navigator.shuffleRoundtrip()
+    fun selectAdventureSuggestion(i: Int) = navigator.selectAdventureSuggestion(i)
 
     fun reversePreviewTrack() = navigator.reversePreviewTrack()
 
@@ -1931,7 +1957,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         private const val SNAP_JOIN_M = 12.0
         /** The tunnel halo stops growing here: it says "roughly here", not "anywhere". */
         private const val DR_MAX_ACCURACY_M = 300.0
-        private const val DR_MAX_MS = 15 * 60_000L // longest Norwegian road tunnel (Lærdal, 24.5 km) at low speed
+        /** The tunnel guess stays this far short of the end of the route (arrival is for a real fix to decide). */
+        private const val DR_END_MARGIN_M = 60.0
 
         fun routeOptions(
             roadType: RoadTypePreference,

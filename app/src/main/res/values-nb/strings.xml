@@ -404,6 +404,12 @@
     <string name="preview_adventure_title">Eventyr til %1$s</string>
     <string name="nav_no_adventure">Fant ikke noe eventyr i det området. Prøv å tegne det større, eller bruk mer tid.</string>
     <string name="nav_adventure_too_short">Raskeste vei tar %1$d min. Be om mer tid for å få et eventyr.</string>
+    <string name="adventure_time_explain">Lengste tid turen kan ta. Den kan bli kortere hvis området ikke har gode veier nok til mer.</string>
+    <string name="map_tilt_up">Tilt kartet opp, mot fugleperspektiv</string>
+    <string name="map_tilt_down">Tilt kartet ned, mot veien</string>
+    <string name="adventure_improving">Leter etter en bedre tur …</string>
+    <string name="adventure_suggestion">Tur %1$d · %2$s · %3$d km</string>
+    <string name="adventure_shorter">Turen tar %1$s av de %2$s du ga den. Mer ville bare blitt blindveier.</string>
     <string name="nav_adventure_progress">Finner veier… %1$d av %2$d</string>
     <string name="preview_loop_from">Rundtur fra %1$s</string>
     <string name="preview_area_roundtrip_title">Rundtur i området</string>

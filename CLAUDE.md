@@ -92,8 +92,10 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   strip them down so far that the change is hard to understand, and keep them non-technical (no
   driver names, data sources or internals; "the map no longer crashes", not "OpenGL instead of
   Vulkan"). Norwegian written naturally, not translated word for word.
-- Installing a new build on the X7 (over wifi, see above) and/or Pixel is always allowed whenever they are reachable
-  (`adb devices`); do it after each change without asking.
+- **Installing:** a device connected by USB (`adb devices` lists it with a `usb:` transport, e.g. the X7 at
+  the desk) can always be installed on, after each change, without asking. A device reached only over wifi
+  (the X7 on the handlebars, the Pixel) is not: say what is waiting to be installed and end the message with
+  the question whether to install, on which devices; once the rider says yes, do it for that batch.
 - Committing and pushing are always allowed once a build has been installed on the devices (X7 or
   Pixel); no need to ask first.
 - The app was renamed from VibeNav on 2026-10-06: anything still saying vibenav is stale.

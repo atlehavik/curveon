@@ -57,6 +57,43 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
     private val cells = object : LinkedHashMap<Long, List<SurfaceWay>>(256, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, List<SurfaceWay>>?) = size > MAX_CELLS
     }
+    /** Tags → the rank of a road a motorbike rides (2 = tertiary and up, 1 = unclassified/residential), or null. */
+    private val roadClasses = HashMap<ByteBuffer, Pair<SurfaceKind, Int>?>()
+    /** Cells of ordinary roads, kept apart from [cells] (planning looks at far more cells than the map shows). */
+    private val roadCells = object : LinkedHashMap<Long, List<SurfaceWay>>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Long, List<SurfaceWay>>?) = size > ROAD_CELLS
+    }
+
+    /**
+     * The point on a road (tertiary and up, unclassified, residential; not tracks or service roads) nearest
+     * to [lat], [lon], or null when there is none within [maxMeters] (at sea, up a mountain with no road) or
+     * no segment file. Only the cells around the point are read, so this is cheap, with no routing.
+     */
+    @Synchronized
+    fun nearestRoad(lat: Double, lon: Double, maxMeters: Double): LatLon? {
+        val cell = 1_000_000 / DIVISOR
+        val lonIdx = toILon(lon) / cell
+        val latIdx = toILat(lat) / cell
+        val cosLat = Math.cos(Math.toRadians(lat))
+        var best: LatLon? = null
+        var bestD = maxMeters * maxMeters
+        for (dLat in -1..1) for (dLon in -1..1) {
+            val key = (lonIdx + dLon).toLong() shl 32 or (latIdx + dLat).toLong()
+            val ways = roadCells[key] ?: (runCatching { decodeCell(lonIdx + dLon, latIdx + dLat, ::classifyRoad) }.getOrNull() ?: continue)
+                .also { roadCells[key] = it }
+            for (w in ways) {
+                var i = 0
+                while (i < w.coords.size) {
+                    val dx = (w.coords[i] - lon) * M_PER_DEGREE * cosLat
+                    val dy = (w.coords[i + 1] - lat) * M_PER_DEGREE
+                    val d = dx * dx + dy * dy
+                    if (d < bestD) { bestD = d; best = LatLon(w.coords[i + 1], w.coords[i]) }
+                    i += 2
+                }
+            }
+        }
+        return best
+    }
 
     /** The marked ways in (or crossing into) the area. Cells that can't be read are skipped. */
     @Synchronized
@@ -95,7 +132,7 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
 
     /** Same order of reads as BRouter's MicroCache2 constructor; anything else would lose sync. */
     /** Null when there's no segment file for the cell. */
-    private fun decodeCell(lonIdx: Int, latIdx: Int): List<SurfaceWay>? {
+    private fun decodeCell(lonIdx: Int, latIdx: Int, classifyTags: (ByteArray) -> Pair<SurfaceKind, Int>? = ::classify): List<SurfaceWay>? {
         val file = osmFile(lonIdx / DIVISOR, latIdx / DIVISOR) ?: return null
         val subIdx = (latIdx - DIVISOR * file.latDegree) * DIVISOR + (lonIdx - DIVISOR * file.lonDegree)
         var ab = buffers.iobuffer
@@ -165,7 +202,7 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
                 val tags = wayTagCoder.decodeTagValueSet()
                 // A reverse link's geometry lives with its forward twin (in this cell or the next).
                 if (!isReverse) {
-                    val cls = tags?.data?.let { classify(it) }
+                    val cls = tags?.data?.let { classifyTags(it) }
                     val transfers = bc.decodeVarBits()
                     val coords = if (cls != null) DoubleArray((transfers + 2) * 2) else null
                     coords?.let { it[0] = lonOf(ilon); it[1] = latOf(ilat) }
@@ -199,6 +236,11 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
     var syncErrors = 0
         private set
 
+    private fun classifyRoad(bitmap: ByteArray): Pair<SurfaceKind, Int>? = roadClasses.getOrPut(ByteBuffer.wrap(bitmap.copyOf())) {
+        val highway = ctx.getKeyValueDescription(false, bitmap).split(' ').firstOrNull { it.startsWith("highway=") }?.substringAfter('=')
+        roadRank(highway)?.let { SurfaceKind.PAVED to it }
+    }
+
     private fun classify(bitmap: ByteArray): Pair<SurfaceKind, Int>? = classes.getOrPut(ByteBuffer.wrap(bitmap.copyOf())) {
         val tags = ctx.getKeyValueDescription(false, bitmap).split(' ').mapNotNull {
             val eq = it.indexOf('='); if (eq > 0) it.substring(0, eq) to it.substring(eq + 1) else null
@@ -211,6 +253,19 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
         private const val DIVISOR = 32
         /** About a screenful at zoom 10 on the X7; beyond that the map shows no surfaces anyway. */
         private const val MAX_CELLS = 400
+        private const val ROAD_CELLS = 700
+        private const val M_PER_DEGREE = 111_195.0
+
+        /** 2 for tertiary and up, 1 for unclassified/residential; null for what isn't a road to ride (paths, tracks, service). */
+        internal fun roadRank(highway: String?): Int? {
+            if (highway == null || highway in NOT_FOR_MOTORBIKES) return null
+            return when (highway) {
+                "motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link",
+                "secondary", "secondary_link", "tertiary", "tertiary_link" -> 2
+                "unclassified", "residential", "living_street", "road" -> 1
+                else -> null
+            }
+        }
 
         private val NOT_FOR_MOTORBIKES = setOf(
             "footway", "path", "cycleway", "bridleway", "steps", "pedestrian", "platform", "construction",

@@ -7,6 +7,7 @@ import android.graphics.RectF
 import android.view.Gravity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -124,6 +125,12 @@ private const val SURFACE_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
 /** 3D tilt; car navigators sit around 45–50 (Mapbox's navigation camera: 45). */
 private const val TILT_3D = 50.0
+/** The rider's own 3D angle: 0 is looking straight down, higher looks more along the road. Steps of the +/- buttons. */
+private const val TILT_MIN = 20.0
+private const val TILT_MAX = 60.0
+private const val TILT_STEP = 5.0
+/** The tilt buttons hide again after this long without a press. */
+private const val TILT_CONTROLS_MS = 6_000L
 /** Rider position below the middle, as a share of the map's height, given as top padding (×2 lower). */
 private const val RIDER_LOW_3D = 0.5 // rider ~3/4 down the map
 private const val RIDER_LOW_2D = 0.3
@@ -179,7 +186,12 @@ fun CurveonMapView(
     trackHint: com.curveon.data.gpx.TrackHint? = null,
     onPoiClick: (com.curveon.data.gpx.GpxPoi) -> Unit = {},
     /** Where the map is looking once it settles: south, north, west, east, and the zoom. */
-    onViewport: (south: Double, north: Double, west: Double, east: Double, zoom: Double) -> Unit = { _, _, _, _, _ -> },
+    /**
+     * Where the map is looking: its bounds, and how wide the middle of the screen is ([widthKm]) with where the camera is
+     * ([centerLat], [centerLon]). In 3D the bounds reach the horizon and say little about how zoomed in the map is.
+     */
+    onViewport: (south: Double, north: Double, west: Double, east: Double, zoom: Double, widthKm: Double, centerLat: Double, centerLon: Double) -> Unit =
+        { _, _, _, _, _, _, _, _ -> },
     /** Zoom follows speed (in when slow and twisty, out on fast roads). */
     autoZoom: Boolean = true,
     /** Test: the arrow's tip, not its middle, where the rider is. */
@@ -247,6 +259,15 @@ fun CurveonMapView(
     var orientation by remember { mutableStateOf(savedOrientation(navigating)) }
     var orientationFor by remember { mutableStateOf(navigating) }
     if (orientationFor != navigating) { orientationFor = navigating; orientation = savedOrientation(navigating) }
+    // The angle of the 3D view (remembered): changed with the +/- that come beside the 3D button when it is held down.
+    var tilt3d by remember { mutableStateOf(prefs.getFloat("tilt3d", TILT_3D.toFloat()).toDouble().coerceIn(TILT_MIN, TILT_MAX)) }
+    var tiltControls by remember { mutableStateOf(false) }
+    var tiltPresses by remember { mutableIntStateOf(0) }
+    LaunchedEffect(tiltControls, tiltPresses) {
+        if (!tiltControls) return@LaunchedEffect
+        kotlinx.coroutines.delay(TILT_CONTROLS_MS)
+        tiltControls = false
+    }
     var following by remember { mutableStateOf(true) }
     /** Where the rider is on screen (px), to hint at them from the edge once they're out of view. */
     var riderScreen by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
@@ -619,7 +640,16 @@ fun CurveonMapView(
                 kotlin.math.abs(b.center.longitude - was.center.longitude) > width * 0.1 ||
                 kotlin.math.abs(b.center.latitude - was.center.latitude) > (b.latitudeNorth - b.latitudeSouth) * 0.1) {
                 last = b
-                onViewportState.value(b.latitudeSouth, b.latitudeNorth, b.longitudeWest, b.longitudeEast, m.cameraPosition.zoom)
+                // Across the middle of the screen: what the map's scale is, however it is tilted.
+                val w = mapView.width.toFloat(); val h = mapView.height.toFloat()
+                val midKm = if (w <= 0f) 0.0 else {
+                    val l = m.projection.fromScreenLocation(android.graphics.PointF(0f, h / 2))
+                    val r = m.projection.fromScreenLocation(android.graphics.PointF(w, h / 2))
+                    com.curveon.routing.Geo.distance(l.latitude, l.longitude, r.latitude, r.longitude) / 1000
+                }
+                val at = m.cameraPosition.target
+                onViewportState.value(b.latitudeSouth, b.latitudeNorth, b.longitudeWest, b.longitudeEast, m.cameraPosition.zoom,
+                    midKm, at?.latitude ?: b.center.latitude, at?.longitude ?: b.center.longitude)
             }
             kotlinx.coroutines.delay(800)
             lifecycleOwner.lifecycle.untilStarted()
@@ -711,7 +741,7 @@ fun CurveonMapView(
 
     // Preview: the camera stays where the rider puts it while they build or change the trip; the
     // fit button (zoom to extents) shows the whole of it. Only when a trip first appears and isn't
-    // already in view is it fitted by itself. Leaving preview hands the camera back to following.
+    // already in view is it fitted by itself. Leaving preview leaves the camera where it is.
     val previewPoints = remember(previewRoutes) { previewRoutes.flatMap { it.points } }
     var fitTick by remember { mutableIntStateOf(0) }
     val fitTrip: (Boolean) -> Unit = fit@{ onlyIfOutOfView ->
@@ -756,26 +786,19 @@ fun CurveonMapView(
     }
     LaunchedEffect(fitTick) { if (fitTick > 0) fitTrip(false) }
     val inPreview = previewRoutes.isNotEmpty()
-    // Back to following once the preview is really gone: not while picking places or editing, and
-    // not for the moment the trip is empty while it is being worked out again (that flew the map
-    // to the rider and back in the middle of planning).
     // A drawn area stays in view while its loop is worked out.
-    val picking = onTap != null || editor != null || onSketch != null || sketch.isNotEmpty()
-    // Drawing an area: flat, north up and zoomed out to about a day's ride round the rider.
+    // Drawing an area: flat, north up and zoomed out to about a day's ride, where the map already is.
     LaunchedEffect(map, onSketch != null) {
         val m = map ?: return@LaunchedEffect
         if (onSketch == null) return@LaunchedEffect
         following = false
         m.easeCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder()
-            .target(LatLng(location.latitude, location.longitude)).zoom(minOf(m.cameraPosition.zoom, SKETCH_ZOOM))
+            .target(m.cameraPosition.target ?: LatLng(location.latitude, location.longitude)).zoom(minOf(m.cameraPosition.zoom, SKETCH_ZOOM))
             .bearing(0.0).tilt(0.0).padding(0.0, 0.0, 0.0, 0.0).build()), 800)
     }
-    LaunchedEffect(inPreview, picking) {
-        if (inPreview || picking) return@LaunchedEffect
-        kotlinx.coroutines.delay(700)
-        following = true
-    }
 
+    // The camera is only taken back to the rider when navigation starts or the rider presses the
+    // recenter button. Ending a preview, an edit or a pick leaves the map where the rider put it.
     // Starting a route always brings the camera back to the rider.
     val hasRoute = routePoints.isNotEmpty()
     LaunchedEffect(hasRoute) { if (hasRoute) following = true }
@@ -800,7 +823,7 @@ fun CurveonMapView(
     // MapLibre draws on every screen frame of its own accord while the map moves (labels fade in
     // and out), so cap it to match. There is no "no cap": 1000 is as good as none.
     LaunchedEffect(map) { if (map != null) mapView.setMaximumFps(MAX_FPS) }
-    LaunchedEffect(map, style, following, inPreview, orientation, zoomBias, hasGpsFix, autoZoom) {
+    LaunchedEffect(map, style, following, inPreview, orientation, zoomBias, hasGpsFix, autoZoom, tilt3d) {
         val m = map ?: return@LaunchedEffect
         if (style == null) return@LaunchedEffect
         val follow = following && !inPreview
@@ -831,7 +854,7 @@ fun CurveonMapView(
                 val speed = speedState.value
                 val h = mapView.height.toDouble()
                 val wantZoom = if (autoZoom) (followZoom(speed, turnState.value?.distanceMeters, threeD) + zoomBias).coerceIn(10.0, 18.5) else zoom
-                val wantTilt = if (threeD) TILT_3D else 0.0
+                val wantTilt = if (threeD) tilt3d else 0.0
                 // Heading up and 3D: the rider low on screen to see more road ahead. North up: centred.
                 var wantLift = when {
                     threeD -> RIDER_LOW_3D * h
@@ -967,6 +990,11 @@ fun CurveonMapView(
         val wide = if (palette == SurfacePalette.QUIET) 1f else 1.3f
         s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(if (dark) palette.gravelDark else palette.gravelLight), lineWidth(surfaceWidth(2.8f * wide)))
         s.getLayer("$SURFACE-soft")?.setProperties(lineColor(if (dark) palette.softDark else palette.softLight), lineWidth(surfaceWidth(2.2f * wide)))
+        // The same over the route and GPX tracks, with its dark edge a little wider than the dash.
+        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(if (dark) palette.gravelDark else palette.gravelLight), lineWidth(surfaceWidth(2.8f * wide)))
+        s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(if (dark) palette.softDark else palette.softLight), lineWidth(surfaceWidth(2.2f * wide)))
+        s.getLayer("$SURFACE-over-gravel-casing")?.setProperties(lineWidth(surfaceWidth(2.8f * wide + 1.6f)))
+        s.getLayer("$SURFACE-over-soft-casing")?.setProperties(lineWidth(surfaceWidth(2.2f * wide + 1.6f)))
     }
 
     // Gravel heat map while planning: counted per routing data file in the background (once), shown
@@ -1065,30 +1093,58 @@ fun CurveonMapView(
         // there: while following with auto-zoom they nudge the speed-based zoom, otherwise they zoom.
         if (!inPreview) Column(
             modifier = Modifier.align(Alignment.CenterEnd).padding(top = buttonsTopInset, bottom = buttonsBottomInset).padding(14.dp).tourTarget(TourTarget.MAP_BUTTONS),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.End
         ) {
-            MapButton(
-                onClick = {
-                    orientation = Orientation.entries[(orientation.ordinal + 1) % Orientation.entries.size]
-                    prefs.edit().putString(if (navigating) "orientationNav" else "orientationBrowse", orientation.name).apply()
-                    // Not following: turn the map where it is; following picks it up by itself.
-                    if (!following) map?.let { m ->
-                        m.animateCamera(CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.Builder(m.cameraPosition)
-                                .bearing(if (orientation == Orientation.NORTH_UP) 0.0 else headingDeg.toDouble())
-                                .tilt(if (orientation == Orientation.THREE_D) TILT_3D else 0.0)
-                                .build()
-                        ), 600)
+            // Tap: north up → heading up → 3D. Held down: 3D, and +/- beside it for the angle of the view.
+            fun chooseOrientation(o: Orientation) {
+                orientation = o
+                prefs.edit().putString(if (navigating) "orientationNav" else "orientationBrowse", orientation.name).apply()
+                // Not following: turn the map where it is; following picks it up by itself.
+                if (!following) map?.let { m ->
+                    m.animateCamera(CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.Builder(m.cameraPosition)
+                            .bearing(if (orientation == Orientation.NORTH_UP) 0.0 else headingDeg.toDouble())
+                            .tilt(if (orientation == Orientation.THREE_D) tilt3d else 0.0)
+                            .build()
+                    ), 600)
+                }
+            }
+            fun tiltBy(delta: Double) {
+                tilt3d = (tilt3d + delta).coerceIn(TILT_MIN, TILT_MAX)
+                prefs.edit().putFloat("tilt3d", tilt3d.toFloat()).apply()
+                tiltPresses++
+                if (!following) map?.let { m -> m.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder(m.cameraPosition).tilt(tilt3d).build()), 300) }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (tiltControls && orientation == Orientation.THREE_D) {
+                    // Plus lifts the view towards looking down on the map, minus lowers it towards the road.
+                    MapButton(onClick = { tiltBy(-TILT_STEP) }, tag = "map_tilt_up_btn") {
+                        Icon(Icons.Default.Add, stringResource(R.string.map_tilt_up), tint = TextPrimary, modifier = Modifier.size(24.dp))
                     }
-                },
-                tag = "map_orientation_btn"
-            ) {
-                when (orientation) {
-                    Orientation.NORTH_UP -> Text("N", color = ElectricCyan, fontSize = 22.sp, fontWeight = FontWeight.Black,
-                        modifier = Modifier.rotate(-cameraBearing))
-                    Orientation.HEADING_UP -> Icon(Icons.Default.Navigation, stringResource(R.string.map_heading_up), tint = ElectricCyan,
-                        modifier = Modifier.size(26.dp))
-                    Orientation.THREE_D -> Text("3D", color = ElectricCyan, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    MapButton(onClick = { tiltBy(TILT_STEP) }, tag = "map_tilt_down_btn") {
+                        Icon(Icons.Default.Remove, stringResource(R.string.map_tilt_down), tint = TextPrimary, modifier = Modifier.size(24.dp))
+                    }
+                }
+                MapButton(
+                    onClick = {
+                        chooseOrientation(Orientation.entries[(orientation.ordinal + 1) % Orientation.entries.size])
+                        tiltControls = false
+                    },
+                    onLongClick = {
+                        if (orientation != Orientation.THREE_D) chooseOrientation(Orientation.THREE_D)
+                        tiltControls = true
+                        tiltPresses++
+                    },
+                    tag = "map_orientation_btn"
+                ) {
+                    when (orientation) {
+                        Orientation.NORTH_UP -> Text("N", color = ElectricCyan, fontSize = 22.sp, fontWeight = FontWeight.Black,
+                            modifier = Modifier.rotate(-cameraBearing))
+                        Orientation.HEADING_UP -> Icon(Icons.Default.Navigation, stringResource(R.string.map_heading_up), tint = ElectricCyan,
+                            modifier = Modifier.size(26.dp))
+                        Orientation.THREE_D -> Text("3D", color = ElectricCyan, fontSize = 18.sp, fontWeight = FontWeight.Black)
+                    }
                 }
             }
             MapButton(onClick = {
@@ -1303,6 +1359,30 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
     }
 }
 
+/**
+ * The gravel and soft dashes again, over the route and the GPX tracks (which are drawn above the
+ * ones under the road names and would hide them): a dark edge under each dash so it reads on any
+ * line colour. Same source, filters and palette as the dashes below, shown and hidden with them.
+ */
+private fun addSurfaceOverLayers(s: Style, dark: Boolean) {
+    fun over(kind: String, dash: Array<Float>, base: Float, color: String) = listOf(
+        LineLayer("$SURFACE-over-$kind-casing", SURFACE).withProperties(
+            lineColor(if (dark) "#000000" else "#202020"), lineOpacity(0.7f), lineWidth(surfaceWidth(base + 1.6f)),
+            lineDasharray(dash), lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
+        ).withFilter(E.eq(E.get("kind"), E.literal(kind))),
+        LineLayer("$SURFACE-over-$kind", SURFACE).withProperties(
+            lineColor(color), lineWidth(surfaceWidth(base)), lineDasharray(dash),
+            lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
+        ).withFilter(E.eq(E.get("kind"), E.literal(kind)))
+    )
+    val palette = SurfacePalette.QUIET
+    (over("soft", arrayOf(2f, 1.5f), 2.2f, if (dark) palette.softDark else palette.softLight) +
+        over("gravel", arrayOf(2.5f, 1.5f), 2.8f, if (dark) palette.gravelDark else palette.gravelLight)).forEach { l ->
+        l.minZoom = SURFACE_ZOOM
+        s.addLayer(l)
+    }
+}
+
 private fun addOverlayLayers(s: Style, dark: Boolean) {
     addSurfaceLayers(s, dark)
     s.addImage(ARROW_IMAGE, arrowBitmap(), true)
@@ -1391,6 +1471,7 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             routeWidth(6.5f, 11f, 17f), lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )
+    addSurfaceOverLayers(s, dark)
     // Zoomed out: small dots in the category colour (many waypoints stay readable). Zoomed in:
     // a badge with an icon per kind, and the name.
     s.addLayer(
@@ -1585,12 +1666,22 @@ private fun RiderArrow(orange: Boolean, puck: () -> Puck?) {
 }
 
 @Composable
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 private fun MapButton(
     onClick: () -> Unit,
     tag: String,
     highlighted: Boolean = false,
+    /** Held down; the button is then a box that tells taps and holds apart. */
+    onLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
+    if (onLongClick != null) return Box(
+        Modifier.size(52.dp).clip(CircleShape).background(if (highlighted) ElectricCyan else CockpitSurface)
+            .border(1.dp, CockpitBorder, CircleShape)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .testTag(tag),
+        contentAlignment = Alignment.Center
+    ) { content() }
     IconButton(
         onClick = onClick,
         modifier = Modifier
