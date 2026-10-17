@@ -418,6 +418,43 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /** The adapter is only talked to while the engine panel is on. */
+    // Fuel gauge set-up: the tank size, the levels registered so far and the signal that follows them.
+    private val fuelStore = com.curveon.data.obd.FuelCalibrationStore(settings)
+    private val _fuelCalibration = MutableStateFlow(fuelStore.load().also { obd.setFuelCalibration(it) })
+    val fuelCalibration: StateFlow<com.curveon.data.obd.FuelCalibration> = _fuelCalibration.asStateFlow()
+    private val _fuelCapturing = MutableStateFlow(false)
+    /** A level is being read from the bike (about ten seconds). */
+    val fuelCapturing: StateFlow<Boolean> = _fuelCapturing.asStateFlow()
+
+    private fun updateFuel(change: (com.curveon.data.obd.FuelCalibration) -> com.curveon.data.obd.FuelCalibration) {
+        val c = change(_fuelCalibration.value)
+        _fuelCalibration.value = c
+        fuelStore.save(c)
+        obd.setFuelCalibration(c)
+    }
+
+    fun setTankLiters(liters: Float?) = updateFuel { it.copy(tankLiters = liters?.takeIf { l -> l > 0f }) }
+
+    /** Reads everything the bike tells now and keeps it as the tank holding [liters]; [onDone] says whether it worked. */
+    fun registerFuelLevel(liters: Float, onDone: (Boolean) -> Unit) {
+        if (_fuelCapturing.value) return
+        _fuelCapturing.value = true
+        viewModelScope.launch {
+            val signals = obd.capture()
+            _fuelCapturing.value = false
+            if (signals != null) updateFuel { c ->
+                // The same amount again replaces the earlier reading of it.
+                c.copy(points = c.points.filter { kotlin.math.abs(it.liters - liters) >= com.curveon.data.obd.FuelCalibration.MIN_LEVEL_GAP / 2 } +
+                    com.curveon.data.obd.FuelPoint(liters, signals, System.currentTimeMillis()))
+            }
+            onDone(signals != null)
+        }
+    }
+
+    fun removeFuelLevel(at: Long) = updateFuel { c -> c.copy(points = c.points.filter { it.at != at }) }
+    fun setFuelSource(signal: String?) = updateFuel { it.copy(source = signal) }
+    fun resetFuelSetup() = updateFuel { com.curveon.data.obd.FuelCalibration() }
+
     private fun connectObd() = obd.use(_obdDevice.value.takeIf { _telemetry.value.isObdEnabled })
 
     private val _offlineMapStatus = MutableStateFlow(describeOfflineMaps())

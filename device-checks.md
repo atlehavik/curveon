@@ -6,6 +6,23 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — Gravel colours, slimmer dashes, DEMO tab, fuel gauge setup
+
+- [ ] Settings → Display → Road surfaces: pick Yellow, then Green. On the light map and on the dark map
+      the gravel dashes are yellow (and the soft roads orange-red) / green (soft roads amber), and the
+      little samples in Settings match what the map shows (they follow the map theme).
+- [ ] Plan or ride a route over gravel roads: the dashes on top of the blue route are slim, the blue
+      line is easy to follow between and around them; GPX tracks too.
+- [ ] Settings → Navigation → Demo ride on, start a navigation: a clear amber DEMO tag sits right under the rider arrow
+      and follows it. Check it covers nothing (phone upright too). It goes when
+      the demo ride is off or navigation stops.
+- [ ] Fuel gauge setup (Settings → Engine, with the OBD2 adapter connected on the bike): go through the
+      steps. Register Empty, one or two levels in between (litres you know) and Full; step 4 should
+      then offer a reading whose values rise or fall with the litres; pick it, step 5 shows litres
+      now. Then check the dashboard's Fuel shows litres (e.g. "9.4 L"). Registering takes ~10 s and
+      pauses the other readings meanwhile. Not verifiable in the emulator (only the Demo adapter).
+      If step 4 finds nothing, pull `files/navtrace/obd-*.txt` and send it.
+
 ## 2026-10-17 — Waypoints hidden in the route planner
 
 - [ ] Plan a TET route (e.g. N-01) on the Pixel and the X7: the chip row in the planner shows only

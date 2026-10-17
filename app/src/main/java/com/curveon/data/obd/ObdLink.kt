@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
 import java.util.UUID
 import kotlin.math.sin
@@ -27,6 +29,8 @@ data class ObdState(
     val status: Status = Status.OFF,
     val rpm: Int? = null,
     val fuelPercent: Int? = null,
+    /** From the tank table (Settings → Engine → Fuel gauge), once set up. */
+    val fuelLiters: Float? = null,
     val coolantC: Int? = null,
     val voltage: Float? = null
 ) {
@@ -50,6 +54,32 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
     private var job: Job? = null
     private var socket: BluetoothSocket? = null
     private var address: String? = null
+
+    /** The tank table and the signal that follows the fuel level; the fuel reading comes from it once set up. */
+    @Volatile private var fuelCalibration = FuelCalibration()
+    private val fuelSamples = ArrayDeque<Int>()
+    @Volatile private var fuelReadAt = 0L
+    @Volatile private var fuelSourceChanged = false
+
+    fun setFuelCalibration(c: FuelCalibration) {
+        if (c.source != fuelCalibration.source) fuelSourceChanged = true
+        fuelCalibration = c
+        if (c.source == null || c.tankLiters == null) _state.value = _state.value.copy(fuelLiters = null)
+    }
+
+    private var pendingCapture: CompletableDeferred<Map<String, Int>?>? = null
+
+    /**
+     * Reads everything the bike tells at this moment, for registering a fuel level: the standard
+     * engine data it supports and ~4 s of its bus traffic, as [FuelSignal] keys. Takes about ten
+     * seconds (the readings on the dashboard pause meanwhile); null when the adapter isn't talking.
+     */
+    suspend fun capture(): Map<String, Int>? {
+        if (_state.value.status != ObdState.Status.CONNECTED) return null
+        val request = CompletableDeferred<Map<String, Int>?>()
+        pendingCapture = request
+        return withTimeoutOrNull(CAPTURE_TIMEOUT_MS) { request.await() }.also { if (it == null) pendingCapture = null }
+    }
 
     private val canConnect get() =
         android.os.Build.VERSION.SDK_INT < 31 ||
@@ -116,9 +146,15 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
                 val bytes = Elm327.parse(pid, elm.send(pid, 5_000))
                 if (bytes == null) unsupported += pid else parse(bytes)
             }
+            pendingCapture?.let { request ->
+                pendingCapture = null
+                request.complete(runCatching { capture(elm) }.getOrElse { if (it is IOException) throw it; Log.w(TAG, "Capture failed", it); null })
+            }
             ask("010C") { b -> if (b.size >= 2) s2 = s2.copy(rpm = (b[0] * 256 + b[1]) / 4) }
+            val tankTable = fuelCalibration.takeIf { it.source != null && it.tankLiters != null }
+            if (tankTable != null) readFuel(elm, tankTable)?.let { s2 = s2.copy(fuelLiters = it, fuelPercent = (it * 100 / tankTable.tankLiters!!).toInt().coerceIn(0, 100)) }
             if (slow) {
-                ask("012F") { b -> if (b.isNotEmpty()) s2 = s2.copy(fuelPercent = (b[0] * 100 + 127) / 255) }
+                if (tankTable == null) ask("012F") { b -> if (b.isNotEmpty()) s2 = s2.copy(fuelPercent = (b[0] * 100 + 127) / 255) }
                 ask("0105") { b -> if (b.isNotEmpty()) s2 = s2.copy(coolantC = b[0] - 40) }
                 Elm327.voltage(elm.send("ATRV", 2_000))?.let { s2 = s2.copy(voltage = it) }
                 // Whatever else the bike reports that could tell fuel use, into the ride trace.
@@ -129,6 +165,53 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
             round++
             delay(POLL_MS)
         }
+    }
+
+    /** See [capture]: runs on the polling loop, since the adapter handles one thing at a time. */
+    private fun capture(elm: Elm327): Map<String, Int> {
+        val seen = HashMap<String, MutableList<Int>>()
+        fun add(prefix: String, bytes: List<Int>) {
+            for (i in bytes.indices) {
+                seen.getOrPut("$prefix:$i") { ArrayList() } += bytes[i]
+                if (i + 1 < bytes.size) seen.getOrPut("$prefix:$i-${i + 1}") { ArrayList() } += bytes[i] * 256 + bytes[i + 1]
+            }
+        }
+        val pids = supportedPids.filter { it.substring(2).toInt(16) % 0x20 != 0 }.take(CAPTURE_MAX_PIDS)
+        repeat(3) { for (pid in pids) Elm327.parse(pid, elm.send(pid, 1_500))?.let { add("pid:$pid", it) } }
+        // The bus traffic with headers and spaces, so each frame is an id and its bytes.
+        elm.send("ATH1", 1_000); elm.send("ATS1", 1_000)
+        val traffic = elm.monitor(CAPTURE_BUS_MS)
+        elm.send("ATS0", 1_000); elm.send("ATH0", 1_000)
+        for (line in traffic.lines()) {
+            val frame = Elm327.frame(line) ?: continue
+            add("can:${frame.first}", frame.second)
+        }
+        // Only what held still while reading: a counter or a fast signal can't be the fuel level.
+        return seen.mapNotNull { (k, v) ->
+            if (v.max() - v.min() > CAPTURE_STEADY) null else k to v.sorted()[v.size / 2]
+        }.toMap()
+    }
+
+    /** The litres now, from the signal the tank table is set up with; about every 5 s (15 s over the bus, which holds the readings up). */
+    private fun readFuel(elm: Elm327, c: FuelCalibration): Float? {
+        val src = FuelSignal.parse(c.source ?: return null) ?: return null
+        if (fuelSourceChanged) { fuelSourceChanged = false; fuelSamples.clear(); fuelReadAt = 0L }
+        val now = System.currentTimeMillis()
+        if (now - fuelReadAt >= if (src.isPid) FUEL_EVERY_MS else FUEL_BUS_EVERY_MS) {
+            fuelReadAt = now
+            val bytes = if (src.isPid) Elm327.parse(src.id, elm.send(src.id, 2_000)) else {
+                elm.send("ATH1", 1_000); elm.send("ATS1", 1_000); elm.send("ATCRA${src.id}", 1_000)
+                val text = elm.monitor(1_500) { Elm327.frame(it)?.first == src.id }
+                elm.send("ATCRA", 1_000); elm.send("ATS0", 1_000); elm.send("ATH0", 1_000)
+                text.lines().firstNotNullOfOrNull { l -> Elm327.frame(l)?.takeIf { it.first == src.id }?.second }
+            }
+            src.value(bytes ?: emptyList())?.let {
+                fuelSamples.addLast(it)
+                if (fuelSamples.size > FUEL_SAMPLES) fuelSamples.removeFirst()
+            }
+        }
+        if (fuelSamples.isEmpty()) return null
+        return c.liters(fuelSamples.sorted()[fuelSamples.size / 2])
     }
 
     /**
@@ -170,16 +253,32 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
             java.io.File(dir, "obd-" + java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US).format(java.util.Date()) + ".txt").writeText(out.toString())
         }
         Log.i(TAG, "Survey: supported ${supported.joinToString(" ")}")
+        supportedPids = supported
         return supported.filter { it in FUEL_HINTS }
     }
 
     private suspend fun demo() {
         _state.value = ObdState(ObdState.Status.CONNECTED, fuelPercent = 72, coolantC = 88, voltage = 13.9f)
         var t = 0.0
+        var level = 72.0
+        var captures = 0
         while (scope.isActive) {
             t += 0.25
-            val fuel = (72 - t / 120).toInt().coerceAtLeast(5)
-            _state.value = _state.value.copy(rpm = (4_500 + 3_000 * sin(t / 3)).toInt(), fuelPercent = fuel)
+            level = (level - 1 / 120.0).coerceAtLeast(5.0)
+            // Registering a level: another one each time, so a tank table can be made in a minute.
+            pendingCapture?.let { request ->
+                pendingCapture = null
+                delay(2_000)
+                level = DEMO_LEVELS[captures++ % DEMO_LEVELS.size]
+                request.complete(mapOf(
+                    "can:3F0:2" to (level * 2.55).toInt(), "can:3F0:3" to 17,
+                    "can:5A0:1" to (captures * 37 % 100), "pid:0105:0" to 128, "pid:0142:0-1" to 13_900
+                ))
+            }
+            val cal = fuelCalibration
+            val litres = if (cal.source == "can:3F0:2") cal.liters((level * 2.55).toInt()) else null
+            _state.value = _state.value.copy(rpm = (4_500 + 3_000 * sin(t / 3)).toInt(), fuelPercent = level.toInt(),
+                fuelLiters = litres)
             delay(250)
         }
     }
@@ -197,6 +296,17 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         private const val POLL_MS = 200L
         private const val SLOW_EVERY = 25
         private const val RETRY_MS = 10_000L
+        private const val CAPTURE_TIMEOUT_MS = 90_000L
+        private const val CAPTURE_BUS_MS = 4_000L
+        private const val CAPTURE_MAX_PIDS = 40
+        /** A signal that moved more than this while being read isn't the fuel level (the float sloshes a little). */
+        private const val CAPTURE_STEADY = 4
+        private const val FUEL_EVERY_MS = 5_000L
+        private const val FUEL_BUS_EVERY_MS = 15_000L
+        private const val FUEL_SAMPLES = 5
+        private val DEMO_LEVELS = listOf(6.0, 98.0, 52.0, 27.0, 75.0)
+        /** Every mode-01 PID the bike says it supports, from the survey. */
+        private var supportedPids: List<String> = emptyList()
         /** Load, MAP, speed, intake temp, MAF, throttle, fuel rate, fuel level, fuel system/trims. */
         private val FUEL_HINTS = setOf("0104", "010B", "010D", "010F", "0110", "0111", "015E", "012F", "0103", "0106", "0107", "0151")
     }
@@ -223,13 +333,21 @@ internal class Elm327(private val input: java.io.InputStream, private val output
     }
 
     /** Raw bus monitor (after "ATMA"): everything heard for [ms], then stops it and waits for the prompt. */
-    fun monitor(ms: Long): String {
+    fun monitor(ms: Long, stopWhen: ((String) -> Boolean)? = null): String {
         output.write("ATMA\r".toByteArray())
         output.flush()
         val sb = StringBuilder()
         val until = System.currentTimeMillis() + ms
+        var lineStart = 0
         while (System.currentTimeMillis() < until && sb.length < 2_000_000) {
-            if (input.available() > 0) sb.append(input.read().toChar()) else Thread.sleep(5)
+            if (input.available() > 0) {
+                val c = input.read().toChar()
+                sb.append(c)
+                if (c == '\r' || c == '\n') {
+                    if (stopWhen != null && stopWhen(sb.substring(lineStart))) break
+                    lineStart = sb.length
+                }
+            } else Thread.sleep(5)
         }
         output.write("\r".toByteArray())
         output.flush()
@@ -252,6 +370,20 @@ internal class Elm327(private val input: java.io.InputStream, private val output
             val data = line.substring(want.length)
             if (data.isEmpty() || data.length % 2 != 0) return null
             return data.chunked(2).map { it.toInt(16) }
+        }
+
+        /**
+         * A bus frame from the monitor (headers and spaces on: "3F0 01 02 7F"): the message id and
+         * its data bytes, or null for anything else ("BUFFER FULL", "STOPPED", a cut-off line).
+         */
+        fun frame(line: String): Pair<String, List<Int>>? {
+            val parts = line.trim().uppercase().split(Regex("\\s+"))
+            if (parts.size < 2) return null
+            val id = parts[0]
+            if ((id.length != 3 && id.length != 8) || !id.all { it in "0123456789ABCDEF" }) return null
+            val data = parts.drop(1)
+            if (data.size > 8 || data.any { it.length != 2 || !it.all { c -> c in "0123456789ABCDEF" } }) return null
+            return id to data.map { it.toInt(16) }
         }
 
         /** "12.6V" → 12.6. */

@@ -106,8 +106,11 @@ private const val HEAT = "curveon-gravel-heat"
 enum class SurfacePalette(val label: Int, val gravelDark: String, val softDark: String, val gravelLight: String, val softLight: String) {
     QUIET(R.string.surface_palette_quiet, "#8A919C", "#8F7458", "#9AA0A6", "#B39A82"),
     ROUTE(R.string.surface_palette_route, GRAVEL_COLOR, TRACK_COLOR, "#F57C00", "#AA00FF"),
-    YELLOW(R.string.surface_palette_yellow, "#FFD600", "#FF6E40", "#F9A825", "#E64A19"),
-    GREEN(R.string.surface_palette_green, "#76FF03", "#FFC400", "#2E9E3E", "#EF6C00");
+    YELLOW(R.string.surface_palette_yellow, "#FFD600", "#FF6E40", "#FFD000", "#F4511E"),
+    GREEN(R.string.surface_palette_green, "#76FF03", "#FFC400", "#2EB83E", "#EF6C00");
+
+    fun gravel(dark: Boolean) = if (dark) gravelDark else gravelLight
+    fun soft(dark: Boolean) = if (dark) softDark else softLight
 }
 
 /** Settings → Display: whether the gravel heat map's button shows (planning and on the map); off for riders who don't look for gravel. */
@@ -162,6 +165,8 @@ fun CurveonMapView(
     location: GeoPoint,
     /** The latest fix, carried forward frame by frame so the rider glides instead of hopping. */
     riderFix: com.curveon.data.location.RiderMotion.Fix?,
+    /** The position is simulated (demo ride): a DEMO tag sits at the arrow. */
+    demoRide: Boolean = false,
     headingDeg: Float,
     speedKmh: Float,
     speedLimitKmh: Int,
@@ -1031,11 +1036,9 @@ fun CurveonMapView(
             lineColor(if (!bright) (if (dark) "#EBEBEB" else "#FFFFFF") else if (dark) palette.gravelDark else palette.gravelLight), lineOpacity(countryOpacity),
             lineWidth(if (bright) E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.4f), E.stop(13, 2.2f), E.stop(15, 3.2f))
                 else E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(15, 2.2f))))
-        // The same over the route and GPX tracks, with its dark edge a little wider than the dash.
-        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(if (dark) palette.gravelDark else palette.gravelLight), lineWidth(surfaceWidth(2.8f * wide)))
-        s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(if (dark) palette.softDark else palette.softLight), lineWidth(surfaceWidth(2.2f * wide)))
-        s.getLayer("$SURFACE-over-gravel-casing")?.setProperties(lineWidth(surfaceWidth(2.8f * wide + 1.6f)))
-        s.getLayer("$SURFACE-over-soft-casing")?.setProperties(lineWidth(surfaceWidth(2.2f * wide + 1.6f)))
+        // The same over the route and GPX tracks, slim (see overWidth).
+        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(palette.gravel(dark)))
+        s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(palette.soft(dark)))
     }
 
     // Gravel heat map while planning: counted per routing data file in the background (once), shown
@@ -1126,6 +1129,7 @@ fun CurveonMapView(
         if (hasGpsFix && style != null) {
             RiderHalo(dark, riderColor) { puck }
             RiderArrow(riderOrange) { puck }
+            if (demoRide) RiderDemoTag { puck }
         }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, riderColor, Modifier.matchParentSize()) }
 
@@ -1405,20 +1409,26 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
  * ones under the road names and would hide them): a dark edge under each dash so it reads on any
  * line colour. Same source, filters and palette as the dashes below, shown and hidden with them.
  */
+/**
+ * The dashes over the route and GPX tracks: slim, about 40 % of the line under them, so the route
+ * stays the clear thing to follow and only shows what the ground is like, with a thin dark edge.
+ */
+private fun overWidth(extra: Float) = E.interpolate(E.linear(), E.zoom(),
+    E.stop(SURFACE_ZOOM - 1, 2.4f + extra), E.stop(14, 4.4f + extra), E.stop(17, 6.4f + extra))
+
 private fun addSurfaceOverLayers(s: Style, dark: Boolean) {
-    fun over(kind: String, dash: Array<Float>, base: Float, color: String) = listOf(
+    fun over(kind: String, dash: Array<Float>, color: String) = listOf(
         LineLayer("$SURFACE-over-$kind-casing", SURFACE).withProperties(
-            lineColor(if (dark) "#000000" else "#202020"), lineOpacity(0.7f), lineWidth(surfaceWidth(base + 1.6f)),
+            lineColor(if (dark) "#000000" else "#202020"), lineOpacity(0.55f), lineWidth(overWidth(1.2f)),
             lineDasharray(dash), lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
         ).withFilter(E.eq(E.get("kind"), E.literal(kind))),
         LineLayer("$SURFACE-over-$kind", SURFACE).withProperties(
-            lineColor(color), lineWidth(surfaceWidth(base)), lineDasharray(dash),
+            lineColor(color), lineWidth(overWidth(0f)), lineDasharray(dash),
             lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
         ).withFilter(E.eq(E.get("kind"), E.literal(kind)))
     )
     val palette = SurfacePalette.QUIET
-    (over("soft", arrayOf(2f, 1.5f), 2.2f, if (dark) palette.softDark else palette.softLight) +
-        over("gravel", arrayOf(2.5f, 1.5f), 2.8f, if (dark) palette.gravelDark else palette.gravelLight)).forEach { l ->
+    (over("soft", arrayOf(2f, 1.5f), palette.soft(dark)) + over("gravel", arrayOf(2.5f, 1.5f), palette.gravel(dark))).forEach { l ->
         l.minZoom = SURFACE_ZOOM
         s.addLayer(l)
     }
@@ -1676,6 +1686,25 @@ private fun RiderHalo(dark: Boolean, color: Color, puck: () -> Puck?) {
         val size = androidx.compose.ui.geometry.Size(2 * p.haloRx, 2 * p.haloRy)
         drawOval(fill, topLeft, size)
         drawOval(edge, topLeft, size, style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
+    }
+}
+
+/** "DEMO" right under the arrow while the ride is a simulation, so it can't be taken for a real one. */
+@Composable
+private fun RiderDemoTag(puck: () -> Puck?) {
+    val below = with(androidx.compose.ui.platform.LocalDensity.current) { 26.dp.toPx() }
+    Box(
+        Modifier
+            .graphicsLayer {
+                val p = puck()
+                alpha = if (p == null) 0f else 1f
+                if (p != null) { translationX = p.x - size.width / 2; translationY = p.y + below }
+            }
+            .clip(RoundedCornerShape(50)).background(NeonAmber).border(2.dp, Color.Black, RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 3.dp)
+            .testTag("demo_ride_tag")
+    ) {
+        Text(stringResource(R.string.map_demo_ride), color = Color.Black, fontSize = 14.sp, lineHeight = 14.sp, fontWeight = FontWeight.Black, maxLines = 1)
     }
 }
 

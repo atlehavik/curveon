@@ -75,7 +75,7 @@ private fun Gauge(v: ObdValue, s: ObdState?, modifier: Modifier) {
     }
     // Text, share of the bar (null = no bar) and whether it's a warning.
     val (text, share, warn) = when (v) {
-        ObdValue.FUEL -> Triple(s?.fuelPercent?.let { "$it %" }, s?.fuelPercent?.div(100f), (s?.fuelPercent ?: 100) < 20)
+        ObdValue.FUEL -> Triple(s?.fuelLiters?.let { "%.1f L".format(it) } ?: s?.fuelPercent?.let { "$it %" }, s?.fuelPercent?.div(100f), (s?.fuelPercent ?: 100) < 20)
         ObdValue.RPM -> Triple(s?.rpm?.toString(), s?.rpm?.div(MAX_RPM), (s?.rpm ?: 0) > REDLINE_RPM)
         ObdValue.COOLANT -> Triple(s?.coolantC?.let { "$it °C" }, null, (s?.coolantC ?: 0) > 105)
         ObdValue.VOLTAGE -> Triple(s?.voltage?.let { "%.1f V".format(it) }, null, (s?.voltage ?: 13f) < 12f)

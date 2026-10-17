@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,12 +59,16 @@ data class SettingsState(
     /** The chosen adapter's address, [com.curveon.data.obd.ObdLink.DEMO], or null. */
     val obdDevice: String?,
     val obdValues: List<com.curveon.data.obd.ObdValue>,
+    /** The fuel gauge has a tank table and a signal (Settings → Engine → Fuel gauge setup). */
+    val fuelSetUp: Boolean = false,
     val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
     val arrowLead: Double = com.curveon.data.location.RiderMotion.DEFAULT_LEAD_S,
     val showSurfaces: Boolean,
     val surfacePalette: SurfacePalette = SurfacePalette.QUIET,
     val surfacePaletteWhilePlanning: Boolean = false,
+    /** Whether the map is drawn dark now, so the dash colours are shown as they look on it. */
+    val mapDark: Boolean = true,
     val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,
     val showAltitude: Boolean,
     val showRoadInfo: Boolean = true,
@@ -99,6 +104,7 @@ class SettingsActions(
     val onObd: (Boolean) -> Unit,
     val onObdDevice: (String?) -> Unit,
     val onObdValue: (com.curveon.data.obd.ObdValue) -> Unit,
+    val onFuelSetup: () -> Unit = {},
     val onAutoZoom: (Boolean) -> Unit,
     val onArrowLead: (Double) -> Unit = {},
     val onShowSurfaces: (Boolean) -> Unit,
@@ -185,13 +191,13 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)
                         }
                         Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = {
-                            if (state.showSurfaces) SurfaceColours(state.surfacePalette, state.surfacePaletteWhilePlanning, actions.onSurfacePaletteWhilePlanning)
+                            if (state.showSurfaces) SurfaceColours(state.surfacePalette, state.mapDark, state.surfacePaletteWhilePlanning, actions.onSurfacePaletteWhilePlanning)
                         }) {
                             // Standard (no dashes) or one of the dash colours, each shown as drawn.
                             Choice(listOf<SurfacePalette?>(null) + SurfacePalette.entries, state.surfacePalette.takeIf { state.showSurfaces },
                                 { stringResource(it?.label ?: R.string.settings_surfaces_off) },
                                 { p -> actions.onShowSurfaces(p != null); if (p != null) actions.onSurfacePalette(p) },
-                                icon = { PaletteSample(it) })
+                                icon = { PaletteSample(it, state.mapDark) })
                         }
                         Setting(stringResource(R.string.settings_gravel_heat), stringResource(R.string.settings_gravel_heat_hint)) {
                             CockpitSwitch(state.gravelHeatButton == GravelHeatButton.MAP, onCheckedChange = {
@@ -409,6 +415,19 @@ private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsAc
                 )
             }
         }
+    }
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant)
+            .clickable(onClick = actions.onFuelSetup).padding(horizontal = 14.dp, vertical = 12.dp).testTag("settings_fuel_setup"),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.settings_fuel_setup), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.settings_fuel_setup_hint), color = TextSecondary, fontSize = 12.sp)
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(stringResource(if (state.fuelSetUp) R.string.settings_fuel_setup_done else R.string.settings_fuel_setup_open),
+            color = if (state.fuelSetUp) EcoGreen else NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
     SectionTitle(stringResource(R.string.settings_obd_values))
     com.curveon.data.obd.ObdValue.entries.forEach { v ->
@@ -642,15 +661,15 @@ private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
 }
 
 /**
- * The key under the dash colours chosen above: gravel and soft ground as drawn on the dark map,
+ * The key under the dash colours chosen above: gravel and soft ground as drawn on the map in use,
  * and whether the colours are only for planning.
  */
 @Composable
-private fun SurfaceColours(palette: SurfacePalette, whilePlanning: Boolean, onWhilePlanning: (Boolean) -> Unit) {
+private fun SurfaceColours(palette: SurfacePalette, dark: Boolean, whilePlanning: Boolean, onWhilePlanning: (Boolean) -> Unit) {
     Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        DashSample(palette.gravelDark)
+        DashSample(palette.gravel(dark))
         Text(stringResource(R.string.surface_gravel), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, end = 16.dp))
-        DashSample(palette.softDark)
+        DashSample(palette.soft(dark))
         Text(stringResource(R.string.surface_soft), color = TextMuted, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 6.dp))
     }
     if (palette != SurfacePalette.QUIET) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -659,13 +678,13 @@ private fun SurfaceColours(palette: SurfacePalette, whilePlanning: Boolean, onWh
     }
 }
 
-/** A dash colour set in the Veidekke list: gravel then soft ground, as drawn on the dark map; blank for Standard, to line up. */
+/** A dash colour set in the Veidekke list: gravel then soft ground, as drawn on the map in use; blank for Standard, to line up. */
 @Composable
-private fun PaletteSample(p: SurfacePalette?) {
+private fun PaletteSample(p: SurfacePalette?, dark: Boolean) {
     if (p == null) { Spacer(Modifier.width(32.dp)); return }
-    DashSample(p.gravelDark, width = 10.dp)
+    DashSample(p.gravel(dark), width = 10.dp)
     Spacer(Modifier.width(4.dp))
-    DashSample(p.softDark, width = 10.dp)
+    DashSample(p.soft(dark), width = 10.dp)
     Spacer(Modifier.width(8.dp))
 }
 

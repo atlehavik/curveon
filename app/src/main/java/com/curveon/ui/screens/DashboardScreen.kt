@@ -85,6 +85,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val offlineMapStatus by viewModel.offlineMapStatus.collectAsStateWithLifecycle()
     val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
     val demoMode by viewModel.demoMode.collectAsStateWithLifecycle()
+    val demoRiding by viewModel.isDemoRiding.collectAsStateWithLifecycle()
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
     val gpxGroups by viewModel.gpxGroups.collectAsStateWithLifecycle()
     val overlayTracks by viewModel.overlayTracks.collectAsStateWithLifecycle()
@@ -639,7 +640,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier.tourTarget(TourTarget.MAP)) {
         CurveonMapView(
             location = currentLocationState.value,
-            riderFix = riderFixState.value,
+            riderFix = riderFixState.value, demoRide = demoRiding,
             headingDeg = telemetryState.value.headingDeg,
             speedKmh = telemetryState.value.speedKmh,
             speedLimitKmh = telemetryState.value.speedLimitKmh,
@@ -959,6 +960,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             val mapDownload by viewModel.mapDownload.collectAsStateWithLifecycle()
             val mapQueue by viewModel.mapQueue.collectAsStateWithLifecycle()
             var showMapCatalog by remember { mutableStateOf(false) }
+            var showFuelSetup by remember { mutableStateOf(false) }
+            val fuelCalibration by viewModel.fuelCalibration.collectAsStateWithLifecycle()
             val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
             val autoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
             LaunchedEffect(Unit) { viewModel.refreshMapStatus() }
@@ -966,11 +969,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 state = SettingsState(
                     language = remember { com.curveon.AppLanguage.current(context) },
                     useMph = useMph, mapTheme = mapTheme, mapDetail = mapDetail, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
-                    obdEnabled = obdEnabled,
+                    obdEnabled = obdEnabled, fuelSetUp = fuelCalibration.source != null && fuelCalibration.tankLiters != null,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, arrowLead = arrowLead, showSurfaces = showSurfaces, surfacePalette = surfacePalette,
-                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     navAlerts = viewModel.navAlerts.collectAsStateWithLifecycle().value,
                     offRouteAlerts = viewModel.offRouteAlerts.collectAsStateWithLifecycle().value,
@@ -1014,6 +1017,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                             .onFailure { runCatching { context.startActivity(android.content.Intent("com.android.settings.TTS_SETTINGS")) } }
                     },
                     onDemoMode = viewModel::setDemoMode,
+                    onFuelSetup = { showFuelSetup = true },
                     onDownloadMap = viewModel::downloadMap,
                     onCancelMapDownload = viewModel::cancelMapDownload,
                     onDeleteMap = viewModel::deleteMap,
@@ -1030,6 +1034,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 openHelp = settingsOnHelp,
                 onDismiss = { showSettings = false }
             )
+            if (showFuelSetup) {
+                FuelSetupDialog(
+                    calibration = fuelCalibration, obd = obdState, capturing = viewModel.fuelCapturing.collectAsStateWithLifecycle().value,
+                    onTank = viewModel::setTankLiters, onRegister = viewModel::registerFuelLevel, onRemove = viewModel::removeFuelLevel,
+                    onUseSource = viewModel::setFuelSource, onReset = viewModel::resetFuelSetup, onDismiss = { showFuelSetup = false }
+                )
+            }
             if (showMapCatalog) {
                 MapCatalogDialog(
                     catalog = viewModel.mapCatalog, installed = installedMaps, download = mapDownload, queue = mapQueue,
@@ -1419,3 +1430,4 @@ private fun savedToast(t: RouteSaveTargets) = when {
     t.toPlanned -> R.string.toast_saved_to_planned
     else -> R.string.toast_saved_to_gpx
 }
+

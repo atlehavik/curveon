@@ -2,6 +2,10 @@
   {
     "version": "1.2",
     "en": [
+      "Fuel gauge setup (Settings → Engine): a step-by-step checklist that teaches Curveon which value from your bike is the fuel level. Register empty, a litre or two, half and full whenever you refuel; the gauge then shows litres, gets more exact with every level, and it is all kept for next time",
+      "While a demo ride is on, a clear DEMO tag follows the rider arrow on the map, so you never mistake it for a real ride",
+      "Yellow and Green gravel now look yellow and green on the light map too, and Settings shows the colours as the map you are using draws them",
+      "Gravel dashes over your route and GPX tracks are slimmer, so the route is easy to follow on gravel roads",
       "A route with lots of waypoints (like a TET track) no longer fills the planner with a long row of fake stops: only the stops you added yourself are listed",
       "Spoken navigation: \"In 300 metres, turn right onto …\" in the language Curveon is shown in, with Android's own voice (Settings → Navigation → Sound). In the helmet through the phone when the tablet is linked to it",
       "Navigation sounds: soft notes before a turn and a tick at it, in the ear you turn towards, a chime on arriving, and sounds for leaving and getting back on the route",
@@ -18,6 +22,10 @@
       "A GPX track or an earlier ride can be turned into an ordinary route (the button at the top of the preview), so you can adjust it, add stops and save the adjusted route as a new GPX track"
     ],
     "nb": [
+      "Oppsett av drivstoffmåler (Innstillinger → Motor): en steg-for-steg-sjekkliste som lærer Curveon hvilken verdi fra motorsykkelen som er drivstoffnivået. Registrer tom, en liter eller to, halv og full hver gang du tanker; da viser måleren liter, blir mer nøyaktig for hvert nivå, og alt huskes til neste gang",
+      "Mens demoturen går følger et tydelig DEMO-merke rytterpilen på kartet, så du aldri tar den for en ekte tur",
+      "Gul og grønn grus ser nå gul og grønn ut også på det lyse kartet, og Innstillinger viser fargene slik kartet du bruker tegner dem",
+      "Grusstripene over ruten din og GPX-spor er slankere, så ruten er lett å følge på grusveier",
       "En rute med mange hjelpepunkter (som et TET-spor) fyller ikke lenger planleggeren med en lang rad falske stopp: bare stoppene du la til selv vises",
       "Talenavigasjon: «Om 300 meter, sving til høyre inn på …» på språket Curveon vises på, med Androids egen stemme (Innstillinger → Navigasjon → Lyd). I hjelmen gjennom telefonen når nettbrettet er koblet til den",
       "Navigasjonslyder: myke toner før en sving og et tikk i svingen, i øret du svinger mot, en klokke ved ankomst, og lyder når du kjører av og tilbake på ruten",
@@ -107,7 +115,11 @@
   },
   {
     "version": "1.0",
-    "en": ["First release"],
-    "nb": ["Første versjon"]
+    "en": [
+      "First release"
+    ],
+    "nb": [
+      "Første versjon"
+    ]
   }
 ]
