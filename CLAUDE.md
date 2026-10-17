@@ -85,6 +85,17 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   the user reports back.
 - Bluetooth, real calls, tunnel dead reckoning and gyro lean can't be verified in the emulator;
   say so rather than claiming they work.
+- **A redesign keeps what the rider could do.** Before removing or replacing a button, step, setting
+  or mode, list what the old version could do and check that every item is still possible. If
+  something is dropped on purpose, say so in the plan first and ask; never decide it silently. Change
+  only what was asked: improving *how* something works (e.g. finding the fuel signal) is not
+  permission to remove a neighbouring feature (e.g. the tank table).
+- **Plan before a bigger change.** For a change that touches several files, write 3–4 lines first:
+  what changes, what stays, and what (if anything) is removed. Then implement.
+- **Read the build before committing.** Look at the whole output of `./gradlew` and `adb install`.
+  `BUILD FAILED`, `INSTALL_FAILED…` or a non-zero exit means it is not done: find the cause and
+  say what it was before committing or reporting success. A failure that is expected (e.g.
+  `installDebug` over the release-signed Pixel) is handled (`ANDROID_SERIAL=<device>`), not ignored.
 - Commit messages describe the change from the rider's point of view (see `git log`).
 - **Changelog and release notes** (`app/src/main/assets/changelog.json`, the GitHub release text)
   are what riders read on their phones before updating. Write them easy to read and a little
