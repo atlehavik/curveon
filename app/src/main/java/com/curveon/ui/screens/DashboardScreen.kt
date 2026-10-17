@@ -327,6 +327,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var editLine by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
     LaunchedEffect(selectedLine) { if (selectedLine != null) editLine = selectedLine }
     val selectedCandidate = preview?.candidates?.getOrNull(preview!!.selected)
+    /** The tapped point as a via point (white dot), put where it falls along the route so the order stays right. */
+    val addShapingPoint: (GeoPoint) -> Unit = { p ->
+        val goal = planGoal
+        if (goal != null) {
+            val line = selectedCandidate?.route?.points?.map { GeoPoint(it.lat, it.lon) }.orEmpty()
+            val index = com.curveon.ui.components.legIndexAt(goal.stops.map { GeoPoint(it.point.lat, it.point.lon) }, line, p) ?: goal.stops.size
+            scope.launch { viewModel.insertPreviewStop(index, p, viewModel.describePoint(p), via = true) }
+        }
+    }
     // Point by point shows the trip's points the same way, so they can be dragged while building it
     // (and the map stays where the rider is tapping instead of fitting the whole trip each time).
     val planningOnMap = chaining && planGoal != null
@@ -470,6 +479,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 asking = picked?.takeIf { chaining }?.let { it.second ?: "…" },
                 onAlongTheWay = { picked?.let { (p, n) -> alongTheWay = true; picked = null; planPointByPoint(p, n ?: "") } },
                 onNewEnd = { picked?.let { (p, n) -> alongTheWay = false; picked = null; planPointByPoint(p, n ?: "") } },
+                onShapingPoint = { picked?.let { (p, _) -> picked = null; addShapingPoint(p) } },
+                onDismissAsk = { picked = null },
                 tripSummary = tripSummary.takeIf { planGoal != null },
                 busy = preview?.calculating == true || preview?.fetching != null,
                 canUndo = preview?.canUndo == true,

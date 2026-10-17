@@ -118,6 +118,14 @@ internal fun legAt(editor: RouteEditor, line: List<GeoPoint>, along: Double): In
     return stopAt.count { it <= along.toInt() }
 }
 
+/** The stop number a via point at [p] gets in a trip with [stops] (in order) along [line]; null when there is no line. */
+internal fun legIndexAt(stops: List<GeoPoint>, line: List<GeoPoint>, p: GeoPoint): Int? {
+    if (line.size < 2) return null
+    val along = nearestAlong(line, p.latitude, p.longitude, Double.MAX_VALUE) ?: return null
+    var from = 0
+    return stops.map { s -> nearestIndex(line, s, from).also { from = it } }.count { it <= along.toInt() }
+}
+
 /** The point [along] the line (segment index + fraction). */
 internal fun pointAlong(line: List<GeoPoint>, along: Double): GeoPoint {
     val i = along.toInt().coerceIn(0, line.size - 2)

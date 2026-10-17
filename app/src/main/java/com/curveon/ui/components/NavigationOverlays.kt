@@ -528,6 +528,10 @@ fun MapPickBar(
     asking: String? = null,
     onAlongTheWay: () -> Unit = {},
     onNewEnd: () -> Unit = {},
+    /** The first point tapped becomes a via point (a white dot to shape the route), not a stop. */
+    onShapingPoint: () -> Unit = {},
+    /** Give up the tapped point (a mistaken tap). */
+    onDismissAsk: () -> Unit = {},
     /** Why the trip's route couldn't be found, instead of the hint. */
     error: String? = null,
     /** Marking a part of the route to change (on a long trip, so the rest stays as it is); null = no trip to mark on yet. */
@@ -555,20 +559,32 @@ fun MapPickBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Box(Modifier.testTag("map_pick_search")) {
+        if (!(chaining && asking != null)) Box(Modifier.testTag("map_pick_search")) {
             RoundButton(Icons.Default.Search, stringResource(R.string.back_to_search), 48.dp, CockpitSurfaceVariant, accent, onBackToSearch)
         }
         if (chaining && asking != null) {
-            Column(Modifier.weight(1f, fill = false).widthIn(max = 300.dp).padding(horizontal = 4.dp)) {
-                Text(asking, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                Text(stringResource(R.string.pick_ask_stop_or_end), color = TextSecondary, fontSize = 13.sp, maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+            // Two rows so it fits a phone: the tapped place with ✕ above, the three answers below.
+            Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.testTag("map_pick_dismiss")) {
+                        RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 40.dp, CockpitSurfaceVariant, TextPrimary, onDismissAsk)
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(asking, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.pick_ask_stop_or_end), color = TextSecondary, fontSize = 13.sp, maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    PillButton(Icons.Default.RadioButtonUnchecked, stringResource(R.string.pick_shaping_point), CockpitSurfaceVariant, TextPrimary,
+                        Modifier.testTag("map_pick_via"), onShapingPoint)
+                    PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.pick_along_the_way), NeonAmber, Color.Black,
+                        Modifier.testTag("map_pick_along"), onAlongTheWay)
+                    PillButton(Icons.Default.Flag, stringResource(R.string.pick_new_end), ElectricCyan, OnCyanDark,
+                        Modifier.testTag("map_pick_new_end"), onNewEnd)
+                }
             }
-            PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.pick_along_the_way), NeonAmber, Color.Black,
-                Modifier.testTag("map_pick_along"), onAlongTheWay)
-            PillButton(Icons.Default.Flag, stringResource(R.string.pick_new_end), ElectricCyan, OnCyanDark,
-                Modifier.testTag("map_pick_new_end"), onNewEnd)
         } else if (chaining) {
             Row(Modifier.weight(1f, fill = false).widthIn(max = 340.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (busy) CircularProgressIndicator(color = ElectricCyan, strokeWidth = 3.dp, modifier = Modifier.padding(end = 10.dp).size(20.dp))

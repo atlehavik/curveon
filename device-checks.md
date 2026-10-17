@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — Better GPX → route, route points, cancel a tap
+
+- [ ] Make TET N-01 Øyermoen–Blåhø into a route ("Juster som en rute"). It now adds extra points
+      where the track takes a side road the router would skip (takes a bit longer to appear). Check
+      the route follows the track's small roads, and that it doesn't need manual fixing.
+- [ ] While adjusting a route, tap a road with "+ Stopp": the bar now has Hjelpepunkt (white dot),
+      På veien and Nytt mål, and a ✕ to drop a mistaken tap. Check it fits the Pixel in portrait.
+
 ## 2026-10-17 — GPX track or ride as a route
 
 - [ ] Open a GPX track (GPX → track → follow/preview) and tap the new "Change it like a route"

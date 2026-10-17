@@ -622,6 +622,7 @@
     <string name="pick_hint_start">Trykk i kartet der turen starter</string>
     <string name="pick_hint_next_point">Trykk for nytt punkt, dra for å bøye ruta</string>
     <string name="pick_ask_stop_or_end">Stopp på veien, eller nytt mål?</string>
+    <string name="pick_shaping_point">Hjelpepunkt</string>
     <string name="pick_along_the_way">På veien</string>
     <string name="pick_new_end">Nytt mål</string>
     <string name="back_to_search">Tilbake til søket</string>

@@ -624,6 +624,7 @@
     <string name="pick_hint_start">Tap the map where the trip starts</string>
     <string name="pick_hint_next_point">Tap to add a point, drag to bend the route</string>
     <string name="pick_ask_stop_or_end">A stop on the way, or the new end?</string>
+    <string name="pick_shaping_point">Route point</string>
     <string name="pick_along_the_way">On the way</string>
     <string name="pick_new_end">New end</string>
     <string name="back_to_search">Back to search</string>

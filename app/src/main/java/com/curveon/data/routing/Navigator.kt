@@ -473,7 +473,22 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         scope.launch {
             val first = g.points.first()
             val last = g.points.last()
-            val vias = pointsAlong(g.points, TRACK_VIA_SPACING_M).map { Stop(describePlace(it), it, via = true) }
+            val tiles = tilesAround(g.points)
+            // Points where the track leaves what the router would choose, so side roads it took are kept.
+            val along = if (canRoute(tiles)) {
+                _state.value = _state.value.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_following, g.name)))
+                try {
+                    fetchRoutingData(tiles)
+                    withContext(Dispatchers.Default) { TrackFollower(engine).viaPoints(g.points, g.options) }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    pointsAlong(g.points, TRACK_VIA_SPACING_M)
+                } finally {
+                    if (_state.value.status is RoutingStatus.Calculating) _state.value = _state.value.copy(status = RoutingStatus.Idle)
+                }
+            } else pointsAlong(g.points, TRACK_VIA_SPACING_M)
+            val vias = along.map { Stop(describePlace(it), it, via = true) }
             val start = Stop(describePlace(first), first)
             // Still the same track on screen?
             if (_state.value.preview?.goal != g) return@launch
