@@ -13,6 +13,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
       15 s apart), fill to the first click, park the same way, enter the pump litres, After filling. Do it at two
       refuellings. Step 4 should then offer a reading that rises or falls with the litres; pick it and check that
       step 5 and the dashboard Fuel show litres that match the bike's own gauge.
+- [ ] Step 6 (fine-tune): with the reading chosen, register a level you know (e.g. after pouring in 2 L from a can, or Full): it is read ~40 s and listed in step 3; the litres on the dashboard follow the table. Remove it again with its cross: the chosen reading stays.
 - [ ] If step 4 offers nothing: it says whether the adapter heard the bus at all. Pull `files/navtrace/obd-*.txt` and send it.
 - [ ] Remove a refuelling with its cross (both levels go); the chosen reading goes too when only one refuelling is left.
 - [ ] Leave the Before reading for over 30 min, then After: it says the reading is too old and must be removed.

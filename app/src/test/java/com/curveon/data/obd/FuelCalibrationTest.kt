@@ -67,6 +67,24 @@ class FuelCalibrationTest {
         assertEquals(1, done.sessions)
     }
 
+    @Test fun levelsTypedInToFineTuneNeverSteerTheChoiceOfSignal() {
+        // A wrong guess (and one with no reading of the fuel at all) must neither spoil nor change what is found.
+        val wrong = FuelPoint(2f, mapOf("can:3F0:2" to 250), 5L)
+        val bare = FuelPoint(9f, mapOf("can:100:0" to 7), 6L)
+        assertEquals(FuelAnalysis.candidates(points).map { it.signal }, FuelAnalysis.candidates(points + wrong + bare).map { it.signal })
+        assertEquals(4, FuelCalibration(points = points + wrong).fillLevels)
+    }
+
+    @Test fun theTankTableUsesTheLevelsTypedInAsWell() {
+        // The gauge is not linear: at 8 L the bike reads more than a straight line from 6 L to 10 L says.
+        val c = FuelCalibration(tankLiters = tank, points = points + FuelPoint(8f, mapOf("can:3F0:2" to 12 + 8 * 15 + 20), 5L), source = "can:3F0:2")
+        assertEquals(8f, c.liters(12 + 8 * 15 + 20)!!, 0.01f)
+        // Taking it back puts the straight line back, and the chosen reading stays: it never rested on it.
+        val back = c.without(5L)
+        assertEquals("can:3F0:2", back.source)
+        assertEquals(8f, back.liters(12 + 8 * 15)!!, 0.01f)
+    }
+
     @Test fun takingBackARefuellingRemovesBothLevelsAndTheReadingItNoLongerSupports() {
         val c = FuelCalibration(tankLiters = tank, points = points, source = "can:3F0:2")
         // Either level of a refuelling takes the pair with it; three refuellings still support the reading.

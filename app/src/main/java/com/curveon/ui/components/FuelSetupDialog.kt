@@ -49,6 +49,7 @@ fun FuelSetupDialog(
     obd: ObdState,
     capturing: Boolean,
     onTank: (Float?) -> Unit,
+    onRegister: (liters: Float, onDone: (Boolean) -> Unit) -> Unit,
     onBefore: (onDone: (Boolean) -> Unit) -> Unit,
     onAfter: (pumped: Float, onDone: (Boolean) -> Unit) -> Unit,
     onCancelFill: () -> Unit,
@@ -61,7 +62,7 @@ fun FuelSetupDialog(
     var failed by remember { mutableStateOf(false) }
     var confirmReset by remember { mutableStateOf(false) }
     val candidates = remember(calibration.points) { FuelAnalysis.candidates(calibration.points) }
-    val levels = calibration.distinctLevels
+    val levels = calibration.fillLevels
     val tank = calibration.tankLiters
     val before = calibration.before
     val now = remember(before, capturing) { System.currentTimeMillis() }
@@ -144,8 +145,8 @@ fun FuelSetupDialog(
                             if (litres != null && !fits) Text(stringResource(R.string.fuel_pumped_wrong, "%.0f".format(FuelCalibration.MIN_FILL), tank?.let { "%.1f".format(it) } ?: "–"), color = NeonAmber, fontSize = 12.sp)
                         }
                     }
-                    if (tank == null) Text(stringResource(R.string.fuel_tank_first), color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     if (!can) Text(stringResource(R.string.fuel_connect_first), color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    if (tank == null) Text(stringResource(R.string.fuel_tank_first), color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     if (failed) Text(stringResource(R.string.fuel_read_failed), color = WarningRed, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
@@ -184,6 +185,26 @@ fun FuelSetupDialog(
                     obd.fuelLiters?.let { stringResource(R.string.fuel_now, "%.1f".format(it)) } ?: stringResource(R.string.fuel_waiting),
                     color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.testTag("fuel_now")
                 )
+            }
+
+            Step(6, stringResource(R.string.fuel_step_tune), calibration.points.any { it.session == 0L }) {
+                Text(stringResource(R.string.fuel_step_tune_body), color = TextSecondary, fontSize = 13.sp)
+                if (calibration.source == null) Text(stringResource(R.string.fuel_tune_first), color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                else if (!capturing) {
+                    val can = obd.status == ObdState.Status.CONNECTED
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FuelButton(stringResource(R.string.fuel_register_empty), can, Modifier.testTag("fuel_empty")) { failed = false; onRegister(0f) { ok -> failed = !ok } }
+                        FuelButton(stringResource(R.string.fuel_register_full, tank?.let { "%.1f".format(it) } ?: "–"), can && tank != null, Modifier.testTag("fuel_full")) { failed = false; onRegister(tank!!) { ok -> failed = !ok } }
+                    }
+                    var other by remember { mutableStateOf<Float?>(null) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        LitresField(other, stringResource(R.string.fuel_litres), { other = it }, Modifier.weight(1f).testTag("fuel_other"))
+                        FuelButton(stringResource(R.string.fuel_register_other), can && other != null) { failed = false; onRegister(other!!) { ok -> failed = !ok } }
+                    }
+                    Text(stringResource(R.string.fuel_not_sure), color = TextMuted, fontSize = 12.sp)
+                    if (!can) Text(stringResource(R.string.fuel_connect_first), color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    if (failed) Text(stringResource(R.string.fuel_read_failed), color = WarningRed, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
             if (calibration.points.isNotEmpty() || tank != null || calibration.source != null)

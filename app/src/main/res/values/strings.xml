@@ -577,6 +577,13 @@
     <string name="fuel_fill_row">%1$s → %2$s L (%3$s L pumped)</string>
     <string name="fuel_remove">Remove this refuelling</string>
     <string name="fuel_remove_hint">Entered a wrong number? Remove the refuelling with the cross and do it again. The reading in use is dropped too if what is left no longer supports it.</string>
+    <string name="fuel_step_tune">Fine-tune the gauge (optional)</string>
+    <string name="fuel_step_tune_body">The tank table is made of every level you register, and every refuelling adds two. Gauges are rarely linear, so the more levels in between, the more exact the litres: add one after pouring in a known amount from a can, or when you know what is left. Park the same way each time, with the engine off.</string>
+    <string name="fuel_tune_first">Pick the reading in step 4 first.</string>
+    <string name="fuel_register_empty">Empty (0 L)</string>
+    <string name="fuel_register_full">Full (%1$s L)</string>
+    <string name="fuel_register_other">Register</string>
+    <string name="fuel_not_sure">Not sure how much is left? Don\'t register it. Never run the bike dry on purpose.</string>
     <string name="fuel_before">Before filling</string>
     <string name="fuel_before_hint">Tap it at the pump, before any fuel goes in.</string>
     <string name="fuel_before_saved">Before reading saved at %1$s. Now fill the tank.</string>

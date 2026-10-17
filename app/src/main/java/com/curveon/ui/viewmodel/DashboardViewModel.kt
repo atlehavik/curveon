@@ -471,6 +471,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /**
+     * Fine-tuning the tank table: reads the bike now and keeps it as the tank holding [liters]. Any
+     * amount will do, the table is made of all the levels. The same amount again replaces the earlier one.
+     */
+    fun registerFuelLevel(liters: Float, onDone: (Boolean) -> Unit) {
+        if (_fuelCapturing.value) return
+        _fuelCapturing.value = true
+        viewModelScope.launch {
+            val signals = readBikeTwice()
+            _fuelCapturing.value = false
+            if (signals != null) updateFuel { c ->
+                c.copy(points = c.points.filter { it.session != 0L || kotlin.math.abs(it.liters - liters) >= com.curveon.data.obd.FuelCalibration.MIN_LEVEL_GAP / 2 } +
+                    com.curveon.data.obd.FuelPoint(liters, signals, System.currentTimeMillis()))
+            }
+            onDone(signals != null)
+        }
+    }
+
     fun cancelFuelFill() = updateFuel { it.copy(before = null) }
 
     /**

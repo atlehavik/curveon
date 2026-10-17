@@ -27,6 +27,9 @@ data class FuelCalibration(
     val source: String? = null,
     val before: PendingFill? = null
 ) {
+    /** Levels that came from refuellings (litres from the pump): what finding the signal is built on. */
+    val fillLevels get() = copy(points = points.filter { it.session != 0L }).distinctLevels
+
     /** Refuellings registered: each is a before and an after reading of litres known from the pump. */
     val sessions get() = points.map { it.session }.filter { it != 0L }.distinct().size
 
@@ -108,11 +111,13 @@ object FuelAnalysis {
      *    (odometer, run time, temperatures that follow the season);
      *  - move the same way, by a similar amount per litre, in every refuelling: what the fuel does in
      *    minutes at the pump is the one thing nothing else on the bike does.
-     * Needs [FuelCalibration.SESSIONS_NEEDED] refuellings and [FuelCalibration.LEVELS_NEEDED] levels:
+     * Looks at the refuellings only. Needs [FuelCalibration.SESSIONS_NEEDED] refuellings and [FuelCalibration.LEVELS_NEEDED] levels:
      * with fewer, anything that changed would fit. Engine data known to be something else (revs,
      * speed, temperatures, run time) is left out.
      */
-    fun candidates(points: List<FuelPoint>): List<FuelCandidate> {
+    fun candidates(registered: List<FuelPoint>): List<FuelCandidate> {
+        // Only the refuellings: levels the rider typed in to fine-tune the table must never steer (or spoil) the choice of signal.
+        val points = registered.filter { it.session != 0L }
         val levels = points.sortedBy { it.liters }
         val cal = FuelCalibration(points = points)
         if (cal.distinctLevels < FuelCalibration.LEVELS_NEEDED || cal.sessions < FuelCalibration.SESSIONS_NEEDED) return emptyList()
