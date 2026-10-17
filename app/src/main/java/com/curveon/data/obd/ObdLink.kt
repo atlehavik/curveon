@@ -265,14 +265,19 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         while (scope.isActive) {
             t += 0.25
             level = (level - 1 / 120.0).coerceAtLeast(5.0)
-            // Registering a level: another one each time, so a tank table can be made in a minute.
+            // Registering a refuelling: two readings per level (the second is the control), and the levels
+            // alternate between "before" (DEMO_LEVELS, so give the pump litres of tank × (1 − level)) and full.
             pendingCapture?.let { request ->
                 pendingCapture = null
                 delay(2_000)
-                level = DEMO_LEVELS[captures++ % DEMO_LEVELS.size]
+                val reading = captures++
+                val pair = reading / 2
+                level = if (pair % 2 == 0) DEMO_LEVELS[pair / 2 % DEMO_LEVELS.size] else 100.0
                 request.complete(mapOf(
                     "can:3F0:2" to (level * 2.55).toInt(), "can:3F0:3" to 17,
-                    "can:5A0:1" to (captures * 37 % 100), "pid:0105:0" to 128, "pid:0142:0-1" to 13_900
+                    // A counter (moves between the two readings) and a slow drift (like an odometer).
+                    "can:5A0:1" to (reading * 37 % 100), "can:5B0:0-1" to 1_000 + pair * 3,
+                    "pid:0105:0" to 128, "pid:0142:0-1" to 13_900
                 ))
             }
             val cal = fuelCalibration
@@ -304,7 +309,7 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         private const val FUEL_EVERY_MS = 5_000L
         private const val FUEL_BUS_EVERY_MS = 15_000L
         private const val FUEL_SAMPLES = 5
-        private val DEMO_LEVELS = listOf(6.0, 98.0, 52.0, 27.0, 75.0)
+        private val DEMO_LEVELS = listOf(25.0, 50.0, 12.5, 75.0)
         /** Every mode-01 PID the bike says it supports, from the survey. */
         private var supportedPids: List<String> = emptyList()
         /** Load, MAP, speed, intake temp, MAF, throttle, fuel rate, fuel level, fuel system/trims. */

@@ -1037,7 +1037,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             if (showFuelSetup) {
                 FuelSetupDialog(
                     calibration = fuelCalibration, obd = obdState, capturing = viewModel.fuelCapturing.collectAsStateWithLifecycle().value,
-                    onTank = viewModel::setTankLiters, onRegister = viewModel::registerFuelLevel, onRemove = viewModel::removeFuelLevel,
+                    onTank = viewModel::setTankLiters, onBefore = viewModel::startFuelFill, onAfter = viewModel::finishFuelFill, onCancelFill = viewModel::cancelFuelFill, onRemove = viewModel::removeFuelLevel,
                     onUseSource = viewModel::setFuelSource, onReset = viewModel::resetFuelSetup, onDismiss = { showFuelSetup = false }
                 )
             }

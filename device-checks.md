@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — Fuel gauge setup: tank twice, engine off (1.2.2)
+
+- [ ] Settings → Engine → Fuel gauge setup, X7 or Pixel with the OBD2 adapter on the bike, engine **off**, ignition on,
+      parked the same way every time. Tank size in step 2. At the pump: Before filling (reads ~40 s: two readings
+      15 s apart), fill to the first click, park the same way, enter the pump litres, After filling. Do it at two
+      refuellings. Step 4 should then offer a reading that rises or falls with the litres; pick it and check that
+      step 5 and the dashboard Fuel show litres that match the bike's own gauge.
+- [ ] If step 4 offers nothing: it says whether the adapter heard the bus at all. Pull `files/navtrace/obd-*.txt` and send it.
+- [ ] Remove a refuelling with its cross (both levels go); the chosen reading goes too when only one refuelling is left.
+- [ ] Leave the Before reading for over 30 min, then After: it says the reading is too old and must be removed.
+- [ ] Old levels registered with the earlier version are listed one by one; they don't count as refuellings, so register two again.
+
 ## 2026-10-17 — Progress when making a GPX track adjustable from the ride sheet (1.2.2)
 
 - [ ] GPX and trips → GPX: ⋮ ... ride menu → Kjør GPX herfra, then tap the adjust (EditRoad) icon in the ride sheet header: the sheet shows "Konverterer …" in cyan above the options until the route appears.
@@ -29,12 +41,6 @@ Commands assume the device is connected over USB. With both connected, pick one 
 - [ ] Settings → Navigation → Demo ride on, start a navigation: a clear amber DEMO tag sits right under the rider arrow
       and follows it. Check it covers nothing (phone upright too). It goes when
       the demo ride is off or navigation stops.
-- [ ] Fuel gauge setup (Settings → Engine, with the OBD2 adapter connected on the bike): go through the
-      steps. Register Empty, one or two levels in between (litres you know) and Full; step 4 should
-      then offer a reading whose values rise or fall with the litres; pick it, step 5 shows litres
-      now. Then check the dashboard's Fuel shows litres (e.g. "9.4 L"). Registering takes ~10 s and
-      pauses the other readings meanwhile. Not verifiable in the emulator (only the Demo adapter).
-      If step 4 finds nothing, pull `files/navtrace/obd-*.txt` and send it.
 
 ## 2026-10-17 — Waypoints hidden in the route planner
 

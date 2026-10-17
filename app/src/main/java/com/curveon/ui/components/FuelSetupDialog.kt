@@ -49,7 +49,9 @@ fun FuelSetupDialog(
     obd: ObdState,
     capturing: Boolean,
     onTank: (Float?) -> Unit,
-    onRegister: (liters: Float, onDone: (Boolean) -> Unit) -> Unit,
+    onBefore: (onDone: (Boolean) -> Unit) -> Unit,
+    onAfter: (pumped: Float, onDone: (Boolean) -> Unit) -> Unit,
+    onCancelFill: () -> Unit,
     onRemove: (at: Long) -> Unit,
     onUseSource: (String?) -> Unit,
     onReset: () -> Unit,
@@ -61,7 +63,10 @@ fun FuelSetupDialog(
     val candidates = remember(calibration.points) { FuelAnalysis.candidates(calibration.points) }
     val levels = calibration.distinctLevels
     val tank = calibration.tankLiters
-    val register: (Float) -> Unit = { l -> failed = false; onRegister(l) { ok -> failed = !ok } }
+    val before = calibration.before
+    val now = remember(before, capturing) { System.currentTimeMillis() }
+    val expired = before != null && now - before.at > FuelCalibration.MAX_FILL_GAP_MS
+    val noBus = calibration.points.isNotEmpty() && calibration.points.none { p -> p.signals.keys.any { it.startsWith("can:") } }
 
     CockpitDialog(
         title = stringResource(R.string.fuel_setup_title), icon = Icons.Default.LocalGasStation, accent = NeonAmber,
@@ -89,33 +94,57 @@ fun FuelSetupDialog(
                 LitresField(tank, stringResource(R.string.fuel_litres), onTank, Modifier.testTag("fuel_tank"))
             }
 
-            Step(3, stringResource(R.string.fuel_step_levels), levels >= FuelCalibration.LEVELS_NEEDED) {
+            Step(3, stringResource(R.string.fuel_step_levels), calibration.sessions >= FuelCalibration.SESSIONS_NEEDED) {
                 Text(stringResource(R.string.fuel_step_levels_body), color = TextSecondary, fontSize = 13.sp)
-                calibration.points.sortedBy { it.liters }.forEach { p ->
+                // A refuelling is one row (its two levels live and die together); a level registered alone keeps its own.
+                val rows = calibration.points.groupBy { if (it.session != 0L) it.session else it.at }.values.sortedBy { g -> g.minOf { it.at } }
+                rows.forEach { g ->
+                    val lo = g.minBy { it.liters }; val hi = g.maxBy { it.liters }
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(CockpitSurfaceVariant).padding(start = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("%.1f L".format(p.liters), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(80.dp))
-                        Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(p.at)), color = TextMuted, fontSize = 12.sp, modifier = Modifier.weight(1f))
-                        IconButton(onClick = { onRemove(p.at) }) { Icon(Icons.Default.Close, stringResource(R.string.delete), tint = TextSecondary) }
+                        Column(Modifier.weight(1f).padding(vertical = 6.dp)) {
+                            Text(
+                                if (g.size > 1) stringResource(R.string.fuel_fill_row, "%.1f".format(lo.liters), "%.1f".format(hi.liters), "%.1f".format(hi.liters - lo.liters))
+                                else "%.1f L".format(lo.liters),
+                                color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold
+                            )
+                            Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(lo.at)), color = TextMuted, fontSize = 12.sp)
+                        }
+                        IconButton(onClick = { onRemove(lo.at) }, modifier = Modifier.testTag("fuel_remove")) { Icon(Icons.Default.Close, stringResource(R.string.fuel_remove), tint = TextSecondary) }
                     }
                 }
+                if (rows.isNotEmpty()) Text(stringResource(R.string.fuel_remove_hint), color = TextMuted, fontSize = 12.sp)
                 if (capturing) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     CircularProgressIndicator(Modifier.size(20.dp), color = NeonAmber, strokeWidth = 2.dp)
                     Text(stringResource(R.string.fuel_reading), color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 } else {
                     val can = obd.status == ObdState.Status.CONNECTED
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FuelButton(stringResource(R.string.fuel_register_empty), can, Modifier.testTag("fuel_empty")) { register(0f) }
-                        FuelButton(stringResource(R.string.fuel_register_full, tank?.let { "%.1f".format(it) } ?: "–"), can && tank != null, Modifier.testTag("fuel_full")) { register(tank!!) }
+                    if (before == null) {
+                        FuelButton(stringResource(R.string.fuel_before), can && tank != null, Modifier.testTag("fuel_before")) { failed = false; onBefore { ok -> failed = !ok } }
+                        Text(stringResource(R.string.fuel_before_hint), color = TextMuted, fontSize = 12.sp)
+                    } else {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                stringResource(if (expired) R.string.fuel_before_expired else R.string.fuel_before_saved, DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(before.at))),
+                                color = if (expired) WarningRed else EcoGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = onCancelFill) { Icon(Icons.Default.Close, stringResource(R.string.cancel), tint = TextSecondary) }
+                        }
+                        if (!expired) {
+                            var pumped by remember { mutableStateOf<Float?>(null) }
+                            val litres = pumped
+                            val fits = litres != null && tank != null && litres >= FuelCalibration.MIN_FILL && litres <= tank
+                            Text(stringResource(R.string.fuel_after_hint), color = TextSecondary, fontSize = 13.sp)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                LitresField(null, stringResource(R.string.fuel_pumped), { pumped = it }, Modifier.weight(1f).testTag("fuel_pumped"))
+                                FuelButton(stringResource(R.string.fuel_after), can && fits, Modifier.testTag("fuel_after")) { failed = false; onAfter(litres!!) { ok -> failed = !ok } }
+                            }
+                            if (litres != null && !fits) Text(stringResource(R.string.fuel_pumped_wrong, "%.0f".format(FuelCalibration.MIN_FILL), tank?.let { "%.1f".format(it) } ?: "–"), color = NeonAmber, fontSize = 12.sp)
+                        }
                     }
-                    var other by remember { mutableStateOf<Float?>(null) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        LitresField(other, stringResource(R.string.fuel_litres), { other = it }, Modifier.weight(1f).testTag("fuel_other"))
-                        FuelButton(stringResource(R.string.fuel_register_other), can && other != null) { register(other!!) }
-                    }
-                    Text(stringResource(R.string.fuel_not_sure), color = TextMuted, fontSize = 12.sp)
+                    if (tank == null) Text(stringResource(R.string.fuel_tank_first), color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     if (!can) Text(stringResource(R.string.fuel_connect_first), color = NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     if (failed) Text(stringResource(R.string.fuel_read_failed), color = WarningRed, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
@@ -124,10 +153,10 @@ fun FuelSetupDialog(
             Step(4, stringResource(R.string.fuel_step_find), calibration.source != null) {
                 Text(stringResource(R.string.fuel_step_find_body), color = TextSecondary, fontSize = 13.sp)
                 when {
-                    levels < FuelCalibration.LEVELS_NEEDED ->
-                        Text(stringResource(R.string.fuel_need_levels, levels), color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    calibration.sessions < FuelCalibration.SESSIONS_NEEDED || levels < FuelCalibration.LEVELS_NEEDED ->
+                        Text(stringResource(R.string.fuel_need_fills, calibration.sessions, FuelCalibration.SESSIONS_NEEDED), color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     candidates.isEmpty() ->
-                        Text(stringResource(R.string.fuel_none_found), color = WarningRed, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(if (noBus) R.string.fuel_none_heard else R.string.fuel_none_found), color = WarningRed, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                     else -> candidates.take(3).forEach { c ->
                         val chosen = c.signal == calibration.source
                         Column(

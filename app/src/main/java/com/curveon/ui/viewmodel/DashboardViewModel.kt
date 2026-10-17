@@ -435,23 +435,49 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setTankLiters(liters: Float?) = updateFuel { it.copy(tankLiters = liters?.takeIf { l -> l > 0f }) }
 
-    /** Reads everything the bike tells now and keeps it as the tank holding [liters]; [onDone] says whether it worked. */
-    fun registerFuelLevel(liters: Float, onDone: (Boolean) -> Unit) {
+    /**
+     * Reads the bike twice, [FUEL_CONTROL_GAP_MS] apart, and keeps what held still: a counter or a
+     * clock can't be the fuel level. Null when the bike could not be read.
+     */
+    private suspend fun readBikeTwice(): Map<String, Int>? {
+        val first = obd.capture() ?: return null
+        delay(FUEL_CONTROL_GAP_MS)
+        val second = obd.capture() ?: return null
+        return com.curveon.data.obd.FuelAnalysis.stable(first, second).takeIf { it.isNotEmpty() }
+    }
+
+    /** The rider is at the pump: keeps what the bike says before any fuel goes in. [onDone] says whether it worked. */
+    fun startFuelFill(onDone: (Boolean) -> Unit) {
         if (_fuelCapturing.value) return
         _fuelCapturing.value = true
         viewModelScope.launch {
-            val signals = obd.capture()
+            val signals = readBikeTwice()
             _fuelCapturing.value = false
-            if (signals != null) updateFuel { c ->
-                // The same amount again replaces the earlier reading of it.
-                c.copy(points = c.points.filter { kotlin.math.abs(it.liters - liters) >= com.curveon.data.obd.FuelCalibration.MIN_LEVEL_GAP / 2 } +
-                    com.curveon.data.obd.FuelPoint(liters, signals, System.currentTimeMillis()))
-            }
+            if (signals != null) updateFuel { it.copy(before = com.curveon.data.obd.PendingFill(signals, System.currentTimeMillis())) }
             onDone(signals != null)
         }
     }
 
-    fun removeFuelLevel(at: Long) = updateFuel { c -> c.copy(points = c.points.filter { it.at != at }) }
+    /** The tank is full and [pumped] litres went in: reads the bike again and keeps both levels. [onDone] says whether it worked. */
+    fun finishFuelFill(pumped: Float, onDone: (Boolean) -> Unit) {
+        if (_fuelCapturing.value) return
+        _fuelCapturing.value = true
+        viewModelScope.launch {
+            val signals = readBikeTwice()
+            _fuelCapturing.value = false
+            val c = signals?.let { _fuelCalibration.value.withRefuel(it, pumped, System.currentTimeMillis()) }
+            if (c != null) updateFuel { c }
+            onDone(c != null)
+        }
+    }
+
+    fun cancelFuelFill() = updateFuel { it.copy(before = null) }
+
+    /**
+     * Removes a level (see [com.curveon.data.obd.FuelCalibration.without]): the rider took back what
+     * was entered, and numbers from a mistaken entry must not stay in use.
+     */
+    fun removeFuelLevel(at: Long) = updateFuel { it.without(at) }
     fun setFuelSource(signal: String?) = updateFuel { it.copy(source = signal) }
     fun resetFuelSetup() = updateFuel { com.curveon.data.obd.FuelCalibration() }
 
@@ -2015,6 +2041,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     companion object {
+        /** Long enough that anything counting seconds has moved, short enough to stand at the pump. */
+        private const val FUEL_CONTROL_GAP_MS = 15_000L
         /** How far along the route give way signs stand on the map. */
         private const val MAP_GIVE_WAY_M = 1_000.0
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)

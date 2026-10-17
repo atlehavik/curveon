@@ -75,7 +75,9 @@ phone, with an optional companion app on the phone when a tablet is used.
   Reply/Dismiss, calls with Answer/Decline, music with full cover art when nothing else needs the space.
 - **Engine panel** (Settings → Engine, optional): fuel, RPM, coolant and battery from an ELM327
   OBD2 adapter paired over Bluetooth (classic serial profile); readings the bike doesn't report stay "–".
-  "Demo" makes up values. Above the music on the tablet; beside it, bottom right, on a phone held upright.
+  "Demo" makes up values. **Fuel gauge setup** finds the fuel signal from two refuellings (reading before and after,
+  litres from the pump, two readings 15 s apart to drop counters; a candidate must read the same on every full tank
+  and move by a similar amount in every refuelling); in Demo, give the pump 75 / 50 / 87.5 / 25 % of the tank. Above the music on the tablet; beside it, bottom right, on a phone held upright.
 - **Spoken replies**: Reply → the phone listens through the headset → the tablet shows what was
   heard → Send.
 - **Welcome tour** on the first start (language first; animated how-tos: how tablet, phone and intercom fit together, Curveon on just a phone, planning, editing a trip on the map, drawing a roundtrip): the screen dims and a lit ring walks over the buttons and
