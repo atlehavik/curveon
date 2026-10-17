@@ -422,6 +422,7 @@
     <string name="preview_roundtrip_title">Rundtur · omtrent %.0f km</string>
     <string name="preview_another_loop">En annen runde</string>
     <string name="preview_reverse">Kjør motsatt vei</string>
+    <string name="preview_track_to_trip">Juster som en rute</string>
     <string name="preview_save">Lagre ruten</string>
     <string name="preview_remove_stop">Fjern stopp</string>
     <string name="remove_point">Fjern punktet</string>

@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — GPX track or ride as a route
+
+- [ ] Open a GPX track (GPX → track → follow/preview) and tap the new "Change it like a route"
+      button next to the reverse arrow. It should become an ordinary trip from the track's start to
+      its end with stops along it ("Adjust route" in the sheet), keep to the track's roads and stay
+      on the map while it recalculates. Drag the line, add a stop, then save it as a GPX track.
+      Check a loop track (start = end) and a long one (200+ km). Same from Rides → Ride again.
+
 ## 2026-10-17 — Recording dot, stop button and merging rides
 
 - [ ] Ride (or demo ride) for a minute, then stand still: after about 5 seconds a red dot should

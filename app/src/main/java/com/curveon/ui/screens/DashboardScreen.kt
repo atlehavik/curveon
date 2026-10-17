@@ -558,6 +558,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     sketching = true
                 },
                     onReverse = viewModel::reversePreviewTrack,
+                    onTrackToTrip = viewModel::trackToTrip,
                     onSave = askSaveName,
                     onGo = viewModel::startPreview,
                     onClose = viewModel::cancelPreview,

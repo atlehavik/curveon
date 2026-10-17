@@ -69,6 +69,8 @@ fun RoutePreviewSheet(
     onMoveStop: (index: Int, delta: Int) -> Unit = { _, _ -> },
     onEditStart: () -> Unit = {},
     onReverse: () -> Unit = {},
+    /** A track made into an ordinary trip, to change like one. */
+    onTrackToTrip: () -> Unit = {},
     /** Pick another place for stop i (search or map). */
     onChangeStop: (Int) -> Unit = {},
     /** Put a new stop just before stop i. */
@@ -147,6 +149,7 @@ fun RoutePreviewSheet(
             )
             if (goal is NavigationGoal.Roundtrip || goal is NavigationGoal.Adventure || (goal as? NavigationGoal.Destination)?.loop != null || (goal as? NavigationGoal.Destination)?.adventure != null) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
+            if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.EditRoad, stringResource(R.string.preview_track_to_trip), onTrackToTrip)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
             // A trip on the map may be half an hour of planning: ask before throwing it away.

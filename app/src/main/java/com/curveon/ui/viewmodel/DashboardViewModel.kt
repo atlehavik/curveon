@@ -1599,6 +1599,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun selectAdventureSuggestion(i: Int) = navigator.selectAdventureSuggestion(i)
 
     fun reversePreviewTrack() = navigator.reversePreviewTrack()
+    fun trackToTrip() = navigator.trackToTrip()
 
     fun cancelPreview() = navigator.cancelPreview()
 

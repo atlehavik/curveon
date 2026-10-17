@@ -424,6 +424,7 @@
     <string name="preview_roundtrip_title">Roundtrip · about %.0f km</string>
     <string name="preview_another_loop">Another loop</string>
     <string name="preview_reverse">Ride it the other way</string>
+    <string name="preview_track_to_trip">Change it like a route</string>
     <string name="preview_save">Save route</string>
     <string name="preview_remove_stop">Remove stop</string>
     <string name="remove_point">Remove point</string>

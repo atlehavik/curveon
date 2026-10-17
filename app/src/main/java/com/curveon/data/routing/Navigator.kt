@@ -461,6 +461,35 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         preview(g.copy(points = g.points.reversed()))
     }
 
+    /**
+     * The previewed track (a GPX track or a ride) made into an ordinary trip, to change like one
+     * (stops, road style, dragging it on the map) and keep as a route or a GPX track: it starts and ends
+     * where the track does, with via points along it so the route keeps to its roads.
+     */
+    fun trackToTrip() {
+        val p = _state.value.preview ?: return
+        val g = p.goal as? NavigationGoal.Track ?: return
+        if (g.points.size < 2) return
+        scope.launch {
+            val first = g.points.first()
+            val last = g.points.last()
+            val vias = pointsAlong(g.points, TRACK_VIA_SPACING_M).map { Stop(describePlace(it), it, via = true) }
+            val start = Stop(describePlace(first), first)
+            // Still the same track on screen?
+            if (_state.value.preview?.goal != g) return@launch
+            previewHistory.clear()
+            val style = RoadStyle.entries.indexOf(g.options.roadStyle)
+            val shown = _state.value.preview?.selectedRoute
+            preview(NavigationGoal.Destination(g.name, last, g.options, vias, start), keepSelection = style, keepHistory = true)
+            // The track's line stays on the map until the route through the points is in.
+            if (shown != null) synchronized(this@Navigator) {
+                val now = _state.value.preview ?: return@launch
+                if (now.candidates[style].route == null && now.candidates[style].error == null) _state.value = _state.value.copy(
+                    preview = now.copy(candidates = now.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, shown) }))
+            }
+        }
+    }
+
     /** Another loop in the same direction and length. */
     fun shuffleRoundtrip() {
         val g = previewedAdventure()
@@ -1107,6 +1136,27 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         private const val REROUTE_COOLDOWN_MS = 10_000L
         /** A loop made into a trip gets about one via point this far apart (close enough to keep its shape). */
         private const val LOOP_VIA_SPACING_M = 8_000.0
+        /** A track made into a trip gets about one via point this far apart: close enough to keep to its roads. */
+        private const val TRACK_VIA_SPACING_M = 5_000.0
+        private const val TRACK_VIA_MAX = 30
+
+        /**
+         * Points along [line], evenly spaced by length about [spacingM] apart (never the ends, never fewer
+         * than 2 or more than [TRACK_VIA_MAX]); none when the line is too short to need any.
+         */
+        internal fun pointsAlong(line: List<LatLon>, spacingM: Double): List<LatLon> {
+            val along = DoubleArray(line.size)
+            for (i in 1 until line.size) along[i] = along[i - 1] +
+                com.curveon.data.location.TripTracker.distanceMeters(line[i - 1].lat, line[i - 1].lon, line[i].lat, line[i].lon)
+            val total = along.last()
+            if (total < spacingM) return emptyList()
+            val count = (total / spacingM).toInt().coerceIn(2, TRACK_VIA_MAX)
+            var next = 0
+            return buildList {
+                for (i in line.indices) while (next < count && along[i] >= total * (next + 1) / (count + 1)) { add(line[i]); next++ }
+            }
+        }
+
         /** An adventure made into a trip gets about one via point this far apart: far enough to keep the roads it was made of, close enough to keep its shape. */
         private const val ADVENTURE_VIA_SPACING_M = 15_000.0
         /** An adventure is planned in this many rounds: the first answers quickly, the others look for a better one. */
