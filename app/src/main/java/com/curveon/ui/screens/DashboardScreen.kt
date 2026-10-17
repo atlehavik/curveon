@@ -873,6 +873,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                             onReverse = { t, r -> viewModel.setTrackReversed(t, r) },
                             onTogglePois = { t, on -> viewModel.setTrackPois(t, on) },
                             onRide = { t -> showGpx = false; viewModel.previewGpx(t, reverse = false, ground = GroundPreference.MIXED) },
+                            onToRoute = { t -> showGpx = false; viewModel.gpxToTrip(t, GroundPreference.MIXED) },
                             onDelete = { viewModel.deleteGpx(it) },
                             onRenameTrack = { t, name -> viewModel.renameTrack(t, name) },
                             onMove = { t, id, name -> viewModel.moveTrack(t, id, name) },

@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-17 — GPX ride button: ride or convert
+
+- [ ] In the GPX list, tap the cyan ride button: a menu with "Kjør GPX herfra" (as before) and
+      "Konverter til justerbar rute". Both show a progress message while they work; converting
+      TET N-01 takes ~15 s. The route should now follow the track everywhere (no red stripes;
+      measured 0 % of the track off the route, was 50 %), with a few hundred white dots.
+
 ## 2026-10-17 — Better GPX → route, route points, cancel a tap
 
 - [ ] Make TET N-01 Øyermoen–Blåhø into a route ("Juster som en rute"). It now adds extra points

@@ -191,6 +191,7 @@
 
     <!-- Navigator -->
     <string name="nav_following">Following %1$s…</string>
+    <string name="nav_converting">Making a route of %1$s…</string>
     <string name="nav_follow_failed">Couldn\'t follow %1$s: %2$s</string>
     <string name="nav_waiting_gps">Waiting for GPS position</string>
     <string name="nav_adding_stop">Adding %1$s…</string>
@@ -465,6 +466,8 @@
         <item quantity="one">Remove %d planned trip?</item>
         <item quantity="other">Remove %d planned trips?</item>
     </plurals>
+    <string name="gpx_ride_from_here">Ride GPX from here</string>
+    <string name="gpx_to_route">Convert to adjustable route</string>
     <string name="ride_now">Ride</string>
     <string name="stat_estimated">Estimated</string>
     <string name="stat_curves">Curves</string>

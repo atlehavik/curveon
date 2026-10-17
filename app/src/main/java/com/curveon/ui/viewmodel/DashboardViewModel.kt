@@ -1555,6 +1555,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             RouteOptions(RoadStyle.FASTEST, SurfacePreference.entries[ground.ordinal]))
     }
 
+    /** A saved GPX track made into an ordinary trip to adjust, in the direction set for it. */
+    fun gpxToTrip(track: GpxTrack, ground: GroundPreference) {
+        val inverted = GpxGroups.reversed(track, track.groupId?.let { id -> gpxGroups.value.firstOrNull { it.id == id } })
+        val pts = com.curveon.data.osm.GpxParser.decodePoints(track.trackPointsJson).map { LatLon(it.latitude, it.longitude) }
+        navigator.gpxToTrip(track.name, if (inverted) pts.reversed() else pts,
+            RouteOptions(RoadStyle.FASTEST, SurfacePreference.entries[ground.ordinal]))
+    }
+
     fun previewSaved(item: RouteItem) {
         when (val g = SavedRoutes.toGoal(item)) {
             is NavigationGoal.Destination -> navigator.previewPlanned(g)

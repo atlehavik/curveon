@@ -36,8 +36,10 @@ class TrackFollower(private val engine: BRouterEngine) {
         val along = DoubleArray(pts.size)
         for (i in 1 until pts.size) along[i] = along[i - 1] + Geo.distance(pts[i - 1], pts[i])
         val vias = sortedSetOf<Int>()
-        var next = START_SPACING_M
-        for (i in 1 until pts.size - 1) if (along[i] >= next) { vias += i; next = along[i] + START_SPACING_M }
+        // A long track starts with fewer points, so there is room left to add where the route leaves it.
+        val spacing = maxOf(START_SPACING_M, along.last() / START_VIAS_MAX)
+        var next = spacing
+        for (i in 1 until pts.size - 1) if (along[i] >= next) { vias += i; next = along[i] + spacing }
         repeat(ROUNDS) {
             val route = try {
                 engine.route(listOf(pts.first()) + vias.map { pts[it] } + pts.last(), options)
@@ -64,7 +66,7 @@ class TrackFollower(private val engine: BRouterEngine) {
             }
             val fresh = added.filter { it in 1 until pts.size - 1 && it !in vias }
             if (fresh.isEmpty()) return vias.map { pts[it] }
-            vias += fresh.take(MAX_VIAS - vias.size)
+            vias += fresh.take((MAX_VIAS - vias.size).coerceAtLeast(0))
             if (vias.size >= MAX_VIAS) return vias.map { pts[it] }
         }
         return vias.map { pts[it] }
@@ -94,9 +96,10 @@ class TrackFollower(private val engine: BRouterEngine) {
         /** The route is off the track where the track is further than this from it. */
         const val DEVIATION_M = 120.0
         /** A stretch away from the route longer than this gets a point for each part of it. */
-        const val MAX_STRETCH_M = 2_000.0
-        const val MAX_VIAS = 80
-        const val ROUNDS = 4
+        const val MAX_STRETCH_M = 1_000.0
+        const val START_VIAS_MAX = 60
+        const val MAX_VIAS = 500
+        const val ROUNDS = 8
         const val VIA_SPACING_M = 1_000.0
         const val ON_TRACK_M = 300.0
         const val VIA_CATCHING_RANGE_M = 150.0

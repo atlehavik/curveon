@@ -190,6 +190,7 @@
 
     <!-- Navigator -->
     <string name="nav_following">Følger %1$s…</string>
+    <string name="nav_converting">Lager rute av %1$s…</string>
     <string name="nav_follow_failed">Kunne ikke følge %1$s: %2$s</string>
     <string name="nav_waiting_gps">Venter på GPS-posisjon</string>
     <string name="nav_adding_stop">Legger til %1$s…</string>
@@ -463,6 +464,8 @@
         <item quantity="one">Fjerne %d planlagte tur?</item>
         <item quantity="other">Fjerne %d planlagte turer?</item>
     </plurals>
+    <string name="gpx_ride_from_here">Kjør GPX herfra</string>
+    <string name="gpx_to_route">Konverter til justerbar rute</string>
     <string name="ride_now">Kjør</string>
     <string name="stat_estimated">Beregnet</string>
     <string name="stat_curves">Svinger</string>

@@ -235,6 +235,8 @@ class GpxActions(
     val onReverse: (GpxTrack, Boolean) -> Unit,
     val onTogglePois: (GpxTrack, Boolean) -> Unit,
     val onRide: (GpxTrack) -> Unit,
+    /** The track made into an ordinary trip to adjust. */
+    val onToRoute: (GpxTrack) -> Unit,
     val onDelete: (GpxTrack) -> Unit,
     val onRenameTrack: (GpxTrack, String) -> Unit,
     val onMove: (GpxTrack, Long?, String?) -> Unit,
@@ -346,10 +348,25 @@ private fun TrackRow(
             }
             if (pois > 0) RowIcon(Icons.Default.Place, stringResource(R.string.gpx_waypoints), if (t.showPois) NeonAmber else TextMuted) { actions.onTogglePois(t, !t.showPois) }
             RowMenu(menu)
-            Box(
-                Modifier.padding(start = 4.dp).size(44.dp).clip(CircleShape).background(ElectricCyan).clickable { actions.onRide(t) },
-                contentAlignment = Alignment.Center
-            ) { Icon(Icons.Default.Navigation, stringResource(R.string.ride), tint = Color(0xFF00363D)) }
+            var rideMenu by remember { mutableStateOf(false) }
+            Box {
+                Box(
+                    Modifier.padding(start = 4.dp).size(44.dp).clip(CircleShape).background(ElectricCyan).clickable { rideMenu = true },
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Default.Navigation, stringResource(R.string.ride), tint = Color(0xFF00363D)) }
+                DropdownMenu(expanded = rideMenu, onDismissRequest = { rideMenu = false }, containerColor = CockpitSurface) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gpx_ride_from_here), color = TextPrimary) },
+                        leadingIcon = { Icon(Icons.Default.Navigation, null, tint = TextSecondary) },
+                        onClick = { rideMenu = false; actions.onRide(t) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.gpx_to_route), color = TextPrimary) },
+                        leadingIcon = { Icon(Icons.Default.EditRoad, null, tint = TextSecondary) },
+                        onClick = { rideMenu = false; actions.onToRoute(t) }
+                    )
+                }
+            }
         }
         if (paletteOpen) Palette(selected = colorInt, onColor = { if (it != null) onColor(it) })
     }
