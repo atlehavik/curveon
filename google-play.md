@@ -39,8 +39,10 @@ Kilde: https://support.google.com/googleplay/android-developer/answer/10208820 (
   Apper som 1881 Hvem Ringer (anropslogg og SMS-logg, uten å være standard ringeapp) bruker mest sannsynlig
   unntaket «Caller ID, spam detection or blocking».
   Appen må være ubrukelig uten tillatelsen (kjernefunksjon), og dataene kan ikke brukes til noe annet.
-  Utfallet er ikke garantert. **Svakhet:** unntaket står sterkest for companion; for hovedappen (som på Pixel
-  er sin egen companion) må vi forklare at tavla er skjermen i kjøretøyet. Reserveplan hvis det avslås: egen
+  Ferdig utkast til søknaden (tekst per app og manus til demovideo): [google-play-call-log.md](google-play-call-log.md).
+  Begge tabellradene i Googles policy dekker `READ_CALL_LOG` (companion: «connected device companion», hovedappen:
+  «in-vehicle hands-free use and projected display» fordi den er navigasjon). Utfallet er ikke garantert.
+  Hovedappen faller under navigasjonsraden også når den er sin egen companion på Pixel. Reserveplan hvis det avslås: egen
   avskalert Play-variant (anropslogg erstattes av en liste Curveon fører selv over anrop den ser), eller
   READ_CALL_LOG bare i companion.
 - **`CALL_PHONE`**: Googles policyside om SMS og anropslogg nevner bare SMS- og anropsloggtillatelsene, ikke

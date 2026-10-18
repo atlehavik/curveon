@@ -8,9 +8,9 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 ## 2026-10-18 — Play preparation: app names without QUERY_ALL_PACKAGES
 
-- [ ] Pixel (installed) and X7: a message in an app that isn't a music app (WhatsApp, Messenger, SMS) still shows with the app's name ("WhatsApp"), not `com.whatsapp`. Also a call/notification from a launcher app you rarely use.
-- [ ] Settings → Navigation/Music: the list of music and podcast apps is the same as before (Spotify, NRK Radio, YouTube Music, ...), and starting one that isn't running still works.
-- [ ] If an app name shows as a package name: `adb shell dumpsys package <package> | grep -i launcher` and tell me which app it was.
+- [x] Pixel (installed) and X7: a message in an app that isn't a music app (WhatsApp, Messenger, SMS) still shows with the app's name ("WhatsApp"), not `com.whatsapp`. Also a call/notification from a launcher app you rarely use.
+- [x] Settings → Navigation/Music: the list of music and podcast apps is the same as before (Spotify, NRK Radio, YouTube Music, ...), and starting one that isn't running still works.
+- [x] If an app name shows as a package name: `adb shell dumpsys package <package> | grep -i launcher` and tell me which app it was.
 
 ## 2026-10-18 — Adventure finds more routes; white Hjelpepunkt button (1.2.2)
 
@@ -1219,8 +1219,6 @@ Norway on the map, then deleted again). Still to try on the X7:
 - [x] Pick two or three countries in a row: they queue ("Waiting") and download one after another;
   Cancel on a waiting one takes it out.
 - [x] Border areas (e.g. Svinesund): roads look normal where the two maps overlap (no doubled labels).
-
-  
 
 ## 2026-10-08 — Bike stays on the road while navigating
 
