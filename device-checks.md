@@ -6,6 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Place names on top, thinner road edge (1.2.2)
+
+- [ ] High contrast, zoomed out: no road runs through a place name; the white halo hides what is under it.
+- [ ] Normal day map in sun: is the thin grey edge (#808080, 1 px) around white roads enough, or too weak now? Say which way to go.
+
 ## 2026-10-18 — Road names beside roads, high contrast while navigating, music player stays put (1.2.2)
 
 - [ ] Road names sit beside the road at zoom 15+, all from the same zoom; readable and not too far from the road (also on wide roads)?

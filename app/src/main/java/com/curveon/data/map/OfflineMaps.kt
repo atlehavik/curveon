@@ -48,7 +48,7 @@ class OfflineMaps(private val context: Context) {
         }
         sources.put(ONLINE_SOURCE, online.getJSONObject("source"))
         val layers = style.getJSONArray("layers")
-        val out = JSONArray()
+        var out = JSONArray()
         for (k in 0 until layers.length()) {
             val layer = layers.getJSONObject(k)
             if (layer.optString("source") != SOURCE) {
@@ -68,6 +68,11 @@ class OfflineMaps(private val context: Context) {
             }
         }
         for (k in 0 until out.length()) roadLabels(out.getJSONObject(k))
+        // Place names last, so no road is drawn over them (and their halo).
+        val rest = JSONArray(); val places = JSONArray()
+        for (k in 0 until out.length()) out.getJSONObject(k).let { if (it.getString("id").substringBefore('~').let { id -> id.startsWith("places_") || id == "online-places" }) places.put(it) else rest.put(it) }
+        for (k in 0 until places.length()) rest.put(places.getJSONObject(k))
+        out = rest
         if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
         style.put("layers", out)
         return style.toString()

@@ -2,6 +2,8 @@
   {
     "version": "1.2.2",
     "en": [
+      "Place names now always lie on top of the roads, so no road runs through them",
+      "On the normal day map the edge around white roads is thinner and lighter again, still clear but a more ordinary map",
       "Road names now sit beside the road instead of cutting across it, and all road names appear from the same zoom level",
       "In high contrast, place names have a wide white background so they stay readable over the dark roads",
       "When you start navigating on the day map, it is always high contrast, whatever you had chosen. When you stop, your own choice is back",
@@ -38,6 +40,8 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
+      "Stedsnavn ligger nå alltid øverst, over veiene, så ingen vei går gjennom dem",
+      "På det vanlige dagkartet er kanten rundt de hvite veiene tynnere og lysere igjen, fortsatt tydelig men mer som et vanlig kart",
       "Veinavn ligger nå ved siden av veien i stedet for å kutte den, og alle veinavn dukker opp på samme zoomnivå",
       "I høykontrast har stedsnavn en bred hvit bakgrunn, så de er lette å lese over de mørke veiene",
       "Når du starter navigasjon på dagkartet, er det alltid høykontrast, uansett hva du hadde valgt. Når du stopper, er ditt eget valg tilbake",

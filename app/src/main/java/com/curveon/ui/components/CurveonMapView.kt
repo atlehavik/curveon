@@ -1049,7 +1049,7 @@ fun CurveonMapView(
             lineColor(com.curveon.data.map.OfflineMaps.HC_ROAD), lineOpacity(countryOpacity),
             lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.6f), E.stop(13, 1.8f), E.stop(15, 2.4f))))
         else s.getLayer("$SURFACE-country-casing")?.setProperties(
-            lineColor(if (!bright) "#A3A3A3" else if (dark) "#000000" else "#202020"), lineOpacity(countryOpacity),
+            lineColor(if (!bright) "#808080" else if (dark) "#000000" else "#202020"), lineOpacity(countryOpacity),
             lineWidth(if (bright) E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 2.8f), E.stop(13, 3.8f), E.stop(15, 5f))
                 else E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(15, 3.6f))))
         if (!hc) s.getLayer("$SURFACE-country")?.setProperties(
@@ -1410,7 +1410,7 @@ private fun addSurfaceLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
         ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until }
     ) else listOf(
         LineLayer("$SURFACE-$kind-casing", SURFACE).withProperties(
-            lineColor("#A3A3A3"), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
+            lineColor("#808080"), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
             lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(15, 3.6f)))
         ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until },
