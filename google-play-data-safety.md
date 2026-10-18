@@ -40,6 +40,19 @@ Ikke avkrysset fordi det ikke forlater enheten eller ikke samles av oss:
   nettverksmetadata hos mottakeren er ikke noe appen «samler».
 - Krasjrapporter: lagres på enheten (`crashes/`), ikke sendt noe sted. (Ikke «Crash logs» i skjemaet.)
 
+## Når kjøregrupper kommer (`groups.md`)
+
+Svarene over gjelder uten grupper. Når gruppene sendes, må skjemaet (og personvernerklæringen) oppdateres for **begge** apper:
+
+- Companion får `INTERNET`: «No data collected» holder ikke lenger automatisk.
+- Posisjon, kallenavn, farge, bilde og delte ruter sendes til reléet, ende-til-ende-kryptert med en nøkkel reléet ikke har.
+  Svar på «Is data encrypted in transit»: ja. Ende-til-ende-kryptert data utvikleren ikke kan lese er etter Googles
+  definisjon ikke «samlet inn», men bare hvis det stemmer i koden **(skjønn, sjekk definisjonen i Console når den tid kommer)**.
+- Reléet ser IP-adresse, `groupId`, `riderId`, tidspunkt og størrelser. Mest sannsynlig må **Device or other IDs**
+  deklareres (samlet, ikke delt, formål App functionality) **(skjønn)**.
+- Funksjonen er valgfri og av som standard; det skal stå i skjemaet («Data collection is optional»).
+- SOS-funksjonen må stå som ikke en nødtjeneste (også for Play-vurderingen).
+
 ## Det som må avklares før innsending
 
 1. **Android-sikkerhetskopi.** `app/src/main/AndroidManifest.xml` har `allowBackup="true"`, og

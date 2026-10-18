@@ -22,7 +22,7 @@ Developer and contact: [name], [email address].
 | **Installed apps** (apps with a launcher icon and music apps) | To show the name of the app that sent a message or plays music | Used on the device only |
 
 Curveon Companion has no internet permission and cannot send anything off the phone: it only talks to your
-Curveon display over Bluetooth.
+Curveon display over Bluetooth. <!-- Only true until the riding groups (groups.md) ship: then rewrite, see google-play.md -->
 
 ## What is sent over the internet (Curveon only)
 

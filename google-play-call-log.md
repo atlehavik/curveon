@@ -74,6 +74,13 @@ Skjermopptak, ca. 60–90 s, uten tale nødvendig, med tekstplakater:
 4. Vis at appen fungerer uten tillatelsen (kortet ber om tillatelse) og at ingenting sendes på nett (companion har ikke INTERNET: `adb shell dumpsys package com.curveon.companion | grep INTERNET` gir ingen treff; bekreftet i manifestet 2026-10-18).
 Emulator har ikke Bluetooth, så opptaket må gjøres på X7 og Pixel.
 
+## Obs: endres når kjøregrupper kommer
+
+Setningen «the companion app has no `INTERNET` permission, so it technically cannot send the call log off the phone»
+gjelder bare til `groups.md` er bygget (da får companion `INTERNET`). Da må teksten i stedet si at anropslogg,
+kontakter og varsler aldri sendes til reléet eller noen server, og at gruppekoden er adskilt fra `:phone`.
+Hvis første Play-versjon sendes uten grupper, kan setningen brukes som den står.
+
 ## Det som ikke er avklart
 
 - Det eksakte skjemaet i Play Console, og om det krever én erklæring per app (trolig ja).

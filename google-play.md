@@ -61,6 +61,29 @@ og alle med `MediaBrowserService`. Det gir de samme appnavnene («Spotify», «W
 uten erklæring. Gjelder begge appene. Risiko: en app som sender varsler uten startikon vises med pakkenavn.
 Sjekkes på enhet (se `device-checks.md`).
 
+## Kjøregrupper (`groups.md`) og Play
+
+Gruppene gjør at **companion får `INTERNET`** (relé over mobildata, slik at tavla kan være offline). Hovedappen har
+`INTERNET` fra før og kjører relé-klienten selv når den er frittstående på mobil eller online tablet. Det som
+endrer seg på Play-siden:
+
+- **Setningen «companion kan ikke sende noe ut på nett» faller bort** når gruppene sendes. Den står i
+  personvernerklæringen, i Data safety-utkastet og som et argument i `google-play-call-log.md`. Argumentet kan
+  erstattes av at anropsloggen (og kontakter og varsler) ikke går til reléet. Det er sant, men må kunne
+  forklares, og anropslogg + internett i samme app vil få mer oppmerksomhet i vurderingen. Hold koden for
+  grupper (`:groups`) adskilt fra `:phone` så det er lett å vise.
+- **Data safety for begge apper:** posisjon (og kallenavn, farge, bilde, ruter) sendes til reléet. Alt er ende-til-ende-kryptert
+  med en nøkkel reléet aldri har. Google regner ende-til-ende-kryptert data som utvikler ikke kan lese som ikke
+  «samlet inn», men det kravet må være sant i koden. Reléet ser likevel IP-adresse, tilfeldige `groupId` og `riderId`
+  og tidspunkt/størrelser: dette er trolig «Device or other IDs» og må med **(skjønn)**.
+- **Personvernerklæringen** må få et eget avsnitt om grupper (valgfritt, av som standard, hva reléet ser, hvor lenge det
+  lagrer: posisjoner lagres ikke, øvrig ca. 30 dager) og si hvem som drifter reléet.
+- **Foreground service og posisjon:** companion trenger en tjeneste av riktig type; deklarasjon og demovideo i Play Console.
+- **Anbefaling: første Play-versjon uten grupper.** Da har companion fortsatt ingen `INTERNET`, den sterkeste
+  setningen i unntakssøknaden står, og første vurdering blir enklere. Gruppene kommer som en oppdatering sammen med
+  oppdatert Data safety og personvernerklæring. Test gruppene i lukket testing og via GitHub-APK først.
+- Domenet som `groups.md` trenger for `https`-invitasjonslenken kan også hoste personvernerklæringen (én løsning for begge).
+
 ## Største risikoer hos Google
 
 1. **`READ_CALL_LOG`**, se over. Største risiko.

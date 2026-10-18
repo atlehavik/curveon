@@ -22,7 +22,7 @@ Utvikler og kontakt: [navn], [e-postadresse].
 | **Installerte apper** (apper med startikon og musikkapper) | For å vise navnet på appen som sendte en melding eller spiller musikk | Brukes bare på enheten |
 
 Curveon Companion har ikke tillatelse til internett og kan ikke sende noe ut av telefonen: den snakker bare
-med Curveon-skjermen din over Bluetooth.
+med Curveon-skjermen din over Bluetooth. <!-- Gjelder bare til kjøregruppene (groups.md) kommer: da må dette skrives om, se google-play.md -->
 
 ## Hva som sendes over internett (bare Curveon)
 
