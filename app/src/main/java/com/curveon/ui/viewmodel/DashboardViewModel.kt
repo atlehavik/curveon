@@ -955,6 +955,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _mapTheme = MutableStateFlow(MapTheme.valueOf(settings.getString("mapTheme", MapTheme.AUTO.name)!!))
     val mapTheme: StateFlow<MapTheme> = _mapTheme.asStateFlow()
 
+    private val _highContrast = MutableStateFlow(settings.getBoolean("highContrast", false))
+    val highContrast: StateFlow<Boolean> = _highContrast.asStateFlow()
+    fun setHighContrast(on: Boolean) { _highContrast.value = on; settings.edit().putBoolean("highContrast", on).apply() }
+
     private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.NORMAL)
     val speedSign: StateFlow<SpeedSignSize> = _speedSign.asStateFlow()
     fun setSpeedSign(size: SpeedSignSize) { _speedSign.value = size; settings.edit().putString("speedSign", size.name).apply() }

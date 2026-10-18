@@ -52,6 +52,7 @@ data class SettingsState(
     val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
+    val highContrast: Boolean = false,
     val mapDetail: MapDetail = MapDetail.RESPONSE,
     val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
@@ -100,6 +101,7 @@ class SettingsActions(
     val onLanguage: (AppLanguage) -> Unit,
     val onUnits: (Boolean) -> Unit,
     val onMapTheme: (MapTheme) -> Unit,
+    val onHighContrast: (Boolean) -> Unit = {},
     val onMapDetail: (MapDetail) -> Unit = {},
     val onScreenLock: (com.curveon.ScreenLock) -> Unit,
     val onObd: (Boolean) -> Unit,
@@ -188,6 +190,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_map), stringResource(R.string.settings_map_hint)) {
                             Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
+                        }
+                        Setting(stringResource(R.string.settings_high_contrast), stringResource(R.string.settings_high_contrast_hint)) {
+                            CockpitSwitch(state.highContrast, actions.onHighContrast)
                         }
                         Setting(stringResource(R.string.settings_map_detail), stringResource(R.string.settings_map_detail_hint)) {
                             Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)

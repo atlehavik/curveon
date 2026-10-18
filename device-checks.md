@@ -8,6 +8,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 ## 2026-10-18 — Road card place, small roads on the day map, night arrow (1.2.2)
 
+- [ ] X7 in bright daylight: Settings → Display → High contrast on (map on Day or Auto in daytime). Dark grey roads with black edges and yellow main roads: easy enough to see? Say if the grey should be darker/lighter or the edge wider. Paths and tracks go mid-grey in this mode.
 - [ ] X7 in bright daylight (day map): the small white roads now have a dark edge; are they easy enough to see? Say if the edge should be darker or wider, or if the grey paths/tracks need the same.
 - [ ] Night map while navigating: the arrow has a white edge and a light halo; clear enough on the dark map?
 - [ ] Road card (road number / priority sign): under the speed card in portrait and in the dashboard; centred at the top only on the full-screen map in landscape. Check it doesn't meet the trip bar on the Pixel in landscape.

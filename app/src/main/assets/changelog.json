@@ -2,6 +2,7 @@
   {
     "version": "1.2.2",
     "en": [
+      "New setting, High contrast (Settings → Display): the day map gets dark grey roads with a black edge instead of white ones, so even the small roads are easy to see in bright sun. Main roads stay yellow, now with a clear black edge too",
       "The road card (road number, priority road, give way) now always has its place: under the speed card, and only centred at the top on the full-screen map in landscape. It no longer jumps around depending on room",
       "Small roads are much easier to see on the day map in bright sun: they now have a darker edge that stands out from the map",
       "The arrow on the night map has a white edge and a light halo, so it no longer disappears into the dark map",
@@ -22,6 +23,7 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
+      "Ny innstilling, Høykontrast (Innstillinger → Skjerm): dagkartet får mørkegrå veier med svart kant i stedet for hvite, så selv de små veiene er lette å se i sterk sol. Hovedveiene er fortsatt gule, nå også med tydelig svart kant",
       "Veikortet (veinummer, forkjørsvei, vikeplikt) har nå alltid samme plass: under fartskortet, og bare midtstilt øverst når kartet fyller skjermen i landskap. Det hopper ikke lenger rundt etter hvor det er plass",
       "Små veier er mye lettere å se på dagkartet i sterk sol: de har nå en mørkere kant som skiller seg tydelig fra kartet",
       "Pila på nattkartet har en hvit kant og en lys glorie, så den ikke lenger forsvinner i det mørke kartet",

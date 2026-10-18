@@ -85,6 +85,8 @@
     <string name="settings_altitude">Altitude</string>
     <string name="settings_altitude_hint">Height above sea level under the speed</string>
     <string name="settings_road_info">Road info</string>
+    <string name="settings_high_contrast">High contrast</string>
+    <string name="settings_high_contrast_hint">Day map: dark grey roads with black edges, main roads stay yellow</string>
     <string name="settings_speed_sign">Speed limit sign</string>
     <string name="settings_speed_sign_hint">How big the sign is on the map; a bigger one sticks out of the speed card</string>
     <string name="speed_sign_normal">Normal</string>

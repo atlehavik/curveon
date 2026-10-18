@@ -33,9 +33,10 @@ class OfflineMaps(private val context: Context) {
      * map gets its own source and a copy of each layer right after the first map's, so water, roads
      * and labels still stack in the right order where countries meet. Under them all go the online
      * layers (OpenFreeMap, see tools/map/gen-online-style.py), which the map shows only where no
-     * downloaded map covers the view ([covers]).
+     * downloaded map covers the view ([covers]). [highContrast] (day map only) draws the white roads
+     * dark grey and every road's edge black, main roads staying yellow.
      */
-    fun styleJson(flavor: String): String {
+    fun styleJson(flavor: String, highContrast: Boolean = false): String {
         val maps = installedMaps()
         val style = JSONObject(asset("map/styles/$flavor.json"))
         val online = JSONObject(asset("map/styles/online-$flavor.json"))
@@ -66,8 +67,30 @@ class OfflineMaps(private val context: Context) {
                 out.put(JSONObject(layer.toString()).put("source", sourceName(i)).apply { if (i > 0) put("id", "${layer.getString("id")}~$i") })
             }
         }
+        if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
         style.put("layers", out)
         return style.toString()
+    }
+
+    /** One layer of the day style in high contrast: dark grey where it was white, and black road edges. */
+    private fun highContrast(layer: JSONObject) {
+        val paint = layer.optJSONObject("paint") ?: return
+        val id = layer.getString("id").substringBefore('~')
+        when (id) {
+            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> paint.put("line-color", HC_ROAD)
+            "roads_other", "roads_bridges_other", "online-roads_other" -> paint.put("line-color", HC_PATH)
+            "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "roads_link_casing",
+            "roads_major_casing_early", "roads_major_casing_late", "roads_highway_casing_early", "roads_highway_casing_late",
+            "roads_bridges_link_casing", "roads_bridges_major_casing", "roads_bridges_highway_casing",
+            "online-roads_minor_casing", "online-roads_major_casing", "online-roads_highway_casing" -> {
+                paint.put("line-color", "#000000")
+                // Edge at least this wide wherever it is drawn at all (a 0 stop is where it starts).
+                when (val w = paint.opt("line-width")) {
+                    is JSONArray -> for (i in 4 until w.length() step 2) if (w.optDouble(i, 0.0) > 0.0) w.put(i, HC_EDGE)
+                    is Number -> paint.put("line-width", HC_EDGE)
+                }
+            }
+        }
     }
 
     private fun asset(path: String) = context.assets.open(path).bufferedReader().use { it.readText() }
@@ -128,6 +151,10 @@ class OfflineMaps(private val context: Context) {
 
     companion object {
         private const val SOURCE = "protomaps"
+        /** High contrast: the dark grey that white roads and light paths become, and the black edge's width (px). */
+        private const val HC_ROAD = "#555555"
+        private const val HC_PATH = "#7a7a7a"
+        private const val HC_EDGE = 1.5
         /** How long the list of downloaded maps is trusted before the folder is looked at again. */
         private const val COVERAGE_RECHECK_MS = 10_000L
 

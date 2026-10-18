@@ -84,6 +84,8 @@
     <string name="settings_altitude">Høyde</string>
     <string name="settings_altitude_hint">Høyde over havet under farten</string>
     <string name="settings_road_info">Veiinformasjon</string>
+    <string name="settings_high_contrast">Høykontrast</string>
+    <string name="settings_high_contrast_hint">Dagkartet: mørkegrå veier med svart kant, hovedveiene er fortsatt gule</string>
     <string name="settings_speed_sign">Fartsgrenseskilt</string>
     <string name="settings_speed_sign_hint">Hvor stort skiltet er på kartet; et større stikker ut av fartskortet</string>
     <string name="speed_sign_normal">Normal</string>

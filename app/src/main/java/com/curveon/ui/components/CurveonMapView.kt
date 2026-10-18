@@ -167,6 +167,8 @@ fun CurveonMapView(
     riderFix: com.curveon.data.location.RiderMotion.Fix?,
     /** The position is simulated (demo ride): a DEMO tag sits at the arrow. */
     demoRide: Boolean = false,
+    /** Settings → Display: the day map with dark grey roads and black road edges. */
+    highContrast: Boolean = false,
     headingDeg: Float,
     speedKmh: Float,
     speedLimitKmh: Int,
@@ -587,9 +589,9 @@ fun CurveonMapView(
     }
 
     // Style: day or night. Switching style drops our layers, so they are re-added each time.
-    LaunchedEffect(map, dark, mapVersion) {
+    LaunchedEffect(map, dark, mapVersion, highContrast) {
         val m = map ?: return@LaunchedEffect
-        val json = offlineMaps.styleJson(if (dark) "dark" else "light")
+        val json = offlineMaps.styleJson(if (dark) "dark" else "light", highContrast)
         style = null
         m.setStyle(Style.Builder().fromJson(json)) { s ->
             addOverlayLayers(s, dark)
