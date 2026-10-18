@@ -91,7 +91,7 @@ fun MapCatalogDialog(
                         area = area, indent = indent, split = split, open = area.id in expanded,
                         parts = if (split) catalog.children(area.id).size else 0,
                         installed = area.id in installedIds,
-                        running = (download as? MapDownloadState.Running)?.takeIf { it.areaId == area.id },
+                        running = download.runningFor(area.id),
                         queued = area.id in queue,
                         bytes = downloadBytes(area),
                         onToggle = { expanded = if (area.id in expanded) expanded - area.id else expanded + area.id },

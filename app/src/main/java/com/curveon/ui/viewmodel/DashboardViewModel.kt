@@ -124,7 +124,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _installedMaps = MutableStateFlow(mapDownloads.installed(null))
     val installedMaps: StateFlow<List<com.curveon.data.map.InstalledMap>> = _installedMaps.asStateFlow()
     private val _mapDownload = MutableStateFlow<com.curveon.data.map.MapDownloadState>(com.curveon.data.map.MapDownloadState.Idle)
-    val mapDownload: StateFlow<com.curveon.data.map.MapDownloadState> = _mapDownload.asStateFlow()
+    /** A country whose map is in place and whose routing and search are being fetched while the next map downloads. */
+    private val _mapFinishing = MutableStateFlow<com.curveon.data.map.MapDownloadState.Running?>(null)
+    val mapDownload: StateFlow<com.curveon.data.map.MapDownloadState> = combine(_mapDownload, _mapFinishing) { d, f ->
+        when {
+            f == null || d is com.curveon.data.map.MapDownloadState.Failed -> d
+            d is com.curveon.data.map.MapDownloadState.Running -> d.copy(finishing = f)
+            else -> f
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, com.curveon.data.map.MapDownloadState.Idle)
     /** Countries waiting their turn after the one downloading now. */
     private val _mapQueue = MutableStateFlow<List<String>>(emptyList())
     val mapQueue: StateFlow<List<String>> = _mapQueue.asStateFlow()
@@ -132,7 +140,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _mapVersion = MutableStateFlow(0)
     val mapVersion: StateFlow<Int> = _mapVersion.asStateFlow()
     @Volatile private var cancelMapDownload = false
+    @Volatile private var cancelMapFinish = false
+    /** A finishing step that failed while a map was downloading; shown when the queue is done. */
+    @Volatile private var deferredFailure: String? = null
     private var mapWorker: Job? = null
+    private var mapFinisher: Job? = null
 
     fun freeStorageBytes() = mapDownloads.freeBytes()
 
@@ -204,10 +216,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _routingDataStatus.value = navigator.routingData.describe()
     }
 
-    /** Queues a country (map and routing); downloads run one after another. */
+    /**
+     * Queues a country (map and routing). Maps download one after another; a finished map's routing
+     * and search are fetched/built meanwhile, so the next map doesn't wait for them.
+     */
     fun downloadMap(areaId: String) {
         val running = (_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId
-        if (areaId == running || areaId in _mapQueue.value || mapCatalog.byId[areaId] == null) return
+        if (areaId == running || areaId == _mapFinishing.value?.areaId || areaId in _mapQueue.value || mapCatalog.byId[areaId] == null) return
         _mapQueue.value = _mapQueue.value + areaId
         if (mapWorker?.isActive != true) mapWorker = viewModelScope.launch { runMapQueue() }
     }
@@ -222,15 +237,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val progress = { msg: String, f: Float -> _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(id, msg, f) }
             try {
                 val installed = _installedMaps.value.firstOrNull { it.id == id }
-                if (installed != null && installed.newerBuild == null && (installed.missingRouting.isNotEmpty() || installed.missingSearch)) {
-                    // Map is current: only fetch the routing and search it lacks.
-                    mapDownloads.completeMissing(area, progress, isCancelled = { cancelMapDownload })
-                } else {
+                // A current map only needs the routing and search it lacks.
+                if (installed == null || installed.newerBuild != null || (installed.missingRouting.isEmpty() && !installed.missingSearch)) {
                     val build = mapDownloads.latestBuild() ?: error(str(R.string.map_no_connection))
                     latestMapBuild = build
                     mapDownloads.download(area, build, progress, isCancelled = { cancelMapDownload })
                     _mapVersion.value++
+                    updateMapStatus()
                 }
+                // One finishing step at a time; the next map can start downloading once this one is handed over.
+                progress(str(R.string.maps_waiting), 1f)
+                mapFinisher?.join()
+                check(!cancelMapDownload) { "Cancelled" }
+                _mapFinishing.value = com.curveon.data.map.MapDownloadState.Running(id, str(R.string.map_checking_newest), 0f)
+                cancelMapFinish = false
+                mapFinisher = viewModelScope.launch { finishMap(area) }
                 _mapDownload.value = com.curveon.data.map.MapDownloadState.Idle
             } catch (e: Throwable) {
                 mapDownloads.cleanupPartial(id)
@@ -242,12 +263,38 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
             updateMapStatus()
         }
+        deferredFailure?.let {
+            deferredFailure = null
+            _mapDownload.value = com.curveon.data.map.MapDownloadState.Failed(it)
+        }
     }
 
-    /** Stops [areaId]: the running download, or takes it out of the queue. */
+    /** Routing tiles, search index and speed limits for a country whose map is installed. */
+    private suspend fun finishMap(area: com.curveon.data.map.CatalogArea) {
+        val id = area.id
+        val progress = { msg: String, f: Float -> _mapFinishing.value = com.curveon.data.map.MapDownloadState.Running(id, msg, f) }
+        try {
+            mapDownloads.completeMissing(area, progress, isCancelled = { cancelMapFinish })
+        } catch (e: Throwable) {
+            mapDownloads.cleanupPartial(id)
+            if (!cancelMapFinish) {
+                val message = str(R.string.map_download_failed, e.message ?: "")
+                if (_mapDownload.value is com.curveon.data.map.MapDownloadState.Running) deferredFailure = message
+                else _mapDownload.value = com.curveon.data.map.MapDownloadState.Failed(message)
+            }
+        } finally {
+            _mapFinishing.value = null
+            updateMapStatus()
+        }
+    }
+
+    /** Stops [areaId]: the running download or finishing step, or takes it out of the queue. */
     fun cancelMapDownload(areaId: String) {
-        if ((_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId == areaId) cancelMapDownload = true
-        else _mapQueue.value = _mapQueue.value - areaId
+        when {
+            (_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId == areaId -> cancelMapDownload = true
+            _mapFinishing.value?.areaId == areaId -> cancelMapFinish = true
+            else -> _mapQueue.value = _mapQueue.value - areaId
+        }
     }
 
     fun deleteMap(id: String) {

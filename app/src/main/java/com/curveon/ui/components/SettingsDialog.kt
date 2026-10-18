@@ -272,7 +272,8 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         if (state.maps.isEmpty()) Text(stringResource(R.string.maps_none), color = TextSecondary, fontSize = 14.sp)
                         state.maps.forEach { m -> MapRow(m, state.mapDownload, state.mapQueue, actions) { confirmDelete = m } }
                         // Downloads queued from the country list that aren't installed yet.
-                        val pending = listOfNotNull((state.mapDownload as? MapDownloadState.Running)?.areaId) + state.mapQueue
+                        val running = state.mapDownload as? MapDownloadState.Running
+                        val pending = listOfNotNull(running?.areaId, running?.finishing?.areaId) + state.mapQueue
                         pending.filter { id -> state.maps.none { it.id == id } }.forEach { id -> PendingRow(id, state.mapName(id), state.mapDownload, actions) }
                         (state.mapDownload as? MapDownloadState.Failed)?.let { Text(it.message, color = WarningRed, fontSize = 13.sp) }
                         Button(onClick = actions.onBrowseMaps, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
@@ -313,7 +314,7 @@ private fun InstalledMap.displayName() = area?.displayName(LocalConfiguration.cu
 
 @Composable
 private fun MapRow(m: InstalledMap, download: MapDownloadState, queue: List<String>, actions: SettingsActions, onDelete: () -> Unit) {
-    val running = (download as? MapDownloadState.Running)?.takeIf { it.areaId == m.id }
+    val running = download.runningFor(m.id)
     val busy = running != null || m.id in queue
     val missing = m.missingRouting.isNotEmpty() || m.missingSearch
     val warn = m.newerBuild != null || missing
@@ -362,7 +363,7 @@ private fun MapRow(m: InstalledMap, download: MapDownloadState, queue: List<Stri
 /** A queued or running download of a country that isn't on the tablet yet. */
 @Composable
 private fun PendingRow(id: String, name: String, download: MapDownloadState, actions: SettingsActions) {
-    val running = (download as? MapDownloadState.Running)?.takeIf { it.areaId == id }
+    val running = download.runningFor(id)
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)

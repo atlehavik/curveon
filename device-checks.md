@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Faster map downloads, next country starts while the last one finishes (1.2.2)
+
+- [ ] Pixel: Settings → Data → add a mid-sized country (e.g. Denmark) on wifi: it should download clearly faster than before (the PC test went from 46 s to 14 s for 96 MB). Note the time and the speed on a phone hotspot too.
+- [ ] Pixel: queue two or three countries. When the first map is done its row shows its own bar for routing/search while the second map already downloads; both can be cancelled separately. Check the app doesn't run out of memory (`adb logcat -s AndroidRuntime`) and that the map of country 1 opens while country 2 downloads.
+- [ ] Pixel: cut the connection halfway (airplane mode on) while a country downloads: the error shows, partial files are cleaned, and the next try works.
+
 ## 2026-10-18 — Play preparation: app names without QUERY_ALL_PACKAGES
 
 - [x] Pixel (installed) and X7: a message in an app that isn't a music app (WhatsApp, Messenger, SMS) still shows with the app's name ("WhatsApp"), not `com.whatsapp`. Also a call/notification from a launcher app you rarely use.

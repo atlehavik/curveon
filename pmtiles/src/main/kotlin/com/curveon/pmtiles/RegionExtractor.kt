@@ -5,6 +5,10 @@ import okhttp3.Request
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlin.math.PI
 import kotlin.math.atan
 import kotlin.math.floor
@@ -132,7 +136,8 @@ data class ExtractProgress(
 /**
  * Cuts [region] (zoom 0..[maxZoom]) out of a remote PMTiles archive using HTTP range requests,
  * the same job as `pmtiles extract`. Tiles are fetched in large merged chunks to keep the number
- * of requests low; the result is written as a new, clustered PMTiles file.
+ * of requests low and several in flight at once, since each one waits on the server for a while;
+ * the result is written as a new, clustered PMTiles file.
  */
 class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
 
@@ -143,6 +148,19 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
         out: File,
         onProgress: (ExtractProgress) -> Unit = {},
         isCancelled: () -> Boolean = { false }
+    ) {
+        val pool = Executors.newFixedThreadPool(PARALLEL)
+        try { extract(pool, url, region, maxZoom, out, onProgress, isCancelled) } finally { pool.shutdownNow() }
+    }
+
+    private fun extract(
+        pool: ExecutorService,
+        url: String,
+        region: TileArea,
+        maxZoom: Int,
+        out: File,
+        onProgress: (ExtractProgress) -> Unit,
+        isCancelled: () -> Boolean
     ) {
         onProgress(ExtractProgress("Reading map index", 0, 0, ExtractProgress.Stage.READING_INDEX))
         val head = get(url, 0, 16_384)
@@ -184,9 +202,9 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
             val offs = pendingOff; val lens = pendingLen
             pendingOff = LongList(); pendingLen = LongList()
             var done = 0
-            // Leaves are contiguous on the server: fetch neighbours together, parse one at a time.
-            forEachMergedRange(url, offs, lens, LEAF_GAP) { start, bytes, members ->
-                check(!isCancelled()) { "Cancelled" }
+            // Leaves are contiguous on the server: fetch neighbours together (several requests at
+            // a time), parse one at a time.
+            forEachMergedRange(pool, url, offs, lens, LEAF_GAP, isCancelled) { start, bytes, members ->
                 for (m in members) {
                     val o = (offs[m] - start).toInt()
                     process(Pmtiles.parseDirectory(Pmtiles.decompress(bytes.copyOfRange(o, o + lens[m].toInt()), h.internalCompression)))
@@ -253,9 +271,10 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
         var written = 0L
         tmpOut.outputStream().buffered(1 shl 20).use { o ->
             o.write(Pmtiles.writeHeader(header)); o.write(root); o.write(metadata); o.write(leafBytes)
+            // Chunks of neighbouring tiles; they download a few at a time and are written in order.
+            val chunks = ArrayList<IntArray>()
             var i = 0
             while (i < uniqOff.size) {
-                check(!isCancelled()) { "Cancelled" }
                 var j = i
                 while (j + 1 < uniqOff.size) {
                     val gap = uniqOff[j + 1] - (uniqOff[j] + uniqLen[j])
@@ -263,14 +282,20 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
                     if (gap > DATA_GAP || size > CHUNK) break
                     j++
                 }
-                val start = uniqOff[i]
-                val chunk = get(url, h.dataOffset + start, uniqOff[j] + uniqLen[j] - start)
-                for (k in i..j) {
+                chunks.add(intArrayOf(i, j))
+                i = j + 1
+            }
+            fetchAhead(pool, chunks.size, isCancelled, { c ->
+                val (a, b) = chunks[c]
+                get(url, h.dataOffset + uniqOff[a], uniqOff[b] + uniqLen[b] - uniqOff[a])
+            }) { c, chunk ->
+                val (a, b) = chunks[c]
+                val start = uniqOff[a]
+                for (k in a..b) {
                     o.write(chunk, (uniqOff[k] - start).toInt(), uniqLen[k])
                     written += uniqLen[k]
                 }
                 onProgress(ExtractProgress("Downloading map", written, total, ExtractProgress.Stage.DOWNLOADING))
-                i = j + 1
             }
         }
         check(written == total) { "Downloaded $written of $total bytes" }
@@ -303,8 +328,12 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
     }
 
     /** Groups ranges that are close together into single requests; calls [block] per request. */
-    private fun forEachMergedRange(url: String, offs: LongList, lens: LongList, maxGap: Long, block: (Long, ByteArray, List<Int>) -> Unit) {
+    private fun forEachMergedRange(
+        pool: ExecutorService, url: String, offs: LongList, lens: LongList, maxGap: Long,
+        isCancelled: () -> Boolean, block: (Long, ByteArray, List<Int>) -> Unit
+    ) {
         val order = (0 until offs.size).sortedBy { offs[it] }
+        val starts = ArrayList<Long>(); val ends = ArrayList<Long>(); val members = ArrayList<List<Int>>()
         var i = 0
         while (i < order.size) {
             var j = i
@@ -313,9 +342,33 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
                 j++
                 end = max(end, offs[order[j]] + lens[order[j]])
             }
-            val start = offs[order[i]]
-            block(start, get(url = url, offset = start, length = end - start), order.subList(i, j + 1))
+            starts.add(offs[order[i]]); ends.add(end); members.add(order.subList(i, j + 1))
             i = j + 1
+        }
+        fetchAhead(pool, starts.size, isCancelled, { k -> get(url, starts[k], ends[k] - starts[k]) }) { k, bytes ->
+            block(starts[k], bytes, members[k])
+        }
+    }
+
+    /**
+     * Runs [fetch] for 0 until [count] on [pool], keeping up to [PARALLEL] in flight (and so in
+     * memory), and hands the results to [consume] one at a time in order.
+     */
+    private fun fetchAhead(pool: ExecutorService, count: Int, isCancelled: () -> Boolean, fetch: (Int) -> ByteArray, consume: (Int, ByteArray) -> Unit) {
+        val pending = ArrayDeque<Future<ByteArray>>()
+        var next = 0
+        try {
+            for (i in 0 until count) {
+                check(!isCancelled()) { "Cancelled" }
+                while (next < count && pending.size < PARALLEL) {
+                    val k = next++
+                    pending.addLast(pool.submit<ByteArray> { check(!isCancelled()) { "Cancelled" }; fetch(k) })
+                }
+                val bytes = try { pending.removeFirst().get() } catch (e: ExecutionException) { throw e.cause ?: e }
+                consume(i, bytes)
+            }
+        } finally {
+            pending.forEach { it.cancel(true) }
         }
     }
 
@@ -342,7 +395,9 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
     companion object {
         private const val LEAF_GAP = 256L * 1024
         private const val DATA_GAP = 64L * 1024
-        private const val CHUNK = 16L * 1024 * 1024
+        private const val CHUNK = 8L * 1024 * 1024
+        /** Requests in flight at once; with [CHUNK] that is at most about 32 MB of downloaded bytes in memory. */
+        private const val PARALLEL = 4
 
         /** Sorted ids of all tiles at zoom [minZ]..[maxZ] that touch the region. */
         fun coverTiles(region: Region, minZ: Int, maxZ: Int): LongArray {

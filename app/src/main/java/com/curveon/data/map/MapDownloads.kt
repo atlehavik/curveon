@@ -35,8 +35,13 @@ data class InstalledMap(
 
 sealed interface MapDownloadState {
     data object Idle : MapDownloadState
-    data class Running(val areaId: String, val message: String, val fraction: Float) : MapDownloadState
+    /** [finishing]: another country whose routing and search are being fetched/built while this map downloads. */
+    data class Running(val areaId: String, val message: String, val fraction: Float, val finishing: Running? = null) : MapDownloadState
     data class Failed(val message: String) : MapDownloadState
+
+    /** The running download or finishing step of [id], if any. */
+    fun runningFor(id: String): Running? =
+        (this as? Running)?.let { if (it.areaId == id) it else it.finishing?.takeIf { f -> f.areaId == id } }
 }
 
 /**
@@ -104,7 +109,10 @@ class MapDownloads(
         }.getOrNull()
     }
 
-    /** Downloads (or updates) the map and the missing routing tiles of [area]. */
+    /**
+     * Downloads (or updates) the map of [area]. Its routing and search come next, with
+     * [completeMissing], which the caller can run while the next country's map downloads.
+     */
     suspend fun download(area: CatalogArea, build: String, onProgress: (String, Float) -> Unit, isCancelled: () -> Boolean) =
         withContext(Dispatchers.IO) {
             // An old map stays usable until the new one is complete, so we need room for a full copy.
@@ -119,22 +127,20 @@ class MapDownloads(
                     ExtractProgress.Stage.DOWNLOADING -> context.getString(R.string.map_downloading, p.doneBytes / 1e6, p.totalBytes / 1e6)
                     ExtractProgress.Stage.DONE -> context.getString(R.string.download_complete)
                 }
-                // The map is most of the download; routing and search share the last 20 %.
-                onProgress(msg, p.fraction * 0.8f)
+                onProgress(msg, p.fraction)
             }, isCancelled = isCancelled)
             prefs.edit().putString("build_${area.id}", build.removeSuffix(".pmtiles")).apply()
-            completeMissing(area, onProgress, isCancelled)
         }
 
-    /** Routing tiles the area lacks, and its search when missing or when a fuller one is online. */
+    /** Routing tiles the area lacks, and its search when missing or when a fuller one is online (progress 0..1). */
     suspend fun completeMissing(area: CatalogArea, onProgress: (String, Float) -> Unit, isCancelled: () -> Boolean) {
         routing.download(area.routing, { done, total, tile ->
-            if (done < total) onProgress(context.getString(R.string.routing_downloading, tile, done + 1, total), 0.8f + 0.05f * done / total)
+            if (done < total) onProgress(context.getString(R.string.routing_downloading, tile, done + 1, total), 0.3f * done / total)
         }, isCancelled)
         if (searchAvailable == null) refreshSearch()
         val src = search.source(area.id)
         if (src == SearchIndexes.Source.NONE || (src == SearchIndexes.Source.MAP && searchAvailable?.containsKey(area.id) == true)) {
-            search.install(area.id, file(area), searchAvailable, { msg, f -> onProgress(msg, 0.85f + 0.15f * f) }, isCancelled)
+            search.install(area.id, file(area), searchAvailable, { msg, f -> onProgress(msg, 0.3f + 0.7f * f) }, isCancelled)
         }
         // Official speed limits, for the countries that publish them freely (small: no progress of its own).
         speedLimits.update(listOf(area.id), speedLimits.available())
