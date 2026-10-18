@@ -1250,7 +1250,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 title = navState.goal?.title ?: "",
                 // Points the route was dragged through aren't stops to the rider.
                 stops = realStops.map { (_, sa) -> sa.first.name to ((sa.second - along) / 1000).coerceAtLeast(0.0) },
-                onRemoveStop = { i -> showRouteMenu = false; realStops.getOrNull(i)?.let { viewModel.removeStop(it.index) } },
+                onRemoveStop = if (navState.goal is com.curveon.data.routing.NavigationGoal.Destination) { i: Int -> showRouteMenu = false; realStops.getOrNull(i)?.let { viewModel.removeStop(it.index) } } else null,
                 onAddStop = { showRouteMenu = false; searchPurpose = SearchPurpose.STOP },
                 onSave = { showRouteMenu = false; askSaveName() },
                 onEnd = { showRouteMenu = false; viewModel.stopNavigation() },

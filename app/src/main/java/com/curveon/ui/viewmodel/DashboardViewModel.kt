@@ -795,7 +795,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                         goal.stops.filterNot { it.via }.mapIndexed { i, st -> pin(st.point, com.curveon.ui.components.PinKind.STOP, "${i + 1}") } +
                         pin(goal.destination, end, "B")
                 // A line ridden as it is (a planned trip, a GPX track, the other way round): where it starts and ends.
-                is NavigationGoal.Track -> if (goal.points.size >= 2) listOf(pin(goal.points.first(), start, "A"), pin(goal.points.last(), end, "B")) else emptyList()
+                // With stops added on the way the line starts wherever the rider was: no "A" dot there.
+                is NavigationGoal.Track -> if (goal.points.size >= 2) listOfNotNull(pin(goal.points.first(), start, "A").takeIf { goal.stops.isEmpty() }) +
+                    goal.stops.mapIndexed { i, st -> pin(st.point, com.curveon.ui.components.PinKind.STOP, "${i + 1}") } + pin(goal.points.last(), end, "B") else emptyList()
                 else -> emptyList()
             }
         }
@@ -870,6 +872,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val currentRoad: StateFlow<com.curveon.data.road.CurrentRoad?> = _currentRoad.asStateFlow()
 
     private fun watchCurrentRoad() = viewModelScope.launch {
+        var readAt: LatLon? = null
         while (true) {
             delay(2_000)
             untilAwake()
@@ -881,7 +884,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val lat = p?.snapped?.lat ?: _currentLocation.value.latitude
             val lon = p?.snapped?.lon ?: _currentLocation.value.longitude
             val heading = p?.routeBearingDeg ?: t.headingDeg.toDouble().takeIf { t.speedKmh >= 8f }
-            if (heading == null && _currentRoad.value != null) continue // standing still: keep what we had
+            // Standing still: keep what we had, but only where we read it (a demo ride's E18 must not follow the rider home).
+            val here = LatLon(lat, lon)
+            if (heading == null && _currentRoad.value != null && readAt?.let { com.curveon.routing.Geo.distance(it, here) < 100 } == true) continue
+            readAt = here
             val ref = roadRefAt(lat, lon, heading, mapRoadHere)
             val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(lat, lon, heading) }
             _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority).takeUnless { it.isEmpty }

@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Fuel stop on a demo ride, trip bar at speed, stale road number (1.2.2)
+
+- [ ] Demo ride on the Pixel (portrait), pass 100 km/h: the arrival box top left keeps its × visible; fold it out with a fuel chip showing: time, fuel and add stop wrap onto two lines and nothing overlaps (the road card moves down with it).
+- [ ] Tap the fuel chip: a numbered orange stop appears on the station, no "A" dot where you are; the route menu lists it (without a ×, a track's stops can't be taken out one by one). Say if the route to the station looks wrong.
+- [ ] End the demo ride, ride/stand elsewhere (not near the E18): the E18 card is gone or shows the road you are on.
+
 ## 2026-10-18 — Add stop that doesn't redraw the route (1.2.2)
 
 - [ ] While navigating, add a stop. If the route doesn't change (or nothing happens), note which stop and where it was, then pull the trace: `adb -s <device> pull /sdcard/Android/data/com.curveon.app/files/navtrace` and look for the `E,…,addStop '<name>' <lat> <lon>: …` lines (started / done / cancelled / failed / no route / no position). Known from the Pixel trace of 2026-10-18: one route change 1.5 km into the ride kept exactly the old line (1235 vs 1236 points), the next one, 40 s later, had a small detour.

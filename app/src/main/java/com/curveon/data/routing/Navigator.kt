@@ -145,7 +145,13 @@ sealed interface NavigationGoal {
     }
 
     /** A fixed line to ride: an imported GPX track, a saved roundtrip or a route with an added stop. */
-    data class Track(val name: String, val points: List<LatLon>, override val options: RouteOptions) : NavigationGoal {
+    data class Track(
+        val name: String,
+        val points: List<LatLon>,
+        override val options: RouteOptions,
+        /** Stops added while riding it (the line already passes through them): shown on the map and in the route menu. */
+        val stops: List<Stop> = emptyList()
+    ) : NavigationGoal {
         override val title get() = name
     }
 }
@@ -839,6 +845,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     private fun stopsAlong(goal: NavigationGoal, route: Route): List<Pair<Stop, Double>> {
+        if (goal is NavigationGoal.Track) return goal.stops.zip(alongDistances(goal.stops, route)).sortedBy { it.second }
         val stops = (goal as? NavigationGoal.Destination)?.stops ?: return emptyList()
         return stops.zip(alongDistances(stops, route))
     }
@@ -927,7 +934,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                                 s.progress?.distanceAlongRoute ?: 0.0) ?: (s.progress?.distanceAlongRoute ?: 0.0)
                             val rest = rejoin(stop.point, route, along, goal.options)
                             val combined = Routes.concat(toStop, rest)
-                            NavigationGoal.Track(goal.title, combined.points.map { LatLon(it.lat, it.lon) }, goal.options) to combined
+                            NavigationGoal.Track(goal.title, combined.points.map { LatLon(it.lat, it.lon) }, goal.options,
+                                (goal as? NavigationGoal.Track)?.stops.orEmpty() + stop) to combined
                         }
                     }
                 }
