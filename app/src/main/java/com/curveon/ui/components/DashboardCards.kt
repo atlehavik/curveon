@@ -24,6 +24,7 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -60,7 +61,7 @@ private val CardShape = RoundedCornerShape(20.dp)
 private val OnCyan = Color(0xFF00363D)
 
 @Composable
-private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorder, content: @Composable BoxScope.() -> Unit) {
+internal fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorder, content: @Composable BoxScope.() -> Unit) {
     Box(
         modifier = modifier
             .clip(CardShape)
@@ -71,6 +72,9 @@ private fun DashCard(modifier: Modifier = Modifier, border: Color = CockpitBorde
 }
 
 // ---------------------------------------------------------------------------------- speed
+
+/** The speed limit sign's normal size; the card beside it is sized for this. */
+val SPEED_SIGN_BASE = 36.dp
 
 /**
  * Speed, the signed limit when known and the clock, in the map's top-right corner (always, not
@@ -85,7 +89,9 @@ fun MapSpeedCluster(
     camera: com.curveon.data.routing.CameraAlert?,
     modifier: Modifier = Modifier,
     /** Settings → Display: the height above sea level under the speed. */
-    showAltitude: Boolean = false
+    showAltitude: Boolean = false,
+    /** The limit sign's size (Settings → Display). Over [SPEED_SIGN_BASE] it sticks out over the card's top and bottom. */
+    signSize: Dp = SPEED_SIGN_BASE
 ) {
     val telemetry = telemetryNow()
     val limit = camera?.maxSpeedKmh ?: telemetry.speedLimitKmh
@@ -96,10 +102,11 @@ fun MapSpeedCluster(
         camera != null -> NeonAmber
         else -> CockpitBorder
     }
+    // No clip here: a big sign is let out over the card's edges instead of making the card taller.
+    val sticksOut = ((signSize - SPEED_SIGN_BASE) / 2).coerceAtLeast(0.dp)
     Column(
         modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(CockpitSurface.copy(alpha = 0.92f))
+            .background(CockpitSurface.copy(alpha = 0.92f), RoundedCornerShape(16.dp))
             .border(1.dp, border, RoundedCornerShape(16.dp))
             .padding(horizontal = 14.dp, vertical = 8.dp)
             .testTag("full_map_speed_cluster"),
@@ -109,9 +116,17 @@ fun MapSpeedCluster(
             Text(telemetry.displaySpeed.toString(), color = speedColor, fontSize = 32.sp, lineHeight = 32.sp,
                 fontWeight = FontWeight.Black, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                 modifier = Modifier.testTag("map_speed"))
-            if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, 36.dp)
+            if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, signSize,
+                modifier = Modifier.layout { measurable, constraints ->
+                    // Takes the room of a normal sign and is centred on it; the rest sticks out.
+                    val p = measurable.measure(constraints)
+                    val base = SPEED_SIGN_BASE.roundToPx()
+                    layout(p.width, minOf(p.height, base)) { p.place(0, (minOf(p.height, base) - p.height) / 2) }
+                })
             Clock(17.sp)
         }
+        val below = camera != null || telemetry.isDeadReckoning || !telemetry.hasGpsFix || (showAltitude && telemetry.hasGpsFix)
+        if (below && limit > 0) Spacer(Modifier.height(sticksOut))
         when {
             camera != null -> Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.PhotoCamera, stringResource(R.string.speed_camera), tint = NeonAmber, modifier = Modifier.size(16.dp))
@@ -266,9 +281,9 @@ fun CurrentRoadCard(road: com.curveon.data.road.CurrentRoad, modifier: Modifier 
 }
 
 @Composable
-fun SpeedLimitSign(limit: Int, size: Dp) {
+fun SpeedLimitSign(limit: Int, size: Dp, modifier: Modifier = Modifier) {
     Box(
-        Modifier.size(size).clip(CircleShape).background(SpeedLimitWhite).border(size * 0.11f, SpeedLimitBorder, CircleShape),
+        modifier.size(size).clip(CircleShape).background(SpeedLimitWhite).border(size * 0.11f, SpeedLimitBorder, CircleShape),
         contentAlignment = Alignment.Center
     ) {
         Text(limit.toString(), color = Color.Black, fontSize = (size.value * 0.38f).sp, fontWeight = FontWeight.Black)
@@ -368,10 +383,11 @@ fun FullMediaCard(
 
 /** One-row player used when a notification or reply needs the space. */
 @Composable
-fun MiniMediaCard(track: MusicTrack, art: Bitmap?, onPlayPause: () -> Unit, onNext: () -> Unit, modifier: Modifier = Modifier) {
+fun MiniMediaCard(track: MusicTrack, art: Bitmap?, onPlayPause: () -> Unit, onNext: () -> Unit, modifier: Modifier = Modifier, onCollapse: (() -> Unit)? = null) {
     DashCard(modifier.fillMaxWidth().testTag("media_card_mini")) {
         Row(Modifier.fillMaxWidth().align(Alignment.Center).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant)
+                .then(if (onCollapse != null) Modifier.clickable(onClick = onCollapse) else Modifier), contentAlignment = Alignment.Center) {
                 if (art != null) Image(art.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
                 else Icon(Icons.Default.MusicNote, null, tint = TextMuted)
             }
@@ -386,6 +402,28 @@ fun MiniMediaCard(track: MusicTrack, art: Bitmap?, onPlayPause: () -> Unit, onNe
         }
     }
 }
+
+/** The music on the map, folded in: just the cover (a note without one). A tap opens [MiniMediaCard]. */
+@Composable
+fun MediaPillIcon(track: MusicTrack, art: Bitmap?, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        modifier.size(MEDIA_ICON_SIZE).clip(shape).background(CockpitSurface.copy(alpha = 0.95f))
+            .border(1.dp, if (track.isPlaying) ElectricCyan else CockpitBorder, shape).clickable(onClick = onClick)
+            .testTag("media_pill_icon"),
+        contentAlignment = Alignment.Center
+    ) {
+        if (art != null) Image(art.asImageBitmap(), track.title, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
+        else Icon(Icons.Default.MusicNote, track.title, tint = TextMuted, modifier = Modifier.size(28.dp))
+        // What it is doing now, in the corner.
+        Box(Modifier.align(Alignment.BottomEnd).padding(3.dp).size(20.dp).clip(CircleShape).background(Color(0xCC000000)), contentAlignment = Alignment.Center) {
+            Icon(if (track.isPlaying) Icons.Default.GraphicEq else Icons.Default.Pause, null, tint = if (track.isPlaying) ElectricCyan else Color.White, modifier = Modifier.size(14.dp))
+        }
+    }
+}
+
+/** The folded music icon's size; the turn card beside it and the map buttons above it make room for this. */
+val MEDIA_ICON_SIZE = 56.dp
 
 /** A media app on the phone; the one being shown gets a cyan ring. */
 @Composable

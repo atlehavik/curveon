@@ -105,6 +105,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val showGravelHeat by viewModel.showGravelHeat.collectAsStateWithLifecycle()
     val gravelHeatButton by viewModel.gravelHeatButton.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
+    val speedSign by viewModel.speedSign.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
     val showMapMedia by viewModel.showMapMedia.collectAsStateWithLifecycle()
     val roadHere by viewModel.currentRoad.collectAsStateWithLifecycle()
@@ -413,9 +414,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // A ringing call is a big card over everything (see [callLayer]); an answered one is a floating icon
     // that leaves the music where it is.
     val showMedia = isFullScreenMap && showMapMedia && (ringing == null || callOngoing) && preview == null && mapPick == null && !sketching && track != null
-    // The music beside the turn card when there is room, else above it.
-    val sideBySide = mapWidth - 14.dp - 8.dp - SIDE_COLUMN_WIDTH - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
-    val bottomRightHeight = BOTTOM_CARD_HEIGHT + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp
+    // The music is a small cover icon until tapped, then the player as it was; the turn card and the map's
+    // buttons make room for whichever is showing.
+    var mediaOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(mediaOpen, track?.isPlaying, track?.title) { if (mediaOpen) { kotlinx.coroutines.delay(10_000); mediaOpen = false } }
+    val mediaWidth = if (mediaOpen) SIDE_COLUMN_WIDTH else MEDIA_ICON_SIZE
+    val mediaHeight = if (mediaOpen) BOTTOM_CARD_HEIGHT else MEDIA_ICON_SIZE
+    // Beside the turn card when there is room, else above it.
+    val sideBySide = mapWidth - 14.dp - 8.dp - mediaWidth - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
+    val bottomRightHeight = mediaHeight + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp
     // The road card goes top middle in landscape when it fits between the trip bar and the speed.
     val landscape = LocalConfiguration.current.orientation != android.content.res.Configuration.ORIENTATION_PORTRAIT
     val tripBarRight = if (showTripBar && navigationSummary != null) 14.dp + tripBarWidth + 8.dp else 0.dp
@@ -426,7 +433,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val buttonsFitAboveMedia = mapHeight - buttonsTopInset - (bottomRightHeight + 14.dp + 8.dp) >= MAP_BUTTONS_HEIGHT
     val buttonsBottomInset = if (showMedia && buttonsFitAboveMedia) bottomRightHeight + 14.dp + 8.dp else 0.dp
     val rightCardEnd = if (showMedia && !buttonsFitAboveMedia) MAP_BUTTONS_RESERVE else 14.dp
-    val turnWidth = (if (sideBySide && showMedia) minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - 8.dp - SIDE_COLUMN_WIDTH - MAP_BUTTONS_RESERVE)
+    val turnWidth = (if (sideBySide && showMedia) minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - 8.dp - mediaWidth - MAP_BUTTONS_RESERVE)
         else minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - MAP_BUTTONS_RESERVE)).coerceAtLeast(0.dp)
     /** How far up from the bottom the cards reach: the rider is lifted to keep clear of them. */
     val bottomClearance = maxOf(if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp, if (showMedia) bottomRightHeight + 14.dp else 0.dp)
@@ -451,7 +458,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
         MapSpeedCluster({ telemetryState.value }, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
-            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude)
+            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, signSize = speedSign.dp.dp)
         // The road's number and priority sign in a card of their own: top middle in landscape, under
         // the speed in portrait or when the middle has no room between the trip bar and the speed.
         currentRoad?.let { road ->
@@ -459,9 +466,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 else Modifier.align(Alignment.TopEnd).padding(top = 14.dp + speedSize.height + 8.dp, end = 14.dp))
                 .onSizeChanged { roadSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } })
         }
-        // The next turn bottom left, as high as the music beside it.
+        // The next turn bottom left, as narrow as it can be.
         if (showTurn) {
-            TurnByTurnBanner(turn!!, modifier = Modifier.align(Alignment.BottomStart).padding(14.dp).width(turnWidth).height(BOTTOM_CARD_HEIGHT))
+            TurnByTurnBanner(turn!!, modifier = Modifier.align(Alignment.BottomStart).padding(14.dp), maxWidth = turnWidth)
         }
         // Picking a place: just the map and the little bar; the rest waits.
         val pickPurpose = mapPick
@@ -587,10 +594,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         // route preview needs the bottom (its Go button).
         if (isFullScreenMap) {
             if (showMedia) track?.let { t ->
-                MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
-                    Modifier.align(Alignment.BottomEnd)
-                        .padding(start = 14.dp, end = rightCardEnd, bottom = 14.dp + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp)
-                        .width(minOf(SIDE_COLUMN_WIDTH, (mapWidth - 14.dp - rightCardEnd).coerceAtLeast(0.dp))).height(BOTTOM_CARD_HEIGHT))
+                val mediaModifier = Modifier.align(Alignment.BottomEnd)
+                    .padding(end = rightCardEnd, bottom = 14.dp + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp)
+                if (mediaOpen) MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
+                    mediaModifier.width(minOf(SIDE_COLUMN_WIDTH, (mapWidth - 14.dp - rightCardEnd).coerceAtLeast(0.dp))).height(BOTTOM_CARD_HEIGHT),
+                    onCollapse = { mediaOpen = false })
+                else MediaPillIcon(t, albumArt, { mediaOpen = true }, mediaModifier)
             }
         }
     }
@@ -715,7 +724,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     } }
     // Messages or music (one of them gets the free height), and engine data.
     val cards: @Composable ColumnScope.() -> Unit = {
-
+        if (callOngoing && !isFullScreenMap) ringing?.let { call ->
+            OngoingCallCard(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) })
+        }
         val messages = notifications.filterNot { it.isIncomingCall }
         val attention = voiceReply != null || messages.isNotEmpty()
         when {
@@ -971,7 +982,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, arrowLead = arrowLead, showSurfaces = showSurfaces, surfacePalette = surfacePalette,
-                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, speedSign = speedSign, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     navAlerts = viewModel.navAlerts.collectAsStateWithLifecycle().value,
                     offRouteAlerts = viewModel.offRouteAlerts.collectAsStateWithLifecycle().value,
@@ -1003,6 +1014,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onSurfacePaletteWhilePlanning = viewModel::setSurfacePaletteWhilePlanning,
                     onGravelHeatButton = viewModel::setGravelHeatButton,
                     onShowAltitude = viewModel::setShowAltitude,
+                    onSpeedSign = viewModel::setSpeedSign,
                     onShowRoadInfo = viewModel::setShowRoadInfo,
                     onShowMapMedia = viewModel::setShowMapMedia,
                     onAutoFollow = viewModel::setAutoFollow,
@@ -1069,7 +1081,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         if (call != null) {
             val onAction: (Int) -> Unit = { i -> phone.invokeAction(call.id, i) }
             val onDismiss = { phone.hideNotification(call.id) }
-            if (callOngoing) FloatingCallBubble(call, onAction, onDismiss, Modifier.matchParentSize().padding(8.dp))
+            // An answered call is an icon over the full-screen map; with the dashboard's cards showing, it is a card there (portrait hides them while a trip is planned).
+            if (callOngoing) { if (isFullScreenMap || (portrait && preview != null)) FloatingCallBubble(call, onAction, onDismiss, Modifier.matchParentSize().padding(8.dp)) }
             else CallCard(call, onAction, onDismiss, Modifier.align(Alignment.Center).fillMaxWidth(0.92f).widthIn(max = 440.dp)
                 .fillMaxHeight(0.85f).heightIn(max = 320.dp))
         }
@@ -1253,7 +1266,7 @@ private val SIDE_COLUMN_WIDTH = 300.dp
 /** The turn card at the bottom left and the media player at the bottom right are this high. */
 private val BOTTOM_CARD_HEIGHT = 72.dp
 private val BOTTOM_TURN_WIDTH = 320.dp
-private val BOTTOM_TURN_MIN_WIDTH = 220.dp
+private val BOTTOM_TURN_MIN_WIDTH = 190.dp
 /** The map's button column (CurveonMapView): four 52 dp buttons, 10 dp apart. */
 private val MAP_BUTTONS_HEIGHT = 52.dp * 4 + 10.dp * 3
 /** From the map's right edge: the buttons, their margin and a gap; cards on the left stay clear of it. */

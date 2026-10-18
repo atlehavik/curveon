@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Calmer navigation cards, call card on the dashboard (1.2.2)
+
+- [ ] Pixel (Curveon on the phone itself): ring it and tap Answer on Curveon's call card. It must answer (if not: `adb logcat -s PhoneLink` and look for "Call action"). Never tried with a real call.
+- [ ] Answer a call with the dashboard showing (not full-screen map): a call card with Hang up and Speaker sits at the top of the card column, no green icon over the map. Full-screen map: the green icon is still there.
+- [ ] Full-screen map, music playing: a small cover icon bottom right; tap opens the player, tap its cover (or wait 10 s) folds it. Check the map buttons and the turn card don't collide, open and folded.
+- [ ] Navigating: the arrival box shows only the time; tap shows km and time left. The turn card is narrow, tap shows the words; a roundabout shows the exit number in its corner.
+- [ ] Settings → Display → Speed limit sign: Large and Extra large grow over the speed card's top and bottom without the card growing; nothing gets cut off at the screen edge (also with a speed camera or altitude line under it).
+
 ## 2026-10-18 — Faster map downloads, next country starts while the last one finishes (1.2.2)
 
 - [ ] Pixel: Settings → Data → add a mid-sized country (e.g. Denmark) on wifi: it should download clearly faster than before (the PC test went from 46 s to 14 s for 96 MB). Note the time and the speed on a phone hotspot too.

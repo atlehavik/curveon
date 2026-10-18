@@ -123,6 +123,29 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
 }
 
 /**
+ * An answered call in the dashboard's card column (the map isn't full screen, so there is room for
+ * it there instead of an icon over the map): the caller, and Hang up and Speaker as big buttons.
+ */
+@Composable
+fun OngoingCallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    val buttons = callButtons(call, onAction, onDismiss)
+    DashCard(modifier.fillMaxWidth().testTag("call_card_ongoing"), border = EcoGreen) {
+        Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            CallAvatar(call, 56.dp)
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.PhoneInTalk, null, tint = EcoGreen, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(5.dp))
+                    Text(stringResource(R.string.call_in_progress), color = Color(0xFFD0D7E0), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                Text(call.senderName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            CallButtonsRow(call, buttons)
+        }
+    }
+}
+
+/**
  * An answered call: never in the way, so just a green phone you can drag anywhere and leave there
  * (remembered). A tap opens the name with Hang up and Speaker for a few seconds. Fill the screen
  * area with [modifier]; it only takes touches where the icon is.

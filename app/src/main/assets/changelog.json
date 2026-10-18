@@ -2,6 +2,11 @@
   {
     "version": "1.2.2",
     "en": [
+      "The map is calmer while you ride: the arrival box shows just the time, and tapping it reveals distance and time left. The next-turn card is now as narrow as it can be and grows only when it needs to, and tapping it shows the full description. Roundabouts show which exit to take",
+      "The music player on the map is now a small cover icon in the right corner. Tap it to open the full player, and it folds itself away again",
+      "On the dashboard, an ongoing call now gets its own card with Hang up and Speaker instead of a small icon over the map",
+      "The speed limit sign can be made bigger in Settings → Display: it grows out over the speed card, so the card itself stays small",
+      "The Answer button on an incoming call now works when Curveon runs on the phone itself",
       "Fuel gauge setup is now easier and much more reliable: just tap Before filling at the pump, fill up, and enter the litres the pump shows. Do it at two refuellings and Curveon finds the fuel level in your bike, without you having to run the tank dry or guess. Want it even more exact? Add extra levels in between to fine-tune the tank table. Made a mistake? Remove that refuelling or level and do it again",
       "Speed cameras are only shown on the map when you have zoomed in close, where the houses show up, so they no longer clutter the zoomed-out map",
       "Turning a GPX track into an adjustable route from the ride sheet now shows that it is working, just like it does from the GPX list, so you know something is happening",
@@ -14,6 +19,11 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
+      "Kartet er roligere når du kjører: ankomstboksen viser bare klokkeslettet, og et trykk viser hvor langt og hvor lenge det er igjen. Svingkortet er nå så smalt som mulig og blir bare bredere når det trengs, og et trykk viser hele beskrivelsen. I rundkjøringer ser du hvilken avkjøring du skal ta",
+      "Musikkspilleren på kartet er nå et lite coverbilde i høyre hjørne. Trykk på det for å åpne hele spilleren, så brettes den sammen igjen av seg selv",
+      "På dashbordet får en pågående samtale nå et eget kort med Legg på og Høyttaler, i stedet for et lite ikon over kartet",
+      "Fartsgrenseskiltet kan gjøres større under Innstillinger → Visning: det vokser ut over fartskortet, så selve kortet holder seg lite",
+      "Svar-knappen på en innkommende samtale virker nå når Curveon kjører på selve telefonen",
       "Oppsett av drivstoffmåler er nå enklere og mye mer pålitelig: trykk bare Før tanking ved pumpa, fyll opp og skriv inn literne pumpa viser. Gjør det ved to tankinger, så finner Curveon drivstoffnivået i motorsykkelen din, uten at du må kjøre tanken tom eller gjette. Vil du ha den enda mer nøyaktig? Legg til ekstra nivåer imellom for å finjustere tanktabellen. Skrev du feil? Fjern tankingen eller nivået og gjør det på nytt",
       "Fotobokser vises bare på kartet når du har zoomet helt inn, der husene dukker opp, så de ikke lenger roter til kartet når du er zoomet ut",
       "Når du gjør en GPX-tur om til en justerbar rute fra kjør-dialogen, ser du nå at noe jobbes med, akkurat som fra GPX-listen, så du vet at det skjer noe",

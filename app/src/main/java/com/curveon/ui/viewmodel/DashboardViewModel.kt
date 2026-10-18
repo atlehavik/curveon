@@ -82,6 +82,11 @@ enum class MapDetail(val label: Int, val surfaceZoom: Float) {
     RESPONSE(com.curveon.R.string.map_detail_response, 11f), DETAIL(com.curveon.R.string.map_detail_detail, 10f)
 }
 
+/** How big the speed limit sign is on the map (Settings → Display); a big one sticks out over the speed card's height. */
+enum class SpeedSignSize(val label: Int, val dp: Int) {
+    NORMAL(com.curveon.R.string.speed_sign_normal, 36), LARGE(com.curveon.R.string.speed_sign_large, 52), HUGE(com.curveon.R.string.speed_sign_huge, 68)
+}
+
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
 
     private val app: Context = application
@@ -898,7 +903,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             streetName = road ?: "",
             speedLimitKmh = p.speedLimitKmh ?: 0,
             location = route.points[m.pointIndex].let { GeoPoint(it.lat, it.lon) },
-            roadRef = next?.ref
+            roadRef = next?.ref,
+            roundaboutExit = m.exitNumber.takeIf { m.type == ManeuverType.ROUNDABOUT } ?: 0
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -948,6 +954,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _mapTheme = MutableStateFlow(MapTheme.valueOf(settings.getString("mapTheme", MapTheme.AUTO.name)!!))
     val mapTheme: StateFlow<MapTheme> = _mapTheme.asStateFlow()
+
+    private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.NORMAL)
+    val speedSign: StateFlow<SpeedSignSize> = _speedSign.asStateFlow()
+    fun setSpeedSign(size: SpeedSignSize) { _speedSign.value = size; settings.edit().putString("speedSign", size.name).apply() }
 
     private val _mapDetail = MutableStateFlow(MapDetail.valueOf(settings.getString("mapDetail", MapDetail.RESPONSE.name)!!))
     val mapDetail: StateFlow<MapDetail> = _mapDetail.asStateFlow()

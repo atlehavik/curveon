@@ -85,6 +85,11 @@
     <string name="settings_altitude">Altitude</string>
     <string name="settings_altitude_hint">Height above sea level under the speed</string>
     <string name="settings_road_info">Road info</string>
+    <string name="settings_speed_sign">Speed limit sign</string>
+    <string name="settings_speed_sign_hint">How big the sign is on the map; a bigger one sticks out of the speed card</string>
+    <string name="speed_sign_normal">Normal</string>
+    <string name="speed_sign_large">Large</string>
+    <string name="speed_sign_huge">Extra large</string>
     <string name="settings_map_media">Music on the map</string>
     <string name="settings_map_media_hint">The player in the corner of the full-screen map</string>
     <string name="settings_road_info_hint">Road number and priority road sign under the speed, when known</string>

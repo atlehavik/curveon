@@ -12,7 +12,10 @@ import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.unit.Dp
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,32 +31,35 @@ import com.curveon.data.model.TurnInstruction
 import com.curveon.data.model.TurnType
 import com.curveon.ui.theme.*
 
+/**
+ * The next turn, as small as it can be: the arrow (a roundabout with the exit's number), the distance
+ * and the number sign of the road. It grows by what has to be in it (a wide sign) up to [maxWidth].
+ * A tap folds out the words about the turn (and what comes after) for a few seconds.
+ */
 @Composable
 fun TurnByTurnBanner(
     instruction: TurnInstruction,
     speedLimitKmh: Int = 0,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    maxWidth: Dp = Dp.Unspecified
 ) {
-    Box(
+    var open by remember(instruction.index) { mutableStateOf(false) }
+    LaunchedEffect(open, instruction.index) { if (open) { delay(8000); open = false } }
+    val shape = RoundedCornerShape(18.dp)
+    Column(
         modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .widthIn(max = maxWidth)
+            .clip(shape)
             .background(CockpitSurface.copy(alpha = 0.95f))
-            .border(1.5.dp, ElectricCyanDim, RoundedCornerShape(18.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .border(1.5.dp, ElectricCyanDim, shape)
+            .clickable { open = !open }
+            .padding(horizontal = 10.dp, vertical = 10.dp)
             .testTag("turn_by_turn_banner")
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Big Directional Maneuver Icon
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Big directional maneuver icon; at a roundabout the exit to take sits in its corner.
             Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(ElectricCyan)
-                    .padding(6.dp),
+                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -62,35 +68,37 @@ fun TurnByTurnBanner(
                     tint = Color(0xFF00363D),
                     modifier = Modifier.size(36.dp)
                 )
-            }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            // Distance & Street Name
-            Column(modifier = Modifier.weight(1f)) {
-                // The distance, and the number sign of the road the turn leads onto.
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = formatDistance(instruction.distanceMeters),
-                        color = TextPrimary,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = (-0.5).sp
-                    )
-                    instruction.roadRef?.let { RoadShield(it, 26.dp) }
+                if (instruction.type == TurnType.ROUNDABOUT && instruction.roundaboutExit > 0) Box(
+                    Modifier.align(Alignment.BottomEnd).offset(x = 4.dp, y = 4.dp).size(22.dp).clip(CircleShape).background(Color(0xFF00363D)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(instruction.roundaboutExit.toString(), color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.Black, lineHeight = 14.sp)
                 }
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = instruction.text,
-                    color = ElectricCyan,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = formatDistance(instruction.distanceMeters),
+                color = TextPrimary,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = (-0.5).sp,
+                maxLines = 1
+            )
+            instruction.roadRef?.let {
+                Spacer(modifier = Modifier.width(12.dp))
+                RoadShield(it, 26.dp)
             }
         }
+        if (open) Text(
+            text = instruction.text,
+            color = ElectricCyan,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp)
+        )
     }
 }
 

@@ -144,7 +144,16 @@ class CurveonNotificationListener : NotificationListenerService() {
 
     fun invokeAction(key: String, index: Int) {
         val sbn = synchronized(active) { active[key] } ?: return
-        runCatching { sbn.notification.actions?.getOrNull(index)?.actionIntent?.send() }
+        val intent = sbn.notification.actions?.getOrNull(index)?.actionIntent ?: return
+        // Android 14+ lets the dialer's Answer / Decline start its call screen only if the one sending
+        // it says so: without this the button did nothing when Curveon ran on the phone itself.
+        val options = if (Build.VERSION.SDK_INT >= 34) android.app.ActivityOptions.makeBasic()
+            .setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED).toBundle() else null
+        try {
+            intent.send(this, 0, null, null, null, null, options)
+        } catch (e: PendingIntent.CanceledException) {
+            Log.w(TAG, "Call action $index of $key failed", e)
+        }
     }
 
     /** Sends [text] through the notification's own reply action (works for SMS, WhatsApp, Signal, …). */

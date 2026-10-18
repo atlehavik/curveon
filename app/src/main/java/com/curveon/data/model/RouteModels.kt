@@ -51,7 +51,9 @@ data class TurnInstruction(
     val speedLimitKmh: Int = 80,
     val location: GeoPoint,
     /** The number sign of the road after the turn, when known. */
-    val roadRef: com.curveon.data.road.RoadRef? = null
+    val roadRef: com.curveon.data.road.RoadRef? = null,
+    /** Which exit to take at a roundabout, 0 when not one (or not known). */
+    val roundaboutExit: Int = 0
 )
 
 @Entity(tableName = "saved_routes")

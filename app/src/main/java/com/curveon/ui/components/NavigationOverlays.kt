@@ -32,9 +32,9 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Arrival time and what is left with the end button, at the top of the map beside the speed. Tapping
- * it folds out a second line: next stop (opens the route menu: stops, save), fuel when worth
- * knowing (tapping it adds it as a stop) and add stop.
+ * Arrival time and the end button, at the top of the map beside the speed. Tapping it folds out a
+ * second line: what is left (distance and time), next stop (opens the route menu: stops, save), fuel
+ * when worth knowing (tapping it adds it as a stop) and add stop.
  */
 @Composable
 fun NavigationSummaryBar(
@@ -51,7 +51,7 @@ fun NavigationSummaryBar(
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
     }
-    // Folded: arrival, what is left and the end button, small enough to sit beside the speed.
+    // Folded: arrival and the end button, small enough to sit beside the speed.
     // A tap opens a second line below with the next stop, fuel and add stop.
     var open by remember { mutableStateOf(false) }
     Column(
@@ -68,11 +68,6 @@ fun NavigationSummaryBar(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
-            Text(
-                stringResource(R.string.distance_km_whole, summary.remainingKm) + " · %d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
-                color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false)
-            )
             IconButton(
                 onClick = onStop,
                 modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
@@ -85,6 +80,12 @@ fun NavigationSummaryBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // What is left of the trip: only shown when asked for.
+            Text(
+                stringResource(R.string.distance_km_whole, summary.remainingKm) + " · %d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
+                color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                modifier = Modifier.testTag("nav_remaining")
+            )
             // The next stop (or just "Route") opens the route's menu: stops, save, end.
             Row(
                 Modifier.weight(1f, fill = false).clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp)
