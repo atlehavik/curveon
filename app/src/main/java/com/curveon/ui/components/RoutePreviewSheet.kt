@@ -169,7 +169,8 @@ fun RoutePreviewSheet(
         ) {
             // An adventure goes on being worked on after the first trip is shown: the ones found so far to switch
             // between (the others grey on the map), and a small sign of work while it keeps looking.
-            if (preview.suggestions.size >= 2) Row(
+            // The first trip is marked as such ("Trip 1") while it is being improved on, even before there is a second.
+            if (preview.suggestions.size >= 2 || (preview.improving && preview.suggestions.isNotEmpty())) Row(
                 Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -189,7 +190,7 @@ fun RoutePreviewSheet(
                     animationSpec = androidx.compose.animation.core.infiniteRepeatable(tween(900), androidx.compose.animation.core.RepeatMode.Reverse), label = "improvingAlpha"
                 )
                 Text(
-                    stringResource(R.string.adventure_improving), color = TextSecondary, fontSize = 13.sp,
+                    stringResource(R.string.adventure_improving), color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier.graphicsLayer { alpha = pulse }.testTag("adventure_improving")
                 )
             }

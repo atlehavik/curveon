@@ -415,7 +415,7 @@
     <string name="adventure_time_explain">The longest the trip may take. It can be shorter when the area has no good roads for more.</string>
     <string name="map_tilt_up">Tilt the map up, towards a bird\'s-eye view</string>
     <string name="map_tilt_down">Tilt the map down, towards the road</string>
-    <string name="adventure_improving">Looking for a better trip…</string>
+    <string name="adventure_improving">First suggestion. Looking for a better trip…</string>
     <string name="adventure_suggestion">Trip %1$d · %2$s · %3$d km</string>
     <string name="nav_adventure_progress">Finding roads… %1$d of %2$d</string>
     <string name="preview_loop_from">Roundtrip from %1$s</string>

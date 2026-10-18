@@ -9,6 +9,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 ## 2026-10-18 — Adventure finds more routes; white Hjelpepunkt button (1.2.2)
 
 - [ ] Pixel: plan an adventure with an area and a long time (e.g. the Hallingdal → Gudbrandsdalen oval, 7 h), then shuffle a few times: each shuffle should give a different route near the asked time (before, the first try could come out at half the time, and later tries added nothing).
+- [ ] Pixel: plan an adventure: Tur 1 shows at once with its time and km, and a bold yellow "Første forslag. Leter etter en bedre tur …" under it while it keeps looking; the first trip should be near the asked time (before it could be far short). Better trips appear as Tur 2, 3 beside it.
 - [ ] While riding, tap the map for a new stop: the Hjelpepunkt button in the "Stopp på veien, eller nytt mål?" bar is white with black text and stands out from the map.
 
 ## 2026-10-17 — Fuel gauge setup: tank twice, engine off (1.2.2)

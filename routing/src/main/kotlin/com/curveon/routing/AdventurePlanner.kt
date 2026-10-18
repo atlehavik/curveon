@@ -68,7 +68,7 @@ class AdventurePlanner(
         options: RouteOptions,
         variant: Int = 0,
         /**
-         * More than 1: a first trip comes quickly from half the anchors, then each further round adds anchors
+         * More than 1: a first trip comes quickly from most of the anchors, then each further round adds anchors
          * (and the roads between them) to the same graph and looks again. A round that finds a better trip
          * hands it to [onRoute]; the first trip is handed over too. The best one is also what [plan] returns.
          */
@@ -105,7 +105,7 @@ class AdventurePlanner(
                 log("  round %d graph: %d anchors, %d roads (%.1f s)".format(index + 1, nodes.size, edges.size, (System.nanoTime() - t0) / 1e9))
                 return search(pool, nodes, edges, opts, area, targetS, Random(variant * 104_729L + 7 + index * 977L))
             }
-            val shares = if (rounds <= 1) listOf(1.0) else List(rounds) { ROUND_SHARE }
+            val shares = if (rounds <= 1) listOf(1.0) else List(rounds) { if (it == 0) FIRST_ROUND_SHARE else ROUND_SHARE }
             for ((index, share) in shares.withIndex()) {
                 if (index > 0 && (cancelled() || System.nanoTime() - began > ROUNDS_BUDGET_MS * 1_000_000)) break
                 // The first round answers for itself; a later one that fails or is cancelled leaves what there is.
@@ -517,6 +517,8 @@ class AdventurePlanner(
         const val MAX_ANCHORS = 30
         /** A round of a progressive plan puts out this share of the full number of anchors (at least [MIN_ROUND_ANCHORS]). */
         const val ROUND_SHARE = 0.5
+        /** The first round puts out more: it is the trip shown at once, and from too few roads it can come out well short of the asked time. */
+        const val FIRST_ROUND_SHARE = 0.75
         const val MIN_ROUND_ANCHORS = 6
         /** A later round's trip replaces the earlier only when it scores this much better. */
         const val MIN_GAIN = 25.0
