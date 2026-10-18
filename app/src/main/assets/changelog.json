@@ -2,6 +2,7 @@
   {
     "version": "1.2.2",
     "en": [
+      "On the night map, place names and road names are now white on the night map's own dark colour, so they stand out without a bright box",
       "Place names now sit on the same colour as the day map's land instead of white, so they stand out less but are still readable",
       "Place names are now on top of the roads when no map is downloaded (the online map): the road lines used to be drawn over them. They also have a wider background so the roads don't show between the letters",
       "Place names on the online map now also lie above the roads at every zoom level, not just on the downloaded map",
@@ -43,6 +44,7 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
+      "På nattkartet er stedsnavn og veinavn nå hvite på kartets egen mørke farge, så de er lette å lese uten en lys boks",
       "Stedsnavn ligger nå på samme farge som landet på dagkartet i stedet for hvit bakgrunn, så de ikke stikker seg så mye ut, men fortsatt er lette å lese",
       "Stedsnavn ligger nå virkelig øverst over veiene også når ingen kart er lastet ned (nettkartet): veilinjene ble tidligere tegnet over dem. De har også en bredere bakgrunn, så veiene ikke skinner mellom bokstavene",
       "Stedsnavn på nettkartet ligger nå også over veiene på alle zoomnivå, ikke bare på det nedlastede kartet",
