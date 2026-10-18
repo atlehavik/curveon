@@ -2,7 +2,7 @@
   {
     "version": "1.2.2",
     "en": [
-      "Place names are now really on top of the roads when no map is downloaded (the online map): the road lines used to be drawn over them. They also have a wider background so the roads don't show between the letters",
+      "Place names are now on top of the roads when no map is downloaded (the online map): the road lines used to be drawn over them. They also have a wider background so the roads don't show between the letters",
       "Place names on the online map now also lie above the roads at every zoom level, not just on the downloaded map",
       "Place names now always lie on top of the roads, so no road runs through them",
       "On the normal day map the edge around white roads is thinner and lighter again, still clear but a more ordinary map",

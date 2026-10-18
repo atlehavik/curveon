@@ -1432,8 +1432,8 @@ private fun addSurfaceLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
     // layers, labels included, all lie underneath).
     // With no downloaded map there are only the online map's labels: the lines go under those, not on top of everything
     // (which put them over the place names).
-    val firstLabel = (s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer && !it.id.startsWith("online-") }
-        ?: s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer })?.id
+    val firstLabel = (s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer && !it.id.startsWith("online-") && !it.id.startsWith("org.maplibre") }
+        ?: s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer && !it.id.startsWith("org.maplibre") })?.id
     // Gravel heat: warm where there is much gravel per 1/16° square (about 6 km of gravel road
     // counts as a lot), the squares' blobs overlapping into one surface, fading out as the dashes take over when zoomed in.
     val heat = HeatmapLayer("$HEAT-layer", HEAT).withProperties(
