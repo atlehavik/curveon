@@ -67,7 +67,7 @@ class OfflineMaps(private val context: Context) {
                 out.put(JSONObject(layer.toString()).put("source", sourceName(i)).apply { if (i > 0) put("id", "${layer.getString("id")}~$i") })
             }
         }
-        for (k in 0 until out.length()) roadLabels(out.getJSONObject(k))
+        for (k in 0 until out.length()) { roadLabels(out.getJSONObject(k)); placeHalo(out.getJSONObject(k), flavor) }
         // Names last, so no road is drawn over them (and their halo): the place names, and the online map's
         // labels, which would otherwise lie under the overlay lines (tarmac and gravel dashes) added over the offline map.
         val rest = JSONArray(); val names = JSONArray()
@@ -80,6 +80,15 @@ class OfflineMaps(private val context: Context) {
         if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
         style.put("layers", out)
         return style.toString()
+    }
+
+    /** Place names get a wide halo (white on the day map), so a road under them doesn't show between the letters. */
+    private fun placeHalo(layer: JSONObject, flavor: String) {
+        val id = layer.getString("id").substringBefore('~')
+        if (!id.startsWith("places_") && id != "online-places") return
+        val paint = layer.optJSONObject("paint") ?: return
+        paint.put("text-halo-width", PLACE_HALO)
+        if (flavor == "light") paint.put("text-halo-color", "#ffffff")
     }
 
     /**
@@ -104,7 +113,7 @@ class OfflineMaps(private val context: Context) {
         when (id) {
             // Place names: dark text on a wide white halo, so they stay readable over the dark roads.
             "places_subplace", "places_locality", "places_region", "online-places" -> {
-                paint.put("text-color", "#1f1f1f"); paint.put("text-halo-color", "#ffffff"); paint.put("text-halo-width", 2.5)
+                paint.put("text-color", "#1f1f1f"); paint.put("text-halo-color", "#ffffff")
             }
             "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { paint.put("line-color", HC_ROAD); atLeast(paint, HC_MIN_WIDTH) }
             "roads_other", "roads_bridges_other", "online-roads_other" -> { paint.put("line-color", HC_PATH); atLeast(paint, HC_MIN_WIDTH) }
@@ -197,6 +206,8 @@ class OfflineMaps(private val context: Context) {
         const val HC_ROAD = "#707070"
         private const val HC_PATH = "#a0a0a0"
         private const val HC_EDGE = 1.5
+        /** The width of the halo round place names (px). */
+        private const val PLACE_HALO = 3.0
         /** Road names show from this zoom, all of them. */
         private const val ROAD_LABEL_ZOOM = 15
         /** The thinnest the grey roads and paths are drawn, at any zoom (px). */
