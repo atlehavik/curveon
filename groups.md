@@ -1,7 +1,7 @@
 # Groups: ride together (design draft)
 
 Status: idea and design only, nothing built. Decided in discussion 2026-10-11, revised 2026-10-18
-(Apple not ruled out, no hard group limit in the protocol, relay self-hosted).
+(Apple not ruled out, no hard group limit in the protocol, relay on a VPS).
 
 ## Goal
 A rider can start a group, friends join with a QR code or link, and everyone sees the others on the
@@ -19,7 +19,7 @@ learns who anyone is or where anyone is. Free to run (or close to it).
   Bluetooth as today, companion <-> relay over mobile data. On a phone running Curveon itself
   ("This device") the same code runs in-process.
 - **Planned for Google Play** later (the whole app, not just this feature), so design for review now.
-- The rider hosts the relay himself (see Hosting options); riders in a group need nothing.
+- The rider runs the relay on a VPS (see Hosting); riders in a group need nothing.
 
 ```
 tablet --Bluetooth--> companion --mobile data--> relay <-- companion <--Bluetooth-- tablet
@@ -122,7 +122,7 @@ limit, but the *group* stays, so the next morning is one tap on "Start sharing",
   Traffic per rider grows with group size (each receives N-1 positions): 100 riders at 5 s is about
   10 MB/hour per phone, so slower updates for far-away riders matter more in big groups.
 
-## Relay (small WebSocket server run by the rider)
+## Relay (small WebSocket server run on a VPS)
 The traffic is tiny (about 100 bytes per position per rider every 5-10 s). One long-running process
 keeps the sockets and the groups in memory, plus a small SQLite file for the rare things below.
 Written in TypeScript on Node (runs the same on PC, Raspberry Pi and VPS), in `~/develop/curveon-relay`.
@@ -147,7 +147,7 @@ Caddy in front for TLS; the same host serves the `https` invite landing page.
   the small one (~4-5 EUR/month) and move up only if it is full.
 - Keep the relay portable: the logic (copy an encrypted message to the others in the group, keep the
   few rare things) is small and the protocol is plain WebSocket; the client does not care where it
-  runs. A home machine can be moved to a VPS by copying one folder.
+  runs. Moving to another host is copying one folder.
 - The app has a **relay address** setting, so anyone can run their own relay and it is an escape
   hatch if the default one gets too expensive.
 - Cost control either way: cap concurrent groups and connections per IP ("service is full" rather
@@ -156,39 +156,31 @@ Caddy in front for TLS; the same host serves the `https` invite landing page.
 - Who pays if it grows (voluntary support, or riders running their own relay) is undecided. No
   payment system: that would go against "no accounts".
 
-## Hosting options (decided 2026-10-18: the rider runs it himself; no usage-based costs)
+## Hosting (decided 2026-10-18: a small fixed-price VPS; no usage-based costs)
 The point is a fixed price with a cap, not pay-per-use, and no dependence on a third-party platform.
-1. **Small fixed-price VPS** (about 4-5 EUR/month, e.g. Hetzner). Cannot get more expensive; if too
-   many use it, it slows down or says "full". Probably holds thousands of riders (to be tested).
-   Needs someone to keep it running; a small process. **Fallback** if home hosting does not work
-   (CGNAT, uptime) or the app outgrows a Raspberry Pi.
-2. **Other people's public servers** (Nostr relays, MQTT brokers, ntfy.sh): free and nothing to run,
-   and E2E encryption keeps content private. But it depends on their goodwill and limits, and they
-   may block a large app. Fine for prototyping, not as the lasting answer.
-3. **Phone to phone with Nearby Connections:** no server, free, works without internet, but only
-   within tens to ~100 m and needs Google Play services. A useful addition when riders are close,
-   with the relay for when they are apart.
-4. **Riders host their own relay** (Raspberry Pi etc.): zero cost for the developer, but not
-   "no setup". Possible for a few, not the main path.
-5. **A computer at the rider's own home** (Raspberry Pi, mini PC, old PC): no rent, only electricity
-   and the domain. Assuming ~2 NOK/kWh: a Pi (3-5 W) costs roughly 50-100 NOK/year, a mini PC
-   (10-15 W) 200-300 NOK/year, an old desktop (~50 W) 700-1000 NOK/year, so as much as the VPS
-   (~600 NOK/year). Domain ~100-150 NOK/year either way. **Chosen.**
-   What it takes: the router forwards port 443 (and 80 for the certificate)
-   to the machine, a dynamic DNS record follows the home IP if it changes, and Caddy terminates TLS
-   with a Let's Encrypt certificate and serves the landing page. It only works if the ISP gives the
-   router a public IP: with CGNAT (the router's WAN address is not the address the internet sees)
-   nothing can come in, and then the VPS is the answer.
-   Downsides: the home IP is public in DNS; uptime depends on home power, router and ISP (matters
-   for SOS); the machine should be kept apart from the home network (container or VLAN); the ISP's
-   terms may restrict servers on a home line. The **relay address** setting makes a later move to
-   the VPS painless.
-   **Plan (2026-10-18):** run it on the rider's Linux PC first, then on a Raspberry Pi once bought.
-   Everything the server needs lives in one plain folder outside the repo (no disk image): the
-   relay, the static invite landing page, config (`relay.env`), `data/` (SQLite), a systemd unit,
-   the Caddy config and a small install script. Moving to the Pi (ARM, the PC is x86_64) or later
-   a VPS is copying that folder and running the script, so the relay must not depend on the CPU
-   architecture (interpreted runtime, not a compiled binary).
+- **Small fixed-price VPS** (about 4-5 EUR/month, e.g. Hetzner, ~600 NOK/year). Cannot get more
+  expensive; if too many use it, it slows down or says "full". Probably holds thousands of riders
+  (to be tested). Fixed IP, steady uptime (matters for SOS), nothing opened on the rider's home
+  network. Domain ~100-150 NOK/year on top. Caddy terminates TLS with a Let's Encrypt certificate and
+  serves the landing page.
+- **Why not at home:** the rider's ISP offers no fixed IP, which points to CGNAT (nothing can come in
+  from outside), and home uptime and exposure are a poor fit for SOS. Dropped as a plan.
+- **Development** runs on the rider's Linux PC; the relay is the same everywhere.
+- Everything the server needs lives in one plain folder outside the repo (no disk image): the relay,
+  the static invite landing page, config (`relay.env`), `data/` (SQLite), a systemd unit, the Caddy
+  config and a small install script. Moving to another host (or CPU architecture) is copying that
+  folder and running the script, so the relay must not depend on the CPU architecture (interpreted
+  runtime, not a compiled binary).
+- The **relay address** setting means anyone can run their own relay (a Raspberry Pi etc.): zero cost
+  for the developer, but not "no setup". Possible for a few, not the main path.
+
+Other ideas, not chosen:
+- **Other people's public servers** (Nostr relays, MQTT brokers, ntfy.sh): free and nothing to run,
+  and E2E encryption keeps content private. But it depends on their goodwill and limits, and they
+  may block a large app. Fine for prototyping, not as the lasting answer.
+- **Phone to phone with Nearby Connections:** no server, free, works without internet, but only
+  within tens to ~100 m and needs Google Play services. A useful addition when riders are close,
+  with the relay for when they are apart.
 
 ## Messages inside the encrypted payload
 - `pos`: lat, lon, speed, heading, accuracy, timestamp, optional battery and "paused", plus movement:
@@ -295,8 +287,6 @@ Operations and law:
 - **Domain not bought yet.** Blocks `https` invites, certificates and App Links (`assetlinks.json`,
   needs the release signing fingerprint). Without App Links the link opens in a browser, so the
   landing page needs an "Open in Curveon" button.
-- **CGNAT unchecked.** Home hosting needs a public IP on the router; compare the router's WAN address
-  with what the internet sees. If they differ, use the VPS.
 - GDPR: the operator handles IP addresses and metadata, so the privacy policy must be online (on the
   domain) before anyone outside the friends uses it.
 - Phone lost or app reinstalled: groups live only on the device, so the rider needs a new invite and
