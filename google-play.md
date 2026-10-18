@@ -72,9 +72,9 @@ Sjekkes på enhet (se `device-checks.md`).
 
 - Utviklerkonto hos Google Play (25 USD, identitetsverifisering).
 - Ny privatkonto: lukket testing med minst 12 testere i 14 dager før produksjon.
-- Personvernerklæring på offentlig URL (jeg kan skrive norsk og engelsk, legge på GitHub Pages).
+- Personvernerklæring på offentlig URL: utkast i `privacy/` (norsk og engelsk), mangler navn og e-post og må hostes (GitHub Pages er enkleste vei; å skru det på er utad, så jeg spør først).
 - Butikkoppføring: 512px-ikon, feature graphic 1024x500, skjermbilder, beskrivelse (jeg kan lage tekst og ta skjermbilder fra emulatoren).
-- Data safety-skjema (jeg kan lage utkast).
+- Data safety-skjema: utkast i [google-play-data-safety.md](google-play-data-safety.md). Avklar Android-backup (`allowBackup="true"` med tomme regler i hovedappen) før innsending.
 
 ## Åpne spørsmål
 
