@@ -204,6 +204,8 @@ fun CurveonMapView(
      * Where the map is looking: its bounds, and how wide the middle of the screen is ([widthKm]) with where the camera is
      * ([centerLat], [centerLon]). In 3D the bounds reach the horizon and say little about how zoomed in the map is.
      */
+    /** How far down the top left corner's own things (the gravel heat button) start: the road card is above them. */
+    topLeftInset: androidx.compose.ui.unit.Dp = 14.dp,
     onViewport: (south: Double, north: Double, west: Double, east: Double, zoom: Double, widthKm: Double, centerLat: Double, centerLon: Double) -> Unit =
         { _, _, _, _, _, _, _, _ -> },
     /** Zoom follows speed (in when slow and twisty, out on fast roads). */
@@ -1239,7 +1241,7 @@ fun CurveonMapView(
 
         // The gravel heat map on and off, top left where nothing else is while planning or browsing
         // (the trip bar is there only while navigating); what it is up to beside it.
-        if (heatButton) Row(Modifier.align(Alignment.TopStart).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (heatButton) Row(Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = topLeftInset), verticalAlignment = Alignment.CenterVertically) {
             MapButton(onClick = { onShowGravelHeat?.invoke(!showGravelHeat) }, highlighted = showGravelHeat, tag = "map_gravel_heat_btn") {
                 Icon(Icons.Default.Whatshot, stringResource(R.string.map_gravel_heat),
                     tint = if (showGravelHeat) Color(0xFF00363D) else TextPrimary, modifier = Modifier.size(24.dp))

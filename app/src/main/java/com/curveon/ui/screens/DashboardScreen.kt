@@ -409,8 +409,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val density = LocalDensity.current
     var mapBox by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var speedSize by remember { mutableStateOf(androidx.compose.ui.unit.DpSize.Zero) }
-    var roadSize by remember { mutableStateOf(androidx.compose.ui.unit.DpSize.Zero) }
     var tripBarWidth by remember { mutableStateOf(0.dp) }
+    var roadCardHeight by remember { mutableStateOf(0.dp) }
     var turnCardWidth by remember { mutableStateOf(0.dp) }
     val mapWidth = mapBox?.width?.let { with(density) { it.toDp() } } ?: 0.dp
     val mapHeight = mapBox?.height?.let { with(density) { it.toDp() } } ?: 0.dp
@@ -430,11 +430,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // it: it only gets as wide as the room beside the turn card allows.
     val sideBySide = mapWidth - 14.dp - 8.dp - MEDIA_ICON_SIZE - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
     val bottomRightHeight = mediaHeight + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp
-    // The road card sits under the speed card, except on the full-screen map in landscape, where it
-    // is centred at the top.
-    val landscape = LocalConfiguration.current.orientation != android.content.res.Configuration.ORIENTATION_PORTRAIT
-    val roadCentred = landscape && isFullScreenMap
-    val buttonsTopInset = 14.dp + speedSize.height + 8.dp + if (currentRoad != null && !roadCentred) roadSize.height + 8.dp else 0.dp
+    // The road card is always top left; what else sits there (the trip bar, the gravel heat button) goes under it,
+    // as far down as the card is high (it changes with its size setting and with a give way sign beside it).
+    val topLeftInset = 14.dp + if (currentRoad != null) roadCardHeight + 8.dp else 0.dp
+    val buttonsTopInset = 14.dp + speedSize.height + 8.dp
     // The music keeps the corner if the buttons still fit above it; otherwise it moves left of them.
     val buttonsFitAboveMedia = mapHeight - buttonsTopInset - (bottomRightHeight + 14.dp + 8.dp) >= MAP_BUTTONS_HEIGHT
     val buttonsBottomInset = if (showMedia && buttonsFitAboveMedia) bottomRightHeight + 14.dp + 8.dp else 0.dp
@@ -453,7 +452,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         if (showTripBar) navigationSummary?.let {
             NavigationSummaryBar(
                 it, onStop = { viewModel.stopNavigation() },
-                modifier = Modifier.align(Alignment.TopStart).padding(14.dp)
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = topLeftInset, end = 14.dp, bottom = 14.dp)
                     .widthIn(max = (mapWidth - 14.dp - 14.dp - 8.dp - speedSize.width).coerceAtLeast(0.dp))
                     .onSizeChanged { tripBarWidth = with(density) { it.width.toDp() } },
                 foldedHeight = speedSize.height,
@@ -465,12 +464,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
         MapSpeedCluster({ telemetryState.value }, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
             .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, signSize = speedSign.dp.dp)
-        // The road's number and priority sign in a card of their own: top middle on the full-screen map in
-        // landscape, under the speed everywhere else.
+        // The road's number and priority sign in a card of their own: always top left, with the trip bar under it.
         currentRoad?.let { road ->
-            CurrentRoadCard(road, giveWay = giveWayAhead, scale = roadCardSize.scale, modifier = (if (roadCentred) Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
-                else Modifier.align(Alignment.TopEnd).padding(top = 14.dp + speedSize.height + 8.dp, end = 14.dp))
-                .onSizeChanged { roadSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } })
+            CurrentRoadCard(road, giveWay = giveWayAhead, scale = roadCardSize.scale,
+                modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = 14.dp)
+                    .widthIn(max = (mapWidth - 14.dp - 14.dp - 8.dp - speedSize.width).coerceAtLeast(0.dp))
+                    .onSizeChanged { roadCardHeight = with(density) { it.height.toDp() } })
         }
         // The next turn bottom left, as narrow as it can be.
         if (showTurn) {
@@ -669,6 +668,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             isFullScreen = isFullScreenMap,
             bottomClearance = bottomClearance,
             buttonsTopInset = buttonsTopInset,
+            topLeftInset = topLeftInset,
             buttonsBottomInset = buttonsBottomInset,
             dark = mapDark,
             highContrast = highContrast || isNavigating, // while navigating the day map is always high contrast

@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Road card always top left (1.2.2)
+
+- [ ] Navigating with a road card showing: the arrival box sits under it; fold the arrival box out (tap) and the road card stays put (it is above). With no road card (no road info) the arrival box is top left by itself.
+- [ ] Road card Large / Extra large: the arrival box moves down with it and never touches it. A give way sign beside the number makes the card wider only, not taller.
+- [ ] Gravel heat button (not navigating): it sits under the road card when there is one, and doesn't touch it.
+- [ ] Right side: only the speed card and the map buttons; the map buttons start right under the speed card.
+
 ## 2026-10-18 — Place names on top, thinner road edge (1.2.2)
 
 - [ ] Online map AND downloaded map, normal and high contrast, several zoom levels (10–16): no road, gravel dash or tarmac line runs over a place name. Online labels were under the overlay lines before.
