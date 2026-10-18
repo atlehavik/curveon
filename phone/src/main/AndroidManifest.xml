@@ -7,12 +7,17 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-    <!-- To show "Spotify"/"WhatsApp" instead of package names for any app that posts or plays.
-         Fine for a sideloaded app; would need review for Play Store distribution. -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        xmlns:tools="http://schemas.android.com/tools"
-        tools:ignore="QueryAllPackagesPermission" />
     <queries>
+        <!-- To show "Spotify"/"WhatsApp" instead of package names for any app that posts or plays:
+             every app with a launcher icon (instead of QUERY_ALL_PACKAGES, which Play restricts) -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <!-- The music and podcast apps (listed, started and played through their media browser) -->
+        <intent>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent>
         <intent>
             <action android:name="android.speech.RecognitionService" />
         </intent>

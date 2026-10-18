@@ -442,7 +442,7 @@ private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsAc
     }
 }
 
-/** Settings → Help: this version, a newer one on GitHub (download and install), and what's new. */
+/** Settings → Help: this version, a newer one on GitHub (download and install; not in the Play build), and what's new. */
 @Composable
 private fun AppVersionCard(update: UpdateState, actions: SettingsActions) {
     val release = when (update) {
@@ -480,6 +480,7 @@ private fun AppVersionCard(update: UpdateState, actions: SettingsActions) {
                 if (status != null) Text(status, color = if (update is UpdateState.Failed) WarningRed else TextSecondary, fontSize = 13.sp)
             }
             when {
+                !com.curveon.BuildConfig.SELF_UPDATE -> Unit // Google Play updates the app
                 update is UpdateState.Downloading || update is UpdateState.Installing || update == UpdateState.Checking -> Unit
                 release != null -> Button(onClick = actions.onInstallUpdate, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
                     Text(stringResource(R.string.update_install), color = OnCyan, fontWeight = FontWeight.Bold)

@@ -1,32 +1,70 @@
 # Google Play: status og plan
 
-Notater fra samtalen 2026-10-11/12. Ikke committet.
+Notater fra samtalene 2026-10-11/12 og 2026-10-18. Ikke committet.
 
 ## Status
 
 - Opplastingsnøkkel: `~/.curveon-signing/upload-key.jks`, passord i `~/.curveon-signing/signing.env`
   (alias `upload`). **Ta backup av hele mappen.** Mistes nøkkelen kan Play nullstille den, men det er tungvint.
-- Begge appene har signert release-bygg:
-  `source ~/.curveon-signing/signing.env && ./gradlew :app:bundleRelease :companion:bundleRelease`
-  - `app/build/outputs/bundle/release/app-release.aab` (tablet, `com.curveon.tablet`, ca. 33 MB)
+- Begge appene har signert bygg for Play:
+  `source ~/.curveon-signing/signing.env && ./gradlew :app:bundlePlay :companion:bundleRelease`
+  - `app/build/outputs/bundle/play/app-play.aab` (tablet, `com.curveon.tablet`, ca. 30 MB)
   - `companion/build/outputs/bundle/release/companion-release.aab` (telefon, `com.curveon.companion`, ca. 6 MB)
+- **`play`-byggtypen i `:app`** (2026-10-18) er `release` uten selvoppdatering: `BuildConfig.SELF_UPDATE` er
+  `false`, `src/play/AndroidManifest.xml` fjerner `REQUEST_INSTALL_PACKAGES`, og oppdateringssjekken
+  (oppstart og «Se etter oppdatering» i Settings → Help) er av. «Hva er nytt» og GitHub-lenken er der fortsatt.
+  GitHub-APK-en (`assembleRelease`) har alt som før. Companion har ingen selvoppdatering.
 - Kartdata ligger ikke i appen (lastes ned i Settings), så størrelsen er ikke et problem.
-- `companion/build.gradle.kts` fikk signeringskonfig; `.gitignore` dekker `*.jks`, `*.keystore`, `signing.env`.
-- Release-bygg skjuler utviklerverktøy via `BuildConfig.DEV` (demo ride, demo data, fake OBD, companionens test-kort).
-- GitHub-release v1.0 med signerte APK-er (sideloading): https://github.com/atlehavik/curveon/releases/tag/v1.0
-- Versjon er 1.0 / versionCode 1 i begge moduler. Øk `versionCode` for hver opplasting til Play.
+- `.gitignore` dekker `*.jks`, `*.keystore`, `signing.env`.
+- Release-bygg skjuler utviklerverktøy via `BuildConfig.DEV` (demo data, fake OBD, companionens test-kort).
+  Demoturen er med i alle bygg.
+- GitHub-release med signerte APK-er (sideloading): https://github.com/atlehavik/curveon/releases
+- Øk `versionCode` for hver opplasting til Play.
+- **Mål:** Play-versjonen skal også være den du bruker selv, med dagens telefoni-UI.
+
+## Viktig: tablet-appen har også telefontillatelsene
+
+`:app` bruker `:phone` (som «Denne enheten» på Pixel), og manifestene slås sammen. Tablet-appen har derfor
+`READ_CONTACTS`, `READ_CALL_LOG`, `CALL_PHONE` og `RECORD_AUDIO` akkurat som companion. Begge appene må
+altså igjennom samme vurdering; «tablet først» gjør det ikke enklere.
+
+## Telefontillatelser og Googles regler
+
+Kilde: https://support.google.com/googleplay/android-developer/answer/10208820 (lest 2026-10-18).
+
+- **`READ_CALL_LOG`** er begrenset. Tillatt for standard ringeapp, eller etter unntak som søkes om i Play Console
+  (Permissions Declaration Form) og vurderes av Google. Unntak som passer Curveon:
+  - **«Companion apps for connected devices»** (klokker, biler, smarthus): companion er følgeappen til tavla.
+  - **«In-vehicle hands-free use and projected display»**: samtaler på tavla mens du kjører.
+  Apper som 1881 Hvem Ringer (anropslogg og SMS-logg, uten å være standard ringeapp) bruker mest sannsynlig
+  unntaket «Caller ID, spam detection or blocking».
+  Appen må være ubrukelig uten tillatelsen (kjernefunksjon), og dataene kan ikke brukes til noe annet.
+  Utfallet er ikke garantert. **Svakhet:** unntaket står sterkest for companion; for tablet-appen (som på Pixel
+  er sin egen companion) må vi forklare at tavla er skjermen i kjøretøyet. Reserveplan hvis det avslås: egen
+  avskalert Play-variant (anropslogg erstattes av en liste Curveon fører selv over anrop den ser), eller
+  READ_CALL_LOG bare i companion.
+- **`CALL_PHONE`**: Googles policyside om SMS og anropslogg nevner bare SMS- og anropsloggtillatelsene, ikke
+  `CALL_PHONE`. Den er altså trolig ikke begrenset (sjekkes i erklæringsskjemaet i Play Console).
+  Vi bruker den i `PhoneBook.placeCall` (`TelecomManager.placeCall`). **Ikke bytt til `ACTION_DIAL`:** den må
+  starte en aktivitet, og det får en tjeneste i bakgrunnen (telefonen i lommen) ikke lov til, så «ring fra
+  tavla» ville sluttet å virke. Brukt i `PhoneBook.kt`, `PhoneLinkDialog.kt`, `companion/.../MainActivity.kt`.
+- **`READ_CONTACTS`** og **`RECORD_AUDIO`**: ikke begrenset, men må stå i Data safety og ha tydelig forklaring i
+  appen før brukeren blir spurt.
+- **Notification listener**: erklæres i Play Console. Brukes til varsler, musikkøkter og samtaler.
+
+## `QUERY_ALL_PACKAGES` er fjernet (2026-10-18)
+
+Erstattet av `<queries>` i `phone/src/main/AndroidManifest.xml`: alle apper med startikon (`MAIN`/`LAUNCHER`)
+og alle med `MediaBrowserService`. Det gir de samme appnavnene («Spotify», «WhatsApp») og musikklisten som før,
+uten erklæring. Gjelder begge appene. Risiko: en app som sender varsler uten startikon vises med pakkenavn.
+Sjekkes på enhet (se `device-checks.md`).
 
 ## Største risikoer hos Google
 
-1. **Telefon-tillatelser i `:phone`** (`READ_CALL_LOG`, `CALL_PHONE`) er begrensede. Godtas normalt bare
-   for standard ringeapp. Companion blir sannsynligvis avvist med dem. Største risiko.
-   Alternativ: fjern anropsloggen og bruk `ACTION_DIAL` eller en Telecom-flyt uten `CALL_PHONE` (mindre funksjon).
-   Brukt i `phone/.../PhoneBook.kt` (`placeCall`, call log) og `PhoneLinkDialog.kt`, `companion/.../MainActivity.kt`.
-2. **`QUERY_ALL_PACKAGES`** krever begrunnelse (står selv i manifestet at den trenger vurdering for Play).
-   Forslag: bytt til `<queries>` for medie- og meldingsapper. Brukes for å vise appnavn ("Spotify", "WhatsApp").
-3. **Erklæringer i Play Console:** notification listener, mikrofon (`RECORD_AUDIO`), foreground services
+1. **`READ_CALL_LOG`**, se over. Største risiko.
+2. **Erklæringer i Play Console:** notification listener, mikrofon (`RECORD_AUDIO`), foreground services
    (location i tablet; connectedDevice og microphone i companion). Noen krever kort demovideo.
-4. Tablet-appen har bare posisjon og Bluetooth, og er enklest. Den har også en notification listener ("This device").
+3. Reell unntakssøknad for anropslogg trenger tekst og trolig demovideo av tavla som viser anropslogg og ringing.
 
 ## Må gjøres av deg
 
@@ -36,15 +74,12 @@ Notater fra samtalen 2026-10-11/12. Ikke committet.
 - Butikkoppføring: 512px-ikon, feature graphic 1024x500, skjermbilder, beskrivelse (jeg kan lage tekst og ta skjermbilder fra emulatoren).
 - Data safety-skjema (jeg kan lage utkast).
 
-## Åpne spørsmål / forslag
+## Åpne spørsmål
 
-1. Begge apper, eller bare tablet først? Anbefaling: tablet først.
-2. Fjerne `READ_CALL_LOG` og `CALL_PHONE`, og bytte `QUERY_ALL_PACKAGES` til `queries`, så companion har en realistisk sjanse?
+1. Begge apper samtidig. Tablet først hjelper ikke (se over).
+2. Søke om unntak for `READ_CALL_LOG` som følgeapp til tavla, og beholde `CALL_PHONE`? (Anbefalt.)
 
 ## Andre ting å vurdere
-
-- **Selvoppdatering fra GitHub** (`AppUpdates`, `REQUEST_INSTALL_PACKAGES` i manifestet) er ikke lov på Play:
-  fjern tillatelsen og skjul «Se etter oppdatering» i Play-bygget (f.eks. egen flavor).
 
 - **Play App Signing** signerer på nytt med en annen nøkkel. Den som har installert APK fra GitHub må avinstallere før Play-versjonen.
 - Release-APK-en kan ikke installeres over ride-bygget på din X7 (annen nøkkel) uten å miste nedlastede kart. Behold ride-bygget på egen tablet.

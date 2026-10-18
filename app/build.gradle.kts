@@ -31,7 +31,10 @@ android {
   buildTypes {
     // DEV: developer aids (demo data, fake OBD values) that public releases leave out. The demo
     // ride is in every build.
-    debug { buildConfigField("boolean", "DEV", "true") }
+    debug {
+      buildConfigField("boolean", "DEV", "true")
+      buildConfigField("boolean", "SELF_UPDATE", "true")
+    }
     // Like release (not debuggable, so ART runs routing at full speed) but signed with the debug
     // key, so it installs over a debug build and keeps the app's data. For the bike tablet.
     create("ride") {
@@ -39,13 +42,23 @@ android {
       isDebuggable = false
       matchingFallbacks += "release"
       buildConfigField("boolean", "DEV", "true")
+      buildConfigField("boolean", "SELF_UPDATE", "true")
     }
     release {
       buildConfigField("boolean", "DEV", "false")
+      // Updates itself from the GitHub releases page (sideloaded builds only).
+      buildConfigField("boolean", "SELF_UPDATE", "true")
       isCrunchPngs = false
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
+    }
+    // The Google Play bundle (`:app:bundlePlay`): release, but Play updates it, so no installer
+    // permission and no update check (src/play/AndroidManifest.xml drops REQUEST_INSTALL_PACKAGES).
+    create("play") {
+      initWith(getByName("release"))
+      matchingFallbacks += "release"
+      buildConfigField("boolean", "SELF_UPDATE", "false")
     }
   }
   compileOptions {

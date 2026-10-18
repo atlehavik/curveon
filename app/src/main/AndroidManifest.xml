@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Updates from the GitHub releases page (Settings → Help). Not allowed on Google Play: drop it there. -->
+    <!-- Updates from the GitHub releases page (Settings → Help). Not allowed on Google Play: the play build type (src/play) removes it. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application

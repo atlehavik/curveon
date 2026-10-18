@@ -319,6 +319,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Looks for a newer version now (Settings → Help, or [quiet]ly by itself). */
     fun checkForUpdate(quiet: Boolean = false) {
+        if (!com.curveon.BuildConfig.SELF_UPDATE) return
         val s = _appUpdate.value
         if (s is UpdateState.Checking || s is UpdateState.Downloading ||
             s is UpdateState.Installing) return
@@ -959,7 +960,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         // A new version on GitHub: looked for soon after start, again every half hour until the
         // server has answered (often offline), then once a day. Developer builds are signed with
         // another key and can't take the release, so they only look when asked (Settings → Help).
-        if (!com.curveon.BuildConfig.DEV) viewModelScope.launch {
+        // The Google Play build is updated by Play and doesn't look at all.
+        if (!com.curveon.BuildConfig.DEV && com.curveon.BuildConfig.SELF_UPDATE) viewModelScope.launch {
             delay(15_000)
             while (true) { untilAwake(); delay(if (checkNow(quiet = true)) 24 * 3_600_000L else 30 * 60_000L) }
         }

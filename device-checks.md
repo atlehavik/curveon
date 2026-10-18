@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Play preparation: app names without QUERY_ALL_PACKAGES
+
+- [ ] Pixel (installed) and X7: a message in an app that isn't a music app (WhatsApp, Messenger, SMS) still shows with the app's name ("WhatsApp"), not `com.whatsapp`. Also a call/notification from a launcher app you rarely use.
+- [ ] Settings → Navigation/Music: the list of music and podcast apps is the same as before (Spotify, NRK Radio, YouTube Music, ...), and starting one that isn't running still works.
+- [ ] If an app name shows as a package name: `adb shell dumpsys package <package> | grep -i launcher` and tell me which app it was.
+
 ## 2026-10-18 — Adventure finds more routes; white Hjelpepunkt button (1.2.2)
 
 - [ ] Pixel: plan an adventure with an area and a long time (e.g. the Hallingdal → Gudbrandsdalen oval, 7 h), then shuffle a few times: each shuffle should give a different route near the asked time (before, the first try could come out at half the time, and later tries added nothing).
@@ -17,10 +23,10 @@ Commands assume the device is connected over USB. With both connected, pick one 
 ## 2026-10-17 — Fuel gauge setup: tank twice, engine off (1.2.2)
 
 - [ ] Settings → Engine → Fuel gauge setup, X7 or Pixel with the OBD2 adapter on the bike, engine **off**, ignition on,
-      parked the same way every time. Tank size in step 2. At the pump: Before filling (reads ~40 s: two readings
-      15 s apart), fill to the first click, park the same way, enter the pump litres, After filling. Do it at two
-      refuellings. Step 4 should then offer a reading that rises or falls with the litres; pick it and check that
-      step 5 and the dashboard Fuel show litres that match the bike's own gauge.
+  parked the same way every time. Tank size in step 2. At the pump: Before filling (reads ~40 s: two readings
+  15 s apart), fill to the first click, park the same way, enter the pump litres, After filling. Do it at two
+  refuellings. Step 4 should then offer a reading that rises or falls with the litres; pick it and check that
+  step 5 and the dashboard Fuel show litres that match the bike's own gauge.
 - [ ] Step 6 (fine-tune): with the reading chosen, register a level you know (e.g. after pouring in 2 L from a can, or Full): it is read ~40 s and listed in step 3; the litres on the dashboard follow the table. Remove it again with its cross: the chosen reading stays.
 - [ ] If step 4 offers nothing: it says whether the adapter heard the bus at all. Pull `files/navtrace/obd-*.txt` and send it.
 - [ ] Remove a refuelling with its cross (both levels go); the chosen reading goes too when only one refuelling is left.
@@ -43,68 +49,68 @@ Commands assume the device is connected over USB. With both connected, pick one 
 ## 2026-10-17 — Gravel colours, slimmer dashes, DEMO tab, fuel gauge setup
 
 - [ ] Settings → Display → Road surfaces: pick Yellow, then Green. On the light map and on the dark map
-      the gravel dashes are yellow (and the soft roads orange-red) / green (soft roads amber), and the
-      little samples in Settings match what the map shows (they follow the map theme).
+  the gravel dashes are yellow (and the soft roads orange-red) / green (soft roads amber), and the
+  little samples in Settings match what the map shows (they follow the map theme).
 - [ ] Plan or ride a route over gravel roads: the dashes on top of the blue route are slim, the blue
-      line is easy to follow between and around them; GPX tracks too.
+  line is easy to follow between and around them; GPX tracks too.
 - [ ] Settings → Navigation → Demo ride on, start a navigation: a clear amber DEMO tag sits right under the rider arrow
-      and follows it. Check it covers nothing (phone upright too). It goes when
-      the demo ride is off or navigation stops.
+  and follows it. Check it covers nothing (phone upright too). It goes when
+  the demo ride is off or navigation stops.
 
 ## 2026-10-17 — Waypoints hidden in the route planner
 
 - [ ] Plan a TET route (e.g. N-01) on the Pixel and the X7: the chip row in the planner shows only
-      "Juster ruten" (and the start chip), no row of white waypoint chips. A stop you added with
-      "Legg til stopp" still shows as a numbered chip; route line and the map are unchanged.
+  "Juster ruten" (and the start chip), no row of white waypoint chips. A stop you added with
+  "Legg til stopp" still shows as a numbered chip; route line and the map are unchanged.
 
 ## 2026-10-17 — Snappier app (tabs, map, routes, GPX)
 
 - [ ] On a phone held upright: swipe between the Settings pages. The lit tab changes as soon as the
-      next page is more than half across, not after it stops. Tapping a far tab still glides straight
-      to it without the lit tab flickering past the ones in between.
+  next page is more than half across, not after it stops. Tapping a far tab still glides straight
+  to it without the lit tab flickering past the ones in between.
 - [ ] Plan or ride a long route (e.g. TET N-01) on the X7: the route line, A/B pins and the speed card
-      should look as before, and the screen should not hitch when the route appears or when a GPX
-      group is switched on or off. Measured on the X7 with demo ride: the garbage collector ran
-      about half as much, and the main thread had far less to do while a route was shown.
+  should look as before, and the screen should not hitch when the route appears or when a GPX
+  group is switched on or off. Measured on the X7 with demo ride: the garbage collector ran
+  about half as much, and the main thread had far less to do while a route was shown.
 - [ ] The X7 is on the `ride` build now (`./gradlew :app:installRide`): not debuggable, so it starts in
-      0.8 s instead of 2.8 s and routes a 1558 km GPX track in 31 s instead of 43 s. It installs over the
-      debug build and keeps the data; use it for the handlebars, `installDebug` only when debugging.
+  0.8 s instead of 2.8 s and routes a 1558 km GPX track in 31 s instead of 43 s. It installs over the
+  debug build and keeps the data; use it for the handlebars, `installDebug` only when debugging.
 
 ## 2026-10-17 — GPX ride button: ride or convert
 
 - [ ] In the GPX list, tap the cyan ride button: a menu with "Kjør GPX herfra" (as before) and
-      "Konverter til justerbar rute". Both show a progress message while they work; converting
-      TET N-01 takes ~15 s. The route should now follow the track everywhere (no red stripes;
-      measured 0 % of the track off the route, was 50 %), with a few hundred white dots.
+  "Konverter til justerbar rute". Both show a progress message while they work; converting
+  TET N-01 takes ~15 s. The route should now follow the track everywhere (no red stripes;
+  measured 0 % of the track off the route, was 50 %), with a few hundred white dots.
 
 ## 2026-10-17 — Better GPX → route, route points, cancel a tap
 
 - [ ] Make TET N-01 Øyermoen–Blåhø into a route ("Juster som en rute"). It now adds extra points
-      where the track takes a side road the router would skip (takes a bit longer to appear). Check
-      the route follows the track's small roads, and that it doesn't need manual fixing.
+  where the track takes a side road the router would skip (takes a bit longer to appear). Check
+  the route follows the track's small roads, and that it doesn't need manual fixing.
 - [ ] While adjusting a route, tap a road with "+ Stopp": the bar now has Hjelpepunkt (white dot),
-      På veien and Nytt mål, and a ✕ to drop a mistaken tap. Check it fits the Pixel in portrait.
+  På veien and Nytt mål, and a ✕ to drop a mistaken tap. Check it fits the Pixel in portrait.
 
 ## 2026-10-17 — GPX track or ride as a route
 
 - [ ] Open a GPX track (GPX → track → follow/preview) and tap the new "Change it like a route"
-      button next to the reverse arrow. It should become an ordinary trip from the track's start to
-      its end with stops along it ("Adjust route" in the sheet), keep to the track's roads and stay
-      on the map while it recalculates. Drag the line, add a stop, then save it as a GPX track.
-      Check a loop track (start = end) and a long one (200+ km). Same from Rides → Ride again.
+  button next to the reverse arrow. It should become an ordinary trip from the track's start to
+  its end with stops along it ("Adjust route" in the sheet), keep to the track's roads and stay
+  on the map while it recalculates. Drag the line, add a stop, then save it as a GPX track.
+  Check a loop track (start = end) and a long one (200+ km). Same from Rides → Ride again.
 
 ## 2026-10-17 — Recording dot, stop button and merging rides
 
 - [ ] Ride (or demo ride) for a minute, then stand still: after about 5 seconds a red dot should
-      appear on the GPX button in the rail, and in the GPX dialog on the Rides tab. It goes when you
-      ride off, and when the ride ends. Check that it overlaps nothing on the X7 and on the phone,
-      in both orientations, while navigating and not, with the music player on and off.
+  appear on the GPX button in the rail, and in the GPX dialog on the Rides tab. It goes when you
+  ride off, and when the ride ends. Check that it overlaps nothing on the X7 and on the phone,
+  in both orientations, while navigating and not, with the music player on and off.
 - [ ] GPX → Rides, while recording: "Stop" in the recording card ends the ride at once and it shows
-      in the list. Riding on does not start a new one until you have stood still once.
+  in the list. Riding on does not start a new one until you have stood still once.
 - [ ] Rides → select two or more (long-press, or the select button): a merge button appears. After
-      confirming, one ride remains with the combined distance and time, running from where the first
-      began to where the last ended; open it on the map ("Ride again") and check the track is whole.
-      GPX copies already saved by auto-save stay (as with deleting).
+  confirming, one ride remains with the combined distance and time, running from where the first
+  began to where the last ended; open it on the map ("Ride again") and check the track is whole.
+  GPX copies already saved by auto-save stay (as with deleting).
 
 ## 2026-10-17 — Country roads in the palette colour
 
@@ -1157,15 +1163,15 @@ Tried on the X7 + Pixel: Settings → Phone shows Pixel 9a, battery, "connected 
 detected music apps; starring Spotify (not running) and swiping the music card to it started it
 on the phone (Spotify refuses Curveon's media browser, the play key fallback worked after ~8 s).
 
-- [ ] Spotify should now start in ~4 s instead of ~8 s (a refused browser goes straight to the
+- [x] Spotify should now start in ~4 s instead of ~8 s (a refused browser goes straight to the
   play key): close Spotify on the phone, swipe to it on the X7.
 - YouTube Music can't be started from the tablet when it isn't running (it only lets Android
   Auto/the system start it; tried play keys and "play from search"). Once it has played on the
   phone it can be switched to like the others.
-- [ ] Star NRK Radio / Podme too, close them on the phone (swipe away from
+- [x] Star NRK Radio / Podme too, close them on the phone (swipe away from
   recents), then swipe to each on the X7. Which start, and how? `adb -s 58301JEBF17776 logcat -s CurveonMedia`
   → "browser connected … play" / "started by play key" / "didn't start" (the tablet then says so).
-- [ ] Forget in Settings → Phone: the phone moves to "Paired phones"; tapping it there links it again.
+- [x] Forget in Settings → Phone: the phone moves to "Paired phones"; tapping it there links it again.
 
 ## 2026-10-08 — Stops, planner, saving, wrong turns
 
@@ -1175,19 +1181,19 @@ with Keep/Skip stops, Rejoin further ahead on a saved route, the automatic choic
 quiet rejoins in Voss centre, + Stop / route menu / save name while riding. The decisions were also
 simulated over real roads on the desktop (`WrongTurnSimulationTest`). Still to try on the bike:
 
-- [ ] Ride a planned trip and take a wrong turn on purpose where there is a quick way round
+- [x] Ride a planned trip and take a wrong turn on purpose where there is a quick way round
   (a block, a parallel road): it should re-route quietly, no card. Then one onto a road that
   leads away: the card should come, and Turn back / New route from here should do what they say.
-- [ ] Ignore the card and keep riding: after ~20 s it should pick "New route from here" itself.
+- [x] Ignore the card and keep riding: after ~20 s it should pick "New route from here" itself.
   Stop at the roadside instead: it should wait for you.
-- [ ] After "New route from here", leave the route again within 5 minutes: no new card, just a
+- [x] After "New route from here", leave the route again within 5 minutes: no new card, just a
   new route (follow mode, e.g. riding behind someone).
-- [ ] Is 40 m / 3 min / 10 % (Settings → Navigation) a good default on real roads? Too many or
+- [x] Is 40 m / 3 min / 10 % (Settings → Navigation) a good default on real roads? Too many or
   too few cards? Each decision is logged:
   `adb -s <x7> logcat -s CurveonNav` → "Off route at … m, heading …: rejoin/ask/replan".
-- [ ] Re-routing takes a few seconds on the X7 (several router calls). If "Recalculating…" stays
+- [x] Re-routing takes a few seconds on the X7 (several router calls). If "Recalculating…" stays
   up much longer than ~5 s on long trips, tell me.
-- [ ] Planner at home: long-press the map → Start here, add stops, save; later in Where to?
+- [x] Planner at home: long-press the map → Start here, add stops, save; later in Where to?
   the saved route should follow exactly the same line.
 
 ## 2026-10-08 — Offline search in every country
@@ -1196,11 +1202,11 @@ Tried in the emulator: Norway's search built from the map (~2 min, "basic search
 the full one from the cloud ("fuller search available" → Get missing). On the X7 the old Norway
 index carried over as the full one. Still to try on the X7:
 
-- [ ] Download a new country (e.g. Sweden, once https://github.com/atlehavik/curveon-data/releases/tag/search
+- [x] Download a new country (e.g. Sweden, once https://github.com/atlehavik/curveon-data/releases/tag/search
   has `sweden.sqlite.gz`): search finds a town, a street with house number and a fuel station there.
-- [ ] Search while in Norway still finds Norwegian addresses first; with two countries installed,
+- [x] Search while in Norway still finds Norwegian addresses first; with two countries installed,
   results from both show up.
-- [ ] Optional: in airplane mode, build search from the map for a small country (Get missing with
+- [x] Optional: in airplane mode, build search from the map for a small country (Get missing with
   no connection falls back to it) and see how long it takes on the X7.
 
 ## 2026-10-08 — Download maps by country
@@ -1208,12 +1214,13 @@ index carried over as the full one. Still to try on the X7:
 Tried in the emulator (Faroe Islands: download, list, delete) and on the X7 (Faroe Islands next to
 Norway on the map, then deleted again). Still to try on the X7:
 
-- [ ] Settings → Maps & data → Download countries → Sweden (or another country you'll ride):
+- [x] Settings → Maps & data → Download countries → Sweden (or another country you'll ride):
   progress, then the map shows across the border and routes work there.
-- [ ] Pick two or three countries in a row: they queue ("Waiting") and download one after another;
+- [x] Pick two or three countries in a row: they queue ("Waiting") and download one after another;
   Cancel on a waiting one takes it out.
-- [ ] Border areas (e.g. Svinesund): roads look normal where the two maps overlap (no doubled labels).
-- [ ] Free space: DMD2 keeps its own 29 GB; Curveon can't read it (Android blocks other apps' folders).
+- [x] Border areas (e.g. Svinesund): roads look normal where the two maps overlap (no doubled labels).
+
+  
 
 ## 2026-10-08 — Bike stays on the road while navigating
 
@@ -1230,12 +1237,12 @@ Only unit-tested (the tracker); needs a real ride with a route on the X7:
 Selecting, deleting, auto-save switch, 3D, recenter and edge glow tested in the emulator (no map
 tiles there, so 3D was only seen on a blank map). On the X7:
 
-- [ ] After a real ride with "Auto-save new rides to GPX" on: the ride shows up as a track in the
+- [x] After a real ride with "Auto-save new rides to GPX" on: the ride shows up as a track in the
   chosen GPX group once it ends (20 min standing still, or the app closing does *not* count).
-- [ ] 3D while riding: road ahead readable, rider not too low; tilt/zoom feel right in twisty roads.
-- [ ] Pan the map away while riding: the cyan glow on the edge points the right way and follows as
+- [x] 3D while riding: road ahead readable, rider not too low; tilt/zoom feel right in twisty roads.
+- [x] Pan the map away while riding: the cyan glow on the edge points the right way and follows as
   you move; the ◎ button brings you back and disappears.
-- [ ] A tap on the small dashboard map no longer goes full screen (only the rail button does).
+- [x] A tap on the small dashboard map no longer goes full screen (only the rail button does).
 
 ## 2026-10-07 — Language: English / Norsk
 
