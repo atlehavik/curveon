@@ -8,7 +8,7 @@ Notater fra samtalene 2026-10-11/12 og 2026-10-18. Ikke committet.
   (alias `upload`). **Ta backup av hele mappen.** Mistes nøkkelen kan Play nullstille den, men det er tungvint.
 - Begge appene har signert bygg for Play:
   `source ~/.curveon-signing/signing.env && ./gradlew :app:bundlePlay :companion:bundleRelease`
-  - `app/build/outputs/bundle/play/app-play.aab` (tablet, `com.curveon.tablet`, ca. 30 MB)
+  - `app/build/outputs/bundle/play/app-play.aab` (hovedappen, `com.curveon.tablet`, ca. 30 MB)
   - `companion/build/outputs/bundle/release/companion-release.aab` (telefon, `com.curveon.companion`, ca. 6 MB)
 - **`play`-byggtypen i `:app`** (2026-10-18) er `release` uten selvoppdatering: `BuildConfig.SELF_UPDATE` er
   `false`, `src/play/AndroidManifest.xml` fjerner `REQUEST_INSTALL_PACKAGES`, og oppdateringssjekken
@@ -22,11 +22,11 @@ Notater fra samtalene 2026-10-11/12 og 2026-10-18. Ikke committet.
 - Øk `versionCode` for hver opplasting til Play.
 - **Mål:** Play-versjonen skal også være den du bruker selv, med dagens telefoni-UI.
 
-## Viktig: tablet-appen har også telefontillatelsene
+## Viktig: hovedappen har også telefontillatelsene
 
-`:app` bruker `:phone` (som «Denne enheten» på Pixel), og manifestene slås sammen. Tablet-appen har derfor
+`:app` bruker `:phone` (som «Denne enheten» på Pixel, der hovedappen er frittstående), og manifestene slås sammen. Hovedappen har derfor
 `READ_CONTACTS`, `READ_CALL_LOG`, `CALL_PHONE` og `RECORD_AUDIO` akkurat som companion. Begge appene må
-altså igjennom samme vurdering; «tablet først» gjør det ikke enklere.
+altså igjennom samme vurdering; «hovedappen først» gjør det ikke enklere.
 
 ## Telefontillatelser og Googles regler
 
@@ -39,7 +39,7 @@ Kilde: https://support.google.com/googleplay/android-developer/answer/10208820 (
   Apper som 1881 Hvem Ringer (anropslogg og SMS-logg, uten å være standard ringeapp) bruker mest sannsynlig
   unntaket «Caller ID, spam detection or blocking».
   Appen må være ubrukelig uten tillatelsen (kjernefunksjon), og dataene kan ikke brukes til noe annet.
-  Utfallet er ikke garantert. **Svakhet:** unntaket står sterkest for companion; for tablet-appen (som på Pixel
+  Utfallet er ikke garantert. **Svakhet:** unntaket står sterkest for companion; for hovedappen (som på Pixel
   er sin egen companion) må vi forklare at tavla er skjermen i kjøretøyet. Reserveplan hvis det avslås: egen
   avskalert Play-variant (anropslogg erstattes av en liste Curveon fører selv over anrop den ser), eller
   READ_CALL_LOG bare i companion.
@@ -63,7 +63,7 @@ Sjekkes på enhet (se `device-checks.md`).
 
 1. **`READ_CALL_LOG`**, se over. Største risiko.
 2. **Erklæringer i Play Console:** notification listener, mikrofon (`RECORD_AUDIO`), foreground services
-   (location i tablet; connectedDevice og microphone i companion). Noen krever kort demovideo.
+   (location i hovedappen; connectedDevice og microphone i companion). Noen krever kort demovideo.
 3. Reell unntakssøknad for anropslogg trenger tekst og trolig demovideo av tavla som viser anropslogg og ringing.
 
 ## Må gjøres av deg
@@ -76,14 +76,14 @@ Sjekkes på enhet (se `device-checks.md`).
 
 ## Åpne spørsmål
 
-1. Begge apper samtidig. Tablet først hjelper ikke (se over).
+1. Begge apper samtidig. Én app først hjelper ikke (se over).
 2. Søke om unntak for `READ_CALL_LOG` som følgeapp til tavla, og beholde `CALL_PHONE`? (Anbefalt.)
 
 ## Andre ting å vurdere
 
 - **Play App Signing** signerer på nytt med en annen nøkkel. Den som har installert APK fra GitHub må avinstallere før Play-versjonen.
-- Release-APK-en kan ikke installeres over ride-bygget på din X7 (annen nøkkel) uten å miste nedlastede kart. Behold ride-bygget på egen tablet.
-- Tablet-APK er stor (ca. 99 MB): ikke minifisert, alle ABI-er. R8 + resource shrinking kan krympe den, men må testes på enhet
+- Release-APK-en kan ikke installeres over ride-bygget på din X7 (annen nøkkel) uten å miste nedlastede kart. Behold ride-bygget på X7.
+- Hovedappens APK er stor (ca. 99 MB): ikke minifisert, alle ABI-er. R8 + resource shrinking kan krympe den, men må testes på enhet
   (MapLibre, Room, refleksjon). Kan også fjerne ca. 20 `Log.d/v/i`-kall.
 - **Lyd og stemme (se `docs/audio.md`):** bruker Androids innebygde talemotor (`<queries>` for `TTS_SERVICE`),
   ingen egne biblioteker eller nedlastinger. sherpa-onnx er strøket, så ingen GPL. Eneste nye tillatelse er
