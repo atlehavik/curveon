@@ -10,12 +10,12 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 - [ ] While navigating, add a stop. If the route doesn't change (or nothing happens), note which stop and where it was, then pull the trace: `adb -s <device> pull /sdcard/Android/data/com.curveon.app/files/navtrace` and look for the `E,…,addStop '<name>' <lat> <lon>: …` lines (started / done / cancelled / failed / no route / no position). Known from the Pixel trace of 2026-10-18: one route change 1.5 km into the ride kept exactly the old line (1235 vs 1236 points), the next one, 40 s later, had a small detour.
 
-## 2026-10-18 — Road card always top left (1.2.2)
+## 2026-10-18 — Arrival box top left, road card under it (1.2.2)
 
-- [ ] Navigating with a road card showing: the arrival box sits under it; fold the arrival box out (tap) and the road card stays put (it is above). With no road card (no road info) the arrival box is top left by itself.
-- [ ] Road card Large / Extra large: the arrival box moves down with it and never touches it. A give way sign beside the number makes the card wider only, not taller.
-- [ ] Gravel heat button (not navigating): it sits under the road card when there is one, and doesn't touch it.
-- [ ] Right side: only the speed card and the map buttons; the map buttons start right under the speed card.
+- [ ] Navigating with a road card showing: the arrival box is on top, the road card right under it. Tap the arrival box open: the road card moves down and never touches it. With no road info, the arrival box is top left alone.
+- [ ] Road card Large / Extra large: still under the box, never overlapping, also folded out.
+- [ ] Gravel heat button (not navigating): the road card sits under it.
+- [ ] Right side: only the speed card and the map buttons.
 
 ## 2026-10-18 — Place names on top, thinner road edge (1.2.2)
 
