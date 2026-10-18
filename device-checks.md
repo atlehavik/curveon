@@ -8,6 +8,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 ## 2026-10-18 — Place names on top, thinner road edge (1.2.2)
 
+- [ ] Online map AND downloaded map, normal and high contrast, several zoom levels (10–16): no road, gravel dash or tarmac line runs over a place name. Online labels were under the overlay lines before.
 - [ ] High contrast, zoomed out: no road runs through a place name; the white halo hides what is under it.
 - [ ] Normal day map in sun: is the thin grey edge (#808080, 1 px) around white roads enough, or too weak now? Say which way to go.
 

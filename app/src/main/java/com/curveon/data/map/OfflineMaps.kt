@@ -68,10 +68,14 @@ class OfflineMaps(private val context: Context) {
             }
         }
         for (k in 0 until out.length()) roadLabels(out.getJSONObject(k))
-        // Place names last, so no road is drawn over them (and their halo).
-        val rest = JSONArray(); val places = JSONArray()
-        for (k in 0 until out.length()) out.getJSONObject(k).let { if (it.getString("id").substringBefore('~').let { id -> id.startsWith("places_") || id == "online-places" }) places.put(it) else rest.put(it) }
-        for (k in 0 until places.length()) rest.put(places.getJSONObject(k))
+        // Names last, so no road is drawn over them (and their halo): the place names, and the online map's
+        // labels, which would otherwise lie under the overlay lines (tarmac and gravel dashes) added over the offline map.
+        val rest = JSONArray(); val names = JSONArray()
+        for (k in 0 until out.length()) out.getJSONObject(k).let {
+            val id = it.getString("id").substringBefore('~')
+            if (id.startsWith("places_") || (id.startsWith("online-") && it.optString("type") == "symbol")) names.put(it) else rest.put(it)
+        }
+        for (k in 0 until names.length()) rest.put(names.getJSONObject(k))
         out = rest
         if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
         style.put("layers", out)
