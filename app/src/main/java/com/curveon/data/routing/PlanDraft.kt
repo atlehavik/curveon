@@ -48,7 +48,7 @@ class PlanDraft(context: Context) {
             .putOpt("maxKm", goal.maxKm)
         is NavigationGoal.Adventure -> JSONObject().put("type", "adventure")
             .put("name", goal.name).put("destination", pointJson(goal.destination))
-            .put("area", SavedRoutes.encode(goal.area)).put("minutes", goal.minutes).put("variant", goal.variant)
+            .put("area", SavedRoutes.encode(goal.area)).putOpt("minutes", goal.minutes).put("variant", goal.variant)
             .putOpt("start", goal.start?.let(::stopJson))
         is NavigationGoal.Track -> JSONObject().put("type", "track")
             .put("name", goal.name).put("points", SavedRoutes.encode(goal.points))
@@ -75,7 +75,7 @@ class PlanDraft(context: Context) {
             )
             "adventure" -> NavigationGoal.Adventure(
                 j.getString("name"), parsePoint(j.getJSONObject("destination")), SavedRoutes.decode(j.getString("area")),
-                j.getInt("minutes"), options, j.optInt("variant"), start
+                if (j.has("minutes")) j.getInt("minutes") else null, options, j.optInt("variant"), start
             )
             else -> NavigationGoal.Track(j.getString("name"), SavedRoutes.decode(j.getString("points")), options)
         }

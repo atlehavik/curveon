@@ -406,11 +406,12 @@
     <string name="roundtrip_search_subtitle">Tegn området du vil kjøre i på kartet</string>
     <string name="adventure_chip">Eventyr</string>
     <string name="adventure_draw_hint">Tegn området du vil kjøre i på veien dit. To fingre flytter kartet.</string>
+    <string name="adventure_no_limit">Ingen grense</string>
     <string name="adventure_time_hm">%1$d:%2$02d t</string>
     <string name="preview_adventure_title">Eventyr til %1$s</string>
     <string name="nav_no_adventure">Fant ikke noe eventyr i det området. Prøv å tegne det større, eller bruk mer tid.</string>
     <string name="nav_adventure_too_short">Raskeste vei tar %1$d min. Be om mer tid for å få et eventyr.</string>
-    <string name="adventure_time_explain">Lengste tid turen kan ta. Den kan bli kortere hvis området ikke har gode veier nok til mer.</string>
+    <string name="adventure_time_explain">Lengste tid turen kan ta, eller ingen grense så området bestemmer. Den kan bli kortere hvis området ikke har gode veier nok til mer.</string>
     <string name="map_tilt_up">Tilt kartet opp, mot fugleperspektiv</string>
     <string name="map_tilt_down">Tilt kartet ned, mot veien</string>
     <string name="adventure_improving">Første forslag. Leter etter en bedre tur …</string>

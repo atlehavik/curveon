@@ -167,8 +167,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var searchGrowIn by remember { mutableStateOf(false) }
     /** Editing on the map: the next drag along the line marks the part of the route to change. */
     var marking by remember { mutableStateOf(false) }
-    /** Editing on the map: the route locked against dragging, so a pan can't bend it (kept between edits). */
-    var routeLocked by remember { mutableStateOf(viewModel.routeLocked) }
+    /** Editing on the map: the route locked against dragging, so a pan can't bend it (locked again each time editing starts). */
+    var routeLocked by remember { mutableStateOf(true) }
     /** The help bubble for planning on the map: again each time point by point starts, unless hidden for good. */
     var showPbpHelp by remember { mutableStateOf(false) }
     // The route preview folded down to a bar so more of the route shows; open again for each new plan.
@@ -268,6 +268,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         picked = null
         alongTheWay = null
         marking = false
+        routeLocked = true
         mapPick = purpose
     }
     val closeSearch: () -> Unit = {
@@ -472,7 +473,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             SketchBar(onCancel = { sketching = false }, km = sketchKm?.let { k -> sketchMaxKm?.let { minOf(it, k) } ?: k }, startName = roundtripStart?.second,
                 maxKm = sketchMaxKm, onMaxKm = { sketchMaxKm = it }, surface = sketchSurface, onSurface = { sketchSurface = it },
                 gravelReachKm = sketchGravelReach, onGravelReach = { sketchGravelReach = it },
-                adventureMinutes = adventure?.minutes, onAdventureMinutes = { m -> adventure = adventure?.copy(minutes = m) },
+                adventure = adventure != null, adventureMinutes = adventure?.minutes, onAdventureMinutes = { m -> adventure = adventure?.copy(minutes = m) },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
         } else if (pickPurpose != null) {
             MapPickBar(
@@ -495,7 +496,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 marking = marking.takeIf { planGoal != null },
                 onMark = { marking = !marking },
                 locked = routeLocked.takeIf { planGoal != null },
-                onLock = { routeLocked = !routeLocked; viewModel.setRouteLocked(routeLocked) },
+                onLock = { routeLocked = !routeLocked },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
             )
             // How it works, the first times: over the bar, until "Don't show again".
@@ -546,11 +547,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onGravelReach = viewModel::setPreviewGravelReach,
                 onAdventure = {
                     (preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.let { g ->
-                        // About what the twistier roads there take, to start from.
-                        val minutes = preview?.candidates.orEmpty().filter { it.route != null }
-                        val curvy = (minutes.firstOrNull { it.style == com.curveon.routing.RoadStyle.CURVY } ?: minutes.firstOrNull())?.route?.durationSeconds ?: 0.0
-                        val slowest = minutes.maxOfOrNull { it.route!!.durationSeconds } ?: 0.0
-                        adventure = AdventureDraft(g.name, g.destination, defaultAdventureMinutes(curvy / 60, slowest / 60))
+                        // No time limit to start from: the area drawn is the limit, and the trips found say how long they take.
+                        adventure = AdventureDraft(g.name, g.destination, null)
                         roundtripStart = g.start?.let { GeoPoint(it.point.lat, it.point.lon) to it.name }
                         sketchSurface = g.options.surface
                         sketchGravelReach = g.options.gravelReachKm
@@ -1421,7 +1419,7 @@ private enum class TracksTab(val label: Int, val icon: androidx.compose.ui.graph
 }
 
 /** An adventure being drawn: where to, and how long it should take (minutes of estimated riding). */
-private data class AdventureDraft(val name: String, val destination: com.curveon.routing.LatLon, val minutes: Int)
+private data class AdventureDraft(val name: String, val destination: com.curveon.routing.LatLon, val minutes: Int?)
 
 /** What to tell the rider after saving: where it went. */
 private fun savedToast(t: RouteSaveTargets) = when {

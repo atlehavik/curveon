@@ -297,9 +297,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val gravelHeatButton: StateFlow<com.curveon.ui.components.GravelHeatButton> = _gravelHeatButton.asStateFlow()
     fun setGravelHeatButton(b: com.curveon.ui.components.GravelHeatButton) { _gravelHeatButton.value = b; settings.edit().putString("gravelHeatButton", b.name).apply() }
 
-    /** Point by point on the map: the line locked against dragging (on unless the rider unlocked it). */
-    val routeLocked: Boolean get() = settings.getBoolean("routeLocked", true)
-    fun setRouteLocked(on: Boolean) = settings.edit().putBoolean("routeLocked", on).apply()
     /** The help bubble for planning on the map, until the rider says not to show it again. */
     val pointByPointHelpHidden: Boolean get() = settings.getBoolean("pointByPointHelpHidden", false)
     fun hidePointByPointHelp() = settings.edit().putBoolean("pointByPointHelpHidden", true).apply()
@@ -1604,11 +1601,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     )
 
     /**
-     * An adventure to [destination] inside [area], taking about [minutes] of estimated riding time.
+     * An adventure to [destination] inside [area], taking about [minutes] of estimated riding time (null = no limit).
      * Like a loop its shape is found on curvy roads when Fastest was last used.
      */
     fun previewAdventure(
-        name: String, destination: LatLon, area: List<GeoPoint>, minutes: Int, start: GeoPoint? = null, startName: String = "",
+        name: String, destination: LatLon, area: List<GeoPoint>, minutes: Int?, start: GeoPoint? = null, startName: String = "",
         surface: SurfacePreference = lastOptions.surface, gravelReachKm: Int? = lastOptions.gravelReachKm
     ) = navigator.previewAdventure(
         name, destination, area.map { LatLon(it.latitude, it.longitude) }, minutes,
@@ -1617,7 +1614,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         start?.let { Stop(startName, LatLon(it.latitude, it.longitude)) }
     )
 
-    fun setAdventureMinutes(minutes: Int) = navigator.setAdventureMinutes(minutes)
+    fun setAdventureMinutes(minutes: Int?) = navigator.setAdventureMinutes(minutes)
 
     /** The surface last planned with: what a new loop starts with. */
     fun lastSurface(): SurfacePreference = lastOptions.surface

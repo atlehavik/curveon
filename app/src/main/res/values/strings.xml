@@ -408,11 +408,12 @@
     <string name="roundtrip_search_subtitle">Draw the area to ride in on the map</string>
     <string name="adventure_chip">Adventure</string>
     <string name="adventure_draw_hint">Draw the area to ride in on the way there. Two fingers move the map.</string>
+    <string name="adventure_no_limit">No limit</string>
     <string name="adventure_time_hm">%1$d:%2$02d h</string>
     <string name="preview_adventure_title">Adventure to %1$s</string>
     <string name="nav_no_adventure">Could not find an adventure in that area. Try drawing it bigger, or taking more time.</string>
     <string name="nav_adventure_too_short">The quickest way takes %1$d min. Ask for more time to get an adventure.</string>
-    <string name="adventure_time_explain">The longest the trip may take. It can be shorter when the area has no good roads for more.</string>
+    <string name="adventure_time_explain">The longest the trip may take, or no limit to let the area decide. It can be shorter when the area has no good roads for more.</string>
     <string name="map_tilt_up">Tilt the map up, towards a bird\'s-eye view</string>
     <string name="map_tilt_down">Tilt the map down, towards the road</string>
     <string name="adventure_improving">First suggestion. Looking for a better trip…</string>

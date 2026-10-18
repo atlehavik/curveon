@@ -36,6 +36,10 @@ class PlanDraftTest {
         val adventure = NavigationGoal.Adventure("Gjøvik", LatLon(60.8, 10.7), area, 180, RouteOptions(), variant = 1)
         draft.save(adventure to 0)
         assertEquals(adventure to 0, draft.load())
+        // No time limit is no time, not zero.
+        val unlimited = adventure.copy(minutes = null)
+        draft.save(unlimited to 0)
+        assertEquals(unlimited to 0, draft.load())
 
         val track = NavigationGoal.Track("Valdres", listOf(LatLon(61.0, 9.0), LatLon(61.1, 9.2)), RouteOptions(RoadStyle.FASTEST))
         draft.save(track to 0)

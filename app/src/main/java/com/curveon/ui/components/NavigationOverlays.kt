@@ -659,9 +659,10 @@ fun SketchBar(
     /** Gravel/Offroad: how far off the ordinary road for gravel (null = any distance). */
     gravelReachKm: Int? = null,
     onGravelReach: (Int?) -> Unit = {},
-    /** Drawing the area for an adventure to a destination: how long it should take (instead of the loop's max length). */
+    /** Drawing the area for an adventure to a destination: how long it may take, null = no limit (instead of the loop's max length). */
+    adventure: Boolean = false,
     adventureMinutes: Int? = null,
-    onAdventureMinutes: (Int) -> Unit = {}
+    onAdventureMinutes: (Int?) -> Unit = {}
 ) {
     Column(
         modifier
@@ -675,9 +676,9 @@ fun SketchBar(
         Icon(Icons.Default.Gesture, null, tint = NeonAmber)
         Column(Modifier.weight(1f, fill = false).widthIn(max = 420.dp)) {
             Text(
-                if (adventureMinutes != null) stringResource(R.string.adventure_draw_hint)
+                if (adventure) stringResource(R.string.adventure_draw_hint)
                 else if (km != null) stringResource(R.string.roundtrip_draw_km, km) else stringResource(R.string.roundtrip_draw_hint),
-                color = TextPrimary, fontSize = if (km != null && adventureMinutes == null) 20.sp else 15.sp, fontWeight = FontWeight.Bold,
+                color = TextPrimary, fontSize = if (km != null && !adventure) 20.sp else 15.sp, fontWeight = FontWeight.Bold,
                 maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             if (startName != null) Text(stringResource(R.string.from_place, startName), color = TextSecondary, fontSize = 13.sp, maxLines = 1)
@@ -687,7 +688,7 @@ fun SketchBar(
         }
     }
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (adventureMinutes != null) AdventureTimeChip(adventureMinutes, onAdventureMinutes) else LoopMaxChip(maxKm, onMaxKm)
+        if (adventure) AdventureTimeChip(adventureMinutes, onAdventureMinutes) else LoopMaxChip(maxKm, onMaxKm)
         SurfaceChip(surface, onSurface)
         if (surface >= com.curveon.routing.SurfacePreference.GRAVEL) GravelReachChip(gravelReachKm, onGravelReach)
     }

@@ -59,12 +59,15 @@ class AdventurePlanner(
         fun other(n: Int) = if (n == a) b else a
     }
 
-    /** Routes [start] → [destination] riding about [targetMinutes] of estimated time, inside [stroke]. */
+    /**
+     * Routes [start] → [destination] riding about [targetMinutes] of estimated time, inside [stroke]. With no
+     * time (null) the area is the limit: the trip aims for a generous time of its own ([noLimitSeconds]).
+     */
     fun plan(
         start: LatLon,
         destination: LatLon,
         stroke: List<LatLon>,
-        targetMinutes: Int,
+        targetMinutes: Int?,
         options: RouteOptions,
         variant: Int = 0,
         /**
@@ -79,11 +82,12 @@ class AdventurePlanner(
         if (area.outline.size < 3 || area.perimeterM < MIN_AREA_PERIMETER_M) throw NoAdventureException("The area is too small")
         // The area is what keeps the trip in check here, not how far it strays from the ordinary road.
         val opts = options.copy(gravelReachKm = null)
-        val targetS = targetMinutes * 60.0
 
         val direct = engine.route(listOf(start, destination), opts, CATCHING_RANGE_M, PLANNING_FERRY_COST)
         log("  direct %.0f km, %.0f min".format(direct.distanceMeters / 1000, direct.durationSeconds / 60))
-        if (targetS < direct.durationSeconds * MIN_DETOUR) {
+        val targetS = targetMinutes?.let { it * 60.0 } ?: noLimitSeconds(direct.durationSeconds)
+        if (targetMinutes == null) log("  no time asked: aiming for up to %.0f min".format(targetS / 60))
+        if (targetMinutes != null && targetS < direct.durationSeconds * MIN_DETOUR) {
             throw NoAdventureException("The quickest way takes ${(direct.durationSeconds / 60).toInt()} min", directMinutes = (direct.durationSeconds / 60).toInt())
         }
 
@@ -123,6 +127,12 @@ class AdventurePlanner(
             pool.shutdownNow()
         }
     }
+
+    /**
+     * What a trip with no time asked for aims at: well over the quickest way (there is something to wander for) but
+     * not endless, the drawn area keeping it in check as well.
+     */
+    private fun noLimitSeconds(directSeconds: Double) = maxOf(directSeconds * NO_LIMIT_FACTOR, directSeconds + NO_LIMIT_EXTRA_S)
 
     /** The best trip the graph gives, and whether it fits under the asked time (or null when there is none at all). */
     private fun search(
@@ -508,6 +518,9 @@ class AdventurePlanner(
         const val MIN_AREA_PERIMETER_M = 8_000.0
         /** Less time than this times the quickest way's isn't a detour to speak of. */
         const val MIN_DETOUR = 1.1
+        /** With no time asked for a trip aims at this many times the quickest way, or that plus [NO_LIMIT_EXTRA_S] when that is more. */
+        const val NO_LIMIT_FACTOR = 2.0
+        const val NO_LIMIT_EXTRA_S = 90 * 60.0
         /** A route this close to the asked time competes on how fun it is; the others only when none is. */
         const val CLOSE_ENOUGH = 0.15
 

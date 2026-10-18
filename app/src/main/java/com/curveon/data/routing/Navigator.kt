@@ -129,13 +129,13 @@ sealed interface NavigationGoal {
 
     /**
      * To [destination] by the most fun roads inside [area], taking about [minutes] of estimated
-     * riding time: not the quickest way there. Ridden as a fixed line once started.
+     * riding time (null = no limit, the area decides): not the quickest way there. Ridden as a fixed line once started.
      */
     data class Adventure(
         val name: String,
         val destination: LatLon,
         val area: List<LatLon>,
-        val minutes: Int,
+        val minutes: Int?,
         override val options: RouteOptions,
         val variant: Int = 0,
         /** Starting somewhere else than where the rider is; null = from here. */
@@ -361,8 +361,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     fun previewAreaRoundtrip(area: List<LatLon>, options: RouteOptions, start: Stop? = null, maxKm: Int? = null) =
         preview(NavigationGoal.Roundtrip(0.0, 0.0, options, name = context.getString(R.string.roundtrip), area = area, start = start, maxKm = maxKm))
 
-    /** An adventure to [destination] inside [area], taking about [minutes] of estimated riding time. */
-    fun previewAdventure(name: String, destination: LatLon, area: List<LatLon>, minutes: Int, options: RouteOptions, start: Stop? = null) =
+    /** An adventure to [destination] inside [area], taking about [minutes] of estimated riding time (null = no limit). */
+    fun previewAdventure(name: String, destination: LatLon, area: List<LatLon>, minutes: Int?, options: RouteOptions, start: Stop? = null) =
         preview(NavigationGoal.Adventure(name, destination, area, minutes, options, start = start))
 
     /** The adventure on screen: being worked out, or found and made into an ordinary trip. */
@@ -374,8 +374,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         return adventure.copy(options = p.goal.options.copy(roadStyle = style))
     }
 
-    /** The previewed adventure again taking [minutes]. */
-    fun setAdventureMinutes(minutes: Int) {
+    /** The previewed adventure again taking [minutes] (null = no limit). */
+    fun setAdventureMinutes(minutes: Int?) {
         val g = previewedAdventure() ?: return
         preview(g.copy(minutes = minutes, variant = 0))
     }

@@ -83,8 +83,8 @@ fun RoutePreviewSheet(
     onRedraw: () -> Unit = {},
     /** A trip to a place: make it an adventure (draw the area to ride in, say how long). */
     onAdventure: () -> Unit = {},
-    /** An adventure: plan it again taking this many minutes. */
-    onAdventureMinutes: (Int) -> Unit = {},
+    /** An adventure: plan it again taking this many minutes (null = no limit). */
+    onAdventureMinutes: (Int?) -> Unit = {},
     /** Gravel/Offroad: how far off the ordinary route it may go for gravel (null = any distance). */
     onGravelReach: (Int?) -> Unit = {},
     onSave: () -> Unit,

@@ -129,36 +129,30 @@ fun LoopMaxChip(maxKm: Int?, onPick: (Int?) -> Unit) {
 }
 
 /**
- * What an adventure can be asked to take, in minutes of estimated riding time: every half hour to
- * four hours, then every hour, up to [current] and a while beyond (a trip of many hours has many to pick from).
+ * What an adventure can be asked to take, in minutes of estimated riding time: no limit (null), then every half
+ * hour to four hours, then every hour, up to [current] and a while beyond (a trip of many hours has many to pick from).
  */
-fun adventureMinuteChoices(current: Int): List<Int> {
-    val top = maxOf(480, current + 240)
+fun adventureMinuteChoices(current: Int?): List<Int?> {
+    val top = maxOf(480, (current ?: 0) + 240)
     val steps = generateSequence(60) { it + if (it < 240) 30 else 60 }.takeWhile { it <= top }.toList()
-    return (steps + current).distinct().sorted()
-}
-
-/**
- * The time an adventure to the trip on screen starts with: about what its twistier roads take
- * ([curvyMinutes] for Curvy, [slowestMinutes] for the slowest style) and a little more, as there
- * must be something to wander for; rounded up to the half hour.
- */
-fun defaultAdventureMinutes(curvyMinutes: Double, slowestMinutes: Double): Int {
-    val wanted = maxOf(slowestMinutes, curvyMinutes * 1.12)
-    return ((wanted + 29) / 30).toInt() * 30
+    return listOf<Int?>(null) + (steps + listOfNotNull(current)).distinct().sorted()
 }
 
 /** "3:00 h"; the list is open for any time, the chip shows the one picked. */
 @Composable
 fun adventureTimeLabel(minutes: Int) = stringResource(R.string.adventure_time_hm, minutes / 60, minutes % 60)
 
-/** The longest the adventure may take: "3:00 h", tap for the list (which says what the time means). */
+/** The time of an adventure as the chip and the list show it: "No limit" or "3:00 h". */
 @Composable
-fun AdventureTimeChip(minutes: Int, onPick: (Int) -> Unit) {
+private fun adventureLimitLabel(minutes: Int?) = if (minutes == null) stringResource(R.string.adventure_no_limit) else adventureTimeLabel(minutes)
+
+/** The longest the adventure may take: "No limit" or "3:00 h", tap for the list (which says what the time means). */
+@Composable
+fun AdventureTimeChip(minutes: Int?, onPick: (Int?) -> Unit) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     Box {
-        OptionChip(adventureTimeLabel(minutes), active = true, onClick = { open = true }) {
-            Icon(Icons.Default.Schedule, null, tint = NeonAmber)
+        OptionChip(adventureLimitLabel(minutes), active = minutes != null, onClick = { open = true }) {
+            Icon(Icons.Default.Schedule, null, tint = if (minutes != null) NeonAmber else TextSecondary)
         }
         androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
             // What the time means: a ceiling, not a target.
@@ -168,7 +162,7 @@ fun AdventureTimeChip(minutes: Int, onPick: (Int) -> Unit) {
             )
             adventureMinuteChoices(minutes).forEach { m ->
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(adventureTimeLabel(m), color = if (m == minutes) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
+                    text = { Text(adventureLimitLabel(m), color = if (m == minutes) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
                     onClick = { open = false; onPick(m) }
                 )
             }
