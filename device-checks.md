@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Speed signs on the map, stop alert, roundabout icon, road info without a map (1.2.2)
+
+- [ ] Pixel/X7, navigating a route with speed limit changes (a road with NVDB limits): a speed sign stands on each side of the road where the limit changes (not where it stays), within ~1 km ahead; zoom 13+.
+- [ ] A trip with a stop on the way: reaching it (30 m) shows a "Reached <name>" banner for 8 s and plays the arrival sound (or says the name with spoken navigation); tap closes it. Check it doesn't fire again, and not for the destination.
+- [ ] Navigating: the arrival box shows time and km left folded, and h:mm left when tapped. A roundabout shows two big arrows with the exit number inside; readable?
+- [ ] Hold a finger on a road in a country whose map is not downloaded (e.g. abroad): the road card says to download the map for <country>.
+- [ ] High contrast: the dark grey (#707070) at several zoom levels; the same grey everywhere; main roads yellow with black edge.
+
 ## 2026-10-18 — Road card place, small roads on the day map, night arrow (1.2.2)
 
 - [ ] X7 in bright daylight: Settings → Display → High contrast on (map on Day or Auto in daytime). Dark grey roads with black edges and yellow main roads: easy enough to see? Say if the grey should be darker/lighter or the edge wider. Paths and tracks go mid-grey in this mode.

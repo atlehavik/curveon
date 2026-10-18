@@ -32,7 +32,7 @@ import com.curveon.data.model.TurnType
 import com.curveon.ui.theme.*
 
 /**
- * The next turn, as small as it can be: the arrow (a roundabout with the exit's number), the distance
+ * The next turn, as small as it can be: the arrow (a roundabout with the exit's number inside it), the distance
  * and the number sign of the road. It grows by what has to be in it (a wide sign) up to [maxWidth].
  * A tap folds out the words about the turn (and what comes after) for a few seconds.
  */
@@ -57,23 +57,21 @@ fun TurnByTurnBanner(
             .testTag("turn_by_turn_banner")
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Big directional maneuver icon; at a roundabout the exit to take sits in its corner.
+            // Big directional maneuver icon. A roundabout is two big arrows round the number of the exit to take.
+            val roundabout = instruction.type == TurnType.ROUNDABOUT
             Box(
-                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(6.dp),
+                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(if (roundabout) 1.dp else 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = getTurnIcon(instruction.type),
                     contentDescription = instruction.text,
                     tint = Color(0xFF00363D),
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(if (roundabout) 50.dp else 36.dp)
                 )
-                if (instruction.type == TurnType.ROUNDABOUT && instruction.roundaboutExit > 0) Box(
-                    Modifier.align(Alignment.BottomEnd).offset(x = 4.dp, y = 4.dp).size(22.dp).clip(CircleShape).background(Color(0xFF00363D)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(instruction.roundaboutExit.toString(), color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.Black, lineHeight = 14.sp)
-                }
+                if (roundabout && instruction.roundaboutExit > 0) Text(
+                    instruction.roundaboutExit.toString(), color = Color(0xFF00363D), fontSize = 26.sp, fontWeight = FontWeight.Black, lineHeight = 26.sp
+                )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(
@@ -117,7 +115,7 @@ private fun getTurnIcon(type: TurnType): ImageVector {
         TurnType.RIGHT -> Icons.Default.TurnRight
         TurnType.SHARP_RIGHT -> Icons.Default.TurnSharpRight
         TurnType.U_TURN -> Icons.Default.RotateLeft
-        TurnType.ROUNDABOUT -> Icons.Default.ChangeCircle
+        TurnType.ROUNDABOUT -> Icons.Default.Autorenew
         TurnType.DESTINATION -> Icons.Default.Flag
     }
 }

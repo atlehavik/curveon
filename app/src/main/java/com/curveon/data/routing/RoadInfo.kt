@@ -17,5 +17,9 @@ data class RoadInfo(
     /** The road's number as its sign shows it; [name] is then the street name alone. */
     val ref: com.curveon.data.road.RoadRef? = null,
     /** A priority road (forkjørsveg), where the country's register says so. */
-    val priority: Boolean = false
+    val priority: Boolean = false,
+    /** The routing data for this place isn't downloaded: road class and surface (and often the limit) are unknown. */
+    val needsMap: Boolean = false,
+    /** The country (or region) whose map would fill that in, when the catalogue knows it. */
+    val mapArea: String? = null
 )

@@ -703,6 +703,17 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /** Spoken or as a sound, as chosen; [p] and [road] give the words for turns. */
+    /** Reached a stop on the way: a banner on screen and, as set in Settings → Navigation, a sound or the spoken name. */
+    private fun announceStop(name: String) {
+        _stopReached.tryEmit(name)
+        val mph = _telemetry.value.useMph
+        when (navCues.alerts) {
+            NavAlerts.OFF -> Unit
+            NavAlerts.SOUNDS -> phoneCompanion.playCue(Message.NavCue.ARRIVE, Message.CueSide.CENTER)
+            NavAlerts.VOICE -> phoneCompanion.speak(str(R.string.speak_stop_reached, name), navSpeech.language(mph), false, Message.NavCue.ARRIVE, Message.CueSide.CENTER)
+        }
+    }
+
     private fun tell(c: com.curveon.data.routing.Cue, p: com.curveon.routing.NavigationProgress?, road: String?) {
         val mph = _telemetry.value.useMph
         if (navCues.alerts == NavAlerts.VOICE && c.sound == Message.NavCue.PREPARE && !_voiceHeadsUp.value) return
@@ -950,6 +961,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         route.ifEmpty { listOfNotNull(free) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** While navigating: where the speed limit changes in the next stretch of the route, for signs on the map. */
+    private val _mapSpeedSigns = MutableStateFlow<List<com.curveon.data.routing.SpeedChange>>(emptyList())
+    val mapSpeedSigns: StateFlow<List<com.curveon.data.routing.SpeedChange>> = _mapSpeedSigns.asStateFlow()
+
+    /** A stop on the way was just reached (its name). */
+    private val _stopReached = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val stopReached: SharedFlow<String> = _stopReached.asSharedFlow()
+    private val announcedStops = HashSet<com.curveon.data.routing.Stop>()
+
     // ---------------------------------------------------------------- day / night
 
     private val _mapTheme = MutableStateFlow(MapTheme.valueOf(settings.getString("mapTheme", MapTheme.AUTO.name)!!))
@@ -1107,14 +1127,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     startDemoRide(newTrip = !_isDemoRiding.value || title != demoTrip)
                     demoTrip = title
                 }
-                if (route == null) { _fuelHint.value = null; _cameraAlert.value = null; _giveWayAlert.value = null; routeGiveWays.value = emptyList() }
+                if (route == null) { _fuelHint.value = null; _cameraAlert.value = null; _giveWayAlert.value = null; routeGiveWays.value = emptyList(); _mapSpeedSigns.value = emptyList() }
             }
         }
         // While navigating: the sounds for turns, arriving and riding off the route.
         viewModelScope.launch {
             navigator.state.collect { s ->
-                val route = s.route ?: return@collect navCues.reset()
+                val route = s.route ?: return@collect run { navCues.reset(); announcedStops.clear() }
                 val p = s.progress ?: return@collect
+                // A stop on the way (not the destination: arriving has its own cue) is reached.
+                s.stopsAlong.filter { !it.first.via && it.second - p.distanceAlongRoute < STOP_REACHED_M && !p.offRoute }.forEach { (stop, _) ->
+                    if (announcedStops.add(stop)) announceStop(stop.name)
+                }
                 val cues = navCues.update(route, p, tripTracker.speedKmh / 3.6, s.wrongTurn != null, s.approach != null, System.currentTimeMillis())
                 if (cues.isEmpty()) return@collect
                 val idx = route.maneuvers.indexOf(p.nextManeuver)
@@ -1129,6 +1153,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 _cameraAlert.value = hazards.cameraAhead(p.distanceAlongRoute)
                 _giveWayAlert.value = hazards.giveWayAhead(p.distanceAlongRoute)
                 routeGiveWays.value = hazards.giveWaysAhead(p.distanceAlongRoute, MAP_GIVE_WAY_M)
+                _mapSpeedSigns.value = hazards.speedChangesAhead(p.distanceAlongRoute, MAP_SPEED_SIGN_M)
             }
         }
     }
@@ -1914,11 +1939,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val official = withContext(Dispatchers.IO) { speedLimits.at(p.lat, p.lon, null) }
         val ref = roadRefAt(p.lat, p.lon, null, mapRoad)
         val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(p.lat, p.lon, null) }
-        if (road == null && official == null && mapName == null && ref == null) return null
+        // Road class and surface come from the routing data downloaded with a country's map; without it for this place, say so.
+        val needsMap = navigator.routingData.missing(com.curveon.data.routing.RoutingData.tilesFor(p.lat, p.lon, p.lat, p.lon, 0.0)).isNotEmpty()
+        val mapArea = if (needsMap) mapDownloads.catalog.areaAt(p.lat, p.lon)?.displayName(java.util.Locale.getDefault()) else null
+        if (road == null && official == null && mapName == null && ref == null && !needsMap) return null
         // With the number on its sign, the name is the street's alone.
         val name = if (ref != null) mapRoad?.name?.takeIf { it != ref.text } else mapName
         return com.curveon.data.routing.RoadInfo(name, road?.highway, road?.surface, road?.tracktype, road?.unpaved ?: false,
-            official ?: road?.maxSpeedKmh, official != null, ref, priority)
+            official ?: road?.maxSpeedKmh, official != null, ref, priority, needsMap, mapArea)
     }
 
     /** Settings → Maps & data: where the speed limits come from, per country (credits the licences ask for). */
@@ -2123,6 +2151,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         private const val FUEL_CONTROL_GAP_MS = 15_000L
         /** How far along the route give way signs stand on the map. */
         private const val MAP_GIVE_WAY_M = 1_000.0
+        /** A stop on the way counts as reached this close to it. */
+        private const val STOP_REACHED_M = 30.0
+        private const val MAP_SPEED_SIGN_M = 1_000.0
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
         /** Search data bigger than this (compressed) isn't offered on its own: it comes with the country's map. */
         private const val SEARCH_OFFER_MAX_BYTES = 120_000_000L

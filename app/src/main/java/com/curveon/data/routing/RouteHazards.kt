@@ -25,6 +25,9 @@ data class CameraAlert(val distanceMeters: Double, val maxSpeedKmh: Int?)
  */
 data class GiveWayAlert(val distanceMeters: Double, val stop: Boolean, val lat: Double = 0.0, val lon: Double = 0.0, val bearingDeg: Double = 0.0)
 
+/** Where the speed limit along the route changes to [limit] (km/h): [along] metres from the start, at [lat], [lon], heading [bearingDeg]. */
+data class SpeedChange(val along: Double, val lat: Double, val lon: Double, val bearingDeg: Double, val limit: Int)
+
 /**
  * Fuel stations, speed cameras and give way signs for the active route, and cameras ahead when free
  * riding.
@@ -38,6 +41,9 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
     var giveWays: List<GiveWayOnRoute> = emptyList()
         private set
 
+    var speedChanges: List<SpeedChange> = emptyList()
+        private set
+
     /** False while a new route's fuel/cameras are loading, so we don't claim "no fuel ahead". */
     @Volatile private var ready = false
 
@@ -47,7 +53,7 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
     suspend fun load(route: Route?) = withContext(Dispatchers.Default) {
         ready = false
         if (route == null) {
-            fuel = emptyList(); cameras = emptyList(); giveWays = emptyList(); return@withContext
+            fuel = emptyList(); cameras = emptyList(); giveWays = emptyList(); speedChanges = emptyList(); return@withContext
         }
         val corridor = RouteCorridor(route)
         val pad = 0.02
@@ -59,7 +65,10 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
             .mapNotNull { p -> corridor.alongDistance(p.lat, p.lon, CAMERA_MAX_OFFSET_M)?.let { AlongPoi(p, it) } }
             .sortedBy { it.along }
         giveWays = giveWaysOn(route)
+        speedChanges = emptyList()
         ready = true
+        // Last, so fuel and cameras don't wait for it: a long route is thousands of lookups.
+        speedChanges = speedChangesOn(route)
     }
 
     /** Next fuel on the route; flagged when the gap after it (or to it) is long for a motorcycle tank. */
@@ -92,6 +101,47 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
         giveWaysOn(probe).firstOrNull { it.along < GIVE_WAY_FREE_M }?.alert(0.0)
     }
 
+    /** Where the speed limits changes along the route in the next [withinM] metres, for signs on the map. */
+    fun speedChangesAhead(along: Double, withinM: Double): List<SpeedChange> =
+        speedChanges.filter { it.along > along - SPEED_SIGN_PAST_M && it.along - along < withinM }
+
+    /**
+     * The limit (the country's official one where there is one, else OpenStreetMap's) sampled along the
+     * route; a change counts once it holds for two samples in a row, so a junction's other road or a
+     * missing stretch doesn't make signs. No sign at the start: it is the limit the rider begins with.
+     */
+    private fun speedChangesOn(route: Route): List<SpeedChange> = runCatching {
+        val pts = route.points
+        val out = ArrayList<SpeedChange>()
+        var stable: Int? = null
+        var candidate: Int? = null
+        var candidateCount = 0
+        var candidateAt = 0
+        var nextSample = 0.0
+        for (i in 0 until pts.size - 1) {
+            val pt = pts[i]
+            if (pt.distanceFromStart < nextSample) continue
+            nextSample = pt.distanceFromStart + SPEED_SAMPLE_M
+            val next = pts[i + 1]
+            val bearing = Geo.bearing(pt.lat, pt.lon, next.lat, next.lon)
+            val limit = speedLimits.at(pt.lat, pt.lon, bearing) ?: pt.maxSpeedKmh ?: continue
+            when {
+                stable == null -> stable = limit
+                limit == stable -> candidate = null
+                limit == candidate -> {
+                    if (++candidateCount >= 2) {
+                        val at = pts[candidateAt]
+                        val after = pts.getOrElse(candidateAt + 1) { at }
+                        out += SpeedChange(at.distanceFromStart, at.lat, at.lon, Geo.bearing(at.lat, at.lon, after.lat, after.lon), limit)
+                        stable = limit; candidate = null
+                    }
+                }
+                else -> { candidate = limit; candidateCount = 1; candidateAt = i }
+            }
+        }
+        out
+    }.getOrDefault(emptyList())
+
     private fun giveWaysOn(route: Route): List<GiveWayOnRoute> = runCatching {
         GiveWay.alongRoute(route, speedLimits.giveWaySigns(route.points.map { LatLon(it.lat, it.lon) }), speedLimits::priorityRoadNear)
     }.getOrDefault(emptyList())
@@ -121,6 +171,8 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
         private const val GIVE_WAY_FREE_M = 120.0
         /** A sign stands a little before the junction: keep showing it until the rider is there. */
         private const val GIVE_WAY_PAST_M = 10.0
+        private const val SPEED_SIGN_PAST_M = 10.0
+        private const val SPEED_SAMPLE_M = 25.0
         /** Many bikes have 250–350 km range; warn when the next pump is more than 120 km away. */
         const val LONG_GAP_M = 120_000.0
     }

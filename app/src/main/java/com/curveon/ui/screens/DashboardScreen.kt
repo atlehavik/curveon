@@ -111,6 +111,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val roadHere by viewModel.currentRoad.collectAsStateWithLifecycle()
     val freeGiveWay by viewModel.freeGiveWay.collectAsStateWithLifecycle()
     val mapGiveWays by viewModel.mapGiveWays.collectAsStateWithLifecycle()
+    val mapSpeedSigns by viewModel.mapSpeedSigns.collectAsStateWithLifecycle()
     val giveWayAlert by viewModel.giveWayAlert.collectAsStateWithLifecycle()
     // The road card: the road's number and priority sign, and a give way or stop just ahead (on the route
     // when navigating, else on the road ridden): the one place for the junction's sign and its distance.
@@ -234,6 +235,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
     LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
+    var reachedStop by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) { viewModel.stopReached.collect { reachedStop = it } }
+    LaunchedEffect(reachedStop) { if (reachedStop != null) { delay(8000); reachedStop = null } }
     LaunchedEffect(Unit) { viewModel.updateAnnounced.collect { toast = context.getString(R.string.toast_update_available, it) } }
     LaunchedEffect(Unit) { viewModel.takeNewChanges().takeIf { it.isNotEmpty() }?.let { delay(1200); whatsNew = it } }
     // Fresh call log each time the phone opens (the contacts come along).
@@ -654,6 +658,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             hasGpsFix = telemetryState.value.hasGpsFix,
             routePoints = routePoints,
             giveWaySigns = mapGiveWays,
+            speedSigns = mapSpeedSigns,
             groundPreference = groundPreference,
             currentTurnInstruction = currentTurnInstruction,
             isFullScreen = isFullScreenMap,
@@ -716,6 +721,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             mapVersion = mapVersion,
             overlays = mapOverlays
         )
+        reachedStop?.let { StopReachedBanner(it, onDismiss = { reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
         toast?.let {
             Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp).clip(RoundedCornerShape(12.dp))

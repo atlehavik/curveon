@@ -85,6 +85,7 @@ private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
 private const val GIVE_WAY = "curveon-give-way"
 private const val GIVE_WAY_IMAGE = "curveon-give-way-sign"
+private const val SPEED_SIGNS = "curveon-speed-signs"
 private const val STOP_SIGN_IMAGE = "curveon-stop-sign"
 private const val HINT = "curveon-track-hint"
 private const val SKETCH = "curveon-sketch"
@@ -194,6 +195,8 @@ fun CurveonMapView(
     gpxPois: List<com.curveon.data.gpx.GpxPoi> = emptyList(),
     /** Give way and stop signs that apply to the rider, stood beside the road before their junctions. */
     giveWaySigns: List<com.curveon.data.routing.GiveWayAlert> = emptyList(),
+    /** Where the speed limit changes ahead on the route: a sign on each side of the road. */
+    speedSigns: List<com.curveon.data.routing.SpeedChange> = emptyList(),
     trackHint: com.curveon.data.gpx.TrackHint? = null,
     onPoiClick: (com.curveon.data.gpx.GpxPoi) -> Unit = {},
     /** Where the map is looking once it settles: south, north, west, east, and the zoom. */
@@ -689,6 +692,18 @@ fun CurveonMapView(
             val at = com.curveon.routing.Geo.destination(back, g.bearingDeg + 90, 6.0)
             Feature.fromGeometry(Point.fromLngLat(at.lon, at.lat)).also {
                 it.addStringProperty("icon", if (g.stop) STOP_SIGN_IMAGE else GIVE_WAY_IMAGE)
+            }
+        }))
+    }
+    // Speed limit signs where the limit changes, on both sides of the road, as they stand.
+    LaunchedEffect(style, speedSigns) {
+        val s = style ?: return@LaunchedEffect
+        val density = context.resources.displayMetrics.density
+        speedSigns.map { it.limit }.distinct().forEach { l -> if (s.getImage(speedSignImageName(l)) == null) s.addImage(speedSignImageName(l), speedSignImage(l, density)) }
+        s.getSourceAs<GeoJsonSource>(SPEED_SIGNS)?.setGeoJson(FeatureCollection.fromFeatures(speedSigns.flatMap { c ->
+            listOf(90.0, -90.0).map { side ->
+                val at = com.curveon.routing.Geo.destination(com.curveon.routing.LatLon(c.lat, c.lon), c.bearingDeg + side, 6.0)
+                Feature.fromGeometry(Point.fromLngLat(at.lon, at.lat)).also { it.addStringProperty("icon", speedSignImageName(c.limit)) }
             }
         }))
     }
@@ -1328,6 +1343,28 @@ private fun roadSignImages(density: Float): Map<String, android.graphics.Bitmap>
     return mapOf(GIVE_WAY_IMAGE to giveWay, STOP_SIGN_IMAGE to stop)
 }
 
+private fun speedSignImageName(limit: Int) = "curveon-speed-sign-$limit"
+
+/** A speed limit sign on a short pole, as the road signs: red ring, white disc, [limit] in black. */
+private fun speedSignImage(limit: Int, density: Float): android.graphics.Bitmap {
+    val w = (30 * density).toInt()
+    val h = (46 * density).toInt()
+    val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+    val c = android.graphics.Canvas(bmp)
+    val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    p.color = android.graphics.Color.rgb(0x8A, 0x93, 0x9E)
+    c.drawRect(w / 2f - 1.5f * density, w * 0.8f, w / 2f + 1.5f * density, h.toFloat(), p)
+    val r = w / 2f
+    p.color = android.graphics.Color.rgb(0xD5, 0x2B, 0x1E); c.drawCircle(r, r, r, p)
+    p.color = android.graphics.Color.WHITE; c.drawCircle(r, r, r * 0.74f, p)
+    p.color = android.graphics.Color.BLACK
+    p.textAlign = android.graphics.Paint.Align.CENTER
+    p.typeface = android.graphics.Typeface.DEFAULT_BOLD
+    p.textSize = w * if (limit >= 100) 0.34f else 0.42f
+    c.drawText(limit.toString(), r, r + p.textSize * 0.36f, p)
+    return bmp
+}
+
 private fun arrowBitmap(): android.graphics.Bitmap {
     val size = 48
     val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
@@ -1570,6 +1607,13 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(GIVE_WAY))
     s.addLayer(
         org.maplibre.android.style.layers.SymbolLayer("$GIVE_WAY-signs", GIVE_WAY).withProperties(
+            iconImage(org.maplibre.android.style.expressions.Expression.get("icon")),
+            iconAnchor(Property.ICON_ANCHOR_BOTTOM), iconAllowOverlap(true), iconIgnorePlacement(true)
+        ).also { it.minZoom = 13f }
+    )
+    s.addSource(GeoJsonSource(SPEED_SIGNS))
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$SPEED_SIGNS-signs", SPEED_SIGNS).withProperties(
             iconImage(org.maplibre.android.style.expressions.Expression.get("icon")),
             iconAnchor(Property.ICON_ANCHOR_BOTTOM), iconAllowOverlap(true), iconIgnorePlacement(true)
         ).also { it.minZoom = 13f }

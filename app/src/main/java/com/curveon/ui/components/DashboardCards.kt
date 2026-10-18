@@ -102,49 +102,46 @@ fun MapSpeedCluster(
         camera != null -> NeonAmber
         else -> CockpitBorder
     }
-    // No clip here: a big sign is let out over the card's edges instead of making the card taller.
+    // No clip, and the edge drawn behind the content: a big sign sticks out over the card's edges and
+    // must lie on top of the edge line, not under it.
     val sticksOut = ((signSize - SPEED_SIGN_BASE) / 2).coerceAtLeast(0.dp)
-    Column(
-        modifier
-            .background(CockpitSurface.copy(alpha = 0.92f), RoundedCornerShape(16.dp))
-            .border(1.dp, border, RoundedCornerShape(16.dp))
-            .padding(horizontal = 14.dp, vertical = 8.dp)
-            .testTag("full_map_speed_cluster"),
-        horizontalAlignment = Alignment.End
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(telemetry.displaySpeed.toString(), color = speedColor, fontSize = 32.sp, lineHeight = 32.sp,
-                fontWeight = FontWeight.Black, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                modifier = Modifier.testTag("map_speed"))
-            if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, signSize,
-                modifier = Modifier.layout { measurable, constraints ->
-                    // Takes the room of a normal sign and is centred on it; the rest sticks out.
-                    val p = measurable.measure(constraints)
-                    val base = SPEED_SIGN_BASE.roundToPx()
-                    layout(p.width, minOf(p.height, base)) { p.place(0, (minOf(p.height, base) - p.height) / 2) }
-                })
-            Clock(17.sp)
-        }
-        val below = camera != null || telemetry.isDeadReckoning || !telemetry.hasGpsFix || (showAltitude && telemetry.hasGpsFix)
-        if (below && limit > 0) Spacer(Modifier.height(sticksOut))
-        when {
-            camera != null -> Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.PhotoCamera, stringResource(R.string.speed_camera), tint = NeonAmber, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(5.dp))
-                Text(stringResource(R.string.speed_camera_in, (camera.distanceMeters / 10).toInt() * 10),
-                    color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+    Box(modifier.testTag("full_map_speed_cluster")) {
+        Box(Modifier.matchParentSize().background(CockpitSurface.copy(alpha = 0.92f), RoundedCornerShape(16.dp)).border(1.dp, border, RoundedCornerShape(16.dp)))
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.End) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(telemetry.displaySpeed.toString(), color = speedColor, fontSize = 32.sp, lineHeight = 32.sp,
+                    fontWeight = FontWeight.Black, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    modifier = Modifier.testTag("map_speed"))
+                if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, signSize,
+                    modifier = Modifier.layout { measurable, constraints ->
+                        // Takes the room of a normal sign and is centred on it; the rest sticks out.
+                        val p = measurable.measure(constraints)
+                        val base = SPEED_SIGN_BASE.roundToPx()
+                        layout(p.width, minOf(p.height, base)) { p.place(0, (minOf(p.height, base) - p.height) / 2) }
+                    })
+                Clock(17.sp)
             }
-            telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
-            !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
+            val below = camera != null || telemetry.isDeadReckoning || !telemetry.hasGpsFix || (showAltitude && telemetry.hasGpsFix)
+            if (below && limit > 0) Spacer(Modifier.height(sticksOut))
+            when {
+                camera != null -> Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.PhotoCamera, stringResource(R.string.speed_camera), tint = NeonAmber, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(5.dp))
+                    Text(stringResource(R.string.speed_camera_in, (camera.distanceMeters / 10).toInt() * 10),
+                        color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+                telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
+                !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
+            }
+            if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
+                Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    if (telemetry.useMph) stringResource(R.string.altitude_ft, (telemetry.altitudeMeters * 3.28084).toInt())
+                    else stringResource(R.string.altitude_m, telemetry.altitudeMeters),
+                    color = TextSecondary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1
+                )
         }
-        if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
-            Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(5.dp))
-            Text(
-                if (telemetry.useMph) stringResource(R.string.altitude_ft, (telemetry.altitudeMeters * 3.28084).toInt())
-                else stringResource(R.string.altitude_m, telemetry.altitudeMeters),
-                color = TextSecondary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1
-            )
         }
     }
 }

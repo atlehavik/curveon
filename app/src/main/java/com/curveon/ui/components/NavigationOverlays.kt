@@ -32,8 +32,8 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Arrival time and the end button, at the top of the map beside the speed. Tapping it folds out a
- * second line: what is left (distance and time), next stop (opens the route menu: stops, save), fuel
+ * Arrival time, distance left and the end button, at the top of the map beside the speed. Tapping it
+ * folds out a second line: the time left, next stop (opens the route menu: stops, save), fuel
  * when worth knowing (tapping it adds it as a stop) and add stop.
  */
 @Composable
@@ -51,7 +51,7 @@ fun NavigationSummaryBar(
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
     }
-    // Folded: arrival and the end button, small enough to sit beside the speed.
+    // Folded: arrival, distance left and the end button, small enough to sit beside the speed.
     // A tap opens a second line below with the next stop, fuel and add stop.
     var open by remember { mutableStateOf(false) }
     Column(
@@ -68,6 +68,7 @@ fun NavigationSummaryBar(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
+            Text(stringResource(R.string.distance_km_whole, summary.remainingKm), color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             IconButton(
                 onClick = onStop,
                 modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
@@ -80,9 +81,9 @@ fun NavigationSummaryBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // What is left of the trip: only shown when asked for.
+            // The time left: only shown when asked for (the distance is always on show).
             Text(
-                stringResource(R.string.distance_km_whole, summary.remainingKm) + " · %d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
+                "%d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
                 color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
                 modifier = Modifier.testTag("nav_remaining")
             )
@@ -118,6 +119,25 @@ fun NavigationSummaryBar(
             ) {
                 Icon(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), tint = NeonAmber)
             }
+        }
+    }
+}
+
+/** A stop on the way is reached: its name, big, for a few seconds (tap to put it away). */
+@Composable
+fun StopReachedBanner(name: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        modifier.clip(shape).background(CockpitSurface).border(2.dp, NeonAmber, shape).clickable(onClick = onDismiss)
+            .padding(horizontal = 18.dp, vertical = 12.dp).testTag("stop_reached"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(Icons.Default.Flag, null, tint = NeonAmber, modifier = Modifier.size(34.dp))
+        Column {
+            Text(stringResource(R.string.stop_reached), color = TextSecondary, fontSize = 13.sp, maxLines = 1)
+            Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
     }
 }
@@ -714,6 +734,14 @@ fun RoadInfoRow(road: com.curveon.data.routing.RoadInfo) {
                 stringResource(if (road.officialSpeed) R.string.road_speed_official else R.string.road_speed_osm),
                 color = TextMuted, fontSize = 12.sp, maxLines = 1
             )
+            if (road.needsMap) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("road_needs_map")) {
+                Icon(Icons.Default.Download, null, tint = NeonAmber, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    if (road.mapArea != null) stringResource(R.string.road_needs_map_for, road.mapArea) else stringResource(R.string.road_needs_map),
+                    color = NeonAmber, fontSize = 13.sp, maxLines = 2
+                )
+            }
         }
     }
 }

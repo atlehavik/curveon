@@ -87,6 +87,10 @@
     <string name="settings_road_info">Road info</string>
     <string name="settings_high_contrast">High contrast</string>
     <string name="settings_high_contrast_hint">Day map: dark grey roads with black edges, main roads stay yellow</string>
+    <string name="stop_reached">Reached</string>
+    <string name="speak_stop_reached">You have reached %1$s</string>
+    <string name="road_needs_map">Download the map for more about this road</string>
+    <string name="road_needs_map_for">Download the map for %1$s for more about this road</string>
     <string name="settings_speed_sign">Speed limit sign</string>
     <string name="settings_speed_sign_hint">How big the sign is on the map; a bigger one sticks out of the speed card</string>
     <string name="speed_sign_normal">Normal</string>
