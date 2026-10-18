@@ -1,6 +1,7 @@
 # Groups: ride together (design draft)
 
-Status: idea and design only, nothing built. Decided in discussion 2026-10-11.
+Status: idea and design only, nothing built. Decided in discussion 2026-10-11, revised 2026-10-18
+(Apple not ruled out, no hard group limit in the protocol, relay self-hosted).
 
 ## Goal
 A rider can start a group, friends join with a QR code or link, and everyone sees the others on the
@@ -8,14 +9,17 @@ map. Anyone can share a route or GPX with the group. No accounts, no sign-up, an
 learns who anyone is or where anyone is. Free to run (or close to it).
 
 ## Decisions so far
-- **Android only**, never Apple. One Kotlin implementation shared by companion and "This device".
-- **Typical group 3-4 riders**, hard limit 30 per group in the protocol.
+- **Android first.** One Kotlin implementation shared by companion and "This device". Apple is not
+  ruled out: the protocol is platform-neutral and documented (see "Protocol and other platforms"),
+  so an iOS client can be added later by anyone who wants to build it.
+- **Typical group 3-4 riders**, no limit in the protocol. The relay has a configurable cap per group
+  (default 30) as cost and abuse control, not as a design decision.
 - **Optional and off by default.** Curveon stays offline-first; only this feature uses the internet.
 - **The phone is the post office.** The tablet never touches the internet. Tablet <-> companion over
   Bluetooth as today, companion <-> relay over mobile data. On a phone running Curveon itself
   ("This device") the same code runs in-process.
 - **Planned for Google Play** later (the whole app, not just this feature), so design for review now.
-- Rider has a hosting account (e.g. Cloudflare) for the relay; riders in a group need nothing.
+- The rider hosts the relay himself (see Hosting options); riders in a group need nothing.
 
 ```
 tablet --Bluetooth--> companion --mobile data--> relay <-- companion <--Bluetooth-- tablet
@@ -115,41 +119,35 @@ limit, but the *group* stays, so the next morning is one tap on "Start sharing",
 - **Default ~5 s while moving;** adaptive (faster in bends or at high speed, ~30 s when stopped,
   slower for riders far away); a **data saver** option (~15 s) for riders with little data or a
   foreign subscription (roaming is free in the EEA, not elsewhere). The app shows data used today.
-- Cloudflare free tier checked 2026-10-11 (Durable Objects docs): 100 000 requests/day with incoming
-  WebSocket messages counted 20:1 (outgoing free), 13 000 GB-s/day active duration, SQLite storage
-  only with 100 000 row writes/day, 32 MiB max incoming message, ~1000 req/s soft limit per object.
-  Messages are no problem (4 riders x 8 h is ~1 150 requests-equivalent, 20 riders ~5 800). Active
-  duration is the real limit: messages every 5 s keep the object awake, roughly 3 600 GB-s per group
-  per 8 h (assuming 128 MB billing, not confirmed), so the free tier covers about 3-4 such groups
-  a day: plenty for friends, not for a public app. Paid: 400 000 GB-s/month included, then
-  $12.50 per million GB-s, about $0.05 per 8 h group-day, plus the Workers Paid subscription (price
-  not verified; check). Longer intervals while stopped (30 s) let the object hibernate and cost nothing.
+  Traffic per rider grows with group size (each receives N-1 positions): 100 riders at 5 s is about
+  10 MB/hour per phone, so slower updates for far-away riders matter more in big groups.
 
-## Relay (Cloudflare Workers + Durable Objects, one object per group)
-Check current free-tier limits before committing; the traffic is tiny (about 100 bytes per position
-per rider every 5-10 s). Fall back to a small VPS (~50 NOK/month) if limits do not fit.
+## Relay (small WebSocket server run by the rider)
+The traffic is tiny (about 100 bytes per position per rider every 5-10 s). One long-running process
+keeps the sockets and the groups in memory, plus a small SQLite file for the rare things below.
+Written in TypeScript on Node (runs the same on PC, Raspberry Pi and VPS), in `~/develop/curveon-relay`.
+Caddy in front for TLS; the same host serves the `https` invite landing page.
 
-- `GET /g/<groupId>` upgrades to WebSocket (hibernating, so idle groups cost nothing).
+- `GET /g/<groupId>` upgrades to WebSocket.
 - The relay also keeps the latest `hello` per rider (with avatar) so a late joiner gets everyone's
   picture straight away. 30 riders x 8 KB is still tiny.
 - Client frame: `{ "t": "pos"|"route"|"hello", "r": "<riderId>", "n": "<nonce>", "c": "<ciphertext>" }`.
 - Relay broadcasts to the other sockets and stores only rare things (latest `hello` per rider, last
   few `route` frames, `rekey`, active `sos`), replaying them to a newly connected client. **Positions
-  are not stored:** they are relayed and forgotten, since the next one arrives in seconds. (Storing
-  each one would hit the free tier's 100 000 row writes/day after about 4 group-days.)
-- Limits: 30 sockets per group, frame max ~512 KB (GPX gzipped), per-socket rate limit, max groups
+  are not stored:** they are relayed and forgotten, since the next one arrives in seconds, and not
+  keeping them is better for privacy.
+- Limits (all configurable): sockets per group (default 30), frame max ~512 KB (GPX gzipped), per-socket rate limit, max groups
   per IP per hour. Nothing else is logged.
-- Reconnect with backoff; the relay needs no state beyond the above.
+- Reconnect with backoff; the relay needs no state beyond the above. A restart loses only memory;
+  the SQLite file keeps `hello`, `route`, `rekey` and `sos`.
 
 ## If the app becomes popular (cost and scale)
-- On Cloudflare the cost grows with the number of active groups (each keeps an object awake): very
-  roughly $0.02-0.05 per group-day, so thousands of active groups a day means thousands of dollars a
-  month. Rough order of magnitude only.
-- A plain VPS scales much more cheaply: cost follows CPU, bandwidth and memory, and one decent
-  server (10-20 EUR/month) should hold tens of thousands of WebSocket connections (to be tested).
-- So keep the relay portable: the logic (copy an encrypted message to the others in the group,
-  keep the few rare things) is a small pure module with a thin Cloudflare adapter, and could get a
-  VPS adapter later. Plain WebSocket protocol; the client does not care where it runs.
+- A plain VPS scales cheaply: cost follows CPU, bandwidth and memory, and one decent server
+  (10-20 EUR/month) should hold tens of thousands of WebSocket connections (to be tested). Start on
+  the small one (~4-5 EUR/month) and move up only if it is full.
+- Keep the relay portable: the logic (copy an encrypted message to the others in the group, keep the
+  few rare things) is small and the protocol is plain WebSocket; the client does not care where it
+  runs. A home machine can be moved to a VPS by copying one folder.
 - The app has a **relay address** setting, so anyone can run their own relay and it is an escape
   hatch if the default one gets too expensive.
 - Cost control either way: cap concurrent groups and connections per IP ("service is full" rather
@@ -158,11 +156,12 @@ per rider every 5-10 s). Fall back to a small VPS (~50 NOK/month) if limits do n
 - Who pays if it grows (voluntary support, or riders running their own relay) is undecided. No
   payment system: that would go against "no accounts".
 
-## Hosting options (undecided; the rider cannot afford usage-based costs)
-The point is a fixed price with a cap, not pay-per-use.
+## Hosting options (decided 2026-10-18: the rider runs it himself; no usage-based costs)
+The point is a fixed price with a cap, not pay-per-use, and no dependence on a third-party platform.
 1. **Small fixed-price VPS** (about 4-5 EUR/month, e.g. Hetzner). Cannot get more expensive; if too
    many use it, it slows down or says "full". Probably holds thousands of riders (to be tested).
-   Needs someone to keep it running; a small process. Leading candidate.
+   Needs someone to keep it running; a small process. **Fallback** if home hosting does not work
+   (CGNAT, uptime) or the app outgrows a Raspberry Pi.
 2. **Other people's public servers** (Nostr relays, MQTT brokers, ntfy.sh): free and nothing to run,
    and E2E encryption keeps content private. But it depends on their goodwill and limits, and they
    may block a large app. Fine for prototyping, not as the lasting answer.
@@ -171,7 +170,25 @@ The point is a fixed price with a cap, not pay-per-use.
    with the relay for when they are apart.
 4. **Riders host their own relay** (Raspberry Pi etc.): zero cost for the developer, but not
    "no setup". Possible for a few, not the main path.
-Cloudflare stays an option for a prototype or small scale (free tier is enough for friends).
+5. **A computer at the rider's own home** (Raspberry Pi, mini PC, old PC): no rent, only electricity
+   and the domain. Assuming ~2 NOK/kWh: a Pi (3-5 W) costs roughly 50-100 NOK/year, a mini PC
+   (10-15 W) 200-300 NOK/year, an old desktop (~50 W) 700-1000 NOK/year, so as much as the VPS
+   (~600 NOK/year). Domain ~100-150 NOK/year either way. **Chosen.**
+   What it takes: the router forwards port 443 (and 80 for the certificate)
+   to the machine, a dynamic DNS record follows the home IP if it changes, and Caddy terminates TLS
+   with a Let's Encrypt certificate and serves the landing page. It only works if the ISP gives the
+   router a public IP: with CGNAT (the router's WAN address is not the address the internet sees)
+   nothing can come in, and then the VPS is the answer.
+   Downsides: the home IP is public in DNS; uptime depends on home power, router and ISP (matters
+   for SOS); the machine should be kept apart from the home network (container or VLAN); the ISP's
+   terms may restrict servers on a home line. The **relay address** setting makes a later move to
+   the VPS painless.
+   **Plan (2026-10-18):** run it on the rider's Linux PC first, then on a Raspberry Pi once bought.
+   Everything the server needs lives in one plain folder outside the repo (no disk image): the
+   relay, the static invite landing page, config (`relay.env`), `data/` (SQLite), a systemd unit,
+   the Caddy config and a small install script. Moving to the Pi (ARM, the PC is x86_64) or later
+   a VPS is copying that folder and running the script, so the relay must not depend on the CPU
+   architecture (interpreted runtime, not a compiled binary).
 
 ## Messages inside the encrypted payload
 - `pos`: lat, lon, speed, heading, accuracy, timestamp, optional battery and "paused", plus movement:
@@ -223,7 +240,19 @@ The companion queues outgoing positions during coverage gaps and sends only the 
   says "Ola has been stopped for 12 min"; no alarms or popups), and a faded look when "last seen" is old.
 - Tablet UI: group entry in the settings/menu (no button clutter), markers on the map, group sheet
   with members, invite QR, share route, pause/leave.
-- Relay: small TypeScript worker in `tools/relay/` (or its own repo), deployed from the rider's account.
+- Relay: small WebSocket server in `tools/relay/` (or its own repo), run on the rider's VPS.
+
+## Protocol and other platforms
+Android is the only client planned, but nothing in the group protocol may depend on Android or
+Kotlin, so an iOS (or any other) client can be written by anyone who wants to.
+- The wire format (invite URI, frames, payload messages, key handling, associated data) is written
+  down in its own document with test vectors, separate from the Kotlin code.
+- Crypto uses only common primitives: AES-256-GCM, X25519, Ed25519.
+- The relay speaks plain WebSocket with JSON frames.
+- The `https` invite link can later double as an iOS universal link; the landing page can point to
+  both stores.
+- Nearby Connections (hosting option 3) is Android-only and not part of the protocol.
+- Keep `:groups` free of Android dependencies so it could become Kotlin Multiplatform.
 
 ## Play Store notes (for later)
 - **Read first: [google-play.md](google-play.md) → «Kjøregrupper og Play».** Groups give the companion `INTERNET`,
@@ -237,6 +266,43 @@ The companion queues outgoing positions during coverage gaps and sends only the 
   encrypted with a key the service never has, deleted after the TTLs above.
 - Both tablet app and companion are reviewed; notification-listener access gets extra scrutiny.
 - With public users the relay needs abuse limits, and someone to keep it running.
+
+## Gaps found 2026-10-18 (resolve before building)
+Wire format (expensive to change once people use it):
+1. **Invite lacks the relay address.** Add `r=<host>` so a moved or self-run relay still works.
+2. **Admin public key is not in the invite.** Otherwise any member (who has the group key) could pose
+   as admin. Put it in the invite; "make admin" must be a change signed by an existing admin.
+3. **No replay protection.** Old `pos`, `sos` or `rekey` frames can be resent. Add a per-rider
+   counter or time window in the payload, and a key epoch in the associated data for rekey.
+4. **No version field** in invite or frames. Add before anyone else writes a client.
+5. **No access control on the relay.** Anyone who knows `groupId` can connect and see metadata (also
+   a removed rider), and groups are created on first connect, so empty groups can fill `MAX_GROUPS`.
+   Needs a proof derived from the group key (rotated on rekey) and per-IP limits.
+6. **Relay frame whitelist** in `curveon-relay` only allows `pos`, `route`, `hello`; `sos`, `sos_ack`,
+   `rekey` (stored and replayed) must be added.
+
+Android and platform:
+- `minSdk` is 29, but built-in X25519/Ed25519 exist only from API 33: `:groups` needs a library
+  (e.g. Tink), with its licence in `THIRD_PARTY_LICENSES.md`.
+- Companion's foreground service is `connectedDevice|microphone` and it has no `INTERNET`. Pick a
+  type that honestly matches relaying for the connected tablet (`dataSync` is limited on Android 15).
+- Full-screen SOS alert on a phone: `USE_FULL_SCREEN_INTENT` is for calls and alarms only since
+  Android 14 (Play enforces it). Fine on the tablet; on the phone SOS is a high-priority
+  notification, maybe with a Do-not-disturb permission the rider grants.
+- Samsung, Xiaomi etc. kill background services; needs testing and a battery-optimisation guide.
+
+Operations and law:
+- **Domain not bought yet.** Blocks `https` invites, certificates and App Links (`assetlinks.json`,
+  needs the release signing fingerprint). Without App Links the link opens in a browser, so the
+  landing page needs an "Open in Curveon" button.
+- **CGNAT unchecked.** Home hosting needs a public IP on the router; compare the router's WAN address
+  with what the internet sees. If they differ, use the VPS.
+- GDPR: the operator handles IP addresses and metadata, so the privacy policy must be online (on the
+  domain) before anyone outside the friends uses it.
+- Phone lost or app reinstalled: groups live only on the device, so the rider needs a new invite and
+  appears as a new rider. Decide whether keys may be backed up.
+- Untestable in the emulator: Bluetooth and mobile data on the road. Plan a small Node test client
+  that simulates ~10 riders to test markers and clustering.
 
 ## Open questions
 - `https` invite link needs a domain and a tiny landing page. Start with scheme + QR for testing, but
