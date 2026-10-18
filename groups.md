@@ -226,6 +226,9 @@ The companion queues outgoing positions during coverage gaps and sends only the 
 - Relay: small TypeScript worker in `tools/relay/` (or its own repo), deployed from the rider's account.
 
 ## Play Store notes (for later)
+- **Read first: [google-play.md](google-play.md) → «Kjøregrupper og Play».** Groups give the companion `INTERNET`,
+  which changes the privacy policy (`privacy/`), the Data safety draft and the call log exception text
+  (`google-play-call-log.md`). Those files say what to rewrite when groups ship. Keep `:groups` separate from `:phone`.
 - Background location needs an in-app disclosure before the permission prompt, a Play Console
   declaration and usually a short demo video. Companion probably needs no GPS of its own (position
   comes from the tablet over Bluetooth); "This device" mode does.

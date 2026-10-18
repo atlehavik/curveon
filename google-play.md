@@ -103,6 +103,10 @@ endrer seg på Play-siden:
 
 1. Begge apper samtidig. Én app først hjelper ikke (se over).
 2. Søke om unntak for `READ_CALL_LOG` som følgeapp til tavla, og beholde `CALL_PHONE`? (Anbefalt.)
+3. **Første Play-versjon med eller uten kjøregrupper?** Anbefalt uten (companion uten `INTERNET`, se «Kjøregrupper og Play»).
+   Ikke avgjort 2026-10-18; tas opp i tråden som implementerer groups.
+4. Før innsending: Android-backup i hovedappen (`allowBackup`), navn og e-post i personvernerklæringen, hosting av den,
+   og lenke til den i Innstillinger → Hjelp. Se `google-play-data-safety.md`.
 
 ## Andre ting å vurdere
 
