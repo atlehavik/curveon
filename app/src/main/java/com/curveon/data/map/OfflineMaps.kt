@@ -82,13 +82,13 @@ class OfflineMaps(private val context: Context) {
         return style.toString()
     }
 
-    /** Place names get a wide halo (white on the day map), so a road under them doesn't show between the letters. */
+    /** Place names get a wide halo (the day map's land colour), so a road under them doesn't show between the letters. */
     private fun placeHalo(layer: JSONObject, flavor: String) {
         val id = layer.getString("id").substringBefore('~')
         if (!id.startsWith("places_") && id != "online-places") return
         val paint = layer.optJSONObject("paint") ?: return
         paint.put("text-halo-width", PLACE_HALO)
-        if (flavor == "light") paint.put("text-halo-color", "#ffffff")
+        if (flavor == "light") paint.put("text-halo-color", LAND_LIGHT)
     }
 
     /**
@@ -113,7 +113,7 @@ class OfflineMaps(private val context: Context) {
         when (id) {
             // Place names: dark text on a wide white halo, so they stay readable over the dark roads.
             "places_subplace", "places_locality", "places_region", "online-places" -> {
-                paint.put("text-color", "#1f1f1f"); paint.put("text-halo-color", "#ffffff")
+                paint.put("text-color", "#1f1f1f"); paint.put("text-halo-color", LAND_LIGHT)
             }
             "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { paint.put("line-color", HC_ROAD); atLeast(paint, HC_MIN_WIDTH) }
             "roads_other", "roads_bridges_other", "online-roads_other" -> { paint.put("line-color", HC_PATH); atLeast(paint, HC_MIN_WIDTH) }
@@ -206,6 +206,8 @@ class OfflineMaps(private val context: Context) {
         const val HC_ROAD = "#707070"
         private const val HC_PATH = "#a0a0a0"
         private const val HC_EDGE = 1.5
+        /** The day map's land colour: place names sit on a halo of it, so they blend in instead of standing out white. */
+        private const val LAND_LIGHT = "#e2dfda"
         /** The width of the halo round place names (px). */
         private const val PLACE_HALO = 3.0
         /** Road names show from this zoom, all of them. */
