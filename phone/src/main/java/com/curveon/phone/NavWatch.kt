@@ -19,7 +19,7 @@ object NavWatch {
 
     const val EXTRA_NAVIGATING = "com.curveon.NAVIGATING"
     const val GOOGLE_MAPS = "com.google.android.apps.maps"
-    const val CURVEON = "com.curveon.tablet"
+    const val CURVEON = "com.curveon.app"
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()

@@ -231,7 +231,7 @@ Curveon must be updated on both devices, and the companion on the Pixel (older c
 ## 2026-10-16 — Crash reports kept on the device
 
 - [ ] After a crash, open Curveon again, then
-  `adb pull /sdcard/Android/data/com.curveon.tablet/files/crashes`: a `.txt` per crash with
+  `adb pull /sdcard/Android/data/com.curveon.app/files/crashes`: a `.txt` per crash with
   the time, version and stack (a native one also has a `.pb`). Tell Claude, who can read them.
 
 ## 2026-10-16 — Planning on the map: help bubble, padlock on by default
@@ -485,7 +485,7 @@ standing still the app went from ~23 % of a core to ~5 %; riding, the main threa
 - [ ] GPX & rides → Rides: "Note lean angle" is off by default (lean is stored but not shown
   anywhere yet). Switched on, ride a few bends: the ride still gets a lean angle.
 - [ ] Battery over an hour's ride, compared with before:
-  `adb shell dumpsys batterystats --charged com.curveon.tablet`.
+  `adb shell dumpsys batterystats --charged com.curveon.app`.
 
 ## 2026-10-14 — Pins A/B, save dialog, Planned looks like Rides
 
@@ -597,7 +597,7 @@ while testing, so none of this has been seen with a real call.
 ## 2026-10-11 — Speed limits without a map
 
 - [ ] Pixel (no maps installed), online and with a GPS fix: within a couple of minutes
-  `adb -s <pixel> shell ls /sdcard/Android/data/com.curveon.tablet/files/speedlimits/` shows
+  `adb -s <pixel> shell ls /sdcard/Android/data/com.curveon.app/files/speedlimits/` shows
   `norway.sqlite` (the country it is in); the limit sign then shows on roads, e.g. in the demo ride
   or "Hold a finger on a road".
 
@@ -848,13 +848,13 @@ navigator called it off route, 40 m+ for 3 fixes). 3D: tilt 50° (was 60°), rid
 map, zoom 17.2 at 20 km/h → 15.6 at 90, in a bit when a turn is under 300 m away. Installed on the
 X7 (the Pixel was offline: `ANDROID_SERIAL=<pixel> ./gradlew :app:installDebug`).
 
-Every app start writes a trace to `Android/data/com.curveon.tablet/files/navtrace/trace-*.csv`
+Every app start writes a trace to `Android/data/com.curveon.app/files/navtrace/trace-*.csv`
 (raw GPS fixes, route matching, where the arrow was drawn, routes, OBD values; kept 14 days).
 
 - [ ] Ride a route, including a junction where you deliberately go the wrong way, in heading-up
   and in 3D. Does the arrow glide, keep up with the bike at junctions, leave the line at once?
 - [ ] Then pull the traces and tell me roughly when/where (time of day, which junction):
-  `adb -s <X7> pull /sdcard/Android/data/com.curveon.tablet/files/navtrace/ ~/develop/Curveon-data/navtrace/`
+  `adb -s <X7> pull /sdcard/Android/data/com.curveon.app/files/navtrace/ ~/develop/Curveon-data/navtrace/`
   (Pixel: same path with its own serial).
 
 ## 2026-10-10 — Speed on the map, engine panel (OBD2)
@@ -1250,7 +1250,7 @@ Tested in the emulator (switching both ways, Settings stays open). On the X7:
 - [x] Ride with navigation in Norwegian: turn banner ("Sving til høyre · deretter …") fits, and
   numbers use decimal comma (12,5 km).
 - [x] Android Settings → Apps → Curveon → Language lists English and Norsk too.
-- [x] Reset if needed: `adb -s 241181d1 shell cmd locale set-app-locales com.curveon.tablet --locales en`
+- [x] Reset if needed: `adb -s 241181d1 shell cmd locale set-app-locales com.curveon.app --locales en`
 
 ## 2026-10-07 — GPX groups: database upgrade on the X7
 

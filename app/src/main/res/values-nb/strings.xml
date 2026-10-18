@@ -319,7 +319,7 @@
     <string name="gpx_import">Importer</string>
     <string name="gpx_auto_follow">Følg automatisk</string>
     <string name="gpx_auto_follow_hint">Start navigasjon når du kjører langs et spor som vises på kartet</string>
-    <string name="gpx_empty">Ingen spor ennå. Importer en .gpx-fil, eller kopier filer til nettbrettets\nAndroid/data/com.curveon.tablet/files/gpx-mappe over USB.</string>
+    <string name="gpx_empty">Ingen spor ennå. Importer en .gpx-fil, eller kopier filer til nettbrettets\nAndroid/data/com.curveon.app/files/gpx-mappe over USB.</string>
     <string name="gpx_export">Eksporter GPX</string>
     <string name="gpx_ungroup">Løs opp gruppen</string>
     <string name="gpx_delete_group">Slett gruppen</string>

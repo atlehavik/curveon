@@ -17,7 +17,7 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
 - **Layouts** must work on the X7 in landscape and on a phone (Pixel 9a, 411 dp wide) in both
   orientations: `isNarrowScreen()` (CockpitDialog.kt) stacks what sits side by side on the tablet.
 - Tablet: `./gradlew :app:installDebug`, then
-  `adb shell am start -n com.curveon.tablet/com.curveon.MainActivity`.
+  `adb shell am start -n com.curveon.app/com.curveon.MainActivity`.
 - **The X7 is reached over wifi, not USB** (it lives on the handlebars). Before installing, find it:
   `adb mdns services` lists it as `_adb-tls-connect` once Wireless debugging is on and this PC is
   paired; `adb connect <ip:port>` from that line (the port changes each time Wireless debugging is
@@ -37,8 +37,8 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   (demo data, fake OBD) and no `run-as`, but do have the demo ride (Settings → Navigation). The Pixel is found on wifi like the X7 (`adb connect <ip>:5555`,
   last seen at 192.168.86.199); the X7 stays on debug builds.
 - **Crash reports** (`CrashLog.kt`): one `.txt` per crash under
-  `Android/data/com.curveon.tablet/files/crashes/` on the device, also on release builds:
-  `adb -s <device> pull /sdcard/Android/data/com.curveon.tablet/files/crashes`. Native crashes and
+  `Android/data/com.curveon.app/files/crashes/` on the device, also on release builds:
+  `adb -s <device> pull /sdcard/Android/data/com.curveon.app/files/crashes`. Native crashes and
   ANRs are copied from Android on the next start; a native one's `.txt` has the crashing thread's
   stack, and the whole tombstone (all threads, recent log) is in the `.pb` next to it. Look here
   first when the rider says the app crashed.
@@ -47,7 +47,7 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   devices have Mali GPUs. Switching back is the artifact name in `gradle/libs.versions.toml`.
 - Tests: `./gradlew test`. `:routing:test` routes over real Norway data.
 - Large data (pmtiles, BRouter segments, search index, OSM extracts) lives outside the repo in
-  `~/develop/Curveon-data`; on the tablet it goes under `Android/data/com.curveon.tablet/files/`.
+  `~/develop/Curveon-data`; on the tablet it goes under `Android/data/com.curveon.app/files/`.
 
 ## How to work here
 

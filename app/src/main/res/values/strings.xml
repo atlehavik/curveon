@@ -321,7 +321,7 @@
     <string name="gpx_import">Import</string>
     <string name="gpx_auto_follow">Auto-follow</string>
     <string name="gpx_auto_follow_hint">Start navigation when you ride along a track shown on the map</string>
-    <string name="gpx_empty">No tracks yet. Import a .gpx file, or copy files into the tablet\'s\nAndroid/data/com.curveon.tablet/files/gpx folder over USB.</string>
+    <string name="gpx_empty">No tracks yet. Import a .gpx file, or copy files into the tablet\'s\nAndroid/data/com.curveon.app/files/gpx folder over USB.</string>
     <string name="gpx_export">Export GPX</string>
     <string name="gpx_ungroup">Ungroup</string>
     <string name="gpx_delete_group">Delete group</string>

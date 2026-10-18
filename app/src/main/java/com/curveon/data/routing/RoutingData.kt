@@ -11,7 +11,7 @@ import java.io.IOException
 
 /**
  * BRouter routing data (.rd5 segment files, 5x5 degree tiles). Stored in
- * Android/data/com.curveon.tablet/files/routing/segments4 so they can also be copied over USB.
+ * Android/data/com.curveon.app/files/routing/segments4 so they can also be copied over USB.
  * Each downloaded country brings the tiles it needs (see MapDownloads).
  */
 class RoutingData(private val context: Context) {

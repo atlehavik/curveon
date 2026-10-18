@@ -15,7 +15,7 @@ import kotlin.math.tan
 
 /**
  * Offline vector maps are PMTiles archives (Protomaps schema) stored in the app's external files
- * directory, e.g. /sdcard/Android/data/com.curveon.tablet/files/maps/norway.pmtiles, one per
+ * directory, e.g. /sdcard/Android/data/com.curveon.app/files/maps/norway.pmtiles, one per
  * country. They are downloaded in Settings (MapDownloads), copied there over USB or imported
  * through the system file picker; all of them are shown together. Elsewhere the map is drawn from
  * OpenFreeMap's online tiles when there is a connection (and from MapLibre's cache when not).

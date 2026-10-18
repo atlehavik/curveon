@@ -11,7 +11,7 @@ import java.io.InputStream
 
 /**
  * Imports GPX files: picked in the app, or copied over USB into
- * Android/data/com.curveon.tablet/files/gpx/ (imported at startup, then moved to gpx/imported/).
+ * Android/data/com.curveon.app/files/gpx/ (imported at startup, then moved to gpx/imported/).
  * Each track in a file becomes its own entry; a file with several tracks becomes a group.
  */
 class GpxImporter(private val context: Context, private val repository: CurveonRepository) {

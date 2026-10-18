@@ -29,6 +29,6 @@ done
 cat <<MSG
 Done: $OUT/norway.pmtiles
 Install on the tablet by copying it to
-  Android/data/com.curveon.tablet/files/maps/
-over USB, or with: adb push "$OUT/norway.pmtiles" /sdcard/Android/data/com.curveon.tablet/files/maps/
+  Android/data/com.curveon.app/files/maps/
+over USB, or with: adb push "$OUT/norway.pmtiles" /sdcard/Android/data/com.curveon.app/files/maps/
 MSG

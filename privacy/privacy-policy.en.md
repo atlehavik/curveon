@@ -1,6 +1,6 @@
 # Curveon privacy policy
 
-Effective 2026-10-18. This policy covers the apps **Curveon** (`com.curveon.tablet`) and **Curveon Companion**
+Effective 2026-10-18. This policy covers the apps **Curveon** (`com.curveon.app`) and **Curveon Companion**
 (`com.curveon.companion`).
 
 **In short:** Curveon has no accounts, no advertising, no analytics and no server of its own. What the apps

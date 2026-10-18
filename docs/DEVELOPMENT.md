@@ -10,7 +10,7 @@ phone, with an optional companion app on the phone when a tablet is used.
 
 | Module | What it is |
 |---|---|
-| `app` | The tablet app (`com.curveon.tablet`): map, navigation, dashboard |
+| `app` | The main app (`com.curveon.app`), standalone on phone and tablet: map, navigation, dashboard |
 | `companion` | Phone app (`com.curveon.companion`), installed on its own: mirrors messages, calls and music to the tablet over Bluetooth |
 | `phone` | What a phone shares (messages, calls, music, contacts, spoken replies), read on the device itself; used by `companion`, and by `app` when it is its own phone |
 | `routing` | Offline routing on BRouter: motorcycle profile, roundtrips, GPX following, route tracking |
@@ -100,7 +100,7 @@ Requirements: JDK 17+ (21 recommended) and the Android SDK (`local.properties` â
 ```
 
 The ride build is signed with the debug key, so it installs over a debug build and keeps the
-app's data. After installing, `adb shell cmd package compile -m speed -f com.curveon.tablet`
+app's data. After installing, `adb shell cmd package compile -m speed -f com.curveon.app`
 compiles it ahead of time instead of waiting for Android to do it overnight.
 
 Emulator for a 7" tablet: API 33, 1080x1920 @ 320 dpi, landscape.
@@ -127,7 +127,7 @@ asked, and Android refuses the release APK over them.
 
 ## Offline data (by hand)
 
-Everything lives under `Android/data/com.curveon.tablet/files/` on the tablet; copy over USB
+Everything lives under `Android/data/com.curveon.app/files/` on the tablet; copy over USB
 or with `adb push`.
 
 | Folder | File(s) | Size | How to get it |

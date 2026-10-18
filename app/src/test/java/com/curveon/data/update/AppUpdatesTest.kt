@@ -40,7 +40,7 @@ class AppUpdatesTest {
 
     @Test
     fun `release notes lose their Markdown`() {
-        assertEquals("Intro\n\n• Curveon-1.0.apk: the app (com.curveon.tablet)\nNotes",
-            AppUpdates.plainText("## Intro\r\n\n\n- **Curveon-1.0.apk**: the app (`com.curveon.tablet`)\nNotes\n"))
+        assertEquals("Intro\n\n• Curveon-1.0.apk: the app (com.curveon.app)\nNotes",
+            AppUpdates.plainText("## Intro\r\n\n\n- **Curveon-1.0.apk**: the app (`com.curveon.app`)\nNotes\n"))
     }
 }

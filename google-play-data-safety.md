@@ -2,7 +2,7 @@
 
 Utkast 2026-10-18, samsvarer med personvernerklæringen i `privacy/`. Skjemaet er på engelsk; svarene under er det
 jeg foreslår å krysse av. Jeg har ikke sett selve skjemaet, så kategorinavn kan avvike litt. Skjønnsmessige valg er
-merket **(skjønn)**. Hovedappen = `com.curveon.tablet`, companion = `com.curveon.companion`.
+merket **(skjønn)**. Hovedappen = `com.curveon.app`, companion = `com.curveon.companion`.
 
 Grunnlag: kartlegging av koden 2026-10-18 (all nettrafikk: `PlaceSearch.kt`, `MapDownloads.kt`, `RoutingData.kt`,
 online-kartstilene; ingen analyse, reklame, Firebase eller Play Services-bibliotek; companion har ikke `INTERNET`).

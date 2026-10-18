@@ -1,6 +1,6 @@
 # Personvernerklæring for Curveon
 
-Gjelder fra 2026-10-18. Erklæringen gjelder appene **Curveon** (`com.curveon.tablet`) og **Curveon Companion**
+Gjelder fra 2026-10-18. Erklæringen gjelder appene **Curveon** (`com.curveon.app`) og **Curveon Companion**
 (`com.curveon.companion`).
 
 **Kort fortalt:** Curveon har ingen kontoer, ingen reklame, ingen analyse og ingen egen server. Det appene

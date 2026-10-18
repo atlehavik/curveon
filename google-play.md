@@ -8,7 +8,7 @@ Notater fra samtalene 2026-10-11/12 og 2026-10-18. Ikke committet.
   (alias `upload`). **Ta backup av hele mappen.** Mistes nøkkelen kan Play nullstille den, men det er tungvint.
 - Begge appene har signert bygg for Play:
   `source ~/.curveon-signing/signing.env && ./gradlew :app:bundlePlay :companion:bundleRelease`
-  - `app/build/outputs/bundle/play/app-play.aab` (hovedappen, `com.curveon.tablet`, ca. 30 MB)
+  - `app/build/outputs/bundle/play/app-play.aab` (hovedappen, `com.curveon.app`, ca. 30 MB)
   - `companion/build/outputs/bundle/release/companion-release.aab` (telefon, `com.curveon.companion`, ca. 6 MB)
 - **`play`-byggtypen i `:app`** (2026-10-18) er `release` uten selvoppdatering: `BuildConfig.SELF_UPDATE` er
   `false`, `src/play/AndroidManifest.xml` fjerner `REQUEST_INSTALL_PACKAGES`, og oppdateringssjekken

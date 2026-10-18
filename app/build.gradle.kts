@@ -9,7 +9,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.curveon.tablet"
+    applicationId = "com.curveon.app"
     minSdk = 29
     targetSdk = 36
     versionCode = 7

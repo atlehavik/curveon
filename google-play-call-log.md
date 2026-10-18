@@ -11,7 +11,7 @@ Googles tabell over unntak (policysiden, «Permitted uses») har to rader som de
 | App | Unntak | Hvorfor det passer |
 |---|---|---|
 | Companion (`com.curveon.companion`) | **Connected device companion apps that enable sending/receiving of SMS or calls**: «connect a mobile device to a connected device (for example a smartwatch, **automotive technology**, smart home device) and send/receive texts and phone calls». Tillatelser: `READ_CALL_LOG`, `PROCESS_OUTGOING_CALLS`, `WRITE_CALL_LOG` m.fl. | Koble telefonen til Curveon-tavla på motorsykkelen (frittstående, offline) og ringe/se anrop derfra. |
-| Hovedappen (`com.curveon.tablet`) | **In-vehicle hands-free use and projected display**: «Apps whose core functionality (like **navigation**) directly relates to driving/mobility, especially where the user's physical interactions with a device are limited». Tillatelser: `READ_CALL_LOG` m.fl. | Navigasjonsapp for motorsykkel. Rytteren har hanskene på og kan ikke bruke telefonen mens hen kjører. |
+| Hovedappen (`com.curveon.app`) | **In-vehicle hands-free use and projected display**: «Apps whose core functionality (like **navigation**) directly relates to driving/mobility, especially where the user's physical interactions with a device are limited». Tillatelser: `READ_CALL_LOG` m.fl. | Navigasjonsapp for motorsykkel. Rytteren har hanskene på og kan ikke bruke telefonen mens hen kjører. |
 
 Merk: hovedappen er frittstående på mobil og tablet, og er sin egen «companion» når den kjører på telefonen
 («Denne enheten»). Det er navigasjonsraden som bærer søknaden for den, ikke companion-raden.
