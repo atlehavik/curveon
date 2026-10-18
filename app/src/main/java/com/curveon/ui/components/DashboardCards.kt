@@ -251,26 +251,30 @@ fun StopSign(size: Dp, modifier: Modifier = Modifier) {
  * or stops adds its sign and how far it is, with or without a route: this card is the one place for it.
  */
 @Composable
-fun CurrentRoadCard(road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier, giveWay: com.curveon.data.routing.GiveWayAlert? = null) {
+fun CurrentRoadCard(
+    road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier, giveWay: com.curveon.data.routing.GiveWayAlert? = null,
+    /** Settings → Display → Road info size: the card and what is on it, 1 is normal. */
+    scale: Float = 1f
+) {
     Row(
         modifier
             .clip(RoundedCornerShape(16.dp))
             .background(CockpitSurface.copy(alpha = 0.92f))
             .border(1.dp, CockpitBorder, RoundedCornerShape(16.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp * scale, vertical = 8.dp * scale)
             .testTag("current_road"),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp * scale)
     ) {
-        road.ref?.let { RoadShield(it, 26.dp) }
-        if (road.priority) PriorityRoadSign(30.dp)
+        road.ref?.let { RoadShield(it, 26.dp * scale) }
+        if (road.priority) PriorityRoadSign(30.dp * scale)
         giveWay?.let { g ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("free_give_way")) {
-                if (g.stop) StopSign(30.dp) else GiveWaySign(30.dp)
+                if (g.stop) StopSign(30.dp * scale) else GiveWaySign(30.dp * scale)
                 if (g.distanceMeters >= 10) {
-                    Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.width(6.dp * scale))
                     Text(stringResource(R.string.give_way_in, (g.distanceMeters / 10).toInt() * 10),
-                        color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        color = TextPrimary, fontSize = (15 * scale).sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
             }
         }

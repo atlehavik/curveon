@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Road card size, one-sided speed signs, wider roundabout ring (1.2.2)
+
+- [ ] Settings → Display → Road info size: Large and Extra large make the road number, priority and give way signs bigger. Check it doesn't touch the speed card or the trip bar (Pixel landscape, portrait).
+- [ ] High contrast, zoomed far out and in: small roads dark grey at every level, none white.
+- [ ] A speed sign stands on the right of the road only, where the limit changes.
+- [ ] Roundabout icon: the number sits clear of the arrows; is the size right?
+
 ## 2026-10-18 — Speed signs on the map, stop alert, roundabout icon, road info without a map (1.2.2)
 
 - [ ] Pixel/X7, navigating a route with speed limit changes (a road with NVDB limits): a speed sign stands on each side of the road where the limit changes (not where it stays), within ~1 km ahead; zoom 13+.

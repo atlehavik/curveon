@@ -87,6 +87,11 @@ enum class SpeedSignSize(val label: Int, val dp: Int) {
     NORMAL(com.curveon.R.string.speed_sign_normal, 36), LARGE(com.curveon.R.string.speed_sign_large, 52), HUGE(com.curveon.R.string.speed_sign_huge, 68)
 }
 
+/** How big the road card is (Settings → Display): the road number and the priority and give way signs. */
+enum class RoadCardSize(val label: Int, val scale: Float) {
+    NORMAL(com.curveon.R.string.size_normal, 1f), LARGE(com.curveon.R.string.size_large, 1.4f), HUGE(com.curveon.R.string.size_huge, 1.8f)
+}
+
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
 
     private val app: Context = application
@@ -978,6 +983,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _highContrast = MutableStateFlow(settings.getBoolean("highContrast", false))
     val highContrast: StateFlow<Boolean> = _highContrast.asStateFlow()
     fun setHighContrast(on: Boolean) { _highContrast.value = on; settings.edit().putBoolean("highContrast", on).apply() }
+
+    private val _roadCardSize = MutableStateFlow(RoadCardSize.entries.firstOrNull { it.name == settings.getString("roadCardSize", null) } ?: RoadCardSize.NORMAL)
+    val roadCardSize: StateFlow<RoadCardSize> = _roadCardSize.asStateFlow()
+    fun setRoadCardSize(size: RoadCardSize) { _roadCardSize.value = size; settings.edit().putString("roadCardSize", size.name).apply() }
 
     private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.NORMAL)
     val speedSign: StateFlow<SpeedSignSize> = _speedSign.asStateFlow()

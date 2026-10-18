@@ -2,6 +2,10 @@
   {
     "version": "1.2.2",
     "en": [
+      "High contrast now keeps every small road dark grey at every zoom level, also when zoomed far out where they used to turn white",
+      "Speed limit signs on the map now stand on one side of the road only",
+      "The roundabout icon is redrawn with a wider ring, so the exit number sits clear of the arrows and is easy to read",
+      "New setting: the size of the road card (road number, priority road and give way signs) can be made larger in Settings → Display",
       "Speed limit signs now stand on the map where the speed limit changes along your route, on both sides of the road, just like the give way signs",
       "The arrival box now always shows the distance left next to the time. When you reach a stop on the way, you get a clear message (and a sound or the spoken name, as set in Settings → Navigation)",
       "Roundabouts have a much bigger icon with the exit number in large digits inside the arrows",
@@ -29,6 +33,10 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
+      "Høykontrast holder nå alle småveier mørkegrå på alle zoomnivå, også langt ute der de tidligere ble hvite",
+      "Fartsgrenseskilt på kartet står nå bare på én side av veien",
+      "Rundkjøringsikonet er tegnet på nytt med en videre ring, så avkjøringsnummeret står fritt fra pilene og er lett å lese",
+      "Ny innstilling: veikortet (veinummer, forkjørsvei og vikepliktskilt) kan gjøres større under Innstillinger → Skjerm",
       "Fartsgrenseskilt står nå på kartet der fartsgrensen endrer seg langs ruta, på begge sider av veien, akkurat som vikepliktskiltene",
       "Ankomstboksen viser nå alltid hvor mange kilometer det er igjen ved siden av klokkeslettet. Når du kommer til et stopp underveis, får du en tydelig melding (og en lyd eller navnet opplest, slik du har valgt under Innstillinger → Navigasjon)",
       "Rundkjøringer har et mye større ikon, med avkjøringsnummeret i store tall inni pilene",

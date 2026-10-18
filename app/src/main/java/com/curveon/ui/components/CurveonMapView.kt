@@ -195,7 +195,7 @@ fun CurveonMapView(
     gpxPois: List<com.curveon.data.gpx.GpxPoi> = emptyList(),
     /** Give way and stop signs that apply to the rider, stood beside the road before their junctions. */
     giveWaySigns: List<com.curveon.data.routing.GiveWayAlert> = emptyList(),
-    /** Where the speed limit changes ahead on the route: a sign on each side of the road. */
+    /** Where the speed limit changes ahead on the route: a sign on the right of the road. */
     speedSigns: List<com.curveon.data.routing.SpeedChange> = emptyList(),
     trackHint: com.curveon.data.gpx.TrackHint? = null,
     onPoiClick: (com.curveon.data.gpx.GpxPoi) -> Unit = {},
@@ -597,7 +597,7 @@ fun CurveonMapView(
         val json = offlineMaps.styleJson(if (dark) "dark" else "light", highContrast)
         style = null
         m.setStyle(Style.Builder().fromJson(json)) { s ->
-            addOverlayLayers(s, dark)
+            addOverlayLayers(s, dark, highContrast && !dark)
             poiBadges.forEach { (name, bmp) -> s.addImage(name, bmp) }
             signImages.forEach { (name, bmp) -> s.addImage(name, bmp) }
             style = s
@@ -695,16 +695,14 @@ fun CurveonMapView(
             }
         }))
     }
-    // Speed limit signs where the limit changes, on both sides of the road, as they stand.
+    // Speed limit signs where the limit changes, on the right of the road as they stand.
     LaunchedEffect(style, speedSigns) {
         val s = style ?: return@LaunchedEffect
         val density = context.resources.displayMetrics.density
         speedSigns.map { it.limit }.distinct().forEach { l -> if (s.getImage(speedSignImageName(l)) == null) s.addImage(speedSignImageName(l), speedSignImage(l, density)) }
-        s.getSourceAs<GeoJsonSource>(SPEED_SIGNS)?.setGeoJson(FeatureCollection.fromFeatures(speedSigns.flatMap { c ->
-            listOf(90.0, -90.0).map { side ->
-                val at = com.curveon.routing.Geo.destination(com.curveon.routing.LatLon(c.lat, c.lon), c.bearingDeg + side, 6.0)
-                Feature.fromGeometry(Point.fromLngLat(at.lon, at.lat)).also { it.addStringProperty("icon", speedSignImageName(c.limit)) }
-            }
+        s.getSourceAs<GeoJsonSource>(SPEED_SIGNS)?.setGeoJson(FeatureCollection.fromFeatures(speedSigns.map { c ->
+            val at = com.curveon.routing.Geo.destination(com.curveon.routing.LatLon(c.lat, c.lon), c.bearingDeg + 90.0, 6.0)
+            Feature.fromGeometry(Point.fromLngLat(at.lon, at.lat)).also { it.addStringProperty("icon", speedSignImageName(c.limit)) }
         }))
     }
     LaunchedEffect(style, gpxPois) {
@@ -1034,7 +1032,7 @@ fun CurveonMapView(
     // Planning a trip: a preview, editing it, picking places or drawing an area on the map.
     val planning = planningTrip || previewRoutes.isNotEmpty() || editor != null || onTap != null || onSketch != null
     val palette = if (surfacePaletteWhilePlanning && !planning) SurfacePalette.QUIET else surfacePalette
-    LaunchedEffect(style, palette) {
+    LaunchedEffect(style, palette, highContrast) {
         val s = style ?: return@LaunchedEffect
         // The bright colours a little wider too, so they read at a glance.
         val wide = if (palette == SurfacePalette.QUIET) 1f else 1.3f
@@ -1045,11 +1043,16 @@ fun CurveonMapView(
         val bright = palette != SurfacePalette.QUIET
         val fade = if (bright) 14.8f to 15.6f else 13.2f to 14f
         val countryOpacity = E.interpolate(E.linear(), E.zoom(), E.stop(fade.first, 1f), E.stop(fade.second, 0f))
-        s.getLayer("$SURFACE-country-casing")?.setProperties(
+        val hc = highContrast && !dark && !bright
+        // High contrast, quiet: the same dark grey as the map's own small roads (no edge); see addSurfaceLayers.
+        if (hc) s.getLayer("$SURFACE-country")?.setProperties(
+            lineColor(com.curveon.data.map.OfflineMaps.HC_ROAD), lineOpacity(countryOpacity),
+            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.6f), E.stop(13, 1.8f), E.stop(15, 2.4f))))
+        else s.getLayer("$SURFACE-country-casing")?.setProperties(
             lineColor(if (!bright) "#A3A3A3" else if (dark) "#000000" else "#202020"), lineOpacity(countryOpacity),
             lineWidth(if (bright) E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 2.8f), E.stop(13, 3.8f), E.stop(15, 5f))
                 else E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(15, 3.6f))))
-        s.getLayer("$SURFACE-country")?.setProperties(
+        if (!hc) s.getLayer("$SURFACE-country")?.setProperties(
             lineColor(if (!bright) (if (dark) "#EBEBEB" else "#FFFFFF") else if (dark) palette.gravelDark else palette.gravelLight), lineOpacity(countryOpacity),
             lineWidth(if (bright) E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.4f), E.stop(13, 2.2f), E.stop(15, 3.2f))
                 else E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(15, 2.2f))))
@@ -1389,7 +1392,7 @@ private fun surfaceWidth(base: Float) = E.interpolate(E.linear(), E.zoom(),
     E.stop(14, E.product(E.literal(base), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
     E.stop(18, E.product(E.literal(base * 3f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))))
 
-private fun addSurfaceLayers(s: Style, dark: Boolean) {
+private fun addSurfaceLayers(s: Style, dark: Boolean, highContrast: Boolean = false) {
     s.addSource(GeoJsonSource(SURFACE))
     s.addSource(GeoJsonSource(HEAT))
     fun width(base: Float) = surfaceWidth(base)
@@ -1398,7 +1401,14 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
     // Small tarmac roads like the map's own minor roads (white in a grey casing), until the map's
     // own are wide enough to see, so a gravel road visibly starts somewhere: small roads until
     // zoom 14, access roads leading to gravel (the map draws those even later) until 15.5.
-    fun tarmac(kind: String, fadeFrom: Float, until: Float) = listOf(
+    fun tarmac(kind: String, fadeFrom: Float, until: Float) = if (highContrast) listOf(
+        // High contrast: the same dark grey as the map's own small roads, no edge, never thinner than they are.
+        LineLayer("$SURFACE-$kind", SURFACE).withProperties(
+            lineColor(com.curveon.data.map.OfflineMaps.HC_ROAD), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.6f), E.stop(13, 1.8f), E.stop(15, 2.4f)))
+        ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until }
+    ) else listOf(
         LineLayer("$SURFACE-$kind-casing", SURFACE).withProperties(
             lineColor("#A3A3A3"), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
@@ -1473,8 +1483,8 @@ private fun addSurfaceOverLayers(s: Style, dark: Boolean) {
     }
 }
 
-private fun addOverlayLayers(s: Style, dark: Boolean) {
-    addSurfaceLayers(s, dark)
+private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = false) {
+    addSurfaceLayers(s, dark, highContrast)
     s.addImage(ARROW_IMAGE, arrowBitmap(), true)
     s.addSource(GeoJsonSource(GPX))
     s.addSource(GeoJsonSource(GPX_POIS))

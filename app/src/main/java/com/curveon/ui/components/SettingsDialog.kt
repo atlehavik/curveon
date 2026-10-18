@@ -74,6 +74,7 @@ data class SettingsState(
     val showAltitude: Boolean,
     val speedSign: com.curveon.ui.viewmodel.SpeedSignSize = com.curveon.ui.viewmodel.SpeedSignSize.NORMAL,
     val showRoadInfo: Boolean = true,
+    val roadCardSize: com.curveon.ui.viewmodel.RoadCardSize = com.curveon.ui.viewmodel.RoadCardSize.NORMAL,
     val showMapMedia: Boolean = true,
     val autoFollowTracks: Boolean,
     val offRoute: com.curveon.data.routing.OffRouteSettings,
@@ -116,6 +117,7 @@ class SettingsActions(
     val onGravelHeatButton: (GravelHeatButton) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
     val onSpeedSign: (com.curveon.ui.viewmodel.SpeedSignSize) -> Unit = {},
+    val onRoadCardSize: (com.curveon.ui.viewmodel.RoadCardSize) -> Unit = {},
     val onShowRoadInfo: (Boolean) -> Unit = {},
     val onShowMapMedia: (Boolean) -> Unit = {},
     val onAutoFollow: (Boolean) -> Unit,
@@ -219,6 +221,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_road_info), stringResource(R.string.settings_road_info_hint)) {
                             CockpitSwitch(state.showRoadInfo, actions.onShowRoadInfo)
+                        }
+                        Setting(stringResource(R.string.settings_road_size), stringResource(R.string.settings_road_size_hint)) {
+                            Choice(com.curveon.ui.viewmodel.RoadCardSize.entries, state.roadCardSize, { stringResource(it.label) }, actions.onRoadCardSize)
                         }
                         Setting(stringResource(R.string.settings_map_media), stringResource(R.string.settings_map_media_hint)) {
                             CockpitSwitch(state.showMapMedia, actions.onShowMapMedia)

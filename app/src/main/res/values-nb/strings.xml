@@ -90,6 +90,11 @@
     <string name="speak_stop_reached">Du er framme ved %1$s</string>
     <string name="road_needs_map">Last ned kartet for mer om veien</string>
     <string name="road_needs_map_for">Last ned kartet for %1$s for mer om veien</string>
+    <string name="size_normal">Normal</string>
+    <string name="size_large">Stor</string>
+    <string name="size_huge">Ekstra stor</string>
+    <string name="settings_road_size">Veiinformasjon, størrelse</string>
+    <string name="settings_road_size_hint">Veinummer, forkjørsvei og vikepliktskilt</string>
     <string name="settings_speed_sign">Fartsgrenseskilt</string>
     <string name="settings_speed_sign_hint">Hvor stort skiltet er på kartet; et større stikker ut av fartskortet</string>
     <string name="speed_sign_normal">Normal</string>

@@ -106,6 +106,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val gravelHeatButton by viewModel.gravelHeatButton.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val speedSign by viewModel.speedSign.collectAsStateWithLifecycle()
+    val roadCardSize by viewModel.roadCardSize.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
     val showMapMedia by viewModel.showMapMedia.collectAsStateWithLifecycle()
     val roadHere by viewModel.currentRoad.collectAsStateWithLifecycle()
@@ -466,7 +467,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         // The road's number and priority sign in a card of their own: top middle on the full-screen map in
         // landscape, under the speed everywhere else.
         currentRoad?.let { road ->
-            CurrentRoadCard(road, giveWay = giveWayAhead, modifier = (if (roadCentred) Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
+            CurrentRoadCard(road, giveWay = giveWayAhead, scale = roadCardSize.scale, modifier = (if (roadCentred) Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
                 else Modifier.align(Alignment.TopEnd).padding(top = 14.dp + speedSize.height + 8.dp, end = 14.dp))
                 .onSizeChanged { roadSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } })
         }
@@ -989,7 +990,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, arrowLead = arrowLead, showSurfaces = showSurfaces, surfacePalette = surfacePalette,
-                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, speedSign = speedSign, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, speedSign = speedSign, roadCardSize = roadCardSize, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     navAlerts = viewModel.navAlerts.collectAsStateWithLifecycle().value,
                     offRouteAlerts = viewModel.offRouteAlerts.collectAsStateWithLifecycle().value,
@@ -1023,6 +1024,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onGravelHeatButton = viewModel::setGravelHeatButton,
                     onShowAltitude = viewModel::setShowAltitude,
                     onSpeedSign = viewModel::setSpeedSign,
+                    onRoadCardSize = viewModel::setRoadCardSize,
                     onShowRoadInfo = viewModel::setShowRoadInfo,
                     onShowMapMedia = viewModel::setShowMapMedia,
                     onAutoFollow = viewModel::setAutoFollow,

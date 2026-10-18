@@ -80,10 +80,11 @@ class OfflineMaps(private val context: Context) {
         val paint = layer.optJSONObject("paint") ?: return
         val id = layer.getString("id").substringBefore('~')
         when (id) {
-            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> paint.put("line-color", HC_ROAD)
-            "roads_other", "roads_bridges_other", "online-roads_other" -> paint.put("line-color", HC_PATH)
+            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { paint.put("line-color", HC_ROAD); atLeast(paint, HC_MIN_WIDTH) }
+            "roads_other", "roads_bridges_other", "online-roads_other" -> { paint.put("line-color", HC_PATH); atLeast(paint, HC_MIN_WIDTH) }
             "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "online-roads_minor_casing" ->
-                layer.put("layout", (layer.optJSONObject("layout") ?: JSONObject()).put("visibility", "none"))
+                // Not hidden by visibility: the online layers' visibility is switched by the map view.
+                paint.put("line-opacity", 0)
             "roads_link_casing", "roads_major_casing_early", "roads_major_casing_late", "roads_highway_casing_early", "roads_highway_casing_late",
             "roads_bridges_link_casing", "roads_bridges_major_casing", "roads_bridges_highway_casing",
             "online-roads_major_casing", "online-roads_highway_casing" -> {
@@ -94,6 +95,17 @@ class OfflineMaps(private val context: Context) {
                     is Number -> paint.put("line-width", HC_EDGE)
                 }
             }
+        }
+    }
+
+    /**
+     * Keeps a line at least [min] px wide wherever it is drawn at all: a thinner one is only part-covered
+     * pixels, and a dark grey one fades to nearly white on the light map when zoomed out.
+     */
+    private fun atLeast(paint: JSONObject, min: Double) {
+        when (val w = paint.opt("line-width")) {
+            is JSONArray -> for (i in 4 until w.length() step 2) { val v = w.optDouble(i, 0.0); if (v > 0.0 && v < min) w.put(i, min) }
+            is Number -> if (w.toDouble() in 0.0..min) paint.put("line-width", min)
         }
     }
 
@@ -156,9 +168,11 @@ class OfflineMaps(private val context: Context) {
     companion object {
         private const val SOURCE = "protomaps"
         /** High contrast: the greys that white roads and light paths become, and the main roads' black edge width (px). */
-        private const val HC_ROAD = "#707070"
+        const val HC_ROAD = "#707070"
         private const val HC_PATH = "#a0a0a0"
         private const val HC_EDGE = 1.5
+        /** The thinnest the grey roads and paths are drawn, at any zoom (px). */
+        private const val HC_MIN_WIDTH = 1.6
         /** How long the list of downloaded maps is trusted before the folder is looked at again. */
         private const val COVERAGE_RECHECK_MS = 10_000L
 

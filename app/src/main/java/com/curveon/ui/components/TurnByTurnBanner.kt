@@ -57,20 +57,22 @@ fun TurnByTurnBanner(
             .testTag("turn_by_turn_banner")
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Big directional maneuver icon. A roundabout is two big arrows round the number of the exit to take.
+            // Big directional maneuver icon. A roundabout is two arrows round a wide ring with the exit's number clear inside it.
             val roundabout = instruction.type == TurnType.ROUNDABOUT
             Box(
-                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(if (roundabout) 1.dp else 6.dp),
+                modifier = Modifier.size(if (roundabout) 64.dp else 52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(if (roundabout) 0.dp else 6.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
+                if (roundabout) {
+                    RoundaboutRing(Modifier.fillMaxSize())
+                    if (instruction.roundaboutExit > 0) Text(
+                        instruction.roundaboutExit.toString(), color = Color(0xFF00363D), fontSize = 27.sp, fontWeight = FontWeight.Black, lineHeight = 27.sp
+                    )
+                } else Icon(
                     imageVector = getTurnIcon(instruction.type),
                     contentDescription = instruction.text,
                     tint = Color(0xFF00363D),
-                    modifier = Modifier.size(if (roundabout) 50.dp else 36.dp)
-                )
-                if (roundabout && instruction.roundaboutExit > 0) Text(
-                    instruction.roundaboutExit.toString(), color = Color(0xFF00363D), fontSize = 26.sp, fontWeight = FontWeight.Black, lineHeight = 26.sp
+                    modifier = Modifier.size(36.dp)
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
@@ -97,6 +99,35 @@ fun TurnByTurnBanner(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp)
         )
+    }
+}
+
+/** Two curved arrows chasing each other round a wide ring: the roundabout, with the whole middle left free. */
+@Composable
+private fun RoundaboutRing(modifier: Modifier = Modifier) {
+    androidx.compose.foundation.Canvas(modifier) {
+        val ink = Color(0xFF00363D)
+        val stroke = size.minDimension * 0.075f
+        val r = size.minDimension * 0.4f
+        val c = center
+        val head = size.minDimension * 0.17f
+        // Two arcs of 140°, a gap between them where each arrow's head sits (clockwise).
+        for (start in listOf(-70f, 110f)) {
+            drawArc(ink, start, 140f, false, topLeft = androidx.compose.ui.geometry.Offset(c.x - r, c.y - r),
+                size = androidx.compose.ui.geometry.Size(2 * r, 2 * r), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
+            val end = Math.toRadians((start + 140f).toDouble())
+            val tip = androidx.compose.ui.geometry.Offset(c.x + r * kotlin.math.cos(end).toFloat(), c.y + r * kotlin.math.sin(end).toFloat())
+            // The tangent, clockwise, and its normal.
+            val tx = -kotlin.math.sin(end).toFloat(); val ty = kotlin.math.cos(end).toFloat()
+            val nx = kotlin.math.cos(end).toFloat(); val ny = kotlin.math.sin(end).toFloat()
+            val path = androidx.compose.ui.graphics.Path().apply {
+                moveTo(tip.x + tx * head, tip.y + ty * head)
+                lineTo(tip.x + nx * head * 0.8f, tip.y + ny * head * 0.8f)
+                lineTo(tip.x - nx * head * 0.8f, tip.y - ny * head * 0.8f)
+                close()
+            }
+            drawPath(path, ink)
+        }
     }
 }
 
