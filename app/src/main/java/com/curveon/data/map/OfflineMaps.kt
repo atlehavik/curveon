@@ -67,7 +67,7 @@ class OfflineMaps(private val context: Context) {
                 out.put(JSONObject(layer.toString()).put("source", sourceName(i)).apply { if (i > 0) put("id", "${layer.getString("id")}~$i") })
             }
         }
-        for (k in 0 until out.length()) { roadLabels(out.getJSONObject(k)); placeHalo(out.getJSONObject(k), flavor); nightRoadNames(out.getJSONObject(k), flavor) }
+        for (k in 0 until out.length()) { roadLabels(out.getJSONObject(k)); placeHalo(out.getJSONObject(k), flavor); roadNameColours(out.getJSONObject(k), flavor) }
         // Names last, so no road is drawn over them (and their halo): the place names, and the online map's
         // labels, which would otherwise lie under the overlay lines (tarmac and gravel dashes) added over the offline map.
         val rest = JSONArray(); val names = JSONArray()
@@ -92,13 +92,14 @@ class OfflineMaps(private val context: Context) {
         else { paint.put("text-halo-color", LAND_DARK); paint.put("text-color", "#ffffff") }
     }
 
-    /** Night map: road names white on the night land colour. */
-    private fun nightRoadNames(layer: JSONObject, flavor: String) {
-        if (flavor != "dark") return
+    /** Road names on the map's land colour (white text at night), like the place names. */
+    private fun roadNameColours(layer: JSONObject, flavor: String) {
         val id = layer.getString("id").substringBefore('~')
         if (id != "roads_labels_minor" && id != "roads_labels_major" && id != "online-roads_labels") return
         val paint = layer.optJSONObject("paint") ?: return
-        paint.put("text-color", "#ffffff"); paint.put("text-halo-color", LAND_DARK); paint.put("text-halo-width", NIGHT_ROAD_HALO)
+        paint.put("text-halo-width", ROAD_NAME_HALO)
+        if (flavor == "dark") { paint.put("text-color", "#ffffff"); paint.put("text-halo-color", LAND_DARK) }
+        else paint.put("text-halo-color", LAND_LIGHT)
     }
 
     /**
@@ -220,7 +221,7 @@ class OfflineMaps(private val context: Context) {
         private const val LAND_LIGHT = "#e2dfda"
         /** The night map's land colour (the dark styles' earth and background). */
         private const val LAND_DARK = "#1f1f1f"
-        private const val NIGHT_ROAD_HALO = 2.0
+        private const val ROAD_NAME_HALO = 2.0
         /** The width of the halo round place names (px). */
         private const val PLACE_HALO = 3.0
         /** Road names show from this zoom, all of them. */
