@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Road card place, small roads on the day map, night arrow (1.2.2)
+
+- [ ] X7 in bright daylight (day map): the small white roads now have a dark edge; are they easy enough to see? Say if the edge should be darker or wider, or if the grey paths/tracks need the same.
+- [ ] Night map while navigating: the arrow has a white edge and a light halo; clear enough on the dark map?
+- [ ] Road card (road number / priority sign): under the speed card in portrait and in the dashboard; centred at the top only on the full-screen map in landscape. Check it doesn't meet the trip bar on the Pixel in landscape.
+
 ## 2026-10-18 — Calmer navigation cards, call card on the dashboard (1.2.2)
 
 - [ ] Pixel (Curveon on the phone itself): ring it and tap Answer on Curveon's call card. It must answer (if not: `adb logcat -s PhoneLink` and look for "Call action"). Never tried with a real call.

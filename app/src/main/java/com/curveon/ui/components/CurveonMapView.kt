@@ -1671,13 +1671,14 @@ private const val HALO_MIN_DP = 27f
 
 /**
  * A see-through disc under the arrow, as big as the GPS's accuracy: a small ring round the arrow
- * normally, wider where the fix is poor or the position is guessed (tunnels). The arrow's [color]
+ * normally, wider where the fix is poor or the position is guessed (tunnels). White
  * on the dark map; the deeper blue of the route on the light one, where cyan would fade into it.
  */
 @Composable
 private fun RiderHalo(dark: Boolean, color: Color, puck: () -> Puck?) {
-    val fill = if (dark) color.copy(alpha = 0.2f) else Color(0x2E0091EA)
-    val edge = if (dark) color.copy(alpha = 0.5f) else Color(0x990091EA)
+    // White on the dark map: a tinted halo vanished into it.
+    val fill = if (dark) Color.White.copy(alpha = 0.18f) else Color(0x2E0091EA)
+    val edge = if (dark) Color.White.copy(alpha = 0.7f) else Color(0x990091EA)
     val stroke = with(androidx.compose.ui.platform.LocalDensity.current) { 1.5.dp.toPx() }
     androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
         val p = puck() ?: return@Canvas

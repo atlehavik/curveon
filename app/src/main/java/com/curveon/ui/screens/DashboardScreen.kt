@@ -423,11 +423,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // Beside the turn card when there is room, else above it.
     val sideBySide = mapWidth - 14.dp - 8.dp - mediaWidth - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
     val bottomRightHeight = mediaHeight + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp
-    // The road card goes top middle in landscape when it fits between the trip bar and the speed.
+    // The road card sits under the speed card, except on the full-screen map in landscape, where it
+    // is centred at the top.
     val landscape = LocalConfiguration.current.orientation != android.content.res.Configuration.ORIENTATION_PORTRAIT
-    val tripBarRight = if (showTripBar && navigationSummary != null) 14.dp + tripBarWidth + 8.dp else 0.dp
-    val roadCentred = landscape && (mapWidth - roadSize.width) / 2 >= tripBarRight &&
-        (mapWidth + roadSize.width) / 2 <= mapWidth - 14.dp - speedSize.width - 8.dp
+    val roadCentred = landscape && isFullScreenMap
     val buttonsTopInset = 14.dp + speedSize.height + 8.dp + if (currentRoad != null && !roadCentred) roadSize.height + 8.dp else 0.dp
     // The music keeps the corner if the buttons still fit above it; otherwise it moves left of them.
     val buttonsFitAboveMedia = mapHeight - buttonsTopInset - (bottomRightHeight + 14.dp + 8.dp) >= MAP_BUTTONS_HEIGHT
@@ -459,8 +458,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
         MapSpeedCluster({ telemetryState.value }, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
             .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, signSize = speedSign.dp.dp)
-        // The road's number and priority sign in a card of their own: top middle in landscape, under
-        // the speed in portrait or when the middle has no room between the trip bar and the speed.
+        // The road's number and priority sign in a card of their own: top middle on the full-screen map in
+        // landscape, under the speed everywhere else.
         currentRoad?.let { road ->
             CurrentRoadCard(road, giveWay = giveWayAhead, modifier = (if (roadCentred) Modifier.align(Alignment.TopCenter).padding(top = 14.dp)
                 else Modifier.align(Alignment.TopEnd).padding(top = 14.dp + speedSize.height + 8.dp, end = 14.dp))

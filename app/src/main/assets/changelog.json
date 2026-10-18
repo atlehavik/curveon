@@ -2,6 +2,9 @@
   {
     "version": "1.2.2",
     "en": [
+      "The road card (road number, priority road, give way) now always has its place: under the speed card, and only centred at the top on the full-screen map in landscape. It no longer jumps around depending on room",
+      "Small roads are much easier to see on the day map in bright sun: they now have a darker edge that stands out from the map",
+      "The arrow on the night map has a white edge and a light halo, so it no longer disappears into the dark map",
       "The map is calmer while you ride: the arrival box shows just the time, and tapping it reveals distance and time left. The next-turn card is now as narrow as it can be and grows only when it needs to, and tapping it shows the full description. Roundabouts show which exit to take",
       "The music player on the map is now a small cover icon in the right corner. Tap it to open the full player, and it folds itself away again",
       "On the dashboard, an ongoing call now gets its own card with Hang up and Speaker instead of a small icon over the map",
@@ -19,6 +22,9 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
+      "Veikortet (veinummer, forkjørsvei, vikeplikt) har nå alltid samme plass: under fartskortet, og bare midtstilt øverst når kartet fyller skjermen i landskap. Det hopper ikke lenger rundt etter hvor det er plass",
+      "Små veier er mye lettere å se på dagkartet i sterk sol: de har nå en mørkere kant som skiller seg tydelig fra kartet",
+      "Pila på nattkartet har en hvit kant og en lys glorie, så den ikke lenger forsvinner i det mørke kartet",
       "Kartet er roligere når du kjører: ankomstboksen viser bare klokkeslettet, og et trykk viser hvor langt og hvor lenge det er igjen. Svingkortet er nå så smalt som mulig og blir bare bredere når det trengs, og et trykk viser hele beskrivelsen. I rundkjøringer ser du hvilken avkjøring du skal ta",
       "Musikkspilleren på kartet er nå et lite coverbilde i høyre hjørne. Trykk på det for å åpne hele spilleren, så brettes den sammen igjen av seg selv",
       "På dashbordet får en pågående samtale nå et eget kort med Legg på og Høyttaler, i stedet for et lite ikon over kartet",
