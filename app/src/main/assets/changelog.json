@@ -2,7 +2,7 @@
   {
     "version": "1.2.2",
     "en": [
-      "The road number (like E18) no longer follows you home after a demo ride: it is read again where you actually are",
+      "The arrival box is tidier at motorway speeds: folded it shows just the arrival time and the end button, and folded out it grows downwards with distance and time left, the fuel stop and add stop each on their own line",
       "Tapping the fuel stop while riding a track now adds the station as a numbered stop on the map, instead of just putting a dot where you are",
       "The arrival box now fits next to the speed at motorway speeds: the end button stays visible, and when you fold it out the fuel stop and add stop wrap onto a new line instead of running over each other",
       "On the day map, road names also sit on the map's own land colour instead of white, like the place names",
@@ -48,7 +48,7 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
-      "Veinummeret (som E18) henger ikke lenger med deg hjem etter en demotur: det leses på nytt der du faktisk er",
+      "Ankomstboksen er ryddigere på motorveifart: sammenfoldet viser den bare ankomsttid og avslutt-knappen, og utfoldet vokser den nedover med distanse og tid igjen, og bensinstasjon og legg til stopp på hver sin linje",
       "Trykker du på bensinstasjonen mens du kjører et spor, legges stasjonen nå til som et nummerert stopp på kartet, i stedet for en prikk der du er",
       "Ankomstboksen får plass ved siden av farten på motorveifart: avslutt-knappen står alltid synlig, og når du folder den ut brytes drivstoff og legg til stopp over på en ny linje i stedet for å ligge oppå hverandre",
       "På dagkartet ligger veinavn nå også på kartets egen landfarge i stedet for hvitt, som stedsnavnene",

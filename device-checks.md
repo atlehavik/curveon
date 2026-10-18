@@ -8,7 +8,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 ## 2026-10-18 — Fuel stop on a demo ride, trip bar at speed, stale road number (1.2.2)
 
-- [ ] Demo ride on the Pixel (portrait), pass 100 km/h: the arrival box top left keeps its × visible; fold it out with a fuel chip showing: time, fuel and add stop wrap onto two lines and nothing overlaps (the road card moves down with it).
+- [ ] Demo ride on the Pixel (portrait), pass 100 km/h: the arrival box top left keeps its × visible; folded it shows only the arrival time and ×; fold it out with a fuel chip showing: line 2 distance + time left, then next stop, fuel and Add stop each on its own line, left-aligned, nothing overlapping (the road card moves down with it).
 - [ ] Tap the fuel chip: a numbered orange stop appears on the station, no "A" dot where you are; the route menu lists it (without a ×, a track's stops can't be taken out one by one). Say if the route to the station looks wrong.
 - [ ] End the demo ride, ride/stand elsewhere (not near the E18): the E18 card is gone or shows the road you are on.
 

@@ -54,8 +54,8 @@ fun NavigationSummaryBar(
     // Folded: arrival, distance left and the end button, small enough to sit beside the speed.
     // A tap opens a second line below with the next stop, fuel and add stop.
     var open by remember { mutableStateOf(false) }
-    // Next to a wide speed card (over 100 km/h, or a phone held upright) there is little room: the
-    // numbers and buttons shrink, and the folded out line wraps instead of running over.
+    // Next to a wide speed card (over 100 km/h, or a phone held upright) there is little room: folded, it is
+    // just the arrival time and the end button. Folded out it grows downwards, one thing per line, all to the left.
     BoxWithConstraints(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -65,39 +65,38 @@ fun NavigationSummaryBar(
             .testTag("nav_summary_bar")
     ) {
         val narrow = maxWidth < 200.dp
-        val button = if (narrow) 36.dp else 44.dp
-        Column {
+        val km = stringResource(R.string.distance_km_whole, summary.remainingKm)
+        Column(Modifier.padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(
-                Modifier.heightIn(min = foldedHeight).padding(start = if (narrow) 10.dp else 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                Modifier.heightIn(min = (foldedHeight - 12.dp).coerceAtLeast(0.dp)),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(if (narrow) 6.dp else 12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // The end button keeps its place; the distance gives way if it must.
                 Row(Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(if (narrow) 6.dp else 12.dp)) {
-                    Text(eta, color = TextPrimary, fontSize = if (narrow) 18.sp else 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
-                    Text(stringResource(R.string.distance_km_whole, summary.remainingKm), color = TextSecondary, fontSize = if (narrow) 14.sp else 16.sp,
-                        fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
+                    // Squeezed against the speed, or folded out (where it moves to the second line): not up here.
+                    if (!narrow && !open) Text(km, color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
                 }
                 IconButton(
                     onClick = onStop,
-                    modifier = Modifier.size(button).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
+                    modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
                 ) {
                     Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
                 }
             }
-            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-            if (open) FlowRow(
-                Modifier.padding(start = if (narrow) 10.dp else 14.dp, end = 6.dp, bottom = 6.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(if (narrow) 6.dp else 10.dp)
-            ) {
-                // The time left: only shown when asked for (the distance is always on show).
-                Text(
-                    "%d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
-                    color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                    modifier = Modifier.padding(vertical = 8.dp).testTag("nav_remaining")
-                )
+            if (open) {
+                // Distance and time left.
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(km, color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(
+                        "%d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
+                        color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                        modifier = Modifier.testTag("nav_remaining")
+                    )
+                }
                 // The next stop (or just "Route") opens the route's menu: stops, save, end.
                 Row(
                     Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp)
@@ -114,21 +113,25 @@ fun NavigationSummaryBar(
                     val color = if (fuel.isLongGap) NeonAmber else EcoGreen
                     Row(
                         Modifier.clip(RoundedCornerShape(14.dp)).background(color.copy(alpha = 0.15f))
-                            .clickable(enabled = fuel.point.lat != 0.0, onClick = onFuel).padding(horizontal = 8.dp, vertical = 4.dp)
+                            .clickable(enabled = fuel.point.lat != 0.0, onClick = onFuel).padding(horizontal = 10.dp, vertical = 8.dp)
                             .testTag("fuel_chip"),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.LocalGasStation, fuel.name.ifEmpty { stringResource(R.string.fuel_none_on_route) }, tint = color, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
+                        Icon(Icons.Default.LocalGasStation, fuel.name.ifEmpty { stringResource(R.string.fuel_none_on_route) }, tint = color, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(if (fuel.point.lat == 0.0) stringResource(R.string.fuel_none_ahead) else stringResource(R.string.distance_km_whole, fuel.distanceMeters / 1000),
-                            color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
-                IconButton(
-                    onClick = onAddStop,
-                    modifier = Modifier.size(button).clip(CircleShape).background(NeonAmber.copy(alpha = 0.2f)).testTag("nav_add_stop_btn")
+                Row(
+                    Modifier.clip(RoundedCornerShape(14.dp)).background(NeonAmber.copy(alpha = 0.15f))
+                        .clickable(onClick = onAddStop).padding(horizontal = 10.dp, vertical = 8.dp)
+                        .testTag("nav_add_stop_btn"),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), tint = NeonAmber)
+                    Icon(Icons.Default.AddLocationAlt, null, tint = NeonAmber, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.add_stop), color = NeonAmber, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
             }
         }
