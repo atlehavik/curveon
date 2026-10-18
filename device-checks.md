@@ -6,6 +6,10 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Add stop that doesn't redraw the route (1.2.2)
+
+- [ ] While navigating, add a stop. If the route doesn't change (or nothing happens), note which stop and where it was, then pull the trace: `adb -s <device> pull /sdcard/Android/data/com.curveon.app/files/navtrace` and look for the `E,…,addStop '<name>' <lat> <lon>: …` lines (started / done / cancelled / failed / no route / no position). Known from the Pixel trace of 2026-10-18: one route change 1.5 km into the ride kept exactly the old line (1235 vs 1236 points), the next one, 40 s later, had a small detour.
+
 ## 2026-10-18 — Road card always top left (1.2.2)
 
 - [ ] Navigating with a road card showing: the arrival box sits under it; fold the arrival box out (tap) and the road card stays put (it is above). With no road card (no road info) the arrival box is top left by itself.

@@ -901,13 +901,16 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      */
     fun addStop(stop: Stop) {
         val s = _state.value
+        // For the navigation trace: every add stop is written down with where it is and what became of it.
+        fun trace(what: String) = com.curveon.data.location.NavTrace.event("addStop '%s' %.5f %.5f: %s".format(stop.name, stop.point.lat, stop.point.lon, what))
         val previewGoal = s.preview?.goal
         if (previewGoal is NavigationGoal.Destination) {
             return editPreview { g -> g.copy(stops = insertStop(g.start?.point ?: lastPosition, g.stops, g.destination, stop)) }
         }
-        val goal = s.goal ?: return previewDestination(stop.name, stop.point, RouteOptions(preferredStyle))
-        val route = s.route ?: return
-        val pos = lastPosition ?: return
+        val goal = s.goal ?: return previewDestination(stop.name, stop.point, RouteOptions(preferredStyle)).also { trace("no goal, planning a trip instead") }
+        val route = s.route ?: return trace("no route, nothing done")
+        val pos = lastPosition ?: return trace("no position yet, nothing done")
+        trace("started, ${(goal as? NavigationGoal.Destination)?.stops?.size ?: -1} stops before, route ${route.points.size} points, calculating was ${calcJob?.isActive}")
         calcJob?.cancel()
         _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_adding_stop, stop.name)))
         calcJob = scope.launch {
@@ -928,10 +931,13 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                         }
                     }
                 }
+                trace("done, ${(newGoal as? NavigationGoal.Destination)?.stops?.size ?: -1} stops, new route ${newRoute.points.size} points (old ${route.points.size})")
                 activate(newGoal, newRoute)
             } catch (e: kotlinx.coroutines.CancellationException) {
+                trace("cancelled")
                 throw e
             } catch (e: Exception) {
+                trace("failed: ${e.message}")
                 _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_add_stop_failed, stop.name, message(e))))
             }
         }
