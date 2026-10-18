@@ -67,9 +67,22 @@ class OfflineMaps(private val context: Context) {
                 out.put(JSONObject(layer.toString()).put("source", sourceName(i)).apply { if (i > 0) put("id", "${layer.getString("id")}~$i") })
             }
         }
+        for (k in 0 until out.length()) roadLabels(out.getJSONObject(k))
         if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
         style.put("layers", out)
         return style.toString()
+    }
+
+    /**
+     * Road names: all from the same zoom (the closest in of the layers' own, so none shows earlier than
+     * the rest), and beside the road instead of across it.
+     */
+    private fun roadLabels(layer: JSONObject) {
+        val id = layer.getString("id").substringBefore('~')
+        if (id != "roads_labels_minor" && id != "roads_labels_major" && id != "online-roads_labels") return
+        layer.put("minzoom", ROAD_LABEL_ZOOM)
+        val layout = layer.optJSONObject("layout") ?: return
+        layout.put("text-offset", JSONArray().put(0).put(1.15))
     }
 
     /**
@@ -80,6 +93,10 @@ class OfflineMaps(private val context: Context) {
         val paint = layer.optJSONObject("paint") ?: return
         val id = layer.getString("id").substringBefore('~')
         when (id) {
+            // Place names: dark text on a wide white halo, so they stay readable over the dark roads.
+            "places_subplace", "places_locality", "places_region", "online-places" -> {
+                paint.put("text-color", "#1f1f1f"); paint.put("text-halo-color", "#ffffff"); paint.put("text-halo-width", 2.5)
+            }
             "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { paint.put("line-color", HC_ROAD); atLeast(paint, HC_MIN_WIDTH) }
             "roads_other", "roads_bridges_other", "online-roads_other" -> { paint.put("line-color", HC_PATH); atLeast(paint, HC_MIN_WIDTH) }
             "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "online-roads_minor_casing" ->
@@ -171,6 +188,8 @@ class OfflineMaps(private val context: Context) {
         const val HC_ROAD = "#707070"
         private const val HC_PATH = "#a0a0a0"
         private const val HC_EDGE = 1.5
+        /** Road names show from this zoom, all of them. */
+        private const val ROAD_LABEL_ZOOM = 15
         /** The thinnest the grey roads and paths are drawn, at any zoom (px). */
         private const val HC_MIN_WIDTH = 1.6
         /** How long the list of downloaded maps is trusted before the folder is looked at again. */

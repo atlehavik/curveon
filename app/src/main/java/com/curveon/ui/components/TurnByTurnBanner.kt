@@ -87,7 +87,7 @@ fun TurnByTurnBanner(
             )
             instruction.roadRef?.let {
                 Spacer(modifier = Modifier.width(12.dp))
-                RoadShield(it, 26.dp)
+                RoadShield(it, 38.dp)
             }
         }
         if (open) Text(

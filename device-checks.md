@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-18 — Road names beside roads, high contrast while navigating, music player stays put (1.2.2)
+
+- [ ] Road names sit beside the road at zoom 15+, all from the same zoom; readable and not too far from the road (also on wide roads)?
+- [ ] High contrast: place names (white halo) readable when zoomed out a bit.
+- [ ] Day map, normal map setting: starting navigation turns on high contrast, stopping puts it back.
+- [ ] Portrait, full-screen map, music icon, while navigating: tap the icon. The player opens on the same height, beside the turn card, not above it.
+- [ ] The road number in the turn card (38 dp) is readable at a glance.
+
 ## 2026-10-18 — Road card size, one-sided speed signs, wider roundabout ring (1.2.2)
 
 - [ ] Settings → Display → Road info size: Large and Extra large make the road number, priority and give way signs bigger. Check it doesn't touch the speed card or the trip bar (Pixel landscape, portrait).

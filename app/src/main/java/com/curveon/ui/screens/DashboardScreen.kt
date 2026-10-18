@@ -411,6 +411,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var speedSize by remember { mutableStateOf(androidx.compose.ui.unit.DpSize.Zero) }
     var roadSize by remember { mutableStateOf(androidx.compose.ui.unit.DpSize.Zero) }
     var tripBarWidth by remember { mutableStateOf(0.dp) }
+    var turnCardWidth by remember { mutableStateOf(0.dp) }
     val mapWidth = mapBox?.width?.let { with(density) { it.toDp() } } ?: 0.dp
     val mapHeight = mapBox?.height?.let { with(density) { it.toDp() } } ?: 0.dp
     // Planning, picking and drawing have the bottom (and the bar's middle); the trip bar and the turn wait.
@@ -424,10 +425,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // buttons make room for whichever is showing.
     var mediaOpen by remember { mutableStateOf(false) }
     LaunchedEffect(mediaOpen, track?.isPlaying, track?.title) { if (mediaOpen) { kotlinx.coroutines.delay(10_000); mediaOpen = false } }
-    val mediaWidth = if (mediaOpen) SIDE_COLUMN_WIDTH else MEDIA_ICON_SIZE
     val mediaHeight = if (mediaOpen) BOTTOM_CARD_HEIGHT else MEDIA_ICON_SIZE
-    // Beside the turn card when there is room, else above it.
-    val sideBySide = mapWidth - 14.dp - 8.dp - mediaWidth - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
+    // Beside the turn card when there is room for the icon, else above it. Opening the player never moves
+    // it: it only gets as wide as the room beside the turn card allows.
+    val sideBySide = mapWidth - 14.dp - 8.dp - MEDIA_ICON_SIZE - MAP_BUTTONS_RESERVE >= BOTTOM_TURN_MIN_WIDTH
     val bottomRightHeight = mediaHeight + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp
     // The road card sits under the speed card, except on the full-screen map in landscape, where it
     // is centred at the top.
@@ -438,7 +439,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val buttonsFitAboveMedia = mapHeight - buttonsTopInset - (bottomRightHeight + 14.dp + 8.dp) >= MAP_BUTTONS_HEIGHT
     val buttonsBottomInset = if (showMedia && buttonsFitAboveMedia) bottomRightHeight + 14.dp + 8.dp else 0.dp
     val rightCardEnd = if (showMedia && !buttonsFitAboveMedia) MAP_BUTTONS_RESERVE else 14.dp
-    val turnWidth = (if (sideBySide && showMedia) minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - 8.dp - mediaWidth - MAP_BUTTONS_RESERVE)
+    val turnWidth = (if (sideBySide && showMedia) minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - 8.dp - MEDIA_ICON_SIZE - MAP_BUTTONS_RESERVE)
         else minOf(BOTTOM_TURN_WIDTH, mapWidth - 14.dp - MAP_BUTTONS_RESERVE)).coerceAtLeast(0.dp)
     /** How far up from the bottom the cards reach: the rider is lifted to keep clear of them. */
     val bottomClearance = maxOf(if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp, if (showMedia) bottomRightHeight + 14.dp else 0.dp)
@@ -473,7 +474,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
         // The next turn bottom left, as narrow as it can be.
         if (showTurn) {
-            TurnByTurnBanner(turn!!, modifier = Modifier.align(Alignment.BottomStart).padding(14.dp), maxWidth = turnWidth)
+            TurnByTurnBanner(turn!!, modifier = Modifier.align(Alignment.BottomStart).padding(14.dp)
+                .onSizeChanged { turnCardWidth = with(density) { it.width.toDp() } }, maxWidth = turnWidth)
         }
         // Picking a place: just the map and the little bar; the rest waits.
         val pickPurpose = mapPick
@@ -601,8 +603,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             if (showMedia) track?.let { t ->
                 val mediaModifier = Modifier.align(Alignment.BottomEnd)
                     .padding(end = rightCardEnd, bottom = 14.dp + if (showTurn && !sideBySide) BOTTOM_CARD_HEIGHT + 8.dp else 0.dp)
+                // Beside the turn card it is no wider than the room left of the map's right edge; else the usual width.
+                val room = (mapWidth - 14.dp - rightCardEnd - if (showTurn && sideBySide) 14.dp + turnCardWidth + 8.dp else 0.dp).coerceAtLeast(MEDIA_ICON_SIZE)
                 if (mediaOpen) MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() },
-                    mediaModifier.width(minOf(SIDE_COLUMN_WIDTH, (mapWidth - 14.dp - rightCardEnd).coerceAtLeast(0.dp))).height(BOTTOM_CARD_HEIGHT),
+                    mediaModifier.width(minOf(SIDE_COLUMN_WIDTH, room)).height(BOTTOM_CARD_HEIGHT),
                     onCollapse = { mediaOpen = false })
                 else MediaPillIcon(t, albumArt, { mediaOpen = true }, mediaModifier)
             }
@@ -667,7 +671,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             buttonsTopInset = buttonsTopInset,
             buttonsBottomInset = buttonsBottomInset,
             dark = mapDark,
-            highContrast = highContrast,
+            highContrast = highContrast || isNavigating, // while navigating the day map is always high contrast
             previewRoutes = mapPreviewRoutes,
             markers = mapMarkers,
             editor = editor,

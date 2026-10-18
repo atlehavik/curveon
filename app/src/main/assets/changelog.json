@@ -2,6 +2,11 @@
   {
     "version": "1.2.2",
     "en": [
+      "Road names now sit beside the road instead of cutting across it, and all road names appear from the same zoom level",
+      "In high contrast, place names have a wide white background so they stay readable over the dark roads",
+      "When you start navigating on the day map, it is always high contrast, whatever you had chosen. When you stop, your own choice is back",
+      "On the full-screen map, opening the music player no longer makes it jump up: it stays where the icon was and is only as wide as there is room for beside the turn card",
+      "The road number in the next-turn card is bigger and easier to read",
       "High contrast now keeps every small road dark grey at every zoom level, also when zoomed far out where they used to turn white",
       "Speed limit signs on the map now stand on one side of the road only",
       "The roundabout icon is redrawn with a wider ring, so the exit number sits clear of the arrows and is easy to read",
@@ -33,6 +38,11 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
+      "Veinavn ligger nå ved siden av veien i stedet for å kutte den, og alle veinavn dukker opp på samme zoomnivå",
+      "I høykontrast har stedsnavn en bred hvit bakgrunn, så de er lette å lese over de mørke veiene",
+      "Når du starter navigasjon på dagkartet, er det alltid høykontrast, uansett hva du hadde valgt. Når du stopper, er ditt eget valg tilbake",
+      "På fullskjermkartet hopper ikke musikkspilleren opp lenger når du åpner den: den blir stående der ikonet var, og er bare så bred som det er plass til ved siden av svingkortet",
+      "Veinummeret i neste-sving-kortet er større og lettere å lese",
       "Høykontrast holder nå alle småveier mørkegrå på alle zoomnivå, også langt ute der de tidligere ble hvite",
       "Fartsgrenseskilt på kartet står nå bare på én side av veien",
       "Rundkjøringsikonet er tegnet på nytt med en videre ring, så avkjøringsnummeret står fritt fra pilene og er lett å lese",
