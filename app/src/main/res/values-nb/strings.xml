@@ -406,6 +406,7 @@
     <string name="fuel_go_to">Kjøre til %1$s?</string>
     <string name="fuel_go_to_body">%1$s foran på ruten. Den blir et stopp.</string>
     <string name="yes">Ja</string>
+    <string name="remove_stop">Fjern stopp</string>
     <string name="nav_route">Rute</string>
     <string name="add_stop">Legg til stopp</string>
     <string name="go_here">Kjør hit</string>

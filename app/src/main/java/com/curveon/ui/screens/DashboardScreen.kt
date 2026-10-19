@@ -463,6 +463,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 fuel = fuelHint,
                 onFuel = { fuelHint?.let { f -> viewModel.addStop(GeoPoint(f.point.lat, f.point.lon), f.name) } },
                 onAddStop = { searchPurpose = SearchPurpose.STOP },
+                onRemoveStop = { viewModel.removeStop(it) },
                 onOpen = { showRouteMenu = true }
             )
         }

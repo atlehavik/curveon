@@ -27,12 +27,13 @@ import androidx.compose.ui.window.Dialog
 import com.curveon.data.routing.RoutingStatus
 import com.curveon.ui.theme.*
 import com.curveon.ui.viewmodel.NavigationSummary
+import com.curveon.ui.viewmodel.StopAhead
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Arrival time, the distance to the next stop (or the destination) in orange under it, and the end button, at
+ * Arrival time, the distance to the next stop in orange under it (none without a stop), and the end button, at
  * the top of the map beside the speed. Tapping it folds it out: distance and time left, then each stop (opens
  * the route menu: stops, save) with its own, fuel when worth knowing (tapping it asks whether to go there)
  * and add stop.
@@ -47,6 +48,8 @@ fun NavigationSummaryBar(
     fuel: com.curveon.data.routing.FuelHint? = null,
     onFuel: () -> Unit = {},
     onAddStop: () -> Unit = {},
+    /** Takes the stop at this index of the trip out (after the rider has said yes). */
+    onRemoveStop: (Int) -> Unit = {},
     onOpen: () -> Unit = {}
 ) {
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
@@ -56,6 +59,7 @@ fun NavigationSummaryBar(
     // A tap folds it out: the destination's distance and time left, then each stop with its own, all in the same columns.
     var open by remember { mutableStateOf(false) }
     var askFuel by remember { mutableStateOf(false) }
+    var askRemove by remember { mutableStateOf<StopAhead?>(null) }
     val next = summary.stops.firstOrNull()
     Box(
         modifier = modifier
@@ -75,8 +79,8 @@ fun NavigationSummaryBar(
                 // The end button keeps its place; the text gives way if it must.
                 Column(Modifier.weight(1f, fill = false)) {
                     Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
-                    if (!open) Text(
-                        tripDistance(next?.km ?: summary.remainingKm), color = NeonAmber, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                    if (!open && next != null) Text(
+                        tripDistance(next.km), color = NeonAmber, fontSize = 20.sp, fontWeight = FontWeight.Bold,
                         maxLines = 1, softWrap = false, modifier = Modifier.testTag("nav_next_km")
                     )
                 }
@@ -96,8 +100,13 @@ fun NavigationSummaryBar(
                         Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).testTag("nav_route_menu_btn"),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(stop.name, color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stop.name, color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            if (stop.removable) IconButton(onClick = { askRemove = stop }, modifier = Modifier.size(28.dp).testTag("nav_stop_remove")) {
+                                Icon(Icons.Default.Close, stringResource(R.string.remove_stop), tint = WarningRed, modifier = Modifier.size(16.dp))
+                            }
+                        }
                         TripLeg(tripDistance(stop.km), stop.minutes, NeonAmber, Modifier.testTag("nav_remaining_stop"))
                     }
                 }
@@ -132,6 +141,15 @@ fun NavigationSummaryBar(
                 }
             }
         }
+    }
+    askRemove?.let { stop ->
+        AlertDialog(
+            onDismissRequest = { askRemove = null },
+            containerColor = CockpitSurface,
+            title = { HideSystemBars(); Text(stringResource(R.string.delete_named, stop.name), color = TextPrimary, fontWeight = FontWeight.Black) },
+            confirmButton = { TextButton(onClick = { askRemove = null; onRemoveStop(stop.index) }, modifier = Modifier.testTag("remove_stop_yes")) { Text(stringResource(R.string.delete), color = WarningRed) } },
+            dismissButton = { TextButton(onClick = { askRemove = null }) { Text(stringResource(R.string.cancel)) } }
+        )
     }
     if (askFuel && fuel != null) {
         val name = fuel.name.ifEmpty { stringResource(R.string.poi_fuel) }

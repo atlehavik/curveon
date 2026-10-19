@@ -73,7 +73,7 @@ data class NavigationSummary(
 )
 
 /** A stop on the way: how far and how long to it. */
-data class StopAhead(val name: String, val km: Double, val minutes: Int)
+data class StopAhead(val name: String, val km: Double, val minutes: Int, val index: Int, val removable: Boolean)
 
 enum class MapTheme(val label: Int) { AUTO(com.curveon.R.string.map_theme_auto), DAY(com.curveon.R.string.map_theme_day), NIGHT(com.curveon.R.string.map_theme_night) }
 
@@ -959,9 +959,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 arrivalTimeMillis = System.currentTimeMillis() + (p.remainingSeconds * 1000).toLong(),
                 title = s.goal?.title ?: "",
                 curviness = route.curviness,
-                stops = s.stopsAlong.filter { !it.first.via && it.second > p.distanceAlongRoute }.map { (stop, along) ->
+                // A track's stops can't be taken out one by one (the line already passes through them).
+                stops = s.stopsAlong.withIndex().filter { !it.value.first.via && it.value.second > p.distanceAlongRoute }.map { (i, st) ->
+                    val (stop, along) = st
                     StopAhead(stop.name, (along - p.distanceAlongRoute) / 1000.0,
-                        ((pts[indexAt(along)].secondsFromStart - pts[here].secondsFromStart).coerceAtLeast(0.0) / 60).roundToInt())
+                        ((pts[indexAt(along)].secondsFromStart - pts[here].secondsFromStart).coerceAtLeast(0.0) / 60).roundToInt(),
+                        i, s.goal is com.curveon.data.routing.NavigationGoal.Destination)
                 }
             )
         }
