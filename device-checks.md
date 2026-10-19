@@ -10,6 +10,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 - [ ] Navigate a route with gravel and offroad in it: asphalt keeps the usual blue, gravel is solid orange, offroad solid purple, no see-through dashes on the route. Night and day map, and at the rider arrow (orange at night) check it is still easy to see.
 - [ ] Roundabout in the turn card (demo ride past one): three arrows turning against the clock, the exit number clear of the arrowheads. In a left-hand country (e.g. Britain, if its map is on the device) they turn with the clock.
+- [ ] 3D map while riding: the arrow sits a bit lower than before without touching the cards at the bottom (also on the phone in portrait and landscape); the default tilt is steeper (55° instead of 50°; if you have set a tilt before, yours is kept).
 - [ ] Convert a GPX track to a route (GPX list → make a route): the line is cyan, not green. Same when riding a track or a logged ride.
 - [ ] After converting, wait a minute or two without touching anything, then open the route menu: fewer stops than before? Pull the log and look for the pruned count: `adb logcat -d -s Curveon | grep Pruned` ("N -> M via points"). Edit the trip (drag, add a stop) while it works: nothing should jump or be lost.
 - [ ] Navigate a trip with one real stop, fold the arrival box out: the time left has a smaller orange time under it, the time to the stop; it counts down and disappears once the stop is passed.

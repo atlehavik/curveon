@@ -132,16 +132,16 @@ interface GravelHeatSource {
 private const val SURFACE_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
 /** 3D tilt; car navigators sit around 45–50 (Mapbox's navigation camera: 45). */
-private const val TILT_3D = 50.0
+private const val TILT_3D = 55.0
 /** The rider's own 3D angle: 0 is looking straight down, higher looks more along the road. Steps of the +/- buttons. */
 private const val TILT_MIN = 20.0
-private const val TILT_MAX = 60.0
+private const val TILT_MAX = 60.0 // MapLibre 13.6.1 refuses more (checked: 61 is rejected)
 private const val TILT_STEP = 5.0
 /** The tilt buttons hide again after this long without a press. */
 private const val TILT_CONTROLS_MS = 6_000L
 /** Rider position below the middle, as a share of the map's height, given as top padding (×2 lower). */
-private const val RIDER_LOW_3D = 0.5 // rider ~3/4 down the map
-private const val RIDER_LOW_2D = 0.3
+private const val RIDER_LOW_3D = 0.6 // rider ~4/5 down the map
+private const val RIDER_LOW_2D = 0.36
 
 /** How the camera turns while following the rider; the rider picks it with the compass button. */
 private enum class Orientation { NORTH_UP, HEADING_UP, THREE_D }
