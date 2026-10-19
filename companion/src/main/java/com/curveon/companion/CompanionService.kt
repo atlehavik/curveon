@@ -52,6 +52,7 @@ class CompanionService : Service() {
             PhoneHub.phoneBook = PhoneBook(this)
             PhoneHub.cues = CuePlayer(this)
             PhoneHub.speaker = Speaker(this) { lang, availability -> PhoneHub.broadcast(Message.SpeechVoice(lang, availability)) }
+            GroupHub.start(this)
             PhoneHub.update { it.copy(serviceRunning = true, lastEvent = "Waiting for the tablet…") }
             thread(name = "curveon-bt-server", isDaemon = true) { acceptLoop() }
             registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
@@ -71,6 +72,7 @@ class CompanionService : Service() {
         PhoneHub.cues = null
         PhoneHub.speaker?.shutdown()
         PhoneHub.speaker = null
+        GroupHub.stop()
         PhoneHub.update { it.copy(serviceRunning = false, tabletName = null, lastEvent = "Stopped") }
         super.onDestroy()
     }

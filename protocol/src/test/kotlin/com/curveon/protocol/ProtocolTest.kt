@@ -88,7 +88,8 @@ class ProtocolTest {
         Message.GroupSos("0123", "r1", 68.1, 13.6, 7L, false, true, emptyList(), 4),
         Message.GroupRoute("0123", "r1", "Lofoten", "H4sI"),
         Message.GroupInvite("0123", "curveon://join#v=1"),
-        Message.GroupError(Message.GroupErrorCode.EXPIRED_INVITE)
+        Message.GroupError(Message.GroupErrorCode.EXPIRED_INVITE),
+        Message.GroupError(Message.GroupErrorCode.NO_RELAY)
     )
 
     @Test

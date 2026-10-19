@@ -72,12 +72,18 @@ object PhoneHub {
         tablets += sink
         update { it.copy(tabletName = name, lastEvent = "Connected to $name") }
         snapshot().forEach { runCatching { sink(it) } }
+        GroupHub.sendSnapshot(sink)
+        GroupHub.tabletsChanged()
     }
 
     fun removeTablet(sink: (Message) -> Unit) {
         tablets -= sink
         if (tablets.isEmpty()) update { it.copy(tabletName = null, lastEvent = "Tablet disconnected") }
+        GroupHub.tabletsChanged()
     }
+
+    /** How many tablets (or Curveon's own screen) are listening; the group link is kept up only while someone is. */
+    val tabletCount: Int get() = tablets.size
 
     fun broadcast(message: Message) {
         for (t in tablets) runCatching { t(message) }.onFailure { tablets -= t }
@@ -140,7 +146,7 @@ object PhoneHub {
             is Message.PlaceCall -> phoneBook?.placeCall(message.number)
             is Message.PlayCue -> cues?.play(message.cue, message.side)
             is Message.Speak -> speaker?.speak(message.text, message.language, message.interrupt) { cues?.play(message.cue, message.side) }
-            else -> Unit
+            else -> GroupHub.handle(message) // group messages; GroupHub ignores anything else
         }
     }
 

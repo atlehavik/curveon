@@ -407,7 +407,8 @@ sealed interface Message {
         override fun toJson() = obj("group_error").put("code", code.name)
     }
 
-    enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER }
+    /** [NO_RELAY]: no relay address is set on the phone, so a group cannot be made yet. */
+    enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER, NO_RELAY }
 
     companion object {
         private fun obj(type: String) = JSONObject().put("type", type)

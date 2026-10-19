@@ -18,6 +18,7 @@ import android.util.Log
 import com.curveon.data.model.MusicTrack
 import com.curveon.data.model.NotificationItem
 import com.curveon.phone.CurveonNotificationListener
+import com.curveon.phone.GroupHub
 import com.curveon.phone.MediaApps
 import com.curveon.phone.PhoneBook
 import com.curveon.phone.PhoneHub
@@ -334,6 +335,7 @@ class PhoneCompanionManager(
     private fun startThisDevice() {
         PhoneHub.phoneBook = PhoneBook(context)
         PhoneHub.voice = VoiceReplier(context)
+        GroupHub.start(context)
         _connectionState.value = CompanionConnectionState.CONNECTED
         _connectedSince.value = System.currentTimeMillis()
         _connectedDeviceName.value = Build.MODEL // "Nothing playing on Pixel 9a"
@@ -345,6 +347,7 @@ class PhoneCompanionManager(
 
     private fun stopThisDevice() {
         PhoneHub.removeTablet(localSink)
+        GroupHub.stop()
         PhoneHub.voice?.cancel()
         PhoneHub.voice = null
         PhoneHub.phoneBook?.shutdown()

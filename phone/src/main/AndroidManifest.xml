@@ -2,6 +2,8 @@
 <!-- The notification listener is declared by each app (it needs the app's own label). -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Group rides: the phone is the only device that talks to the relay (end-to-end encrypted) -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Spoken navigation: an online-only voice is skipped when there is no connection -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
