@@ -21,6 +21,12 @@ import com.curveon.groups.SosView
 import com.curveon.protocol.Message
 import java.util.Base64
 import java.util.UUID
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.Executors
 
 /**
@@ -36,6 +42,26 @@ object GroupHub {
     private const val DEFAULT_INVITE_DAYS = 7
     private val exec = Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
     private val transports = OkHttpTransportFactory()
+
+    /** For the companion's and Curveon's own screens: the active group and how its link is doing. */
+    data class Summary(val groupId: String, val name: String?, val status: Message.GroupStatus, val members: Int, val admin: Boolean)
+
+    private val _summary = MutableStateFlow<Summary?>(null)
+    val summary: StateFlow<Summary?> = _summary.asStateFlow()
+
+    /** Every group on this phone (id, name), for settings screens. */
+    private val _groupNames = MutableStateFlow<List<Pair<String, String?>>>(emptyList())
+    val groupNames: StateFlow<List<Pair<String, String?>>> = _groupNames.asStateFlow()
+
+    @Volatile private var published: Map<String, GroupState> = emptyMap()
+
+    /** Things that went wrong (a bad invite, no relay set), for a short message on the phone's own screen. */
+    private val _errors = MutableSharedFlow<Message.GroupErrorCode>(extraBufferCapacity = 4)
+    val errors: SharedFlow<Message.GroupErrorCode> = _errors.asSharedFlow()
+
+    /** A link to join [groupId], valid for [days]; null for a group this phone does not know. Safe to call from any thread. */
+    fun inviteLink(groupId: String, days: Int = DEFAULT_INVITE_DAYS): String? =
+        published[groupId]?.invite(System.currentTimeMillis() / 1000 + days * 86_400L)?.toUri()
 
     // All of this is touched only on [exec].
     private var context: Context? = null
@@ -66,6 +92,7 @@ object GroupHub {
                 override fun onAvailable(network: Network) { exec.execute { client?.reconnectNow() } }
             }.also { cm.registerDefaultNetworkCallback(it) }
         }
+        publish()
         updateConnection()
     }
 
@@ -81,6 +108,12 @@ object GroupHub {
         groups.clear()
         positions.clear()
         activeId = null
+        publish()
+    }
+
+    fun setDataSaver(on: Boolean) = exec.execute {
+        store?.dataSaver = on
+        sharer.dataSaver = on
     }
 
     /** A tablet came or went: connect only while someone is looking, to save the phone's battery. */
@@ -124,7 +157,7 @@ object GroupHub {
                 store.sharing = m.on
                 sharer.reset()
                 send(groupList())
-                connectionMessage()?.let(::send)
+                sendConnection()
             }
             is Message.GroupProfile -> {
                 store.profile = m
@@ -195,10 +228,20 @@ object GroupHub {
         if (client != null) return
         state!!
         sos = SosTracker(myIdOf(state))
-        val c = GroupClient(state, transports, { e -> exec.execute { onEvent(state, e) } }, { s -> exec.execute { store?.save(s) } })
+        val c = GroupClient(
+            state, transports, { e -> exec.execute { onEvent(state, e) } }, { s -> exec.execute { store?.save(s) } },
+            scheme = scheme(state.relayHost)
+        )
         c.setProfile(helloFor(state))
         client = c
         c.start()
+    }
+
+    /** TLS always, except in a debuggable build talking to this PC (adb reverse, or the emulator's host address). */
+    private fun scheme(host: String): String {
+        val debuggable = (context?.applicationInfo?.flags ?: 0) and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
+        val local = host.startsWith("localhost") || host.startsWith("127.") || host.startsWith("10.0.2.2") || host.startsWith("192.168.")
+        return if (debuggable && local) "ws" else "wss"
     }
 
     /** Stop talking to the relay and forget what was seen in this group (it is replayed on the next connect). */
@@ -246,14 +289,14 @@ object GroupHub {
     private fun onEvent(state: GroupState, e: GroupEvent) {
         if (state.groupIdHex != activeId) return // an event from a group we have left or switched away from
         when (e) {
-            GroupEvent.Connected -> { connected = true; connectionMessage()?.let(::send) }
-            is GroupEvent.Disconnected -> { connected = false; connectionMessage()?.let(::send) }
-            is GroupEvent.MemberUpdated -> { membersMessage()?.let(::send); connectionMessage()?.let(::send) }
+            GroupEvent.Connected -> { connected = true; sendConnection() }
+            is GroupEvent.Disconnected -> { connected = false; sendConnection() }
+            is GroupEvent.MemberUpdated -> { membersMessage()?.let(::send); sendConnection() }
             is GroupEvent.MemberLeft -> {
                 positions.remove(e.riderId)
                 sos?.forget(e.riderId)?.let { send(sosMessage(it)) }
                 membersMessage()?.let(::send)
-                connectionMessage()?.let(::send)
+                sendConnection()
             }
             is GroupEvent.Position -> {
                 val p = e.pos
@@ -280,9 +323,29 @@ object GroupHub {
         }
     }
 
-    private fun send(m: Message) = PhoneHub.broadcast(m)
+    private fun send(m: Message) {
+        if (m is Message.GroupList) publish()
+        PhoneHub.broadcast(m)
+    }
 
-    private fun error(code: Message.GroupErrorCode) = send(Message.GroupError(code))
+    /** Keeps the screens' view of the groups and the active group's link in step. */
+    private fun publish() {
+        published = HashMap(groups)
+        _groupNames.value = groups.values.map { it.groupIdHex to it.name }
+        val c = connectionMessage()
+        val g = c?.let { groups[it.groupId] }
+        _summary.value = if (c == null || g == null) null else Summary(c.groupId, g.name, c.status, c.members, g.isAdmin)
+    }
+
+    private fun sendConnection() {
+        publish()
+        connectionMessage()?.let { PhoneHub.broadcast(it) }
+    }
+
+    private fun error(code: Message.GroupErrorCode) {
+        _errors.tryEmit(code)
+        send(Message.GroupError(code))
+    }
 
     // ---- what the tablet is told ----
 

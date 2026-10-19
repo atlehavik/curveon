@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        joinFromIntent(intent)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Cyan, background = Bg, surface = Surface)) {
                 Screen()
@@ -42,8 +43,23 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        joinFromIntent(intent)
+    }
+
+    /** An invite link (curveon://join#...) opened on this phone. */
+    private fun joinFromIntent(intent: Intent?) {
+        val uri = intent?.dataString ?: return
+        intent.data = null // handled once, not again after a rotation
+        GroupHub.start(applicationContext)
+        GroupHub.handle(com.curveon.protocol.Message.GroupJoin(uri))
+    }
+
     override fun onResume() {
         super.onResume()
+        GroupHub.start(applicationContext)
         // Opening the app is enough to (re)start sharing, e.g. after an update or a reboot.
         if (!PhoneHub.status.value.serviceRunning && has(Manifest.permission.BLUETOOTH_CONNECT) && !stoppedByUser) {
             CompanionService.start(this)
@@ -94,6 +110,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            GroupCard()
+
             BatteryTestCard(notificationAccess)
 
             if (BuildConfig.DEV) Card("Test") {
@@ -115,6 +133,73 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Text(if (status.serviceRunning) "Stop sharing" else "Start sharing with tablet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+
+    /** The active group, and what only this phone can set: relay address, nickname, data saver, invites. */
+    @Composable
+    private fun GroupCard() {
+        val summary by GroupHub.summary.collectAsStateWithLifecycle()
+        val store = remember { GroupStore(this@MainActivity) }
+        var relay by remember { mutableStateOf(store.relayHost) }
+        var nick by remember { mutableStateOf(store.profile?.nickname.orEmpty()) }
+        var saver by remember { mutableStateOf(store.dataSaver) }
+        // Saved a moment after the last keystroke, so the group is not told about every letter.
+        LaunchedEffect(relay) { kotlinx.coroutines.delay(600); store.relayHost = relay }
+        LaunchedEffect(nick) {
+            kotlinx.coroutines.delay(800)
+            if (nick.isNotBlank() && nick != store.profile?.nickname) {
+                val old = store.profile
+                GroupHub.handle(com.curveon.protocol.Message.GroupProfile(nick.trim(), old?.colour ?: 0xFF00E5FF.toInt(), old?.icon, old?.photoJpegBase64))
+                store.profile = com.curveon.protocol.Message.GroupProfile(nick.trim(), old?.colour ?: 0xFF00E5FF.toInt(), old?.icon, old?.photoJpegBase64)
+            }
+        }
+        LaunchedEffect(Unit) {
+            GroupHub.errors.collect { code ->
+                val text = when (code) {
+                    com.curveon.protocol.Message.GroupErrorCode.INVALID_INVITE -> R.string.group_error_invalid_invite
+                    com.curveon.protocol.Message.GroupErrorCode.EXPIRED_INVITE -> R.string.group_error_expired_invite
+                    com.curveon.protocol.Message.GroupErrorCode.ALREADY_MEMBER -> R.string.group_error_already_member
+                    com.curveon.protocol.Message.GroupErrorCode.NO_RELAY -> R.string.group_error_no_relay
+                    else -> R.string.group_error_other
+                }
+                android.widget.Toast.makeText(this@MainActivity, text, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+        Card(stringResource(R.string.group_ride)) {
+            val s = summary
+            if (s == null) Text(stringResource(R.string.group_status_none), color = Muted, fontSize = 13.sp)
+            else {
+                val status = stringResource(when (s.status) {
+                    com.curveon.protocol.Message.GroupStatus.CONNECTED -> R.string.group_connected
+                    com.curveon.protocol.Message.GroupStatus.OFFLINE -> R.string.group_offline
+                    com.curveon.protocol.Message.GroupStatus.PAUSED -> R.string.group_paused
+                    com.curveon.protocol.Message.GroupStatus.REMOVED -> R.string.group_removed
+                })
+                Text(
+                    stringResource(R.string.group_status_line, s.name ?: stringResource(R.string.group_unnamed), s.members, status),
+                    color = if (s.status == com.curveon.protocol.Message.GroupStatus.CONNECTED) Green else Amber,
+                    fontSize = 14.sp, fontWeight = FontWeight.Bold
+                )
+                OutlinedButton(onClick = {
+                    GroupHub.inviteLink(s.groupId)?.let { link ->
+                        startActivity(Intent.createChooser(
+                            Intent(Intent.ACTION_SEND).setType("text/plain")
+                                .putExtra(Intent.EXTRA_TEXT, getString(R.string.group_invite_text, link)), null
+                        ))
+                    }
+                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.group_invite)) }
+            }
+            OutlinedTextField(nick, { nick = it }, label = { Text(stringResource(R.string.group_nickname)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(relay, { relay = it }, label = { Text(stringResource(R.string.group_relay)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            Text(stringResource(R.string.group_relay_hint), color = Muted, fontSize = 12.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.group_data_saver), color = Color.White, fontSize = 14.sp)
+                    Text(stringResource(R.string.group_data_saver_hint), color = Muted, fontSize = 12.sp)
+                }
+                Switch(saver, { saver = it; store.dataSaver = it; GroupHub.setDataSaver(it) })
             }
         }
     }

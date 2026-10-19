@@ -43,9 +43,11 @@ googleid = "1.1.1"
 maplibre = "13.6.1"
 json = "20260814"
 tink = "1.16.0"
+zxing = "3.5.3"
 
 
 [libraries]
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 tink-android = { group = "com.google.crypto.tink", name = "tink-android", version.ref = "tink" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
