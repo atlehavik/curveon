@@ -91,6 +91,7 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
     val myId by manager.myId.collectAsStateWithLifecycle()
     val positions by manager.positions.collectAsStateWithLifecycle()
     val invite by manager.invite.collectAsStateWithLifecycle()
+    val sos by manager.sos.collectAsStateWithLifecycle()
     val active = groups.firstOrNull { it.id == activeId }
     var name by rememberSaveable { mutableStateOf("") }
     var showInvite by rememberSaveable { mutableStateOf(false) }
@@ -116,6 +117,7 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        sos.values.firstOrNull { it.mine }?.let { MySosCard(it, manager) }
         if (active == null) {
             Text(stringResource(R.string.group_start_hint), color = TextSecondary, fontSize = 14.sp)
             OutlinedTextField(
@@ -386,24 +388,7 @@ fun GroupSosOverlay(manager: GroupManager, myLat: Double?, myLon: Double?, navig
     var dismissed by remember { mutableStateOf(setOf<Long>()) }
 
     Box(Modifier.fillMaxSize()) {
-    sos.values.firstOrNull { it.mine }?.let { mine ->
-        val seen = mine.acks.size
-        val coming = mine.acks.count { it.coming }
-        val others = (mine.memberCount - 1).coerceAtLeast(0)
-        Column(
-            Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF7A0B00))
-                .border(2.dp, WarningRed, RoundedCornerShape(16.dp)).padding(14.dp).testTag("sos_sent"),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(stringResource(R.string.sos_sent), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
-            Text(stringResource(R.string.sos_delivery, seen, others), color = Color.White, fontSize = 15.sp)
-            if (coming > 0) Text(stringResource(R.string.sos_on_the_way, coming), color = Color(0xFFB9F6CA), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-            else if (seen == 0) Text(stringResource(R.string.sos_no_delivery), color = Color(0xFFFFD180), fontSize = 14.sp)
-            Button(onClick = { manager.sosCancel() }, colors = ButtonDefaults.buttonColors(containerColor = Color.White)) {
-                Text(stringResource(R.string.sos_cancel), color = Color(0xFF7A0B00), fontWeight = FontWeight.Black)
-            }
-        }
-    }
+    sos.values.firstOrNull { it.mine }?.let { mine -> MySosCard(mine, manager, Modifier.align(Alignment.TopCenter).padding(12.dp)) }
 
     val incoming = sos.values.firstOrNull { !it.mine && it.timeMs !in dismissed }
     incoming?.let { s ->
@@ -446,6 +431,27 @@ fun GroupSosOverlay(manager: GroupManager, myLat: Double?, myLon: Double?, navig
             }
         }
     }
+    }
+}
+
+/** The rider's own SOS: how far it has got, and a way to end it. Shown on the dashboard and, as the dialog covers that, in the dialog too. */
+@Composable
+private fun MySosCard(sos: Message.GroupSos, manager: GroupManager, modifier: Modifier = Modifier) {
+    val seen = sos.acks.size
+    val coming = sos.acks.count { it.coming }
+    val others = (sos.memberCount - 1).coerceAtLeast(0)
+    Column(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF7A0B00))
+            .border(2.dp, WarningRed, RoundedCornerShape(16.dp)).padding(14.dp).testTag("sos_sent"),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(stringResource(R.string.sos_sent), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
+        Text(stringResource(R.string.sos_delivery, seen, others), color = Color.White, fontSize = 15.sp)
+        if (coming > 0) Text(stringResource(R.string.sos_on_the_way, coming), color = Color(0xFFB9F6CA), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        else if (seen == 0) Text(stringResource(R.string.sos_no_delivery), color = Color(0xFFFFD180), fontSize = 14.sp)
+        Button(onClick = { manager.sosCancel() }, colors = ButtonDefaults.buttonColors(containerColor = Color.White)) {
+            Text(stringResource(R.string.sos_cancel), color = Color(0xFF7A0B00), fontWeight = FontWeight.Black)
+        }
     }
 }
 

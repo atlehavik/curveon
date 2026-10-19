@@ -266,6 +266,14 @@ X25519/Ed25519, Apache 2.0). The relay side of 5 and 6 is done too (`~/develop/c
 proof, new frame types, SQLite storage and replay, per-IP creation limit, signed rekey, tested; the
 Kotlin and Node sides agree on the rekey signature byte for byte). Not done yet: "make admin" (a change
 signed by an existing admin), test vectors, JSON encoding of frames in `:groups`, wiring into the apps.
+Built 2026-10-19: the group library (`:groups`: client, payloads, position sharing, SOS tracking), the Bluetooth messages
+(`:protocol` version 2), the phone side (`GroupHub` in `:phone`, encrypted store, OkHttp), a Group ride card in the companion, and on the
+tablet the other riders on the map, a group button, the group dialog (also Settings → Group ride) with invite QR, pause, profile, remove
+rider and SOS (hold 3 s, 10 s countdown, full-screen alert), in English and Norwegian. Tried on the X7 against a relay on the PC with
+simulated riders (`~/develop/curveon-relay/test/rider.ts`, an independent implementation of the protocol, which also reads what the Kotlin
+side sends). Still open: the real Pixel + X7 chain (see `device-checks.md`), QR scanning in the apps, sharing a route to the group from
+the route screens, an SOS notification when the app is not open, "Call him" in the SOS alert (there are no phone numbers in the protocol,
+dropped on purpose), the `https` invite and landing page (domain), a VPS, and the Play decisions in `google-play.md`.
 Spec fix found while building the relay: the rekey signature must cover the new proof, or a member
 could swap it and lock everyone out.
 Wire format (expensive to change once people use it):

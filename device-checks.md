@@ -6,6 +6,27 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-19 — Group rides (not released, no version bump yet)
+
+Tried 2026-10-19 on the X7 (as its own phone, over a relay on this PC with simulated riders): joining by link,
+positions both ways, the map markers, the group dialog, the invite QR, SOS in both directions and "I'm coming".
+Not tried, because it needs the Pixel: the real chain X7 → Bluetooth → companion → relay.
+
+Set up a test group without a second rider (the relay and the simulated riders live in `~/develop/curveon-relay`):
+`npm start` there; `node test/rider.ts create --riders 3 --lat <lat> --lon <lon> --sos-after 120` prints an invite
+link (`curveon://join#...`) and keeps three riders circling the point. `adb -s <phone> reverse tcp:8787 tcp:8787`, then
+open the link on the phone: `adb -s <phone> shell "am start -a android.intent.action.VIEW -d '<link>'"`.
+
+- [ ] **Pixel + X7 together.** Install `:companion:installDebug` on the Pixel (it now opens invite links and has a Group ride card), keep the X7 on the build with groups. Open the link on the Pixel, check that the X7 shows the group button and the riders, and that the X7's position shows up in the simulated riders' output (`riders.log`).
+- [ ] **After restarting Curveon** (force-stop, start) with a group active: the group button and the riders are back within about 10 s. Seen once on the X7 (as own phone) that they were *not* back after a restart although the group was stored (`shared_prefs/groups.xml` held it): if it happens again, pull `adb logcat -s GroupHub` and say when.
+- [ ] **SOS sent from the dialog:** the red "SOS sent" card sits at the top of the dialog (it was behind the dialog before this fix) with "Received by n of m" counting up, and "Cancel SOS" works.
+- [ ] **Overlap (CLAUDE.md):** the group button is the last one in the right-hand button column. Check Pixel size in portrait and landscape, navigating and not, music player on and off, and the X7 landscape: it must not touch the speed card or the bottom cards.
+- [ ] **Tunnel / no coverage:** drive into a tunnel or switch the phone to flight mode: the group says "No contact with the group", the position is sent once when coverage is back, and an SOS made without coverage goes out when it returns.
+- [ ] **Battery:** one hour of riding with a group active, phone screen off: compare with the same ride without a group (companion uses the radio every 5 s; data saver 15 s).
+- [ ] **Invite links with both apps on one phone:** `curveon://join` is handled by both Curveon and the companion, so Android asks which to use. Pick the companion when it is paired with a tablet, otherwise Curveon.
+- [ ] **Samsung/Xiaomi-type phones** (not the Pixel) may kill the companion in the background: if a group goes quiet on someone's phone, note the model.
+- [ ] **Not built yet, so do not look for it:** scanning a QR with the camera inside the apps (use the phone's camera app or the link), sharing a route to the group from the route screens, a notification for SOS when Curveon is not open on the phone.
+
 ## 2026-10-18 — Add stop that doesn't redraw the route (1.2.2)
 
 - [ ] While navigating, add a stop. If the route doesn't change (or nothing happens), note which stop and where it was, then pull the trace: `adb -s <device> pull /sdcard/Android/data/com.curveon.app/files/navtrace` and look for the `E,…,addStop '<name>' <lat> <lon>: …` lines (started / done / cancelled / failed / no route / no position). Known from the Pixel trace of 2026-10-18: one route change 1.5 km into the ride kept exactly the old line (1235 vs 1236 points), the next one, 40 s later, had a small detour.

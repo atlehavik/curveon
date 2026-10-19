@@ -84,6 +84,26 @@ endrer seg på Play-siden:
   oppdatert Data safety og personvernerklæring. Test gruppene i lukket testing og via GitHub-APK først.
 - Domenet som `groups.md` trenger for `https`-invitasjonslenken kan også hoste personvernerklæringen (én løsning for begge).
 
+### Slik ble det bygget (2026-10-19), og hva det betyr for Play
+
+- **Companion har `INTERNET` nå**, via `:phone`-manifestet (det samme manifestet gir hovedappen det den allerede hadde). Hver bygging
+  av companion har det, også en Play-bygging: for «første Play-versjon uten grupper» må `INTERNET` fjernes i en play-bygging
+  (`tools:node="remove"`, slik `app/src/play` gjør for `REQUEST_INSTALL_PACKAGES`) og gruppene slås av. Ikke gjort.
+- **Nye biblioteker, alle Apache 2.0, ingen native kode (16 KB-kravet berøres ikke):** Tink (`tink-android`, X25519/Ed25519/HKDF),
+  ZXing core (QR-kode for invitasjon), OkHttp (var der fra før, nå også i `:phone`). Ført i `THIRD_PARTY_LICENSES.md` (Tink; ZXing mangler
+  der ennå).
+- **Nøkler på enheten:** gruppene (nøkkel og rytter-identitet) lagres kryptert med en nøkkel i Android Keystore (`GroupStore`), og er
+  utelatt fra Android-backup (`backup_rules.xml`, `data_extraction_rules.xml`). Ny telefon eller reinstallasjon betyr ny invitasjon.
+- **Ny tillatelse i hovedappen:** `VIBRATE` (vanlig, gis automatisk) til SOS-varselet. Ikke brukt: `USE_FULL_SCREEN_INTENT`. SOS-varselet er et
+  vindu i appen og vises bare når Curveon er åpen; på en telefon i lommen kommer ingenting (varsel for det er ikke bygget).
+- **Foreground service-typen i companion er uendret** (`connectedDevice|microphone`). Å sende posisjoner over nett for en tilkoblet tavle er
+  en grei, men ikke opplagt, beskrivelse av `connectedDevice`: skriv det rett ut i deklarasjonen. Posisjon hentes på tavla, ikke i companion.
+- **Ukryptert `ws://`** brukes aldri i produksjon: bare i debug-bygg (`debuggable`) mot lokale adresser (`GroupHub.scheme`); debug-manifestene
+  tillater ukryptert trafikk (`app/src/debug`, `companion/src/debug`), release-manifestene gjør ikke det.
+- **Invitasjonslenker:** `curveon://join` er registrert i både Curveon og companion (Android spør hvilken som skal brukes når begge er
+  installert). `https`-formen trenger domene og App Links.
+- **SOS:** appen sier at den ikke er en nødtjeneste (teksten under knappen). Ingen automatisk krasjvarsling.
+
 ## Største risikoer hos Google
 
 1. **`READ_CALL_LOG`**, se over. Største risiko.
