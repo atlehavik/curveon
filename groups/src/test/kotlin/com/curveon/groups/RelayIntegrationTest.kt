@@ -137,10 +137,13 @@ class RelayIntegrationTest {
     // SOS: others get it, answer it, and the sender can cancel
     assertTrue(b.client.sendSos(Payload.Sos(68.1, 13.6)))
     a.await { (it as? GroupEvent.SosReceived)?.takeIf { e -> e.riderId == b.id } }
+    // every device says at once that it got it, so the sender sees the delivery ...
+    b.await { (it as? GroupEvent.SosAnswered)?.takeIf { e -> e.riderId == a.id && !e.coming } }
+    b.await { (it as? GroupEvent.SosAnswered)?.takeIf { e -> e.riderId == c.id && !e.coming } }
+    // ... and "I'm coming" is a separate answer
     a.client.answerSos(b.id, coming = true)
-    val answer = b.await { it as? GroupEvent.SosAnswered }
+    val answer = b.await { (it as? GroupEvent.SosAnswered)?.takeIf { e -> e.coming } }
     assertEquals(a.id, answer.riderId)
-    assertTrue(answer.coming)
     b.client.cancelSos()
     a.await { (it as? GroupEvent.SosCancelled)?.takeIf { e -> e.riderId == b.id } }
 

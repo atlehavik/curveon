@@ -79,6 +79,16 @@ class GroupClient(
     scheduler.shutdownNow()
   }
 
+  /** The network came back (or changed): do not wait for the back-off. */
+  fun reconnectNow() {
+    synchronized(lock) {
+      if (stopped || removed || connected) return
+      retry?.cancel(false)
+      attempt = 0
+      connect()
+    }
+  }
+
   fun members(): List<Member> = synchronized(lock) { members.values.toList() }
 
   // ---- sending ----
@@ -197,7 +207,10 @@ class GroupClient(
       }
       is Payload.Pos -> onEvent(GroupEvent.Position(from, p, signed.tsMs))
       is Payload.Route -> onEvent(GroupEvent.RouteReceived(from, p))
-      is Payload.Sos -> onEvent(GroupEvent.SosReceived(from, p, signed.tsMs))
+      is Payload.Sos -> {
+        send(Payload.SosAck(from, coming = false)) // every device says it got it, so the sender sees the delivery
+        onEvent(GroupEvent.SosReceived(from, p, signed.tsMs))
+      }
       is Payload.SosAck -> onEvent(GroupEvent.SosAnswered(from, p.sosRiderId, p.coming))
       Payload.SosCancel -> onEvent(GroupEvent.SosCancelled(from))
       Payload.Leave -> {

@@ -12,7 +12,8 @@ import java.util.UUID
 object Protocol {
     val SERVICE_UUID: UUID = UUID.fromString("6b3a1f6e-2c55-4e0b-9a4b-56a1f0b7c1d2")
     const val SERVICE_NAME = "Curveon Companion"
-    const val VERSION = 1
+    /** 2: group rides. A peer on version 1 ignores the group messages, so mixed versions keep working. */
+    const val VERSION = 2
 }
 
 sealed interface Message {
@@ -260,6 +261,154 @@ sealed interface Message {
 
     enum class CueSide { LEFT, CENTER, RIGHT }
 
+    // ---- groups, tablet -> phone (docs/groups-protocol.md; the phone talks to the relay, the tablet only draws) ----
+
+    /** Ask for [GroupList] and the state of the active group. */
+    data object RequestGroups : Message {
+        override fun toJson() = obj("request_groups")
+    }
+
+    /** Start a group; this rider becomes its admin. The phone answers with [GroupList] and [GroupInvite]. */
+    data class GroupCreate(val name: String?) : Message {
+        override fun toJson() = obj("group_create").put("name", name ?: JSONObject.NULL)
+    }
+
+    /** Join from an invite link scanned or opened on the phone, or typed in on the tablet. */
+    data class GroupJoin(val invite: String) : Message {
+        override fun toJson() = obj("group_join").put("invite", invite)
+    }
+
+    data class GroupLeave(val groupId: String) : Message {
+        override fun toJson() = obj("group_leave").put("id", groupId)
+    }
+
+    /** Make this the group that gets the rider's position and is shown on the map; null for none. */
+    data class GroupSelect(val groupId: String?) : Message {
+        override fun toJson() = obj("group_select").put("id", groupId ?: JSONObject.NULL)
+    }
+
+    /** Start or pause sharing the rider's position with the active group. The group stays either way. */
+    data class GroupSharing(val on: Boolean) : Message {
+        override fun toJson() = obj("group_sharing").put("on", on)
+    }
+
+    /** What others see: nickname, colour and one avatar ([icon] id from the bundled set, or a small [photoJpegBase64]). */
+    data class GroupProfile(val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?) : Message {
+        override fun toJson() = obj("group_profile").put("nick", nickname).put("colour", colour)
+            .put("icon", icon ?: JSONObject.NULL).put("photo", photoJpegBase64 ?: JSONObject.NULL)
+    }
+
+    /** The tablet's position, sent while sharing. The phone decides what is sent on and how often. */
+    data class MyPosition(
+        val lat: Double, val lon: Double, val speedMs: Float, val heading: Float, val accuracy: Float, val timeMs: Long
+    ) : Message {
+        override fun toJson() = obj("my_position").put("lat", lat).put("lon", lon).put("speed", speedMs.toDouble())
+            .put("heading", heading.toDouble()).put("acc", accuracy.toDouble()).put("time", timeMs)
+    }
+
+    /** Share a route or GPX track ([gpxGzBase64] is gzipped GPX) with the active group. */
+    data class ShareRoute(val name: String, val gpxGzBase64: String) : Message {
+        override fun toJson() = obj("share_route").put("name", name).put("gpx", gpxGzBase64)
+    }
+
+    data class SosStart(val lat: Double, val lon: Double) : Message {
+        override fun toJson() = obj("sos_start").put("lat", lat).put("lon", lon)
+    }
+
+    data object SosCancel : Message {
+        override fun toJson() = obj("sos_cancel")
+    }
+
+    /** "I'm coming" ([coming]) to the SOS of [sosRiderId]; false just says it was seen. */
+    data class SosAnswer(val sosRiderId: String, val coming: Boolean) : Message {
+        override fun toJson() = obj("sos_answer").put("sos", sosRiderId).put("coming", coming)
+    }
+
+    /** Admin only: give everyone but [riderId] a new group key. */
+    data class GroupRemoveRider(val groupId: String, val riderId: String) : Message {
+        override fun toJson() = obj("group_remove").put("id", groupId).put("rider", riderId)
+    }
+
+    /** Ask for an invite for the group; the phone answers with [GroupInvite]. [validDays] null for the default. */
+    data class RequestGroupInvite(val groupId: String, val validDays: Int?) : Message {
+        override fun toJson() = obj("request_invite").put("id", groupId).put("days", validDays ?: JSONObject.NULL)
+    }
+
+    // ---- groups, phone -> tablet ----
+
+    /** Every group on the phone, and which one is active. [sharing] is false while paused. */
+    data class GroupList(val groups: List<GroupInfo>, val activeId: String?, val sharing: Boolean) : Message {
+        override fun toJson() = obj("group_list").put("active", activeId ?: JSONObject.NULL).put("sharing", sharing)
+            .put("list", JSONArray(groups.map {
+                JSONObject().put("id", it.id).put("name", it.name ?: JSONObject.NULL).put("members", it.members).put("admin", it.admin)
+            }))
+    }
+
+    data class GroupInfo(val id: String, val name: String?, val members: Int, val admin: Boolean)
+
+    /** How the active group's link is doing. */
+    data class GroupConnection(val groupId: String, val status: GroupStatus, val members: Int) : Message {
+        override fun toJson() = obj("group_connection").put("id", groupId).put("status", status.name).put("members", members)
+    }
+
+    enum class GroupStatus { CONNECTED, OFFLINE, PAUSED, REMOVED }
+
+    /** Sent when someone joins or changes their profile; the tablet caches the pictures per rider. */
+    data class GroupMembers(val groupId: String, val members: List<GroupMemberInfo>) : Message {
+        override fun toJson() = obj("group_members").put("id", groupId).put("list", JSONArray(members.map {
+            JSONObject().put("id", it.id).put("nick", it.nickname).put("colour", it.colour)
+                .put("icon", it.icon ?: JSONObject.NULL).put("photo", it.photoJpegBase64 ?: JSONObject.NULL)
+        }))
+    }
+
+    data class GroupMemberInfo(val id: String, val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?)
+
+    /** Small and frequent; riders are referred to by id (see [GroupMembers]). */
+    data class GroupPositions(val groupId: String, val positions: List<GroupPositionInfo>) : Message {
+        override fun toJson() = obj("group_positions").put("id", groupId).put("list", JSONArray(positions.map {
+            JSONObject().put("id", it.id).put("lat", it.lat).put("lon", it.lon).put("heading", it.heading.toDouble())
+                .put("speed", it.speedMs.toDouble()).put("time", it.timeMs).put("stopped", it.stopped)
+                .put("since", it.stoppedSince ?: JSONObject.NULL).put("bat", it.battery ?: JSONObject.NULL)
+        }))
+    }
+
+    data class GroupPositionInfo(
+        val id: String, val lat: Double, val lon: Double, val heading: Float, val speedMs: Float, val timeMs: Long,
+        val stopped: Boolean, val stoppedSince: Long?, val battery: Int?
+    )
+
+    /**
+     * An SOS in the group, sent again whenever its answers change. [mine] is the rider's own, where [acks]
+     * counts who has seen it ([SosAckInfo.coming] false) and who is on the way. [active] false means it ended.
+     */
+    data class GroupSos(
+        val groupId: String, val from: String, val lat: Double, val lon: Double, val timeMs: Long,
+        val active: Boolean, val mine: Boolean, val acks: List<SosAckInfo>, val memberCount: Int
+    ) : Message {
+        override fun toJson() = obj("group_sos").put("id", groupId).put("from", from).put("lat", lat).put("lon", lon)
+            .put("time", timeMs).put("active", active).put("mine", mine).put("members", memberCount)
+            .put("acks", JSONArray(acks.map { JSONObject().put("rider", it.riderId).put("coming", it.coming) }))
+    }
+
+    data class SosAckInfo(val riderId: String, val coming: Boolean)
+
+    /** A route or track a rider shared; the tablet offers to open or save it. */
+    data class GroupRoute(val groupId: String, val from: String, val name: String, val gpxGzBase64: String) : Message {
+        override fun toJson() = obj("group_route").put("id", groupId).put("from", from).put("name", name).put("gpx", gpxGzBase64)
+    }
+
+    /** The invite for [groupId], to show as a QR code or share as a link. */
+    data class GroupInvite(val groupId: String, val uri: String) : Message {
+        override fun toJson() = obj("group_invite").put("id", groupId).put("uri", uri)
+    }
+
+    /** Something about groups didn't work; the tablet shows its own (translated) text for [code]. */
+    data class GroupError(val code: GroupErrorCode) : Message {
+        override fun toJson() = obj("group_error").put("code", code.name)
+    }
+
+    enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER }
+
     companion object {
         private fun obj(type: String) = JSONObject().put("type", type)
 
@@ -328,6 +477,48 @@ sealed interface Message {
             "play_cue" -> runCatching { NavCue.valueOf(o.getString("cue")) }.getOrNull()?.let { cue ->
                 PlayCue(cue, runCatching { CueSide.valueOf(o.optString("side")) }.getOrDefault(CueSide.CENTER))
             }
+            // groups
+            "request_groups" -> RequestGroups
+            "group_create" -> GroupCreate(o.nullableString("name"))
+            "group_join" -> GroupJoin(o.getString("invite"))
+            "group_leave" -> GroupLeave(o.getString("id"))
+            "group_select" -> GroupSelect(o.nullableString("id"))
+            "group_sharing" -> GroupSharing(o.optBoolean("on"))
+            "group_profile" -> GroupProfile(o.optString("nick"), o.optInt("colour"), o.nullableString("icon"), o.nullableString("photo"))
+            "my_position" -> MyPosition(
+                o.getDouble("lat"), o.getDouble("lon"), o.optDouble("speed", 0.0).toFloat(), o.optDouble("heading", 0.0).toFloat(),
+                o.optDouble("acc", 0.0).toFloat(), o.optLong("time")
+            )
+            "share_route" -> ShareRoute(o.optString("name"), o.getString("gpx"))
+            "sos_start" -> SosStart(o.getDouble("lat"), o.getDouble("lon"))
+            "sos_cancel" -> SosCancel
+            "sos_answer" -> SosAnswer(o.getString("sos"), o.optBoolean("coming", true))
+            "group_remove" -> GroupRemoveRider(o.getString("id"), o.getString("rider"))
+            "request_invite" -> RequestGroupInvite(o.getString("id"), if (o.isNull("days")) null else o.optInt("days"))
+            "group_list" -> GroupList(o.optJSONArray("list").objects().map {
+                GroupInfo(it.getString("id"), it.nullableString("name"), it.optInt("members"), it.optBoolean("admin"))
+            }, o.nullableString("active"), o.optBoolean("sharing", true))
+            "group_connection" -> runCatching { GroupStatus.valueOf(o.getString("status")) }.getOrNull()
+                ?.let { GroupConnection(o.getString("id"), it, o.optInt("members")) }
+            "group_members" -> GroupMembers(o.getString("id"), o.optJSONArray("list").objects().map {
+                GroupMemberInfo(it.getString("id"), it.optString("nick"), it.optInt("colour"), it.nullableString("icon"), it.nullableString("photo"))
+            })
+            "group_positions" -> GroupPositions(o.getString("id"), o.optJSONArray("list").objects().map {
+                GroupPositionInfo(
+                    it.getString("id"), it.getDouble("lat"), it.getDouble("lon"), it.optDouble("heading", 0.0).toFloat(),
+                    it.optDouble("speed", 0.0).toFloat(), it.optLong("time"), it.optBoolean("stopped"),
+                    if (it.isNull("since")) null else it.optLong("since"), if (it.isNull("bat")) null else it.optInt("bat")
+                )
+            })
+            "group_sos" -> GroupSos(
+                o.getString("id"), o.getString("from"), o.getDouble("lat"), o.getDouble("lon"), o.optLong("time"),
+                o.optBoolean("active", true), o.optBoolean("mine"),
+                o.optJSONArray("acks").objects().map { SosAckInfo(it.getString("rider"), it.optBoolean("coming")) }, o.optInt("members")
+            )
+            "group_route" -> GroupRoute(o.getString("id"), o.getString("from"), o.optString("name"), o.getString("gpx"))
+            "group_invite" -> GroupInvite(o.getString("id"), o.getString("uri"))
+            // An error code from a newer phone is skipped.
+            "group_error" -> runCatching { GroupErrorCode.valueOf(o.getString("code")) }.getOrNull()?.let { GroupError(it) }
             else -> null // unknown types from a newer peer are ignored
         }
     }
