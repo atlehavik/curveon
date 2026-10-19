@@ -52,7 +52,8 @@
       "Adventures no longer start with a time limit: draw your area and Curveon finds trips that make good use of it, each showing about how long it takes. Want a shorter ride? Pick a time on the time button and it becomes the limit, as before",
       "When you edit a route on the map, the padlock is now locked every time, so you can pan the map without bending the route by accident. Unlock it when you want to drag the line",
       "Curveon has a new package name (com.curveon.app, was com.curveon.tablet) because it is the main app on both phone and tablet. Android treats it as a new app: install this version, then uninstall the old Curveon. Settings, downloaded maps and saved data do not carry over, and the Curveon Companion must be updated too",
-      "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
+      "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready",
+      "Curveon has a new icon: a motorbike seen head-on, with an orange body and a cyan front tyre against the evening sky"
     ],
     "nb": [
       "Stopp du legger til underveis ligger nå alltid på ruten: før kunne en ny rute som unngår å snu hoppe over noen av stoppene (den kjørte forbi på avstand), og «stopp nådd» kunne meldes uten at du var der. Nå besøkes hvert stopp, og meldingen kommer bare når du er ved stoppet",
@@ -105,7 +106,8 @@
       "Eventyr starter ikke lenger med en tidsgrense: tegn området ditt, så finner Curveon turer som utnytter det godt, og hver tur viser omtrent hvor lang tid den tar. Vil du ha en kortere tur? Velg en tid på tidsknappen, så blir den grensen, som før",
       "Når du endrer en rute i kartet, er hengelåsen nå låst hver gang, så du kan flytte kartet uten å bøye ruten ved et uhell. Lås den opp når du vil dra i linjen",
       "Curveon har fått nytt pakkenavn (com.curveon.app, før com.curveon.tablet) fordi det er hovedappen på både mobil og nettbrett. Android ser det som en ny app: installer denne versjonen, og avinstaller deretter den gamle Curveon. Innstillinger, nedlastede kart og lagrede data følger ikke med, og Curveon Companion må oppdateres samtidig",
-      "Kartnedlastingen går mye raskere: Curveon henter nå flere deler av kartet samtidig i stedet for én om gangen, så et land kan bli ferdig på en tredjedel av tiden. Når du setter flere land i kø, begynner neste kart å laste ned mens det forrige gjør klart ruter og søk"
+      "Kartnedlastingen går mye raskere: Curveon henter nå flere deler av kartet samtidig i stedet for én om gangen, så et land kan bli ferdig på en tredjedel av tiden. Når du setter flere land i kø, begynner neste kart å laste ned mens det forrige gjør klart ruter og søk",
+      "Curveon har fått nytt ikon: en motorsykkel sett forfra, med oransje kropp og cyan framdekk mot kveldshimmelen"
     ]
   },
   {
