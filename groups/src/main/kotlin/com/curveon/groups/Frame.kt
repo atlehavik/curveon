@@ -6,10 +6,10 @@ import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-/** Frame types the relay forwards. Everything else is dropped. `hello`, `route`, `sos` and `rekey` are also stored and replayed. */
+/** Frame types the relay forwards. Everything else is dropped. `hello`, `route`, `sos`, `claim` and `rekey` are also stored and replayed. */
 enum class FrameType(val wire: String) {
   POS("pos"), HELLO("hello"), ROUTE("route"), SOS("sos"), SOS_ACK("sos_ack"), SOS_CANCEL("sos_cancel"),
-  LEAVE("leave"), REKEY("rekey");
+  LEAVE("leave"), CLAIM("claim"), REKEY("rekey");
 
   companion object { fun of(wire: String) = entries.firstOrNull { it.wire == wire } }
 }

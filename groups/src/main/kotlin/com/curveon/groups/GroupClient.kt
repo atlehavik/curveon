@@ -20,7 +20,16 @@ sealed interface GroupEvent {
 
   /** An admin made a new key and this rider is not in it. The client has stopped. */
   data object Removed : GroupEvent
+
+  /**
+   * Which of the rider's own devices sends their position changed: [thisDevice] true when it is this one. The other
+   * device was told by the group (see [Payload.Claim]) or the rider took over here.
+   */
+  data class DeviceActiveChanged(val thisDevice: Boolean) : GroupEvent
 }
+
+private const val CLAIM_HEARTBEAT_MS = 60_000L
+private const val CLAIM_STALE_MS = 180_000L
 
 /**
  * One group's connection to the relay: encrypts what the rider sends, opens and checks what arrives,
@@ -54,6 +63,11 @@ class GroupClient(
     private set
   private var profile: Payload.Hello? = null
   private var pendingPos: Payload.Pos? = null
+
+  /** The newest [Payload.Claim] seen, ours or another device's of the same rider: its time and device. */
+  private var claim: Pair<Long, String>? = null
+  private var lastClaimSent = 0L
+  private var announcedActive = true
   private var pendingSos: Payload.Sos? = null
 
   fun start() {
@@ -99,8 +113,24 @@ class GroupClient(
     if (connected) send(hello)
   }
 
-  /** Sends now, or keeps it as the one to send when the connection is back (older ones are not worth sending). */
+  /**
+   * False while another of the rider's devices is the one sending their position: positions given here are then
+   * dropped. Nobody having claimed it, or the claimant having been silent for [CLAIM_STALE_MS], leaves it to this device.
+   */
+  val sendingHere: Boolean get() = synchronized(lock) { activeHere() }
+
+  /** The rider chose this device: it sends from now on, and the rider's other devices are told to stop. */
+  fun useThisDevice() = synchronized(lock) { claimNow() }
+
+  /**
+   * Sends now, or keeps it as the one to send when the connection is back (older ones are not worth sending).
+   * Does nothing while another of the rider's devices is the one sending; otherwise this device claims the role
+   * (and says so again every minute, so the other device can tell the claimant has gone quiet).
+   */
   fun sendPosition(pos: Payload.Pos) = synchronized(lock) {
+    if (!activeHere()) { pendingPos = null; return }
+    val c = claim
+    if (c == null || c.second != state.deviceId || clock() - lastClaimSent > CLAIM_HEARTBEAT_MS) claimNow()
     if (!(connected && send(pos))) pendingPos = pos
   }
 
@@ -144,6 +174,35 @@ class GroupClient(
     true
   }
 
+  private fun activeHere(): Boolean {
+    val c = claim ?: return true
+    return c.second == state.deviceId || clock() - c.first > CLAIM_STALE_MS
+  }
+
+  private fun claimNow() {
+    val now = clock()
+    claim = now to state.deviceId
+    lastClaimSent = now
+    if (connected) send(Payload.Claim(state.deviceId))
+    announceActive()
+  }
+
+  private fun announceActive() {
+    val now = activeHere()
+    if (now != announcedActive) {
+      announcedActive = now
+      onEvent(GroupEvent.DeviceActiveChanged(now))
+    }
+  }
+
+  /** Another device of this rider claimed the role; the newest claim wins, and a tie goes to the larger device id. */
+  private fun otherClaimed(device: String, tsMs: Long) {
+    if (device == state.deviceId) return
+    val cur = claim
+    if (cur == null || tsMs > cur.first || (tsMs == cur.first && device > cur.second)) claim = tsMs to device
+    announceActive()
+  }
+
   // ---- connection ----
 
   private fun connect() {
@@ -158,6 +217,7 @@ class GroupClient(
           attempt = 0
           onEvent(GroupEvent.Connected)
           profile?.let { send(it) }
+          if (claim?.second == state.deviceId) send(Payload.Claim(state.deviceId)) // a claim made while offline
           pendingSos?.let { if (send(it)) pendingSos = null }
           pendingPos?.let { if (send(it)) pendingPos = null }
         }
@@ -185,7 +245,7 @@ class GroupClient(
   private fun send(p: Payload): Boolean {
     val seq = maxOf(lastSeq + 1, clock())
     lastSeq = seq
-    val frame = FrameCrypto.seal(state.keys, p.type, state.riderId, PayloadCodec.encode(seq, clock(), p))
+    val frame = FrameCrypto.seal(state.keys, p.type, state.riderId, PayloadCodec.encode(seq, clock(), p, state.deviceId))
     return transport?.send(Wire.encode(frame)) == true
   }
 
@@ -194,10 +254,17 @@ class GroupClient(
   private fun incoming(text: String) {
     if (Wire.typeOf(text) == "rekey") return rekeyed(text)
     val frame = Wire.decode(text) ?: return
-    if (frame.riderId.contentEquals(state.riderId)) return
+    if (frame.riderId.contentEquals(state.riderId)) {
+      // One's own frames come from the rider's other devices. Only who sends the position matters.
+      if (frame.type == FrameType.CLAIM) {
+        val signed = FrameCrypto.open(state.keys, frame)?.let { PayloadCodec.decode(FrameType.CLAIM, it) } ?: return
+        (signed.payload as? Payload.Claim)?.let { otherClaimed(it.deviceId, signed.tsMs) }
+      }
+      return
+    }
     val plain = FrameCrypto.open(state.keys, frame) ?: return
     val signed = PayloadCodec.decode(frame.type, plain) ?: return
-    if (!guard.accept(frame.riderId, frame.epoch, signed.seq)) return
+    if (!guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device)) return
     val from = B64.encode(frame.riderId)
     when (val p = signed.payload) {
       is Payload.Hello -> {
@@ -217,6 +284,7 @@ class GroupClient(
         members.remove(from)
         onEvent(GroupEvent.MemberLeft(from))
       }
+      is Payload.Claim -> Unit // only meaningful between one rider's own devices
     }
   }
 

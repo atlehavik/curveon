@@ -111,6 +111,17 @@ class GroupsTest {
     assertTrue(g.accept(a, 1, 1))
   }
 
+  @Test fun twoDevicesOfOneRiderAreCountedApart() {
+    val g = ReplayGuard()
+    val rider = GroupKeys.newRiderId()
+    assertTrue(g.accept(rider, 0, 1_000, "tablet"))
+    // the phone's clock is a little behind: its numbers are lower, and still fine
+    assertTrue(g.accept(rider, 0, 900, "phone"))
+    assertFalse(g.accept(rider, 0, 900, "phone"))
+    assertTrue(g.accept(rider, 0, 901, "phone"))
+    assertFalse(g.accept(rider, 0, 1_000, "tablet"))
+  }
+
   @Test fun rekeyReachesRemainingRidersOnly() {
     val groupId = GroupKeys.newGroupId()
     val ola = GroupKeys.newRiderId(); val olaKeys = Keys.newAgreementKeyPair()

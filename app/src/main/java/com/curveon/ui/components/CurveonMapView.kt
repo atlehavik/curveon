@@ -159,7 +159,7 @@ const val SURFACE_GRAVEL = 1
 const val SURFACE_TRACK = 2
 
 /** Another rider in the active group, drawn as a coloured ring with their name. [stale] when not heard from for a while. */
-data class MapGroupRider(val point: GeoPoint, val label: String, val color: Int, val stale: Boolean)
+data class MapGroupRider(val id: String, val point: GeoPoint, val label: String, val color: Int, val stale: Boolean, val avatar: android.graphics.Bitmap? = null)
 
 /**
  * The main map: MapLibre rendering the offline Norway vector map (day or night style), the
@@ -753,11 +753,22 @@ fun CurveonMapView(
         )
     }
 
+    // Riders with a picture get it as a round marker; the image is made once per picture and per style.
+    val groupImages = remember(style) { HashMap<String, android.graphics.Bitmap>() }
+    val groupDensity = androidx.compose.ui.platform.LocalDensity.current.density
     LaunchedEffect(style, groupRiders) {
         val s = style ?: return@LaunchedEffect
+        groupRiders.forEach { r ->
+            val a = r.avatar
+            if (a != null && groupImages[r.id] !== a) {
+                s.addImage("grp-${r.id}", ringedAvatar(a, r.color, groupDensity))
+                groupImages[r.id] = a
+            }
+        }
         s.getSourceAs<GeoJsonSource>(GROUP)?.setGeoJson(
             FeatureCollection.fromFeatures(groupRiders.map { r ->
                 Feature.fromGeometry(Point.fromLngLat(r.point.longitude, r.point.latitude)).also {
+                    if (r.avatar != null) it.addStringProperty("icon", "grp-${r.id}")
                     it.addStringProperty("label", r.label)
                     it.addStringProperty("color", hex(r.color))
                     it.addNumberProperty("alpha", if (r.stale) 0.45f else 1f)
@@ -1390,6 +1401,29 @@ private fun speedSignImage(limit: Int, density: Float): android.graphics.Bitmap 
     return bmp
 }
 
+/** A rider's picture as a round marker with a white edge and a ring in their colour. */
+private fun ringedAvatar(photo: android.graphics.Bitmap, color: Int, density: Float): android.graphics.Bitmap {
+    val d = (44 * density).toInt()
+    val bmp = android.graphics.Bitmap.createBitmap(d, d, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bmp)
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    val r = d / 2f
+    paint.color = android.graphics.Color.WHITE
+    canvas.drawCircle(r, r, r, paint)
+    paint.color = color
+    canvas.drawCircle(r, r, r - 3 * density, paint)
+    val inner = r - 6 * density
+    val size = (inner * 2).toInt().coerceAtLeast(1)
+    val shader = android.graphics.BitmapShader(
+        android.graphics.Bitmap.createScaledBitmap(photo, size, size, true),
+        android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP
+    )
+    shader.setLocalMatrix(android.graphics.Matrix().apply { setTranslate(r - inner, r - inner) })
+    paint.shader = shader
+    canvas.drawCircle(r, r, inner, paint)
+    return bmp
+}
+
 private fun arrowBitmap(): android.graphics.Bitmap {
     val size = 48
     val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
@@ -1633,6 +1667,8 @@ private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
     )
     // The other riders of a group ride: a ring in their colour with the name under it, dimmed when not heard from for a while.
     s.addSource(GeoJsonSource(GROUP))
+    val noPicture = org.maplibre.android.style.expressions.Expression.not(org.maplibre.android.style.expressions.Expression.has("icon"))
+    val hasPicture = org.maplibre.android.style.expressions.Expression.has("icon")
     s.addLayer(
         CircleLayer("$GROUP-dots", GROUP).withProperties(
             circleRadius(10f),
@@ -1640,19 +1676,29 @@ private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
             circleOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
             circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f),
             circleStrokeOpacity(org.maplibre.android.style.expressions.Expression.get("alpha"))
-        )
+        ).also { it.setFilter(noPicture) }
     )
     s.addLayer(
-        org.maplibre.android.style.layers.SymbolLayer("$GROUP-labels", GROUP).withProperties(
-            textField(org.maplibre.android.style.expressions.Expression.get("label")),
-            textFont(arrayOf("Noto Sans Medium")), textSize(14f),
-            textColor(if (dark) "#FFFFFF" else "#0B0E14"),
-            textHaloColor(if (dark) "#0B0E14" else "#FFFFFF"), textHaloWidth(2f),
-            textOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
-            textAnchor(Property.TEXT_ANCHOR_TOP), textOffset(arrayOf(0f, 1f)),
-            textAllowOverlap(true), textIgnorePlacement(true)
-        )
+        org.maplibre.android.style.layers.SymbolLayer("$GROUP-photos", GROUP).withProperties(
+            iconImage(org.maplibre.android.style.expressions.Expression.get("icon")),
+            iconOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+            iconAllowOverlap(true), iconIgnorePlacement(true)
+        ).also { it.setFilter(hasPicture) }
     )
+    // The name sits under the dot, or further down under a picture, which is bigger.
+    for ((id, filter, offset) in listOf(Triple("$GROUP-labels", noPicture, 1f), Triple("$GROUP-photo-labels", hasPicture, 2.6f))) {
+        s.addLayer(
+            org.maplibre.android.style.layers.SymbolLayer(id, GROUP).withProperties(
+                textField(org.maplibre.android.style.expressions.Expression.get("label")),
+                textFont(arrayOf("Noto Sans Medium")), textSize(14f),
+                textColor(if (dark) "#FFFFFF" else "#0B0E14"),
+                textHaloColor(if (dark) "#0B0E14" else "#FFFFFF"), textHaloWidth(2f),
+                textOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+                textAnchor(Property.TEXT_ANCHOR_TOP), textOffset(arrayOf(0f, offset)),
+                textAllowOverlap(true), textIgnorePlacement(true)
+            ).also { it.setFilter(filter) }
+        )
+    }
     addEditLayers(s, dark)
     s.addSource(GeoJsonSource(SKETCH))
     s.addLayer(

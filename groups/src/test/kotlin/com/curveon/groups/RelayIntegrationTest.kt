@@ -53,10 +53,15 @@ class RelayIntegrationTest {
   private var relay: Process? = null
   private val riders = mutableListOf<Rider>()
 
-  private inner class Rider(val name: String, val state: GroupState) {
+  /** [clockOffsetMs]: this device's clock runs that far ahead of the others', to try what a stale claim does. */
+  private inner class Rider(val name: String, val state: GroupState, clockOffsetMs: Long = 0) {
     val events = CopyOnWriteArrayList<GroupEvent>()
-    private val consumed = HashSet<GroupEvent>()
-    val client = GroupClient(state, JdkTransportFactory(), { events.add(it) }, scheme = "ws", retryDelaysMs = listOf(200)).also {
+    // By identity: the events are data classes, and two equal ones are still two events.
+    private val consumed: MutableSet<GroupEvent> = java.util.Collections.newSetFromMap(java.util.IdentityHashMap())
+    val client = GroupClient(
+      state, JdkTransportFactory(), { events.add(it) }, scheme = "ws", retryDelaysMs = listOf(200),
+      clock = { System.currentTimeMillis() + clockOffsetMs },
+    ).also {
       it.setProfile(Payload.Hello(name, 0xFF000000.toInt() or name.hashCode(), state.agreement.publicKey))
       riders.add(this)
     }
@@ -222,6 +227,72 @@ class RelayIntegrationTest {
     val seen = b.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 59.5 } }
     assertEquals(a.id, seen.riderId)
     assertTrue(a.none { it is GroupEvent.Position && it.pos.lat == 59.5 })
+  }
+
+  /** The rider's tablet and phone, plus another rider, all connected. */
+  private fun twoDevices(tabletClockOffsetMs: Long = 0): Triple<Rider, Rider, Rider> {
+    val (phone, invite) = group()
+    phone.client.start()
+    val kari = joined(invite, "Kari").also { it.client.start() }
+    phone.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Kari" } }
+    val tablet = Rider("Ola", GroupState.join(Invite.parse(phone.state.deviceLink(System.currentTimeMillis() / 1000 + 600).toUri("curveon"))!!), tabletClockOffsetMs)
+    tablet.client.start()
+    tablet.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Kari" } }
+    Thread.sleep(400)
+    return Triple(phone, tablet, kari)
+  }
+
+  @Test fun onlyOneOfTheRidersDevicesSendsThePosition() {
+    val (phone, tablet, kari) = twoDevices()
+
+    // the phone sends first and so is the one that counts; the tablet is told, and its positions are not sent
+    phone.client.sendPosition(Payload.Pos(1.0, 1.0, 10f, 0f, 2f))
+    kari.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 1.0 } }
+    assertEquals(false, tablet.await { (it as? GroupEvent.DeviceActiveChanged)?.takeIf { e -> !e.thisDevice } }.thisDevice)
+    assertFalse(tablet.client.sendingHere)
+    tablet.client.sendPosition(Payload.Pos(2.0, 2.0, 10f, 0f, 2f))
+    assertTrue(kari.none { it is GroupEvent.Position && it.pos.lat == 2.0 })
+
+    // the rider chooses the tablet: now it sends, and the phone is the quiet one
+    tablet.client.useThisDevice()
+    phone.await { (it as? GroupEvent.DeviceActiveChanged)?.takeIf { e -> !e.thisDevice } }
+    assertTrue(tablet.client.sendingHere)
+    assertFalse(phone.client.sendingHere)
+    tablet.client.sendPosition(Payload.Pos(3.0, 3.0, 10f, 0f, 2f))
+    kari.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 3.0 } }
+    phone.client.sendPosition(Payload.Pos(4.0, 4.0, 10f, 0f, 2f))
+    assertTrue(kari.none { it is GroupEvent.Position && it.pos.lat == 4.0 })
+
+    // and back again
+    phone.client.useThisDevice()
+    tablet.await { (it as? GroupEvent.DeviceActiveChanged)?.takeIf { e -> !e.thisDevice } }
+    phone.client.sendPosition(Payload.Pos(5.0, 5.0, 10f, 0f, 2f))
+    kari.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 5.0 } }
+  }
+
+  @Test fun aDeviceTakesOverWhenTheOtherHasGoneQuiet() {
+    // the tablet's clock is ten minutes ahead, so the phone's claim looks old to it
+    val (phone, tablet, kari) = twoDevices(tabletClockOffsetMs = 600_000)
+    phone.client.sendPosition(Payload.Pos(1.0, 1.0, 10f, 0f, 2f))
+    kari.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 1.0 } }
+    Thread.sleep(300)
+    assertTrue("a claim older than three minutes does not hold", tablet.client.sendingHere)
+    tablet.client.sendPosition(Payload.Pos(2.0, 2.0, 10f, 0f, 2f))
+    kari.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 2.0 } }
+    phone.await { (it as? GroupEvent.DeviceActiveChanged)?.takeIf { e -> !e.thisDevice } }
+  }
+
+  @Test fun aDeviceThatConnectsLaterLearnsWhoSendsFromTheRelay() {
+    val (phone, tablet, _) = twoDevices()
+    phone.client.sendPosition(Payload.Pos(1.0, 1.0, 10f, 0f, 2f))
+    tablet.await { (it as? GroupEvent.DeviceActiveChanged)?.takeIf { e -> !e.thisDevice } }
+    // the tablet restarts: the relay hands it the claim again
+    tablet.client.stop()
+    Thread.sleep(300)
+    val again = Rider("Ola", tablet.state)
+    again.client.start()
+    again.await { (it as? GroupEvent.DeviceActiveChanged)?.takeIf { e -> !e.thisDevice } }
+    assertFalse(again.client.sendingHere)
   }
 
   @Test fun anSosMadeWithoutCoverageGoesOutWhenTheConnectionIsBack() {

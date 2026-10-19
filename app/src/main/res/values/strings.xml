@@ -948,6 +948,12 @@
     <string name="group_nickname">Nickname</string>
     <string name="group_save">Save</string>
     <string name="group_invite">Invite riders</string>
+    <string name="group_photo_pick">Choose a picture of you</string>
+    <string name="group_photo_change">Change picture</string>
+    <string name="group_photo_remove">Remove</string>
+    <string name="group_photo_failed">That picture could not be used.</string>
+    <string name="group_other_device_active">Your position is shared from your other device.</string>
+    <string name="group_use_this_device">Use this device</string>
     <string name="group_other_device">My other device</string>
     <string name="group_other_device_hint">Scan this with your other device (the phone, if this is the tablet) to make it the same rider here, not a new one. It gives full access as you, so show it only to yourself. It stops working after 15 minutes.</string>
     <string name="group_invite_hint">Scan with a phone\'s camera. Anyone with this code can join, so only show it to riders you want in the group. To send a link instead, use the Curveon Companion app on your phone.</string>

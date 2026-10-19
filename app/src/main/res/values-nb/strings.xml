@@ -946,6 +946,12 @@
     <string name="group_nickname">Kallenavn</string>
     <string name="group_save">Lagre</string>
     <string name="group_invite">Inviter ryttere</string>
+    <string name="group_photo_pick">Velg et bilde av deg</string>
+    <string name="group_photo_change">Bytt bilde</string>
+    <string name="group_photo_remove">Fjern</string>
+    <string name="group_photo_failed">Det bildet kunne ikke brukes.</string>
+    <string name="group_other_device_active">Posisjonen din deles fra den andre enheten din.</string>
+    <string name="group_use_this_device">Bruk denne enheten</string>
     <string name="group_other_device">Min andre enhet</string>
     <string name="group_other_device_hint">Skann denne med den andre enheten din (telefonen, hvis dette er tavla) så den blir samme rytter her, ikke en ny. Koden gir full tilgang som deg, så vis den bare til deg selv. Den slutter å virke etter 15 minutter.</string>
     <string name="group_invite_hint">Skann med telefonkameraet. Alle med denne koden kan bli med, så vis den bare til de du vil ha med. Vil du sende en lenke i stedet, bruk Curveon Companion på telefonen.</string>

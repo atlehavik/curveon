@@ -147,6 +147,21 @@ class MainActivity : ComponentActivity() {
         var relay by remember { mutableStateOf(store.relayHost) }
         var nick by remember { mutableStateOf(store.profile?.nickname.orEmpty()) }
         var saver by remember { mutableStateOf(store.dataSaver) }
+        var hasPhoto by remember { mutableStateOf(store.profile?.photoJpegBase64 != null) }
+        fun saveProfile(photo: String?) {
+            val old = store.profile
+            val p = com.curveon.protocol.Message.GroupProfile(old?.nickname ?: nick.ifBlank { "Rider" }, old?.colour ?: 0xFF00E5FF.toInt(), old?.icon, photo)
+            GroupHub.handle(p)
+            store.profile = p
+            hasPhoto = photo != null
+        }
+        val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri != null) {
+                val b64 = ProfilePhoto.fromUri(this@MainActivity, uri)
+                if (b64 != null) saveProfile(b64)
+                else android.widget.Toast.makeText(this@MainActivity, R.string.group_photo_failed, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
         // Saved a moment after the last keystroke, so the group is not told about every letter.
         LaunchedEffect(relay) { kotlinx.coroutines.delay(600); store.relayHost = relay }
         LaunchedEffect(nick) {
@@ -211,6 +226,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
             OutlinedTextField(nick, { nick = it }, label = { Text(stringResource(R.string.group_nickname)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(onClick = { pickPhoto.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+                    Text(stringResource(if (hasPhoto) R.string.group_photo_change else R.string.group_photo_pick))
+                }
+                if (hasPhoto) TextButton(onClick = { saveProfile(null) }) { Text(stringResource(R.string.group_photo_remove)) }
+            }
             OutlinedTextField(relay, { relay = it }, label = { Text(stringResource(R.string.group_relay)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.group_relay_hint), color = Muted, fontSize = 12.sp)
             Row(verticalAlignment = Alignment.CenterVertically) {

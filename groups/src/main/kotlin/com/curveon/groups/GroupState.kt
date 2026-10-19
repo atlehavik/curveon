@@ -23,6 +23,8 @@ class GroupState(
   val agreement: KeyPair,
   /** Only the admin holds this; it signs rekeys. */
   val adminSigning: KeyPair?,
+  /** Tells this device from the rider's other devices (see [Payload.Claim]); never shared between them. */
+  val deviceId: String = B64.encode(GroupKeys.randomBytes(8)),
 ) {
   var groupKey: ByteArray = groupKey
     private set
@@ -54,7 +56,7 @@ class GroupState(
     .put("admin", B64.encode(adminPublicKey)).put("relay", relayHost).put("name", name ?: JSONObject.NULL)
     .put("rider", B64.encode(riderId)).put("agreementPub", B64.encode(agreement.publicKey))
     .put("agreementPriv", B64.encode(agreement.privateKey))
-    .put("signingPriv", adminSigning?.let { B64.encode(it.privateKey) } ?: JSONObject.NULL).toString()
+    .put("signingPriv", adminSigning?.let { B64.encode(it.privateKey) } ?: JSONObject.NULL).put("device", deviceId).toString()
 
   companion object {
     /** A new group: this rider becomes its admin. */
@@ -89,6 +91,7 @@ class GroupState(
         o.getString("relay"), if (o.isNull("name")) null else o.getString("name"), B64.decode(o.getString("rider")),
         KeyPair(B64.decode(o.getString("agreementPub")), B64.decode(o.getString("agreementPriv"))),
         signingPriv?.let { KeyPair(admin, it) },
+        o.optString("device").ifEmpty { B64.encode(GroupKeys.randomBytes(8)) },
       )
     } catch (_: Exception) {
       null

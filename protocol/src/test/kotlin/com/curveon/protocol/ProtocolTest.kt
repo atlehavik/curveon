@@ -75,6 +75,8 @@ class ProtocolTest {
         Message.GroupList(listOf(Message.GroupInfo("0123", "Lofoten", 4, true), Message.GroupInfo("4567", null, 2, false)), "0123", true),
         Message.GroupList(emptyList(), null, false),
         Message.GroupConnection("0123", Message.GroupStatus.OFFLINE, 3),
+        Message.GroupConnection("0123", Message.GroupStatus.CONNECTED, 3, otherDeviceActive = true),
+        Message.GroupUseThisDevice,
         Message.GroupMembers("0123", listOf(
             Message.GroupMemberInfo("r1", "Ola", -1, "helmet", null),
             Message.GroupMemberInfo("r2", "Kari", 5, null, "/9j/"),

@@ -664,7 +664,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         groupPositions.values.map { p ->
             val m = groupMembers[p.id]
             com.curveon.ui.components.MapGroupRider(
-                GeoPoint(p.lat, p.lon), m?.nickname.orEmpty(), m?.colour ?: 0xFF00E5FF.toInt(), System.currentTimeMillis() - p.timeMs > 120_000
+                p.id, GeoPoint(p.lat, p.lon), m?.nickname.orEmpty(), m?.colour ?: 0xFF00E5FF.toInt(), System.currentTimeMillis() - p.timeMs > 120_000, m?.photo
             )
         }
     }

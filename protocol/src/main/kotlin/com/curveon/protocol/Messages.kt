@@ -324,6 +324,11 @@ sealed interface Message {
         override fun toJson() = obj("sos_answer").put("sos", sosRiderId).put("coming", coming)
     }
 
+    /** The rider has two devices in the group and chose this one to send their position; the other one is told to stop. */
+    data object GroupUseThisDevice : Message {
+        override fun toJson() = obj("group_use_device")
+    }
+
     /** Admin only: give everyone but [riderId] a new group key. */
     data class GroupRemoveRider(val groupId: String, val riderId: String) : Message {
         override fun toJson() = obj("group_remove").put("id", groupId).put("rider", riderId)
@@ -354,9 +359,13 @@ sealed interface Message {
 
     data class GroupInfo(val id: String, val name: String?, val members: Int, val admin: Boolean)
 
-    /** How the active group's link is doing. */
-    data class GroupConnection(val groupId: String, val status: GroupStatus, val members: Int) : Message {
+    /**
+     * How the active group's link is doing. [otherDeviceActive]: another of the rider's own devices is the one sending
+     * their position, so this one keeps quiet until the rider takes over ([GroupUseThisDevice]).
+     */
+    data class GroupConnection(val groupId: String, val status: GroupStatus, val members: Int, val otherDeviceActive: Boolean = false) : Message {
         override fun toJson() = obj("group_connection").put("id", groupId).put("status", status.name).put("members", members)
+            .put("other", otherDeviceActive)
     }
 
     enum class GroupStatus { CONNECTED, OFFLINE, PAUSED, REMOVED }
@@ -507,6 +516,7 @@ sealed interface Message {
             "sos_start" -> SosStart(o.getDouble("lat"), o.getDouble("lon"))
             "sos_cancel" -> SosCancel
             "sos_answer" -> SosAnswer(o.getString("sos"), o.optBoolean("coming", true))
+            "group_use_device" -> GroupUseThisDevice
             "group_remove" -> GroupRemoveRider(o.getString("id"), o.getString("rider"))
             "request_device_link" -> RequestDeviceLink(o.getString("id"))
             "group_device_link" -> GroupDeviceLink(o.getString("id"), o.getString("uri"))
@@ -515,7 +525,7 @@ sealed interface Message {
                 GroupInfo(it.getString("id"), it.nullableString("name"), it.optInt("members"), it.optBoolean("admin"))
             }, o.nullableString("active"), o.optBoolean("sharing", true))
             "group_connection" -> runCatching { GroupStatus.valueOf(o.getString("status")) }.getOrNull()
-                ?.let { GroupConnection(o.getString("id"), it, o.optInt("members")) }
+                ?.let { GroupConnection(o.getString("id"), it, o.optInt("members"), o.optBoolean("other")) }
             "group_members" -> GroupMembers(o.getString("id"), o.optJSONArray("list").objects().map {
                 GroupMemberInfo(it.getString("id"), it.optString("nick"), it.optInt("colour"), it.nullableString("icon"), it.nullableString("photo"))
             })

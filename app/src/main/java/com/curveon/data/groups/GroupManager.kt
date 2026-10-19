@@ -19,7 +19,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** Someone in the active group. [photo] is decoded once per change; without it the marker shows the icon or initials. */
-data class GroupRider(val id: String, val nickname: String, val colour: Int, val icon: String?, val photo: Bitmap?)
+data class GroupRider(val id: String, val nickname: String, val colour: Int, val icon: String?, val photo: Bitmap?, val photoBase64: String? = null)
 
 /**
  * The tablet's side of group rides: it holds what the phone tells it (the groups, who is where, SOS)
@@ -91,8 +91,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 _myId.value = m.members.firstOrNull()?.id
                 val old = _members.value
                 _members.value = m.members.associate { i ->
-                    val keep = old[i.id]?.takeIf { it.nickname == i.nickname && it.colour == i.colour && it.icon == i.icon }
-                    i.id to (keep ?: GroupRider(i.id, i.nickname, i.colour, i.icon, i.photoJpegBase64?.let(::decode)))
+                    val keep = old[i.id]?.takeIf { it.nickname == i.nickname && it.colour == i.colour && it.icon == i.icon && it.photoBase64 == i.photoJpegBase64 }
+                    i.id to (keep ?: GroupRider(i.id, i.nickname, i.colour, i.icon, i.photoJpegBase64?.let(::decode), i.photoJpegBase64))
                 }
                 // Someone who left takes their dot with them.
                 _positions.value = _positions.value.filterKeys { it in _members.value }
@@ -132,6 +132,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun leave(groupId: String) = send(Message.GroupLeave(groupId))
     fun select(groupId: String?) = send(Message.GroupSelect(groupId))
     fun setSharing(on: Boolean) = send(Message.GroupSharing(on))
+    /** Another of the rider's devices sends their position now; this makes this one do it instead. */
+    fun useThisDevice() = send(Message.GroupUseThisDevice)
     fun setProfile(nickname: String, colour: Int, icon: String?, photoJpegBase64: String?) =
         send(Message.GroupProfile(nickname, colour, icon, photoJpegBase64))
     fun requestInvite(groupId: String, validDays: Int? = null) = send(Message.RequestGroupInvite(groupId, validDays))

@@ -20,6 +20,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -169,6 +172,17 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
                 fontSize = 14.sp, fontWeight = FontWeight.Bold
             )
 
+            // My other device (tablet or phone) is the one sending my position: say so, and let me take over.
+            if (connection?.otherDeviceActive == true && sharing && status != Message.GroupStatus.REMOVED) Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(stringResource(R.string.group_other_device_active), color = TextPrimary, fontSize = 14.sp)
+                Button(onClick = { manager.useThisDevice() }, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan), modifier = Modifier.testTag("group_use_this_device")) {
+                    Text(stringResource(R.string.group_use_this_device), color = Color(0xFF00363D), fontWeight = FontWeight.Bold)
+                }
+            }
+
             if (status != Message.GroupStatus.REMOVED) Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.group_share_position), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 CockpitSwitch(sharing, { manager.setSharing(it) })
@@ -178,7 +192,7 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
             members.values.sortedBy { if (it.id == myId) 0 else 1 }.forEach { r ->
                 RiderRow(r, r.id == myId, positions[r.id], onRemove = if (active.admin && r.id != myId) ({ confirmRemove = r }) else null)
             }
-            members[myId]?.let { me -> ProfileEditor(me) { n, c, i -> manager.setProfile(n, c, i, null) } }
+            members[myId]?.let { me -> ProfileEditor(me) { n, c, i, photo -> manager.setProfile(n, c, i, photo) } }
 
             if (status != Message.GroupStatus.REMOVED) {
                 OutlinedButton(onClick = {
@@ -289,8 +303,19 @@ private fun riderStatus(p: Message.GroupPositionInfo?): String {
 
 /** Nickname, icon and colour; "Save" tells the phone, which tells the group. */
 @Composable
-private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?) -> Unit) {
+private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?, String?) -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    // The rider's own picture: kept as it is unless a new one is picked or it is removed.
+    var photo by remember(me.photoBase64) { mutableStateOf(me.photoBase64) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            val b64 = com.curveon.phone.ProfilePhoto.fromUri(context, uri)
+            if (b64 != null) photo = b64
+            else android.widget.Toast.makeText(context, context.getString(R.string.group_photo_failed), android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+    val preview = remember(photo) { photo?.let { runCatching { val b = android.util.Base64.decode(it, android.util.Base64.DEFAULT); android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size) }.getOrNull() } }
     var nick by rememberSaveable(me.nickname) { mutableStateOf(me.nickname) }
     var colour by rememberSaveable(me.colour) { mutableStateOf(me.colour) }
     var icon by rememberSaveable(me.icon) { mutableStateOf(me.icon) }
@@ -301,6 +326,15 @@ private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?) -> Unit
     }
     if (open) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedTextField(nick, { nick = it.take(20) }, singleLine = true, label = { Text(stringResource(R.string.group_nickname)) }, modifier = Modifier.fillMaxWidth())
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            RiderAvatar(me.copy(nickname = nick.ifEmpty { me.nickname }, colour = colour, icon = icon, photo = preview, photoBase64 = photo), 56.dp)
+            OutlinedButton(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.testTag("group_pick_photo")) {
+                Icon(Icons.Default.PhotoCamera, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(if (photo == null) R.string.group_photo_pick else R.string.group_photo_change), color = ElectricCyan, fontWeight = FontWeight.Bold)
+            }
+            if (photo != null) TextButton(onClick = { photo = null }) { Text(stringResource(R.string.group_photo_remove), color = TextSecondary) }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
             GroupColours.forEach { c ->
                 Box(Modifier.size(36.dp).clip(CircleShape).background(Color(c)).border(if (c == colour) 3.dp else 1.dp, if (c == colour) Color.White else CockpitBorder, CircleShape).clickable { colour = c })
@@ -315,7 +349,7 @@ private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?) -> Unit
                 ) { Icon(vector, null, tint = if (id == icon) Color(0xFF0B0E14) else TextSecondary, modifier = Modifier.size(22.dp)) }
             }
         }
-        Button(onClick = { onSave(nick.trim().ifEmpty { me.nickname }, colour, icon); open = false }, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
+        Button(onClick = { onSave(nick.trim().ifEmpty { me.nickname }, colour, icon, photo); open = false }, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
             Text(stringResource(R.string.group_save), color = Color(0xFF00363D), fontWeight = FontWeight.Bold)
         }
     }

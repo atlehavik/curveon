@@ -50,14 +50,21 @@ sealed interface Payload {
   data object SosCancel : Payload { override val type get() = FrameType.SOS_CANCEL }
 
   data object Leave : Payload { override val type get() = FrameType.LEAVE }
+
+  /**
+   * "This device is the one sending my position now." A rider with two devices (tablet and phone) has one of them
+   * send, so the group does not get two streams: the newest claim wins, and the other device keeps quiet.
+   */
+  data class Claim(val deviceId: String) : Payload { override val type get() = FrameType.CLAIM }
 }
 
-/** A payload with its sender's counter (see [ReplayGuard]) and clock. */
-class Signed(val seq: Long, val tsMs: Long, val payload: Payload)
+/** A payload with its sender's counter (see [ReplayGuard]), clock, and the device it came from (a rider's devices count separately). */
+class Signed(val seq: Long, val tsMs: Long, val payload: Payload, val device: String = "")
 
 object PayloadCodec {
-  fun encode(seq: Long, tsMs: Long, p: Payload): ByteArray {
+  fun encode(seq: Long, tsMs: Long, p: Payload, device: String = ""): ByteArray {
     val o = JSONObject().put("seq", seq).put("ts", tsMs)
+    if (device.isNotEmpty()) o.put("dev", device)
     when (p) {
       is Payload.Pos -> {
         o.put("lat", p.lat).put("lon", p.lon).put("speed", p.speed.toDouble()).put("heading", p.heading.toDouble())
@@ -78,6 +85,7 @@ object PayloadCodec {
       is Payload.Route -> o.put("id", p.id).put("name", p.name).put("kind", p.kind).put("data", B64.encode(p.data))
       is Payload.Sos -> o.put("lat", p.lat).put("lon", p.lon)
       is Payload.SosAck -> o.put("sos", p.sosRiderId).put("coming", p.coming)
+      is Payload.Claim -> o.put("dev", p.deviceId)
       Payload.SosCancel, Payload.Leave -> Unit
     }
     return o.toString().toByteArray()
@@ -105,9 +113,10 @@ object PayloadCodec {
       FrameType.SOS_ACK -> Payload.SosAck(o.getString("sos"), o.optBoolean("coming", true))
       FrameType.SOS_CANCEL -> Payload.SosCancel
       FrameType.LEAVE -> Payload.Leave
+      FrameType.CLAIM -> Payload.Claim(o.getString("dev")) // sent with the device's own id, like everything else
       FrameType.REKEY -> return null // not encrypted with the group key
     }
-    Signed(o.getLong("seq"), o.getLong("ts"), payload)
+    Signed(o.getLong("seq"), o.getLong("ts"), payload, o.optString("dev"))
   } catch (_: Exception) {
     null
   }

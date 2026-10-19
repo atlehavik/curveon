@@ -198,6 +198,11 @@ object GroupHub {
                 if (groups[m.groupId] == null) return error(Message.GroupErrorCode.NO_SUCH_GROUP)
                 send(Message.GroupDeviceLink(m.groupId, deviceLink(m.groupId) ?: return))
             }
+            is Message.GroupUseThisDevice -> {
+                client?.useThisDevice()
+                sharer.reset()
+                sendConnection()
+            }
             is Message.RequestGroupInvite -> {
                 val state = groups[m.groupId] ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
                 val days = m.validDays ?: DEFAULT_INVITE_DAYS
@@ -300,6 +305,7 @@ object GroupHub {
         when (e) {
             GroupEvent.Connected -> { connected = true; sendConnection() }
             is GroupEvent.Disconnected -> { connected = false; sendConnection() }
+            is GroupEvent.DeviceActiveChanged -> { sharer.reset(); sendConnection() }
             is GroupEvent.MemberUpdated -> { membersMessage()?.let(::send); sendConnection() }
             is GroupEvent.MemberLeft -> {
                 positions.remove(e.riderId)
@@ -382,7 +388,7 @@ object GroupHub {
             store?.sharing == false -> Message.GroupStatus.PAUSED
             else -> Message.GroupStatus.CONNECTED
         }
-        return Message.GroupConnection(id, status, (client?.members()?.size ?: 0) + 1)
+        return Message.GroupConnection(id, status, (client?.members()?.size ?: 0) + 1, otherDeviceActive = client?.sendingHere == false)
     }
 
     private fun membersMessage(): Message.GroupMembers? {
