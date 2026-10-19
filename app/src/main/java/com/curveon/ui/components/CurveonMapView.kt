@@ -612,8 +612,7 @@ fun CurveonMapView(
         val color = when (groundPreference) {
             GroundPreference.OFFROAD -> "#D500F9"
             GroundPreference.GRAVEL -> "#FF9100"
-            GroundPreference.MIXED -> "#00C853"
-            GroundPreference.PAVED -> if (dark) "#00E5FF" else "#0091EA"
+            GroundPreference.PAVED, GroundPreference.MIXED -> if (dark) "#00E5FF" else "#0091EA"
         }
         (s.getLayer("$ROUTE-line") as? LineLayer)?.setProperties(lineColor(color))
         if (previewRoutes.isEmpty()) {

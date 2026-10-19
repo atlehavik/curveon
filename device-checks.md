@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-19 — Route colour, pruned via points, time to the next stop (1.2.2)
+
+- [ ] Convert a GPX track to a route (GPX list → make a route): the line is cyan, not green. Same when riding a track or a logged ride.
+- [ ] After converting, wait a minute or two without touching anything, then open the route menu: fewer stops than before? Pull the log and look for the pruned count: `adb logcat -d -s Curveon | grep Pruned` ("N -> M via points"). Edit the trip (drag, add a stop) while it works: nothing should jump or be lost.
+- [ ] Navigate a trip with one real stop, fold the arrival box out: the time left has a smaller orange time under it, the time to the stop; it counts down and disappears once the stop is passed.
+
 ## 2026-10-18 — Fuel stop on a demo ride, trip bar at speed, stale road number (1.2.2)
 
 - [ ] Demo ride on the Pixel (portrait), pass 100 km/h: the arrival box top left keeps its × visible; folded it shows only the arrival time and ×; fold it out with a fuel chip showing: line 2 distance + time left, then next stop, fuel and Add stop each on its own line, left-aligned, nothing overlapping (the road card moves down with it).

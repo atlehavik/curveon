@@ -88,14 +88,20 @@ fun NavigationSummaryBar(
                 }
             }
             if (open) {
-                // Distance and time left.
+                // Distance and time left; with a stop on the way, the time to it in orange under the time left.
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(km, color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Text(
-                        "%d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
-                        color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                        modifier = Modifier.testTag("nav_remaining")
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "%d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
+                            color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                            modifier = Modifier.testTag("nav_remaining")
+                        )
+                        summary.nextStopMinutes?.let { m ->
+                            Text("%d:%02d".format(m / 60, m % 60), color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                                modifier = Modifier.testTag("nav_remaining_stop"))
+                        }
+                    }
                 }
                 // The next stop (or just "Route") opens the route's menu: stops, save, end.
                 Row(

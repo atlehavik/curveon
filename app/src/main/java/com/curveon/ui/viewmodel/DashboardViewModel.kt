@@ -69,7 +69,9 @@ data class NavigationSummary(
     val title: String,
     val curviness: Int,
     /** Distance to the next stop, when there is one before the destination. */
-    val nextStop: Pair<String, Double>? = null
+    val nextStop: Pair<String, Double>? = null,
+    /** Minutes to that stop, shown in orange under the time left. */
+    val nextStopMinutes: Int? = null
 )
 
 enum class MapTheme(val label: Int) { AUTO(com.curveon.R.string.map_theme_auto), DAY(com.curveon.R.string.map_theme_day), NIGHT(com.curveon.R.string.map_theme_night) }
@@ -934,13 +936,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .map { s ->
             val p = s.progress ?: return@map null
             val route = s.route ?: return@map null
+            val next = s.stopsAlong.firstOrNull { !it.first.via }
             NavigationSummary(
                 remainingKm = p.remainingDistance / 1000.0,
                 remainingMinutes = (p.remainingSeconds / 60).roundToInt(),
                 arrivalTimeMillis = System.currentTimeMillis() + (p.remainingSeconds * 1000).toLong(),
                 title = s.goal?.title ?: "",
                 curviness = route.curviness,
-                nextStop = s.stopsAlong.firstOrNull { !it.first.via }?.let { (stop, along) -> stop.name to (along - p.distanceAlongRoute) / 1000.0 }
+                nextStop = next?.let { (stop, along) -> stop.name to (along - p.distanceAlongRoute) / 1000.0 },
+                nextStopMinutes = next?.let { (_, along) ->
+                    val pts = route.points
+                    // The riding time at the stop's distance along the route, less what has been ridden.
+                    val i = pts.binarySearchBy(along) { it.distanceFromStart }.let { if (it >= 0) it else -it - 1 }.coerceIn(0, pts.lastIndex)
+                    val here = pts.binarySearchBy(p.distanceAlongRoute) { it.distanceFromStart }.let { if (it >= 0) it else -it - 1 }.coerceIn(0, pts.lastIndex)
+                    ((pts[i].secondsFromStart - pts[here].secondsFromStart).coerceAtLeast(0.0) / 60).roundToInt()
+                }
             )
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
