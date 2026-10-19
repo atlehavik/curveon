@@ -72,12 +72,12 @@ fun NavigationSummaryBar(
         // As wide as its widest line: the dividers stretch to that, not to all the room there is.
         Column(Modifier.width(IntrinsicSize.Max).padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
-                Modifier.heightIn(min = (foldedHeight - 12.dp).coerceAtLeast(0.dp)),
+                Modifier.fillMaxWidth().heightIn(min = (foldedHeight - 12.dp).coerceAtLeast(0.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // The end button keeps its place; the text gives way if it must.
-                Column(Modifier.weight(1f, fill = false)) {
+                // The end button keeps its place, at the right edge; the text gives way if it must.
+                Column(Modifier.weight(1f)) {
                     Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
                     if (!open && next != null) Text(
                         tripDistance(next.km), color = NeonAmber, fontSize = 20.sp, fontWeight = FontWeight.Bold,
@@ -103,7 +103,7 @@ fun NavigationSummaryBar(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(stop.name, color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            if (stop.removable) IconButton(onClick = { askRemove = stop }, modifier = Modifier.size(28.dp).testTag("nav_stop_remove")) {
+                            if (stop.removable) IconButton(onClick = { askRemove = stop }, modifier = Modifier.padding(end = 8.dp).size(28.dp).testTag("nav_stop_remove")) {
                                 Icon(Icons.Default.Close, stringResource(R.string.remove_stop), tint = WarningRed, modifier = Modifier.size(16.dp))
                             }
                         }
