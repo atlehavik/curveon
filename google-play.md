@@ -98,6 +98,13 @@ endrer seg på Play-siden:
   vindu i appen og vises bare når Curveon er åpen; på en telefon i lommen kommer ingenting (varsel for det er ikke bygget).
 - **Foreground service-typen i companion er uendret** (`connectedDevice|microphone`). Å sende posisjoner over nett for en tilkoblet tavle er
   en grei, men ikke opplagt, beskrivelse av `connectedDevice`: skriv det rett ut i deklarasjonen. Posisjon hentes på tavla, ikke i companion.
+- **Kamera (QR-skanning):** `CAMERA` i hovedappen, spurt først når rytteren starter skanning, med `uses-feature camera required=false` så Play ikke
+  skjuler appen for enheter uten kamera. Bildet leses på enheten (ZXing, ingen Play-tjenester) og lagres eller sendes ikke. CameraX (Jetpack,
+  Apache 2.0, ingen egen native kode). Companion har ikke kamera.
+- **Profilbilde:** velges med systemets bildevelger (`PickVisualMedia`), uten tillatelse. Bildet skaleres til 96 px (maks 8 KB) og går ende-til-ende-kryptert
+  til gruppa; det er personopplysning som må med i personvernerklæringen og Data safety (valgfritt, bare til gruppa).
+- **Flere enheter, én rytter:** overføringslenken inneholder rytterens private nøkler og vises bare som QR på skjermen, utløper etter 15 minutter. Ingenting
+  av det går til noen server.
 - **Ukryptert `ws://`** brukes aldri i produksjon: bare i debug-bygg (`debuggable`) mot lokale adresser (`GroupHub.scheme`); debug-manifestene
   tillater ukryptert trafikk (`app/src/debug`, `companion/src/debug`), release-manifestene gjør ikke det.
 - **Invitasjonslenker:** `curveon://join` er registrert i både Curveon og companion (Android spør hvilken som skal brukes når begge er

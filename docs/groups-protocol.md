@@ -40,9 +40,19 @@ joins as that rider: same `riderId`, same X25519 key pair (so a rekey can be ope
 signing key if it was an admin. Such a link gives full access as that rider: show it only on screen, set a
 short `x` (the apps use 15 minutes), and never share it through a chat. A client that does not know `me`
 ignores it and joins as a new rider (a harmless fallback); one that cannot read it must refuse the link.
-Frames from one's own `riderId` are ignored, so the two devices do not show each other as riders. Both
-devices number their frames from their own clock, so two devices sending at the same moment can cost the
-receivers a position now and then (the replay guard keeps only rising numbers).
+Frames from one's own `riderId` are ignored (except `claim`, below), so the two devices do not show each other as riders.
+
+Every payload carries `dev`, the sending device's own id (not shared between a rider's devices). The replay
+guard counts `seq` per rider, epoch **and device**, so two devices that number from slightly different clocks
+do not drop each other's frames.
+
+### Which device sends the position
+A rider's devices must not both send their position. A device that is about to send claims the role with a
+`claim` frame (payload: `dev`); the relay keeps the latest `claim` per rider and replays it to a device that
+connects later. The newest claim (by `ts`, ties to the larger `dev`) wins: a device that sees another device's
+newer claim stops sending `pos` until the rider takes over again (a new claim from it). The claimant repeats
+its claim every minute while it sends; a claim more than three minutes old no longer holds, so a device left
+behind in a pocket does not block the other one. Only `pos` is held back: profile, SOS and routes are not.
 
 ## Relay connection
 `wss://<relay>/g/<groupId hex>?p=<proof>[&a=<adminPub>]`
@@ -83,6 +93,7 @@ so a frame cannot be moved to another group, rider, epoch or type. The relay for
 | `sos_ack` | forward | `seq`, `ts`, the `sos` it answers, `coming` true/false |
 | `sos_cancel` | forward; removes the stored `sos` | `seq`, `ts` |
 | `leave` | forward | `seq`, `ts` |
+| `claim` | forward; keep the latest per rider | `seq`, `ts`, `dev` (see below) |
 | `rekey` | forward; keep ~30 days | see below (not encrypted with `encKey`) |
 
 ## Replay protection

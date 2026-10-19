@@ -928,7 +928,7 @@
     <string name="group_start_hint">Kjør sammen: se hverandre på kartet og del ruter. Alt er ende-til-ende-kryptert, så bare gruppa kan lese det.</string>
     <string name="group_name_hint">Gruppenavn (valgfritt)</string>
     <string name="group_start">Start en gruppe</string>
-    <string name="group_join_hint">For å bli med i en gruppe, åpne invitasjonslenken på telefonen.</string>
+    <string name="group_join_hint">For å bli med i en gruppe, skann QR-koden, eller åpne invitasjonslenken på telefonen.</string>
     <string name="group_switch">Gruppene dine</string>
     <string name="group_unnamed">Gruppe</string>
     <string name="group_status_connected">Tilkoblet</string>
@@ -946,6 +946,10 @@
     <string name="group_nickname">Kallenavn</string>
     <string name="group_save">Lagre</string>
     <string name="group_invite">Inviter ryttere</string>
+    <string name="group_scan">Skann QR-kode</string>
+    <string name="group_scan_hint">Hold kameraet foran QR-koden til invitasjonen, eller den for den andre enheten din.</string>
+    <string name="group_scan_denied">Kameraet trengs for å skanne. Gi tilgang i Android-innstillingene, eller åpne invitasjonslenken i stedet.</string>
+    <string name="group_scan_wrong">Det er ikke en Curveon-invitasjon.</string>
     <string name="group_photo_pick">Velg et bilde av deg</string>
     <string name="group_photo_change">Bytt bilde</string>
     <string name="group_photo_remove">Fjern</string>

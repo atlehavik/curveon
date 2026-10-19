@@ -99,6 +99,7 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
     var name by rememberSaveable { mutableStateOf("") }
     var showInvite by rememberSaveable { mutableStateOf(false) }
     var showDeviceLink by rememberSaveable { mutableStateOf(false) }
+    var scanning by rememberSaveable { mutableStateOf(false) }
     val deviceLink by manager.deviceLink.collectAsStateWithLifecycle()
     // The link for my other device carries my secrets: gone from memory as soon as it is not shown.
     DisposableEffect(Unit) { onDispose { manager.forgetDeviceLink() } }
@@ -125,6 +126,12 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         sos.values.firstOrNull { it.mine }?.let { MySosCard(it, manager) }
+        // Joining a friend's group, or making this device the same rider as my other one, from the QR code on the other screen.
+        if (hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.testTag("group_scan")) {
+            Icon(Icons.Default.QrCodeScanner, null, tint = ElectricCyan)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.group_scan), color = ElectricCyan, fontWeight = FontWeight.Bold)
+        }
         if (active == null) {
             Text(stringResource(R.string.group_start_hint), color = TextSecondary, fontSize = 14.sp)
             OutlinedTextField(
@@ -242,6 +249,7 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
         )
     }
     countdown?.let { left -> SosCountdown(left, onCancel = { countdown = null }) }
+    if (scanning) QrScanDialog(onInvite = { link -> scanning = false; manager.join(link) }, onDismiss = { scanning = false })
 }
 
 @Composable

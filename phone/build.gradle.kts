@@ -16,7 +16,5 @@ dependencies {
   api(project(":protocol"))
   implementation(project(":groups"))
   implementation(libs.okhttp)
-  // Draws the invite QR code. Pure Java (Apache 2.0), no Play services.
-  implementation(libs.zxing.core)
   implementation(libs.kotlinx.coroutines.android)
 }

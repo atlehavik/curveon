@@ -930,7 +930,7 @@
     <string name="group_start_hint">Ride together: see each other on the map and share routes. Everything is end-to-end encrypted, so only your group can read it.</string>
     <string name="group_name_hint">Group name (optional)</string>
     <string name="group_start">Start a group</string>
-    <string name="group_join_hint">To join a group, open the invite link on your phone.</string>
+    <string name="group_join_hint">To join a group, scan its QR code, or open the invite link on your phone.</string>
     <string name="group_switch">Your groups</string>
     <string name="group_unnamed">Group</string>
     <string name="group_status_connected">Connected</string>
@@ -948,6 +948,10 @@
     <string name="group_nickname">Nickname</string>
     <string name="group_save">Save</string>
     <string name="group_invite">Invite riders</string>
+    <string name="group_scan">Scan a QR code</string>
+    <string name="group_scan_hint">Hold the camera in front of the invite\'s QR code, or the one for your other device.</string>
+    <string name="group_scan_denied">The camera is needed to scan. Allow it in Android\'s settings, or open the invite link instead.</string>
+    <string name="group_scan_wrong">That is not a Curveon invite.</string>
     <string name="group_photo_pick">Choose a picture of you</string>
     <string name="group_photo_change">Change picture</string>
     <string name="group_photo_remove">Remove</string>
