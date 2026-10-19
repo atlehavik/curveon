@@ -13,5 +13,8 @@ kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarg
 dependencies {
   // X25519, Ed25519 and HKDF: the platform has them only from API 33, minSdk is 29.
   implementation(libs.tink.android)
+  // org.json is part of Android; it is only added explicitly for desktop unit tests.
+  compileOnly(libs.json)
+  testImplementation(libs.json)
   testImplementation(libs.junit)
 }
