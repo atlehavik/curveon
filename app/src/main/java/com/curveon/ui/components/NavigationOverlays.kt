@@ -32,9 +32,10 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Arrival time, distance left and the end button, at the top of the map beside the speed. Tapping it
- * folds out a second line: the time left, next stop (opens the route menu: stops, save), fuel
- * when worth knowing (tapping it adds it as a stop) and add stop.
+ * Arrival time, the distance to the next stop (or the destination) in orange under it, and the end button, at
+ * the top of the map beside the speed. Tapping it folds it out: distance and time left, then each stop (opens
+ * the route menu: stops, save) with its own, fuel when worth knowing (tapping it asks whether to go there)
+ * and add stop.
  */
 @Composable
 fun NavigationSummaryBar(
@@ -51,12 +52,12 @@ fun NavigationSummaryBar(
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
     }
-    // Folded: arrival, distance left and the end button, small enough to sit beside the speed.
-    // A tap opens a second line below with the next stop, fuel and add stop.
+    // Folded: the arrival time, and in orange under it how far it is to the next stop (the destination when there is none).
+    // A tap folds it out: the destination's distance and time left, then each stop with its own, all in the same columns.
     var open by remember { mutableStateOf(false) }
-    // Next to a wide speed card (over 100 km/h, or a phone held upright) there is little room: folded, it is
-    // just the arrival time and the end button. Folded out it grows downwards, one thing per line, all to the left.
-    BoxWithConstraints(
+    var askFuel by remember { mutableStateOf(false) }
+    val next = summary.stops.firstOrNull()
+    Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(CockpitSurface.copy(alpha = 0.95f))
@@ -64,21 +65,20 @@ fun NavigationSummaryBar(
             .clickable { open = !open }
             .testTag("nav_summary_bar")
     ) {
-        val narrow = maxWidth < 200.dp
-        val km = stringResource(R.string.distance_km_whole, summary.remainingKm)
-        Column(Modifier.padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // As wide as its widest line: the dividers stretch to that, not to all the room there is.
+        Column(Modifier.width(IntrinsicSize.Max).padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 Modifier.heightIn(min = (foldedHeight - 12.dp).coerceAtLeast(0.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // The end button keeps its place; the distance gives way if it must.
-                Row(Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // The end button keeps its place; the text gives way if it must.
+                Column(Modifier.weight(1f, fill = false)) {
                     Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
-                    // Squeezed against the speed, or folded out (where it moves to the second line): not up here.
-                    if (!narrow && !open) Text(km, color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Clip)
+                    if (!open) Text(
+                        tripDistance(next?.km ?: summary.remainingKm), color = NeonAmber, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 1, softWrap = false, modifier = Modifier.testTag("nav_next_km")
+                    )
                 }
                 IconButton(
                     onClick = onStop,
@@ -88,38 +88,29 @@ fun NavigationSummaryBar(
                 }
             }
             if (open) {
-                // Distance and time left; with a stop on the way, the time to it in orange under the time left.
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(km, color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            "%d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
-                            color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                            modifier = Modifier.testTag("nav_remaining")
-                        )
-                        summary.nextStopMinutes?.let { m ->
-                            Text("%d:%02d".format(m / 60, m % 60), color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                                modifier = Modifier.testTag("nav_remaining_stop"))
-                        }
+                // The destination, then each stop: name, and under it distance and time in the same columns.
+                TripLeg(tripDistance(summary.remainingKm), summary.remainingMinutes, TextSecondary, Modifier.testTag("nav_remaining"))
+                for (stop in summary.stops) {
+                    HorizontalDivider(color = CockpitBorder)
+                    Column(
+                        Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).testTag("nav_route_menu_btn"),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(stop.name, color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                        TripLeg(tripDistance(stop.km), stop.minutes, NeonAmber, Modifier.testTag("nav_remaining_stop"))
                     }
                 }
-                // The next stop (or just "Route") opens the route's menu: stops, save, end.
-                Row(
-                    Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp)
-                        .testTag("nav_route_menu_btn"),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val next = summary.nextStop
-                    Text(
-                        if (next != null) next.first.take(14) + " " + stringResource(R.string.distance_km_whole, next.second) else stringResource(R.string.nav_route),
-                        color = if (next != null) NeonAmber else TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1
-                    )
-                }
+                // Without stops the route menu (stops, save, end) is still one tap away.
+                if (summary.stops.isEmpty()) Text(
+                    stringResource(R.string.nav_route), color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp).testTag("nav_route_menu_btn")
+                )
                 if (fuel != null && (fuel.isLongGap || fuel.distanceMeters < 60_000)) {
                     val color = if (fuel.isLongGap) NeonAmber else EcoGreen
                     Row(
                         Modifier.clip(RoundedCornerShape(14.dp)).background(color.copy(alpha = 0.15f))
-                            .clickable(enabled = fuel.point.lat != 0.0, onClick = onFuel).padding(horizontal = 10.dp, vertical = 8.dp)
+                            .clickable(enabled = fuel.point.lat != 0.0) { askFuel = true }.padding(horizontal = 10.dp, vertical = 8.dp)
                             .testTag("fuel_chip"),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -142,7 +133,32 @@ fun NavigationSummaryBar(
             }
         }
     }
+    if (askFuel && fuel != null) {
+        val name = fuel.name.ifEmpty { stringResource(R.string.poi_fuel) }
+        AlertDialog(
+            onDismissRequest = { askFuel = false },
+            containerColor = CockpitSurface,
+            title = { HideSystemBars(); Text(stringResource(R.string.fuel_go_to, name), color = TextPrimary, fontWeight = FontWeight.Black) },
+            text = { Text(stringResource(R.string.fuel_go_to_body, tripDistance(fuel.distanceMeters / 1000)), color = TextSecondary) },
+            confirmButton = { TextButton(onClick = { askFuel = false; onFuel() }, modifier = Modifier.testTag("fuel_go_yes")) { Text(stringResource(R.string.yes), color = EcoGreen) } },
+            dismissButton = { TextButton(onClick = { askFuel = false }) { Text(stringResource(R.string.cancel)) } }
+        )
+    }
 }
+
+/** Distance and time to somewhere, in two columns that line up from one leg to the next. */
+@Composable
+private fun TripLeg(distance: String, minutes: Int, color: Color, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text(distance, color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, modifier = Modifier.width(64.dp))
+        Text("%d:%02d".format(minutes / 60, minutes % 60), color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+    }
+}
+
+/** Whole kilometres; metres under one. */
+@Composable
+private fun tripDistance(km: Double): String =
+    if (km < 1.0) stringResource(R.string.distance_m_int, (km * 100).toInt() * 10) else stringResource(R.string.distance_km_whole, km)
 
 /** A stop on the way is reached: its name, big, for a few seconds (tap to put it away). */
 @Composable

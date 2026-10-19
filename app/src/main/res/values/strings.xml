@@ -405,6 +405,9 @@
     <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
     <string name="selected">Selected</string>
+    <string name="fuel_go_to">Go to %1$s?</string>
+    <string name="fuel_go_to_body">%1$s ahead on the route. It becomes a stop.</string>
+    <string name="yes">Yes</string>
     <string name="nav_route">Route</string>
     <string name="add_stop">Add stop</string>
     <string name="go_here">Go here</string>
