@@ -38,7 +38,15 @@ self-run relay still works), `n` optional group name (URL-encoded), `x` optional
   Later connections must send the same `proof`, or the relay answers 403.
 - A `rekey` frame carries the next `proof` and is signed by the admin (see below); the relay then
   accepts only the new `proof`, which locks out a removed rider.
-- The relay limits sockets per group, groups per IP and per hour, frame size and rate.
+- The relay limits sockets per group, groups created per IP and hour, frame size and rate.
+- Answers: 403 wrong or missing proof, 429 too many new groups from this address, 503 relay full.
+- On connect the relay replays what it stored: `hello`, `route`, then `sos`. Positions are never stored.
+- A frame is dropped unless `e` equals the group's current epoch.
+- After an accepted `rekey` the relay closes every socket with code **4001**; clients reconnect with the
+  new proof. A client that connects with the proof from just before the last rekey (it was offline)
+  receives the stored `rekey` and is closed with code **4002**; it then reconnects with the new proof.
+  Two rekeys while offline cannot be caught up: that rider needs a new invite.
+- A rekey drops everything stored (profiles, routes, SOS belong to the old key); riders send `hello` again.
 
 ## Frame (what the relay sees)
 JSON, one WebSocket text message:
@@ -58,7 +66,7 @@ so a frame cannot be moved to another group, rider, epoch or type. The relay for
 | `pos` | forward only | `seq`, `ts`, lat, lon, speed, heading, accuracy, optional battery, `paused`, `stopped`, `stoppedSince` |
 | `hello` | forward; keep latest per rider | `seq`, `ts`, nickname, colour, agreement public key, avatar |
 | `route` | forward; keep the last few | `seq`, `ts`, id, name, kind, gzipped GPX or route data |
-| `sos` | forward; keep until everyone acknowledged it | `seq`, `ts`, position |
+| `sos` | forward; keep until the sender cancels it (`sos_cancel`) or 12 hours | `seq`, `ts`, position |
 | `sos_ack` | forward | `seq`, `ts`, the `sos` it answers, `coming` true/false |
 | `sos_cancel` | forward; removes the stored `sos` | `seq`, `ts` |
 | `leave` | forward | `seq`, `ts` |
@@ -79,9 +87,9 @@ An admin makes a new `groupKey'`, sets `epoch' = epoch + 1` and sends one frame 
 - For each remaining rider: `secret = X25519(ephemeralPrivate, riderAgreementPublic)`,
   `wrapKey = HKDF-SHA256(ikm = secret, salt = groupId, info = "curveon/1 rekey", 32)`,
   `c = AES-256-GCM(wrapKey, n, groupKey')` with associated data `"curveon/1 rekey" || groupId || riderId || epoch'_be32`.
-- `s` signs `"curveon/1 rekey-sig" || groupId || epoch'_be32 || for each key: riderId || ep || n || c`
+- `s` signs `"curveon/1 rekey-sig" || groupId || epoch'_be32 || proof' (ASCII) || for each key: riderId || ep || n || c`
   with the admin Ed25519 key. Receivers and the relay check it against the admin public key from the
-  invite; a member cannot kick anyone.
+  invite; a member cannot kick anyone, and cannot swap `proof'` to lock everyone out. Receivers also check that `proof'` is what the new key gives.
 - The removed rider gets no copy. The relay switches to `proof'` when it has checked the signature.
 - Limits (also in groups.md): the removed rider has seen what was shared before, and a rider who is
   offline during the change picks the rekey up on return.

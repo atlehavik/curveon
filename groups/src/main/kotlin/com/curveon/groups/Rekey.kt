@@ -24,9 +24,16 @@ class SealedKey(val riderId: ByteArray, val ephemeralPublic: ByteArray, val nonc
  * Removing a rider: an admin makes a new group key and sends it, separately, to everyone who stays.
  * The message is signed with the admin key from the invite, so a member cannot kick anyone.
  */
-class Rekey(val groupId: ByteArray, val newEpoch: Int, val keys: List<SealedKey>, val signature: ByteArray) {
+class Rekey(
+  val groupId: ByteArray,
+  val newEpoch: Int,
+  /** The relay access proof for the new key, signed too so a member cannot swap it and lock everyone out. */
+  val newProof: String,
+  val keys: List<SealedKey>,
+  val signature: ByteArray,
+) {
   fun verify(adminPublicKey: ByteArray): Boolean = try {
-    Ed25519Verify(adminPublicKey).verify(signature, signedBytes(groupId, newEpoch, keys))
+    Ed25519Verify(adminPublicKey).verify(signature, signedBytes(groupId, newEpoch, newProof, keys))
     true
   } catch (_: Exception) {
     false
@@ -38,8 +45,9 @@ class Rekey(val groupId: ByteArray, val newEpoch: Int, val keys: List<SealedKey>
     val mine = keys.firstOrNull { it.riderId.contentEquals(riderId) } ?: return null
     return try {
       val secret = X25519.computeSharedSecret(agreementPrivateKey, mine.ephemeralPublic)
-      FrameCrypto.cipher(Cipher.DECRYPT_MODE, wrapKey(secret, groupId), mine.nonce, aad(groupId, riderId, newEpoch))
+      val key = FrameCrypto.cipher(Cipher.DECRYPT_MODE, wrapKey(secret, groupId), mine.nonce, aad(groupId, riderId, newEpoch))
         .doFinal(mine.ciphertext)
+      if (GroupKeys(groupId, key, newEpoch).accessProof() == newProof) key else null
     } catch (_: Exception) {
       null
     }
@@ -59,8 +67,9 @@ class Rekey(val groupId: ByteArray, val newEpoch: Int, val keys: List<SealedKey>
           .doFinal(newGroupKey)
         SealedKey(riderId, eph.publicKey, nonce, c)
       }
-      val sig = Ed25519Sign(adminSigningPrivateKey).sign(signedBytes(groupId, newEpoch, sealed))
-      return Rekey(groupId, newEpoch, sealed, sig)
+      val proof = GroupKeys(groupId, newGroupKey, newEpoch).accessProof()
+      val sig = Ed25519Sign(adminSigningPrivateKey).sign(signedBytes(groupId, newEpoch, proof, sealed))
+      return Rekey(groupId, newEpoch, proof, sealed, sig)
     }
 
     private fun wrapKey(secret: ByteArray, groupId: ByteArray) =
@@ -69,8 +78,8 @@ class Rekey(val groupId: ByteArray, val newEpoch: Int, val keys: List<SealedKey>
     private fun aad(groupId: ByteArray, riderId: ByteArray, epoch: Int) =
       "curveon/1 rekey".toByteArray() + groupId + riderId + epochBytes(epoch)
 
-    private fun signedBytes(groupId: ByteArray, epoch: Int, keys: List<SealedKey>): ByteArray {
-      var out = "curveon/1 rekey-sig".toByteArray() + groupId + epochBytes(epoch)
+    private fun signedBytes(groupId: ByteArray, epoch: Int, proof: String, keys: List<SealedKey>): ByteArray {
+      var out = "curveon/1 rekey-sig".toByteArray() + groupId + epochBytes(epoch) + proof.toByteArray()
       for (k in keys) out += k.riderId + k.ephemeralPublic + k.nonce + k.ciphertext
       return out
     }

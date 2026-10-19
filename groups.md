@@ -262,8 +262,12 @@ Kotlin, so an iOS (or any other) client can be written by anyone who wants to.
 ## Gaps found 2026-10-18 (resolve before building)
 **Status 2026-10-19:** gaps 1-5 are specified in [docs/groups-protocol.md](docs/groups-protocol.md)
 and implemented and unit tested in `:groups` (invite, keys, frames, replay guard, rekey; Tink for
-X25519/Ed25519, Apache 2.0). Not done yet: the relay side of 5 and 6 (access proof, new frame types,
-storage; `~/develop/curveon-relay`), "make admin" (a change signed by an existing admin), test vectors.
+X25519/Ed25519, Apache 2.0). The relay side of 5 and 6 is done too (`~/develop/curveon-relay`: access
+proof, new frame types, SQLite storage and replay, per-IP creation limit, signed rekey, tested; the
+Kotlin and Node sides agree on the rekey signature byte for byte). Not done yet: "make admin" (a change
+signed by an existing admin), test vectors, JSON encoding of frames in `:groups`, wiring into the apps.
+Spec fix found while building the relay: the rekey signature must cover the new proof, or a member
+could swap it and lock everyone out.
 Wire format (expensive to change once people use it):
 1. **Invite lacks the relay address.** Add `r=<host>` so a moved or self-run relay still works.
 2. **Admin public key is not in the invite.** Otherwise any member (who has the group key) could pose

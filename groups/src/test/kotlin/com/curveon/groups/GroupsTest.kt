@@ -140,8 +140,11 @@ class GroupsTest {
     val groupId = GroupKeys.newGroupId()
     val ola = GroupKeys.newRiderId(); val olaKeys = Keys.newAgreementKeyPair()
     val r = Rekey.create(groupId, 1, GroupKeys.newGroupKey(), admin.privateKey, listOf(ola to olaKeys.publicKey))
-    val moved = Rekey(groupId, 2, r.keys, r.signature)
+    val moved = Rekey(groupId, 2, r.newProof, r.keys, r.signature)
     assertNull(moved.open(admin.publicKey, ola, olaKeys.privateKey))
+    // A member swapping the proof (to lock everyone out) breaks the signature too.
+    val swapped = Rekey(groupId, 1, GroupKeys(groupId, GroupKeys.newGroupKey(), 1).accessProof(), r.keys, r.signature)
+    assertNull(swapped.open(admin.publicKey, ola, olaKeys.privateKey))
   }
 
   @Test fun newKeyWorksForFramesAfterRekey() {
@@ -153,5 +156,6 @@ class GroupsTest {
     val frame = FrameCrypto.seal(fresh, FrameType.POS, ola, "after".toByteArray())
     assertEquals("after", String(FrameCrypto.open(fresh, frame)!!))
     assertNull(FrameCrypto.open(oldKeys, frame))
+    assertEquals(fresh.accessProof(), rekey.newProof)
   }
 }
