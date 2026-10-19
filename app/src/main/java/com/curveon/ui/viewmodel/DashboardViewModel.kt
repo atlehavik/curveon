@@ -782,6 +782,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .map { r -> r?.points?.map { GeoPoint(it.lat, it.lon, it.elevation) }.orEmpty() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** What is underfoot at each point of the active route, to colour it (see [com.curveon.ui.components.MapRoute]). */
+    val activeRouteSurfaces: StateFlow<List<Int>?> = navigator.state
+        .map { it.route }
+        .distinctUntilChanged()
+        .map { r -> r?.points?.map { p -> if (p.highway == "track") com.curveon.ui.components.SURFACE_TRACK else if (p.unpaved) com.curveon.ui.components.SURFACE_GRAVEL else com.curveon.ui.components.SURFACE_PAVED } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     /** Remaining stops plus the destination, for markers on the map. */
     val routeMarkers: StateFlow<List<com.curveon.ui.components.MapPin>> = navigator.state
         .map { s ->

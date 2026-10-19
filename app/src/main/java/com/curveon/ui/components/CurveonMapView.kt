@@ -175,6 +175,8 @@ fun CurveonMapView(
     speedLimitKmh: Int,
     hasGpsFix: Boolean,
     routePoints: List<GeoPoint>,
+    /** What is underfoot at each of [routePoints] (see [MapRoute]): gravel and tracks are drawn solid over the route's line. */
+    routeSurfaces: List<Int>? = null,
     groundPreference: GroundPreference,
     currentTurnInstruction: TurnInstruction?,
     isFullScreen: Boolean,
@@ -607,14 +609,9 @@ fun CurveonMapView(
     }
 
     // Active route line
-    LaunchedEffect(style, routePoints, groundPreference) {
+    // The line is the asphalt blue; gravel and tracks lie solid over it (the route surface layer).
+    LaunchedEffect(style, routePoints) {
         val s = style ?: return@LaunchedEffect
-        val color = when (groundPreference) {
-            GroundPreference.OFFROAD -> "#D500F9"
-            GroundPreference.GRAVEL -> "#FF9100"
-            GroundPreference.PAVED, GroundPreference.MIXED -> if (dark) "#00E5FF" else "#0091EA"
-        }
-        (s.getLayer("$ROUTE-line") as? LineLayer)?.setProperties(lineColor(color))
         if (previewRoutes.isEmpty()) {
             // A long route is a couple of hundred thousand points: made into GeoJSON off the main thread.
             val features = withContext(Dispatchers.Default) { lineFeatures(if (routePoints.size >= 2) listOf(routePoints) else emptyList()) }
@@ -629,17 +626,28 @@ fun CurveonMapView(
         val s = style ?: return@LaunchedEffect
         val selected = previewRoutes.filter { it.selected }.map { it.points }
         val others = previewRoutes.filter { !it.selected }.map { it.points }
-        val (runs, alt, line) = withContext(Dispatchers.Default) {
-            Triple(
-                surfaceRuns(previewRoutes.firstOrNull { it.selected }),
+        val (alt, line) = withContext(Dispatchers.Default) {
+            Pair(
                 lineFeatures(others),
                 lineFeatures(if (previewRoutes.isNotEmpty()) selected else if (routePoints.size >= 2) listOf(routePoints) else emptyList())
             )
         }
         if (style !== s || !s.isFullyLoaded) return@LaunchedEffect
-        s.getSourceAs<GeoJsonSource>(ROUTE_SURFACE)?.setGeoJson(runs)
         s.getSourceAs<GeoJsonSource>(ALT)?.setGeoJson(alt)
         s.getSourceAs<GeoJsonSource>(ROUTE)?.setGeoJson(line)
+    }
+
+    // Orange gravel and purple tracks over the line: of the selected preview, else of the route being ridden.
+    // Then the map's own see-through dashes over the route are not wanted.
+    LaunchedEffect(style, previewRoutes, routePoints, routeSurfaces) {
+        val s = style ?: return@LaunchedEffect
+        val shown = previewRoutes.firstOrNull { it.selected } ?: if (previewRoutes.isEmpty() && routeSurfaces != null && routePoints.size >= 2) MapRoute(routePoints, true, routeSurfaces) else null
+        val runs = withContext(Dispatchers.Default) { surfaceRuns(shown) }
+        if (style !== s || !s.isFullyLoaded) return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(ROUTE_SURFACE)?.setGeoJson(runs)
+        val dashes = if (previewRoutes.isEmpty() && routePoints.size >= 2) Property.NONE else Property.VISIBLE
+        for (kind in listOf("soft", "gravel")) for (suffix in listOf("", "-casing"))
+            s.getLayer("$SURFACE-over-$kind$suffix")?.setProperties(visibility(dashes))
     }
 
     // GPX overlays: tracks in their colour with direction arrows, and their waypoints.
@@ -1147,7 +1155,7 @@ fun CurveonMapView(
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
         // At night the rider is orange, so it stands out from the cyan route; cyan again on an orange (gravel) route.
-        val riderOrange = dark && !(routePoints.size >= 2 && groundPreference == GroundPreference.GRAVEL)
+        val riderOrange = dark
         val riderColor = if (riderOrange) NeonAmber else ElectricCyan
         if (hasGpsFix && style != null) {
             RiderHalo(dark, riderColor) { puck }

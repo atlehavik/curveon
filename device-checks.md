@@ -8,6 +8,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 ## 2026-10-19 — Route colour, pruned via points, time to the next stop (1.2.2)
 
+- [ ] Navigate a route with gravel and offroad in it: asphalt keeps the usual blue, gravel is solid orange, offroad solid purple, no see-through dashes on the route. Night and day map, and at the rider arrow (orange at night) check it is still easy to see.
 - [ ] Convert a GPX track to a route (GPX list → make a route): the line is cyan, not green. Same when riding a track or a logged ride.
 - [ ] After converting, wait a minute or two without touching anything, then open the route menu: fewer stops than before? Pull the log and look for the pruned count: `adb logcat -d -s Curveon | grep Pruned` ("N -> M via points"). Edit the trip (drag, add a stop) while it works: nothing should jump or be lost.
 - [ ] Navigate a trip with one real stop, fold the arrival box out: the time left has a smaller orange time under it, the time to the stop; it counts down and disappears once the stop is passed.

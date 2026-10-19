@@ -2,6 +2,7 @@
   {
     "version": "1.2.2",
     "en": [
+      "While navigating, the route line is now coloured by what you ride on, as when planning: blue for asphalt, orange for gravel and purple for offroad, solid instead of see-through dashes",
       "The route line is cyan again when you ride a GPX track, a logged ride or a mixed-surface trip: it had turned green, which nobody asked for",
       "A GPX track made into a route tidies itself afterwards: in the background Curveon tries each of the many helper points and removes the ones the route doesn't need, so the trip is simpler to adjust. You notice nothing while it works",
       "With a stop on the way, the folded-out arrival box shows the time to that stop in orange, small, under the time left to the destination",
@@ -51,6 +52,7 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
     ],
     "nb": [
+      "Under navigering er ruten nå farget etter underlaget, som når du planlegger: blå for asfalt, oransje for grus og lilla for offroad, heldekkende i stedet for gjennomsiktige striper",
       "Ruten er cyan igjen når du kjører et GPX-spor, en logget tur eller en tur med blandet underlag: den hadde blitt grønn uten at noen hadde bedt om det",
       "En GPX-sporrute rydder seg selv etterpå: i bakgrunnen prøver Curveon hvert av de mange hjelpepunktene og tar bort de ruten ikke trenger, så turen blir enklere å justere. Du merker ingenting mens det pågår",
       "Har du et stopp på veien, viser den utfoldede ankomstboksen tiden til stoppet i oransje, litt mindre, under tiden som er igjen til målet",

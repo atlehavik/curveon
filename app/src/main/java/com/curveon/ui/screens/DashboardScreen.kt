@@ -62,6 +62,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val obdEnabled by remember { derivedStateOf { telemetryState.value.isObdEnabled } }
     val speedBelowStanding by remember { derivedStateOf { telemetryState.value.speedKmh < 3f } }
     val routePoints by viewModel.activeRoutePoints.collectAsStateWithLifecycle()
+    val routeSurfaces by viewModel.activeRouteSurfaces.collectAsStateWithLifecycle()
     val groundPreference by viewModel.groundPreference.collectAsStateWithLifecycle()
     val currentTurnInstruction by viewModel.currentTurnInstruction.collectAsStateWithLifecycle()
     val isFullScreenMap by viewModel.isFullScreenMap.collectAsStateWithLifecycle()
@@ -663,6 +664,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             speedLimitKmh = telemetryState.value.speedLimitKmh,
             hasGpsFix = telemetryState.value.hasGpsFix,
             routePoints = routePoints,
+            routeSurfaces = routeSurfaces,
             giveWaySigns = mapGiveWays,
             speedSigns = mapSpeedSigns,
             groundPreference = groundPreference,
