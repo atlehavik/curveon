@@ -1,6 +1,6 @@
 # Groups: ride together (design draft)
 
-Status: idea and design only, nothing built. Decided in discussion 2026-10-11, revised 2026-10-18
+Status: design, plus the protocol library `:groups` (not wired into any app yet). Decided in discussion 2026-10-11, revised 2026-10-18
 (Apple not ruled out, no hard group limit in the protocol, relay on a VPS).
 
 ## Goal
@@ -260,6 +260,10 @@ Kotlin, so an iOS (or any other) client can be written by anyone who wants to.
 - With public users the relay needs abuse limits, and someone to keep it running.
 
 ## Gaps found 2026-10-18 (resolve before building)
+**Status 2026-10-19:** gaps 1-5 are specified in [docs/groups-protocol.md](docs/groups-protocol.md)
+and implemented and unit tested in `:groups` (invite, keys, frames, replay guard, rekey; Tink for
+X25519/Ed25519, Apache 2.0). Not done yet: the relay side of 5 and 6 (access proof, new frame types,
+storage; `~/develop/curveon-relay`), "make admin" (a change signed by an existing admin), test vectors.
 Wire format (expensive to change once people use it):
 1. **Invite lacks the relay address.** Add `r=<host>` so a moved or self-run relay still works.
 2. **Admin public key is not in the invite.** Otherwise any member (who has the group key) could pose

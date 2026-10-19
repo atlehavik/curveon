@@ -76,7 +76,7 @@ Copyright (c) Google LLC.
 
 ---
 
-## Android Jetpack, Kotlin, OkHttp, Retrofit, Moshi, Coil, Accompanist, Firebase, Robolectric
+## Android Jetpack, Kotlin, OkHttp, Retrofit, Moshi, Coil, Accompanist, Firebase, Robolectric, Tink
 
 All fetched as Maven/Gradle dependencies at build time; not vendored in this repository.  
 Each is licensed under the Apache License, Version 2.0.
