@@ -211,6 +211,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showGroup by rememberSaveable { mutableStateOf(false) }
     /** Settings opened from the engine panel: start on its page. */
     var settingsOnEngine by remember { mutableStateOf(false) }
     /** Settings opened while a new version waits: start on Help, where it is. */
@@ -651,6 +652,23 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }?.map { GeoPoint(it.lat, it.lon) }.orEmpty()
     }
 
+    // Group ride: the other riders on the map, and the button that opens the group.
+    val groupActive by phone.groups.activeId.collectAsStateWithLifecycle()
+    val groupPositions by phone.groups.positions.collectAsStateWithLifecycle()
+    val groupMembers by phone.groups.members.collectAsStateWithLifecycle()
+    val groupSos by phone.groups.sos.collectAsStateWithLifecycle()
+    var groupTick by remember { mutableIntStateOf(0) }
+    // A rider not heard from for two minutes is dimmed, even if nothing else changes on screen.
+    LaunchedEffect(groupActive) { while (groupActive != null) { kotlinx.coroutines.delay(30_000); groupTick++ } }
+    val groupRiders = remember(groupPositions, groupMembers, groupTick) {
+        groupPositions.values.map { p ->
+            val m = groupMembers[p.id]
+            com.curveon.ui.components.MapGroupRider(
+                GeoPoint(p.lat, p.lon), m?.nickname.orEmpty(), m?.colour ?: 0xFF00E5FF.toInt(), System.currentTimeMillis() - p.timeMs > 120_000
+            )
+        }
+    }
+
     // The map, as big as the layout allows.
     val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier.tourTarget(TourTarget.MAP)) {
         CurveonMapView(
@@ -674,6 +692,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             highContrast = highContrast || isNavigating, // while navigating the day map is always high contrast
             previewRoutes = mapPreviewRoutes,
             markers = mapMarkers,
+            groupRiders = groupRiders,
+            groupButton = groupActive != null,
+            groupAlert = groupSos.isNotEmpty(),
+            onGroup = { showGroup = true },
             editor = editor,
             // The route starts on the nearest road the map joins up: show the way to it.
             approachTo = mapApproachTo,
@@ -1102,6 +1124,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
 
+    // The group ride: its dialog, the rider's own SOS and the alert for someone else's.
+    val groupLayer: @Composable BoxScope.() -> Unit = {
+        if (showGroup) com.curveon.ui.components.GroupDialog(phone.groups, onDismiss = { showGroup = false })
+        com.curveon.ui.components.GroupSosOverlay(
+            phone.groups, currentLocationState.value.latitude, currentLocationState.value.longitude,
+            navigateTo = { lat, lon, name -> showGroup = false; viewModel.previewDestination(GeoPoint(lat, lon), name) }
+        )
+    }
+
     val rootModifier = Modifier
         .fillMaxSize()
         .background(CockpitBackground)
@@ -1129,6 +1160,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             }
             panelLayer()
             callLayer()
+            groupLayer()
             }
             rail()
         }
@@ -1148,6 +1180,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
                 panelLayer()
                 callLayer()
+                groupLayer()
             }
         }
     }

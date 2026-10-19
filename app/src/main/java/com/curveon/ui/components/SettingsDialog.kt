@@ -43,6 +43,7 @@ private enum class SettingsTab(val label: Int, val icon: ImageVector) {
     NAVIGATION(R.string.settings_navigation, Icons.Default.Navigation),
     ENGINE(R.string.settings_engine, Icons.Default.Speed),
     PHONE(R.string.phone, Icons.Default.PhoneAndroid),
+    GROUP(R.string.group_title, Icons.Default.Groups),
     DATA(R.string.settings_maps_data, Icons.Default.Map),
     HELP(R.string.settings_help, Icons.Default.HelpOutline)
 }
@@ -282,6 +283,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                     }
                     SettingsTab.ENGINE -> Page { EngineSettings(state, actions) }
                     SettingsTab.PHONE -> PhoneLinkContent(phone, Modifier.fillMaxSize())
+                    SettingsTab.GROUP -> GroupContent(phone.groups, Modifier.fillMaxSize())
                     SettingsTab.DATA -> Page {
                         SectionTitle(stringResource(R.string.settings_offline_maps))
                         if (state.maps.isEmpty()) Text(stringResource(R.string.maps_none), color = TextSecondary, fontSize = 14.sp)

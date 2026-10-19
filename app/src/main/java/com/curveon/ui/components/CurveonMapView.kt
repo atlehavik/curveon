@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.Navigation
@@ -70,6 +71,7 @@ import org.maplibre.geojson.Point
 private const val ROUTE = "curveon-route"
 private const val ALT = "curveon-alternatives"
 private const val MARKERS = "curveon-markers"
+private const val GROUP = "curveon-group"
 private const val PICK = "curveon-pick"
 private const val APPROACH = "curveon-approach"
 /** At most this often is a camera that keeps moving (following the rider) reported as settled. */
@@ -157,6 +159,9 @@ const val SURFACE_PAVED = 0
 const val SURFACE_GRAVEL = 1
 const val SURFACE_TRACK = 2
 
+/** Another rider in the active group, drawn as a coloured ring with their name. [stale] when not heard from for a while. */
+data class MapGroupRider(val point: GeoPoint, val label: String, val color: Int, val stale: Boolean)
+
 /**
  * The main map: MapLibre rendering the offline Norway vector map (day or night style), the
  * rider, the active route or the previewed alternatives, and stop markers.
@@ -187,6 +192,12 @@ fun CurveonMapView(
     dark: Boolean = true,
     previewRoutes: List<MapRoute> = emptyList(),
     markers: List<MapPin> = emptyList(),
+    /** The other riders in the active group. */
+    groupRiders: List<MapGroupRider> = emptyList(),
+    /** A group ride is active: a button under the map buttons opens it. [groupAlert] while someone has sent an SOS. */
+    groupButton: Boolean = false,
+    groupAlert: Boolean = false,
+    onGroup: () -> Unit = {},
     roadNameProbe: Pair<Int, GeoPoint>? = null,
     onRoadName: (Int, com.curveon.data.road.MapRoad?) -> Unit = { _, _ -> },
     /** Called now and then with the road under the rider as the tiles have it; null = don't read it. */
@@ -747,6 +758,19 @@ fun CurveonMapView(
         )
     }
 
+    LaunchedEffect(style, groupRiders) {
+        val s = style ?: return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(GROUP)?.setGeoJson(
+            FeatureCollection.fromFeatures(groupRiders.map { r ->
+                Feature.fromGeometry(Point.fromLngLat(r.point.longitude, r.point.latitude)).also {
+                    it.addStringProperty("label", r.label)
+                    it.addStringProperty("color", hex(r.color))
+                    it.addNumberProperty("alpha", if (r.stale) 0.45f else 1f)
+                }
+            })
+        )
+    }
+
     LaunchedEffect(style, sketch) {
         val s = style ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(SKETCH)?.setGeoJson(lineFeatures(listOf(if (sketch.size >= 3) sketch + sketch.first() else emptyList())))
@@ -1230,6 +1254,9 @@ fun CurveonMapView(
                     Icon(Icons.Default.MyLocation, stringResource(R.string.map_follow_me), tint = Color(0xFF00363D), modifier = Modifier.size(24.dp))
                 }
             }
+            if (groupButton) MapButton(onClick = onGroup, highlighted = groupAlert, tag = "map_group_btn") {
+                Icon(Icons.Default.Groups, stringResource(R.string.group_title), tint = if (groupAlert) Color(0xFF00363D) else ElectricCyan, modifier = Modifier.size(24.dp))
+            }
         }
 
         // Zoom to extents: the whole trip being planned, at a tap; under the speed and road cards.
@@ -1608,6 +1635,28 @@ private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
             textField(org.maplibre.android.style.expressions.Expression.get("label")),
             textFont(arrayOf("Noto Sans Medium")), textSize(15f),
             textColor(org.maplibre.android.style.expressions.Expression.get("text")),
+            textAllowOverlap(true), textIgnorePlacement(true)
+        )
+    )
+    // The other riders of a group ride: a ring in their colour with the name under it, dimmed when not heard from for a while.
+    s.addSource(GeoJsonSource(GROUP))
+    s.addLayer(
+        CircleLayer("$GROUP-dots", GROUP).withProperties(
+            circleRadius(10f),
+            circleColor(org.maplibre.android.style.expressions.Expression.get("color")),
+            circleOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+            circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f),
+            circleStrokeOpacity(org.maplibre.android.style.expressions.Expression.get("alpha"))
+        )
+    )
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$GROUP-labels", GROUP).withProperties(
+            textField(org.maplibre.android.style.expressions.Expression.get("label")),
+            textFont(arrayOf("Noto Sans Medium")), textSize(14f),
+            textColor(if (dark) "#FFFFFF" else "#0B0E14"),
+            textHaloColor(if (dark) "#0B0E14" else "#FFFFFF"), textHaloWidth(2f),
+            textOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+            textAnchor(Property.TEXT_ANCHOR_TOP), textOffset(arrayOf(0f, 1f)),
             textAllowOverlap(true), textIgnorePlacement(true)
         )
     )

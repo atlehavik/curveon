@@ -353,7 +353,7 @@ sealed interface Message {
 
     enum class GroupStatus { CONNECTED, OFFLINE, PAUSED, REMOVED }
 
-    /** Sent when someone joins or changes their profile; the tablet caches the pictures per rider. */
+    /** Sent when someone joins or changes their profile; the tablet caches the pictures per rider. The first entry is the rider themself. */
     data class GroupMembers(val groupId: String, val members: List<GroupMemberInfo>) : Message {
         override fun toJson() = obj("group_members").put("id", groupId).put("list", JSONArray(members.map {
             JSONObject().put("id", it.id).put("nick", it.nickname).put("colour", it.colour)

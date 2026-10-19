@@ -1283,6 +1283,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun handleFix(fix: GpsFix, estimated: Boolean) {
         NavTrace.fix(fix, locationSource.satellitesUsed, estimated)
         tripTracker.onFix(fix)
+        if (!estimated) phoneCompanion.groups.onFix(fix)
         navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble(),
             tripTracker.headingDeg.toDouble().takeIf { tripTracker.speedKmh > 5 })
         val onRoad = snapToRoute(fix)

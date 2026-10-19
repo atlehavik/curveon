@@ -151,6 +151,9 @@ class PhoneCompanionManager(
     private val _phoneErrors = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val phoneErrors: SharedFlow<String> = _phoneErrors
 
+    /** Group rides: what the phone tells about the group, and the rider's commands to it. */
+    val groups = com.curveon.data.groups.GroupManager(scope) { send(it) }
+
     @Volatile private var writer: MessageWriter? = null
     @Volatile private var socket: BluetoothSocket? = null
     private var linkJob: Job? = null
@@ -368,6 +371,7 @@ class PhoneCompanionManager(
     }
 
     private fun stopLink() {
+        groups.stopDemo()
         stopThisDevice()
         linkJob?.cancel()
         tickerJob?.cancel()
@@ -479,7 +483,7 @@ class PhoneCompanionManager(
             is Message.PhoneError -> _phoneErrors.tryEmit(msg.text)
             // Curveon as its own companion speaks on this device too.
             is Message.SpeechVoice -> _speechVoice.value = VoiceStatus(msg.language, msg.availability, onThisDevice = isThisDevice)
-            else -> Unit
+            else -> groups.onMessage(msg) // group rides; ignores anything else
         }
     }
 
@@ -508,6 +512,7 @@ class PhoneCompanionManager(
         _notifications.value = emptyList()
         _voiceReply.value = null
         hidden.clear()
+        groups.onLinkLost()
     }
 
     // ------------------------------------------------------------------ commands
@@ -709,11 +714,13 @@ class PhoneCompanionManager(
             Message.RecentCall("+47 400 00 000", null, "", null, Message.CallKind.INCOMING, System.currentTimeMillis() - 26 * 3600_000),
             Message.RecentCall("+47 934 56 789", "Per Hansen", "Mobile", null, Message.CallKind.REJECTED, System.currentTimeMillis() - 4 * 86400_000)
         )
+        groups.startDemo()
         startTicker()
     }
 
     private fun demoCommand(message: Message) {
         when (message) {
+            is Message.SosStart, Message.SosCancel, is Message.GroupSharing -> groups.demoCommand(message)
             is Message.PlayMediaApp -> {
                 if (sessionApps.none { it.packageName == message.packageName }) {
                     _installedApps.value.firstOrNull { it.packageName == message.packageName }?.let { sessionApps = sessionApps + it.copy(running = true) }
