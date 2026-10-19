@@ -60,19 +60,19 @@ fun TurnByTurnBanner(
             // Big directional maneuver icon. A roundabout is three arrows round a wide ring, as on the Norwegian sign with the exit's number clear inside it.
             val roundabout = instruction.type == TurnType.ROUNDABOUT
             Box(
-                modifier = Modifier.size(if (roundabout) 64.dp else 52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(if (roundabout) 0.dp else 6.dp),
+                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(if (roundabout) 0.dp else 3.dp),
                 contentAlignment = Alignment.Center
             ) {
                 if (roundabout) {
                     RoundaboutRing(instruction.leftHandTraffic, Modifier.fillMaxSize())
                     if (instruction.roundaboutExit > 0) Text(
-                        instruction.roundaboutExit.toString(), color = Color(0xFF00363D), fontSize = 27.sp, fontWeight = FontWeight.Black, lineHeight = 27.sp
+                        instruction.roundaboutExit.toString(), color = Color(0xFF00363D), fontSize = 22.sp, fontWeight = FontWeight.Black, lineHeight = 22.sp
                     )
                 } else Icon(
                     imageVector = getTurnIcon(instruction.type),
                     contentDescription = instruction.text,
                     tint = Color(0xFF00363D),
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(46.dp)
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
