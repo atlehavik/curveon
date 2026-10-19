@@ -132,6 +132,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val speedLimits = com.curveon.data.speed.SpeedLimits(application)
     private val mapDownloads = com.curveon.data.map.MapDownloads(application, offlineMaps, navigator.routingData, placeSearch.indexes, speedLimits)
     val mapCatalog get() = mapDownloads.catalog
+
+    /** The country at the place drives on the left (decides which way a roundabout turns). */
+    private fun drivesOnLeft(lat: Double, lon: Double): Boolean =
+        mapCatalog.areaAt(lat, lon)?.iso in LEFT_HAND_TRAFFIC
     private var latestMapBuild: String? = null
     private val _installedMaps = MutableStateFlow(mapDownloads.installed(null))
     val installedMaps: StateFlow<List<com.curveon.data.map.InstalledMap>> = _installedMaps.asStateFlow()
@@ -935,7 +939,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             speedLimitKmh = p.speedLimitKmh ?: 0,
             location = route.points[m.pointIndex].let { GeoPoint(it.lat, it.lon) },
             roadRef = next?.ref,
-            roundaboutExit = m.exitNumber.takeIf { m.type == ManeuverType.ROUNDABOUT } ?: 0
+            roundaboutExit = m.exitNumber.takeIf { m.type == ManeuverType.ROUNDABOUT } ?: 0,
+            leftHandTraffic = m.type == ManeuverType.ROUNDABOUT && route.points[m.pointIndex].let { drivesOnLeft(it.lat, it.lon) }
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -2181,6 +2186,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     companion object {
         /** Long enough that anything counting seconds has moved, short enough to stand at the pump. */
         private const val FUEL_CONTROL_GAP_MS = 15_000L
+        /** Countries (ISO 3166) where they drive on the left. */
+        private val LEFT_HAND_TRAFFIC = setOf(
+            "GB", "IE", "MT", "CY", "JP", "AU", "NZ", "IN", "PK", "BD", "LK", "NP", "BT", "TH", "MY", "SG", "ID", "BN", "TL", "HK", "MO",
+            "ZA", "ZW", "ZM", "BW", "NA", "MZ", "KE", "UG", "TZ", "MW", "LS", "SZ", "MU", "SC", "JM", "BB", "TT", "GY", "SR", "AG", "BS",
+            "DM", "GD", "KN", "LC", "VC", "FJ", "PG", "SB", "TO", "TV", "KI", "NR", "WS"
+        )
         /** How far along the route give way signs stand on the map. */
         private const val MAP_GIVE_WAY_M = 1_000.0
         /** A stop on the way counts as reached this close to it. */

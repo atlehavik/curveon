@@ -53,7 +53,9 @@ data class TurnInstruction(
     /** The number sign of the road after the turn, when known. */
     val roadRef: com.curveon.data.road.RoadRef? = null,
     /** Which exit to take at a roundabout, 0 when not one (or not known). */
-    val roundaboutExit: Int = 0
+    val roundaboutExit: Int = 0,
+    /** Where the turn is, they drive on the left: a roundabout is then ridden clockwise. */
+    val leftHandTraffic: Boolean = false
 )
 
 @Entity(tableName = "saved_routes")

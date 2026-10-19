@@ -57,14 +57,14 @@ fun TurnByTurnBanner(
             .testTag("turn_by_turn_banner")
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Big directional maneuver icon. A roundabout is two arrows round a wide ring with the exit's number clear inside it.
+            // Big directional maneuver icon. A roundabout is three arrows round a wide ring, as on the Norwegian sign with the exit's number clear inside it.
             val roundabout = instruction.type == TurnType.ROUNDABOUT
             Box(
                 modifier = Modifier.size(if (roundabout) 64.dp else 52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(if (roundabout) 0.dp else 6.dp),
                 contentAlignment = Alignment.Center
             ) {
                 if (roundabout) {
-                    RoundaboutRing(Modifier.fillMaxSize())
+                    RoundaboutRing(instruction.leftHandTraffic, Modifier.fillMaxSize())
                     if (instruction.roundaboutExit > 0) Text(
                         instruction.roundaboutExit.toString(), color = Color(0xFF00363D), fontSize = 27.sp, fontWeight = FontWeight.Black, lineHeight = 27.sp
                     )
@@ -102,23 +102,29 @@ fun TurnByTurnBanner(
     }
 }
 
-/** Two curved arrows chasing each other round a wide ring: the roundabout, with the whole middle left free. */
+/**
+ * Three curved arrows chasing each other round a wide ring, as on the Norwegian roundabout sign, with the
+ * whole middle left free. Against the clock where they drive on the right, with it where they drive on the left.
+ */
 @Composable
-private fun RoundaboutRing(modifier: Modifier = Modifier) {
+private fun RoundaboutRing(leftHandTraffic: Boolean, modifier: Modifier = Modifier) {
     androidx.compose.foundation.Canvas(modifier) {
         val ink = Color(0xFF00363D)
         val stroke = size.minDimension * 0.075f
         val r = size.minDimension * 0.4f
         val c = center
         val head = size.minDimension * 0.17f
-        // Two arcs of 140°, a gap between them where each arrow's head sits (clockwise).
-        for (start in listOf(-70f, 110f)) {
-            drawArc(ink, start, 140f, false, topLeft = androidx.compose.ui.geometry.Offset(c.x - r, c.y - r),
+        val dir = if (leftHandTraffic) 1f else -1f // clockwise on screen is positive
+        // Three arcs of 80° with 40° between them, where each arrow's head sits.
+        for (k in 0..2) {
+            val start = if (leftHandTraffic) -70f + k * 120f else 10f + k * 120f
+            val sweep = dir * 80f
+            drawArc(ink, start, sweep, false, topLeft = androidx.compose.ui.geometry.Offset(c.x - r, c.y - r),
                 size = androidx.compose.ui.geometry.Size(2 * r, 2 * r), style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
-            val end = Math.toRadians((start + 140f).toDouble())
+            val end = Math.toRadians((start + sweep).toDouble())
             val tip = androidx.compose.ui.geometry.Offset(c.x + r * kotlin.math.cos(end).toFloat(), c.y + r * kotlin.math.sin(end).toFloat())
-            // The tangent, clockwise, and its normal.
-            val tx = -kotlin.math.sin(end).toFloat(); val ty = kotlin.math.cos(end).toFloat()
+            // The way of travel at the tip, and the normal across it.
+            val tx = -dir * kotlin.math.sin(end).toFloat(); val ty = dir * kotlin.math.cos(end).toFloat()
             val nx = kotlin.math.cos(end).toFloat(); val ny = kotlin.math.sin(end).toFloat()
             val path = androidx.compose.ui.graphics.Path().apply {
                 moveTo(tip.x + tx * head, tip.y + ty * head)
