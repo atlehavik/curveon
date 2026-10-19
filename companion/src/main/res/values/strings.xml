@@ -29,6 +29,9 @@
     <string name="group_data_saver_hint">Shares your position every 15 seconds instead of every 5.</string>
     <string name="group_invite">Invite riders</string>
     <string name="group_invite_text">Join my group ride in Curveon: %1$s</string>
+    <string name="group_other_device">My other device</string>
+    <string name="group_other_device_hint">Scan this with your other device (the tablet, if this is the phone) to make it the same rider, not a new one. It gives full access as you, so show it only to yourself. It stops working after 15 minutes.</string>
+    <string name="group_close">Close</string>
     <string name="group_error_invalid_invite">That invite does not work.</string>
     <string name="group_error_expired_invite">That invite has expired. Ask for a new one.</string>
     <string name="group_error_already_member">You are already in that group.</string>

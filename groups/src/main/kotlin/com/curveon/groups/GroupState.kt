@@ -39,7 +39,16 @@ class GroupState(
   }
 
   /** [expiresAt] in epoch seconds; the app checks it, the relay does not. */
-  fun invite(expiresAt: Long? = null) = Invite(groupId, groupKey, adminPublicKey, relayHost, name, expiresAt)
+  fun invite(expiresAt: Long? = null) = Invite(groupId, groupKey, adminPublicKey, relayHost, name, expiresAt, epoch)
+
+  /**
+   * A link for the rider's own other device: opening it there makes that device the same rider (same id and keys)
+   * instead of a new one. It carries this rider's private keys, so it is shown only on screen and expires soon.
+   */
+  fun deviceLink(expiresAt: Long) = Invite(
+    groupId, groupKey, adminPublicKey, relayHost, name, expiresAt, epoch,
+    DeviceIdentity(riderId, agreement.privateKey, adminSigning?.privateKey),
+  )
 
   fun toJson(): String = JSONObject().put("groupId", B64.encode(groupId)).put("key", B64.encode(groupKey)).put("epoch", epoch)
     .put("admin", B64.encode(adminPublicKey)).put("relay", relayHost).put("name", name ?: JSONObject.NULL)
@@ -57,11 +66,19 @@ class GroupState(
       )
     }
 
-    /** Joining from an invite: a fresh rider id and key pair for this group only. */
-    fun join(invite: Invite) = GroupState(
-      invite.groupId, invite.groupKey, 0, invite.adminPublicKey, invite.relayHost, invite.name,
-      GroupKeys.newRiderId(), Keys.newAgreementKeyPair(), null,
-    )
+    /**
+     * Joining from an invite: a fresh rider id and key pair for this group only, or, from a [GroupState.deviceLink],
+     * the identity of the rider's other device.
+     */
+    fun join(invite: Invite): GroupState {
+      val me = invite.identity
+      return GroupState(
+        invite.groupId, invite.groupKey, invite.epoch, invite.adminPublicKey, invite.relayHost, invite.name,
+        me?.riderId ?: GroupKeys.newRiderId(),
+        me?.let { Keys.agreementKeyPairFrom(it.agreementPrivateKey) } ?: Keys.newAgreementKeyPair(),
+        me?.signingPrivateKey?.let { KeyPair(invite.adminPublicKey, it) },
+      )
+    }
 
     fun fromJson(text: String): GroupState? = try {
       val o = JSONObject(text)

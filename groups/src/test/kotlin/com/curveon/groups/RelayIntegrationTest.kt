@@ -189,6 +189,39 @@ class RelayIntegrationTest {
     a.client.sendPosition(Payload.Pos(61.0, 12.0, 10f, 0f, 2f))
     d.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 61.0 } }
     assertTrue("the old proof must not work any more", oldProof != a.state.keys.accessProof())
+
+    // an invite made after the change carries the new key and epoch, so a newcomer can join and be heard
+    val late = joined(Invite.parse(a.state.invite().toUri())!!, "Nina").also { it.client.start() }
+    a.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Nina" } }
+    Thread.sleep(300)
+    a.client.sendPosition(Payload.Pos(62.0, 13.0, 10f, 0f, 2f))
+    late.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 62.0 } }
+  }
+
+  @Test fun aSecondDeviceOfTheSameRiderIsNotANewRider() {
+    val (a, invite) = group()
+    a.client.start()
+    val b = joined(invite, "Kari").also { it.client.start() }
+    a.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Kari" } }
+
+    // Ola's phone joins with the link from Ola's tablet
+    val phone = Rider("Ola", GroupState.join(Invite.parse(a.state.deviceLink(System.currentTimeMillis() / 1000 + 600).toUri("curveon"))!!))
+    assertEquals(a.id, phone.id)
+    phone.client.start()
+    phone.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Kari" } }
+    Thread.sleep(500)
+
+    // the others see one Ola, not two
+    assertEquals(listOf(a.id), b.client.members().filter { it.nickname == "Ola" }.map { it.id })
+
+    // what Kari sends reaches both of Ola's devices; what one of Ola's devices sends reaches Kari, not the other device as a rider
+    b.client.sendPosition(Payload.Pos(59.0, 10.0, 10f, 0f, 2f))
+    a.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 59.0 } }
+    phone.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 59.0 } }
+    phone.client.sendPosition(Payload.Pos(59.5, 10.5, 10f, 0f, 2f))
+    val seen = b.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 59.5 } }
+    assertEquals(a.id, seen.riderId)
+    assertTrue(a.none { it is GroupEvent.Position && it.pos.lat == 59.5 })
   }
 
   @Test fun anSosMadeWithoutCoverageGoesOutWhenTheConnectionIsBack() {

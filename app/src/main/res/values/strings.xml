@@ -948,6 +948,8 @@
     <string name="group_nickname">Nickname</string>
     <string name="group_save">Save</string>
     <string name="group_invite">Invite riders</string>
+    <string name="group_other_device">My other device</string>
+    <string name="group_other_device_hint">Scan this with your other device (the phone, if this is the tablet) to make it the same rider here, not a new one. It gives full access as you, so show it only to yourself. It stops working after 15 minutes.</string>
     <string name="group_invite_hint">Scan with a phone\'s camera. Anyone with this code can join, so only show it to riders you want in the group. To send a link instead, use the Curveon Companion app on your phone.</string>
     <string name="group_leave">Leave group</string>
     <string name="group_leave_title">Leave %1$s?</string>
@@ -969,11 +971,10 @@
     <string name="sos_on_the_way">%1$d on the way</string>
     <string name="sos_no_delivery">Nobody has got it yet. No coverage? Call someone yourself.</string>
     <string name="sos_cancel">Cancel SOS</string>
+    <string name="sos_drive_there">Drive there</string>
+    <string name="sos_ignore">Ignore</string>
+    <string name="sos_nobody_yet">No one on the way yet</string>
     <string name="sos_alert_title">%1$s needs help</string>
     <string name="sos_away_m">%1$d m away</string>
     <string name="sos_away_km">%1$.1f km away</string>
-    <string name="sos_coming">I\'m coming</string>
-    <string name="sos_you_coming">You are on the way</string>
-    <string name="sos_navigate">Navigate there</string>
-    <string name="sos_dismiss">Close</string>
 </resources>

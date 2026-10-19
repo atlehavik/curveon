@@ -266,6 +266,11 @@ X25519/Ed25519, Apache 2.0). The relay side of 5 and 6 is done too (`~/develop/c
 proof, new frame types, SQLite storage and replay, per-IP creation limit, signed rekey, tested; the
 Kotlin and Node sides agree on the rekey signature byte for byte). Not done yet: "make admin" (a change
 signed by an existing admin), test vectors, JSON encoding of frames in `:groups`, wiring into the apps.
+Decided 2026-10-19 after the rider's first look: (1) groups get a **button in the main menu** (the rail, a "friends" icon), not a map button;
+(2) a rider with several devices (tablet and phone) is **one rider**: a device that is in the group makes a short-lived link or QR
+for the other ("My other device") that hands over the rider id and keys, see `docs/groups-protocol.md`; (3) an incoming SOS is a **small red
+dialog** with "Drive there" (says "on the way" to the group and starts a route) and "Ignore", and shows how many are already on the way, because
+it may be nothing and not everyone has to go. The word stays "group" in the app, though the rider thinks of it as friends.
 Built 2026-10-19: the group library (`:groups`: client, payloads, position sharing, SOS tracking), the Bluetooth messages
 (`:protocol` version 2), the phone side (`GroupHub` in `:phone`, encrypted store, OkHttp), a Group ride card in the companion, and on the
 tablet the other riders on the map, a group button, the group dialog (also Settings → Group ride) with invite QR, pause, profile, remove

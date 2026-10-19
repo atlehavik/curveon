@@ -95,6 +95,10 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
     val active = groups.firstOrNull { it.id == activeId }
     var name by rememberSaveable { mutableStateOf("") }
     var showInvite by rememberSaveable { mutableStateOf(false) }
+    var showDeviceLink by rememberSaveable { mutableStateOf(false) }
+    val deviceLink by manager.deviceLink.collectAsStateWithLifecycle()
+    // The link for my other device carries my secrets: gone from memory as soon as it is not shown.
+    DisposableEffect(Unit) { onDispose { manager.forgetDeviceLink() } }
     var confirmLeave by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf<GroupRider?>(null) }
     var countdown by remember { mutableStateOf<Int?>(null) }
@@ -177,12 +181,25 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
             members[myId]?.let { me -> ProfileEditor(me) { n, c, i -> manager.setProfile(n, c, i, null) } }
 
             if (status != Message.GroupStatus.REMOVED) {
-                OutlinedButton(onClick = { showInvite = !showInvite; if (showInvite) manager.requestInvite(active.id) }, modifier = Modifier.testTag("group_invite")) {
+                OutlinedButton(onClick = {
+                    showInvite = !showInvite; showDeviceLink = false; manager.forgetDeviceLink()
+                    if (showInvite) manager.requestInvite(active.id)
+                }, modifier = Modifier.testTag("group_invite")) {
                     Icon(Icons.Default.QrCode2, null, tint = ElectricCyan)
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.group_invite), color = ElectricCyan, fontWeight = FontWeight.Bold)
                 }
-                if (showInvite) InviteQr(invite)
+                if (showInvite) QrBlock(invite, R.string.group_invite_hint, R.string.group_invite)
+                // The same person on another device (tablet and phone): one rider in the group, not two.
+                OutlinedButton(onClick = {
+                    showDeviceLink = !showDeviceLink; showInvite = false; manager.forgetDeviceLink()
+                    if (showDeviceLink) manager.requestDeviceLink(active.id)
+                }, modifier = Modifier.testTag("group_other_device")) {
+                    Icon(Icons.Default.Devices, null, tint = ElectricCyan)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.group_other_device), color = ElectricCyan, fontWeight = FontWeight.Bold)
+                }
+                if (showDeviceLink) QrBlock(deviceLink, R.string.group_other_device_hint, R.string.group_other_device)
             }
 
             if (status != Message.GroupStatus.REMOVED) SosButton(onTrigger = { countdown = SOS_COUNTDOWN_S })
@@ -304,17 +321,17 @@ private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?) -> Unit
     }
 }
 
-/** The invite as a QR code for a friend's camera. Anyone with it can join, and it says so. */
+/** A link as a QR code for a camera, with what to know about it: the invite (anyone with it can join) or the one for my other device. */
 @Composable
-private fun InviteQr(uri: String?) {
+private fun QrBlock(uri: String?, hint: Int, description: Int) {
     val bitmap = remember(uri) { uri?.let { QrCode.bitmap(it) } }
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (bitmap != null) Image(
-            bitmap.asImageBitmap(), stringResource(R.string.group_invite),
+            bitmap.asImageBitmap(), stringResource(description),
             modifier = Modifier.size(260.dp).clip(RoundedCornerShape(12.dp)).testTag("group_qr")
         )
         else CircularProgressIndicator(color = ElectricCyan)
-        Text(stringResource(R.string.group_invite_hint), color = TextMuted, fontSize = 13.sp, textAlign = TextAlign.Center)
+        Text(stringResource(hint), color = TextMuted, fontSize = 13.sp, textAlign = TextAlign.Center)
     }
 }
 
@@ -393,40 +410,42 @@ fun GroupSosOverlay(manager: GroupManager, myLat: Double?, myLon: Double?, navig
     val incoming = sos.values.firstOrNull { !it.mine && it.timeMs !in dismissed }
     incoming?.let { s ->
         val who = members[s.from]?.nickname ?: stringResource(R.string.group_unnamed)
-        val answered = s.acks.firstOrNull { it.riderId == myId }?.coming == true
+        val onTheWay = s.acks.count { it.coming }
+        // It may be nothing, and not everyone has to go: ignoring it is as easy as answering.
+        val ignore = { dismissed = dismissed + s.timeMs }
         SosAlertSound()
-        Dialog(onDismissRequest = {}, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true, dismissOnClickOutside = false)) {
+        Dialog(onDismissRequest = ignore, properties = DialogProperties(dismissOnClickOutside = false)) {
             HideSystemBars()
             Column(
-                Modifier.fillMaxSize().background(Color(0xFFB71C1C)).padding(24.dp).testTag("sos_alert"),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
+                Modifier.widthIn(max = 380.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFFB71C1C))
+                    .padding(18.dp).testTag("sos_alert"),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Icon(Icons.Default.Sos, null, tint = Color.White, modifier = Modifier.size(72.dp))
-                Spacer(Modifier.height(12.dp))
-                Text(stringResource(R.string.sos_alert_title, who), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
-                if (myLat != null && myLon != null) {
-                    val m = com.curveon.routing.Geo.distance(myLat, myLon, s.lat, s.lon).toInt()
-                    Text(
-                        if (m < 1000) stringResource(R.string.sos_away_m, m) else stringResource(R.string.sos_away_km, m / 1000.0),
-                        color = Color.White, fontSize = 22.sp
-                    )
-                }
-                Spacer(Modifier.height(24.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = { manager.sosAnswer(s.from, true) }, enabled = !answered,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, disabledContainerColor = Color(0xFF1B5E20)),
-                        modifier = Modifier.height(64.dp).testTag("sos_coming")
-                    ) {
-                        Text(stringResource(if (answered) R.string.sos_you_coming else R.string.sos_coming), color = if (answered) Color.White else Color(0xFFB71C1C), fontSize = 18.sp, fontWeight = FontWeight.Black)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Icons.Default.Sos, null, tint = Color.White, modifier = Modifier.size(40.dp))
+                    Column {
+                        Text(stringResource(R.string.sos_alert_title, who), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                        if (myLat != null && myLon != null) {
+                            val m = com.curveon.routing.Geo.distance(myLat, myLon, s.lat, s.lon).toInt()
+                            Text(
+                                if (m < 1000) stringResource(R.string.sos_away_m, m) else stringResource(R.string.sos_away_km, m / 1000.0),
+                                color = Color.White, fontSize = 15.sp
+                            )
+                        }
                     }
-                    Button(
-                        onClick = { navigateTo(s.lat, s.lon, who); dismissed = dismissed + s.timeMs },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White), modifier = Modifier.height(64.dp).testTag("sos_navigate")
-                    ) { Text(stringResource(R.string.sos_navigate), color = Color(0xFFB71C1C), fontSize = 18.sp, fontWeight = FontWeight.Black) }
                 }
-                TextButton(onClick = { dismissed = dismissed + s.timeMs }, modifier = Modifier.testTag("sos_dismiss")) {
-                    Text(stringResource(R.string.sos_dismiss), color = Color.White, fontSize = 16.sp)
+                Text(
+                    if (onTheWay > 0) stringResource(R.string.sos_on_the_way, onTheWay) else stringResource(R.string.sos_nobody_yet),
+                    color = if (onTheWay > 0) Color(0xFFB9F6CA) else Color(0xFFFFCDD2), fontSize = 14.sp, fontWeight = FontWeight.Bold
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = { manager.sosAnswer(s.from, true); navigateTo(s.lat, s.lon, who); ignore() },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White), modifier = Modifier.weight(1f).height(52.dp).testTag("sos_drive")
+                    ) { Text(stringResource(R.string.sos_drive_there), color = Color(0xFFB71C1C), fontSize = 16.sp, fontWeight = FontWeight.Black) }
+                    TextButton(onClick = ignore, modifier = Modifier.height(52.dp).testTag("sos_ignore")) {
+                        Text(stringResource(R.string.sos_ignore), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

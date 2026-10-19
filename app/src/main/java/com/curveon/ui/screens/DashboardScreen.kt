@@ -693,9 +693,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             previewRoutes = mapPreviewRoutes,
             markers = mapMarkers,
             groupRiders = groupRiders,
-            groupButton = groupActive != null,
-            groupAlert = groupSos.isNotEmpty(),
-            onGroup = { showGroup = true },
             editor = editor,
             // The route starts on the nearest road the map joins up: show the way to it.
             approachTo = mapApproachTo,
@@ -808,6 +805,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         searchPurpose != null -> RailPanel.SEARCH
         showGpx -> RailPanel.GPX
         phoneTab != null -> RailPanel.PHONE
+        showGroup -> RailPanel.GROUP
         showSettings -> RailPanel.SETTINGS
         else -> null
     }
@@ -817,11 +815,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         closeSearch()
         showGpx = false
         phoneTab = null
+        showGroup = false
         showSettings = false
         if (panel != activePanel) when (panel) {
             RailPanel.SEARCH -> searchPurpose = SearchPurpose.DESTINATION
             RailPanel.GPX -> showGpx = true
             RailPanel.PHONE -> phoneTab = PhoneTab.FAVORITES
+            RailPanel.GROUP -> showGroup = true
             RailPanel.SETTINGS -> { settingsOnHelp = appUpdate is com.curveon.data.update.UpdateState.Available; showSettings = true }
         }
     }
@@ -845,6 +845,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             isFullScreenMap = isFullScreenMap,
             unread = notifications.size,
             updateWaiting = appUpdate is com.curveon.data.update.UpdateState.Available,
+            groupAlert = groupSos.values.any { !it.mine },
             recordingResting = recordingResting,
             active = activePanel,
             onPress = pressRail,
@@ -884,6 +885,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onClose = { phoneTab = null }
             )
         }
+
+        if (showGroup) com.curveon.ui.components.GroupDialog(phone.groups, onDismiss = { showGroup = false })
 
         searchPurpose?.let { purpose -> key(purpose) {
             DestinationSearchDialog(
@@ -1101,7 +1104,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
       }
     }
     val panelLayer: @Composable BoxScope.() -> Unit = {
-        val open = searchPurpose != null || showGpx || phoneTab != null || showSettings
+        val open = searchPurpose != null || showGpx || phoneTab != null || showGroup || showSettings
         // The cover takes every touch, so nothing reaches the map underneath.
         if (open) Box(Modifier.matchParentSize().pointerInput(Unit) { detectTapGestures { } }) {
             Box(Modifier.fillMaxSize().imePadding().padding(8.dp)) {
@@ -1126,10 +1129,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     // The group ride: its dialog, the rider's own SOS and the alert for someone else's.
     val groupLayer: @Composable BoxScope.() -> Unit = {
-        if (showGroup) com.curveon.ui.components.GroupDialog(phone.groups, onDismiss = { showGroup = false })
         com.curveon.ui.components.GroupSosOverlay(
             phone.groups, currentLocationState.value.latitude, currentLocationState.value.longitude,
-            navigateTo = { lat, lon, name -> showGroup = false; viewModel.previewDestination(GeoPoint(lat, lon), name) }
+            navigateTo = { lat, lon, name -> viewModel.previewDestination(GeoPoint(lat, lon), name) }
         )
     }
 
@@ -1326,7 +1328,7 @@ private const val PORTRAIT_CARDS_SHARE = 0.34f
 private val FULL_MAP_SPEED_CLEARANCE = 80.dp
 
 /** The screens the rail opens over the map. */
-private enum class RailPanel { SEARCH, GPX, PHONE, SETTINGS }
+private enum class RailPanel { SEARCH, GPX, PHONE, GROUP, SETTINGS }
 
 @Composable
 private fun Rail(
@@ -1338,6 +1340,8 @@ private fun Rail(
     unread: Int,
     /** A new version of the app is out: a dot on Settings. */
     updateWaiting: Boolean,
+    /** Someone in the group has sent an SOS: a red dot on the group button. */
+    groupAlert: Boolean = false,
     /** A ride is being recorded while standing still: a red dot on the GPX button. */
     recordingResting: Boolean = false,
     /** The screen that is open: its button is lit. */
@@ -1360,6 +1364,14 @@ private fun Rail(
     val phone: @Composable () -> Unit = {
         RailButton(Icons.Default.Phone, stringResource(R.string.phone), ElectricCyan, EcoGreen, filled = active == RailPanel.PHONE,
             tag = "rail_phone", target = TourTarget.PHONE, onClick = { onPress(RailPanel.PHONE) })
+    }
+    // Friends riding together; a dot while someone has sent an SOS.
+    val group: @Composable () -> Unit = {
+        Box {
+            RailButton(Icons.Default.Diversity3, stringResource(R.string.group_title), ElectricCyan, NeonAmber, filled = active == RailPanel.GROUP,
+                tag = "rail_group", target = null, onClick = { onPress(RailPanel.GROUP) })
+            if (groupAlert) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(WarningRed))
+        }
     }
     val settings: @Composable () -> Unit = {
         Box {
@@ -1389,7 +1401,7 @@ private fun Rail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
     ) {
-        search(); gpx(); phone(); settings()
+        search(); gpx(); phone(); group(); settings()
         Spacer(Modifier.weight(1f))
         mapToggle()
     } else Row(
@@ -1398,7 +1410,7 @@ private fun Rail(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         // The landscape rail turned a quarter: its bottom (the map toggle) ends up at the left.
-        mapToggle(); settings(); phone(); gpx(); search()
+        mapToggle(); settings(); group(); phone(); gpx(); search()
     }
 }
 
@@ -1412,7 +1424,8 @@ private fun RailButton(
     /** Changes (above 0) each time the button should blink: something was just put where it leads. */
     flashKey: Int = 0,
     tag: String,
-    target: TourTarget,
+    /** What the welcome tour lights up; null for a button the tour does not mention. */
+    target: TourTarget?,
     onClick: () -> Unit
 ) {
     // Smaller on a phone: sideways it is low, upright it is narrow.
@@ -1429,7 +1442,7 @@ private fun RailButton(
     Box(
         Modifier
             .size(if (compact) 48.dp else 56.dp)
-            .tourTarget(target)
+            .then(if (target != null) Modifier.tourTarget(target) else Modifier)
             .graphicsLayer { scaleX = 1f + 0.25f * blink.value; scaleY = 1f + 0.25f * blink.value }
             .clip(RoundedCornerShape(16.dp))
             .background(androidx.compose.ui.graphics.lerp(base, NeonAmber, blink.value))

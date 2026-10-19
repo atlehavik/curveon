@@ -10,6 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -190,6 +192,23 @@ class MainActivity : ComponentActivity() {
                         ))
                     }
                 }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.group_invite)) }
+                // The same person on another device (this phone and the tablet): one rider, not two.
+                var showDevice by remember { mutableStateOf(false) }
+                OutlinedButton(onClick = { showDevice = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.group_other_device)) }
+                if (showDevice) {
+                    val bitmap = remember { GroupHub.deviceLink(s.groupId)?.let { QrCode.bitmap(it) } }
+                    AlertDialog(
+                        onDismissRequest = { showDevice = false },
+                        confirmButton = { TextButton(onClick = { showDevice = false }) { Text(stringResource(R.string.group_close)) } },
+                        title = { Text(stringResource(R.string.group_other_device)) },
+                        text = {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                bitmap?.let { Image(it.asImageBitmap(), null, modifier = Modifier.size(240.dp).clip(RoundedCornerShape(12.dp))) }
+                                Text(stringResource(R.string.group_other_device_hint), fontSize = 13.sp)
+                            }
+                        }
+                    )
+                }
             }
             OutlinedTextField(nick, { nick = it }, label = { Text(stringResource(R.string.group_nickname)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(relay, { relay = it }, label = { Text(stringResource(R.string.group_relay)) }, singleLine = true, modifier = Modifier.fillMaxWidth())

@@ -40,6 +40,7 @@ import java.util.concurrent.Executors
 object GroupHub {
     private const val TAG = "GroupHub"
     private const val DEFAULT_INVITE_DAYS = 7
+    private const val DEVICE_LINK_MINUTES = 15
     private val exec = Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
     private val transports = OkHttpTransportFactory()
 
@@ -58,6 +59,10 @@ object GroupHub {
     /** Things that went wrong (a bad invite, no relay set), for a short message on the phone's own screen. */
     private val _errors = MutableSharedFlow<Message.GroupErrorCode>(extraBufferCapacity = 4)
     val errors: SharedFlow<Message.GroupErrorCode> = _errors.asSharedFlow()
+
+    /** A link that makes the rider's other device the same rider in [groupId] (secret, so short-lived); null for an unknown group. */
+    fun deviceLink(groupId: String, minutes: Int = DEVICE_LINK_MINUTES): String? =
+        published[groupId]?.deviceLink(System.currentTimeMillis() / 1000 + minutes * 60L)?.toUri("curveon")
 
     /** A link to join [groupId], valid for [days]; null for a group this phone does not know. Safe to call from any thread. */
     fun inviteLink(groupId: String, days: Int = DEFAULT_INVITE_DAYS): String? =
@@ -188,6 +193,10 @@ object GroupHub {
                 positions.remove(m.riderId)
                 sos?.forget(m.riderId)?.let { send(sosMessage(it)) }
                 membersMessage()?.let(::send)
+            }
+            is Message.RequestDeviceLink -> {
+                if (groups[m.groupId] == null) return error(Message.GroupErrorCode.NO_SUCH_GROUP)
+                send(Message.GroupDeviceLink(m.groupId, deviceLink(m.groupId) ?: return))
             }
             is Message.RequestGroupInvite -> {
                 val state = groups[m.groupId] ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)

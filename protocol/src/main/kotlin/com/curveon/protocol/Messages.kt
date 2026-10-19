@@ -334,6 +334,14 @@ sealed interface Message {
         override fun toJson() = obj("request_invite").put("id", groupId).put("days", validDays ?: JSONObject.NULL)
     }
 
+    /**
+     * Ask for a link that makes the rider's other device the same rider in [groupId] instead of a new one;
+     * the phone answers with [GroupDeviceLink]. The link carries the rider's secrets: show it only as a QR code.
+     */
+    data class RequestDeviceLink(val groupId: String) : Message {
+        override fun toJson() = obj("request_device_link").put("id", groupId)
+    }
+
     // ---- groups, phone -> tablet ----
 
     /** Every group on the phone, and which one is active. [sharing] is false while paused. */
@@ -400,6 +408,11 @@ sealed interface Message {
     /** The invite for [groupId], to show as a QR code or share as a link. */
     data class GroupInvite(val groupId: String, val uri: String) : Message {
         override fun toJson() = obj("group_invite").put("id", groupId).put("uri", uri)
+    }
+
+    /** The answer to [RequestDeviceLink]; short-lived. */
+    data class GroupDeviceLink(val groupId: String, val uri: String) : Message {
+        override fun toJson() = obj("group_device_link").put("id", groupId).put("uri", uri)
     }
 
     /** Something about groups didn't work; the tablet shows its own (translated) text for [code]. */
@@ -495,6 +508,8 @@ sealed interface Message {
             "sos_cancel" -> SosCancel
             "sos_answer" -> SosAnswer(o.getString("sos"), o.optBoolean("coming", true))
             "group_remove" -> GroupRemoveRider(o.getString("id"), o.getString("rider"))
+            "request_device_link" -> RequestDeviceLink(o.getString("id"))
+            "group_device_link" -> GroupDeviceLink(o.getString("id"), o.getString("uri"))
             "request_invite" -> RequestGroupInvite(o.getString("id"), if (o.isNull("days")) null else o.optInt("days"))
             "group_list" -> GroupList(o.optJSONArray("list").objects().map {
                 GroupInfo(it.getString("id"), it.nullableString("name"), it.optInt("members"), it.optBoolean("admin"))

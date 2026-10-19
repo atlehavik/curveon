@@ -83,6 +83,35 @@ class PayloadTest {
     assertArrayEquals(newKey, back.open(admin.publicKey, ola, olaKeys.privateKey))
   }
 
+  @Test fun theLinkForMyOtherDeviceMakesItTheSameRider() {
+    val admin = GroupState.create("relay.example.org", "Lofoten")
+    val link = Invite.parse(admin.deviceLink(1_800_000_000L).toUri("curveon"))!!
+    val other = GroupState.join(link)
+    assertArrayEquals(admin.riderId, other.riderId)
+    assertArrayEquals(admin.agreement.publicKey, other.agreement.publicKey)
+    assertArrayEquals(admin.agreement.privateKey, other.agreement.privateKey)
+    assertTrue("an admin's other device is an admin too", other.isAdmin)
+    assertArrayEquals(admin.adminPublicKey, other.adminSigning!!.publicKey)
+
+    val member = GroupState.join(Invite.parse(admin.invite().toUri())!!)
+    val membersOther = GroupState.join(Invite.parse(member.deviceLink(1_800_000_000L).toUri("curveon"))!!)
+    assertArrayEquals(member.riderId, membersOther.riderId)
+    assertTrue(!membersOther.isAdmin)
+    // an ordinary invite never carries anyone's identity
+    assertNull(Invite.parse(admin.invite().toUri())!!.identity)
+    assertNull(Invite.parse(admin.invite().toUri().replace("&k=", "&me=junk&k="))) // a damaged transfer is refused, not turned into a new rider
+  }
+
+  @Test fun theInviteCarriesTheKeyEpoch() {
+    val g = GroupState.create("relay.example.org", null)
+    assertEquals(0, Invite.parse(g.invite().toUri())!!.epoch)
+    g.switchKey(GroupKeys.newGroupKey(), 3)
+    val joined = GroupState.join(Invite.parse(g.invite().toUri())!!)
+    assertEquals(3, joined.epoch)
+    assertArrayEquals(g.groupKey, joined.groupKey)
+    assertEquals(g.keys.accessProof(), joined.keys.accessProof())
+  }
+
   @Test fun stateRoundTripsForAdminAndMember() {
     val mine = GroupState.create("relay.example.org", "Lofoten")
     val back = GroupState.fromJson(mine.toJson())!!

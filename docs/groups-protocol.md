@@ -24,12 +24,25 @@ Derived with HKDF-SHA256 (`ikm = groupKey`, `salt = groupId`, 32 bytes out):
 ## Invite
 Everything is in the URI fragment, so a web server never sees it:
 
-    https://<relay>/join#v=1&g=<groupId>&k=<groupKey>&a=<adminPub>&r=<relay>[&n=<name>][&x=<expiry>]
+    https://<relay>/join#v=1&g=<groupId>&k=<groupKey>&a=<adminPub>&r=<relay>[&n=<name>][&x=<expiry>][&e=<epoch>][&me=<identity>]
     curveon://join#v=1&...            (same fragment)
 
 `v` version (a client rejects other versions), `g`, `k`, `a` as above, `r` relay host (so a moved or
 self-run relay still works), `n` optional group name (URL-encoded), `x` optional expiry in epoch seconds
-(enforced by the app only: a soft limit).
+(enforced by the app only: a soft limit), `e` the key epoch `k` belongs to (0 when left out; a group that has
+had a rider removed is past 0, so an invite made after that must say so).
+
+### The same rider on two devices
+One person with a tablet and a phone should be one rider, not two. A device that is already in the group makes a
+link for the other one with `me=<identity>` added, where `identity` is `riderId (16 bytes) || agreement private
+key (32) [|| admin signing private key (32), only for an admin]`, base64url. The other device that opens it
+joins as that rider: same `riderId`, same X25519 key pair (so a rekey can be opened on both), and the admin
+signing key if it was an admin. Such a link gives full access as that rider: show it only on screen, set a
+short `x` (the apps use 15 minutes), and never share it through a chat. A client that does not know `me`
+ignores it and joins as a new rider (a harmless fallback); one that cannot read it must refuse the link.
+Frames from one's own `riderId` are ignored, so the two devices do not show each other as riders. Both
+devices number their frames from their own clock, so two devices sending at the same moment can cost the
+receivers a position now and then (the replay guard keeps only rising numbers).
 
 ## Relay connection
 `wss://<relay>/g/<groupId hex>?p=<proof>[&a=<adminPub>]`

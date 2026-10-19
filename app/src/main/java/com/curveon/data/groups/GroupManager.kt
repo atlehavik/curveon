@@ -59,6 +59,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     private val _invite = MutableStateFlow<String?>(null)
     val invite: StateFlow<String?> = _invite.asStateFlow()
 
+    /** A short-lived link for the rider's own other device, to show as a QR code. */
+    private val _deviceLink = MutableStateFlow<String?>(null)
+    val deviceLink: StateFlow<String?> = _deviceLink.asStateFlow()
+
     private val _errors = MutableSharedFlow<Message.GroupErrorCode>(extraBufferCapacity = 4)
     val errors: SharedFlow<Message.GroupErrorCode> = _errors
 
@@ -99,6 +103,7 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
             }
             is Message.GroupRoute -> _routes.tryEmit(m)
             is Message.GroupInvite -> _invite.value = m.uri
+            is Message.GroupDeviceLink -> _deviceLink.value = m.uri
             is Message.GroupError -> _errors.tryEmit(m.code)
             else -> Unit
         }
@@ -116,6 +121,7 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
         _positions.value = emptyMap()
         _sos.value = emptyMap()
         _invite.value = null
+        _deviceLink.value = null
     }
 
     // ---- the rider's commands ----
@@ -129,6 +135,9 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun setProfile(nickname: String, colour: Int, icon: String?, photoJpegBase64: String?) =
         send(Message.GroupProfile(nickname, colour, icon, photoJpegBase64))
     fun requestInvite(groupId: String, validDays: Int? = null) = send(Message.RequestGroupInvite(groupId, validDays))
+    fun requestDeviceLink(groupId: String) = send(Message.RequestDeviceLink(groupId))
+    /** The link is secret: do not leave it around once it has been shown. */
+    fun forgetDeviceLink() { _deviceLink.value = null }
     fun removeRider(groupId: String, riderId: String) = send(Message.GroupRemoveRider(groupId, riderId))
     fun shareRoute(name: String, gpxGz: ByteArray) = send(Message.ShareRoute(name, Base64.encodeToString(gpxGz, Base64.NO_WRAP)))
 

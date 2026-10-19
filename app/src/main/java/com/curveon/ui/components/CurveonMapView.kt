@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.Navigation
@@ -194,10 +193,6 @@ fun CurveonMapView(
     markers: List<MapPin> = emptyList(),
     /** The other riders in the active group. */
     groupRiders: List<MapGroupRider> = emptyList(),
-    /** A group ride is active: a button under the map buttons opens it. [groupAlert] while someone has sent an SOS. */
-    groupButton: Boolean = false,
-    groupAlert: Boolean = false,
-    onGroup: () -> Unit = {},
     roadNameProbe: Pair<Int, GeoPoint>? = null,
     onRoadName: (Int, com.curveon.data.road.MapRoad?) -> Unit = { _, _ -> },
     /** Called now and then with the road under the rider as the tiles have it; null = don't read it. */
@@ -1254,9 +1249,7 @@ fun CurveonMapView(
                     Icon(Icons.Default.MyLocation, stringResource(R.string.map_follow_me), tint = Color(0xFF00363D), modifier = Modifier.size(24.dp))
                 }
             }
-            if (groupButton) MapButton(onClick = onGroup, highlighted = groupAlert, tag = "map_group_btn") {
-                Icon(Icons.Default.Groups, stringResource(R.string.group_title), tint = if (groupAlert) Color(0xFF00363D) else ElectricCyan, modifier = Modifier.size(24.dp))
-            }
+
         }
 
         // Zoom to extents: the whole trip being planned, at a tap; under the speed and road cards.

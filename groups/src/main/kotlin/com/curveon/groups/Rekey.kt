@@ -15,6 +15,8 @@ object Keys {
     val priv = X25519.generatePrivateKey()
     return KeyPair(X25519.publicFromPrivate(priv), priv)
   }
+
+  fun agreementKeyPairFrom(privateKey: ByteArray) = KeyPair(X25519.publicFromPrivate(privateKey), privateKey)
 }
 
 /** One rider's copy of the new group key, readable only with that rider's X25519 private key. */
