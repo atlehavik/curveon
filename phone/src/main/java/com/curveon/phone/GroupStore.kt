@@ -46,6 +46,13 @@ class GroupStore(context: Context) {
         get() = prefs.getString(RELAY, "").orEmpty()
         set(v) = prefs.edit().putString(RELAY, v.trim()).apply()
 
+    /** Invites from friends that have been answered (or are out of date): each is shown once, although the relay keeps them for a week. */
+    fun isOfferHandled(id: String) = id in handledOffers()
+
+    fun markOfferHandled(id: String) = prefs.edit().putString(HANDLED, (handledOffers() + id).takeLast(200).joinToString(",")).apply()
+
+    private fun handledOffers() = prefs.getString(HANDLED, "").orEmpty().split(',').filter { it.isNotEmpty() }
+
     var dataSaver: Boolean
         get() = prefs.getBoolean(DATA_SAVER, false)
         set(v) = prefs.edit().putBoolean(DATA_SAVER, v).apply()
@@ -82,6 +89,7 @@ class GroupStore(context: Context) {
         const val SHARING = "sharing"
         const val RELAY = "relay"
         const val DATA_SAVER = "data_saver"
+        const val HANDLED = "handled_offers"
         const val PROFILE = "profile"
         const val KEYSTORE = "AndroidKeyStore"
         const val ALIAS = "curveon_groups"

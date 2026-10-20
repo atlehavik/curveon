@@ -356,6 +356,72 @@ sealed interface Message {
         override fun toJson() = obj("request_device_link").put("id", groupId)
     }
 
+    // ---- friends and shared trips, tablet -> phone ----
+
+    /** Ask for [FriendList] (and make the phone look for invites its friends have sent). */
+    data object RequestFriends : Message {
+        override fun toJson() = obj("request_friends")
+    }
+
+    /** "Show my code": a new private channel for a friend to join. The phone answers with [FriendInvite]. */
+    data object RequestFriendInvite : Message {
+        override fun toJson() = obj("request_friend_invite")
+    }
+
+    /** Stop being friends with the one in [channelId]. */
+    data class FriendRemove(val channelId: String) : Message {
+        override fun toJson() = obj("friend_remove").put("id", channelId)
+    }
+
+    /** Offer the ride group [groupId] to these friends (their channel ids): each gets an invite to answer. */
+    data class FriendAddToGroup(val groupId: String, val friendIds: List<String>) : Message {
+        override fun toJson() = obj("friend_add_to_group").put("id", groupId).put("friends", JSONArray(friendIds))
+    }
+
+    /** The rider's answer to a [GroupInviteOffer]: join the group, or not. */
+    data class GroupInviteAnswer(val offerId: String, val accept: Boolean) : Message {
+        override fun toJson() = obj("group_invite_answer").put("offer", offerId).put("accept", accept)
+    }
+
+    /** A trip made or changed here, for the active group; [rev] only goes up and the highest wins ([doc] is JSON the app defines). */
+    data class TripShare(val tripId: String, val rev: Long, val name: String, val doc: String) : Message {
+        override fun toJson() = obj("trip_share").put("trip", tripId).put("rev", rev).put("name", name).put("doc", doc)
+    }
+
+    // ---- friends and shared trips, phone -> tablet ----
+
+    /** The friends, with who they are as last heard (the picture is the same small one riders have). */
+    data class FriendList(val friends: List<FriendInfo>) : Message {
+        override fun toJson() = obj("friend_list").put("list", JSONArray(friends.map {
+            JSONObject().put("id", it.id).put("nick", it.nickname).put("colour", it.colour)
+                .put("icon", it.icon ?: JSONObject.NULL).put("photo", it.photoJpegBase64 ?: JSONObject.NULL)
+        }))
+    }
+
+    data class FriendInfo(val id: String, val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?)
+
+    /** The answer to [RequestFriendInvite]: the link to show as a QR code or share. It is for one friend. */
+    data class FriendInvite(val channelId: String, val uri: String) : Message {
+        override fun toJson() = obj("friend_invite").put("id", channelId).put("uri", uri)
+    }
+
+    /** A friend asks the rider to join a ride group: shown once, with "join" or "ignore" ([GroupInviteAnswer]). */
+    data class GroupInviteOffer(
+        val offerId: String, val fromNickname: String, val groupName: String?, val fromPhotoJpegBase64: String?, val fromColour: Int
+    ) : Message {
+        override fun toJson() = obj("group_invite_offer").put("offer", offerId).put("from", fromNickname)
+            .put("group", groupName ?: JSONObject.NULL).put("photo", fromPhotoJpegBase64 ?: JSONObject.NULL).put("colour", fromColour)
+    }
+
+    /** A trip shared with the active group, new or changed, by [from] ([mine]: by the rider's own other device). */
+    data class GroupTrip(
+        val groupId: String, val tripId: String, val rev: Long, val from: String, val fromNickname: String?,
+        val name: String, val doc: String, val mine: Boolean
+    ) : Message {
+        override fun toJson() = obj("group_trip").put("id", groupId).put("trip", tripId).put("rev", rev).put("from", from)
+            .put("nick", fromNickname ?: JSONObject.NULL).put("name", name).put("doc", doc).put("mine", mine)
+    }
+
     // ---- groups, phone -> tablet ----
 
     /** Every group on the phone, and which one is active. [sharing] is false while paused. */
@@ -525,6 +591,21 @@ sealed interface Message {
             "sos_start" -> SosStart(o.getDouble("lat"), o.getDouble("lon"))
             "sos_cancel" -> SosCancel
             "sos_answer" -> SosAnswer(o.getString("sos"), o.optBoolean("coming", true))
+            "request_friends" -> RequestFriends
+            "request_friend_invite" -> RequestFriendInvite
+            "friend_remove" -> FriendRemove(o.getString("id"))
+            "friend_add_to_group" -> FriendAddToGroup(o.getString("id"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
+            "group_invite_answer" -> GroupInviteAnswer(o.getString("offer"), o.optBoolean("accept"))
+            "trip_share" -> TripShare(o.getString("trip"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
+            "friend_list" -> FriendList(o.optJSONArray("list").objects().map {
+                FriendInfo(it.getString("id"), it.optString("nick"), it.optInt("colour"), it.nullableString("icon"), it.nullableString("photo"))
+            })
+            "friend_invite" -> FriendInvite(o.getString("id"), o.getString("uri"))
+            "group_invite_offer" -> GroupInviteOffer(o.getString("offer"), o.optString("from"), o.nullableString("group"), o.nullableString("photo"), o.optInt("colour"))
+            "group_trip" -> GroupTrip(
+                o.getString("id"), o.getString("trip"), o.getLong("rev"), o.getString("from"), o.nullableString("nick"),
+                o.optString("name"), o.getString("doc"), o.optBoolean("mine")
+            )
             "group_use_device" -> GroupUseThisDevice
             "group_settings" -> GroupSettings(o.optString("relay"), o.optBoolean("saver"))
             "group_remove" -> GroupRemoveRider(o.getString("id"), o.getString("rider"))

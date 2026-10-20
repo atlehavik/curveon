@@ -9,7 +9,7 @@ import org.json.JSONObject
 enum class GroupKind { RIDE, FRIEND }
 
 /** The other person in a [GroupKind.FRIEND] channel, as last heard (kept so the list of friends shows them offline). */
-class PeerProfile(val nickname: String, val colour: Int, val icon: String?, val photoBase64: String?)
+class PeerProfile(val nickname: String, val colour: Int, val icon: String?, val photoBase64: String?, val riderId: String? = null)
 
 /** Someone in the group, as known from their `hello`. */
 class Member(val riderId: ByteArray, val nickname: String, val colour: Int, val agreementPublicKey: ByteArray, val avatar: Avatar?) {
@@ -70,7 +70,7 @@ class GroupState(
     .put("rider", B64.encode(riderId)).put("agreementPub", B64.encode(agreement.publicKey))
     .put("agreementPriv", B64.encode(agreement.privateKey))
     .put("signingPriv", adminSigning?.let { B64.encode(it.privateKey) } ?: JSONObject.NULL).put("device", deviceId).put("kind", kind.name)
-    .put("peer", peer?.let { JSONObject().put("nick", it.nickname).put("colour", it.colour).put("icon", it.icon ?: JSONObject.NULL).put("photo", it.photoBase64 ?: JSONObject.NULL) } ?: JSONObject.NULL)
+    .put("peer", peer?.let { JSONObject().put("nick", it.nickname).put("colour", it.colour).put("icon", it.icon ?: JSONObject.NULL).put("photo", it.photoBase64 ?: JSONObject.NULL).put("rider", it.riderId ?: JSONObject.NULL) } ?: JSONObject.NULL)
     .toString()
 
   companion object {
@@ -113,7 +113,7 @@ class GroupState(
         o.optJSONObject("peer")?.let { p ->
           st.peer = PeerProfile(
             p.optString("nick"), p.optInt("colour"), if (p.isNull("icon")) null else p.optString("icon"),
-            if (p.isNull("photo")) null else p.optString("photo"),
+            if (p.isNull("photo")) null else p.optString("photo"), if (p.isNull("rider")) null else p.optString("rider"),
           )
         }
       }

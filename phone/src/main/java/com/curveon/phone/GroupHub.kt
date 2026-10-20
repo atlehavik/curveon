@@ -11,6 +11,8 @@ import com.curveon.groups.Avatar
 import com.curveon.groups.Fix
 import com.curveon.groups.GroupClient
 import com.curveon.groups.GroupEvent
+import com.curveon.groups.GroupKind
+import com.curveon.groups.PeerProfile
 import com.curveon.groups.GroupState
 import com.curveon.groups.Invite
 import com.curveon.groups.Member
@@ -28,6 +30,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 /**
  * Group rides on the phone: holds the groups, keeps the active one connected to the relay while a
@@ -41,7 +45,7 @@ object GroupHub {
     private const val TAG = "GroupHub"
     private const val DEFAULT_INVITE_DAYS = 7
     private const val DEVICE_LINK_MINUTES = 15
-    private val exec = Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
+    private val exec = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
     private val transports = OkHttpTransportFactory()
 
     /** For the companion's and Curveon's own screens: the active group and how its link is doing. */
@@ -88,7 +92,12 @@ object GroupHub {
         this.context = app
         store = GroupStore(app).also { s ->
             s.loadGroups().forEach { groups[it.groupIdHex] = it }
-            activeId = s.activeId?.takeIf { it in groups }
+            // A friend code that was shown but never scanned is of no use after a restart.
+            groups.values.filter { it.kind == GroupKind.FRIEND && it.peer == null && it.isAdmin }.map { it.groupIdHex }.forEach { id ->
+                groups.remove(id)
+                s.delete(id)
+            }
+            activeId = s.activeId?.takeIf { groups[it]?.kind == GroupKind.RIDE }
             sharer.dataSaver = s.dataSaver
         }
         runCatching {
@@ -106,6 +115,8 @@ object GroupHub {
         client?.shutdown()
         client = null
         connected = false
+        stopAllFriends()
+        offers.clear()
         runCatching { network?.let { app.getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(it) } }
         network = null
         context = null
@@ -146,18 +157,19 @@ object GroupHub {
                 val invite = Invite.parse(m.invite) ?: return error(Message.GroupErrorCode.INVALID_INVITE)
                 if (invite.isExpired(System.currentTimeMillis() / 1000)) return error(Message.GroupErrorCode.EXPIRED_INVITE)
                 val id = invite.groupId.joinToString("") { "%02x".format(it) }
-                if (id in groups) return error(Message.GroupErrorCode.ALREADY_MEMBER).also { select(id) }
-                add(GroupState.join(invite))
+                if (id in groups) return error(Message.GroupErrorCode.ALREADY_MEMBER).also { if (groups[id]?.kind == GroupKind.RIDE) select(id) }
+                GroupState.join(invite).let { if (it.kind == GroupKind.FRIEND) addFriend(it) else add(it) }
             }
             is Message.GroupLeave -> {
                 val state = groups[m.groupId] ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
+                if (state.kind == GroupKind.FRIEND) return removeFriend(m.groupId)
                 if (m.groupId == activeId) { client?.leave(); detach() }
                 groups.remove(state.groupIdHex)
                 store.delete(state.groupIdHex)
                 if (activeId == state.groupIdHex) { activeId = null; store.activeId = null }
                 send(groupList())
             }
-            is Message.GroupSelect -> select(m.groupId?.takeIf { it in groups })
+            is Message.GroupSelect -> select(m.groupId?.takeIf { groups[it]?.kind == GroupKind.RIDE })
             is Message.GroupSharing -> {
                 store.sharing = m.on
                 sharer.reset()
@@ -210,6 +222,20 @@ object GroupHub {
                 sharer.reset()
                 sendConnection()
             }
+            is Message.RequestFriends -> { send(friendList()); sweepFriends() }
+            is Message.RequestFriendInvite -> makeFriendInvite()?.let { (id, uri) -> send(Message.FriendInvite(id, uri)) }
+            is Message.FriendRemove -> removeFriend(m.channelId)
+            is Message.FriendAddToGroup -> {
+                val ride = groups[m.groupId]?.takeIf { it.kind == GroupKind.RIDE } ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
+                val link = ride.invite(System.currentTimeMillis() / 1000 + DEFAULT_INVITE_DAYS * 86_400L).toUri()
+                m.friendIds.forEach { id -> touchFriend(id, 8_000) { c -> c.sendInvite(link, ride.name) } }
+            }
+            is Message.GroupInviteAnswer -> {
+                val offer = offers.remove(m.offerId) ?: return
+                store.markOfferHandled(m.offerId)
+                if (m.accept) handleNow(Message.GroupJoin(offer.link))
+            }
+            is Message.TripShare -> client?.sendTrip(Payload.Trip(m.tripId, m.rev, m.name, m.doc))
             is Message.RequestGroupInvite -> {
                 val state = groups[m.groupId] ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
                 val days = m.validDays ?: DEFAULT_INVITE_DAYS
@@ -241,6 +267,7 @@ object GroupHub {
 
     private fun updateConnection() {
         if (context == null) return
+        updateFriendSweep()
         val state = activeId?.let { groups[it] }
         val wanted = state != null && !removed && PhoneHub.tabletCount > 0
         if (!wanted) {
@@ -290,6 +317,135 @@ object GroupHub {
 
     private fun myIdOf(state: GroupState) = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(state.riderId)
 
+    // ---- friends: a private channel with each, opened briefly (a socket per friend all day would cost the battery) ----
+
+    private class Offer(val friendId: String, val link: String, val groupName: String?)
+
+    private val offers = LinkedHashMap<String, Offer>()
+    private val friendClients = HashMap<String, GroupClient>()
+    private val friendDeadlines = HashMap<String, Long>()
+    private val friendActions = HashMap<String, MutableList<(GroupClient) -> Unit>>()
+    private var sweepJob: ScheduledFuture<*>? = null
+
+    private fun friendStates() = groups.values.filter { it.kind == GroupKind.FRIEND }
+
+    private fun friendList() = Message.FriendList(friendStates().mapNotNull { st ->
+        st.peer?.let { Message.FriendInfo(st.groupIdHex, it.nickname, it.colour, it.icon, it.photoBase64) }
+    })
+
+    /** Keeps the channel to a friend open for at least [keepMs] more, and runs [action] as soon as it is. */
+    private fun touchFriend(id: String, keepMs: Long, action: ((GroupClient) -> Unit)? = null) {
+        val state = groups[id]?.takeIf { it.kind == GroupKind.FRIEND } ?: return
+        var c = friendClients[id]
+        if (c == null) {
+            c = GroupClient(
+                state, transports, { e -> exec.execute { onFriendEvent(state, e) } }, { s -> exec.execute { store?.save(s) } },
+                scheme = scheme(state.relayHost)
+            )
+            c.setProfile(helloFor(state))
+            friendClients[id] = c
+            c.start()
+        }
+        if (action != null) { if (c.connected) action(c) else friendActions.getOrPut(id) { mutableListOf() }.add(action) }
+        val deadline = maxOf(friendDeadlines[id] ?: 0L, System.currentTimeMillis() + keepMs)
+        friendDeadlines[id] = deadline
+        exec.schedule({ closeFriendIfDone(id) }, deadline - System.currentTimeMillis() + 50, TimeUnit.MILLISECONDS)
+    }
+
+    private fun closeFriendIfDone(id: String) {
+        if (System.currentTimeMillis() < (friendDeadlines[id] ?: 0L)) return // kept open longer since
+        stopFriend(id)
+    }
+
+    private fun stopFriend(id: String) {
+        friendDeadlines.remove(id)
+        friendActions.remove(id)
+        friendClients.remove(id)?.shutdown()
+    }
+
+    private fun stopAllFriends() {
+        sweepJob?.cancel(false)
+        sweepJob = null
+        friendClients.keys.toList().forEach(::stopFriend)
+    }
+
+    /** While a tablet listens, look in on every friend now and then: an invite from one may be waiting. */
+    private fun updateFriendSweep() {
+        val listening = PhoneHub.tabletCount > 0
+        if (listening && sweepJob == null) sweepJob = exec.scheduleWithFixedDelay({ sweepFriends() }, 0, 10, TimeUnit.MINUTES)
+        else if (!listening && sweepJob != null) stopAllFriends()
+    }
+
+    private fun sweepFriends() = friendStates().forEach { touchFriend(it.groupIdHex, 6_000) }
+
+    private fun onFriendEvent(state: GroupState, e: GroupEvent) {
+        val id = state.groupIdHex
+        when (e) {
+            GroupEvent.Connected -> friendActions.remove(id)?.forEach { act -> friendClients[id]?.let { runCatching { act(it) } } }
+            is GroupEvent.MemberUpdated -> {
+                val m = e.member
+                // A friend channel is for two: whoever said hello first is the friend.
+                if (state.peer?.riderId != null && state.peer?.riderId != m.id) return
+                val photo = (m.avatar as? Avatar.Photo)?.let { Base64.getEncoder().encodeToString(it.jpeg) }
+                state.peer = PeerProfile(m.nickname, m.colour, (m.avatar as? Avatar.Icon)?.id, photo, m.id)
+                store?.save(state)
+                send(friendList())
+            }
+            is GroupEvent.InviteReceived -> offer(state, e.invite)
+            else -> Unit
+        }
+    }
+
+    private fun addFriend(state: GroupState) {
+        groups[state.groupIdHex] = state
+        store?.save(state)
+        touchFriend(state.groupIdHex, 20_000) // long enough for the two to say hello
+        send(friendList())
+    }
+
+    private fun removeFriend(id: String) {
+        val state = groups[id]?.takeIf { it.kind == GroupKind.FRIEND } ?: return
+        friendClients[id]?.leave()
+        stopFriend(id)
+        groups.remove(id)
+        store?.delete(id)
+        offers.entries.removeAll { it.value.friendId == id }
+        publish()
+        send(friendList())
+    }
+
+    /** A new private channel for one friend to join (the code and the link). Kept open while the code is on show. */
+    private fun makeFriendInvite(): Pair<String, String>? {
+        val store = store ?: return null
+        if (store.relayHost.isBlank()) { error(Message.GroupErrorCode.NO_RELAY); return null }
+        val state = friendStates().firstOrNull { it.peer == null && it.isAdmin }
+            ?: GroupState.create(store.relayHost, null, GroupKind.FRIEND).also { groups[it.groupIdHex] = it; store.save(it) }
+        touchFriend(state.groupIdHex, 15 * 60_000L)
+        return state.groupIdHex to state.invite(System.currentTimeMillis() / 1000 + DEFAULT_INVITE_DAYS * 86_400L).toUri()
+    }
+
+    /** For the companion's own screen: a friend code, delivered on the main thread (null if there is no relay set). */
+    fun createFriendInvite(onReady: (String?) -> Unit) = exec.execute {
+        val uri = runCatching { makeFriendInvite()?.second }.getOrNull()
+        android.os.Handler(android.os.Looper.getMainLooper()).post { onReady(uri) }
+    }
+
+    private fun offer(from: GroupState, inv: Payload.GroupInvite) {
+        val store = store ?: return
+        if (store.isOfferHandled(inv.offerId) || inv.offerId in offers) return
+        val parsed = Invite.parse(inv.link)
+        if (parsed == null || parsed.isExpired(System.currentTimeMillis() / 1000)) { store.markOfferHandled(inv.offerId); return }
+        if (parsed.groupId.joinToString("") { "%02x".format(it) } in groups) { store.markOfferHandled(inv.offerId); return } // already in it
+        val o = Offer(from.groupIdHex, inv.link, inv.groupName)
+        offers[inv.offerId] = o
+        send(offerMessage(inv.offerId, o))
+    }
+
+    private fun offerMessage(id: String, o: Offer): Message.GroupInviteOffer {
+        val peer = groups[o.friendId]?.peer
+        return Message.GroupInviteOffer(id, peer?.nickname ?: "?", o.groupName, peer?.photoBase64, peer?.colour ?: 0)
+    }
+
     // ---- position ----
 
     private fun position(m: Message.MyPosition) {
@@ -330,6 +486,11 @@ object GroupHub {
             is GroupEvent.SosReceived -> sos?.received(e.riderId, e.sos, e.tsMs)?.let { send(sosMessage(it)) }
             is GroupEvent.SosAnswered -> sos?.answered(e.riderId, e.sosRiderId, e.coming)?.let { send(sosMessage(it)) }
             is GroupEvent.SosCancelled -> sos?.cancelled(e.riderId)?.let { send(sosMessage(it)) }
+            is GroupEvent.TripReceived -> send(Message.GroupTrip(
+                state.groupIdHex, e.trip.tripId, e.trip.rev, e.riderId, client?.members()?.firstOrNull { it.id == e.riderId }?.nickname,
+                e.trip.name, e.trip.doc, e.mine
+            ))
+            is GroupEvent.InviteReceived -> Unit // invites come through friend channels, not rides
             is GroupEvent.RouteReceived ->
                 send(Message.GroupRoute(state.groupIdHex, e.riderId, e.route.name, Base64.getEncoder().encodeToString(e.route.data)))
             GroupEvent.KeyChanged -> {
@@ -354,7 +515,7 @@ object GroupHub {
     /** Keeps the screens' view of the groups and the active group's link in step. */
     private fun publish() {
         published = HashMap(groups)
-        _groupNames.value = groups.values.map { it.groupIdHex to it.name }
+        _groupNames.value = groups.values.filter { it.kind == GroupKind.RIDE }.map { it.groupIdHex to it.name }
         val c = connectionMessage()
         val g = c?.let { groups[it.groupId] }
         _summary.value = if (c == null || g == null) null else Summary(c.groupId, g.name, c.status, c.members, g.isAdmin)
@@ -376,6 +537,8 @@ object GroupHub {
 
     private fun snapshot(): List<Message> = buildList {
         add(settingsMessage())
+        add(friendList())
+        offers.forEach { (id, o) -> add(offerMessage(id, o)) }
         add(groupList())
         connectionMessage()?.let(::add)
         membersMessage()?.let(::add)
@@ -385,7 +548,7 @@ object GroupHub {
     }
 
     private fun groupList() = Message.GroupList(
-        groups.values.map { g ->
+        groups.values.filter { it.kind == GroupKind.RIDE }.map { g ->
             Message.GroupInfo(g.groupIdHex, g.name, if (g.groupIdHex == activeId) (client?.members()?.size ?: 0) + 1 else 0, g.isAdmin)
         },
         activeId, store?.sharing ?: true
