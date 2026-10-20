@@ -79,6 +79,13 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     val invite: StateFlow<String?> = _invite.asStateFlow()
 
     /** A short-lived link for the rider's own other device, to show as a QR code. */
+    private val _selfLink = MutableStateFlow<String?>(null)
+    /** The link for the rider's other device, while it is on show. */
+    val selfLink: StateFlow<String?> = _selfLink.asStateFlow()
+
+    private val _selfStatus = MutableStateFlow(Message.SelfStatus(linked = false, waiting = false))
+    val selfStatus: StateFlow<Message.SelfStatus> = _selfStatus.asStateFlow()
+
     private val _deviceLink = MutableStateFlow<String?>(null)
     val deviceLink: StateFlow<String?> = _deviceLink.asStateFlow()
 
@@ -133,6 +140,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
             is Message.GroupTrip -> _trips.tryEmit(m)
             is Message.GroupInvite -> _invite.value = m.uri
             is Message.GroupDeviceLink -> _deviceLink.value = m.uri
+            is Message.SelfLink -> _selfLink.value = m.uri
+            is Message.SelfStatus -> _selfStatus.value = m
             is Message.GroupError -> _errors.tryEmit(m.code)
             else -> Unit
         }
@@ -171,6 +180,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
         send(Message.GroupProfile(nickname, colour, icon, photoJpegBase64))
     /** A new or changed shared trip, to the active group. [rev] only goes up; the highest wins. */
     fun shareTrip(tripId: String, rev: Long, name: String, doc: String) = send(Message.TripShare(tripId, rev, name, doc))
+
+    fun requestSelfLink() = send(Message.RequestSelfLink)
+    fun forgetSelfLink() { _selfLink.value = null }
+    fun unlinkSelf() = send(Message.SelfUnlink)
 
     fun requestFriends() = send(Message.RequestFriends)
     fun requestFriendInvite() = send(Message.RequestFriendInvite)

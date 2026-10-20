@@ -35,6 +35,11 @@ class GroupStore(context: Context) {
 
     fun delete(groupIdHex: String) = prefs.edit().remove(GROUP + groupIdHex).apply()
 
+    /** What this device last knew of the rider's shared friends, groups and profile ([com.curveon.groups.SyncDoc] as JSON). */
+    var syncDoc: String?
+        get() = prefs.getString(SYNC, null)
+        set(v) = prefs.edit().putString(SYNC, v).apply()
+
     var activeId: String?
         get() = prefs.getString(ACTIVE, null)
         set(v) = prefs.edit().putString(ACTIVE, v).apply()
@@ -94,6 +99,7 @@ class GroupStore(context: Context) {
         const val ACTIVE = "active"
         const val SHARING = "sharing"
         const val RELAY = "relay"
+        const val SYNC = "sync_doc"
         const val DATA_SAVER = "data_saver"
         const val HANDLED = "handled_offers"
         const val PROFILE = "profile"

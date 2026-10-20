@@ -422,6 +422,28 @@ sealed interface Message {
             .put("nick", fromNickname ?: JSONObject.NULL).put("name", name).put("doc", doc).put("mine", mine)
     }
 
+    // ---- the rider's own devices: one set of friends, groups and profile on all of them ----
+
+    /** UI -> hub: a link for the rider's other device to scan; makes the private channel between them if there is none. Answered with [SelfLink]. */
+    data object RequestSelfLink : Message {
+        override fun toJson() = obj("request_self_link")
+    }
+
+    /** Hub -> UI: the link for the other device (short-lived: show it as a QR code only). */
+    data class SelfLink(val uri: String) : Message {
+        override fun toJson() = obj("self_link").put("uri", uri)
+    }
+
+    /** UI -> hub: stop keeping this device in step with the other one (what is here stays here). */
+    data object SelfUnlink : Message {
+        override fun toJson() = obj("self_unlink")
+    }
+
+    /** Hub -> UI: whether the rider's other device is linked ([waiting]: a link was made but the other device has not answered yet). */
+    data class SelfStatus(val linked: Boolean, val waiting: Boolean) : Message {
+        override fun toJson() = obj("self_status").put("linked", linked).put("waiting", waiting)
+    }
+
     // ---- the relay through the phone: a tablet with no internet of its own reaches the relay over the Bluetooth link ----
 
     /** Tablet -> phone: open a WebSocket to [url] and call it [id]; the phone answers [RelayOpened] or [RelayClosed]. */
@@ -607,6 +629,10 @@ sealed interface Message {
             "play_cue" -> runCatching { NavCue.valueOf(o.getString("cue")) }.getOrNull()?.let { cue ->
                 PlayCue(cue, runCatching { CueSide.valueOf(o.optString("side")) }.getOrDefault(CueSide.CENTER))
             }
+            "request_self_link" -> RequestSelfLink
+            "self_link" -> SelfLink(o.getString("uri"))
+            "self_unlink" -> SelfUnlink
+            "self_status" -> SelfStatus(o.optBoolean("linked"), o.optBoolean("waiting"))
             "relay_open" -> RelayOpen(o.getInt("sock"), o.getString("url"))
             "relay_send" -> RelaySend(o.getInt("sock"), o.getString("text"))
             "relay_close" -> RelayClose(o.getInt("sock"), o.optInt("code", 1000))

@@ -57,7 +57,8 @@
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready",
       "Curveon has a new icon: a motorbike seen head-on, with an orange body and a cyan front tyre against the evening sky",
       "You can share a trip with your group from the route preview or the route menu. A friend who gets it chooses Ride now, Save in shared or Ignore, and saved ones are under \"Shared routes\" next to GPX and Planned. Anyone in the group can change a shared trip, for instance add a stop, and the change follows everyone's route at once, so you all ride to the same stop. You never need to type a server address: groups use Curveon's relay by default (a relay of your own can be set under Advanced)",
-      "Friends and groups now live in Curveon itself, whether or not your phone is nearby: you can show your friend code the moment you open it. If the tablet has no internet, groups use your phone's connection through Bluetooth by themselves, and you never have to think about which device does what"
+      "Friends and groups now live in Curveon itself, whether or not your phone is nearby: you can show your friend code the moment you open it. If the tablet has no internet, groups use your phone's connection through Bluetooth by themselves, and you never have to think about which device does what",
+      "Use Curveon on both your phone and your tablet? Link them once with a code under Friends, Me, and your friends, groups and name are the same on both. Add a friend on one, and it shows up on the other"
     ],
     "nb": [
       "Grus og ulendt underlag ser nå ut som selve veien, bare stiplet: samme farge og ikke tykkere enn veien, brun der det er ulendt. Under Innstillinger → Skjerm → Veidekke kan du i stedet farge dem som ruta, oransje for grus og lilla for ulendt",
@@ -115,7 +116,8 @@
       "Kartnedlastingen går mye raskere: Curveon henter nå flere deler av kartet samtidig i stedet for én om gangen, så et land kan bli ferdig på en tredjedel av tiden. Når du setter flere land i kø, begynner neste kart å laste ned mens det forrige gjør klart ruter og søk",
       "Curveon har fått nytt ikon: en motorsykkel sett forfra, med oransje kropp og cyan framdekk mot kveldshimmelen",
       "Du kan dele en tur med gruppen din fra rutevisningen eller rutemenyen. En venn som får den velger Kjør nå, Lagre i delt eller Ignorer, og lagrede ligger under «Delte ruter» ved siden av GPX og Planlagte. Alle i gruppen kan endre en delt tur, for eksempel legge til et stopp, og endringen følger alles rute med en gang, så dere kjører til samme stopp. Du trenger aldri skrive inn en serveradresse: gruppene bruker Curveons relé som standard (en egen relé kan settes under Avansert)",
-      "Venner og grupper ligger nå i Curveon selv, enten telefonen er i nærheten eller ikke: du kan vise venne-koden din med en gang du åpner den. Har nettbrettet ikke nett, bruker gruppene telefonens forbindelse over Bluetooth av seg selv, og du trenger aldri tenke på hvilken enhet som gjør hva"
+      "Venner og grupper ligger nå i Curveon selv, enten telefonen er i nærheten eller ikke: du kan vise venne-koden din med en gang du åpner den. Har nettbrettet ikke nett, bruker gruppene telefonens forbindelse over Bluetooth av seg selv, og du trenger aldri tenke på hvilken enhet som gjør hva",
+      "Bruker du Curveon både på telefonen og på nettbrettet? Koble dem én gang med en kode under Venner, Meg, så er vennene, gruppene og navnet ditt like på begge. Legger du til en venn på den ene, dukker den opp på den andre"
     ]
   },
   {

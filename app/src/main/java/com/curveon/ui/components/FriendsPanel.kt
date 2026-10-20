@@ -81,8 +81,47 @@ private fun MeTab(manager: GroupManager) {
             val me = remember(p, photo) { GroupRider("me", p.nickname, p.colour, p.icon, photo, p.photoJpegBase64) }
             ProfileEditor(me, alwaysOpen = true) { nick, colour, icon, picture -> manager.setProfile(nick, colour, icon, picture) }
         }
+        MyDevicesSection(manager)
         settings?.let { s -> GroupSettingsSection(s) { relay, saver -> manager.setSettings(relay, saver) } }
     }
+}
+
+/**
+ * My devices: link the Curveon on this device with the one on another (a phone and a tablet) once, and your friends, groups and name
+ * are the same on both. One of them shows a code and the other scans it; after that they keep in step by themselves.
+ */
+@Composable
+private fun MyDevicesSection(manager: GroupManager) {
+    val status by manager.selfStatus.collectAsStateWithLifecycle()
+    val link by manager.selfLink.collectAsStateWithLifecycle()
+    var showCode by rememberSaveable { mutableStateOf(false) }
+    var scanning by rememberSaveable { mutableStateOf(false) }
+    DisposableEffect(Unit) { onDispose { manager.forgetSelfLink() } }
+    LaunchedEffect(status.linked) { if (status.linked) { showCode = false; manager.forgetSelfLink() } }
+    FriendsSectionLabel(stringResource(R.string.devices_title))
+    Text(stringResource(if (status.linked) R.string.devices_linked else R.string.devices_hint), color = TextSecondary, fontSize = 14.sp)
+    if (status.linked) {
+        OutlinedButton(onClick = { manager.unlinkSelf() }, modifier = Modifier.testTag("devices_unlink")) {
+            Text(stringResource(R.string.devices_unlink), color = WarningRed, fontWeight = FontWeight.Bold)
+        }
+    } else {
+        OutlinedButton(onClick = {
+            showCode = !showCode
+            manager.forgetSelfLink()
+            if (showCode) manager.requestSelfLink()
+        }, modifier = Modifier.testTag("devices_show")) {
+            Icon(Icons.Default.QrCode2, null, tint = ElectricCyan)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.devices_show), color = ElectricCyan, fontWeight = FontWeight.Bold)
+        }
+        if (showCode) QrBlock(link, R.string.devices_code_hint, R.string.devices_show)
+        if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.testTag("devices_scan")) {
+            Icon(Icons.Default.QrCodeScanner, null, tint = ElectricCyan)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.devices_scan), color = ElectricCyan, fontWeight = FontWeight.Bold)
+        }
+    }
+    if (scanning) com.curveon.qrscan.QrScanDialog(onInvite = { l -> scanning = false; manager.join(l) }, onDismiss = { scanning = false })
 }
 
 /** My friends: show your code (or send it as a link), scan a friend's code, and the friends you have. */

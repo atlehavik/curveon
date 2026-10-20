@@ -20,6 +20,9 @@ import com.curveon.groups.Payload
 import com.curveon.groups.PositionSharer
 import com.curveon.groups.SosTracker
 import com.curveon.groups.SosView
+import com.curveon.groups.SyncDoc
+import com.curveon.groups.SyncEntry
+import org.json.JSONObject
 import com.curveon.protocol.Message
 import java.util.Base64
 import java.util.UUID
@@ -45,6 +48,7 @@ object GroupHub {
     private const val TAG = "GroupHub"
     private const val DEFAULT_INVITE_DAYS = 7
     private const val DEVICE_LINK_MINUTES = 15
+    private const val SYNC_TRIP = "me"
     private val exec = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
     /** The relay straight over the internet. */
     val directTransports: com.curveon.groups.TransportFactory = OkHttpTransportFactory()
@@ -101,6 +105,7 @@ object GroupHub {
                 groups.remove(id)
                 s.delete(id)
             }
+            syncDoc = s.syncDoc?.let(SyncDoc::fromJson) ?: SyncDoc()
             activeId = s.activeId?.takeIf { groups[it]?.kind == GroupKind.RIDE }
             sharer.dataSaver = s.dataSaver
         }
@@ -148,7 +153,8 @@ object GroupHub {
         is Message.GroupSharing, is Message.GroupProfile, is Message.MyPosition, is Message.ShareRoute, is Message.SosStart,
         is Message.SosCancel, is Message.SosAnswer, is Message.GroupRemoveRider, is Message.RequestDeviceLink, is Message.GroupSettings,
         is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
-        is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.RequestGroupInvite -> true
+        is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.RequestGroupInvite,
+        is Message.RequestSelfLink, is Message.SelfUnlink -> true
         else -> false
     }
 
@@ -176,6 +182,7 @@ object GroupHub {
             is Message.GroupJoin -> {
                 val invite = Invite.parse(m.invite) ?: return error(Message.GroupErrorCode.INVALID_INVITE)
                 if (invite.isExpired(System.currentTimeMillis() / 1000)) return error(Message.GroupErrorCode.EXPIRED_INVITE)
+                if (invite.kind == GroupKind.SELF) return joinSelf(invite)
                 val id = invite.groupId.joinToString("") { "%02x".format(it) }
                 if (id in groups) return error(Message.GroupErrorCode.ALREADY_MEMBER).also { if (groups[id]?.kind == GroupKind.RIDE) select(id) }
                 GroupState.join(invite).let { if (it.kind == GroupKind.FRIEND) addFriend(it) else add(it) }
@@ -186,6 +193,7 @@ object GroupHub {
                 if (m.groupId == activeId) { client?.leave(); detach() }
                 groups.remove(state.groupIdHex)
                 store.delete(state.groupIdHex)
+                trackGone(state.groupIdHex)
                 if (activeId == state.groupIdHex) { activeId = null; store.activeId = null }
                 send(groupList())
             }
@@ -198,10 +206,8 @@ object GroupHub {
             }
             is Message.GroupProfile -> {
                 store.profile = m
-                send(profileMessage())
-                friendClients.forEach { (id, c) -> groups[id]?.let { c.setProfile(helloFor(it)) } }
-                client?.setProfile(helloFor(activeId?.let { groups[it] } ?: return))
-                membersMessage()?.let(::send) // the rider's own row shows the new name and picture at once
+                track(SyncDoc.PROFILE, profilePayload())
+                profileChanged()
             }
             is Message.MyPosition -> position(m)
             is Message.ShareRoute -> {
@@ -244,6 +250,8 @@ object GroupHub {
                 sharer.reset()
                 sendConnection()
             }
+            is Message.RequestSelfLink -> makeSelfLink()
+            is Message.SelfUnlink -> unlinkSelf()
             is Message.RequestFriends -> { send(friendList()); sweepFriends() }
             is Message.RequestFriendInvite -> makeFriendInvite()?.let { (id, uri) -> send(Message.FriendInvite(id, uri)) }
             is Message.FriendRemove -> removeFriend(m.channelId)
@@ -271,6 +279,7 @@ object GroupHub {
         val store = store ?: return
         groups[state.groupIdHex] = state
         store.save(state)
+        trackGroup(state)
         select(state.groupIdHex)
         send(Message.GroupInvite(state.groupIdHex, state.invite(System.currentTimeMillis() / 1000 + DEFAULT_INVITE_DAYS * 86_400L).toUri()))
     }
@@ -300,7 +309,7 @@ object GroupHub {
         state!!
         sos = SosTracker(myIdOf(state))
         val c = GroupClient(
-            state, transports, { e -> exec.execute { onEvent(state, e) } }, { s -> exec.execute { store?.save(s) } },
+            state, transports, { e -> exec.execute { onEvent(state, e) } }, { s -> exec.execute { stateSaved(s) } },
             scheme = scheme(state.relayHost)
         )
         c.setProfile(helloFor(state))
@@ -352,16 +361,16 @@ object GroupHub {
     private fun friendStates() = groups.values.filter { it.kind == GroupKind.FRIEND }
 
     private fun friendList() = Message.FriendList(friendStates().mapNotNull { st ->
-        st.peer?.let { Message.FriendInfo(st.groupIdHex, it.nickname, it.colour, it.icon, it.photoBase64) }
-    })
+        st.peer?.let { Message.FriendInfo(st.groupIdHex, it.nickname, it.colour, it.icon, it.photoBase64) to (it.riderId ?: st.groupIdHex) }
+    }.distinctBy { it.second }.map { it.first }) // a friend met on both of the rider's devices is one friend
 
     /** Keeps the channel to a friend open for at least [keepMs] more, and runs [action] as soon as it is. */
     private fun touchFriend(id: String, keepMs: Long, action: ((GroupClient) -> Unit)? = null) {
-        val state = groups[id]?.takeIf { it.kind == GroupKind.FRIEND } ?: return
+        val state = groups[id]?.takeIf { it.kind != GroupKind.RIDE } ?: return
         var c = friendClients[id]
         if (c == null) {
             c = GroupClient(
-                state, transports, { e -> exec.execute { onFriendEvent(state, e) } }, { s -> exec.execute { store?.save(s) } },
+                state, transports, { e -> exec.execute { onFriendEvent(state, e) } }, { s -> exec.execute { stateSaved(s) } },
                 scheme = scheme(state.relayHost)
             )
             c.setProfile(helloFor(state))
@@ -398,7 +407,10 @@ object GroupHub {
         else if (!listening && sweepJob != null) stopAllFriends()
     }
 
-    private fun sweepFriends() = friendStates().forEach { touchFriend(it.groupIdHex, 6_000) }
+    private fun sweepFriends() {
+        friendStates().forEach { touchFriend(it.groupIdHex, 6_000) }
+        selfState()?.let { touchFriend(it.groupIdHex, 8_000) { c -> exec.schedule({ sendSync(c) }, 1_500, TimeUnit.MILLISECONDS) } }
+    }
 
     private fun onFriendEvent(state: GroupState, e: GroupEvent) {
         val id = state.groupIdHex
@@ -406,6 +418,15 @@ object GroupHub {
             GroupEvent.Connected -> friendActions.remove(id)?.forEach { act -> friendClients[id]?.let { runCatching { act(it) } } }
             is GroupEvent.MemberUpdated -> {
                 val m = e.member
+                if (state.kind == GroupKind.SELF) { // the rider's other device said hello: linked
+                    if (state.peer == null) {
+                        state.peer = PeerProfile("device", 0, null, null, m.id)
+                        store?.save(state)
+                        send(selfStatus())
+                        scheduleSync(500)
+                    }
+                    return
+                }
                 // A friend channel is for two: whoever said hello first is the friend.
                 if (state.peer?.riderId != null && state.peer?.riderId != m.id) return
                 val photo = (m.avatar as? Avatar.Photo)?.let { Base64.getEncoder().encodeToString(it.jpeg) }
@@ -414,6 +435,7 @@ object GroupHub {
                 send(friendList())
             }
             is GroupEvent.InviteReceived -> offer(state, e.invite)
+            is GroupEvent.TripReceived -> if (state.kind == GroupKind.SELF && e.trip.tripId == SYNC_TRIP) onSyncReceived(e.trip.doc)
             else -> Unit
         }
     }
@@ -421,6 +443,7 @@ object GroupHub {
     private fun addFriend(state: GroupState) {
         groups[state.groupIdHex] = state
         store?.save(state)
+        trackGroup(state)
         touchFriend(state.groupIdHex, 20_000) // long enough for the two to say hello
         send(friendList())
     }
@@ -431,6 +454,7 @@ object GroupHub {
         stopFriend(id)
         groups.remove(id)
         store?.delete(id)
+        trackGone(id)
         offers.entries.removeAll { it.value.friendId == id }
         publish()
         send(friendList())
@@ -466,6 +490,197 @@ object GroupHub {
     private fun offerMessage(id: String, o: Offer): Message.GroupInviteOffer {
         val peer = groups[o.friendId]?.peer
         return Message.GroupInviteOffer(id, peer?.nickname ?: "?", o.groupName, peer?.photoBase64, peer?.colour ?: 0)
+    }
+
+    // ---- the rider's other devices: one set of friends, groups and profile ----
+
+    /**
+     * A rider with Curveon on a phone and a tablet is one rider. The devices share a private [GroupKind.SELF] channel, and over it
+     * keep every friend and ride group (with this rider's identity in each, so a friend sees one rider), and the profile, in step:
+     * see [SyncDoc]. Each change is stamped, sent, and merged by the other; a group left on one is left on both.
+     */
+    private var syncDoc = SyncDoc()
+    private var syncSeen = SyncDoc() // what the other device is known to have
+    private var syncRev = 0L
+    private var lastSent: String? = null
+    private var pushJob: ScheduledFuture<*>? = null
+
+    private fun selfState() = groups.values.firstOrNull { it.kind == GroupKind.SELF }
+
+    private fun selfStatus(): Message.SelfStatus = selfState().let { Message.SelfStatus(linked = it?.peer != null, waiting = it != null && it.peer == null) }
+
+    private fun saveSync() { store?.syncDoc = syncDoc.toJson() }
+
+    /** Something new here (a group joined, the profile changed): stamped now, and sent on to the other device. */
+    private fun track(key: String, payload: String?) {
+        syncDoc = syncDoc.with(SyncEntry(key, System.currentTimeMillis(), payload == null, payload))
+        saveSync()
+        scheduleSync()
+    }
+
+    private fun trackGroup(state: GroupState) = track(SyncDoc.groupKey(state.groupIdHex), SyncDoc.payload(state))
+
+    private fun trackGone(groupIdHex: String) = track(SyncDoc.groupKey(groupIdHex), null)
+
+    private fun profilePayload(): String? = store?.profile?.let { p ->
+        JSONObject().put("nick", p.nickname).put("colour", p.colour).put("icon", p.icon ?: JSONObject.NULL)
+            .put("photo", p.photoJpegBase64 ?: JSONObject.NULL).toString()
+    }
+
+    /** A group's keys or a friend's name changed on its own (a rekey, a hello): the other device should have it. */
+    private fun stateSaved(s: GroupState) {
+        store?.save(s)
+        if (s.kind != GroupKind.SELF) scheduleSync(3_000)
+    }
+
+    /** Notes what changed here since the document was last made; what was here before syncing existed counts as oldest. */
+    private fun refreshSync() {
+        val now = System.currentTimeMillis()
+        val changes = ArrayList<SyncEntry>()
+        for (g in groups.values) {
+            if (g.kind == GroupKind.SELF) continue
+            val key = SyncDoc.groupKey(g.groupIdHex)
+            val payload = SyncDoc.payload(g)
+            val e = syncDoc.entries[key]
+            if (e == null) changes += SyncEntry(key, 0L, false, payload)
+            else if (!e.deleted && e.payload != payload) changes += SyncEntry(key, now, false, payload)
+        }
+        profilePayload()?.let { p ->
+            val e = syncDoc.entries[SyncDoc.PROFILE]
+            if (e == null) changes += SyncEntry(SyncDoc.PROFILE, 0L, false, p)
+            else if (!e.deleted && e.payload != p) changes += SyncEntry(SyncDoc.PROFILE, now, false, p)
+        }
+        if (changes.isNotEmpty()) { syncDoc = syncDoc.with(changes); saveSync() }
+    }
+
+    private fun scheduleSync(delayMs: Long = 2_000) {
+        if (selfState() == null) return
+        pushJob?.cancel(false)
+        pushJob = exec.schedule({ pushSync() }, delayMs, TimeUnit.MILLISECONDS)
+    }
+
+    /** Opens the channel to the other device for a moment and, once what it has had time to arrive, sends ours if it lacks something. */
+    private fun pushSync() {
+        val self = selfState() ?: return
+        refreshSync()
+        touchFriend(self.groupIdHex, 10_000) { c -> exec.schedule({ sendSync(c) }, 1_500, TimeUnit.MILLISECONDS) }
+    }
+
+    private fun sendSync(c: GroupClient) = exec.execute {
+        val self = selfState() ?: return@execute
+        if (friendClients[self.groupIdHex] !== c) return@execute
+        refreshSync()
+        val json = syncDoc.toJson()
+        if (json == lastSent && syncSeen.entries.isNotEmpty() && !syncDoc.hasNewerThan(syncSeen)) return@execute
+        if (syncSeen.entries.isNotEmpty() && !syncDoc.hasNewerThan(syncSeen)) return@execute // the other device has all of it
+        val rev = maxOf(System.currentTimeMillis(), syncRev + 1)
+        syncRev = rev
+        if (c.sendTrip(Payload.Trip(SYNC_TRIP, rev, "", json))) lastSent = json
+    }
+
+    /** What the other device has: take what is newer there, and send back what is newer here. */
+    private fun onSyncReceived(doc: String) {
+        val remote = SyncDoc.fromJson(doc) ?: return
+        syncSeen = syncSeen.merge(remote)
+        refreshSync()
+        val changes = syncDoc.newerIn(remote)
+        if (changes.isNotEmpty()) applySync(changes)
+        if (syncDoc.hasNewerThan(syncSeen)) scheduleSync(500)
+    }
+
+    private fun applySync(changes: List<SyncEntry>) {
+        for (e in changes) {
+            if (e.key == SyncDoc.PROFILE) {
+                if (!e.deleted) e.payload?.let(::applyRemoteProfile)
+                syncDoc = syncDoc.with(e)
+            } else if (e.key.startsWith("g:")) {
+                val id = e.key.removePrefix("g:")
+                if (e.deleted) {
+                    dropGroup(id)
+                    syncDoc = syncDoc.with(e)
+                } else {
+                    val existing = groups[id]
+                    val state = e.payload?.let { SyncDoc.restore(it, existing?.deviceId ?: newDeviceId()) } ?: continue
+                    if (state.kind == GroupKind.SELF) continue
+                    adopt(state, existing)
+                    // Kept as this device would write it, so the two agree on the text and do not keep re-sending.
+                    syncDoc = syncDoc.with(SyncEntry(e.key, e.ts, false, SyncDoc.payload(state)))
+                }
+            }
+        }
+        saveSync()
+        send(groupList())
+        send(friendList())
+        membersMessage()?.let(::send)
+        publish()
+    }
+
+    private fun adopt(state: GroupState, existing: GroupState?) {
+        if (existing != null && SyncDoc.payload(existing) == SyncDoc.payload(state)) return
+        val id = state.groupIdHex
+        if (existing != null) {
+            if (id == activeId) detach()
+            stopFriend(id)
+        }
+        groups[id] = state
+        store?.save(state)
+        if (state.kind == GroupKind.FRIEND) touchFriend(id, 8_000) // hear the friend say hello, for the name and picture
+        if (id == activeId) updateConnection()
+    }
+
+    private fun newDeviceId(): String = Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(8).also { java.security.SecureRandom().nextBytes(it) })
+
+    private fun dropGroup(id: String) {
+        val st = groups[id] ?: return
+        if (st.kind == GroupKind.FRIEND) {
+            stopFriend(id)
+            offers.entries.removeAll { it.value.friendId == id }
+        }
+        if (id == activeId) { detach(); activeId = null; store?.activeId = null }
+        groups.remove(id)
+        store?.delete(id)
+    }
+
+    private fun applyRemoteProfile(payload: String) {
+        val o = runCatching { JSONObject(payload) }.getOrNull() ?: return
+        store?.profile = Message.GroupProfile(
+            o.optString("nick"), o.optInt("colour"), if (o.isNull("icon")) null else o.optString("icon"), if (o.isNull("photo")) null else o.optString("photo")
+        )
+        profileChanged()
+    }
+
+    private fun profileChanged() {
+        send(profileMessage())
+        friendClients.forEach { (id, c) -> groups[id]?.let { c.setProfile(helloFor(it)) } }
+        client?.setProfile(helloFor(activeId?.let { groups[it] } ?: return))
+        membersMessage()?.let(::send) // the rider's own row shows the new name and picture at once
+    }
+
+    /** A link the rider's other device scans; the channel between the two is made the first time. */
+    private fun makeSelfLink() {
+        val store = store ?: return
+        val state = selfState() ?: GroupState.create(store.relayHost, null, GroupKind.SELF).also { groups[it.groupIdHex] = it; store.save(it) }
+        touchFriend(state.groupIdHex, 15 * 60_000L) // open while the code is on show, to hear the other device say hello
+        send(Message.SelfLink(state.invite(System.currentTimeMillis() / 1000 + DEVICE_LINK_MINUTES * 60L).toUri()))
+        send(selfStatus())
+    }
+
+    private fun joinSelf(invite: Invite) {
+        selfState()?.let { old -> stopFriend(old.groupIdHex); groups.remove(old.groupIdHex); store?.delete(old.groupIdHex) }
+        val state = GroupState.join(invite)
+        groups[state.groupIdHex] = state
+        store?.save(state)
+        syncSeen = SyncDoc()
+        touchFriend(state.groupIdHex, 20_000)
+        send(selfStatus())
+        scheduleSync(1_000)
+    }
+
+    private fun unlinkSelf() {
+        selfState()?.let { st -> stopFriend(st.groupIdHex); groups.remove(st.groupIdHex); store?.delete(st.groupIdHex) }
+        syncSeen = SyncDoc()
+        lastSent = null
+        send(selfStatus())
     }
 
     // ---- position ----
@@ -564,6 +779,7 @@ object GroupHub {
         add(settingsMessage())
         add(profileMessage())
         add(friendList())
+        add(selfStatus())
         offers.forEach { (id, o) -> add(offerMessage(id, o)) }
         add(groupList())
         connectionMessage()?.let(::add)

@@ -4,9 +4,10 @@ import org.json.JSONObject
 
 /**
  * What a group is for. A [RIDE] is a group of riders on the road; a [FRIEND] is a private channel between two people who
- * have scanned each other: it carries their profiles, and invites to ride groups from one to the other.
+ * have scanned each other: it carries their profiles, and invites to ride groups from one to the other. A [SELF] is a channel
+ * between one rider's own devices, which keep their friends, groups and profile in step over it (see [RiderSync]).
  */
-enum class GroupKind { RIDE, FRIEND }
+enum class GroupKind { RIDE, FRIEND, SELF }
 
 /** The other person in a [GroupKind.FRIEND] channel, as last heard (kept so the list of friends shows them offline). */
 class PeerProfile(val nickname: String, val colour: Int, val icon: String?, val photoBase64: String?, val riderId: String? = null)

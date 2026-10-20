@@ -1036,4 +1036,11 @@
     <string name="toast_shared_trip_saved">Saved under Shared routes</string>
     <string name="toast_shared_trip_changed">%1$s changed %2$s</string>
     <string name="friends_code_failed">The code could not be made. Close this and try again.</string>
+    <string name="devices_title">My devices</string>
+    <string name="devices_hint">Do you use Curveon on more than one device? Link them once, and your friends, groups and name are the same on both.</string>
+    <string name="devices_linked">Linked: your friends, groups and name follow you between your devices.</string>
+    <string name="devices_show">Show code for my other device</string>
+    <string name="devices_scan">Scan code from my other device</string>
+    <string name="devices_unlink">Unlink</string>
+    <string name="devices_code_hint">Scan this on your other device within 15 minutes. It opens your friends and groups, so show it only to yourself.</string>
 </resources>

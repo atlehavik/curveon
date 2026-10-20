@@ -352,7 +352,13 @@ ever because the command was sent to the phone, which was not there. So:
   through the phone (`RelayTunnelClient` on the tablet, `RelayTunnelServer` in the companion; messages `relay_open/send/close` and
   `relay_opened/text/closed` in `:protocol`). The group library only sees a `TransportFactory`. A dropped link fails every tunnelled socket,
   so the library reconnects by itself, by whichever way is there then. Companion opens only ws/wss and at most 8 sockets.
-- **Not done:** one rider across several devices that each run Curveon (Pixel app and X7). "My other device" is still a link per ride group and
-  does not carry friends or the profile. A real answer is a private "my devices" channel that replicates new friends, groups and the profile;
-  the question is whether the rider uses Curveon on both devices for groups at all.
+- **One rider on several devices (built 2026-10-20).** The rider uses Curveon alone on the Pixel at times and with the X7 at others, so both hold the
+  identity. Linking is one QR in Friends → Me → My devices; it makes a private `GroupKind.SELF` channel (invite `t=s`) between the two. Over it they
+  keep every friend and ride group (with this rider's own id and keys in each, so a friend sees one rider) and the profile in step: `SyncDoc` in
+  `:groups` (an entry per key with a time stamp, the newer wins, a deletion stays as a tombstone, so merging gives the same result in any order),
+  carried as a `trip` frame with id `me` (the relay keeps the latest 30 and replays them; nothing changed in the relay). `GroupHub` stamps what changes,
+  sends it a moment later (and every 10 minutes with the friend sweep), and applies what arrives. A friend's picture is not synced (heard again from the
+  friend); the same friend met on both devices shows once. Edge cases left as they are: a group joined separately on both devices before linking ends
+  with one of the two identities (the one that sorts higher); a group left on one device before linking can come back from the other.
+  "My other device" per ride group (the link with `me=`) is still there.
 

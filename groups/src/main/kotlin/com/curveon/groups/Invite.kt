@@ -61,7 +61,7 @@ class Invite(
       if (expiresAt != null) append("&x=").append(expiresAt)
       if (epoch > 0) append("&e=").append(epoch)
       if (identity != null) append("&me=").append(identity.encode())
-      if (kind == GroupKind.FRIEND) append("&t=f")
+      if (kind == GroupKind.FRIEND) append("&t=f") else if (kind == GroupKind.SELF) append("&t=s")
     }
     val base = if (scheme == "https") "https://$relayHost/join" else "$scheme://join"
     return "$base#$frag"
@@ -88,7 +88,7 @@ class Invite(
         expiresAt = p["x"]?.toLong(),
         epoch = p["e"]?.toInt() ?: 0,
         identity = p["me"]?.let { DeviceIdentity.decode(it) },
-        kind = if (p["t"] == "f") GroupKind.FRIEND else GroupKind.RIDE,
+        kind = when (p["t"]) { "f" -> GroupKind.FRIEND; "s" -> GroupKind.SELF; else -> GroupKind.RIDE },
       )
     } catch (_: Exception) {
       null

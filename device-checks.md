@@ -19,7 +19,7 @@ code and hands over what it scans. The tablet uses its own internet if it has so
 - [ ] **Pixel companion → Friends → Show my code / Share link / Scan:** the code is the X7's (a friend who scans it shows up in the X7's friend list, not on the phone). With the X7 not linked or switched off you get "Open Curveon on your tablet or this phone first".
 - [ ] **Companion's Group ride card** shows the X7's active group and "connected" / "offline" like the X7 does. It clears when the X7 disconnects.
 - [ ] **Old companion on the Pixel with the new X7 build:** the X7 ignores what the old companion says about groups, so nothing doubles up. (Update the companion to get the tunnel.)
-- [ ] **Not built yet:** one rider across the Pixel's Curveon app and the X7's. Today "My other device" is a link per ride group (see `docs/groups-protocol.md`) and does not move friends or your profile.
+- [ ] **My devices (Pixel's Curveon app + X7).** Friends → Me → My devices: "Show code for my other device" on one, "Scan code from my other device" on the other; both then say "Linked". Tried on the X7 and a phone emulator against the relay on this PC (link by intent, not by camera): both said linked and a group started on the X7 showed up on the emulator. **Not tried:** scanning the code with the real camera, the profile (name, colour, picture) following, a friend added on one showing on the other, leaving a group on one removing it on the other, Unlink, and the Pixel itself. Do the camera scan, then add a friend on the X7 and open Curveon on the Pixel: the friend should be there within seconds (a friend is not shown until their hello has been heard).
 
 ## 2026-10-20 — Gravel and rough ground on the map (not released, in 1.2.2)
 

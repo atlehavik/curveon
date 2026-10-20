@@ -77,7 +77,11 @@ class OfflineMaps(private val context: Context) {
         }
         for (k in 0 until names.length()) rest.put(names.getJSONObject(k))
         out = rest
-        if (flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
+        for (k in 0 until out.length()) {
+            val layer = out.getJSONObject(k)
+            if (flavor == "light") highContrast(layer) else nightRoadWidths(layer)
+            minorRoadsFromSurfaceZoom(layer)
+        }
         style.put("layers", out)
         return style.toString()
     }
@@ -155,6 +159,29 @@ class OfflineMaps(private val context: Context) {
         }
     }
 
+    /**
+     * The night map's small roads and paths are never thinner than the day map's (see [highContrast]): the
+     * hair-thin ones fade out, and a gravel dash that ends in nothing looks like it joins no road.
+     */
+    private fun nightRoadWidths(layer: JSONObject) {
+        val paint = layer.optJSONObject("paint") ?: return
+        when (layer.getString("id").substringBefore('~')) {
+            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor",
+            "roads_other", "roads_bridges_other", "online-roads_other" -> atLeast(paint, HC_MIN_WIDTH)
+        }
+    }
+
+    /**
+     * The small roads are drawn from the zoom the gravel and offroad dashes start at (day and night map), at least
+     * [HC_MIN_WIDTH] wide from there: a dashed road always meets a road on the map, not bare ground.
+     */
+    private fun minorRoadsFromSurfaceZoom(layer: JSONObject) {
+        val id = layer.getString("id").substringBefore('~')
+        if (id != "roads_minor" && id != "online-roads_minor") return
+        val w = layer.optJSONObject("paint")?.optJSONArray("line-width") ?: return
+        for (i in 4 until w.length() step 2) if (w.optDouble(i - 1, 0.0) >= SURFACE_ZOOM && w.optDouble(i, 0.0) < HC_MIN_WIDTH) w.put(i, HC_MIN_WIDTH)
+    }
+
     private fun asset(path: String) = context.assets.open(path).bufferedReader().use { it.readText() }
 
     private data class Coverage(val key: String, val maps: List<PmtilesIndex>, val at: Long)
@@ -228,6 +255,8 @@ class OfflineMaps(private val context: Context) {
         private const val ROAD_LABEL_ZOOM = 15
         /** The thinnest the grey roads and paths are drawn, at any zoom (px). */
         private const val HC_MIN_WIDTH = 1.6
+        /** Where the gravel and offroad dashes start on the map (fast setting): the small roads start here too. */
+        private const val SURFACE_ZOOM = 11.0
         /** How long the list of downloaded maps is trusted before the folder is looked at again. */
         private const val COVERAGE_RECHECK_MS = 10_000L
 
