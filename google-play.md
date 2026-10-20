@@ -79,7 +79,7 @@ endrer seg på Play-siden:
 - **Personvernerklæringen** må få et eget avsnitt om grupper (valgfritt, av som standard, hva reléet ser, hvor lenge det
   lagrer: posisjoner lagres ikke, øvrig ca. 30 dager) og si hvem som drifter reléet.
 - **Foreground service og posisjon:** companion trenger en tjeneste av riktig type; deklarasjon og demovideo i Play Console.
-- **Anbefaling: første Play-versjon uten grupper.** Da har companion fortsatt ingen `INTERNET`, den sterkeste
+- **Anbefaling: første Play-versjon uten grupper.** (Companion er nå bare status, QR-skanning og lenker; alt oppsett gjøres i Curveon selv.) Da har companion fortsatt ingen `INTERNET`, den sterkeste
   setningen i unntakssøknaden står, og første vurdering blir enklere. Gruppene kommer som en oppdatering sammen med
   oppdatert Data safety og personvernerklæring. Test gruppene i lukket testing og via GitHub-APK først.
 - Domenet som `groups.md` trenger for `https`-invitasjonslenken kan også hoste personvernerklæringen (én løsning for begge).
@@ -100,8 +100,8 @@ endrer seg på Play-siden:
   en grei, men ikke opplagt, beskrivelse av `connectedDevice`: skriv det rett ut i deklarasjonen. Posisjon hentes på tavla, ikke i companion.
 - **Kamera (QR-skanning):** `CAMERA` i hovedappen, spurt først når rytteren starter skanning, med `uses-feature camera required=false` så Play ikke
   skjuler appen for enheter uten kamera. Bildet leses på enheten (ZXing, ingen Play-tjenester) og lagres eller sendes ikke. CameraX (Jetpack,
-  Apache 2.0, ingen egen native kode). Companion har ikke kamera.
-- **Profilbilde:** velges med systemets bildevelger (`PickVisualMedia`), uten tillatelse. Bildet skaleres til 96 px (maks 8 KB) og går ende-til-ende-kryptert
+  Apache 2.0, ingen egen native kode). Skanneren ligger i en egen modul (`:qrscan`) som både Curveon og companion bruker, så companion har også `CAMERA` (kravet kommer fra modulens manifest).
+- **Profilbilde:** velges med systemets bildevelger (`PickVisualMedia`, uten tillatelse) eller tas med kameraappen (`TakePicture` via en `FileProvider` i cachemappa; bildet slettes straks etter at det er beskåret). Beskjæres i appen. Bildet skaleres til 96 px (maks 8 KB) og går ende-til-ende-kryptert
   til gruppa; det er personopplysning som må med i personvernerklæringen og Data safety (valgfritt, bare til gruppa).
 - **Flere enheter, én rytter:** overføringslenken inneholder rytterens private nøkler og vises bare som QR på skjermen, utløper etter 15 minutter. Ingenting
   av det går til noen server.

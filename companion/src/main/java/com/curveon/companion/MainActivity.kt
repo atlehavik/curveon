@@ -10,7 +10,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -139,46 +137,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** The active group, and what only this phone can set: relay address, nickname, data saver, invites. */
+    /**
+     * The active group, and a way to join by scanning a QR code: the Curveon app may be on a tablet whose camera is
+     * not at hand, and the phone's is. Everything else about groups is set up in the Curveon app itself.
+     */
     @Composable
     private fun GroupCard() {
         val summary by GroupHub.summary.collectAsStateWithLifecycle()
-        val store = remember { GroupStore(this@MainActivity) }
-        var relay by remember { mutableStateOf(store.relayHost) }
-        var nick by remember { mutableStateOf(store.profile?.nickname.orEmpty()) }
-        var saver by remember { mutableStateOf(store.dataSaver) }
-        var hasPhoto by remember { mutableStateOf(store.profile?.photoJpegBase64 != null) }
-        fun saveProfile(photo: String?) {
-            val old = store.profile
-            val p = com.curveon.protocol.Message.GroupProfile(old?.nickname ?: nick.ifBlank { "Rider" }, old?.colour ?: 0xFF00E5FF.toInt(), old?.icon, photo)
-            GroupHub.handle(p)
-            store.profile = p
-            hasPhoto = photo != null
-        }
-        val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            if (uri != null) {
-                val b64 = ProfilePhoto.fromUri(this@MainActivity, uri)
-                if (b64 != null) saveProfile(b64)
-                else android.widget.Toast.makeText(this@MainActivity, R.string.group_photo_failed, android.widget.Toast.LENGTH_LONG).show()
-            }
-        }
-        // Saved a moment after the last keystroke, so the group is not told about every letter.
-        LaunchedEffect(relay) { kotlinx.coroutines.delay(600); store.relayHost = relay }
-        LaunchedEffect(nick) {
-            kotlinx.coroutines.delay(800)
-            if (nick.isNotBlank() && nick != store.profile?.nickname) {
-                val old = store.profile
-                GroupHub.handle(com.curveon.protocol.Message.GroupProfile(nick.trim(), old?.colour ?: 0xFF00E5FF.toInt(), old?.icon, old?.photoJpegBase64))
-                store.profile = com.curveon.protocol.Message.GroupProfile(nick.trim(), old?.colour ?: 0xFF00E5FF.toInt(), old?.icon, old?.photoJpegBase64)
-            }
-        }
+        var scanning by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) {
             GroupHub.errors.collect { code ->
                 val text = when (code) {
                     com.curveon.protocol.Message.GroupErrorCode.INVALID_INVITE -> R.string.group_error_invalid_invite
                     com.curveon.protocol.Message.GroupErrorCode.EXPIRED_INVITE -> R.string.group_error_expired_invite
                     com.curveon.protocol.Message.GroupErrorCode.ALREADY_MEMBER -> R.string.group_error_already_member
-                    com.curveon.protocol.Message.GroupErrorCode.NO_RELAY -> R.string.group_error_no_relay
                     else -> R.string.group_error_other
                 }
                 android.widget.Toast.makeText(this@MainActivity, text, android.widget.Toast.LENGTH_LONG).show()
@@ -199,49 +171,19 @@ class MainActivity : ComponentActivity() {
                     color = if (s.status == com.curveon.protocol.Message.GroupStatus.CONNECTED) Green else Amber,
                     fontSize = 14.sp, fontWeight = FontWeight.Bold
                 )
-                OutlinedButton(onClick = {
-                    GroupHub.inviteLink(s.groupId)?.let { link ->
-                        startActivity(Intent.createChooser(
-                            Intent(Intent.ACTION_SEND).setType("text/plain")
-                                .putExtra(Intent.EXTRA_TEXT, getString(R.string.group_invite_text, link)), null
-                        ))
-                    }
-                }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.group_invite)) }
-                // The same person on another device (this phone and the tablet): one rider, not two.
-                var showDevice by remember { mutableStateOf(false) }
-                OutlinedButton(onClick = { showDevice = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.group_other_device)) }
-                if (showDevice) {
-                    val bitmap = remember { GroupHub.deviceLink(s.groupId)?.let { QrCode.bitmap(it) } }
-                    AlertDialog(
-                        onDismissRequest = { showDevice = false },
-                        confirmButton = { TextButton(onClick = { showDevice = false }) { Text(stringResource(R.string.group_close)) } },
-                        title = { Text(stringResource(R.string.group_other_device)) },
-                        text = {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                bitmap?.let { Image(it.asImageBitmap(), null, modifier = Modifier.size(240.dp).clip(RoundedCornerShape(12.dp))) }
-                                Text(stringResource(R.string.group_other_device_hint), fontSize = 13.sp)
-                            }
-                        }
-                    )
-                }
             }
-            OutlinedTextField(nick, { nick = it }, label = { Text(stringResource(R.string.group_nickname)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedButton(onClick = { pickPhoto.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
-                    Text(stringResource(if (hasPhoto) R.string.group_photo_change else R.string.group_photo_pick))
-                }
-                if (hasPhoto) TextButton(onClick = { saveProfile(null) }) { Text(stringResource(R.string.group_photo_remove)) }
-            }
-            OutlinedTextField(relay, { relay = it }, label = { Text(stringResource(R.string.group_relay)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            Text(stringResource(R.string.group_relay_hint), color = Muted, fontSize = 12.sp)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.group_data_saver), color = Color.White, fontSize = 14.sp)
-                    Text(stringResource(R.string.group_data_saver_hint), color = Muted, fontSize = 12.sp)
-                }
-                Switch(saver, { saver = it; store.dataSaver = it; GroupHub.setDataSaver(it) })
+            if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.group_scan))
             }
         }
+        if (scanning) com.curveon.qrscan.QrScanDialog(
+            onInvite = { link ->
+                scanning = false
+                GroupHub.start(applicationContext)
+                GroupHub.handle(com.curveon.protocol.Message.GroupJoin(link))
+            },
+            onDismiss = { scanning = false }
+        )
     }
 
     /** Start/stop the battery test, and mAh per hour for each app that navigated. */

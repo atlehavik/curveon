@@ -77,6 +77,8 @@ class ProtocolTest {
         Message.GroupConnection("0123", Message.GroupStatus.OFFLINE, 3),
         Message.GroupConnection("0123", Message.GroupStatus.CONNECTED, 3, otherDeviceActive = true),
         Message.GroupUseThisDevice,
+        Message.GroupSettings("relay.example.org", true),
+        Message.GroupSettings("", false),
         Message.GroupMembers("0123", listOf(
             Message.GroupMemberInfo("r1", "Ola", -1, "helmet", null),
             Message.GroupMemberInfo("r2", "Kari", 5, null, "/9j/"),

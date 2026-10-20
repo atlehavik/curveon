@@ -31,4 +31,5 @@ include(":companion")
 include(":phone")
 include(":pmtiles")
 include(":groups")
+include(":qrscan")
 

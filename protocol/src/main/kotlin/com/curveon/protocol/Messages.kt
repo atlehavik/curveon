@@ -324,6 +324,15 @@ sealed interface Message {
         override fun toJson() = obj("sos_answer").put("sos", sosRiderId).put("coming", coming)
     }
 
+    /**
+     * What the phone side is set up with: the relay new groups are made on ([relayHost], empty until set) and whether
+     * to share the position less often ([dataSaver]). The tablet sends it to change them, and the phone sends it back
+     * (also when the tablet connects), so the screen shows what is really set. An invite carries its own relay.
+     */
+    data class GroupSettings(val relayHost: String, val dataSaver: Boolean) : Message {
+        override fun toJson() = obj("group_settings").put("relay", relayHost).put("saver", dataSaver)
+    }
+
     /** The rider has two devices in the group and chose this one to send their position; the other one is told to stop. */
     data object GroupUseThisDevice : Message {
         override fun toJson() = obj("group_use_device")
@@ -517,6 +526,7 @@ sealed interface Message {
             "sos_cancel" -> SosCancel
             "sos_answer" -> SosAnswer(o.getString("sos"), o.optBoolean("coming", true))
             "group_use_device" -> GroupUseThisDevice
+            "group_settings" -> GroupSettings(o.optString("relay"), o.optBoolean("saver"))
             "group_remove" -> GroupRemoveRider(o.getString("id"), o.getString("rider"))
             "request_device_link" -> RequestDeviceLink(o.getString("id"))
             "group_device_link" -> GroupDeviceLink(o.getString("id"), o.getString("uri"))

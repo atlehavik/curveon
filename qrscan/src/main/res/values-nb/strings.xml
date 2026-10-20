@@ -1,0 +1,7 @@
+<resources>
+    <string name="qr_scan_title">Skann QR-kode</string>
+    <string name="qr_scan_hint">Hold kameraet foran QR-koden til invitasjonen, eller den for den andre enheten din.</string>
+    <string name="qr_scan_denied">Kameraet trengs for å skanne. Gi tilgang i Android-innstillingene, eller åpne invitasjonslenken i stedet.</string>
+    <string name="qr_scan_wrong">Det er ikke en Curveon-invitasjon.</string>
+    <string name="qr_scan_cancel">Avbryt</string>
+</resources>

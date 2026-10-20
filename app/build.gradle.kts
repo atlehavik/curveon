@@ -92,11 +92,8 @@ dependencies {
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.core.ktx)
-  // Scanning a group invite's QR code (the picture is read with ZXing, see :groups).
-  implementation(libs.androidx.camera.core)
-  implementation(libs.androidx.camera.camera2)
-  implementation(libs.androidx.camera.lifecycle)
-  implementation(libs.androidx.camera.view)
+  // Scanning a group invite's QR code, with the camera permission and the CameraX libraries.
+  implementation(project(":qrscan"))
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.lifecycle.viewmodel.compose)

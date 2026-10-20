@@ -124,10 +124,11 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
         }
     }
 
+    val settings by manager.settings.collectAsStateWithLifecycle()
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         sos.values.firstOrNull { it.mine }?.let { MySosCard(it, manager) }
         // Joining a friend's group, or making this device the same rider as my other one, from the QR code on the other screen.
-        if (hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.testTag("group_scan")) {
+        if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.testTag("group_scan")) {
             Icon(Icons.Default.QrCodeScanner, null, tint = ElectricCyan)
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.group_scan), color = ElectricCyan, fontWeight = FontWeight.Bold)
@@ -210,7 +211,7 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.group_invite), color = ElectricCyan, fontWeight = FontWeight.Bold)
                 }
-                if (showInvite) QrBlock(invite, R.string.group_invite_hint, R.string.group_invite)
+                if (showInvite) QrBlock(invite, R.string.group_invite_hint, R.string.group_invite, shareLink = true)
                 // The same person on another device (tablet and phone): one rider in the group, not two.
                 OutlinedButton(onClick = {
                     showDeviceLink = !showDeviceLink; showInvite = false; manager.forgetDeviceLink()
@@ -229,6 +230,9 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
                 Text(stringResource(R.string.group_leave), color = WarningRed, fontWeight = FontWeight.Bold)
             }
         }
+
+        // Set up here, in the app: where groups are made (the relay) and how often the position goes out.
+        settings?.let { s -> GroupSettingsSection(s) { relay, saver -> manager.setSettings(relay, saver) } }
 
     }
 
@@ -249,7 +253,7 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
         )
     }
     countdown?.let { left -> SosCountdown(left, onCancel = { countdown = null }) }
-    if (scanning) QrScanDialog(onInvite = { link -> scanning = false; manager.join(link) }, onDismiss = { scanning = false })
+    if (scanning) com.curveon.qrscan.QrScanDialog(onInvite = { link -> scanning = false; manager.join(link) }, onDismiss = { scanning = false })
 }
 
 @Composable
@@ -309,21 +313,36 @@ private fun riderStatus(p: Message.GroupPositionInfo?): String {
     return if (min < 1) stringResource(R.string.group_seen_now) else stringResource(R.string.group_seen_min, min)
 }
 
-/** Nickname, icon and colour; "Save" tells the phone, which tells the group. */
+/**
+ * Nickname, colour, icon and the rider's own picture. The picture is taken with the camera or chosen from the
+ * pictures, cut in a round window, and shown as the others will see it before "Save" tells the phone, which tells the group.
+ */
 @Composable
 private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?, String?) -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
-    // The rider's own picture: kept as it is unless a new one is picked or it is removed.
+    // The rider's own picture (base64 JPEG): kept as it is unless a new one is cut or it is removed.
     var photo by remember(me.photoBase64) { mutableStateOf(me.photoBase64) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            val b64 = com.curveon.phone.ProfilePhoto.fromUri(context, uri)
-            if (b64 != null) photo = b64
-            else android.widget.Toast.makeText(context, context.getString(R.string.group_photo_failed), android.widget.Toast.LENGTH_LONG).show()
-        }
-    }
     val preview = remember(photo) { photo?.let { runCatching { val b = android.util.Base64.decode(it, android.util.Base64.DEFAULT); android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size) }.getOrNull() } }
+    // The photo just taken or chosen, waiting to be cut.
+    var toCut by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    val captureFile = remember { java.io.File(context.cacheDir, "photos/profile.jpg") }
+    fun captureUri() = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.photos", captureFile.also { it.parentFile?.mkdirs() })
+    fun toast(res: Int) = android.widget.Toast.makeText(context, context.getString(res), android.widget.Toast.LENGTH_LONG).show()
+    fun cutFrom(uri: android.net.Uri) {
+        val bitmap = com.curveon.phone.ProfilePhoto.load(context, uri)
+        runCatching { captureFile.delete() } // a picture of the rider's face is not left in the cache
+        if (bitmap != null) toCut = bitmap else toast(R.string.group_photo_failed)
+    }
+    val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) cutFrom(uri) }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) cutFrom(captureUri()) }
+    // The app holds the camera permission for scanning, so Android wants it also to start the camera app.
+    val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) camera.launch(captureUri()) else toast(R.string.group_photo_camera_denied) }
+    fun takePhoto() {
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) camera.launch(captureUri())
+        else askCamera.launch(android.Manifest.permission.CAMERA)
+    }
+
     var nick by rememberSaveable(me.nickname) { mutableStateOf(me.nickname) }
     var colour by rememberSaveable(me.colour) { mutableStateOf(me.colour) }
     var icon by rememberSaveable(me.icon) { mutableStateOf(me.icon) }
@@ -334,12 +353,24 @@ private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?, String?
     }
     if (open) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedTextField(nick, { nick = it.take(20) }, singleLine = true, label = { Text(stringResource(R.string.group_nickname)) }, modifier = Modifier.fillMaxWidth())
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            RiderAvatar(me.copy(nickname = nick.ifEmpty { me.nickname }, colour = colour, icon = icon, photo = preview, photoBase64 = photo), 56.dp)
-            OutlinedButton(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.testTag("group_pick_photo")) {
+        // How the others see you: this very marker, as it will be on their map and in their list.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            RiderAvatar(me.copy(nickname = nick.ifEmpty { me.nickname }, colour = colour, icon = icon, photo = preview, photoBase64 = photo), 96.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(nick.ifEmpty { me.nickname }, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.group_photo_preview), color = TextSecondary, fontSize = 13.sp)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+            OutlinedButton(onClick = { takePhoto() }, modifier = Modifier.testTag("group_take_photo")) {
                 Icon(Icons.Default.PhotoCamera, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(if (photo == null) R.string.group_photo_pick else R.string.group_photo_change), color = ElectricCyan, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.group_photo_take), color = ElectricCyan, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.testTag("group_pick_photo")) {
+                Icon(Icons.Default.PhotoLibrary, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.group_photo_gallery), color = ElectricCyan, fontWeight = FontWeight.Bold)
             }
             if (photo != null) TextButton(onClick = { photo = null }) { Text(stringResource(R.string.group_photo_remove), color = TextSecondary) }
         }
@@ -361,12 +392,49 @@ private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?, String?
             Text(stringResource(R.string.group_save), color = Color(0xFF00363D), fontWeight = FontWeight.Bold)
         }
     }
+    toCut?.let { bitmap ->
+        PhotoCropDialog(
+            bitmap,
+            onDone = { square ->
+                val b64 = com.curveon.phone.ProfilePhoto.encode(square)
+                if (b64 != null) photo = b64 else toast(R.string.group_photo_failed)
+                toCut = null
+            },
+            onCancel = { toCut = null }
+        )
+    }
+}
+
+/** Relay address and data saver, saved a moment after the last keystroke. Invites carry their own relay, so it is only needed to start a group. */
+@Composable
+private fun GroupSettingsSection(settings: Message.GroupSettings, onChange: (String, Boolean) -> Unit) {
+    var relay by remember(settings.relayHost) { mutableStateOf(settings.relayHost) }
+    val current by rememberUpdatedState(settings)
+    LaunchedEffect(relay) {
+        delay(700)
+        if (relay.trim() != current.relayHost) onChange(relay.trim(), current.dataSaver)
+    }
+    SectionLabel(stringResource(R.string.group_settings))
+    OutlinedTextField(
+        relay, { relay = it.take(100) }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("group_relay"),
+        label = { Text(stringResource(R.string.group_relay)) },
+        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri)
+    )
+    Text(stringResource(R.string.group_relay_hint), color = TextMuted, fontSize = 12.sp)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.group_data_saver), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.group_data_saver_hint), color = TextMuted, fontSize = 12.sp)
+        }
+        CockpitSwitch(settings.dataSaver, { onChange(relay.trim(), it) })
+    }
 }
 
 /** A link as a QR code for a camera, with what to know about it: the invite (anyone with it can join) or the one for my other device. */
 @Composable
-private fun QrBlock(uri: String?, hint: Int, description: Int) {
+private fun QrBlock(uri: String?, hint: Int, description: Int, shareLink: Boolean = false) {
     val bitmap = remember(uri) { uri?.let { QrCode.bitmap(it) } }
+    val context = LocalContext.current
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (bitmap != null) Image(
             bitmap.asImageBitmap(), stringResource(description),
@@ -374,6 +442,17 @@ private fun QrBlock(uri: String?, hint: Int, description: Int) {
         )
         else CircularProgressIndicator(color = ElectricCyan)
         Text(stringResource(hint), color = TextMuted, fontSize = 13.sp, textAlign = TextAlign.Center)
+        // For a friend who is not here: the same invite as a link, through any chat (Android's share sheet).
+        if (shareLink && uri != null) OutlinedButton(onClick = {
+            context.startActivity(android.content.Intent.createChooser(
+                android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+                    .putExtra(android.content.Intent.EXTRA_TEXT, context.getString(R.string.group_invite_text, uri)), null
+            ))
+        }, modifier = Modifier.testTag("group_share_link")) {
+            Icon(Icons.Default.Share, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.group_share_link), color = ElectricCyan, fontWeight = FontWeight.Bold)
+        }
     }
 }
 

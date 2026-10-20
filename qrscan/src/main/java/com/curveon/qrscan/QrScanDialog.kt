@@ -1,4 +1,4 @@
-package com.curveon.ui.components
+package com.curveon.qrscan
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,13 +33,18 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.curveon.R
 import com.curveon.phone.QrCode
-import com.curveon.ui.theme.*
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+
+private val Amber = Color(0xFFFF9100)
 
 /** True on a device with a camera at all; the scan button is left out on one without. */
 @Composable
@@ -61,23 +67,36 @@ fun QrScanDialog(onInvite: (String) -> Unit, onDismiss: () -> Unit) {
     LaunchedEffect(Unit) { if (!granted) ask.launch(Manifest.permission.CAMERA) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        HideSystemBars()
+        HideBars()
         Box(Modifier.fillMaxSize().background(Color.Black).testTag("qr_scan")) {
             if (granted) CameraScan(onInvite = onInvite, onOther = { wrong = true })
             Column(
                 Modifier.align(Alignment.TopCenter).fillMaxWidth().background(Color(0xAA000000)).padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(stringResource(R.string.group_scan), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                Text(stringResource(R.string.qr_scan_title), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
                 Text(
-                    stringResource(when { denied -> R.string.group_scan_denied; wrong -> R.string.group_scan_wrong; else -> R.string.group_scan_hint }),
-                    color = if (denied || wrong) NeonAmber else Color.White, fontSize = 15.sp, textAlign = TextAlign.Center
+                    stringResource(when { denied -> R.string.qr_scan_denied; wrong -> R.string.qr_scan_wrong; else -> R.string.qr_scan_hint }),
+                    color = if (denied || wrong) Amber else Color.White, fontSize = 15.sp, textAlign = TextAlign.Center
                 )
             }
             Button(
                 onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp).height(56.dp).widthIn(min = 220.dp).testTag("qr_scan_cancel")
-            ) { Text(stringResource(R.string.cancel), color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+            ) { Text(stringResource(R.string.qr_scan_cancel), color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+        }
+    }
+}
+
+/** Full screen, without the system bars. */
+@Composable
+private fun HideBars() {
+    val view = LocalView.current
+    val window = (view.parent as? DialogWindowProvider)?.window ?: return
+    LaunchedEffect(window) {
+        WindowCompat.getInsetsController(window, view).apply {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars())
         }
     }
 }
@@ -126,7 +145,7 @@ private fun CameraScan(onInvite: (String) -> Unit, onOther: () -> Unit) {
 }
 
 /** One frame: its brightness plane to ZXing. A Curveon invite ends the scan; any other code just says so. */
-private fun look(image: ImageProxy, done: AtomicBoolean, main: java.util.concurrent.Executor, invite: (String) -> Unit, other: () -> Unit) {
+private fun look(image: ImageProxy, done: AtomicBoolean, main: Executor, invite: (String) -> Unit, other: () -> Unit) {
     try {
         if (done.get()) return
         val plane = image.planes[0]

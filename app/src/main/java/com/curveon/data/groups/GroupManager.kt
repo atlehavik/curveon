@@ -28,6 +28,10 @@ data class GroupRider(val id: String, val nickname: String, val colour: Int, val
  */
 class GroupManager(private val scope: CoroutineScope, private val send: (Message) -> Unit) {
 
+    /** The phone side's relay address and data saver; null until the phone has told (so not shown without a phone). */
+    private val _settings = MutableStateFlow<Message.GroupSettings?>(null)
+    val settings: StateFlow<Message.GroupSettings?> = _settings.asStateFlow()
+
     private val _groups = MutableStateFlow<List<Message.GroupInfo>>(emptyList())
     val groups: StateFlow<List<Message.GroupInfo>> = _groups.asStateFlow()
 
@@ -80,6 +84,7 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
 
     fun onMessage(m: Message) {
         when (m) {
+            is Message.GroupSettings -> _settings.value = m
             is Message.GroupList -> {
                 _groups.value = m.groups
                 if (_activeId.value != m.activeId) clearLive()
@@ -127,6 +132,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     // ---- the rider's commands ----
 
     fun requestGroups() = send(Message.RequestGroups)
+    fun setSettings(relayHost: String, dataSaver: Boolean) {
+        _settings.value = Message.GroupSettings(relayHost, dataSaver)
+        send(Message.GroupSettings(relayHost, dataSaver))
+    }
     fun create(name: String?) = send(Message.GroupCreate(name))
     fun join(invite: String) = send(Message.GroupJoin(invite))
     fun leave(groupId: String) = send(Message.GroupLeave(groupId))

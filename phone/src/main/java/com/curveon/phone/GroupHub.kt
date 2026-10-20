@@ -167,6 +167,7 @@ object GroupHub {
             is Message.GroupProfile -> {
                 store.profile = m
                 client?.setProfile(helloFor(activeId?.let { groups[it] } ?: return))
+                membersMessage()?.let(::send) // the rider's own row shows the new name and picture at once
             }
             is Message.MyPosition -> position(m)
             is Message.ShareRoute -> {
@@ -198,6 +199,12 @@ object GroupHub {
                 if (groups[m.groupId] == null) return error(Message.GroupErrorCode.NO_SUCH_GROUP)
                 send(Message.GroupDeviceLink(m.groupId, deviceLink(m.groupId) ?: return))
             }
+            is Message.GroupSettings -> {
+                store.relayHost = m.relayHost
+                store.dataSaver = m.dataSaver
+                sharer.dataSaver = m.dataSaver
+                send(settingsMessage())
+            }
             is Message.GroupUseThisDevice -> {
                 client?.useThisDevice()
                 sharer.reset()
@@ -227,6 +234,7 @@ object GroupHub {
         sharer.reset()
         updateConnection()
         send(groupList())
+        membersMessage()?.let(::send) // the rider is in the list from the start, before anyone else is
     }
 
     // ---- connection ----
@@ -303,7 +311,7 @@ object GroupHub {
     private fun onEvent(state: GroupState, e: GroupEvent) {
         if (state.groupIdHex != activeId) return // an event from a group we have left or switched away from
         when (e) {
-            GroupEvent.Connected -> { connected = true; sendConnection() }
+            GroupEvent.Connected -> { connected = true; sendConnection(); membersMessage()?.let(::send) }
             is GroupEvent.Disconnected -> { connected = false; sendConnection() }
             is GroupEvent.DeviceActiveChanged -> { sharer.reset(); sendConnection() }
             is GroupEvent.MemberUpdated -> { membersMessage()?.let(::send); sendConnection() }
@@ -364,7 +372,10 @@ object GroupHub {
 
     // ---- what the tablet is told ----
 
+    private fun settingsMessage() = Message.GroupSettings(store?.relayHost.orEmpty(), store?.dataSaver ?: false)
+
     private fun snapshot(): List<Message> = buildList {
+        add(settingsMessage())
         add(groupList())
         connectionMessage()?.let(::add)
         membersMessage()?.let(::add)

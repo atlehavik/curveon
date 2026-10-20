@@ -47,6 +47,7 @@ android {
 dependencies {
   implementation(project(":protocol"))
   implementation(project(":phone"))
+  implementation(project(":qrscan"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.material3)

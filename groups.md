@@ -271,6 +271,10 @@ Decided 2026-10-19 after the rider's first look: (1) groups get a **button in th
 for the other ("My other device") that hands over the rider id and keys, see `docs/groups-protocol.md`; (3) an incoming SOS is a **small red
 dialog** with "Drive there" (says "on the way" to the group and starts a route) and "Ignore", and shows how many are already on the way, because
 it may be nothing and not everyone has to go. The word stays "group" in the app, though the rider thinks of it as friends.
+Decided 2026-10-20: **groups live in the Curveon app; the companion is only status, QR scanning and invite links.** A rider with only Curveon on a phone must
+be able to do everything (relay address, data saver, name and picture, invite with QR or Share link) without the companion; the tablet sets the same things on
+the phone side with `GroupSettings`. The companion scans because the Curveon app may sit on a tablet whose camera is out of reach. The profile picture can be taken
+or chosen, is cut in a round window, and the result is shown as the others will see it before saving.
 Built 2026-10-19: the group library (`:groups`: client, payloads, position sharing, SOS tracking), the Bluetooth messages
 (`:protocol` version 2), the phone side (`GroupHub` in `:phone`, encrypted store, OkHttp), a Group ride card in the companion, and on the
 tablet the other riders on the map, a group button, the group dialog (also Settings → Group ride) with invite QR, pause, profile, remove
