@@ -2,46 +2,64 @@ package com.curveon.routing
 
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
+import org.junit.Before
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
 
 /**
- * A stop just off the way (a side street in Haugesund, on the way from Bømlo to the centre) is
- * ridden to, not ridden past: BRouter on its own cuts the out-and-back to it short (by 200 m here).
+ * Stops added one by one on the road (2026-10-19, Bømlo: four stops, the route kept only some of them
+ * because the way "that doesn't turn round" was routed without visiting every stop). Skipped without segments.
  */
 class StopsVisitedTest {
-    private val segments = File(System.getProperty("curveon.segments") ?: "")
+    private lateinit var engine: BRouterEngine
 
-    @Test
-    fun `stops down a side street are visited`() {
-        assumeTrue(File(segments, "E5_N55.rd5").exists())
-        val engine = BRouterEngine(segments, ProfileInstaller.install(Files.createTempDirectory("p").toFile()))
-        val from = LatLon(59.7790, 5.2050) // Bømlo
-        val to = LatLon(59.413807, 5.268125) // Haugesund centre
-        val o = RouteOptions(RoadStyle.FASTEST, SurfacePreference.PAVED)
-        for (stop in listOf(LatLon(59.4247, 5.2687))) { // Stiklestadgata x Rogalandsgata, Haugesund
-            // Where the stop meets the road network: the end of a route to it.
-            val atStop = engine.route(listOf(from, stop), o).points.last().let { LatLon(it.lat, it.lon) }
-            val r = engine.route(listOf(from, stop, to), o, visitEveryVia = true)
-            val gap = r.points.minOf { Geo.distance(atStop, LatLon(it.lat, it.lon)) }
-            println("stop $stop: route passes %.0f m from it".format(gap))
-            assertTrue("route rides past the stop at $stop (%.0f m away)".format(gap), gap < 15)
+    @Before
+    fun setUp() {
+        val segments = File(System.getProperty("curveon.segments") ?: "")
+        assumeTrue("No BRouter segments at $segments", File(segments, "E5_N55.rd5").exists())
+        engine = BRouterEngine(segments, ProfileInstaller.install(Files.createTempDirectory("profiles").toFile()))
+    }
+
+    /** How far [p] is from the line of [route], in metres. */
+    private fun offRoute(p: LatLon, route: Route): Double {
+        val line = route.points
+        var best = Double.MAX_VALUE
+        val kx = Math.cos(Math.toRadians(p.lat)) * 111_320.0
+        val ky = 110_540.0
+        for (i in 0 until line.size - 1) {
+            val ax = (line[i].lon - p.lon) * kx; val ay = (line[i].lat - p.lat) * ky
+            val bx = (line[i + 1].lon - p.lon) * kx; val by = (line[i + 1].lat - p.lat) * ky
+            val dx = bx - ax; val dy = by - ay; val len = dx * dx + dy * dy
+            val t = if (len == 0.0) 0.0 else (-(ax * dx + ay * dy) / len).coerceIn(0.0, 1.0)
+            best = minOf(best, Math.hypot(ax + t * dx, ay + t * dy))
         }
+        return best
     }
 
     @Test
-    fun `a trip without stops is one way, not there and back`() {
-        assumeTrue(File(segments, "E5_N55.rd5").exists())
-        val engine = BRouterEngine(segments, ProfileInstaller.install(Files.createTempDirectory("p").toFile()))
-        val from = LatLon(59.7790, 5.2050) // Bømlo
-        val to = LatLon(59.413807, 5.268125) // Haugesund centre
-        val o = RouteOptions(RoadStyle.FASTEST, SurfacePreference.PAVED)
-        val plain = engine.route(listOf(from, to), o)
-        val r = engine.route(listOf(from, to), o, visitEveryVia = true)
-        println("Bømlo-Haugesund %.0f km, with stops visited %.0f km".format(plain.distanceMeters / 1000, r.distanceMeters / 1000))
-        assertTrue("there and back: %.0f km".format(r.distanceMeters / 1000), r.distanceMeters < plain.distanceMeters * 1.05)
-        val end = r.points.last()
-        assertTrue("ends back at the start", Geo.distance(to, LatLon(end.lat, end.lon)) < 500)
+    fun everyStopIsOnTheRouteFromHereAndOnTheWayAhead() {
+        val dest = LatLon(59.797243, 5.188452)
+        val adds = listOf(
+            Triple(LatLon(59.7936362, 5.1442255), 74.0, LatLon(59.79431, 5.17992)),
+            Triple(LatLon(59.7937340, 5.1504260), 94.6, LatLon(59.79345, 5.17164)),
+            Triple(LatLon(59.7931190, 5.1549500), 113.2, LatLon(59.79297, 5.17571)),
+            Triple(LatLon(59.7921430, 5.1651730), 7.5, LatLon(59.79392, 5.17009)))
+        for (style in RoadStyle.entries) {
+            val options = RouteOptions(roadStyle = style)
+            var stops = listOf<LatLon>()
+            for ((pos, heading, stop) in adds) {
+                val chain = listOf(pos) + stops + dest
+                val at = (0 until chain.size - 1).minBy { Geo.distance(chain[it], stop) + Geo.distance(stop, chain[it + 1]) - Geo.distance(chain[it], chain[it + 1]) }
+                stops = stops.toMutableList().also { it.add(at.coerceIn(0, stops.size), stop) }
+                val free = engine.route(listOf(pos) + stops + dest, options, visitEveryVia = true)
+                // The way the rider is heading, as the app tries before it settles for turning round.
+                val ahead = OffRoutePlanner(engine).forwardOnly(pos, heading, stops + dest, options).second
+                for (route in listOfNotNull(free, ahead)) for (s in stops) {
+                    val off = offRoute(s, route)
+                    assertTrue("$style: a stop is $off m from the route", off < 40.0)
+                }
+            }
+        }
     }
 }

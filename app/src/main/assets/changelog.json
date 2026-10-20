@@ -2,6 +2,16 @@
   {
     "version": "1.2.2",
     "en": [
+      "Stops you add while riding are now always on the route: before, a new route that avoids turning round could skip some of the stops (it rode past them at a distance), and \"stop reached\" could be announced without you being there. Now every stop gets visited, and the message only comes when you are at the stop",
+      "The 3D map tilts a little more by default, and your position sits lower on the screen, so you see more of the road ahead",
+      "The roundabout icon is redrawn after the Norwegian road sign: three arrows round the ring instead of two, turning against the clock where they drive on the right and with the clock where they drive on the left. The arrows keep their size, so they still stay clear of the exit number",
+      "While navigating, the route line is now coloured by what you ride on, as when planning: blue for asphalt, orange for gravel and purple for offroad, solid instead of see-through dashes",
+      "The route line is cyan again when you ride a GPX track, a logged ride or a mixed-surface trip: it had turned green, which nobody asked for",
+      "A GPX track made into a route tidies itself afterwards: in the background Curveon tries each of the many helper points and removes the ones the route doesn't need, so the trip is simpler to adjust. You notice nothing while it works",
+      "The arrival box is tidier: folded, it shows the arrival time with the distance to the next stop in orange under it (nothing extra when there is no stop), so you know both at a glance. Folded out, the distance and time left to the destination come first, then every stop with its name and its own distance and time, lined up in columns with thin lines between. Each stop has a small red cross that asks whether to delete it. Tapping the fuel stop now asks whether you want to go there before it becomes a stop",
+      "The arrival box is tidier at motorway speeds: folded it shows just the arrival time and the end button, and folded out it grows downwards with distance and time left, the fuel stop and add stop each on their own line",
+      "Tapping the fuel stop while riding a track now adds the station as a numbered stop on the map, instead of just putting a dot where you are",
+      "The arrival box now fits next to the speed at motorway speeds: the end button stays visible, and when you fold it out the fuel stop and add stop wrap onto a new line instead of running over each other",
       "On the day map, road names also sit on the map's own land colour instead of white, like the place names",
       "On the night map, place names and road names are now white on the night map's own dark colour, so they stand out without a bright box",
       "Place names now sit on the same colour as the day map's land instead of white, so they stand out less but are still readable",
@@ -25,7 +35,7 @@
       "High contrast now keeps the same dark grey roads at every zoom level, a bit lighter and without edges. Main roads stay yellow with a black edge",
       "When you hold a finger on a road and the map for that country isn't downloaded, the road card now says so and tells you which map to download for the road type and surface",
       "New setting, High contrast (Settings → Display): the day map gets dark grey roads with a black edge instead of white ones, so even the small roads are easy to see in bright sun. Main roads stay yellow, now with a clear black edge too",
-      "The road card (road number, priority road, give way) now always sits top left, and the arrival box comes under it, moving down with it. The right side keeps just the speed and the map buttons, and nothing blocks the route line in the middle",
+      "The arrival box sits top left, and the road card (road number, priority road, give way) goes right under it, moving down when the box is folded out so they never overlap. The right side keeps just the speed and the map buttons",
       "Small roads are much easier to see on the day map in bright sun: they now have a darker edge that stands out from the map",
       "The arrow on the night map has a white edge and a light halo, so it no longer disappears into the dark map",
       "The map is calmer while you ride: the arrival box shows just the time, and tapping it reveals distance and time left. The next-turn card is now as narrow as it can be and grows only when it needs to, and tapping it shows the full description. Roundabouts show which exit to take",
@@ -42,9 +52,20 @@
       "Adventures no longer start with a time limit: draw your area and Curveon finds trips that make good use of it, each showing about how long it takes. Want a shorter ride? Pick a time on the time button and it becomes the limit, as before",
       "When you edit a route on the map, the padlock is now locked every time, so you can pan the map without bending the route by accident. Unlock it when you want to drag the line",
       "Curveon has a new package name (com.curveon.app, was com.curveon.tablet) because it is the main app on both phone and tablet. Android treats it as a new app: install this version, then uninstall the old Curveon. Settings, downloaded maps and saved data do not carry over, and the Curveon Companion must be updated too",
-      "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready"
+      "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready",
+      "Curveon has a new icon: a motorbike seen head-on, with an orange body and a cyan front tyre against the evening sky"
     ],
     "nb": [
+      "Stopp du legger til underveis ligger nå alltid på ruten: før kunne en ny rute som unngår å snu hoppe over noen av stoppene (den kjørte forbi på avstand), og «stopp nådd» kunne meldes uten at du var der. Nå besøkes hvert stopp, og meldingen kommer bare når du er ved stoppet",
+      "Kartet i 3D står litt mer på skakke som standard, og markøren din sitter lenger ned på skjermen, så du ser mer av veien foran deg",
+      "Rundkjøringsikonet er tegnet om etter det norske veiskiltet: tre piler rundt ringen i stedet for to, mot klokken der de kjører på høyre side og med klokken der de kjører på venstre side. Pilene har samme størrelse som før, så de holder seg unna avkjøringsnummeret",
+      "Under navigering er ruten nå farget etter underlaget, som når du planlegger: blå for asfalt, oransje for grus og lilla for offroad, heldekkende i stedet for gjennomsiktige striper",
+      "Ruten er cyan igjen når du kjører et GPX-spor, en logget tur eller en tur med blandet underlag: den hadde blitt grønn uten at noen hadde bedt om det",
+      "En GPX-sporrute rydder seg selv etterpå: i bakgrunnen prøver Curveon hvert av de mange hjelpepunktene og tar bort de ruten ikke trenger, så turen blir enklere å justere. Du merker ingenting mens det pågår",
+      "Ankomstboksen er ryddigere: foldet viser den ankomsttiden med avstanden til neste stopp i oransje under (ingenting ekstra når det ikke er noe stopp), så du vet begge deler med et blikk. Utfoldet kommer avstand og tid til målet først, så hvert stopp med navn og egen avstand og tid, på linje i kolonner med tynne streker imellom. Hvert stopp har et lite rødt kryss som spør om du vil slette det. Trykker du på bensinstoppet, spørres du nå om du vil kjøre dit før det blir et stopp",
+      "Ankomstboksen er ryddigere på motorveifart: sammenfoldet viser den bare ankomsttid og avslutt-knappen, og utfoldet vokser den nedover med distanse og tid igjen, og bensinstasjon og legg til stopp på hver sin linje",
+      "Trykker du på bensinstasjonen mens du kjører et spor, legges stasjonen nå til som et nummerert stopp på kartet, i stedet for en prikk der du er",
+      "Ankomstboksen får plass ved siden av farten på motorveifart: avslutt-knappen står alltid synlig, og når du folder den ut brytes drivstoff og legg til stopp over på en ny linje i stedet for å ligge oppå hverandre",
       "På dagkartet ligger veinavn nå også på kartets egen landfarge i stedet for hvitt, som stedsnavnene",
       "På nattkartet er stedsnavn og veinavn nå hvite på kartets egen mørke farge, så de er lette å lese uten en lys boks",
       "Stedsnavn ligger nå på samme farge som landet på dagkartet i stedet for hvit bakgrunn, så de ikke stikker seg så mye ut, men fortsatt er lette å lese",
@@ -68,7 +89,7 @@
       "Høykontrast har nå de samme mørkegrå veiene på alle zoomnivå, litt lysere og uten kanter. Hovedveiene er fortsatt gule med svart kant",
       "Når du holder fingeren på en vei og kartet for landet ikke er lastet ned, sier veikortet fra om det og hvilket kart du bør laste ned for å se veitype og underlag",
       "Ny innstilling, Høykontrast (Innstillinger → Skjerm): dagkartet får mørkegrå veier med svart kant i stedet for hvite, så selv de små veiene er lette å se i sterk sol. Hovedveiene er fortsatt gule, nå også med tydelig svart kant",
-      "Veikortet (veinummer, forkjørsvei, vikeplikt) ligger nå alltid øverst til venstre, og ankomstboksen kommer under det og flytter seg med. Høyre side har bare farten og kartknappene, og ingenting blokkerer rutelinjen midt på skjermen",
+      "Ankomstboksen ligger øverst til venstre, og veikortet (veinummer, forkjørsvei, vikeplikt) ligger rett under, og flytter seg ned når boksen åpnes, så de aldri overlapper. Høyre side har bare farten og kartknappene",
       "Små veier er mye lettere å se på dagkartet i sterk sol: de har nå en mørkere kant som skiller seg tydelig fra kartet",
       "Pila på nattkartet har en hvit kant og en lys glorie, så den ikke lenger forsvinner i det mørke kartet",
       "Kartet er roligere når du kjører: ankomstboksen viser bare klokkeslettet, og et trykk viser hvor langt og hvor lenge det er igjen. Svingkortet er nå så smalt som mulig og blir bare bredere når det trengs, og et trykk viser hele beskrivelsen. I rundkjøringer ser du hvilken avkjøring du skal ta",
@@ -85,7 +106,8 @@
       "Eventyr starter ikke lenger med en tidsgrense: tegn området ditt, så finner Curveon turer som utnytter det godt, og hver tur viser omtrent hvor lang tid den tar. Vil du ha en kortere tur? Velg en tid på tidsknappen, så blir den grensen, som før",
       "Når du endrer en rute i kartet, er hengelåsen nå låst hver gang, så du kan flytte kartet uten å bøye ruten ved et uhell. Lås den opp når du vil dra i linjen",
       "Curveon har fått nytt pakkenavn (com.curveon.app, før com.curveon.tablet) fordi det er hovedappen på både mobil og nettbrett. Android ser det som en ny app: installer denne versjonen, og avinstaller deretter den gamle Curveon. Innstillinger, nedlastede kart og lagrede data følger ikke med, og Curveon Companion må oppdateres samtidig",
-      "Kartnedlastingen går mye raskere: Curveon henter nå flere deler av kartet samtidig i stedet for én om gangen, så et land kan bli ferdig på en tredjedel av tiden. Når du setter flere land i kø, begynner neste kart å laste ned mens det forrige gjør klart ruter og søk"
+      "Kartnedlastingen går mye raskere: Curveon henter nå flere deler av kartet samtidig i stedet for én om gangen, så et land kan bli ferdig på en tredjedel av tiden. Når du setter flere land i kø, begynner neste kart å laste ned mens det forrige gjør klart ruter og søk",
+      "Curveon har fått nytt ikon: en motorsykkel sett forfra, med oransje kropp og cyan framdekk mot kveldshimmelen"
     ]
   },
   {

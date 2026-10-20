@@ -27,14 +27,16 @@ import androidx.compose.ui.window.Dialog
 import com.curveon.data.routing.RoutingStatus
 import com.curveon.ui.theme.*
 import com.curveon.ui.viewmodel.NavigationSummary
+import com.curveon.ui.viewmodel.StopAhead
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Arrival time, distance left and the end button, at the top of the map beside the speed. Tapping it
- * folds out a second line: the time left, next stop (opens the route menu: stops, save), fuel
- * when worth knowing (tapping it adds it as a stop) and add stop.
+ * Arrival time, the distance to the next stop in orange under it (none without a stop), and the end button, at
+ * the top of the map beside the speed. Tapping it folds it out: distance and time left, then each stop (opens
+ * the route menu: stops, save) with its own, fuel when worth knowing (tapping it asks whether to go there)
+ * and add stop.
  */
 @Composable
 fun NavigationSummaryBar(
@@ -46,15 +48,20 @@ fun NavigationSummaryBar(
     fuel: com.curveon.data.routing.FuelHint? = null,
     onFuel: () -> Unit = {},
     onAddStop: () -> Unit = {},
+    /** Takes the stop at this index of the trip out (after the rider has said yes). */
+    onRemoveStop: (Int) -> Unit = {},
     onOpen: () -> Unit = {}
 ) {
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
     }
-    // Folded: arrival, distance left and the end button, small enough to sit beside the speed.
-    // A tap opens a second line below with the next stop, fuel and add stop.
+    // Folded: the arrival time, and in orange under it how far it is to the next stop (the destination when there is none).
+    // A tap folds it out: the destination's distance and time left, then each stop with its own, all in the same columns.
     var open by remember { mutableStateOf(false) }
-    Column(
+    var askFuel by remember { mutableStateOf(false) }
+    var askRemove by remember { mutableStateOf<StopAhead?>(null) }
+    val next = summary.stops.firstOrNull()
+    Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(CockpitSurface.copy(alpha = 0.95f))
@@ -62,66 +69,114 @@ fun NavigationSummaryBar(
             .clickable { open = !open }
             .testTag("nav_summary_bar")
     ) {
-        Row(
-            Modifier.heightIn(min = foldedHeight).padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
-            Text(stringResource(R.string.distance_km_whole, summary.remainingKm), color = TextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-            IconButton(
-                onClick = onStop,
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
-            ) {
-                Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
-            }
-        }
-        if (open) Row(
-            Modifier.padding(start = 14.dp, end = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // The time left: only shown when asked for (the distance is always on show).
-            Text(
-                "%d:%02d".format(summary.remainingMinutes / 60, summary.remainingMinutes % 60),
-                color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
-                modifier = Modifier.testTag("nav_remaining")
-            )
-            // The next stop (or just "Route") opens the route's menu: stops, save, end.
+        // As wide as its widest line: the dividers stretch to that, not to all the room there is.
+        Column(Modifier.width(IntrinsicSize.Max).padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
-                Modifier.weight(1f, fill = false).clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp)
-                    .testTag("nav_route_menu_btn"),
-                verticalAlignment = Alignment.CenterVertically
+                Modifier.fillMaxWidth().heightIn(min = (foldedHeight - 12.dp).coerceAtLeast(0.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                val next = summary.nextStop
-                Text(
-                    if (next != null) next.first.take(14) + " " + stringResource(R.string.distance_km_whole, next.second) else stringResource(R.string.nav_route),
-                    color = if (next != null) NeonAmber else TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1
-                )
-            }
-            if (fuel != null && (fuel.isLongGap || fuel.distanceMeters < 60_000)) {
-                val color = if (fuel.isLongGap) NeonAmber else EcoGreen
-                Row(
-                    Modifier.clip(RoundedCornerShape(14.dp)).background(color.copy(alpha = 0.15f))
-                        .clickable(enabled = fuel.point.lat != 0.0, onClick = onFuel).padding(horizontal = 8.dp, vertical = 4.dp)
-                        .testTag("fuel_chip"),
-                    verticalAlignment = Alignment.CenterVertically
+                // The end button keeps its place, at the right edge; the text gives way if it must.
+                Column(Modifier.weight(1f)) {
+                    Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
+                    if (!open && next != null) Text(
+                        tripDistance(next.km), color = NeonAmber, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 1, softWrap = false, modifier = Modifier.testTag("nav_next_km")
+                    )
+                }
+                IconButton(
+                    onClick = onStop,
+                    modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
                 ) {
-                    Icon(Icons.Default.LocalGasStation, fuel.name.ifEmpty { stringResource(R.string.fuel_none_on_route) }, tint = color, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(if (fuel.point.lat == 0.0) stringResource(R.string.fuel_none_ahead) else stringResource(R.string.distance_km_whole, fuel.distanceMeters / 1000),
-                        color = color, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
                 }
             }
-            IconButton(
-                onClick = onAddStop,
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(NeonAmber.copy(alpha = 0.2f)).testTag("nav_add_stop_btn")
-            ) {
-                Icon(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), tint = NeonAmber)
+            if (open) {
+                // The destination, then each stop: name, and under it distance and time in the same columns.
+                TripLeg(tripDistance(summary.remainingKm), summary.remainingMinutes, TextSecondary, Modifier.testTag("nav_remaining"))
+                for (stop in summary.stops) {
+                    HorizontalDivider(color = CockpitBorder)
+                    Column(
+                        Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).testTag("nav_route_menu_btn"),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stop.name, color = NeonAmber, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            if (stop.removable) IconButton(onClick = { askRemove = stop }, modifier = Modifier.padding(end = 8.dp).size(28.dp).testTag("nav_stop_remove")) {
+                                Icon(Icons.Default.Close, stringResource(R.string.remove_stop), tint = WarningRed, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                        TripLeg(tripDistance(stop.km), stop.minutes, NeonAmber, Modifier.testTag("nav_remaining_stop"))
+                    }
+                }
+                // Without stops the route menu (stops, save, end) is still one tap away.
+                if (summary.stops.isEmpty()) Text(
+                    stringResource(R.string.nav_route), color = TextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen).padding(vertical = 4.dp).testTag("nav_route_menu_btn")
+                )
+                if (fuel != null && (fuel.isLongGap || fuel.distanceMeters < 60_000)) {
+                    val color = if (fuel.isLongGap) NeonAmber else EcoGreen
+                    Row(
+                        Modifier.clip(RoundedCornerShape(14.dp)).background(color.copy(alpha = 0.15f))
+                            .clickable(enabled = fuel.point.lat != 0.0) { askFuel = true }.padding(horizontal = 10.dp, vertical = 8.dp)
+                            .testTag("fuel_chip"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.LocalGasStation, fuel.name.ifEmpty { stringResource(R.string.fuel_none_on_route) }, tint = color, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (fuel.point.lat == 0.0) stringResource(R.string.fuel_none_ahead) else stringResource(R.string.distance_km_whole, fuel.distanceMeters / 1000),
+                            color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    }
+                }
+                Row(
+                    Modifier.clip(RoundedCornerShape(14.dp)).background(NeonAmber.copy(alpha = 0.15f))
+                        .clickable(onClick = onAddStop).padding(horizontal = 10.dp, vertical = 8.dp)
+                        .testTag("nav_add_stop_btn"),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.AddLocationAlt, null, tint = NeonAmber, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.add_stop), color = NeonAmber, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
             }
         }
     }
+    askRemove?.let { stop ->
+        AlertDialog(
+            onDismissRequest = { askRemove = null },
+            containerColor = CockpitSurface,
+            title = { HideSystemBars(); Text(stringResource(R.string.delete_named, stop.name), color = TextPrimary, fontWeight = FontWeight.Black) },
+            confirmButton = { TextButton(onClick = { askRemove = null; onRemoveStop(stop.index) }, modifier = Modifier.testTag("remove_stop_yes")) { Text(stringResource(R.string.delete), color = WarningRed) } },
+            dismissButton = { TextButton(onClick = { askRemove = null }) { Text(stringResource(R.string.cancel)) } }
+        )
+    }
+    if (askFuel && fuel != null) {
+        val name = fuel.name.ifEmpty { stringResource(R.string.poi_fuel) }
+        AlertDialog(
+            onDismissRequest = { askFuel = false },
+            containerColor = CockpitSurface,
+            title = { HideSystemBars(); Text(stringResource(R.string.fuel_go_to, name), color = TextPrimary, fontWeight = FontWeight.Black) },
+            text = { Text(stringResource(R.string.fuel_go_to_body, tripDistance(fuel.distanceMeters / 1000)), color = TextSecondary) },
+            confirmButton = { TextButton(onClick = { askFuel = false; onFuel() }, modifier = Modifier.testTag("fuel_go_yes")) { Text(stringResource(R.string.yes), color = EcoGreen) } },
+            dismissButton = { TextButton(onClick = { askFuel = false }) { Text(stringResource(R.string.cancel)) } }
+        )
+    }
 }
+
+/** Distance and time to somewhere, in two columns that line up from one leg to the next. */
+@Composable
+private fun TripLeg(distance: String, minutes: Int, color: Color, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Text(distance, color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, modifier = Modifier.width(64.dp))
+        Text("%d:%02d".format(minutes / 60, minutes % 60), color = color, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+    }
+}
+
+/** Whole kilometres; metres under one. */
+@Composable
+private fun tripDistance(km: Double): String =
+    if (km < 1.0) stringResource(R.string.distance_m_int, (km * 100).toInt() * 10) else stringResource(R.string.distance_km_whole, km)
 
 /** A stop on the way is reached: its name, big, for a few seconds (tap to put it away). */
 @Composable
@@ -422,7 +477,8 @@ private fun SaveTargetRow(
 fun RouteMenuDialog(
     title: String,
     stops: List<Pair<String, Double?>>,
-    onRemoveStop: (Int) -> Unit,
+    /** Null: the stops are part of a fixed line and can't be taken out one by one. */
+    onRemoveStop: ((Int) -> Unit)?,
     onAddStop: () -> Unit,
     onSave: () -> Unit,
     onEnd: () -> Unit,
@@ -450,7 +506,8 @@ fun RouteMenuDialog(
                 ) {
                     Text("${i + 1}. $name", color = NeonAmber, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
                     if (km != null) Text(stringResource(R.string.distance_km_whole, km), color = TextSecondary, fontSize = 14.sp)
-                    IconButton(onClick = { onRemoveStop(i) }) { Icon(Icons.Default.Close, stringResource(R.string.preview_remove_stop), tint = NeonAmber) }
+                    if (onRemoveStop != null) IconButton(onClick = { onRemoveStop(i) }) { Icon(Icons.Default.Close, stringResource(R.string.preview_remove_stop), tint = NeonAmber) }
+                    else Spacer(Modifier.width(10.dp))
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

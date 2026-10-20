@@ -30,6 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -145,7 +146,13 @@ sealed interface NavigationGoal {
     }
 
     /** A fixed line to ride: an imported GPX track, a saved roundtrip or a route with an added stop. */
-    data class Track(val name: String, val points: List<LatLon>, override val options: RouteOptions) : NavigationGoal {
+    data class Track(
+        val name: String,
+        val points: List<LatLon>,
+        override val options: RouteOptions,
+        /** Stops added while riding it (the line already passes through them): shown on the map and in the route menu. */
+        val stops: List<Stop> = emptyList()
+    ) : NavigationGoal {
         override val title get() = name
     }
 }
@@ -207,6 +214,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private var tracker: NavigationTracker? = null
     private var calcJob: Job? = null
     private var previewJob: Job? = null
+    /** Dropping the via points a converted track's trip doesn't need (see [pruneVias]). */
+    private var pruneJob: Job? = null
     /** An adventure being planned: it goes on after the first trip is shown, looking for a better one. */
     private var adventureJob: Job? = null
     /** The goals that the adventure being planned is for: the adventure and the trip made of its first result. Planning stops when the screen shows anything else. */
@@ -506,13 +515,44 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             previewHistory.clear()
             val style = RoadStyle.entries.indexOf(g.options.roadStyle)
             val shown = if (fromPreview) _state.value.preview?.selectedRoute else null
-            preview(NavigationGoal.Destination(g.name, last, g.options, vias, start), keepSelection = style, keepHistory = true)
+            val trip = NavigationGoal.Destination(g.name, last, g.options, vias, start)
+            preview(trip, keepSelection = style, keepHistory = true)
+            pruneVias(trip, style)
             // The track's line stays on the map until the route through the points is in.
             if (shown != null) synchronized(this@Navigator) {
                 val now = _state.value.preview ?: return@launch
                 if (now.candidates[style].route == null && now.candidates[style].error == null) _state.value = _state.value.copy(
                     preview = now.copy(candidates = now.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, shown) }))
             }
+        }
+    }
+
+    /**
+     * Once the routes of a converted track are in, quietly tries the via points one block at a time
+     * and drops those that change nothing, so the trip has only the points it needs. Stops without
+     * a word if the rider changes the trip, rides it or closes it meanwhile.
+     */
+    private fun pruneVias(trip: NavigationGoal.Destination, style: Int) {
+        pruneJob?.cancel()
+        pruneJob = scope.launch {
+            val ready = _state.first { s -> s.preview?.goal != trip || !s.preview.calculating }.preview
+            if (ready?.goal != trip) return@launch
+            val full = ready.candidates.getOrNull(style)?.route ?: return@launch
+            val start = trip.start?.point ?: return@launch
+            val options = trip.options.copy(roadStyle = RoadStyle.entries[style])
+            val kept = withContext(Dispatchers.Default) {
+                com.curveon.routing.ViaPruner.prune(trip.stops.map { it.point }, full, cancelled = { !isActive }) { vias ->
+                    engine.route(listOf(start) + vias + trip.destination, options, visitEveryVia = true)
+                }
+            }.toSet()
+            if (kept.size == trip.stops.size) return@launch
+            synchronized(this@Navigator) {
+                val p = _state.value.preview ?: return@launch
+                if (p.goal != trip) return@launch
+                // The routes already in stay: they are the same road without the dropped points.
+                _state.value = _state.value.copy(preview = p.copy(goal = trip.copy(stops = trip.stops.filter { it.point in kept })))
+            }
+            android.util.Log.i("Curveon", "Pruned ${trip.name}: ${trip.stops.size} -> ${kept.size} via points")
         }
     }
 
@@ -553,6 +593,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     fun cancelPreview() {
         pendingPreview = null
         previewJob?.cancel()
+        pruneJob?.cancel()
         adventureJob?.cancel()
         _state.value = _state.value.copy(preview = null, status = RoutingStatus.Idle)
     }
@@ -562,6 +603,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val p = _state.value.preview ?: return
         val candidate = p.candidates.getOrNull(p.selected) ?: return
         val route = candidate.route ?: return
+        pruneJob?.cancel()
         candidate.style?.let { preferredStyle = it }
         val planned = p.goal as? NavigationGoal.Destination
         (p.goal as? NavigationGoal.Roundtrip)?.takeIf { it.start != null }?.let { loop ->
@@ -599,6 +641,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val tiles = tilesAround(goalPoints(goal, from))
         if (!canRoute(tiles)) return fail(routingData.describe())
         previewJob?.cancel()
+        pruneJob?.cancel()
         if (!keepAdventure) adventureJob?.cancel()
         val styles: List<RoadStyle?> = if (planned != null && planned.fixedLine == null) RoadStyle.entries else listOf(null)
         val selected = (keepSelection ?: styles.indexOf(preferredStyle)).coerceIn(0, styles.lastIndex)
@@ -839,6 +882,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     private fun stopsAlong(goal: NavigationGoal, route: Route): List<Pair<Stop, Double>> {
+        if (goal is NavigationGoal.Track) return goal.stops.zip(alongDistances(goal.stops, route)).sortedBy { it.second }
         val stops = (goal as? NavigationGoal.Destination)?.stops ?: return emptyList()
         return stops.zip(alongDistances(stops, route))
     }
@@ -927,7 +971,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                                 s.progress?.distanceAlongRoute ?: 0.0) ?: (s.progress?.distanceAlongRoute ?: 0.0)
                             val rest = rejoin(stop.point, route, along, goal.options)
                             val combined = Routes.concat(toStop, rest)
-                            NavigationGoal.Track(goal.title, combined.points.map { LatLon(it.lat, it.lon) }, goal.options) to combined
+                            NavigationGoal.Track(goal.title, combined.points.map { LatLon(it.lat, it.lon) }, goal.options,
+                                (goal as? NavigationGoal.Track)?.stops.orEmpty() + stop) to combined
                         }
                     }
                 }

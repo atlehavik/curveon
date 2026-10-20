@@ -33,18 +33,34 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
 - [ ] **Battery:** one hour of riding with a group active, phone screen off: compare with the same ride without a group (the phone uses the radio every 5 s; data saver 15 s).
 - [ ] **Invite links with both apps on one phone:** `curveon://join` is handled by both Curveon and the companion, so Android asks which to use. Pick the companion when it is paired with a tablet, otherwise Curveon.
 - [ ] **Samsung/Xiaomi-type phones** (not the Pixel) may kill the companion in the background: if a group goes quiet on someone's phone, note the model.
-- [ ] **Not built yet, so do not look for it:** scanning a QR with the camera inside the apps (use the phone's camera app or the link), sharing a route to the group from the route screens, a notification for SOS when Curveon is not open on the phone.
+- [ ] **Not built yet, so do not look for it:** sharing a route to the group from the route screens, and a notification for SOS when Curveon is not open on the phone.
+
+## 2026-10-19 — Route colour, pruned via points, time to the next stop (1.2.2)
+
+- [ ] Navigate a route with gravel and offroad in it: asphalt keeps the usual blue, gravel is solid orange, offroad solid purple, no see-through dashes on the route. Night and day map, and at the rider arrow (orange at night) check it is still easy to see.
+- [ ] Roundabout in the turn card (demo ride past one): three arrows turning against the clock, the exit number clear of the arrowheads. In a left-hand country (e.g. Britain, if its map is on the device) they turn with the clock.
+- [ ] 3D map while riding: the arrow sits a bit lower than before without touching the cards at the bottom (also on the phone in portrait and landscape); the default tilt is steeper (55° instead of 50°; if you have set a tilt before, yours is kept).
+- [ ] Add several stops while riding (also by tapping in the map, and a fuel station), with the road style Fastest: every stop is on the route (the line goes to each one, also a short detour), the numbers follow the order you ride them, and "stop reached" comes only when you are at the stop. Say if any stop is still passed at a distance: pull `navtrace` and send the `E,…addStop` lines.
+- [ ] Convert a GPX track to a route (GPX list → make a route): the line is cyan, not green. Same when riding a track or a logged ride.
+- [ ] After converting, wait a minute or two without touching anything, then open the route menu: fewer stops than before? Pull the log and look for the pruned count: `adb logcat -d -s Curveon | grep Pruned` ("N -> M via points"). Edit the trip (drag, add a stop) while it works: nothing should jump or be lost.
+- [ ] Arrival box (demo ride with a stop and a fuel suggestion): folded = arrival time, and orange km only when there is a stop on the way (nothing extra otherwise); folded out = km and time to the destination, a thin line, then each stop (name, then km and time in orange, same columns), a small red cross on each stop asks "Delete <stop>?" (not on a GPX track's stops), more stops below with lines between; tap the fuel chip: a dialog asks "Go to <station>?", Yes adds it as a stop. Check phone portrait and landscape, and the tablet, with the speed card wide (over 100 km/h).
+
+## 2026-10-18 — Fuel stop on a demo ride, trip bar at speed, stale road number (1.2.2)
+
+- [ ] Demo ride on the Pixel (portrait), pass 100 km/h: the arrival box top left keeps its × visible; folded it shows only the arrival time and ×; fold it out with a fuel chip showing: line 2 distance + time left, then next stop, fuel and Add stop each on its own line, left-aligned, nothing overlapping (the road card moves down with it).
+- [ ] Tap the fuel chip: a numbered orange stop appears on the station, no "A" dot where you are; the route menu lists it (without a ×, a track's stops can't be taken out one by one). Say if the route to the station looks wrong.
+- [ ] End the demo ride, ride/stand elsewhere (not near the E18): the E18 card is gone or shows the road you are on.
 
 ## 2026-10-18 — Add stop that doesn't redraw the route (1.2.2)
 
 - [ ] While navigating, add a stop. If the route doesn't change (or nothing happens), note which stop and where it was, then pull the trace: `adb -s <device> pull /sdcard/Android/data/com.curveon.app/files/navtrace` and look for the `E,…,addStop '<name>' <lat> <lon>: …` lines (started / done / cancelled / failed / no route / no position). Known from the Pixel trace of 2026-10-18: one route change 1.5 km into the ride kept exactly the old line (1235 vs 1236 points), the next one, 40 s later, had a small detour.
 
-## 2026-10-18 — Road card always top left (1.2.2)
+## 2026-10-18 — Arrival box top left, road card under it (1.2.2)
 
-- [ ] Navigating with a road card showing: the arrival box sits under it; fold the arrival box out (tap) and the road card stays put (it is above). With no road card (no road info) the arrival box is top left by itself.
-- [ ] Road card Large / Extra large: the arrival box moves down with it and never touches it. A give way sign beside the number makes the card wider only, not taller.
-- [ ] Gravel heat button (not navigating): it sits under the road card when there is one, and doesn't touch it.
-- [ ] Right side: only the speed card and the map buttons; the map buttons start right under the speed card.
+- [ ] Navigating with a road card showing: the arrival box is on top, the road card right under it. Tap the arrival box open: the road card moves down and never touches it. With no road info, the arrival box is top left alone.
+- [ ] Road card Large / Extra large: still under the box, never overlapping, also folded out.
+- [ ] Gravel heat button (not navigating): the road card sits under it.
+- [ ] Right side: only the speed card and the map buttons.
 
 ## 2026-10-18 — Place names on top, thinner road edge (1.2.2)
 

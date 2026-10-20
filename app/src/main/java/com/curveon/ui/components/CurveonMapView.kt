@@ -133,16 +133,16 @@ interface GravelHeatSource {
 private const val SURFACE_ZOOM = 11f
 private const val FOLLOW_ZOOM = 15.5
 /** 3D tilt; car navigators sit around 45–50 (Mapbox's navigation camera: 45). */
-private const val TILT_3D = 50.0
+private const val TILT_3D = 55.0
 /** The rider's own 3D angle: 0 is looking straight down, higher looks more along the road. Steps of the +/- buttons. */
 private const val TILT_MIN = 20.0
-private const val TILT_MAX = 60.0
+private const val TILT_MAX = 60.0 // MapLibre 13.6.1 refuses more (checked: 61 is rejected)
 private const val TILT_STEP = 5.0
 /** The tilt buttons hide again after this long without a press. */
 private const val TILT_CONTROLS_MS = 6_000L
 /** Rider position below the middle, as a share of the map's height, given as top padding (×2 lower). */
-private const val RIDER_LOW_3D = 0.5 // rider ~3/4 down the map
-private const val RIDER_LOW_2D = 0.3
+private const val RIDER_LOW_3D = 0.6 // rider ~4/5 down the map
+private const val RIDER_LOW_2D = 0.36
 
 /** How the camera turns while following the rider; the rider picks it with the compass button. */
 private enum class Orientation { NORTH_UP, HEADING_UP, THREE_D }
@@ -179,6 +179,8 @@ fun CurveonMapView(
     speedLimitKmh: Int,
     hasGpsFix: Boolean,
     routePoints: List<GeoPoint>,
+    /** What is underfoot at each of [routePoints] (see [MapRoute]): gravel and tracks are drawn solid over the route's line. */
+    routeSurfaces: List<Int>? = null,
     groundPreference: GroundPreference,
     currentTurnInstruction: TurnInstruction?,
     isFullScreen: Boolean,
@@ -210,8 +212,8 @@ fun CurveonMapView(
      * Where the map is looking: its bounds, and how wide the middle of the screen is ([widthKm]) with where the camera is
      * ([centerLat], [centerLon]). In 3D the bounds reach the horizon and say little about how zoomed in the map is.
      */
-    /** How far down the top left corner's own things (the gravel heat button) start: the road card is above them. */
-    topLeftInset: androidx.compose.ui.unit.Dp = 14.dp,
+    /** Whether the gravel heat button is on the map (top left), so the road card goes under it. */
+    onHeatButtonShown: (Boolean) -> Unit = {},
     onViewport: (south: Double, north: Double, west: Double, east: Double, zoom: Double, widthKm: Double, centerLat: Double, centerLon: Double) -> Unit =
         { _, _, _, _, _, _, _, _ -> },
     /** Zoom follows speed (in when slow and twisty, out on fast roads). */
@@ -613,15 +615,9 @@ fun CurveonMapView(
     }
 
     // Active route line
-    LaunchedEffect(style, routePoints, groundPreference) {
+    // The line is the asphalt blue; gravel and tracks lie solid over it (the route surface layer).
+    LaunchedEffect(style, routePoints) {
         val s = style ?: return@LaunchedEffect
-        val color = when (groundPreference) {
-            GroundPreference.OFFROAD -> "#D500F9"
-            GroundPreference.GRAVEL -> "#FF9100"
-            GroundPreference.MIXED -> "#00C853"
-            GroundPreference.PAVED -> if (dark) "#00E5FF" else "#0091EA"
-        }
-        (s.getLayer("$ROUTE-line") as? LineLayer)?.setProperties(lineColor(color))
         if (previewRoutes.isEmpty()) {
             // A long route is a couple of hundred thousand points: made into GeoJSON off the main thread.
             val features = withContext(Dispatchers.Default) { lineFeatures(if (routePoints.size >= 2) listOf(routePoints) else emptyList()) }
@@ -636,17 +632,28 @@ fun CurveonMapView(
         val s = style ?: return@LaunchedEffect
         val selected = previewRoutes.filter { it.selected }.map { it.points }
         val others = previewRoutes.filter { !it.selected }.map { it.points }
-        val (runs, alt, line) = withContext(Dispatchers.Default) {
-            Triple(
-                surfaceRuns(previewRoutes.firstOrNull { it.selected }),
+        val (alt, line) = withContext(Dispatchers.Default) {
+            Pair(
                 lineFeatures(others),
                 lineFeatures(if (previewRoutes.isNotEmpty()) selected else if (routePoints.size >= 2) listOf(routePoints) else emptyList())
             )
         }
         if (style !== s || !s.isFullyLoaded) return@LaunchedEffect
-        s.getSourceAs<GeoJsonSource>(ROUTE_SURFACE)?.setGeoJson(runs)
         s.getSourceAs<GeoJsonSource>(ALT)?.setGeoJson(alt)
         s.getSourceAs<GeoJsonSource>(ROUTE)?.setGeoJson(line)
+    }
+
+    // Orange gravel and purple tracks over the line: of the selected preview, else of the route being ridden.
+    // Then the map's own see-through dashes over the route are not wanted.
+    LaunchedEffect(style, previewRoutes, routePoints, routeSurfaces) {
+        val s = style ?: return@LaunchedEffect
+        val shown = previewRoutes.firstOrNull { it.selected } ?: if (previewRoutes.isEmpty() && routeSurfaces != null && routePoints.size >= 2) MapRoute(routePoints, true, routeSurfaces) else null
+        val runs = withContext(Dispatchers.Default) { surfaceRuns(shown) }
+        if (style !== s || !s.isFullyLoaded) return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(ROUTE_SURFACE)?.setGeoJson(runs)
+        val dashes = if (previewRoutes.isEmpty() && routePoints.size >= 2) Property.NONE else Property.VISIBLE
+        for (kind in listOf("soft", "gravel")) for (suffix in listOf("", "-casing"))
+            s.getLayer("$SURFACE-over-$kind$suffix")?.setProperties(visibility(dashes))
     }
 
     // GPX overlays: tracks in their colour with direction arrows, and their waypoints.
@@ -1099,6 +1106,8 @@ fun CurveonMapView(
     var moving by remember { mutableStateOf(false) }
     if (speedKmh >= 10f) moving = true else if (speedKmh < 3f) moving = false
     val heatButton = gravelHeat != null && onShowGravelHeat != null && (planning || (gravelHeatOnMap && !navigating && !moving))
+    val onHeatButtonShownState = rememberUpdatedState(onHeatButtonShown)
+    LaunchedEffect(heatButton) { onHeatButtonShownState.value(heatButton) }
     val heatOn = showGravelHeat && heatButton
     val heatCells = remember { mutableStateMapOf<String, List<com.curveon.routing.HeatCell>>() }
     val heatCounting = remember { mutableStateListOf<String>() }
@@ -1176,7 +1185,7 @@ fun CurveonMapView(
     ) {
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
         // At night the rider is orange, so it stands out from the cyan route; cyan again on an orange (gravel) route.
-        val riderOrange = dark && !(routePoints.size >= 2 && groundPreference == GroundPreference.GRAVEL)
+        val riderOrange = dark
         val riderColor = if (riderOrange) NeonAmber else ElectricCyan
         if (hasGpsFix && style != null) {
             RiderHalo(dark, riderColor) { puck }
@@ -1272,7 +1281,7 @@ fun CurveonMapView(
 
         // The gravel heat map on and off, top left where nothing else is while planning or browsing
         // (the trip bar is there only while navigating); what it is up to beside it.
-        if (heatButton) Row(Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = topLeftInset), verticalAlignment = Alignment.CenterVertically) {
+        if (heatButton) Row(Modifier.align(Alignment.TopStart).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             MapButton(onClick = { onShowGravelHeat?.invoke(!showGravelHeat) }, highlighted = showGravelHeat, tag = "map_gravel_heat_btn") {
                 Icon(Icons.Default.Whatshot, stringResource(R.string.map_gravel_heat),
                     tint = if (showGravelHeat) Color(0xFF00363D) else TextPrimary, modifier = Modifier.size(24.dp))

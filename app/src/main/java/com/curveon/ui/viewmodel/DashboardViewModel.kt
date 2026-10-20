@@ -68,9 +68,12 @@ data class NavigationSummary(
     val arrivalTimeMillis: Long,
     val title: String,
     val curviness: Int,
-    /** Distance to the next stop, when there is one before the destination. */
-    val nextStop: Pair<String, Double>? = null
+    /** The stops before the destination, nearest first. */
+    val stops: List<StopAhead> = emptyList()
 )
+
+/** A stop on the way: how far and how long to it. */
+data class StopAhead(val name: String, val km: Double, val minutes: Int, val index: Int, val removable: Boolean)
 
 enum class MapTheme(val label: Int) { AUTO(com.curveon.R.string.map_theme_auto), DAY(com.curveon.R.string.map_theme_day), NIGHT(com.curveon.R.string.map_theme_night) }
 
@@ -130,6 +133,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val speedLimits = com.curveon.data.speed.SpeedLimits(application)
     private val mapDownloads = com.curveon.data.map.MapDownloads(application, offlineMaps, navigator.routingData, placeSearch.indexes, speedLimits)
     val mapCatalog get() = mapDownloads.catalog
+
+    /** The country at the place drives on the left (decides which way a roundabout turns). */
+    private fun drivesOnLeft(lat: Double, lon: Double): Boolean =
+        mapCatalog.areaAt(lat, lon)?.iso in LEFT_HAND_TRAFFIC
     private var latestMapBuild: String? = null
     private val _installedMaps = MutableStateFlow(mapDownloads.installed(null))
     val installedMaps: StateFlow<List<com.curveon.data.map.InstalledMap>> = _installedMaps.asStateFlow()
@@ -780,6 +787,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .map { r -> r?.points?.map { GeoPoint(it.lat, it.lon, it.elevation) }.orEmpty() }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** What is underfoot at each point of the active route, to colour it (see [com.curveon.ui.components.MapRoute]). */
+    val activeRouteSurfaces: StateFlow<List<Int>?> = navigator.state
+        .map { it.route }
+        .distinctUntilChanged()
+        .map { r -> r?.points?.map { p -> if (p.highway == "track") com.curveon.ui.components.SURFACE_TRACK else if (p.unpaved) com.curveon.ui.components.SURFACE_GRAVEL else com.curveon.ui.components.SURFACE_PAVED } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     /** Remaining stops plus the destination, for markers on the map. */
     val routeMarkers: StateFlow<List<com.curveon.ui.components.MapPin>> = navigator.state
         .map { s ->
@@ -795,7 +809,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                         goal.stops.filterNot { it.via }.mapIndexed { i, st -> pin(st.point, com.curveon.ui.components.PinKind.STOP, "${i + 1}") } +
                         pin(goal.destination, end, "B")
                 // A line ridden as it is (a planned trip, a GPX track, the other way round): where it starts and ends.
-                is NavigationGoal.Track -> if (goal.points.size >= 2) listOf(pin(goal.points.first(), start, "A"), pin(goal.points.last(), end, "B")) else emptyList()
+                // With stops added on the way the line starts wherever the rider was: no "A" dot there.
+                is NavigationGoal.Track -> if (goal.points.size >= 2) listOfNotNull(pin(goal.points.first(), start, "A").takeIf { goal.stops.isEmpty() }) +
+                    goal.stops.mapIndexed { i, st -> pin(st.point, com.curveon.ui.components.PinKind.STOP, "${i + 1}") } + pin(goal.points.last(), end, "B") else emptyList()
                 else -> emptyList()
             }
         }
@@ -870,6 +886,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val currentRoad: StateFlow<com.curveon.data.road.CurrentRoad?> = _currentRoad.asStateFlow()
 
     private fun watchCurrentRoad() = viewModelScope.launch {
+        var readAt: LatLon? = null
         while (true) {
             delay(2_000)
             untilAwake()
@@ -881,7 +898,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val lat = p?.snapped?.lat ?: _currentLocation.value.latitude
             val lon = p?.snapped?.lon ?: _currentLocation.value.longitude
             val heading = p?.routeBearingDeg ?: t.headingDeg.toDouble().takeIf { t.speedKmh >= 8f }
-            if (heading == null && _currentRoad.value != null) continue // standing still: keep what we had
+            // Standing still: keep what we had, but only where we read it (a demo ride's E18 must not follow the rider home).
+            val here = LatLon(lat, lon)
+            if (heading == null && _currentRoad.value != null && readAt?.let { com.curveon.routing.Geo.distance(it, here) < 100 } == true) continue
+            readAt = here
             val ref = roadRefAt(lat, lon, heading, mapRoadHere)
             val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(lat, lon, heading) }
             _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority).takeUnless { it.isEmpty }
@@ -920,7 +940,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             speedLimitKmh = p.speedLimitKmh ?: 0,
             location = route.points[m.pointIndex].let { GeoPoint(it.lat, it.lon) },
             roadRef = next?.ref,
-            roundaboutExit = m.exitNumber.takeIf { m.type == ManeuverType.ROUNDABOUT } ?: 0
+            roundaboutExit = m.exitNumber.takeIf { m.type == ManeuverType.ROUNDABOUT } ?: 0,
+            leftHandTraffic = m.type == ManeuverType.ROUNDABOUT && route.points[m.pointIndex].let { drivesOnLeft(it.lat, it.lon) }
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
@@ -928,13 +949,23 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .map { s ->
             val p = s.progress ?: return@map null
             val route = s.route ?: return@map null
+            val pts = route.points
+            // The riding time at a distance along the route, less what has been ridden.
+            fun indexAt(along: Double) = pts.binarySearchBy(along) { it.distanceFromStart }.let { if (it >= 0) it else -it - 1 }.coerceIn(0, pts.lastIndex)
+            val here = indexAt(p.distanceAlongRoute)
             NavigationSummary(
                 remainingKm = p.remainingDistance / 1000.0,
                 remainingMinutes = (p.remainingSeconds / 60).roundToInt(),
                 arrivalTimeMillis = System.currentTimeMillis() + (p.remainingSeconds * 1000).toLong(),
                 title = s.goal?.title ?: "",
                 curviness = route.curviness,
-                nextStop = s.stopsAlong.firstOrNull { !it.first.via }?.let { (stop, along) -> stop.name to (along - p.distanceAlongRoute) / 1000.0 }
+                // A track's stops can't be taken out one by one (the line already passes through them).
+                stops = s.stopsAlong.withIndex().filter { !it.value.first.via && it.value.second > p.distanceAlongRoute }.map { (i, st) ->
+                    val (stop, along) = st
+                    StopAhead(stop.name, (along - p.distanceAlongRoute) / 1000.0,
+                        ((pts[indexAt(along)].secondsFromStart - pts[here].secondsFromStart).coerceAtLeast(0.0) / 60).roundToInt(),
+                        i, s.goal is com.curveon.data.routing.NavigationGoal.Destination)
+                }
             )
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
@@ -1145,7 +1176,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 val route = s.route ?: return@collect run { navCues.reset(); announcedStops.clear() }
                 val p = s.progress ?: return@collect
                 // A stop on the way (not the destination: arriving has its own cue) is reached.
-                s.stopsAlong.filter { !it.first.via && it.second - p.distanceAlongRoute < STOP_REACHED_M && !p.offRoute }.forEach { (stop, _) ->
+                // Reached only when the rider is by the stop itself: a route that passes it at a distance has not been there.
+                s.stopsAlong.filter { !it.first.via && it.second - p.distanceAlongRoute < STOP_REACHED_M && !p.offRoute &&
+                    com.curveon.routing.Geo.distance(p.snapped.lat, p.snapped.lon, it.first.point.lat, it.first.point.lon) < STOP_REACHED_NEAR_M }.forEach { (stop, _) ->
                     if (announcedStops.add(stop)) announceStop(stop.name)
                 }
                 val cues = navCues.update(route, p, tripTracker.speedKmh / 3.6, s.wrongTurn != null, s.approach != null, System.currentTimeMillis())
@@ -2159,10 +2192,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     companion object {
         /** Long enough that anything counting seconds has moved, short enough to stand at the pump. */
         private const val FUEL_CONTROL_GAP_MS = 15_000L
+        /** Countries (ISO 3166) where they drive on the left. */
+        private val LEFT_HAND_TRAFFIC = setOf(
+            "GB", "IE", "MT", "CY", "JP", "AU", "NZ", "IN", "PK", "BD", "LK", "NP", "BT", "TH", "MY", "SG", "ID", "BN", "TL", "HK", "MO",
+            "ZA", "ZW", "ZM", "BW", "NA", "MZ", "KE", "UG", "TZ", "MW", "LS", "SZ", "MU", "SC", "JM", "BB", "TT", "GY", "SR", "AG", "BS",
+            "DM", "GD", "KN", "LC", "VC", "FJ", "PG", "SB", "TO", "TV", "KI", "NR", "WS"
+        )
         /** How far along the route give way signs stand on the map. */
         private const val MAP_GIVE_WAY_M = 1_000.0
         /** A stop on the way counts as reached this close to it. */
         private const val STOP_REACHED_M = 30.0
+        /** The rider is at a stop when this near it (the stop may be off the road the route follows). */
+        private const val STOP_REACHED_NEAR_M = 120.0
         private const val MAP_SPEED_SIGN_M = 1_000.0
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
         /** Search data bigger than this (compressed) isn't offered on its own: it comes with the country's map. */

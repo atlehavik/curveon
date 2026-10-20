@@ -101,7 +101,7 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
      */
     fun fromHere(position: LatLon, headingDeg: Double, waypoints: List<LatLon>, options: RouteOptions): Route =
         forwardOnly(position, headingDeg, waypoints, options).second
-            ?: engine.route(listOf(position) + waypoints, options, startHeadingDeg = headingDeg, tracksAsLastResort = false)
+            ?: engine.route(listOf(position) + waypoints, options, startHeadingDeg = headingDeg, tracksAsLastResort = false, visitEveryVia = true)
 
     /**
      * Routes from [position] through [waypoints] without turning back the way the rider came.
@@ -115,7 +115,7 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
     ): Pair<List<NoGo>, Route?> {
         val noGo = known.toMutableList()
         repeat(MAX_BLOCKS + 1) {
-            val r = runCatching { engine.route(listOf(position) + waypoints, options, startHeadingDeg = headingDeg, noGo = noGo, tracksAsLastResort = false) }
+            val r = runCatching { engine.route(listOf(position) + waypoints, options, startHeadingDeg = headingDeg, noGo = noGo, tracksAsLastResort = false, visitEveryVia = true) }
                 .getOrNull() ?: return noGo to null
             val block = when {
                 turnsBack(r, position, headingDeg) -> blockBehind(r)
