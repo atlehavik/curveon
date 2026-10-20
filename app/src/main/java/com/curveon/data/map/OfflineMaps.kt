@@ -139,11 +139,12 @@ class OfflineMaps(private val context: Context) {
             "roads_bridges_link_casing", "roads_bridges_major_casing", "roads_bridges_highway_casing",
             "online-roads_major_casing", "online-roads_highway_casing" -> {
                 paint.put("line-color", "#000000")
-                // Edge at least this wide wherever it is drawn at all (a 0 stop is where it starts).
-                when (val w = paint.opt("line-width")) {
-                    is JSONArray -> for (i in 4 until w.length() step 2) if (w.optDouble(i, 0.0) > 0.0) w.put(i, HC_EDGE)
-                    is Number -> paint.put("line-width", HC_EDGE)
+                // The edge grows with the zoom, from a hairline far out to full width close in (from where it starts).
+                val from = when (val w = paint.opt("line-width")) {
+                    is JSONArray -> w.optDouble(3, 0.0)
+                    else -> layer.optDouble("minzoom", 0.0)
                 }
+                paint.put("line-width", edgeWidth(from))
             }
         }
     }
@@ -152,6 +153,24 @@ class OfflineMaps(private val context: Context) {
      * Keeps a line at least [min] px wide wherever it is drawn at all: a thinner one is only part-covered
      * pixels, and a dark grey one fades to nearly white on the light map when zoomed out.
      */
+    private fun edgeWidth(from: Double): JSONArray {
+        // (zoom, px): thin where the whole map is in view, full width when riding close in.
+        val steps = listOf(7.0 to 0.2, 10.0 to 0.4, 12.0 to 0.8, 14.0 to 1.2, 16.0 to HC_EDGE)
+        fun at(z: Double): Double {
+            val hi = steps.indexOfFirst { it.first >= z }
+            return when {
+                hi == 0 -> steps[0].second
+                hi < 0 -> steps.last().second
+                else -> { val (z0, v0) = steps[hi - 1]; val (z1, v1) = steps[hi]; v0 + (v1 - v0) * (z - z0) / (z1 - z0) }
+            }
+        }
+        val out = JSONArray().put("interpolate").put(JSONArray().put("linear")).put(JSONArray().put("zoom"))
+        out.put(from).put(0)
+        out.put(from + 0.5).put(at(from + 0.5))
+        for ((z, v) in steps) if (z > from + 0.5) out.put(z).put(v)
+        return out
+    }
+
     private fun atLeast(paint: JSONObject, min: Double) {
         when (val w = paint.opt("line-width")) {
             is JSONArray -> for (i in 4 until w.length() step 2) { val v = w.optDouble(i, 0.0); if (v > 0.0 && v < min) w.put(i, min) }
