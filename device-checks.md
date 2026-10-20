@@ -27,6 +27,7 @@ Installed on the X7, but no gravel showed near the desk, so the new look hasn't 
 
 - [ ] Ride or pan to a gravel road (zoom 11 or closer) in Settings → Display → Road surfaces = Dashed: the road itself should look dashed, same colour and no thicker than the neighbouring roads, brown for rough ground. Check the gaps don't show a pale line over forest.
 - [ ] Same with Coloured: orange gravel, purple rough ground, as the route. Also on the night map.
+- [ ] With Dashed or Coloured on, place names (towns, villages) lie above the gravel dashes, the route and GPX tracks, as they do with Off. Dashes should look thinner than the main road and the thin country road, e.g. at Helland.
 - [ ] Day map is high contrast without the old switch; small roads stay dark grey.
 
 ## 2026-10-19 — Group rides (not released, no version bump yet)

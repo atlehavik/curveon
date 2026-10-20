@@ -1067,9 +1067,9 @@ fun CurveonMapView(
         val softWidth = gravelWidth
         s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark)), lineWidth(gravelWidth))
         s.getLayer("$SURFACE-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
-        // The same over the route and GPX tracks, slim (see overWidth).
-        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark)))
-        s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(surfaceMode.soft(dark)))
+        // The same over the route and GPX tracks, as wide as the dashes.
+        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark)), lineWidth(gravelWidth))
+        s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
     }
 
     // Gravel heat map while planning: counted per routing data file in the background (once), shown
@@ -1478,28 +1478,16 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
 
 /**
  * The gravel and soft dashes again, over the route and the GPX tracks (which are drawn above the
- * ones under the road names and would hide them): a dark edge under each dash so it reads on any
- * line colour. Same source, filters and palette as the dashes below, shown and hidden with them.
+ * ones under the road names and would hide them). Same source, filters, colours and width as the
+ * dashes below (set with them), shown and hidden with them; no edge, so they are never heavier
+ * than the road they sit on.
  */
-/**
- * The dashes over the route and GPX tracks: slim, about 40 % of the line under them, so the route
- * stays the clear thing to follow and only shows what the ground is like, with a thin dark edge.
- */
-private fun overWidth(extra: Float) = E.interpolate(E.linear(), E.zoom(),
-    E.stop(SURFACE_ZOOM - 1, 2.4f + extra), E.stop(14, 4.4f + extra), E.stop(17, 6.4f + extra))
-
 private fun addSurfaceOverLayers(s: Style, dark: Boolean) {
-    fun over(kind: String, dash: Array<Float>, color: String) = listOf(
-        LineLayer("$SURFACE-over-$kind-casing", SURFACE).withProperties(
-            lineColor(if (dark) "#000000" else "#202020"), lineOpacity(0.55f), lineWidth(overWidth(1.2f)),
-            lineDasharray(dash), lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
-        ).withFilter(E.eq(E.get("kind"), E.literal(kind))),
-        LineLayer("$SURFACE-over-$kind", SURFACE).withProperties(
-            lineColor(color), lineWidth(overWidth(0f)), lineDasharray(dash),
-            lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
-        ).withFilter(E.eq(E.get("kind"), E.literal(kind)))
-    )
-    (over("soft", arrayOf(2f, 1.5f), SurfaceMode.DASHED.soft(dark)) + over("gravel", arrayOf(2.5f, 1.5f), SurfaceMode.DASHED.gravel(dark))).forEach { l ->
+    fun over(kind: String, dash: Array<Float>, color: String) = LineLayer("$SURFACE-over-$kind", SURFACE).withProperties(
+        lineColor(color), lineWidth(roadWidth()), lineDasharray(dash),
+        lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
+    ).withFilter(E.eq(E.get("kind"), E.literal(kind)))
+    listOf(over("soft", arrayOf(2f, 1.5f), SurfaceMode.DASHED.soft(dark)), over("gravel", arrayOf(2.5f, 1.5f), SurfaceMode.DASHED.gravel(dark))).forEach { l ->
         l.minZoom = SURFACE_ZOOM
         s.addLayer(l)
     }

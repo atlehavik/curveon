@@ -65,6 +65,10 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   Play's developer policies and technical requirements (e.g. 16 KB page-aligned native libraries),
   even though releases go out on GitHub today. Say when a choice breaks or risks a Play rule, and
   note it in [google-play.md](google-play.md).
+- **Place names are always on top.** A new or changed map layer (lines, fills, heat, dashes, route,
+  tracks) must never cover place names: they stay above every line layer (see `raisePlaceNames` in
+  CurveonMapView.kt, and the order in `OfflineMaps.styleJson`). Check it with the layer switched on,
+  not only off, at a zoom where names show.
 - **New visual elements: test for overlap.** Before a new visual element goes in, try it in the
   phone-size emulator (Pixel, see Build and run) in both portrait and landscape, while navigating and
   not navigating, and with the music player on and off. Overlap with other elements is the main
