@@ -14,7 +14,8 @@ android {
 
 dependencies {
   api(project(":protocol"))
-  implementation(project(":groups"))
+  api(project(":groups"))
   implementation(libs.okhttp)
   implementation(libs.kotlinx.coroutines.android)
+  testImplementation(libs.junit)
 }

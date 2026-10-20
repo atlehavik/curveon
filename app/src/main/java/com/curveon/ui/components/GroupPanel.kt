@@ -249,6 +249,7 @@ internal fun groupErrorText(code: Message.GroupErrorCode) = when (code) {
     Message.GroupErrorCode.NO_SUCH_GROUP -> R.string.group_error_other
     Message.GroupErrorCode.ALREADY_MEMBER -> R.string.group_error_already_member
     Message.GroupErrorCode.NO_RELAY -> R.string.group_error_no_relay
+    Message.GroupErrorCode.NOT_LINKED -> R.string.group_error_other
 }
 
 /** The marker's picture: the rider's photo, their icon or their initials, on their colour. */

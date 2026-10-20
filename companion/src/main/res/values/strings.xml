@@ -35,4 +35,5 @@
     <string name="group_error_expired_invite">That invite has expired. Ask for a new one.</string>
     <string name="group_error_already_member">You are already in that group.</string>
     <string name="group_error_other">Something went wrong with the group.</string>
+    <string name="group_error_not_linked">Open Curveon on your tablet or this phone first: your friends and groups live there.</string>
 </resources>

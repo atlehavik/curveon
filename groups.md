@@ -340,3 +340,19 @@ Operations and law:
   under "Shared routes" in the GPX dialog. Only a trip with a destination can be shared (not a track or a loop).
 - Not tested yet: two phones on a real ride. The relay and merge rules are covered by unit and relay tests.
 
+### Friends and groups live in Curveon; the phone is only the way to the internet (decided and built 2026-10-20)
+The rider's complaint: it must not matter whether the tablet is linked to the companion or alone. A friend code on the tablet spun for
+ever because the command was sent to the phone, which was not there. So:
+- **Curveon owns the identity, always.** `GroupHub` runs inside Curveon on the device the rider holds, linked to a phone or not
+  (`PhoneCompanionManager.startLocalGroups`). Group and friend commands never go over Bluetooth (`GroupHub.accepts`).
+- **The companion owns nothing.** It no longer runs `GroupHub`. `GroupMirror` shows the active group's status that the tablet pushes, asks the
+  tablet for a friend code (`RequestFriendInvite`) and hands over what it scans or opens (`GroupJoin`). No tablet linked: "Open Curveon first".
+  What an old companion says about groups is ignored by the tablet.
+- **The way to the relay is chosen per connection, invisibly.** `relayTransports`: straight to the relay if the tablet has validated internet, else
+  through the phone (`RelayTunnelClient` on the tablet, `RelayTunnelServer` in the companion; messages `relay_open/send/close` and
+  `relay_opened/text/closed` in `:protocol`). The group library only sees a `TransportFactory`. A dropped link fails every tunnelled socket,
+  so the library reconnects by itself, by whichever way is there then. Companion opens only ws/wss and at most 8 sockets.
+- **Not done:** one rider across several devices that each run Curveon (Pixel app and X7). "My other device" is still a link per ride group and
+  does not carry friends or the profile. A real answer is a private "my devices" channel that replicates new friends, groups and the profile;
+  the question is whether the rider uses Curveon on both devices for groups at all.
+

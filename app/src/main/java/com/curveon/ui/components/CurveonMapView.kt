@@ -1063,13 +1063,10 @@ fun CurveonMapView(
         val s = style ?: return@LaunchedEffect
         val coloured = surfaceMode == SurfaceMode.COLOURED
         // Dashed: the road itself, never wider than it is; coloured: a little wider, so it reads at a glance.
-        val gravelWidth = if (coloured) surfaceWidth(2.8f * 1.3f) else roadWidth()
-        val softWidth = if (coloured) surfaceWidth(2.2f * 1.3f) else roadWidth()
+        val gravelWidth = if (coloured) E.product(E.literal(1.5f), roadWidth()) else roadWidth()
+        val softWidth = gravelWidth
         s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark)), lineWidth(gravelWidth))
         s.getLayer("$SURFACE-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
-        // The gaps between the dashes show the ground, not the map's own road under them.
-        s.getLayer("$SURFACE-cut")?.setProperties(lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 2.4f), E.stop(15, 3f), E.stop(18, 12f))),
-            visibility(if (coloured) Property.NONE else Property.VISIBLE))
         // The same over the route and GPX tracks, slim (see overWidth).
         s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark)))
         s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(surfaceMode.soft(dark)))
@@ -1427,9 +1424,9 @@ private fun arrowBitmap(): android.graphics.Bitmap {
  * the road names, in quiet colours that sit with the map's own roads. Wider for bigger roads, like
  * the map draws them.
  */
-/** As wide as the day map's own small roads are drawn (at least 1.6 px), so a dashed road is no thicker than the road. */
+/** Thin dashes, a little under the map's own small roads (which are at least 1.6 px), so a gravel road is never the heaviest line on the map. */
 private fun roadWidth() = E.interpolate(E.exponential(1.6f), E.zoom(),
-    E.stop(SURFACE_ZOOM, 1.6f), E.stop(14.5, 1.6f), E.stop(15, 2f), E.stop(18, 11f))
+    E.stop(SURFACE_ZOOM, 1f), E.stop(14.5, 1.2f), E.stop(15, 1.6f), E.stop(18, 7f))
 
 private fun surfaceWidth(base: Float) = E.interpolate(E.linear(), E.zoom(),
     E.stop(SURFACE_ZOOM, E.product(E.literal(base * 0.6f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
@@ -1442,13 +1439,8 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
     fun width(base: Float) = surfaceWidth(base)
     val gravel = E.eq(E.get("kind"), E.literal("gravel"))
     val soft = E.eq(E.get("kind"), E.literal("soft"))
-    // Plain dashes cut the map's own road away underneath first (the ground's colour), so the road
-    // itself looks dashed; coloured ones leave it be (see the effect that sets the mode).
+    // Dashes over the map's own roads: as wide as the road when plain, so the road reads as dashed.
     val layers = listOf(
-        LineLayer("$SURFACE-cut", SURFACE).withProperties(
-            lineColor(if (dark) com.curveon.data.map.OfflineMaps.LAND_DARK else com.curveon.data.map.OfflineMaps.LAND_LIGHT),
-            lineWidth(width(2.8f)), lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
-        ),
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
             lineColor(SurfaceMode.DASHED.soft(dark)), lineWidth(roadWidth()), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),
@@ -1510,6 +1502,17 @@ private fun addSurfaceOverLayers(s: Style, dark: Boolean) {
     (over("soft", arrayOf(2f, 1.5f), SurfaceMode.DASHED.soft(dark)) + over("gravel", arrayOf(2.5f, 1.5f), SurfaceMode.DASHED.gravel(dark))).forEach { l ->
         l.minZoom = SURFACE_ZOOM
         s.addLayer(l)
+    }
+}
+
+/**
+ * Place names above every line layer added so far (route, GPX tracks, dashes): the map's own layers
+ * keep them last, but our lines are added after them and would cover them. Pins and signs
+ * added after this still sit above the names.
+ */
+private fun raisePlaceNames(s: Style) {
+    s.layers.filter { l -> l.id.substringBefore('~').let { it.startsWith("places_") || it == "online-places" } }.forEach { l ->
+        if (s.removeLayer(l)) s.addLayer(l)
     }
 }
 
@@ -1602,6 +1605,7 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
         )
     )
     addSurfaceOverLayers(s, dark)
+    raisePlaceNames(s)
     // Zoomed out: small dots in the category colour (many waypoints stay readable). Zoomed in:
     // a badge with an icon per kind, and the name.
     s.addLayer(

@@ -92,6 +92,12 @@ private fun FriendsTabContent(manager: GroupManager) {
     val invite by manager.friendInvite.collectAsStateWithLifecycle()
     var showCode by rememberSaveable { mutableStateOf(false) }
     var scanning by rememberSaveable { mutableStateOf(false) }
+    // A code that has not come in a few seconds is not coming: say so instead of spinning for ever.
+    var codeFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(showCode, invite) {
+        codeFailed = false
+        if (showCode && invite == null) { kotlinx.coroutines.delay(6_000); codeFailed = true }
+    }
     var confirmRemove by remember { mutableStateOf<Message.FriendInfo?>(null) }
     val context = LocalContext.current
 
@@ -110,6 +116,7 @@ private fun FriendsTabContent(manager: GroupManager) {
         Text(stringResource(R.string.friends_hint), color = TextSecondary, fontSize = 14.sp)
         OutlinedButton(onClick = {
             showCode = !showCode
+            codeFailed = false
             manager.forgetFriendInvite()
             if (showCode) manager.requestFriendInvite()
         }, modifier = Modifier.testTag("friends_my_code")) {
@@ -117,7 +124,8 @@ private fun FriendsTabContent(manager: GroupManager) {
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.friends_my_code), color = ElectricCyan, fontWeight = FontWeight.Bold)
         }
-        if (showCode) QrBlock(invite, R.string.friends_code_hint, R.string.friends_my_code, shareLink = true, shareText = R.string.friends_share_text)
+        if (showCode && codeFailed) Text(stringResource(R.string.friends_code_failed), color = WarningRed, fontSize = 14.sp, modifier = Modifier.testTag("friends_code_failed"))
+        else if (showCode) QrBlock(invite, R.string.friends_code_hint, R.string.friends_my_code, shareLink = true, shareText = R.string.friends_share_text)
         if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.testTag("friends_scan")) {
             Icon(Icons.Default.QrCodeScanner, null, tint = ElectricCyan)
             Spacer(Modifier.width(8.dp))

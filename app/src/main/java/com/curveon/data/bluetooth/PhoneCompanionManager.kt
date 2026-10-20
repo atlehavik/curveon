@@ -79,6 +79,32 @@ class PhoneCompanionManager(
     /** Messages from this device's own listener, handled in order on the main thread. */
     private val localSink: (Message) -> Unit = { msg -> scope.launch(Dispatchers.Main) { handle(msg) } }
 
+    /** The relay through the phone (see [com.curveon.phone.RelayTunnelClient]): used by the groups when this tablet has no internet itself. */
+    private val relayTunnel = com.curveon.phone.RelayTunnelClient { m ->
+        val w = writer
+        w != null && runCatching { w.write(m) }.isSuccess
+    }
+
+    /** Straight to the relay when there is internet here, else through the phone if it is linked; the group never knows which. */
+    private val relayTransports = com.curveon.groups.TransportFactory { url, listener ->
+        if (viaPhone && !hasInternet()) relayTunnel.open(url, listener) else GroupHub.directTransports.open(url, listener)
+    }
+
+    private val mirrorOut = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-group-mirror").apply { isDaemon = true } }
+
+    /** The linked companion shows how the active group is doing and a friend code it asked for; in order, and off the group thread. */
+    private val companionMirror: (Message) -> Unit = { m ->
+        if (m is Message.GroupList || m is Message.GroupConnection || m is Message.FriendInvite || m is Message.GroupError) {
+            mirrorOut.execute { writer?.let { w -> runCatching { w.write(m) } } }
+        }
+    }
+
+    private fun hasInternet(): Boolean {
+        val cm = context.getSystemService(android.net.ConnectivityManager::class.java) ?: return false
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
+        return caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
     /** This device is its own phone: no companion, no Bluetooth. */
     private val _thisDevice = MutableStateFlow(prefs.getBoolean(KEY_THIS_DEVICE, false))
     val thisDevice: StateFlow<Boolean> = _thisDevice.asStateFlow()
@@ -287,6 +313,7 @@ class PhoneCompanionManager(
 
     private fun start() {
         if (isThisDevice) return startThisDevice()
+        startLocalGroups()
         linkJob = scope.launch(Dispatchers.IO) {
             var slowFailures = 0
             var failures = 0
@@ -338,6 +365,7 @@ class PhoneCompanionManager(
     private fun startThisDevice() {
         PhoneHub.phoneBook = PhoneBook(context)
         PhoneHub.voice = VoiceReplier(context)
+        GroupHub.transports = GroupHub.directTransports // this device is the phone
         GroupHub.start(context)
         _connectionState.value = CompanionConnectionState.CONNECTED
         _connectedSince.value = System.currentTimeMillis()
@@ -348,8 +376,19 @@ class PhoneCompanionManager(
         startTicker()
     }
 
+    /**
+     * Friends and groups live in Curveon itself, linked to a phone or not: a code can be shown and a group started with no
+     * phone near, and the phone is only the way to the internet when this tablet has none (see the relay tunnel).
+     */
+    private fun startLocalGroups() {
+        GroupHub.transports = relayTransports
+        GroupHub.start(context)
+        PhoneHub.addGroupListener(localSink)
+    }
+
     private fun stopThisDevice() {
         PhoneHub.removeTablet(localSink)
+        PhoneHub.removeGroupListener(localSink)
         GroupHub.stop()
         PhoneHub.voice?.cancel()
         PhoneHub.voice = null
@@ -403,20 +442,25 @@ class PhoneCompanionManager(
             _connectedSince.value = System.currentTimeMillis()
             _connectedDeviceName.value = device.name ?: address
             startTicker()
+            PhoneHub.addGroupListener(companionMirror)
+            if (!hasInternet()) GroupHub.reconnectNow() // the groups can use the phone's internet from now on
             val reader = MessageReader(s.inputStream)
             while (true) {
                 val msg = reader.read() ?: break
                 if (!active()) break
-                handle(msg)
+                handle(msg, fromPhone = true)
             }
         } finally {
             writer = null
+            PhoneHub.removeGroupListener(companionMirror)
+            relayTunnel.linkLost()
             tickerJob?.cancel()
             runCatching { s.close() }
         }
     }
 
-    private fun handle(msg: Message) {
+    /** [fromPhone]: came over Bluetooth. The groups are Curveon's own, so what a phone says about groups is not heard. */
+    private fun handle(msg: Message, fromPhone: Boolean = false) {
         when (msg) {
             is Message.Hello -> _connectedDeviceName.value = _connectedDeviceName.value.ifEmpty { msg.deviceName }
             is Message.MediaState -> {
@@ -481,9 +525,12 @@ class PhoneCompanionManager(
                 if (decoded.isNotEmpty()) _photos.value = _photos.value + decoded
             }
             is Message.PhoneError -> _phoneErrors.tryEmit(msg.text)
+            is Message.RelayOpened, is Message.RelayText, is Message.RelayClosed -> relayTunnel.onMessage(msg)
+            // What the companion scanned, or a friend code it wants to show: the groups are here, so they are answered here.
+            is Message.GroupJoin, is Message.RequestFriendInvite -> if (fromPhone) GroupHub.handle(msg)
             // Curveon as its own companion speaks on this device too.
             is Message.SpeechVoice -> _speechVoice.value = VoiceStatus(msg.language, msg.availability, onThisDevice = isThisDevice)
-            else -> groups.onMessage(msg) // group rides; ignores anything else
+            else -> if (!fromPhone) groups.onMessage(msg) // group rides; ignores anything else
         }
     }
 
@@ -512,13 +559,13 @@ class PhoneCompanionManager(
         _notifications.value = emptyList()
         _voiceReply.value = null
         hidden.clear()
-        groups.onLinkLost()
     }
 
     // ------------------------------------------------------------------ commands
 
     private fun send(message: Message) {
         if (_connectionState.value == CompanionConnectionState.DEMO) return demoCommand(message)
+        if (GroupHub.accepts(message)) return GroupHub.handle(message) // friends and groups are here, whatever the phone does
         if (isThisDevice) { scope.launch(Dispatchers.IO) { PhoneHub.handle(message) }; return }
         val w = writer ?: return
         scope.launch(Dispatchers.IO) { runCatching { w.write(message) } }

@@ -6,6 +6,21 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-20 — Friends and groups live in Curveon, the phone is the way to the internet (not released, in 1.2.2)
+
+Built and unit tested (the tunnel client and server against each other, and the new messages), tried on the X7 over USB: the friend code
+shows at once with no phone near, and nothing crashes. **Not tried, because it needs the Pixel and the relay on the net:** everything below.
+The companion no longer keeps friends or groups of its own; it shows how the tablet's active group is doing, asks the tablet for a friend
+code and hands over what it scans. The tablet uses its own internet if it has some, else the phone's through Bluetooth.
+
+- [ ] **X7 with the Pixel linked, X7 has no internet** (wifi off, no hotspot): Friends → My friends → Show my code: the code comes up within a second or two (made on the X7, nothing sent to the phone).
+- [ ] **Same, start a group** (needs the relay: `relay.curveon.no` once the VPS is up, or a debug build and `adb reverse tcp:8787 tcp:8787` on the Pixel with the relay on this PC). The group should say "connected" through the phone. Check `adb -s <X7> logcat -s Curveon GroupHub`, and that the phone's data use is small.
+- [ ] **Turn wifi on at the X7 while a group is running:** the group moves to the X7's own internet by itself (a short "offline" at most). Turn wifi off again: back through the phone.
+- [ ] **Pixel companion → Friends → Show my code / Share link / Scan:** the code is the X7's (a friend who scans it shows up in the X7's friend list, not on the phone). With the X7 not linked or switched off you get "Open Curveon on your tablet or this phone first".
+- [ ] **Companion's Group ride card** shows the X7's active group and "connected" / "offline" like the X7 does. It clears when the X7 disconnects.
+- [ ] **Old companion on the Pixel with the new X7 build:** the X7 ignores what the old companion says about groups, so nothing doubles up. (Update the companion to get the tunnel.)
+- [ ] **Not built yet:** one rider across the Pixel's Curveon app and the X7's. Today "My other device" is a link per ride group (see `docs/groups-protocol.md`) and does not move friends or your profile.
+
 ## 2026-10-20 — Gravel and rough ground on the map (not released, in 1.2.2)
 
 Installed on the X7, but no gravel showed near the desk, so the new look hasn't been seen yet.

@@ -54,13 +54,11 @@ class MainActivity : ComponentActivity() {
     private fun joinFromIntent(intent: Intent?) {
         val uri = intent?.dataString ?: return
         intent.data = null // handled once, not again after a rotation
-        GroupHub.start(applicationContext)
-        GroupHub.handle(com.curveon.protocol.Message.GroupJoin(uri))
+        GroupMirror.join(uri)
     }
 
     override fun onResume() {
         super.onResume()
-        GroupHub.start(applicationContext)
         // Opening the app is enough to (re)start sharing, e.g. after an update or a reboot.
         if (!PhoneHub.status.value.serviceRunning && has(Manifest.permission.BLUETOOTH_CONNECT) && !stoppedByUser) {
             CompanionService.start(this)
@@ -146,36 +144,45 @@ class MainActivity : ComponentActivity() {
      */
     @Composable
     private fun FriendsCard() {
-        var code by remember { mutableStateOf<String?>(null) }
+        // The code is made by the tablet (the friends are there) and comes back over the link.
+        val invite by GroupMirror.friendInvite.collectAsStateWithLifecycle()
+        var showing by remember { mutableStateOf(false) }
+        var sharing by remember { mutableStateOf(false) }
         var scanning by remember { mutableStateOf(false) }
+        val code = if (showing) invite else null
+        LaunchedEffect(invite, sharing) {
+            val link = invite ?: return@LaunchedEffect
+            if (!sharing) return@LaunchedEffect
+            sharing = false
+            GroupMirror.forgetFriendInvite()
+            startActivity(Intent.createChooser(
+                Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, getString(R.string.friends_share_text, link)), null
+            ))
+        }
         Card(stringResource(R.string.friends_title)) {
             Text(stringResource(R.string.friends_hint), color = Muted, fontSize = 13.sp)
             OutlinedButton(onClick = {
-                GroupHub.start(applicationContext)
-                GroupHub.createFriendInvite { link -> code = link }
+                showing = true
+                GroupMirror.requestFriendInvite()
             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.friends_my_code)) }
             OutlinedButton(onClick = {
-                GroupHub.start(applicationContext)
-                GroupHub.createFriendInvite { link ->
-                    link?.let {
-                        startActivity(Intent.createChooser(
-                            Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, getString(R.string.friends_share_text, it)), null
-                        ))
-                    }
-                }
+                sharing = true
+                GroupMirror.requestFriendInvite()
             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.friends_share_link)) }
             if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.group_scan))
             }
         }
-        code?.let { link ->
-            val bitmap = remember(link) { QrCode.bitmap(link) }
+        if (showing) {
+            val link = code
+            val bitmap = remember(link) { link?.let { QrCode.bitmap(it) } }
             AlertDialog(
-                onDismissRequest = { code = null },
-                confirmButton = { TextButton(onClick = { code = null }) { Text(stringResource(R.string.friends_close)) } },
+                onDismissRequest = { showing = false; GroupMirror.forgetFriendInvite() },
+                confirmButton = { TextButton(onClick = { showing = false; GroupMirror.forgetFriendInvite() }) { Text(stringResource(R.string.friends_close)) } },
                 title = { Text(stringResource(R.string.friends_my_code)) },
                 text = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (bitmap == null) CircularProgressIndicator() // the tablet is making it
                         bitmap?.let { androidx.compose.foundation.Image(it.asImageBitmap(), null, modifier = Modifier.size(240.dp).clip(RoundedCornerShape(12.dp))) }
                         Text(stringResource(R.string.friends_code_hint), fontSize = 13.sp)
                     }
@@ -185,8 +192,7 @@ class MainActivity : ComponentActivity() {
         if (scanning) com.curveon.qrscan.QrScanDialog(
             onInvite = { link ->
                 scanning = false
-                GroupHub.start(applicationContext)
-                GroupHub.handle(com.curveon.protocol.Message.GroupJoin(link))
+                GroupMirror.join(link)
             },
             onDismiss = { scanning = false }
         )
@@ -195,14 +201,15 @@ class MainActivity : ComponentActivity() {
     /** The active group and how it is doing; groups are started and managed in the Curveon app. */
     @Composable
     private fun GroupCard() {
-        val summary by GroupHub.summary.collectAsStateWithLifecycle()
+        val summary by GroupMirror.summary.collectAsStateWithLifecycle()
         LaunchedEffect(Unit) {
-            GroupHub.errors.collect { code ->
+            GroupMirror.errors.collect { code ->
                 val text = when (code) {
                     com.curveon.protocol.Message.GroupErrorCode.INVALID_INVITE -> R.string.group_error_invalid_invite
                     com.curveon.protocol.Message.GroupErrorCode.EXPIRED_INVITE -> R.string.group_error_expired_invite
                     com.curveon.protocol.Message.GroupErrorCode.ALREADY_MEMBER -> R.string.group_error_already_member
                     com.curveon.protocol.Message.GroupErrorCode.NO_RELAY -> R.string.group_error_no_relay
+                    com.curveon.protocol.Message.GroupErrorCode.NOT_LINKED -> R.string.group_error_not_linked
                     else -> R.string.group_error_other
                 }
                 android.widget.Toast.makeText(this@MainActivity, text, android.widget.Toast.LENGTH_LONG).show()

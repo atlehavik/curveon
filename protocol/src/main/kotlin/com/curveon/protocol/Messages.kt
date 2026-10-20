@@ -422,6 +422,38 @@ sealed interface Message {
             .put("nick", fromNickname ?: JSONObject.NULL).put("name", name).put("doc", doc).put("mine", mine)
     }
 
+    // ---- the relay through the phone: a tablet with no internet of its own reaches the relay over the Bluetooth link ----
+
+    /** Tablet -> phone: open a WebSocket to [url] and call it [id]; the phone answers [RelayOpened] or [RelayClosed]. */
+    data class RelayOpen(val id: Int, val url: String) : Message {
+        override fun toJson() = obj("relay_open").put("sock", id).put("url", url)
+    }
+
+    /** Tablet -> phone: a text frame for socket [id]. */
+    data class RelaySend(val id: Int, val text: String) : Message {
+        override fun toJson() = obj("relay_send").put("sock", id).put("text", text)
+    }
+
+    /** Tablet -> phone: close socket [id] with the WebSocket close [code]. */
+    data class RelayClose(val id: Int, val code: Int) : Message {
+        override fun toJson() = obj("relay_close").put("sock", id).put("code", code)
+    }
+
+    /** Phone -> tablet: socket [id] is open. */
+    data class RelayOpened(val id: Int) : Message {
+        override fun toJson() = obj("relay_opened").put("sock", id)
+    }
+
+    /** Phone -> tablet: a text frame from socket [id]. */
+    data class RelayText(val id: Int, val text: String) : Message {
+        override fun toJson() = obj("relay_text").put("sock", id).put("text", text)
+    }
+
+    /** Phone -> tablet: socket [id] closed, with the WebSocket close [code] (-1 if it failed). */
+    data class RelayClosed(val id: Int, val code: Int) : Message {
+        override fun toJson() = obj("relay_closed").put("sock", id).put("code", code)
+    }
+
     // ---- groups, phone -> tablet ----
 
     /** Every group on the phone, and which one is active. [sharing] is false while paused. */
@@ -504,8 +536,8 @@ sealed interface Message {
         override fun toJson() = obj("group_error").put("code", code.name)
     }
 
-    /** [NO_RELAY]: no relay address to make a group on (not seen unless the standard one is blanked out). */
-    enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER, NO_RELAY }
+    /** [NO_RELAY]: no relay address to make a group on (not seen unless the standard one is blanked out). [NOT_LINKED]: the companion has no tablet to hand this to. */
+    enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER, NO_RELAY, NOT_LINKED }
 
     companion object {
         private fun obj(type: String) = JSONObject().put("type", type)
@@ -575,6 +607,12 @@ sealed interface Message {
             "play_cue" -> runCatching { NavCue.valueOf(o.getString("cue")) }.getOrNull()?.let { cue ->
                 PlayCue(cue, runCatching { CueSide.valueOf(o.optString("side")) }.getOrDefault(CueSide.CENTER))
             }
+            "relay_open" -> RelayOpen(o.getInt("sock"), o.getString("url"))
+            "relay_send" -> RelaySend(o.getInt("sock"), o.getString("text"))
+            "relay_close" -> RelayClose(o.getInt("sock"), o.optInt("code", 1000))
+            "relay_opened" -> RelayOpened(o.getInt("sock"))
+            "relay_text" -> RelayText(o.getInt("sock"), o.getString("text"))
+            "relay_closed" -> RelayClosed(o.getInt("sock"), o.optInt("code", -1))
             // groups
             "request_groups" -> RequestGroups
             "group_create" -> GroupCreate(o.nullableString("name"))

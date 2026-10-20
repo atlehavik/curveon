@@ -37,6 +37,9 @@ object PhoneHub {
 
     /** Where messages go: one per connected tablet, or Curveon's own screen. */
     private val tablets = CopyOnWriteArrayList<(Message) -> Unit>()
+
+    /** Curveon on a tablet that is linked to a phone: it hears the groups (which it runs itself) but not the phone's notifications and media. */
+    private val groupListeners = CopyOnWriteArrayList<(Message) -> Unit>()
     private val notifications = ConcurrentHashMap<String, Message.NotificationPosted>()
 
     @Volatile var media: Message.MediaState? = null
@@ -82,8 +85,26 @@ object PhoneHub {
         GroupHub.tabletsChanged()
     }
 
+    /** Hears what the groups tell, and starts them; for a tablet that rides with a phone and still keeps its own friends and groups. */
+    fun addGroupListener(sink: (Message) -> Unit) {
+        groupListeners += sink
+        GroupHub.sendSnapshot(sink)
+        GroupHub.tabletsChanged()
+    }
+
+    fun removeGroupListener(sink: (Message) -> Unit) {
+        groupListeners -= sink
+        GroupHub.tabletsChanged()
+    }
+
     /** How many tablets (or Curveon's own screen) are listening; the group link is kept up only while someone is. */
-    val tabletCount: Int get() = tablets.size
+    val tabletCount: Int get() = tablets.size + groupListeners.size
+
+    /** What the groups tell: to the tablets, and to a tablet's own group listener. */
+    fun broadcastGroup(message: Message) {
+        broadcast(message)
+        for (t in groupListeners) runCatching { t(message) }.onFailure { groupListeners -= t }
+    }
 
     fun broadcast(message: Message) {
         for (t in tablets) runCatching { t(message) }.onFailure { tablets -= t }

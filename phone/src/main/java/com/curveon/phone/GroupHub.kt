@@ -46,7 +46,11 @@ object GroupHub {
     private const val DEFAULT_INVITE_DAYS = 7
     private const val DEVICE_LINK_MINUTES = 15
     private val exec = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
-    private val transports = OkHttpTransportFactory()
+    /** The relay straight over the internet. */
+    val directTransports: com.curveon.groups.TransportFactory = OkHttpTransportFactory()
+
+    /** How the relay is reached: straight over the internet, or (set by Curveon on a tablet without any) through the phone. */
+    @Volatile var transports: com.curveon.groups.TransportFactory = directTransports
 
     /** For the companion's and Curveon's own screens: the active group and how its link is doing. */
     data class Summary(val groupId: String, val name: String?, val status: Message.GroupStatus, val members: Int, val admin: Boolean)
@@ -137,6 +141,22 @@ object GroupHub {
 
     /** What a tablet that just connected needs to catch up. */
     fun sendSnapshot(sink: (Message) -> Unit) = exec.execute { snapshot().forEach { runCatching { sink(it) } } }
+
+    /** True for the messages the groups act on (commands from a screen), so a caller can tell them from the phone's own. */
+    fun accepts(m: Message): Boolean = when (m) {
+        is Message.RequestGroups, is Message.GroupCreate, is Message.GroupJoin, is Message.GroupLeave, is Message.GroupSelect,
+        is Message.GroupSharing, is Message.GroupProfile, is Message.MyPosition, is Message.ShareRoute, is Message.SosStart,
+        is Message.SosCancel, is Message.SosAnswer, is Message.GroupRemoveRider, is Message.RequestDeviceLink, is Message.GroupSettings,
+        is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
+        is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.RequestGroupInvite -> true
+        else -> false
+    }
+
+    /** Opens the relay again at once (the way to it changed: another network, or the phone came or went). */
+    fun reconnectNow() = exec.execute {
+        client?.reconnectNow()
+        friendClients.values.forEach { it.reconnectNow() }
+    }
 
     fun handle(message: Message) = exec.execute {
         runCatching { handleNow(message) }.onFailure { Log.w(TAG, "Group message failed", it) }
@@ -511,7 +531,7 @@ object GroupHub {
 
     private fun send(m: Message) {
         if (m is Message.GroupList) publish()
-        PhoneHub.broadcast(m)
+        PhoneHub.broadcastGroup(m)
     }
 
     /** Keeps the screens' view of the groups and the active group's link in step. */
@@ -525,7 +545,7 @@ object GroupHub {
 
     private fun sendConnection() {
         publish()
-        connectionMessage()?.let { PhoneHub.broadcast(it) }
+        connectionMessage()?.let { PhoneHub.broadcastGroup(it) }
     }
 
     private fun error(code: Message.GroupErrorCode) {
