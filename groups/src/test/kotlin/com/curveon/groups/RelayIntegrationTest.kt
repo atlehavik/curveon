@@ -295,6 +295,63 @@ class RelayIntegrationTest {
     assertFalse(again.client.sendingHere)
   }
 
+  @Test fun twoFriendsMeetInAPrivateChannelAndOneInvitesTheOtherToARide() {
+    // Ola shows a friend code: a fresh private channel. Kari scans it; both say who they are.
+    val channel = GroupState.create("127.0.0.1:$port", null, GroupKind.FRIEND)
+    val ola = Rider("Ola", channel)
+    ola.client.start()
+    ola.await { if (it is GroupEvent.Connected) it else null }
+    val kari = Rider("Kari", GroupState.join(Invite.parse(channel.invite().toUri("curveon"))!!))
+    assertEquals(GroupKind.FRIEND, kari.state.kind)
+    kari.client.start()
+    assertEquals("Kari", ola.await { (it as? GroupEvent.MemberUpdated)?.member }.nickname)
+    assertEquals("Ola", kari.await { (it as? GroupEvent.MemberUpdated)?.member }.nickname)
+
+    // Ola adds Kari to a ride: the invite goes through the channel
+    val ride = GroupState.create("127.0.0.1:$port", "Lofoten")
+    assertTrue(ola.client.sendInvite(ride.invite().toUri("curveon"), "Lofoten"))
+    val offer = kari.await { (it as? GroupEvent.InviteReceived)?.invite }
+    assertEquals("Lofoten", offer.groupName)
+    assertEquals(ride.groupIdHex, Invite.parse(offer.link)!!.groupId.joinToString("") { "%02x".format(it) })
+
+    // an invite sent while Kari is away is waiting for her
+    kari.client.stop()
+    Thread.sleep(300)
+    assertTrue(ola.client.sendInvite(ride.invite().toUri("curveon"), "Senere"))
+    Thread.sleep(300)
+    val back = Rider("Kari", kari.state)
+    back.client.start()
+    assertEquals("Senere", back.await { (it as? GroupEvent.InviteReceived)?.invite?.takeIf { i -> i.groupName == "Senere" } }.groupName)
+  }
+
+  @Test fun aSharedTripReachesEveryoneAndTheOneWhoJoinsLater() {
+    val (a, invite) = group()
+    a.client.start()
+    val b = joined(invite, "Kari").also { it.client.start() }
+    a.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Kari" } }
+
+    assertTrue(a.client.sendTrip(Payload.Trip("t1", 1, "Dagstur", """{"stops":[]}""")))
+    val got = b.await { (it as? GroupEvent.TripReceived)?.takeIf { e -> e.trip.rev == 1L } }
+    assertEquals(false, got.mine)
+    assertEquals(a.id, got.riderId)
+
+    // Kari changes it: a new revision, and Ola gets it
+    assertTrue(b.client.sendTrip(Payload.Trip("t1", 2, "Dagstur", """{"stops":[{"name":"Kafé"}]}""")))
+    assertTrue(a.await { (it as? GroupEvent.TripReceived)?.takeIf { e -> e.trip.rev == 2L } }.trip.doc.contains("Kafé"))
+
+    // Jens joins afterwards and is handed the changes the relay kept
+    val jens = joined(invite, "Jens").also { it.client.start() }
+    val seen = (1..2).map { jens.await { (it as? GroupEvent.TripReceived)?.trip?.rev } }.toSet()
+    assertEquals(setOf(1L, 2L), seen)
+  }
+
+  @Test fun aTripChangedOnMyOtherDeviceReachesThisOneToo() {
+    val (phone, tablet, _) = twoDevices()
+    phone.client.sendTrip(Payload.Trip("t9", 1, "Min tur", """{"stops":[]}"""))
+    val got = tablet.await { (it as? GroupEvent.TripReceived)?.takeIf { e -> e.trip.tripId == "t9" } }
+    assertTrue("from the same rider's other device", got.mine)
+  }
+
   @Test fun anSosMadeWithoutCoverageGoesOutWhenTheConnectionIsBack() {
     val (a, invite) = group()
     a.client.start()

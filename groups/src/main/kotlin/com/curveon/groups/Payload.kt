@@ -52,6 +52,23 @@ sealed interface Payload {
   data object Leave : Payload { override val type get() = FrameType.LEAVE }
 
   /**
+   * In a friend channel: an invite to a ride group, from one friend to the other. [offerId] is unique, so the same
+   * invite (the relay keeps it until it is fetched) is shown to the rider once.
+   */
+  data class GroupInvite(val offerId: String, val link: String, val groupName: String?) : Payload {
+    override val type get() = FrameType.INVITE
+  }
+
+  /**
+   * A trip (planned route) shared with the group, as one document that anyone in the group can change: the app
+   * defines what is in [doc] (JSON), the library only carries it. The highest [rev] wins; [tripId] stays the same
+   * through all the changes.
+   */
+  data class Trip(val tripId: String, val rev: Long, val name: String, val doc: String) : Payload {
+    override val type get() = FrameType.TRIP
+  }
+
+  /**
    * "This device is the one sending my position now." A rider with two devices (tablet and phone) has one of them
    * send, so the group does not get two streams: the newest claim wins, and the other device keeps quiet.
    */
@@ -86,6 +103,8 @@ object PayloadCodec {
       is Payload.Sos -> o.put("lat", p.lat).put("lon", p.lon)
       is Payload.SosAck -> o.put("sos", p.sosRiderId).put("coming", p.coming)
       is Payload.Claim -> o.put("dev", p.deviceId)
+      is Payload.GroupInvite -> { o.put("oid", p.offerId).put("link", p.link); p.groupName?.let { o.put("gname", it) } }
+      is Payload.Trip -> o.put("tid", p.tripId).put("rev", p.rev).put("name", p.name).put("doc", p.doc)
       Payload.SosCancel, Payload.Leave -> Unit
     }
     return o.toString().toByteArray()
@@ -114,6 +133,8 @@ object PayloadCodec {
       FrameType.SOS_CANCEL -> Payload.SosCancel
       FrameType.LEAVE -> Payload.Leave
       FrameType.CLAIM -> Payload.Claim(o.getString("dev")) // sent with the device's own id, like everything else
+      FrameType.INVITE -> Payload.GroupInvite(o.getString("oid"), o.getString("link"), if (o.has("gname")) o.getString("gname") else null)
+      FrameType.TRIP -> Payload.Trip(o.getString("tid"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
       FrameType.REKEY -> return null // not encrypted with the group key
     }
     Signed(o.getLong("seq"), o.getLong("ts"), payload, o.optString("dev"))

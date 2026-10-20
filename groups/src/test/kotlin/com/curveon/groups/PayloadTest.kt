@@ -102,6 +102,29 @@ class PayloadTest {
     assertNull(Invite.parse(admin.invite().toUri().replace("&k=", "&me=junk&k="))) // a damaged transfer is refused, not turned into a new rider
   }
 
+  @Test fun friendInvitesAndPeerProfilesSurvive() {
+    val friend = GroupState.create("relay.example.org", null, GroupKind.FRIEND)
+    assertEquals(GroupKind.FRIEND, Invite.parse(friend.invite().toUri("curveon"))!!.kind)
+    assertEquals(GroupKind.RIDE, Invite.parse(GroupState.create("relay.example.org", null).invite().toUri())!!.kind)
+    val joined = GroupState.join(Invite.parse(friend.invite().toUri("curveon"))!!)
+    assertEquals(GroupKind.FRIEND, joined.kind)
+    joined.peer = PeerProfile("Ola", 0xFF112233.toInt(), "helmet", "abc")
+    val back = GroupState.fromJson(joined.toJson())!!
+    assertEquals(GroupKind.FRIEND, back.kind)
+    assertEquals("Ola", back.peer!!.nickname)
+    assertEquals("helmet", back.peer!!.icon)
+    assertEquals("abc", back.peer!!.photoBase64)
+    assertNull(GroupState.fromJson(GroupState.create("r.example.org", null).toJson())!!.peer)
+  }
+
+  @Test fun inviteAndTripPayloadsRoundTrip() {
+    val inv = PayloadCodec.decode(FrameType.INVITE, PayloadCodec.encode(1, 2, Payload.GroupInvite("o1", "curveon://join#v=1", "Lofoten")))!!.payload as Payload.GroupInvite
+    assertEquals(Payload.GroupInvite("o1", "curveon://join#v=1", "Lofoten"), inv)
+    assertNull((PayloadCodec.decode(FrameType.INVITE, PayloadCodec.encode(1, 2, Payload.GroupInvite("o2", "x", null)))!!.payload as Payload.GroupInvite).groupName)
+    val trip = Payload.Trip("t1", 7, "Dagstur", """{"stops":[{"name":"Kafé","lat":1.5,"lon":2.5}]}""")
+    assertEquals(trip, PayloadCodec.decode(FrameType.TRIP, PayloadCodec.encode(1, 2, trip))!!.payload)
+  }
+
   @Test fun theInviteCarriesTheKeyEpoch() {
     val g = GroupState.create("relay.example.org", null)
     assertEquals(0, Invite.parse(g.invite().toUri())!!.epoch)

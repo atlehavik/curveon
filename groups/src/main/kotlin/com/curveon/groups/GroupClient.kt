@@ -18,6 +18,12 @@ sealed interface GroupEvent {
   /** The group key changed (someone was removed, or the invite leaked). The device reconnects by itself; store the state. */
   data object KeyChanged : GroupEvent
 
+  /** In a friend channel: the friend offers an invite to a ride group. */
+  data class InviteReceived(val riderId: String, val invite: Payload.GroupInvite) : GroupEvent
+
+  /** A shared trip, new or changed, by someone in the group ([mine]: by the rider's own other device). */
+  data class TripReceived(val riderId: String, val trip: Payload.Trip, val tsMs: Long, val mine: Boolean) : GroupEvent
+
   /** An admin made a new key and this rider is not in it. The client has stopped. */
   data object Removed : GroupEvent
 
@@ -142,6 +148,14 @@ class GroupClient(
     (connected && send(sos)).also { if (it) pendingSos = null }
   }
 
+  /** Offer [link], an invite to a ride group, to the friend at the other end of this channel. False if it could not go out now. */
+  fun sendInvite(link: String, groupName: String?): Boolean = synchronized(lock) {
+    connected && send(Payload.GroupInvite(B64.encode(GroupKeys.randomBytes(9)), link, groupName))
+  }
+
+  /** Shares a new or changed trip with the group. False if it could not go out now. */
+  fun sendTrip(trip: Payload.Trip): Boolean = synchronized(lock) { connected && send(trip) }
+
   fun answerSos(sosRiderId: String, coming: Boolean) = synchronized(lock) { if (connected) send(Payload.SosAck(sosRiderId, coming)) }
 
   fun cancelSos() = synchronized(lock) {
@@ -259,6 +273,11 @@ class GroupClient(
       if (frame.type == FrameType.CLAIM) {
         val signed = FrameCrypto.open(state.keys, frame)?.let { PayloadCodec.decode(FrameType.CLAIM, it) } ?: return
         (signed.payload as? Payload.Claim)?.let { otherClaimed(it.deviceId, signed.tsMs) }
+      } else if (frame.type == FrameType.TRIP) {
+        // A change the rider made on their other device is a change like any other.
+        val signed = FrameCrypto.open(state.keys, frame)?.let { PayloadCodec.decode(FrameType.TRIP, it) } ?: return
+        if (!guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device)) return
+        (signed.payload as? Payload.Trip)?.let { onEvent(GroupEvent.TripReceived(B64.encode(frame.riderId), it, signed.tsMs, mine = true)) }
       }
       return
     }
@@ -285,6 +304,8 @@ class GroupClient(
         onEvent(GroupEvent.MemberLeft(from))
       }
       is Payload.Claim -> Unit // only meaningful between one rider's own devices
+      is Payload.GroupInvite -> onEvent(GroupEvent.InviteReceived(from, p))
+      is Payload.Trip -> onEvent(GroupEvent.TripReceived(from, p, signed.tsMs, mine = false))
     }
   }
 

@@ -41,6 +41,8 @@ class Invite(
   val epoch: Int = 0,
   /** Set when the link is for the rider's own other device (see [DeviceIdentity]); such a link is secret and short-lived. */
   val identity: DeviceIdentity? = null,
+  /** A ride group, or a private channel between two friends (see [GroupKind]). */
+  val kind: GroupKind = GroupKind.RIDE,
 ) {
   init {
     require(groupId.size == GROUP_ID_SIZE) { "groupId must be 16 bytes" }
@@ -59,6 +61,7 @@ class Invite(
       if (expiresAt != null) append("&x=").append(expiresAt)
       if (epoch > 0) append("&e=").append(epoch)
       if (identity != null) append("&me=").append(identity.encode())
+      if (kind == GroupKind.FRIEND) append("&t=f")
     }
     val base = if (scheme == "https") "https://$relayHost/join" else "$scheme://join"
     return "$base#$frag"
@@ -85,6 +88,7 @@ class Invite(
         expiresAt = p["x"]?.toLong(),
         epoch = p["e"]?.toInt() ?: 0,
         identity = p["me"]?.let { DeviceIdentity.decode(it) },
+        kind = if (p["t"] == "f") GroupKind.FRIEND else GroupKind.RIDE,
       )
     } catch (_: Exception) {
       null

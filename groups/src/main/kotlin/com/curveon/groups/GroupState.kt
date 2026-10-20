@@ -2,6 +2,15 @@ package com.curveon.groups
 
 import org.json.JSONObject
 
+/**
+ * What a group is for. A [RIDE] is a group of riders on the road; a [FRIEND] is a private channel between two people who
+ * have scanned each other: it carries their profiles, and invites to ride groups from one to the other.
+ */
+enum class GroupKind { RIDE, FRIEND }
+
+/** The other person in a [GroupKind.FRIEND] channel, as last heard (kept so the list of friends shows them offline). */
+class PeerProfile(val nickname: String, val colour: Int, val icon: String?, val photoBase64: String?)
+
 /** Someone in the group, as known from their `hello`. */
 class Member(val riderId: ByteArray, val nickname: String, val colour: Int, val agreementPublicKey: ByteArray, val avatar: Avatar?) {
   val id: String get() = B64.encode(riderId)
@@ -25,7 +34,11 @@ class GroupState(
   val adminSigning: KeyPair?,
   /** Tells this device from the rider's other devices (see [Payload.Claim]); never shared between them. */
   val deviceId: String = B64.encode(GroupKeys.randomBytes(8)),
+  val kind: GroupKind = GroupKind.RIDE,
 ) {
+  /** For a friend channel: who is at the other end, once they have said hello. */
+  var peer: PeerProfile? = null
+
   var groupKey: ByteArray = groupKey
     private set
   var epoch: Int = epoch
@@ -41,7 +54,7 @@ class GroupState(
   }
 
   /** [expiresAt] in epoch seconds; the app checks it, the relay does not. */
-  fun invite(expiresAt: Long? = null) = Invite(groupId, groupKey, adminPublicKey, relayHost, name, expiresAt, epoch)
+  fun invite(expiresAt: Long? = null) = Invite(groupId, groupKey, adminPublicKey, relayHost, name, expiresAt, epoch, kind = kind)
 
   /**
    * A link for the rider's own other device: opening it there makes that device the same rider (same id and keys)
@@ -49,22 +62,24 @@ class GroupState(
    */
   fun deviceLink(expiresAt: Long) = Invite(
     groupId, groupKey, adminPublicKey, relayHost, name, expiresAt, epoch,
-    DeviceIdentity(riderId, agreement.privateKey, adminSigning?.privateKey),
+    DeviceIdentity(riderId, agreement.privateKey, adminSigning?.privateKey), kind,
   )
 
   fun toJson(): String = JSONObject().put("groupId", B64.encode(groupId)).put("key", B64.encode(groupKey)).put("epoch", epoch)
     .put("admin", B64.encode(adminPublicKey)).put("relay", relayHost).put("name", name ?: JSONObject.NULL)
     .put("rider", B64.encode(riderId)).put("agreementPub", B64.encode(agreement.publicKey))
     .put("agreementPriv", B64.encode(agreement.privateKey))
-    .put("signingPriv", adminSigning?.let { B64.encode(it.privateKey) } ?: JSONObject.NULL).put("device", deviceId).toString()
+    .put("signingPriv", adminSigning?.let { B64.encode(it.privateKey) } ?: JSONObject.NULL).put("device", deviceId).put("kind", kind.name)
+    .put("peer", peer?.let { JSONObject().put("nick", it.nickname).put("colour", it.colour).put("icon", it.icon ?: JSONObject.NULL).put("photo", it.photoBase64 ?: JSONObject.NULL) } ?: JSONObject.NULL)
+    .toString()
 
   companion object {
     /** A new group: this rider becomes its admin. */
-    fun create(relayHost: String, name: String?): GroupState {
+    fun create(relayHost: String, name: String?, kind: GroupKind = GroupKind.RIDE): GroupState {
       val signing = Keys.newSigningKeyPair()
       return GroupState(
         GroupKeys.newGroupId(), GroupKeys.newGroupKey(), 0, signing.publicKey, relayHost, name,
-        GroupKeys.newRiderId(), Keys.newAgreementKeyPair(), signing,
+        GroupKeys.newRiderId(), Keys.newAgreementKeyPair(), signing, kind = kind,
       )
     }
 
@@ -79,6 +94,7 @@ class GroupState(
         me?.riderId ?: GroupKeys.newRiderId(),
         me?.let { Keys.agreementKeyPairFrom(it.agreementPrivateKey) } ?: Keys.newAgreementKeyPair(),
         me?.signingPrivateKey?.let { KeyPair(invite.adminPublicKey, it) },
+        kind = invite.kind,
       )
     }
 
@@ -92,7 +108,15 @@ class GroupState(
         KeyPair(B64.decode(o.getString("agreementPub")), B64.decode(o.getString("agreementPriv"))),
         signingPriv?.let { KeyPair(admin, it) },
         o.optString("device").ifEmpty { B64.encode(GroupKeys.randomBytes(8)) },
-      )
+        runCatching { GroupKind.valueOf(o.optString("kind", "RIDE")) }.getOrDefault(GroupKind.RIDE),
+      ).also { st ->
+        o.optJSONObject("peer")?.let { p ->
+          st.peer = PeerProfile(
+            p.optString("nick"), p.optInt("colour"), if (p.isNull("icon")) null else p.optString("icon"),
+            if (p.isNull("photo")) null else p.optString("photo"),
+          )
+        }
+      }
     } catch (_: Exception) {
       null
     }
