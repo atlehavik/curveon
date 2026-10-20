@@ -21,6 +21,16 @@ code and hands over what it scans. The tablet uses its own internet if it has so
 - [ ] **Old companion on the Pixel with the new X7 build:** the X7 ignores what the old companion says about groups, so nothing doubles up. (Update the companion to get the tunnel.)
 - [ ] **My devices (Pixel's Curveon app + X7).** Friends → Me → My devices: "Show code for my other device" on one, "Scan code from my other device" on the other; both then say "Linked". Tried on the X7 and a phone emulator against the relay on this PC (link by intent, not by camera): both said linked and a group started on the X7 showed up on the emulator. **Not tried:** scanning the code with the real camera, the profile (name, colour, picture) following, a friend added on one showing on the other, leaving a group on one removing it on the other, Unlink, and the Pixel itself. Do the camera scan, then add a friend on the X7 and open Curveon on the Pixel: the friend should be there within seconds (a friend is not shown until their hello has been heard).
 
+## 2026-10-21 — Rides end after 5 minutes, "Continue the ride?" (not released, in 1.2.2)
+
+Only the logic is tested (unit tests); the question card hasn't been seen with real riding.
+
+- [ ] Ride a few km (Rides on, in Settings), stop for 5+ minutes: the ride is finished in the ride log (and its GPX copy made if auto-save is on), the red dot is gone.
+- [ ] Ride on within two hours: a card "Continue the ride?" with Continue / New ride appears at the top of the map after a few seconds of riding. Check it doesn't cover the arrival box, speed card or road card on the X7 and the Pixel, while navigating too.
+- [ ] Continue: the ride log shows one ride (no new one), the distance grows, and with auto-save the GPX group has one track for the whole ride, not two.
+- [ ] New ride (or ignore it for 30 s): the card goes away, and the earlier ride is left as it was.
+- [ ] A stop you end with the stop button, or longer than two hours, does not ask.
+
 ## 2026-10-20 — Gravel and rough ground on the map (not released, in 1.2.2)
 
 Installed on the X7, but no gravel showed near the desk, so the new look hasn't been seen yet.

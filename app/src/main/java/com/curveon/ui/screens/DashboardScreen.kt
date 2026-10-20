@@ -136,6 +136,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val searchOffer by viewModel.searchOffer.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
+    val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
+    // Nothing pressed: it is a new ride, and the question goes away.
+    LaunchedEffect(resumeOffer) { if (resumeOffer != null) { kotlinx.coroutines.delay(30_000); viewModel.startNewRide() } }
     val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
     val logRides by viewModel.logRides.collectAsStateWithLifecycle()
     val recordLean by viewModel.recordLean.collectAsStateWithLifecycle()
@@ -759,6 +762,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             mapVersion = mapVersion,
             overlays = mapOverlays
         )
+        resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp)) }
         reachedStop?.let { StopReachedBanner(it, onDismiss = { reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
         toast?.let {
             Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,

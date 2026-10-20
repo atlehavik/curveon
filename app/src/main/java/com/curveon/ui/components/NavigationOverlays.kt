@@ -197,6 +197,31 @@ fun StopReachedBanner(name: String, onDismiss: () -> Unit, modifier: Modifier = 
     }
 }
 
+/**
+ * Riding again soon after a ride finished: go on logging that ride, or start a new one (the
+ * dashboard picks the new one itself after a while if nothing is pressed).
+ */
+@Composable
+fun RideResumeCard(title: String, onResume: () -> Unit, onNew: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(20.dp)
+    Column(
+        modifier.clip(shape).background(CockpitSurface).border(2.dp, ElectricCyan, shape).padding(horizontal = 18.dp, vertical = 12.dp)
+            .testTag("ride_resume"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(stringResource(R.string.ride_resume_title), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        if (title.isNotEmpty()) Text(title, color = TextSecondary, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(onClick = onResume, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan, contentColor = Color.Black),
+                modifier = Modifier.height(52.dp)) { Text(stringResource(R.string.ride_resume_continue), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
+            OutlinedButton(onClick = onNew, modifier = Modifier.height(52.dp)) {
+                Text(stringResource(R.string.ride_resume_new), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            }
+        }
+    }
+}
+
 /** "Calculating…" spinner or an error message with a dismiss button. */
 @Composable
 fun RoutingStatusCard(status: RoutingStatus, onDismiss: () -> Unit, modifier: Modifier = Modifier) {

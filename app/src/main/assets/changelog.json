@@ -2,6 +2,7 @@
   {
     "version": "1.2.2",
     "en": [
+      "A ride now ends after a stop of five minutes instead of twenty, so your rides are saved sooner. Start riding again within two hours and Curveon asks at once whether to continue the ride you had or start a new one. Continue picks the ride up where it stopped and keeps logging in the same ride; a new ride (also what you get if you just ignore the question) leaves the earlier one finished as it was",
       "Gravel and rough ground on the map now look like the road itself, just dashed: same colour and no thicker than the road, brown where the ground is rough. Settings → Display → Road surfaces can instead colour them like the route, orange for gravel and purple for rough ground",
       "The day map is always high contrast now, since it is the clearest in the sun, so the High contrast switch is gone. The extra lines for ordinary country roads are gone too: the clear roads show them well enough",
       "Stops you add while riding are now always on the route: before, a new route that avoids turning round could skip some of the stops (it rode past them at a distance), and \"stop reached\" could be announced without you being there. Now every stop gets visited, and the message only comes when you are at the stop",
@@ -61,6 +62,7 @@
       "Use Curveon on both your phone and your tablet? Link them once with a code under Friends, Me, and your friends, groups and name are the same on both. Add a friend on one, and it shows up on the other"
     ],
     "nb": [
+      "En tur avsluttes nå etter fem minutters stopp i stedet for tjue, så turene dine blir lagret tidligere. Kjører du igjen innen to timer, spør Curveon med en gang om du vil fortsette turen du hadde eller starte en ny. Fortsett tar opp tråden der du stoppet og logger videre i samme tur. Ny tur (og det du får hvis du bare overser spørsmålet) lar den forrige turen være ferdig som den var",
       "Grus og ulendt underlag ser nå ut som selve veien, bare stiplet: samme farge og ikke tykkere enn veien, brun der det er ulendt. Under Innstillinger → Skjerm → Veidekke kan du i stedet farge dem som ruta, oransje for grus og lilla for ulendt",
       "Dagkartet er alltid høykontrast nå, siden det er tydeligst i sol, så bryteren for høykontrast er borte. De ekstra linjene for vanlige landeveier er også borte: de tydelige veiene viser dem godt nok",
       "Stopp du legger til underveis ligger nå alltid på ruten: før kunne en ny rute som unngår å snu hoppe over noen av stoppene (den kjørte forbi på avstand), og «stopp nådd» kunne meldes uten at du var der. Nå besøkes hvert stopp, og meldingen kommer bare når du er ved stoppet",

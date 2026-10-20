@@ -8,8 +8,10 @@ import kotlin.math.abs
 
 /**
  * Records rides automatically, no buttons: starts once the bike has been moving for a little
- * while and finishes after a long stop (a coffee break shorter than [END_AFTER_STOP_MS] stays
- * part of the same ride). Pure logic; the caller persists [current] when [onFix] says so.
+ * while and finishes after a stop of [END_AFTER_STOP_MS] (a red light or a quick look at the map
+ * stays part of the ride). Riding again within [RESUME_WINDOW_MS] of a finished ride sets
+ * [resumeOffer]: the rider decides between going on with that ride ([resume]) and a new one.
+ * Pure logic; the caller persists [current] when [onFix] says so.
  */
 class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
 
@@ -18,6 +20,12 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
     var current: Ride? = null
         private set
 
+    /** The ride that finished a short while ago, while a new one is under way: asks to be picked up again. */
+    var resumeOffer: Ride? = null
+        private set
+
+    private var lastFinished: Ride? = null
+    private var finishedAt = 0L
     private val track = StringBuilder()
     private var lastPoint: GpsFix? = null
     private var lastEle: Double? = null
@@ -45,6 +53,7 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
             lastEle = null
             lastSavedAt = t
             append(fix, ride.startMs)
+            resumeOffer = lastFinished?.takeIf { t - finishedAt <= RESUME_WINDOW_MS }
             return Event.STARTED
         }
 
@@ -95,11 +104,36 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         val r = current?.copy(track = track.toString())
         current = null
         movingSince = 0L
-        return r?.takeIf { it.distanceMeters >= MIN_RIDE_M }
+        resumeOffer = null
+        val kept = r?.takeIf { it.distanceMeters >= MIN_RIDE_M }
+        if (kept != null) { lastFinished = kept; finishedAt = now() }
+        return kept
     }
 
-    /** [finish], for a ride the rider ended by hand: riding on does not start a new one straight away. */
-    fun stop(): Ride? = finish().also { holdUntilStopped = true }
+    /** [finish], for a ride the rider ended by hand: riding on does not start a new one straight away, nor is it offered again. */
+    fun stop(): Ride? = finish().also { holdUntilStopped = true; lastFinished = null }
+
+    /**
+     * Goes on with [prev] (the [resumeOffer]): what has been ridden since is added to it, and recording
+     * carries on in that one ride, which keeps [prev]'s id. Null when there is no ride under way.
+     */
+    fun resume(prev: Ride): Ride? {
+        val now = current?.copy(track = track.toString()) ?: return null
+        val merged = merge(listOf(prev, now)).copy(id = prev.id)
+        track.clear()
+        track.append(merged.track)
+        current = merged
+        resumeOffer = null
+        lastFinished = null
+        lastSavedAt = now()
+        return merged
+    }
+
+    /** The rider wants a new ride: the earlier one stays as it is. */
+    fun declineResume() {
+        resumeOffer = null
+        lastFinished = null
+    }
 
     fun setId(id: Long) {
         current = current?.copy(id = id)
@@ -122,7 +156,8 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
     companion object {
         const val MOVING_KMH = 12f
         const val START_AFTER_MS = 10_000L
-        const val END_AFTER_STOP_MS = 20 * 60_000L
+        const val END_AFTER_STOP_MS = 5 * 60_000L
+        const val RESUME_WINDOW_MS = 2 * 60 * 60_000L
         const val MIN_RIDE_M = 1_000.0
         const val POINT_SPACING_M = 20.0
         const val SAVE_EVERY_MS = 60_000L

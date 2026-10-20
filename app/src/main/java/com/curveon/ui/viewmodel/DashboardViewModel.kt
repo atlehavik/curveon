@@ -1397,16 +1397,49 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val lean = _recordLean.value
         if (lean) leanSensor.onSpeed(tripTracker.speedKmh / 3.6f)
         when (rideRecorder.onFix(fix, tripTracker.speedKmh, if (lean) leanSensor.leanDeg else null)) {
-            RideRecorder.Event.STARTED -> viewModelScope.launch {
-                val id = rideDao.insert(rideRecorder.current!!)
-                rideRecorder.setId(id)
-                placeName(fix.latitude, fix.longitude)?.let { rideRecorder.setTitle(it) }
+            RideRecorder.Event.STARTED -> {
+                _resumeOffer.value = rideRecorder.resumeOffer
+                val started = rideRecorder.current!!
+                viewModelScope.launch {
+                    val id = rideDao.insert(started)
+                    // Picked up an earlier ride meanwhile: this row is not needed (the earlier one carries on).
+                    if (rideRecorder.current?.startMs == started.startMs && rideRecorder.current?.id == 0L) {
+                        rideRecorder.setId(id)
+                        placeName(fix.latitude, fix.longitude)?.let { rideRecorder.setTitle(it) }
+                    } else rideDao.delete(id)
+                }
             }
             RideRecorder.Event.UPDATED -> saveRide(finish = false)
             RideRecorder.Event.FINISHED -> saveRide(finish = true)
             RideRecorder.Event.NONE -> Unit
         }
         _currentRide.value = rideRecorder.current
+        if (rideRecorder.current == null) _resumeOffer.value = null
+    }
+
+    /** The ride that finished a short while ago, while a new one is under way: the rider is asked whether to go on with it. */
+    private val _resumeOffer = MutableStateFlow<Ride?>(null)
+    val resumeOffer: StateFlow<Ride?> = _resumeOffer.asStateFlow()
+
+    /** The GPX copy made of a finished ride, by ride: replaced when the ride is picked up again and finishes later. */
+    private val autoSavedGpx = java.util.concurrent.ConcurrentHashMap<Long, Long>()
+
+    /** Goes on logging the ride that finished a short while ago, with what has been ridden since added to it. */
+    fun resumeRide() {
+        val prev = _resumeOffer.value ?: return
+        _resumeOffer.value = null
+        val merged = rideRecorder.resume(prev) ?: return
+        _currentRide.value = merged
+        viewModelScope.launch(Dispatchers.IO) {
+            rideDao.update(merged)
+            autoSavedGpx.remove(prev.id)?.let { repository.deleteGpxTrack(it) }
+        }
+    }
+
+    /** A new ride: the earlier one stays finished as it is. */
+    fun startNewRide() {
+        _resumeOffer.value = null
+        rideRecorder.declineResume()
     }
 
     /** The rider ends the ride under way now, rather than waiting for the long stop. */
@@ -1455,7 +1488,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val groupId = _autoSaveRidesGroup.value ?: return
         // The group was deleted since: stop rather than scatter rides as loose tracks.
         if (db.gpxDao().getGroupById(groupId) == null) { setAutoSaveRides(null, null); return }
-        storeRideAsGpx(ride, groupId)
+        storeRideAsGpx(ride, groupId)?.let { autoSavedGpx[ride.id] = it }
     }
 
     /** Name for a ride end: the closest place, nudged towards real towns when distances are similar. */
@@ -1528,13 +1561,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         storeRideAsGpx(ride, newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId)
     }
 
-    private suspend fun storeRideAsGpx(ride: Ride, group: Long?, called: String? = null) {
+    private suspend fun storeRideAsGpx(ride: Ride, group: Long?, called: String? = null): Long? {
         // Each point keeps when it was ridden, so the GPX lines up with a video of the ride.
         val pts = RideRecorder.parseTrack(ride.track).map { GeoPoint(it.lat, it.lon, it.ele, ride.startMs + (it.secondsFromStart * 1000).toLong()) }
-        if (pts.size < 2) return
+        if (pts.size < 2) return null
         val name = called ?: (ride.title.ifEmpty { str(R.string.ride) } + " · " +
             java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ride.startMs)))
-        repository.saveGpxTrack(
+        return repository.saveGpxTrack(
             GpxTrack(
                 name = name,
                 totalDistanceKm = (ride.distanceMeters / 1000).toFloat(),

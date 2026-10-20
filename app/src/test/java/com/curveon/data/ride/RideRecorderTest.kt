@@ -78,4 +78,55 @@ class RideRecorderTest {
         val done = recorder.finish()!!
         assertTrue("points ${RideRecorder.parseTrack(done.track).size}", RideRecorder.parseTrack(done.track).size > 100)
     }
+
+    private fun standStill(ms: Long, lat: Double) {
+        clock += ms
+        recorder.onFix(GpsFix(lat, 10.0, 100.0, 0f, 0f, 5f, clock), 0f, 0f)
+    }
+
+    @Test
+    fun `a stop of five minutes ends the ride, a shorter one does not`() {
+        val lat = ride(120)
+        standStill(RideRecorder.END_AFTER_STOP_MS - 30_000, lat)
+        assertNotNull(recorder.current)
+        assertEquals(RideRecorder.Event.FINISHED, recorder.onFix(GpsFix(lat, 10.0, 100.0, 0f, 0f, 5f, clock + 31_000).also { clock += 31_000 }, 0f, 0f))
+    }
+
+    @Test
+    fun `riding again after a finished ride offers to go on with it, and going on joins the two`() {
+        val lat = ride(120)
+        standStill(RideRecorder.END_AFTER_STOP_MS + 1000, lat)
+        val first = recorder.finish()!!.copy(id = 7)
+        assertNull(recorder.resumeOffer)
+        clock += 30 * 60_000L
+        ride(30, lat)
+        assertEquals(first.startMs, recorder.resumeOffer!!.startMs)
+        val merged = recorder.resume(first)!!
+        assertEquals(7L, merged.id)
+        assertEquals(first.startMs, merged.startMs)
+        assertTrue(merged.distanceMeters > first.distanceMeters)
+        assertNull(recorder.resumeOffer)
+        ride(10, lat)
+        assertEquals(7L, recorder.current!!.id)
+    }
+
+    @Test
+    fun `a new ride, a hand stop and a long wait are not offered`() {
+        var lat = ride(120)
+        standStill(RideRecorder.END_AFTER_STOP_MS + 1000, lat)
+        recorder.finish()
+        clock += 30 * 60_000L
+        lat = ride(90, lat)
+        recorder.declineResume()
+        assertNull(recorder.resumeOffer)
+        assertNotNull(recorder.stop())
+        standStill(5_000, lat); standStill(5_000, lat)
+        lat = ride(60, lat)
+        assertNull(recorder.resumeOffer)
+        standStill(RideRecorder.END_AFTER_STOP_MS + 1000, lat)
+        recorder.finish()
+        clock += RideRecorder.RESUME_WINDOW_MS + 1000
+        ride(30, lat)
+        assertNull(recorder.resumeOffer)
+    }
 }

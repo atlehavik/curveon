@@ -473,6 +473,9 @@
     <string name="rides">Rides</string>
     <string name="rides_recording">● Recording · %1$s</string>
     <string name="rides_this_ride">this ride</string>
+    <string name="ride_resume_title">Continue the ride?</string>
+    <string name="ride_resume_continue">Continue</string>
+    <string name="ride_resume_new">New ride</string>
     <string name="rides_empty">Rides are recorded automatically once you get going.</string>
     <string name="rides_ride_again">Ride again</string>
     <string name="rides_save_to_gpx">Save to GPX</string>
