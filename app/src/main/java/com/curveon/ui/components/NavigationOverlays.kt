@@ -481,6 +481,8 @@ fun RouteMenuDialog(
     onRemoveStop: ((Int) -> Unit)?,
     onAddStop: () -> Unit,
     onSave: () -> Unit,
+    /** Share the trip with the active group (null: no group, or this is not a trip with stops, or it is shared already). */
+    onShare: (() -> Unit)? = null,
     onEnd: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -513,6 +515,7 @@ fun RouteMenuDialog(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black, Modifier.weight(1f).testTag("menu_add_stop"), onAddStop)
                 PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("menu_save"), onSave)
+                if (onShare != null) PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("menu_share"), onShare)
                 PillButton(Icons.Default.Close, stringResource(R.string.nav_end), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("menu_end"), onEnd)
             }
         }

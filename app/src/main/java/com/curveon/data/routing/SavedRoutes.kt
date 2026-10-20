@@ -79,6 +79,11 @@ object SavedRoutes {
         }
     }
 
+    /** The road style, surface and what to avoid, as JSON text (for a trip shared with a group). */
+    fun optionsToJson(o: RouteOptions): String = optionsJson(o).toString()
+
+    fun optionsFromJson(s: String): RouteOptions = runCatching { parseOptions(JSONObject(s)) }.getOrDefault(RouteOptions(RoadStyle.CURVY, SurfacePreference.PAVED))
+
     private fun optionsJson(o: RouteOptions) = JSONObject()
         .put("style", o.roadStyle.name).put("surface", o.surface.name)
         .put("ferries", o.avoidFerries).put("motorways", o.avoidMotorways).put("trunk", o.avoidTrunk).put("toll", o.avoidToll)

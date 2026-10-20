@@ -329,3 +329,14 @@ Operations and law:
 - Avatar: decided, photo or curated emoji/icon or initials. Open: which icons go in the set.
 - Marker clutter beyond ~8 riders: collapse names, show "Ola, 400 m behind".
 - Admins: creator is admin and can promote others. Decide how many admins and how handover works.
+
+### Shared trips (built)
+- A trip shared with the active group is one document (`TripDoc`: destination, stops, route options) that anyone can
+  change. Whoever changes it sends the whole document with a higher revision; the highest revision wins, a tie goes to
+  the larger rider id, so every device ends on the same trip.
+- Stops a rider has passed are kept in the shared document but dropped from that rider's own route, so Kari adding a
+  stop reaches Ola and Jens, and Ola passing one does not remove it for the others.
+- A trip someone else shares is offered once: Ride now, Save in shared, or Ignore (never offered again). Saved trips are
+  under "Shared routes" in the GPX dialog. Only a trip with a destination can be shared (not a track or a loop).
+- Not tested yet: two phones on a real ride. The relay and merge rules are covered by unit and relay tests.
+

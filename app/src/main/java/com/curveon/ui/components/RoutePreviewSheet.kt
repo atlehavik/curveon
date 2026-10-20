@@ -88,6 +88,8 @@ fun RoutePreviewSheet(
     /** Gravel/Offroad: how far off the ordinary route it may go for gravel (null = any distance). */
     onGravelReach: (Int?) -> Unit = {},
     onSave: () -> Unit,
+    /** Share the trip with the active group (null: no group, or this is not a trip with stops). */
+    onShare: (() -> Unit)? = null,
     onGo: () -> Unit,
     onClose: () -> Unit,
     /** Folded down to one line (name, time, GO) so more of the route shows on the map. */
@@ -151,6 +153,7 @@ fun RoutePreviewSheet(
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.EditRoad, stringResource(R.string.preview_track_to_trip), onTrackToTrip)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
+            if (onShare != null && preview.selectedRoute != null) SmallIcon(Icons.Default.Share, stringResource(R.string.share_trip_with_group), onShare)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
             // A trip on the map may be half an hour of planning: ask before throwing it away.
             SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { if (preview.selectedRoute != null) askDiscard = true else onClose() }

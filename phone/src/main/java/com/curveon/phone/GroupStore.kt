@@ -12,6 +12,9 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
+/** The relay Curveon runs, used unless the rider sets another one under Advanced. */
+const val DEFAULT_RELAY_HOST = "relay.curveon.no"
+
 /**
  * What the phone remembers about group rides. The groups (keys and the rider's identity in each) are
  * encrypted with a key in the Android Keystore, which never leaves the device, so a copy of the app's
@@ -41,10 +44,13 @@ class GroupStore(context: Context) {
         get() = prefs.getBoolean(SHARING, true)
         set(v) = prefs.edit().putBoolean(SHARING, v).apply()
 
-    /** Host of the relay new groups are made on. Empty until one is set (invites carry their own). */
-    var relayHost: String
+    /** A relay the rider chose themselves (someone running their own); empty to use [DEFAULT_RELAY_HOST]. */
+    var customRelay: String
         get() = prefs.getString(RELAY, "").orEmpty()
         set(v) = prefs.edit().putString(RELAY, v.trim()).apply()
+
+    /** Host of the relay new groups are made on: the rider's own if set, else Curveon's (invites carry their own). */
+    val relayHost: String get() = customRelay.ifBlank { DEFAULT_RELAY_HOST }
 
     /** Invites from friends that have been answered (or are out of date): each is shown once, although the relay keeps them for a week. */
     fun isOfferHandled(id: String) = id in handledOffers()

@@ -84,8 +84,6 @@
     <string name="settings_altitude">Høyde</string>
     <string name="settings_altitude_hint">Høyde over havet under farten</string>
     <string name="settings_road_info">Veiinformasjon</string>
-    <string name="settings_high_contrast">Høykontrast</string>
-    <string name="settings_high_contrast_hint">Dagkartet: mørkegrå veier med svart kant, hovedveiene er fortsatt gule</string>
     <string name="stop_reached">Fremme ved</string>
     <string name="speak_stop_reached">Du er framme ved %1$s</string>
     <string name="road_needs_map">Last ned kartet for mer om veien</string>
@@ -106,14 +104,11 @@
     <string name="altitude_m">%1$d moh.</string>
     <string name="altitude_ft">%1$d fot</string>
     <string name="settings_surfaces">Veidekke</string>
-    <string name="settings_surfaces_hint">Grusvei og mykt underlag stiplet på kartet</string>
-    <string name="settings_surfaces_off">Standard</string>
+    <string name="settings_surfaces_hint">Grusvei og mykt underlag på kartet</string>
+    <string name="settings_surfaces_off">Av</string>
+    <string name="surface_mode_dashed">Stiplet</string>
+    <string name="surface_mode_coloured">Farget</string>
     <string name="surface_soft">Jord, ulendt eller ukjent</string>
-    <string name="surface_palette_quiet">Diskret</string>
-    <string name="surface_palette_route">Oransje</string>
-    <string name="surface_palette_yellow">Gul</string>
-    <string name="surface_palette_green">Grønn</string>
-    <string name="settings_surfaces_planning_only">Bare når jeg planlegger tur (ellers diskret)</string>
     <string name="settings_gravel_heat">Varmekart grus</string>
     <string name="settings_gravel_heat_hint">Flammeknappen øverst til venstre viser hvor grusen er; skjult mens du kjører</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
@@ -953,7 +948,8 @@
     <string name="group_scan">Skann QR-kode</string>
     <string name="group_settings">Innstillinger</string>
     <string name="group_relay">Reléadresse</string>
-    <string name="group_relay_hint">Serveren gruppene lages på. Invitasjoner har sin egen, så den trengs bare for å starte en gruppe.</string>
+    <string name="group_relay_hint">Bare hvis du driver en egen reléserver. La feltet stå tomt for å bruke Curveons. Invitasjoner har sin egen adresse.</string>
+    <string name="group_advanced">Avansert</string>
     <string name="group_data_saver">Datasparing</string>
     <string name="group_data_saver_hint">Deler posisjonen hvert 15. sekund i stedet for hvert 5.</string>
     <string name="group_share_link">Del lenke</string>
@@ -1022,4 +1018,19 @@
     <string name="offer_title_unnamed">%1$s inviterer deg til en gruppetur</string>
     <string name="offer_join">Bli med</string>
     <string name="offer_ignore">Ignorer</string>
+    <string name="shared_tab">Delte ruter</string>
+    <string name="shared_trips_none">Ingen delte ruter ennå. Del en tur med gruppen fra rutevisningen eller rutemenyen.</string>
+    <string name="shared_trip_remove">Fjern</string>
+    <string name="shared_trip_from">Fra %1$s</string>
+    <string name="shared_trip_stops">%1$d stopp</string>
+    <string name="shared_trip_offer_title">%1$s delte en rute</string>
+    <string name="shared_trip_offer_hint">Alle i gruppen kan endre den, og endringene følger alle.</string>
+    <string name="shared_trip_save">Lagre i delt</string>
+    <string name="shared_trip_ignore">Ignorer</string>
+    <string name="share_trip_with_group">Del med gruppen</string>
+    <string name="share_trip_short">Del</string>
+    <string name="toast_trip_shared">Ruten er delt med gruppen</string>
+    <string name="toast_trip_not_shared">Bare en rute med et mål kan deles</string>
+    <string name="toast_shared_trip_saved">Lagret under Delte ruter</string>
+    <string name="toast_shared_trip_changed">%1$s endret %2$s</string>
 </resources>

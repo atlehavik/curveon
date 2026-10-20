@@ -85,8 +85,6 @@
     <string name="settings_altitude">Altitude</string>
     <string name="settings_altitude_hint">Height above sea level under the speed</string>
     <string name="settings_road_info">Road info</string>
-    <string name="settings_high_contrast">High contrast</string>
-    <string name="settings_high_contrast_hint">Day map: dark grey roads with black edges, main roads stay yellow</string>
     <string name="stop_reached">Reached</string>
     <string name="speak_stop_reached">You have reached %1$s</string>
     <string name="road_needs_map">Download the map for more about this road</string>
@@ -107,14 +105,11 @@
     <string name="altitude_m">%1$d m a.s.l.</string>
     <string name="altitude_ft">%1$d ft</string>
     <string name="settings_surfaces">Road surfaces</string>
-    <string name="settings_surfaces_hint">Gravel and soft roads drawn dashed on the map</string>
-    <string name="settings_surfaces_off">Standard</string>
+    <string name="settings_surfaces_hint">Gravel and soft roads drawn on the map</string>
+    <string name="settings_surfaces_off">Off</string>
+    <string name="surface_mode_dashed">Dashed</string>
+    <string name="surface_mode_coloured">Coloured</string>
     <string name="surface_soft">Dirt, rough or unknown</string>
-    <string name="surface_palette_quiet">Quiet</string>
-    <string name="surface_palette_route">Orange</string>
-    <string name="surface_palette_yellow">Yellow</string>
-    <string name="surface_palette_green">Green</string>
-    <string name="settings_surfaces_planning_only">Only while planning a trip (quiet otherwise)</string>
     <string name="settings_gravel_heat">Gravel heat map</string>
     <string name="settings_gravel_heat_hint">The flame button top left shows where the gravel is; hidden while riding</string>
     <string name="settings_auto_zoom">Auto-zoom</string>
@@ -955,7 +950,8 @@
     <string name="group_scan">Scan a QR code</string>
     <string name="group_settings">Settings</string>
     <string name="group_relay">Relay address</string>
-    <string name="group_relay_hint">The server your groups are made on. Invites carry their own, so it is only needed to start a group.</string>
+    <string name="group_relay_hint">Only if you run a relay server of your own. Leave it empty to use the standard one. Invites carry their own address.</string>
+    <string name="group_advanced">Advanced</string>
     <string name="group_data_saver">Data saver</string>
     <string name="group_data_saver_hint">Shares your position every 15 seconds instead of every 5.</string>
     <string name="group_share_link">Share link</string>
@@ -1024,4 +1020,19 @@
     <string name="offer_title_unnamed">%1$s invites you to a group ride</string>
     <string name="offer_join">Join</string>
     <string name="offer_ignore">Ignore</string>
+    <string name="shared_tab">Shared routes</string>
+    <string name="shared_trips_none">No shared routes yet. Share a trip with your group from the route preview or the route menu.</string>
+    <string name="shared_trip_remove">Remove</string>
+    <string name="shared_trip_from">From %1$s</string>
+    <string name="shared_trip_stops">%1$d stops</string>
+    <string name="shared_trip_offer_title">%1$s shared a route</string>
+    <string name="shared_trip_offer_hint">Anyone in the group can change it, and the changes follow everyone.</string>
+    <string name="shared_trip_save">Save in shared</string>
+    <string name="shared_trip_ignore">Ignore</string>
+    <string name="share_trip_with_group">Share with the group</string>
+    <string name="share_trip_short">Share</string>
+    <string name="toast_trip_shared">Route shared with the group</string>
+    <string name="toast_trip_not_shared">Only a route with a destination can be shared</string>
+    <string name="toast_shared_trip_saved">Saved under Shared routes</string>
+    <string name="toast_shared_trip_changed">%1$s changed %2$s</string>
 </resources>

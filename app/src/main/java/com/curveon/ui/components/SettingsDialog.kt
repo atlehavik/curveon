@@ -52,7 +52,6 @@ data class SettingsState(
     val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
-    val highContrast: Boolean = false,
     val mapDetail: MapDetail = MapDetail.RESPONSE,
     val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
@@ -65,9 +64,7 @@ data class SettingsState(
     val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
     val arrowLead: Double = com.curveon.data.location.RiderMotion.DEFAULT_LEAD_S,
-    val showSurfaces: Boolean,
-    val surfacePalette: SurfacePalette = SurfacePalette.QUIET,
-    val surfacePaletteWhilePlanning: Boolean = false,
+    val surfaceMode: SurfaceMode = SurfaceMode.DASHED,
     /** Whether the map is drawn dark now, so the dash colours are shown as they look on it. */
     val mapDark: Boolean = true,
     val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,
@@ -102,7 +99,6 @@ class SettingsActions(
     val onLanguage: (AppLanguage) -> Unit,
     val onUnits: (Boolean) -> Unit,
     val onMapTheme: (MapTheme) -> Unit,
-    val onHighContrast: (Boolean) -> Unit = {},
     val onMapDetail: (MapDetail) -> Unit = {},
     val onScreenLock: (com.curveon.ScreenLock) -> Unit,
     val onObd: (Boolean) -> Unit,
@@ -111,9 +107,7 @@ class SettingsActions(
     val onFuelSetup: () -> Unit = {},
     val onAutoZoom: (Boolean) -> Unit,
     val onArrowLead: (Double) -> Unit = {},
-    val onShowSurfaces: (Boolean) -> Unit,
-    val onSurfacePalette: (SurfacePalette) -> Unit = {},
-    val onSurfacePaletteWhilePlanning: (Boolean) -> Unit = {},
+    val onSurfaceMode: (SurfaceMode) -> Unit = {},
     val onGravelHeatButton: (GravelHeatButton) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
     val onSpeedSign: (com.curveon.ui.viewmodel.SpeedSignSize) -> Unit = {},
@@ -193,20 +187,13 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_map), stringResource(R.string.settings_map_hint)) {
                             Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
                         }
-                        Setting(stringResource(R.string.settings_high_contrast), stringResource(R.string.settings_high_contrast_hint)) {
-                            CockpitSwitch(state.highContrast, actions.onHighContrast)
-                        }
                         Setting(stringResource(R.string.settings_map_detail), stringResource(R.string.settings_map_detail_hint)) {
                             Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)
                         }
                         Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = {
-                            if (state.showSurfaces) SurfaceColours(state.surfacePalette, state.mapDark, state.surfacePaletteWhilePlanning, actions.onSurfacePaletteWhilePlanning)
+                            if (state.surfaceMode != SurfaceMode.OFF) SurfaceColours(state.surfaceMode, state.mapDark)
                         }) {
-                            // Standard (no dashes) or one of the dash colours, each shown as drawn.
-                            Choice(listOf<SurfacePalette?>(null) + SurfacePalette.entries, state.surfacePalette.takeIf { state.showSurfaces },
-                                { stringResource(it?.label ?: R.string.settings_surfaces_off) },
-                                { p -> actions.onShowSurfaces(p != null); if (p != null) actions.onSurfacePalette(p) },
-                                icon = { PaletteSample(it, state.mapDark) })
+                            Choice(SurfaceMode.entries, state.surfaceMode, { stringResource(it.label) }, actions.onSurfaceMode)
                         }
                         Setting(stringResource(R.string.settings_gravel_heat), stringResource(R.string.settings_gravel_heat_hint)) {
                             CockpitSwitch(state.gravelHeatButton == GravelHeatButton.MAP, onCheckedChange = {
@@ -677,32 +664,15 @@ private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
     }
 }
 
-/**
- * The key under the dash colours chosen above: gravel and soft ground as drawn on the map in use,
- * and whether the colours are only for planning.
- */
+/** The key under the choice above: gravel and soft ground as drawn on the map in use. */
 @Composable
-private fun SurfaceColours(palette: SurfacePalette, dark: Boolean, whilePlanning: Boolean, onWhilePlanning: (Boolean) -> Unit) {
+private fun SurfaceColours(mode: SurfaceMode, dark: Boolean) {
     Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        DashSample(palette.gravel(dark))
+        DashSample(mode.gravel(dark))
         Text(stringResource(R.string.surface_gravel), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, end = 16.dp))
-        DashSample(palette.soft(dark))
+        DashSample(mode.soft(dark))
         Text(stringResource(R.string.surface_soft), color = TextMuted, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 6.dp))
     }
-    if (palette != SurfacePalette.QUIET) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(R.string.settings_surfaces_planning_only), color = TextSecondary, fontSize = 14.sp, modifier = Modifier.weight(1f, fill = false).padding(end = 12.dp))
-        CockpitSwitch(whilePlanning, onWhilePlanning)
-    }
-}
-
-/** A dash colour set in the Veidekke list: gravel then soft ground, as drawn on the map in use; blank for Standard, to line up. */
-@Composable
-private fun PaletteSample(p: SurfacePalette?, dark: Boolean) {
-    if (p == null) { Spacer(Modifier.width(32.dp)); return }
-    DashSample(p.gravel(dark), width = 10.dp)
-    Spacer(Modifier.width(4.dp))
-    DashSample(p.soft(dark), width = 10.dp)
-    Spacer(Modifier.width(8.dp))
 }
 
 @Composable

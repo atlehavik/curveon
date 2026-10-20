@@ -82,6 +82,7 @@ dependencies {
   implementation(project(":routing"))
   implementation(project(":protocol"))
   implementation(project(":phone"))
+  implementation(project(":groups"))
   implementation(project(":pmtiles"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)

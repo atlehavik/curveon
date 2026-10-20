@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-20 — Gravel and rough ground on the map (not released, in 1.2.2)
+
+Installed on the X7, but no gravel showed near the desk, so the new look hasn't been seen yet.
+
+- [ ] Ride or pan to a gravel road (zoom 11 or closer) in Settings → Display → Road surfaces = Dashed: the road itself should look dashed, same colour and no thicker than the neighbouring roads, brown for rough ground. Check the gaps don't show a pale line over forest.
+- [ ] Same with Coloured: orange gravel, purple rough ground, as the route. Also on the night map.
+- [ ] Day map is high contrast without the old switch; small roads stay dark grey.
+
 ## 2026-10-19 — Group rides (not released, no version bump yet)
 
 Tried 2026-10-19 on the X7 (as its own phone, over a relay on this PC with simulated riders): joining by link,

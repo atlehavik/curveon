@@ -214,7 +214,7 @@ object GroupHub {
                 send(Message.GroupDeviceLink(m.groupId, deviceLink(m.groupId) ?: return))
             }
             is Message.GroupSettings -> {
-                store.relayHost = m.relayHost
+                store.customRelay = m.relayHost
                 store.dataSaver = m.dataSaver
                 sharer.dataSaver = m.dataSaver
                 send(settingsMessage())
@@ -538,7 +538,7 @@ object GroupHub {
     /** The rider's own name, colour and picture (what is set also when there is no group). */
     private fun profileMessage() = store?.profile ?: Message.GroupProfile("Rider", 0xFF00E5FF.toInt(), null, null)
 
-    private fun settingsMessage() = Message.GroupSettings(store?.relayHost.orEmpty(), store?.dataSaver ?: false)
+    private fun settingsMessage() = Message.GroupSettings(store?.customRelay.orEmpty(), store?.dataSaver ?: false)
 
     private fun snapshot(): List<Message> = buildList {
         add(settingsMessage())

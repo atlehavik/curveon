@@ -325,7 +325,7 @@ sealed interface Message {
     }
 
     /**
-     * What the phone side is set up with: the relay new groups are made on ([relayHost], empty until set) and whether
+     * What the phone side is set up with: a relay of the rider's own ([relayHost], empty to use the standard one) and whether
      * to share the position less often ([dataSaver]). The tablet sends it to change them, and the phone sends it back
      * (also when the tablet connects), so the screen shows what is really set. An invite carries its own relay.
      */
@@ -504,7 +504,7 @@ sealed interface Message {
         override fun toJson() = obj("group_error").put("code", code.name)
     }
 
-    /** [NO_RELAY]: no relay address is set on the phone, so a group cannot be made yet. */
+    /** [NO_RELAY]: no relay address to make a group on (not seen unless the standard one is blanked out). */
     enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER, NO_RELAY }
 
     companion object {

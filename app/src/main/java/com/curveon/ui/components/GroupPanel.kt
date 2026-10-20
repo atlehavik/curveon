@@ -433,7 +433,7 @@ private fun AddFriendsSection(manager: GroupManager, groupId: String) {
     }
 }
 
-/** Relay address and data saver, saved a moment after the last keystroke. Invites carry their own relay, so it is only needed to start a group. */
+/** Data saver, and under Advanced a relay of one's own (empty: Curveon's), saved a moment after the last keystroke. */
 @Composable
 internal fun GroupSettingsSection(settings: Message.GroupSettings, onChange: (String, Boolean) -> Unit) {
     var relay by remember(settings.relayHost) { mutableStateOf(settings.relayHost) }
@@ -443,18 +443,25 @@ internal fun GroupSettingsSection(settings: Message.GroupSettings, onChange: (St
         if (relay.trim() != current.relayHost) onChange(relay.trim(), current.dataSaver)
     }
     FriendsSectionLabel(stringResource(R.string.group_settings))
-    OutlinedTextField(
-        relay, { relay = it.take(100) }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("group_relay"),
-        label = { Text(stringResource(R.string.group_relay)) },
-        keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri)
-    )
-    Text(stringResource(R.string.group_relay_hint), color = TextMuted, fontSize = 12.sp)
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.group_data_saver), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
             Text(stringResource(R.string.group_data_saver_hint), color = TextMuted, fontSize = 12.sp)
         }
         CockpitSwitch(settings.dataSaver, { onChange(relay.trim(), it) })
+    }
+    var advanced by rememberSaveable { mutableStateOf(settings.relayHost.isNotBlank()) }
+    TextButton({ advanced = !advanced }, Modifier.testTag("group_advanced")) {
+        Text(stringResource(R.string.group_advanced), color = ElectricCyan)
+    }
+    if (advanced) {
+        OutlinedTextField(
+            relay, { relay = it.take(100) }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("group_relay"),
+            label = { Text(stringResource(R.string.group_relay)) },
+            placeholder = { Text(com.curveon.phone.DEFAULT_RELAY_HOST, color = TextMuted) },
+            keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri)
+        )
+        Text(stringResource(R.string.group_relay_hint), color = TextMuted, fontSize = 12.sp)
     }
 }
 

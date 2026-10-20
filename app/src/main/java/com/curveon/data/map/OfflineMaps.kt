@@ -33,10 +33,10 @@ class OfflineMaps(private val context: Context) {
      * map gets its own source and a copy of each layer right after the first map's, so water, roads
      * and labels still stack in the right order where countries meet. Under them all go the online
      * layers (OpenFreeMap, see tools/map/gen-online-style.py), which the map shows only where no
-     * downloaded map covers the view ([covers]). [highContrast] (day map only) draws the white roads
+     * downloaded map covers the view ([covers]). The day map draws the white roads
      * dark grey with no edge and the main roads' edge black, main roads staying yellow.
      */
-    fun styleJson(flavor: String, highContrast: Boolean = false): String {
+    fun styleJson(flavor: String): String {
         val maps = installedMaps()
         val style = JSONObject(asset("map/styles/$flavor.json"))
         val online = JSONObject(asset("map/styles/online-$flavor.json"))
@@ -77,7 +77,7 @@ class OfflineMaps(private val context: Context) {
         }
         for (k in 0 until names.length()) rest.put(names.getJSONObject(k))
         out = rest
-        if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
+        if (flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
         style.put("layers", out)
         return style.toString()
     }
@@ -218,9 +218,9 @@ class OfflineMaps(private val context: Context) {
         private const val HC_PATH = "#a0a0a0"
         private const val HC_EDGE = 1.5
         /** The day map's land colour: place names sit on a halo of it, so they blend in instead of standing out white. */
-        private const val LAND_LIGHT = "#e2dfda"
+        const val LAND_LIGHT = "#e2dfda"
         /** The night map's land colour (the dark styles' earth and background). */
-        private const val LAND_DARK = "#1f1f1f"
+        const val LAND_DARK = "#1f1f1f"
         private const val ROAD_NAME_HALO = 2.0
         /** The width of the halo round place names (px). */
         private const val PLACE_HALO = 3.0

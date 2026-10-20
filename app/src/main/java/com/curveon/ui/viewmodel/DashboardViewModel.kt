@@ -104,6 +104,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val phoneCompanion = PhoneCompanionManager(application, viewModelScope)
     private val offlineMaps = OfflineMaps(application)
     private val navigator = Navigator(application, viewModelScope)
+
+    /** Trips shared with the rider's group: kept in step with the others', and shown under "Shared routes". */
+    val sharedTrips = com.curveon.data.groups.SharedTripsController(application, viewModelScope, navigator, phoneCompanion.groups)
     private val placeSearch = PlaceSearch(application)
     private val hazards by lazy { RouteHazards(placeSearch, speedLimits) }
     private val recentDestinations = RecentDestinations(application)
@@ -339,18 +342,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val autoZoom: StateFlow<Boolean> = _autoZoom.asStateFlow()
     fun setAutoZoom(on: Boolean) { _autoZoom.value = on; settings.edit().putBoolean("autoZoom", on).apply() }
 
-    /** Gravel and soft roads dashed on the map. */
-    private val _showSurfaces = MutableStateFlow(settings.getBoolean("showSurfaces", true))
-    val showSurfaces: StateFlow<Boolean> = _showSurfaces.asStateFlow()
-    fun setShowSurfaces(on: Boolean) { _showSurfaces.value = on; settings.edit().putBoolean("showSurfaces", on).apply() }
-    /** The dashes' colours, and whether they only take them while planning (quiet otherwise). */
-    private val _surfacePalette = MutableStateFlow(runCatching { com.curveon.ui.components.SurfacePalette.valueOf(settings.getString("surfacePalette", null)!!) }
-        .getOrDefault(com.curveon.ui.components.SurfacePalette.QUIET))
-    val surfacePalette: StateFlow<com.curveon.ui.components.SurfacePalette> = _surfacePalette.asStateFlow()
-    fun setSurfacePalette(p: com.curveon.ui.components.SurfacePalette) { _surfacePalette.value = p; settings.edit().putString("surfacePalette", p.name).apply() }
-    private val _surfacePaletteWhilePlanning = MutableStateFlow(settings.getBoolean("surfacePaletteWhilePlanning", false))
-    val surfacePaletteWhilePlanning: StateFlow<Boolean> = _surfacePaletteWhilePlanning.asStateFlow()
-    fun setSurfacePaletteWhilePlanning(on: Boolean) { _surfacePaletteWhilePlanning.value = on; settings.edit().putBoolean("surfacePaletteWhilePlanning", on).apply() }
+    /** Gravel and soft roads on the map: not shown, dashed like the road, or coloured like the route. */
+    private val _surfaceMode = MutableStateFlow(
+        runCatching { com.curveon.ui.components.SurfaceMode.valueOf(settings.getString("surfaceMode", null)!!) }.getOrNull()
+            ?: if (settings.getBoolean("showSurfaces", true)) com.curveon.ui.components.SurfaceMode.DASHED else com.curveon.ui.components.SurfaceMode.OFF)
+    val surfaceMode: StateFlow<com.curveon.ui.components.SurfaceMode> = _surfaceMode.asStateFlow()
+    fun setSurfaceMode(m: com.curveon.ui.components.SurfaceMode) { _surfaceMode.value = m; settings.edit().putString("surfaceMode", m.name).apply() }
     /** The gravel heat map while planning (its button on the map). */
     private val _showGravelHeat = MutableStateFlow(settings.getBoolean("gravelHeat", false))
     val showGravelHeat: StateFlow<Boolean> = _showGravelHeat.asStateFlow()
@@ -1010,10 +1007,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _mapTheme = MutableStateFlow(MapTheme.valueOf(settings.getString("mapTheme", MapTheme.AUTO.name)!!))
     val mapTheme: StateFlow<MapTheme> = _mapTheme.asStateFlow()
-
-    private val _highContrast = MutableStateFlow(settings.getBoolean("highContrast", false))
-    val highContrast: StateFlow<Boolean> = _highContrast.asStateFlow()
-    fun setHighContrast(on: Boolean) { _highContrast.value = on; settings.edit().putBoolean("highContrast", on).apply() }
 
     private val _roadCardSize = MutableStateFlow(RoadCardSize.entries.firstOrNull { it.name == settings.getString("roadCardSize", null) } ?: RoadCardSize.NORMAL)
     val roadCardSize: StateFlow<RoadCardSize> = _roadCardSize.asStateFlow()

@@ -107,7 +107,9 @@ sealed interface NavigationGoal {
         /** A loop made into this trip once found (its stops are points along it): Shuffle plans another. */
         val loop: Roundtrip? = null,
         /** An adventure made into this trip once found (its stops are points along it): Shuffle plans another. */
-        val adventure: Adventure? = null
+        val adventure: Adventure? = null,
+        /** The id of the trip shared with a group that this is: changes to its stops are sent to the group, and the group's are ridden here. */
+        val shared: String? = null
     ) : NavigationGoal {
         override val title get() = name
     }
@@ -917,6 +919,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val passed = current.stopsAlong.filter { it.second < progress.distanceAlongRoute - 50 }
         if (passed.isNotEmpty()) {
             val g = current.goal as? NavigationGoal.Destination
+            // A shared trip is told first, so passing a stop is not mistaken for the rider removing it.
+            if (g?.shared != null) onStopsPassed?.invoke(g, passed.map { it.first })
             current = current.copy(
                 goal = g?.copy(stops = g.stops - passed.map { it.first }.toSet()) ?: current.goal,
                 stopsAlong = current.stopsAlong - passed.toSet()
@@ -1128,6 +1132,49 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val s = offRouteSettings
         val slack = maxOf(OffRoutePlanner.ALWAYS_QUICK_S, minOf(s.maxExtraMinutes * 60.0, s.maxExtraPercent / 100.0 * free.durationSeconds))
         return if (ahead.durationSeconds - free.durationSeconds <= slack) ahead else free
+    }
+
+    /** The trip in the preview or being ridden is now the shared trip [tripId]: its changes go to the group, and the group's come here. */
+    fun tagShared(tripId: String) {
+        val s = _state.value
+        val g = s.goal as? NavigationGoal.Destination
+        if (g != null) { _state.value = s.copy(goal = g.copy(shared = tripId)); return }
+        val p = s.preview ?: return
+        val pg = p.goal as? NavigationGoal.Destination ?: return
+        _state.value = s.copy(preview = p.copy(goal = pg.copy(shared = tripId)))
+    }
+
+    /** Called when stops of a shared trip are ridden past (and so dropped from this rider's own route). */
+    var onStopsPassed: ((NavigationGoal.Destination, List<Stop>) -> Unit)? = null
+
+    /**
+     * A shared trip was changed by someone else: this rider's trip gets its new destination and stops (those they have not
+     * passed), re-planned from here while riding, or shown in the preview. Does nothing if this is not that trip.
+     */
+    fun adoptSharedTrip(change: NavigationGoal.Destination) {
+        val s = _state.value
+        val previewGoal = s.preview?.goal as? NavigationGoal.Destination
+        if (previewGoal != null && previewGoal.shared == change.shared) {
+            return editPreview { g -> g.copy(destination = change.destination, stops = change.stops) }
+        }
+        val g = s.goal as? NavigationGoal.Destination ?: return
+        if (g.shared != change.shared) return
+        val pos = lastPosition ?: return
+        val updated = g.copy(destination = change.destination, stops = change.stops, fixedLine = null)
+        calcJob?.cancel()
+        _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))
+        calcJob = scope.launch {
+            try {
+                val r = withContext(Dispatchers.Default) {
+                    routeFromHere(pos, updated.stops.map { it.point } + updated.destination, updated.options)
+                }
+                activate(updated, r)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e))))
+            }
+        }
     }
 
     /** Drop a stop while riding an A→B trip and re-plan from here. */
