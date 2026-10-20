@@ -982,7 +982,7 @@
     <string name="group_error_expired_invite">Invitasjonen har gått ut. Be om en ny.</string>
     <string name="group_error_not_admin">Bare administratoren kan fjerne ryttere.</string>
     <string name="group_error_already_member">Du er allerede med i den gruppa.</string>
-    <string name="group_error_no_relay">Legg inn en reléadresse under Gruppetur først.</string>
+    <string name="group_error_no_relay">Legg inn en reléadresse under Venner, Meg først.</string>
     <string name="group_error_other">Noe gikk galt med gruppa.</string>
     <string name="sos_hold">Hold inne for SOS</string>
     <string name="sos_hold_hint">Hold i 3 sekunder. Varsler alle i gruppa med posisjonen din. Dette er ikke en nødtjeneste: ring 112 selv om du trenger det.</string>
@@ -998,4 +998,28 @@
     <string name="sos_alert_title">%1$s trenger hjelp</string>
     <string name="sos_away_m">%1$d m unna</string>
     <string name="sos_away_km">%1$.1f km unna</string>
+    <!-- Friends -->
+    <string name="friends_title">Venner</string>
+    <string name="friends_tab_me">Meg</string>
+    <string name="friends_tab_friends">Mine venner</string>
+    <string name="friends_tab_group">Gruppetur</string>
+    <string name="friends_no_phone">Ingen telefon er koblet til, så profilen din kan ikke settes.</string>
+    <string name="friends_hint">Venner er folk du har møtt her. Vis koden din til en venn, eller skann deres. Da kan dere invitere hverandre til gruppeturer.</string>
+    <string name="friends_my_code">Vis koden min</string>
+    <string name="friends_code_hint">Vennen din skanner denne for å bli vennen din. Den gjelder én venn: vis en ny kode til neste. En venn som ikke er her? Bruk Del lenke.</string>
+    <string name="friends_share_text">Bli vennen min i Curveon: %1$s</string>
+    <string name="friends_list">Venner</string>
+    <string name="friends_none">Ingen venner ennå.</string>
+    <string name="friends_remove">Fjern</string>
+    <string name="friends_remove_title">Fjerne %1$s som venn?</string>
+    <string name="friends_remove_text">Dere kan ikke lenger invitere hverandre til turer, før en av dere viser en ny kode.</string>
+    <string name="friends_new_friend">%1$s er nå vennen din</string>
+    <string name="group_add_friends">Legg til venner i gruppa</string>
+    <string name="group_add_friends_none">Du har ingen venner å legge til ennå. Legg til noen under Mine venner.</string>
+    <string name="group_add_friends_send">Send invitasjon</string>
+    <string name="group_add_friends_sent">Invitasjon sendt</string>
+    <string name="offer_title">%1$s inviterer deg til %2$s</string>
+    <string name="offer_title_unnamed">%1$s inviterer deg til en gruppetur</string>
+    <string name="offer_join">Bli med</string>
+    <string name="offer_ignore">Ignorer</string>
 </resources>

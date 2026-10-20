@@ -15,8 +15,16 @@
     <string name="battery_nav_maps">Google Maps</string>
     <string name="battery_nav_curveon">Curveon</string>
     <string name="group_ride">Gruppetur</string>
-    <string name="group_status_none">Ingen aktiv gruppe. Start en i Curveon-appen, eller skann QR-koden til en invitasjon her.</string>
+    <string name="group_status_none">Ingen aktiv gruppe. Start en i Curveon-appen.</string>
     <string name="group_scan">Skann QR-kode</string>
+    <string name="friends_title">Venner</string>
+    <string name="friends_hint">Vis koden din til en venn, eller skann deres. Alt annet om venner og grupper gjør du i Curveon-appen.</string>
+    <string name="friends_my_code">Vis koden min</string>
+    <string name="friends_share_link">Del lenke</string>
+    <string name="friends_share_text">Bli vennen min i Curveon: %1$s</string>
+    <string name="friends_code_hint">Vennen din skanner denne for å bli vennen din. Den gjelder én venn: vis en ny kode til neste.</string>
+    <string name="friends_close">Lukk</string>
+    <string name="group_error_no_relay">Legg inn en reléadresse i Curveon-appen først (Venner, Meg).</string>
     <string name="group_unnamed">Gruppe</string>
     <string name="group_status_line">%1$s · %2$d ryttere · %3$s</string>
     <string name="group_connected">tilkoblet</string>

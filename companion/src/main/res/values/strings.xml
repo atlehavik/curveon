@@ -15,8 +15,16 @@
     <string name="battery_nav_maps">Google Maps</string>
     <string name="battery_nav_curveon">Curveon</string>
     <string name="group_ride">Group ride</string>
-    <string name="group_status_none">No active group. Start one in the Curveon app, or scan an invite\'s QR code here.</string>
+    <string name="group_status_none">No active group. Start one in the Curveon app.</string>
     <string name="group_scan">Scan a QR code</string>
+    <string name="friends_title">Friends</string>
+    <string name="friends_hint">Show your code to a friend, or scan theirs. Everything else about friends and groups is in the Curveon app.</string>
+    <string name="friends_my_code">Show my code</string>
+    <string name="friends_share_link">Share link</string>
+    <string name="friends_share_text">Be my friend in Curveon: %1$s</string>
+    <string name="friends_code_hint">Your friend scans this to become your friend. It is for one friend: show a new code for the next.</string>
+    <string name="friends_close">Close</string>
+    <string name="group_error_no_relay">Set a relay address in the Curveon app first (Friends, Me).</string>
     <string name="group_unnamed">Group</string>
     <string name="group_status_line">%1$s · %2$d riders · %3$s</string>
     <string name="group_connected">connected</string>

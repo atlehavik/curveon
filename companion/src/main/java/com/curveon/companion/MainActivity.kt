@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -110,6 +111,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            FriendsCard()
+
             GroupCard()
 
             BatteryTestCard(notificationAccess)
@@ -138,19 +141,68 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * The active group, and a way to join by scanning a QR code: the Curveon app may be on a tablet whose camera is
-     * not at hand, and the phone's is. Everything else about groups is set up in the Curveon app itself.
+     * Friends: show your code (or send it as a link) and scan a friend's: the Curveon app may be on a tablet whose camera is
+     * not at hand, and the phone's is. The friends themselves, groups and the rest are in the Curveon app.
      */
+    @Composable
+    private fun FriendsCard() {
+        var code by remember { mutableStateOf<String?>(null) }
+        var scanning by remember { mutableStateOf(false) }
+        Card(stringResource(R.string.friends_title)) {
+            Text(stringResource(R.string.friends_hint), color = Muted, fontSize = 13.sp)
+            OutlinedButton(onClick = {
+                GroupHub.start(applicationContext)
+                GroupHub.createFriendInvite { link -> code = link }
+            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.friends_my_code)) }
+            OutlinedButton(onClick = {
+                GroupHub.start(applicationContext)
+                GroupHub.createFriendInvite { link ->
+                    link?.let {
+                        startActivity(Intent.createChooser(
+                            Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, getString(R.string.friends_share_text, it)), null
+                        ))
+                    }
+                }
+            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.friends_share_link)) }
+            if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.group_scan))
+            }
+        }
+        code?.let { link ->
+            val bitmap = remember(link) { QrCode.bitmap(link) }
+            AlertDialog(
+                onDismissRequest = { code = null },
+                confirmButton = { TextButton(onClick = { code = null }) { Text(stringResource(R.string.friends_close)) } },
+                title = { Text(stringResource(R.string.friends_my_code)) },
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        bitmap?.let { androidx.compose.foundation.Image(it.asImageBitmap(), null, modifier = Modifier.size(240.dp).clip(RoundedCornerShape(12.dp))) }
+                        Text(stringResource(R.string.friends_code_hint), fontSize = 13.sp)
+                    }
+                }
+            )
+        }
+        if (scanning) com.curveon.qrscan.QrScanDialog(
+            onInvite = { link ->
+                scanning = false
+                GroupHub.start(applicationContext)
+                GroupHub.handle(com.curveon.protocol.Message.GroupJoin(link))
+            },
+            onDismiss = { scanning = false }
+        )
+    }
+
+    /** The active group and how it is doing; groups are started and managed in the Curveon app. */
     @Composable
     private fun GroupCard() {
         val summary by GroupHub.summary.collectAsStateWithLifecycle()
-        var scanning by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) {
             GroupHub.errors.collect { code ->
                 val text = when (code) {
                     com.curveon.protocol.Message.GroupErrorCode.INVALID_INVITE -> R.string.group_error_invalid_invite
                     com.curveon.protocol.Message.GroupErrorCode.EXPIRED_INVITE -> R.string.group_error_expired_invite
                     com.curveon.protocol.Message.GroupErrorCode.ALREADY_MEMBER -> R.string.group_error_already_member
+                    com.curveon.protocol.Message.GroupErrorCode.NO_RELAY -> R.string.group_error_no_relay
                     else -> R.string.group_error_other
                 }
                 android.widget.Toast.makeText(this@MainActivity, text, android.widget.Toast.LENGTH_LONG).show()
@@ -172,18 +224,7 @@ class MainActivity : ComponentActivity() {
                     fontSize = 14.sp, fontWeight = FontWeight.Bold
                 )
             }
-            if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.group_scan))
-            }
         }
-        if (scanning) com.curveon.qrscan.QrScanDialog(
-            onInvite = { link ->
-                scanning = false
-                GroupHub.start(applicationContext)
-                GroupHub.handle(com.curveon.protocol.Message.GroupJoin(link))
-            },
-            onDismiss = { scanning = false }
-        )
     }
 
     /** Start/stop the battery test, and mAh per hour for each app that navigated. */

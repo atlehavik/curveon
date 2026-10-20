@@ -72,20 +72,12 @@ private val GroupColours = listOf(0xFF00E5FF, 0xFFFF5252, 0xFF69F0AE, 0xFFFFD740
 private const val SOS_HOLD_MS = 3_000
 private const val SOS_COUNTDOWN_S = 10
 
-/** The group ride dialog, opened from the map button. */
+/**
+ * The Group ride tab: start or pick a group, see who is there, add friends or invite by code or link, pause, SOS, leave.
+ * (Your own name and picture, and the settings, are on the Me tab; friends are on the Friends tab.)
+ */
 @Composable
-fun GroupDialog(manager: GroupManager, onDismiss: () -> Unit) {
-    val groups by manager.groups.collectAsStateWithLifecycle()
-    val active = groups.firstOrNull { it.id == manager.activeId.value }
-    CockpitDialog(
-        title = active?.name ?: stringResource(R.string.group_title), icon = Icons.Default.Groups, accent = ElectricCyan,
-        onDismiss = onDismiss, tag = "group_dialog"
-    ) { GroupContent(manager, Modifier.fillMaxSize()) }
-}
-
-/** What there is to do about group rides: start or pick a group, see who is there, invite, pause, SOS. Also Settings → Group ride. */
-@Composable
-fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
+fun GroupTab(manager: GroupManager, modifier: Modifier = Modifier) {
     val groups by manager.groups.collectAsStateWithLifecycle()
     val activeId by manager.activeId.collectAsStateWithLifecycle()
     val sharing by manager.sharing.collectAsStateWithLifecycle()
@@ -108,12 +100,6 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
     var countdown by remember { mutableStateOf<Int?>(null) }
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) { manager.requestGroups() }
-    LaunchedEffect(Unit) {
-        manager.errors.collect { code ->
-            android.widget.Toast.makeText(context, context.getString(groupErrorText(code)), android.widget.Toast.LENGTH_LONG).show()
-        }
-    }
     // A countdown to sending the SOS, with a way out.
     LaunchedEffect(countdown != null) {
         while (true) {
@@ -124,7 +110,6 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
         }
     }
 
-    val settings by manager.settings.collectAsStateWithLifecycle()
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         sos.values.firstOrNull { it.mine }?.let { MySosCard(it, manager) }
         // Joining a friend's group, or making this device the same rider as my other one, from the QR code on the other screen.
@@ -148,7 +133,7 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
         }
 
         if (groups.size > 1 || (groups.isNotEmpty() && active == null)) {
-            SectionLabel(stringResource(R.string.group_switch))
+            FriendsSectionLabel(stringResource(R.string.group_switch))
             groups.forEach { g ->
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
@@ -196,11 +181,11 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
                 CockpitSwitch(sharing, { manager.setSharing(it) })
             }
 
-            SectionLabel(stringResource(R.string.group_riders))
+            FriendsSectionLabel(stringResource(R.string.group_riders))
             members.values.sortedBy { if (it.id == myId) 0 else 1 }.forEach { r ->
                 RiderRow(r, r.id == myId, positions[r.id], onRemove = if (active.admin && r.id != myId) ({ confirmRemove = r }) else null)
             }
-            members[myId]?.let { me -> ProfileEditor(me) { n, c, i, photo -> manager.setProfile(n, c, i, photo) } }
+            if (status != Message.GroupStatus.REMOVED) AddFriendsSection(manager, active.id)
 
             if (status != Message.GroupStatus.REMOVED) {
                 OutlinedButton(onClick = {
@@ -230,10 +215,6 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
                 Text(stringResource(R.string.group_leave), color = WarningRed, fontWeight = FontWeight.Bold)
             }
         }
-
-        // Set up here, in the app: where groups are made (the relay) and how often the position goes out.
-        settings?.let { s -> GroupSettingsSection(s) { relay, saver -> manager.setSettings(relay, saver) } }
-
     }
 
     if (confirmLeave && active != null) AlertDialog(
@@ -257,11 +238,11 @@ fun GroupContent(manager: GroupManager, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+internal fun FriendsSectionLabel(text: String) {
     Text(text.uppercase(), color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
 }
 
-private fun groupErrorText(code: Message.GroupErrorCode) = when (code) {
+internal fun groupErrorText(code: Message.GroupErrorCode) = when (code) {
     Message.GroupErrorCode.INVALID_INVITE -> R.string.group_error_invalid_invite
     Message.GroupErrorCode.EXPIRED_INVITE -> R.string.group_error_expired_invite
     Message.GroupErrorCode.NOT_ADMIN -> R.string.group_error_not_admin
@@ -318,7 +299,7 @@ private fun riderStatus(p: Message.GroupPositionInfo?): String {
  * pictures, cut in a round window, and shown as the others will see it before "Save" tells the phone, which tells the group.
  */
 @Composable
-private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?, String?) -> Unit) {
+internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: (String, Int, String?, String?) -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     // The rider's own picture (base64 JPEG): kept as it is unless a new one is cut or it is removed.
@@ -346,12 +327,12 @@ private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?, String?
     var nick by rememberSaveable(me.nickname) { mutableStateOf(me.nickname) }
     var colour by rememberSaveable(me.colour) { mutableStateOf(me.colour) }
     var icon by rememberSaveable(me.icon) { mutableStateOf(me.icon) }
-    TextButton(onClick = { open = !open }) {
+    if (!alwaysOpen) TextButton(onClick = { open = !open }) {
         Icon(Icons.Default.Edit, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
         Text(stringResource(R.string.group_profile), color = ElectricCyan, fontWeight = FontWeight.Bold)
     }
-    if (open) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    if (open || alwaysOpen) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         OutlinedTextField(nick, { nick = it.take(20) }, singleLine = true, label = { Text(stringResource(R.string.group_nickname)) }, modifier = Modifier.fillMaxWidth())
         // How the others see you: this very marker, as it will be on their map and in their list.
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -405,16 +386,63 @@ private fun ProfileEditor(me: GroupRider, onSave: (String, Int, String?, String?
     }
 }
 
+/** A friend's round picture, icon or initials, as the riders have. */
+@Composable
+internal fun FriendAvatar(f: Message.FriendInfo, size: androidx.compose.ui.unit.Dp) {
+    val photo = remember(f.photoJpegBase64) {
+        f.photoJpegBase64?.let { runCatching { val b = android.util.Base64.decode(it, android.util.Base64.DEFAULT); android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size) }.getOrNull() }
+    }
+    RiderAvatar(GroupRider(f.id, f.nickname, f.colour, f.icon, photo, f.photoJpegBase64), size)
+}
+
+/** Add friends to the group: pick some of them and each gets an invite to answer (through the private channel between you). */
+@Composable
+private fun AddFriendsSection(manager: GroupManager, groupId: String) {
+    val friends by manager.friends.collectAsStateWithLifecycle()
+    var open by rememberSaveable { mutableStateOf(false) }
+    var chosen by remember { mutableStateOf(setOf<String>()) }
+    val context = LocalContext.current
+    OutlinedButton(onClick = { open = !open }, modifier = Modifier.testTag("group_add_friends")) {
+        Icon(Icons.Default.PersonAdd, null, tint = ElectricCyan)
+        Spacer(Modifier.width(8.dp))
+        Text(stringResource(R.string.group_add_friends), color = ElectricCyan, fontWeight = FontWeight.Bold)
+    }
+    if (open) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (friends.isEmpty()) Text(stringResource(R.string.group_add_friends_none), color = TextSecondary, fontSize = 14.sp)
+        else {
+            friends.forEach { f ->
+                Row(
+                    Modifier.fillMaxWidth().clickable { chosen = if (f.id in chosen) chosen - f.id else chosen + f.id }.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FriendAvatar(f, 40.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Text(f.nickname, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Checkbox(f.id in chosen, { chosen = if (it) chosen + f.id else chosen - f.id })
+                }
+            }
+            Button(
+                onClick = {
+                    manager.addFriendsToGroup(groupId, chosen.toList())
+                    android.widget.Toast.makeText(context, context.getString(R.string.group_add_friends_sent), android.widget.Toast.LENGTH_SHORT).show()
+                    chosen = emptySet(); open = false
+                },
+                enabled = chosen.isNotEmpty(), colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan), modifier = Modifier.testTag("group_add_friends_send")
+            ) { Text(stringResource(R.string.group_add_friends_send), color = Color(0xFF00363D), fontWeight = FontWeight.Bold) }
+        }
+    }
+}
+
 /** Relay address and data saver, saved a moment after the last keystroke. Invites carry their own relay, so it is only needed to start a group. */
 @Composable
-private fun GroupSettingsSection(settings: Message.GroupSettings, onChange: (String, Boolean) -> Unit) {
+internal fun GroupSettingsSection(settings: Message.GroupSettings, onChange: (String, Boolean) -> Unit) {
     var relay by remember(settings.relayHost) { mutableStateOf(settings.relayHost) }
     val current by rememberUpdatedState(settings)
     LaunchedEffect(relay) {
         delay(700)
         if (relay.trim() != current.relayHost) onChange(relay.trim(), current.dataSaver)
     }
-    SectionLabel(stringResource(R.string.group_settings))
+    FriendsSectionLabel(stringResource(R.string.group_settings))
     OutlinedTextField(
         relay, { relay = it.take(100) }, singleLine = true, modifier = Modifier.fillMaxWidth().testTag("group_relay"),
         label = { Text(stringResource(R.string.group_relay)) },
@@ -432,7 +460,7 @@ private fun GroupSettingsSection(settings: Message.GroupSettings, onChange: (Str
 
 /** A link as a QR code for a camera, with what to know about it: the invite (anyone with it can join) or the one for my other device. */
 @Composable
-private fun QrBlock(uri: String?, hint: Int, description: Int, shareLink: Boolean = false) {
+internal fun QrBlock(uri: String?, hint: Int, description: Int, shareLink: Boolean = false, shareText: Int = R.string.group_invite_text) {
     val bitmap = remember(uri) { uri?.let { QrCode.bitmap(it) } }
     val context = LocalContext.current
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -446,7 +474,7 @@ private fun QrBlock(uri: String?, hint: Int, description: Int, shareLink: Boolea
         if (shareLink && uri != null) OutlinedButton(onClick = {
             context.startActivity(android.content.Intent.createChooser(
                 android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
-                    .putExtra(android.content.Intent.EXTRA_TEXT, context.getString(R.string.group_invite_text, uri)), null
+                    .putExtra(android.content.Intent.EXTRA_TEXT, context.getString(shareText, uri)), null
             ))
         }, modifier = Modifier.testTag("group_share_link")) {
             Icon(Icons.Default.Share, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))

@@ -984,7 +984,7 @@
     <string name="group_error_expired_invite">That invite has expired. Ask for a new one.</string>
     <string name="group_error_not_admin">Only the group\'s admin can remove riders.</string>
     <string name="group_error_already_member">You are already in that group.</string>
-    <string name="group_error_no_relay">Set a relay address under Group ride first.</string>
+    <string name="group_error_no_relay">Set a relay address under Friends, Me first.</string>
     <string name="group_error_other">Something went wrong with the group.</string>
     <string name="sos_hold">Hold for SOS</string>
     <string name="sos_hold_hint">Hold for 3 seconds. Alerts everyone in the group with your position. This is not an emergency service: call 112 yourself if you need to.</string>
@@ -1000,4 +1000,28 @@
     <string name="sos_alert_title">%1$s needs help</string>
     <string name="sos_away_m">%1$d m away</string>
     <string name="sos_away_km">%1$.1f km away</string>
+    <!-- Friends -->
+    <string name="friends_title">Friends</string>
+    <string name="friends_tab_me">Me</string>
+    <string name="friends_tab_friends">My friends</string>
+    <string name="friends_tab_group">Group ride</string>
+    <string name="friends_no_phone">No phone is linked, so your profile cannot be set.</string>
+    <string name="friends_hint">Friends are people you have met here. Show your code to a friend, or scan theirs. Then you can invite each other to group rides.</string>
+    <string name="friends_my_code">Show my code</string>
+    <string name="friends_code_hint">Your friend scans this to become your friend. It is for one friend: show a new code for the next. A friend who is not here? Use Share link.</string>
+    <string name="friends_share_text">Be my friend in Curveon: %1$s</string>
+    <string name="friends_list">Friends</string>
+    <string name="friends_none">No friends yet.</string>
+    <string name="friends_remove">Remove</string>
+    <string name="friends_remove_title">Remove %1$s as a friend?</string>
+    <string name="friends_remove_text">You can no longer invite each other to rides, until one of you shows a new code.</string>
+    <string name="friends_new_friend">%1$s is now your friend</string>
+    <string name="group_add_friends">Add friends to the group</string>
+    <string name="group_add_friends_none">You have no friends to add yet. Add some under My friends.</string>
+    <string name="group_add_friends_send">Send invitation</string>
+    <string name="group_add_friends_sent">Invitation sent</string>
+    <string name="offer_title">%1$s invites you to %2$s</string>
+    <string name="offer_title_unnamed">%1$s invites you to a group ride</string>
+    <string name="offer_join">Join</string>
+    <string name="offer_ignore">Ignore</string>
 </resources>

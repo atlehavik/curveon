@@ -32,6 +32,21 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     private val _settings = MutableStateFlow<Message.GroupSettings?>(null)
     val settings: StateFlow<Message.GroupSettings?> = _settings.asStateFlow()
 
+    /** The rider's own name, colour and picture, set also with no group (null until the phone has told). */
+    private val _profile = MutableStateFlow<Message.GroupProfile?>(null)
+    val profile: StateFlow<Message.GroupProfile?> = _profile.asStateFlow()
+
+    private val _friends = MutableStateFlow<List<Message.FriendInfo>>(emptyList())
+    val friends: StateFlow<List<Message.FriendInfo>> = _friends.asStateFlow()
+
+    /** The code (a link) a friend can scan or be sent to become a friend; for one friend. */
+    private val _friendInvite = MutableStateFlow<String?>(null)
+    val friendInvite: StateFlow<String?> = _friendInvite.asStateFlow()
+
+    /** Invites to ride groups that friends have sent and the rider has not answered. */
+    private val _offers = MutableStateFlow<List<Message.GroupInviteOffer>>(emptyList())
+    val offers: StateFlow<List<Message.GroupInviteOffer>> = _offers.asStateFlow()
+
     private val _groups = MutableStateFlow<List<Message.GroupInfo>>(emptyList())
     val groups: StateFlow<List<Message.GroupInfo>> = _groups.asStateFlow()
 
@@ -85,6 +100,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun onMessage(m: Message) {
         when (m) {
             is Message.GroupSettings -> _settings.value = m
+            is Message.GroupProfile -> _profile.value = m
+            is Message.FriendList -> _friends.value = m.friends
+            is Message.FriendInvite -> _friendInvite.value = m.uri
+            is Message.GroupInviteOffer -> if (_offers.value.none { it.offerId == m.offerId }) _offers.value = _offers.value + m
             is Message.GroupList -> {
                 _groups.value = m.groups
                 if (_activeId.value != m.activeId) clearLive()
@@ -145,6 +164,18 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun useThisDevice() = send(Message.GroupUseThisDevice)
     fun setProfile(nickname: String, colour: Int, icon: String?, photoJpegBase64: String?) =
         send(Message.GroupProfile(nickname, colour, icon, photoJpegBase64))
+    fun requestFriends() = send(Message.RequestFriends)
+    fun requestFriendInvite() = send(Message.RequestFriendInvite)
+    fun forgetFriendInvite() { _friendInvite.value = null }
+    fun removeFriend(channelId: String) = send(Message.FriendRemove(channelId))
+    fun addFriendsToGroup(groupId: String, friendIds: List<String>) = send(Message.FriendAddToGroup(groupId, friendIds))
+
+    /** The rider's answer to a friend's invite to a ride group. */
+    fun answerOffer(offerId: String, accept: Boolean) {
+        _offers.value = _offers.value.filterNot { it.offerId == offerId }
+        send(Message.GroupInviteAnswer(offerId, accept))
+    }
+
     fun requestInvite(groupId: String, validDays: Int? = null) = send(Message.RequestGroupInvite(groupId, validDays))
     fun requestDeviceLink(groupId: String) = send(Message.RequestDeviceLink(groupId))
     /** The link is secret: do not leave it around once it has been shown. */

@@ -178,6 +178,8 @@ object GroupHub {
             }
             is Message.GroupProfile -> {
                 store.profile = m
+                send(profileMessage())
+                friendClients.forEach { (id, c) -> groups[id]?.let { c.setProfile(helloFor(it)) } }
                 client?.setProfile(helloFor(activeId?.let { groups[it] } ?: return))
                 membersMessage()?.let(::send) // the rider's own row shows the new name and picture at once
             }
@@ -533,10 +535,14 @@ object GroupHub {
 
     // ---- what the tablet is told ----
 
+    /** The rider's own name, colour and picture (what is set also when there is no group). */
+    private fun profileMessage() = store?.profile ?: Message.GroupProfile("Rider", 0xFF00E5FF.toInt(), null, null)
+
     private fun settingsMessage() = Message.GroupSettings(store?.relayHost.orEmpty(), store?.dataSaver ?: false)
 
     private fun snapshot(): List<Message> = buildList {
         add(settingsMessage())
+        add(profileMessage())
         add(friendList())
         offers.forEach { (id, o) -> add(offerMessage(id, o)) }
         add(groupList())

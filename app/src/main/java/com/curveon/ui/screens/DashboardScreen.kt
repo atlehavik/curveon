@@ -891,7 +891,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
-        if (showGroup) com.curveon.ui.components.GroupDialog(phone.groups, onDismiss = { showGroup = false })
+        if (showGroup) com.curveon.ui.components.FriendsDialog(phone.groups, onDismiss = { showGroup = false })
 
         searchPurpose?.let { purpose -> key(purpose) {
             DestinationSearchDialog(
@@ -1134,6 +1134,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
     // The group ride: its dialog, the rider's own SOS and the alert for someone else's.
     val groupLayer: @Composable BoxScope.() -> Unit = {
+        com.curveon.ui.components.GroupInviteOfferDialog(phone.groups)
         com.curveon.ui.components.GroupSosOverlay(
             phone.groups, currentLocationState.value.latitude, currentLocationState.value.longitude,
             navigateTo = { lat, lon, name -> viewModel.previewDestination(GeoPoint(lat, lon), name) }
@@ -1373,7 +1374,7 @@ private fun Rail(
     // Friends riding together; a dot while someone has sent an SOS.
     val group: @Composable () -> Unit = {
         Box {
-            RailButton(Icons.Default.Diversity3, stringResource(R.string.group_title), ElectricCyan, NeonAmber, filled = active == RailPanel.GROUP,
+            RailButton(Icons.Default.Diversity3, stringResource(R.string.friends_title), ElectricCyan, NeonAmber, filled = active == RailPanel.GROUP,
                 tag = "rail_group", target = null, onClick = { onPress(RailPanel.GROUP) })
             if (groupAlert) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(WarningRed))
         }
