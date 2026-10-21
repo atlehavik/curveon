@@ -83,6 +83,10 @@
     <string name="settings_obd">OBD2 data</string>
     <string name="settings_obd_hint">Engine data card when an adapter is connected</string>
     <string name="settings_altitude">Altitude</string>
+    <string name="settings_clock">Clock</string>
+    <string name="settings_clock_hint">The time next to the speed</string>
+    <string name="settings_battery">Battery</string>
+    <string name="settings_battery_hint">This device\'s battery next to the clock</string>
     <string name="settings_altitude_hint">Height above sea level under the speed</string>
     <string name="settings_road_info">Road info</string>
     <string name="stop_reached">Reached</string>

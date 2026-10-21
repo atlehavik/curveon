@@ -35,6 +35,10 @@ import java.util.Locale
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.asImageBitmap
@@ -91,6 +95,9 @@ fun MapSpeedCluster(
     modifier: Modifier = Modifier,
     /** Settings → Display: the height above sea level under the speed. */
     showAltitude: Boolean = false,
+    /** Settings → Display: the clock, and this device's battery to the right of it. */
+    showClock: Boolean = true,
+    showBattery: Boolean = false,
     /** The limit sign's size (Settings → Display). Over [SPEED_SIGN_BASE] it sticks out over the card's top and bottom. */
     signSize: Dp = SPEED_SIGN_BASE
 ) {
@@ -120,7 +127,8 @@ fun MapSpeedCluster(
                         val base = SPEED_SIGN_BASE.roundToPx()
                         layout(p.width, minOf(p.height, base)) { p.place(0, (minOf(p.height, base) - p.height) / 2) }
                     })
-                Clock(17.sp)
+                if (showClock) Clock(17.sp)
+                if (showBattery) BatteryLevel()
             }
             val below = camera != null || telemetry.isDeadReckoning || !telemetry.hasGpsFix || (showAltitude && telemetry.hasGpsFix)
             if (below && limit > 0) Spacer(Modifier.height(sticksOut))
@@ -144,6 +152,55 @@ fun MapSpeedCluster(
                 )
         }
         }
+    }
+}
+
+/**
+ * This device's battery as a slim upright cell: filled to the level, green while charging, red when
+ * low. Listens to the system's battery broadcast only while shown.
+ */
+@Composable
+fun BatteryLevel(modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var level by remember { mutableFloatStateOf(-1f) }
+    var charging by remember { mutableStateOf(false) }
+    DisposableEffect(context) {
+        fun read(i: android.content.Intent?) {
+            i ?: return
+            val scale = i.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
+            level = i.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) / scale.toFloat()
+            charging = i.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) != 0
+        }
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: android.content.Context, i: android.content.Intent) = read(i)
+        }
+        read(context.registerReceiver(receiver, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)))
+        onDispose { context.unregisterReceiver(receiver) }
+    }
+    if (level < 0f) return
+    val fill = when {
+        charging -> EcoGreen
+        level < 0.15f -> WarningRed
+        else -> TextSecondary
+    }
+    val percent = (level * 100).toInt()
+    androidx.compose.foundation.Canvas(
+        modifier.size(width = 11.dp, height = 20.dp).testTag("battery")
+            .semantics { contentDescription = "$percent %" }
+    ) {
+        val stroke = 1.5.dp.toPx()
+        val cap = 2.dp.toPx()
+        // The terminal nub on top, then the cell and its fill from the bottom.
+        drawRect(TextSecondary, topLeft = Offset(size.width * 0.3f, 0f), size = Size(size.width * 0.4f, cap))
+        val body = Size(size.width - stroke, size.height - cap - stroke)
+        drawRoundRect(TextSecondary, topLeft = Offset(stroke / 2, cap + stroke / 2), size = body,
+            cornerRadius = CornerRadius(2.dp.toPx()), style = Stroke(stroke))
+        // The fill sits a small gap inside the outline.
+        val gap = stroke + 1.dp.toPx()
+        val top = cap + gap
+        val bottom = size.height - gap
+        val h = (bottom - top) * level.coerceIn(0.05f, 1f)
+        drawRect(fill, topLeft = Offset(gap, bottom - h), size = Size(size.width - gap * 2, h))
     }
 }
 

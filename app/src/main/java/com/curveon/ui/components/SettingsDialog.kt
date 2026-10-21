@@ -69,6 +69,8 @@ data class SettingsState(
     val mapDark: Boolean = true,
     val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,
     val showAltitude: Boolean,
+    val showClock: Boolean = true,
+    val showBattery: Boolean = false,
     val speedSign: com.curveon.ui.viewmodel.SpeedSignSize = com.curveon.ui.viewmodel.SpeedSignSize.NORMAL,
     val showRoadInfo: Boolean = true,
     val roadCardSize: com.curveon.ui.viewmodel.RoadCardSize = com.curveon.ui.viewmodel.RoadCardSize.NORMAL,
@@ -110,6 +112,8 @@ class SettingsActions(
     val onSurfaceMode: (SurfaceMode) -> Unit = {},
     val onGravelHeatButton: (GravelHeatButton) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
+    val onShowClock: (Boolean) -> Unit = {},
+    val onShowBattery: (Boolean) -> Unit = {},
     val onSpeedSign: (com.curveon.ui.viewmodel.SpeedSignSize) -> Unit = {},
     val onRoadCardSize: (com.curveon.ui.viewmodel.RoadCardSize) -> Unit = {},
     val onShowRoadInfo: (Boolean) -> Unit = {},
@@ -202,6 +206,12 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint)) {
                             CockpitSwitch(state.showAltitude, actions.onShowAltitude)
+                        }
+                        Setting(stringResource(R.string.settings_clock), stringResource(R.string.settings_clock_hint)) {
+                            CockpitSwitch(state.showClock, actions.onShowClock)
+                        }
+                        Setting(stringResource(R.string.settings_battery), stringResource(R.string.settings_battery_hint)) {
+                            CockpitSwitch(state.showBattery, actions.onShowBattery)
                         }
                         Setting(stringResource(R.string.settings_speed_sign), stringResource(R.string.settings_speed_sign_hint)) {
                             Choice(com.curveon.ui.viewmodel.SpeedSignSize.entries, state.speedSign, { stringResource(it.label) }, actions.onSpeedSign)

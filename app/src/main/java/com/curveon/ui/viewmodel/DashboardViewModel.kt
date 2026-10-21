@@ -364,6 +364,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Settings → Display: the height above sea level under the speed. */
     private val _showAltitude = MutableStateFlow(settings.getBoolean("showAltitude", false))
     val showAltitude: StateFlow<Boolean> = _showAltitude.asStateFlow()
+    /** Settings → Display: the clock next to the speed, and this device's battery beside it. */
+    private val _showClock = MutableStateFlow(settings.getBoolean("showClock", true))
+    val showClock: StateFlow<Boolean> = _showClock.asStateFlow()
+    private val _showBattery = MutableStateFlow(settings.getBoolean("showBattery", false))
+    val showBattery: StateFlow<Boolean> = _showBattery.asStateFlow()
     /** The welcome tour has been shown (or skipped) once; Settings → Help brings it back. */
     val tourSeen: Boolean get() = settings.getBoolean("tourSeen", false)
     fun markTourSeen() = settings.edit().putBoolean("tourSeen", true).apply()
@@ -447,6 +452,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun setShowAltitude(on: Boolean) { _showAltitude.value = on; settings.edit().putBoolean("showAltitude", on).apply() }
+    fun setShowClock(on: Boolean) { _showClock.value = on; settings.edit().putBoolean("showClock", on).apply() }
+    fun setShowBattery(on: Boolean) { _showBattery.value = on; settings.edit().putBoolean("showBattery", on).apply() }
 
     fun setUseMph(on: Boolean) { if (_telemetry.value.useMph != on) toggleSpeedUnits() }
     fun setObd(on: Boolean) { if (_telemetry.value.isObdEnabled != on) toggleObd() }
