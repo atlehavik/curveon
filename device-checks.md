@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Ring eller SMS fra Telefon
+
+Companion og Curveon («Denne enheten») ber nå om lov til å sende SMS: godta den på Pixel, i companion og i Telefon-innstillingene.
+
+- [ ] Telefon → Favoritter/Kontakter/Nylige: trykk en person. Dialogen viser navnet, numrene (mobil valgt), Ring, SMS og Avbryt.
+- [ ] SMS: si en kort melding i hjelmen, se teksten på kortet «SMS til …», trykk Send. Kommer SMS-en fram, og ligger den i Meldinger-appen på Pixel som sendt?
+- [ ] «Si igjen» på SMS-kortet starter opptak på nytt, X avbryter uten å sende.
+- [ ] Ring fra dialogen ringer det valgte nummeret (prøv en kontakt med to numre).
+
 ## 2026-10-21 — Les opp meldinger
 
 - [ ] Med Pixel koblet til X7: få en melding, trykk høyttaleren ved avsendernavnet. Meldingen skal leses opp i hjelmen («Navn skriver: …»), musikken dempes litt mens den leses. Uten norsk stemme lastet ned på telefonen kommer bare en lyd.

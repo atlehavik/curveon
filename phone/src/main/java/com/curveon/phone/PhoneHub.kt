@@ -158,7 +158,10 @@ object PhoneHub {
             is Message.PlayMediaApp -> listener?.playApp(message.packageName)
             is Message.DismissNotification -> listener?.dismiss(message.key)
             is Message.InvokeAction -> listener?.invokeAction(message.key, message.actionIndex)
-            is Message.SendReply -> listener?.reply(message.key, message.text)
+            is Message.SendReply -> if (message.key.startsWith(Message.SMS_KEY_PREFIX)) {
+                phoneBook?.sendSms(message.key, message.key.removePrefix(Message.SMS_KEY_PREFIX), message.text)
+                    ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "SMS unavailable"))
+            } else listener?.reply(message.key, message.text)
             is Message.StartVoiceReply -> voice?.start(message.key)
                 ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "Voice reply unavailable"))
             is Message.CancelVoiceReply -> voice?.cancel()

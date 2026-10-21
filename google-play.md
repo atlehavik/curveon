@@ -45,6 +45,11 @@ Kilde: https://support.google.com/googleplay/android-developer/answer/10208820 (
   Hovedappen faller under navigasjonsraden også når den er sin egen companion på Pixel. Reserveplan hvis det avslås: egen
   avskalert Play-variant (anropslogg erstattes av en liste Curveon fører selv over anrop den ser), eller
   READ_CALL_LOG bare i companion.
+- **`SEND_SMS`** (lagt til 2026-10-21, Telefon → kontakt → SMS: rytteren snakker meldingen, telefonen sender den
+  med `SmsManager`) er begrenset på samme måte som `READ_CALL_LOG`, og dekkes av de samme to unntaksradene
+  («connected device companion» og «in-vehicle hands-free»). Den må med i samme erklæring og søknad. Uten
+  tillatelsen finnes ingen håndfri vei: `ACTION_SENDTO` åpner SMS-appen og krever et trykk på telefonen. Avslås den,
+  fjernes SMS-knappen i Play-varianten (stemmesvar på varsler bruker varselets egen svarhandling og trenger den ikke).
 - **`CALL_PHONE`**: Googles policyside om SMS og anropslogg nevner bare SMS- og anropsloggtillatelsene, ikke
   `CALL_PHONE`. Den er altså trolig ikke begrenset (sjekkes i erklæringsskjemaet i Play Console).
   Vi bruker den i `PhoneBook.placeCall` (`TelecomManager.placeCall`). **Ikke bytt til `ACTION_DIAL`:** den må
@@ -113,7 +118,7 @@ endrer seg på Play-siden:
 
 ## Største risikoer hos Google
 
-1. **`READ_CALL_LOG`**, se over. Største risiko.
+1. **`READ_CALL_LOG`** og **`SEND_SMS`**, se over. Største risiko.
 2. **Erklæringer i Play Console:** notification listener, mikrofon (`RECORD_AUDIO`), foreground services
    (location i hovedappen; connectedDevice og microphone i companion). Noen krever kort demovideo.
 3. Reell unntakssøknad for anropslogg trenger tekst og trolig demovideo av tavla som viser anropslogg og ringing.

@@ -562,6 +562,12 @@ sealed interface Message {
     enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER, NO_RELAY, NOT_LINKED }
 
     companion object {
+        /**
+         * A voice reply key ([StartVoiceReply], [SendReply]) starting with this is a new text message
+         * (SMS) to the number after it, not a reply to a notification.
+         */
+        const val SMS_KEY_PREFIX = "sms:"
+
         private fun obj(type: String) = JSONObject().put("type", type)
 
         fun fromJson(o: JSONObject): Message? = when (o.optString("type")) {

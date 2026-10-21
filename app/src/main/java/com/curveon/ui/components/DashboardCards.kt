@@ -623,7 +623,7 @@ private fun Modifier.swipeAway(key: Any, onSwiped: () -> Unit): Modifier = compo
 fun VoiceReplyCard(reply: VoiceReply, onSend: () -> Unit, onRetry: () -> Unit, onCancel: () -> Unit, modifier: Modifier = Modifier) {
     DashCard(modifier.fillMaxWidth().testTag("voice_reply_card"), border = ElectricCyan) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Text(stringResource(R.string.reply_to, reply.senderName), color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(stringResource(if (reply.isSms) R.string.sms_to else R.string.reply_to, reply.senderName), color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 when (reply.state) {

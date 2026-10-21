@@ -12,6 +12,7 @@ import android.provider.CallLog
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.telecom.TelecomManager
+import android.telephony.SmsManager
 import android.util.Log
 import com.curveon.protocol.Message
 import java.util.concurrent.Executors
@@ -50,6 +51,24 @@ class PhoneBook(private val context: Context) {
         }.onFailure {
             Log.w(TAG, "Call failed", it)
             PhoneHub.broadcast(Message.PhoneError("Couldn't call $number"))
+        }
+    }
+
+    /** A new text message to [number], spoken by the rider and confirmed on the tablet; [key] is the voice reply's. */
+    @SuppressLint("MissingPermission") // checked
+    fun sendSms(key: String, number: String, text: String) = worker.execute {
+        if (!has(Manifest.permission.SEND_SMS)) {
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Allow Curveon to send SMS on the phone"))
+            return@execute
+        }
+        runCatching {
+            val sms = if (android.os.Build.VERSION.SDK_INT >= 31) context.getSystemService(SmsManager::class.java)
+            else @Suppress("DEPRECATION") SmsManager.getDefault()
+            sms.sendMultipartTextMessage(number, null, sms.divideMessage(text), null, null)
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.SENT, text))
+        }.onFailure {
+            Log.w(TAG, "SMS failed", it)
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Couldn't send the SMS"))
         }
     }
 

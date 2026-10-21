@@ -56,13 +56,15 @@ data class PairedPhone(val name: String, val address: String)
  */
 data class MediaApp(val packageName: String, val name: String, val playing: Boolean, val icon: Bitmap?, val running: Boolean = true)
 
-/** A spoken reply in progress: recorded on the phone, confirmed on the tablet. */
+/** A spoken reply (or new SMS, see [isSms]) in progress: recorded on the phone, confirmed on the tablet. */
 data class VoiceReply(
     val notificationKey: String,
     val senderName: String,
     val state: Message.VoiceState,
     val text: String = ""
-)
+) {
+    val isSms get() = notificationKey.startsWith(Message.SMS_KEY_PREFIX)
+}
 
 /**
  * Tablet side of the phone link. Connects to the Curveon Companion app on the paired phone over
@@ -707,9 +709,21 @@ class PhoneCompanionManager(
     fun invokeAction(id: String, index: Int) = send(Message.InvokeAction(id, index))
 
     fun startVoiceReply(id: String) {
-        val n = _notifications.value.firstOrNull { it.id == id } ?: return
-        _voiceReply.value = VoiceReply(id, n.senderName, Message.VoiceState.LISTENING)
+        val name = _notifications.value.firstOrNull { it.id == id }?.senderName
+            ?: _voiceReply.value?.takeIf { it.notificationKey == id }?.senderName // Say again on an SMS
+            ?: return
+        _voiceReply.value = VoiceReply(id, name, Message.VoiceState.LISTENING)
         send(Message.StartVoiceReply(id))
+    }
+
+    /** A new SMS to [number], spoken like a reply. Returns false when there is no phone to send it with. */
+    fun startSms(number: String, name: String): Boolean {
+        val state = _connectionState.value
+        if (state != CompanionConnectionState.CONNECTED && state != CompanionConnectionState.DEMO) return false
+        val key = Message.SMS_KEY_PREFIX + number
+        _voiceReply.value = VoiceReply(key, name, Message.VoiceState.LISTENING)
+        send(Message.StartVoiceReply(key))
+        return true
     }
 
     fun cancelVoiceReply() {

@@ -900,6 +900,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     if (phone.placeCall(number)) { toast = context.getString(R.string.toast_calling, name); phoneTab = null }
                     else toast = context.getString(R.string.toast_phone_not_connected)
                 },
+                // The phone listens for the message; it is read back on the dashboard card to send or say again.
+                onSms = { number, name ->
+                    if (phone.startSms(number, name)) phoneTab = null
+                    else toast = context.getString(R.string.toast_phone_not_connected)
+                },
                 onNeedPhoto = phone::requestPhoto,
                 onReconnect = phone::retryNow,
                 onClose = { phoneTab = null }

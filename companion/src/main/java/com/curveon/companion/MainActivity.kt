@@ -323,6 +323,7 @@ class MainActivity : ComponentActivity() {
             add(Manifest.permission.READ_CONTACTS)
             add(Manifest.permission.READ_CALL_LOG)
             add(Manifest.permission.CALL_PHONE)
+            add(Manifest.permission.SEND_SMS)
             if (android.os.Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
