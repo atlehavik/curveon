@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
@@ -505,11 +506,13 @@ fun NotificationCard(
                 }
             }
             Spacer(Modifier.height(10.dp))
-            Text(
-                n.message, color = TextPrimary, fontSize = 17.sp, lineHeight = 22.sp,
-                maxLines = 4, overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.weight(1f))
+            // The message gets what height is left, so a short card (a phone upright) cuts the text, never the buttons.
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
+                Text(
+                    n.message, color = TextPrimary, fontSize = 17.sp, lineHeight = 22.sp,
+                    maxLines = 4, overflow = TextOverflow.Ellipsis
+                )
+            }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (n.isIncomingCall && n.actions.isNotEmpty()) {
