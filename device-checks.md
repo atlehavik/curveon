@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Stiplet grus forblir stiplet når du zoomer inn (1.2.2)
+
+- [ ] Nattkart og dagkart, Veidekke = Stiplet: zoom inn på en grusvei helt til zoom 18: den er stiplet
+      hele veien, uten hvit/grå vei i mellomrommene. Se også der grusveien møter en annen vei: krysset
+      skal ikke se ut som det har et hull. Stedsnavn ligger fortsatt øverst.
+
 ## 2026-10-21 — Settings tabs scroll to the open page; via point or stop when changing place; grey or dark grey roads (1.2.2)
 
 - [ ] X7, day map: Settings → Display → Roads → Grey, then Dark grey: small roads, the tarmac roads

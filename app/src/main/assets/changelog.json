@@ -82,7 +82,8 @@
       "On a phone, the settings tabs scroll along when you pick one, so the name of the page you open, like Help at the far right, is always shown in full instead of sliding off the edge",
       "When you change the place of a route point, or put a new point before another, and pick the spot on the map, you now choose whether it becomes a route point or a stop. Before, it always became a stop, so a route point you only wanted to move turned into a stop",
       "The roads on the day map can now be grey as well as dark grey: pick the shade under Settings → Display → Roads and see which one you like best on the road",
-      "The edge along the yellow main roads is now dark grey instead of pitch black, so it sits more calmly next to the grey roads when you zoom in"
+      "The edge along the yellow main roads is now dark grey instead of pitch black, so it sits more calmly next to the grey roads when you zoom in",
+      "Gravel roads shown as dashes now stay dashed however far you zoom in, by night too: before, the road under them filled the gaps, so a gravel road looked like an ordinary white road up close"
     ],
     "nb": [
       "En tur avsluttes nå etter fem minutters stopp i stedet for tjue, så turene dine blir lagret tidligere. Kjører du igjen innen to timer, spør Curveon med en gang om du vil fortsette turen du hadde eller starte en ny. Fortsett tar opp tråden der du stoppet og logger videre i samme tur. Ny tur (og det du får hvis du bare overser spørsmålet) lar den forrige turen være ferdig som den var",
@@ -165,7 +166,8 @@
       "På mobilen ruller fanene i Innstillinger med når du velger en, så navnet på siden du åpner, som Hjelp helt til høyre, alltid vises helt i stedet for å forsvinne ut over kanten",
       "Når du bytter sted for et hjelpepunkt, eller legger et nytt punkt før et annet, og velger stedet i kartet, velger du nå om det skal bli hjelpepunkt eller stopp. Før ble det alltid et stopp, så et hjelpepunkt du bare ville flytte, ble gjort om til et stopp",
       "Veiene på dagkartet kan nå være grå i tillegg til mørkegrå: velg nyanse under Innstillinger → Skjerm → Veier, og finn ut hva du liker best på veien",
-      "Kanten langs de gule hovedveiene er nå mørkegrå i stedet for kullsvart, så den skiller seg ikke så skarpt fra de grå veiene når du zoomer inn"
+      "Kanten langs de gule hovedveiene er nå mørkegrå i stedet for kullsvart, så den skiller seg ikke så skarpt fra de grå veiene når du zoomer inn",
+      "Grusveier som vises stiplet, forblir nå stiplet uansett hvor langt du zoomer inn, også om natta: før fylte veien under mellomrommene, så grusveien så ut som en vanlig hvit vei på nært hold"
     ]
   },
   {

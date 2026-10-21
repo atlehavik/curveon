@@ -1084,16 +1084,20 @@ fun CurveonMapView(
     LaunchedEffect(style, surfaceMode, roadShade) {
         val s = style ?: return@LaunchedEffect
         val coloured = surfaceMode == SurfaceMode.COLOURED
-        // Dashed: the road itself, never wider than it is; coloured: a little wider, so it reads at a glance.
-        val gravelWidth = if (coloured) roadWidth(1.2f) else roadWidth()
+        // Dashed: the road itself, as wide as the map draws it; coloured: a little wider than the thin dashes, so it reads at a glance.
+        val gravelWidth = if (coloured) roadWidth(1.2f) else dashedRoadWidth()
         val softWidth = gravelWidth
         s.getLayer("$SURFACE-road")?.setProperties(lineColor(if (dark) "#EBEBEB" else roadShade.first))
         s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark, roadShade.first)), lineWidth(gravelWidth))
         s.getLayer("$SURFACE-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
-        // Coloured dashes on the day map get a dark line right under them, a little wider: orange and purple alone
-        // on the green map have no contrast. (The night map has its own dark ground.)
-        s.getLayer("$SURFACE-base")?.setProperties(lineWidth(roadWidth(1.2f, 0.8f)),
-            visibility(if (coloured && !dark) Property.VISIBLE else Property.NONE))
+        // Under the dashes: coloured ones on the day map get a dark line, a little wider (orange and purple alone on
+        // the green map have no contrast; the night map has its own dark ground). Plain dashes get the ground's colour
+        // over the map's own road and its edge, or the road fills the gaps and looks solid once zoomed in.
+        val land = if (dark) com.curveon.data.map.OfflineMaps.LAND_DARK else com.curveon.data.map.OfflineMaps.LAND_LIGHT
+        s.getLayer("$SURFACE-base")?.setProperties(
+            lineColor(if (coloured) "#1F1F1F" else land),
+            lineWidth(if (coloured) roadWidth(1.2f, 0.8f) else dashedRoadGround()),
+            visibility(if (coloured && !dark || surfaceMode == SurfaceMode.DASHED) Property.VISIBLE else Property.NONE))
         // The same over the route and GPX tracks, as wide as the dashes.
         s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark, roadShade.first)), lineWidth(gravelWidth))
         s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
@@ -1459,6 +1463,14 @@ private fun arrowBitmap(): android.graphics.Bitmap {
 /** Thin dashes, a little under the map's own small roads (which are at least 1.6 px), so a gravel road is never the heaviest line on the map. */
 private fun roadWidth(scale: Float = 1f, extra: Float = 0f) = E.interpolate(E.exponential(1.6f), E.zoom(),
     E.stop(SURFACE_ZOOM, 1f * scale + extra), E.stop(14.5, 1.2f * scale + extra), E.stop(15, 1.6f * scale + extra), E.stop(18, 7f * scale + extra))
+
+/** Plain dashes: thin far out, then as wide as the map's own small roads (11 px at zoom 18), so the dashes are the road. */
+private fun dashedRoadWidth() = E.interpolate(E.exponential(1.6f), E.zoom(),
+    E.stop(SURFACE_ZOOM, 1f), E.stop(12.5, 1.6f), E.stop(15, 2f), E.stop(18, 11f))
+
+/** Ground under plain dashes: covers the map's own road (bigger ones up to 13 px at zoom 18) and its edge, from where the map draws roads. */
+private fun dashedRoadGround() = E.interpolate(E.exponential(1.6f), E.zoom(),
+    E.stop(12, 0f), E.stop(12.5, 3f), E.stop(15, 5f), E.stop(18, 16f))
 
 private fun surfaceWidth(base: Float) = E.interpolate(E.linear(), E.zoom(),
     E.stop(SURFACE_ZOOM, E.product(E.literal(base * 0.6f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),

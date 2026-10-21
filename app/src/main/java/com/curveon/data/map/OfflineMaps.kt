@@ -266,9 +266,9 @@ class OfflineMaps(private val context: Context) {
         /** The main roads' edge: dark, but not black, so it isn't so harsh next to the grey roads. */
         private const val HC_EDGE_COLOR = "#404040"
         /** The day map's land colour: place names sit on a halo of it, so they blend in instead of standing out white. */
-        private const val LAND_LIGHT = "#e2dfda"
+        const val LAND_LIGHT = "#e2dfda"
         /** The night map's land colour (the dark styles' earth and background). */
-        private const val LAND_DARK = "#1f1f1f"
+        const val LAND_DARK = "#1f1f1f"
         private const val ROAD_NAME_HALO = 2.0
         /** The width of the halo round place names (px). */
         private const val PLACE_HALO = 3.0
