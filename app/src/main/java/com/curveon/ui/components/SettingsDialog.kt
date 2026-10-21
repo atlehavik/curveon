@@ -71,6 +71,9 @@ data class SettingsState(
     val showAltitude: Boolean,
     val showClock: Boolean = true,
     val showBattery: Boolean = false,
+    val showPhoneBattery: Boolean = false,
+    /** A companion phone is linked: Curveon on a phone of its own has no other phone to show the battery of. */
+    val phoneBatteryOffered: Boolean = true,
     val speedSign: com.curveon.ui.viewmodel.SpeedSignSize = com.curveon.ui.viewmodel.SpeedSignSize.NORMAL,
     val showRoadInfo: Boolean = true,
     val roadCardSize: com.curveon.ui.viewmodel.RoadCardSize = com.curveon.ui.viewmodel.RoadCardSize.NORMAL,
@@ -114,6 +117,7 @@ class SettingsActions(
     val onShowAltitude: (Boolean) -> Unit,
     val onShowClock: (Boolean) -> Unit = {},
     val onShowBattery: (Boolean) -> Unit = {},
+    val onShowPhoneBattery: (Boolean) -> Unit = {},
     val onSpeedSign: (com.curveon.ui.viewmodel.SpeedSignSize) -> Unit = {},
     val onRoadCardSize: (com.curveon.ui.viewmodel.RoadCardSize) -> Unit = {},
     val onShowRoadInfo: (Boolean) -> Unit = {},
@@ -212,6 +216,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_battery), stringResource(R.string.settings_battery_hint)) {
                             CockpitSwitch(state.showBattery, actions.onShowBattery)
+                        }
+                        if (state.phoneBatteryOffered) Setting(stringResource(R.string.settings_phone_battery), stringResource(R.string.settings_phone_battery_hint)) {
+                            CockpitSwitch(state.showPhoneBattery, actions.onShowPhoneBattery)
                         }
                         Setting(stringResource(R.string.settings_speed_sign), stringResource(R.string.settings_speed_sign_hint)) {
                             Choice(com.curveon.ui.viewmodel.SpeedSignSize.entries, state.speedSign, { stringResource(it.label) }, actions.onSpeedSign)

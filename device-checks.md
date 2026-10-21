@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Telefonbatteri, kikk på fartskortet, demo-triks
+
+- [ ] X7 med Pixel koblet til: slå på Innstillinger → Skjerm → Telefonbatteri. Et lite telefonsymbol ved farten viser Pixel-batteriet (grønt når den lader). På Pixel med «Denne enheten» skal bryteren ikke finnes.
+- [ ] Trykk på fartskortet: klokke og batterier vises i 5 s også når de er skrudd av.
+- [ ] Demotur: trykk DEMO under pila → «Mist GPS-signalet» gir spøkelsespil og tunnel-gjetting; «Kjør feil i neste kryss» kjører av ruten i neste kryss, og navigasjonen svarer som på tur.
+- [ ] Det tomme veikortet (liten mørk pille øverst til venstre) fra forrige versjon skal være borte.
+
 ## 2026-10-21 — Pixel fryste ved retur fra en annen app
 
 Tre «svarer ikke» 17:49–17:55: kartets tegnetråd og skjermen ventet på hverandre da vinduet endret størrelse. Kartet tegnes nå i en TextureView på Android 14+.

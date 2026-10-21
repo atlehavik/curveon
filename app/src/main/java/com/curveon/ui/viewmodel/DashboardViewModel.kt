@@ -369,6 +369,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val showClock: StateFlow<Boolean> = _showClock.asStateFlow()
     private val _showBattery = MutableStateFlow(settings.getBoolean("showBattery", false))
     val showBattery: StateFlow<Boolean> = _showBattery.asStateFlow()
+    /** Settings → Display: the linked phone's battery too, while a companion phone is connected. */
+    private val _showPhoneBattery = MutableStateFlow(settings.getBoolean("showPhoneBattery", false))
+    val showPhoneBattery: StateFlow<Boolean> = _showPhoneBattery.asStateFlow()
     /** The welcome tour has been shown (or skipped) once; Settings → Help brings it back. */
     val tourSeen: Boolean get() = settings.getBoolean("tourSeen", false)
     fun markTourSeen() = settings.edit().putBoolean("tourSeen", true).apply()
@@ -454,6 +457,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun setShowAltitude(on: Boolean) { _showAltitude.value = on; settings.edit().putBoolean("showAltitude", on).apply() }
     fun setShowClock(on: Boolean) { _showClock.value = on; settings.edit().putBoolean("showClock", on).apply() }
     fun setShowBattery(on: Boolean) { _showBattery.value = on; settings.edit().putBoolean("showBattery", on).apply() }
+    fun setShowPhoneBattery(on: Boolean) { _showPhoneBattery.value = on; settings.edit().putBoolean("showPhoneBattery", on).apply() }
 
     fun setUseMph(on: Boolean) { if (_telemetry.value.useMph != on) toggleSpeedUnits() }
     fun setObd(on: Boolean) { if (_telemetry.value.isObdEnabled != on) toggleObd() }
@@ -913,7 +917,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             readAt = here
             val ref = roadRefAt(lat, lon, heading, mapRoadHere)
             val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(lat, lon, heading) }
-            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority, mapRoadHere?.ownName) // the road's own name, not a side road's.takeUnless { it.isEmpty }
+            // The road's own name, not a side road's.
+            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority, mapRoadHere?.ownName).takeUnless { it.isEmpty }
         }
     }
 
@@ -1295,7 +1300,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val gap = now - lastRealFixAt
             val lost = lastRealFixAt != 0L && gap > GPS_LOST_MS
             if (_telemetry.value.gpsLost != lost) _telemetry.value = _telemetry.value.copy(gpsLost = lost)
-            if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || _isDemoRiding.value) {
+            // A demo ride guesses too while it plays at losing the signal (see demoSignalLost).
+            if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || (_isDemoRiding.value && !_demoSignalLost.value)) {
                 anchorTime = 0L
                 if (_telemetry.value.isDeadReckoning) _telemetry.value = _telemetry.value.copy(isDeadReckoning = false)
                 continue
@@ -1644,6 +1650,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (demoJob?.isActive != true) return
         demoJob?.cancel()
         _isDemoRiding.value = false
+        _demoSignalLost.value = false
+        _demoWrongTurn.value = false
         startGps()
     }
 
@@ -1657,9 +1665,62 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         gpsJob?.cancel()
         _isDemoRiding.value = true
         demoJob = viewModelScope.launch {
-            DemoRide.fixes(route, speedFactor, startAt = startAt).collect(::onGpsFix)
+            DemoRide.fixes(route, speedFactor, startAt = startAt).collect { fix ->
+                // Once taken, the wrong turn rides on (and then stands) until the new route restarts the demo.
+                if (_demoWrongTurn.value) takeWrongTurn()
+                demoFix(fix)
+            }
             _isDemoRiding.value = false
             startGps()
+        }
+    }
+
+    /** Demo: the ride goes on, but no position reaches Curveon (a tunnel, a lost signal) until it is switched back. */
+    private val _demoSignalLost = MutableStateFlow(false)
+    val demoSignalLost: StateFlow<Boolean> = _demoSignalLost.asStateFlow()
+    fun setDemoSignalLost(lost: Boolean) { _demoSignalLost.value = lost }
+
+    /** Demo: at the next turn the ride takes another road (straight on, or right where the route goes straight). */
+    private val _demoWrongTurn = MutableStateFlow(false)
+    val demoWrongTurn: StateFlow<Boolean> = _demoWrongTurn.asStateFlow()
+    fun demoWrongTurnAhead() { _demoWrongTurn.value = true }
+
+    private fun demoFix(fix: GpsFix) { if (!_demoSignalLost.value) onGpsFix(fix) }
+
+    /**
+     * Close to the next turn with a wrong turn asked for: ride a short way down another road from it instead, then
+     * stand there. Curveon sees the rider leave the route as on a real ride; its new route (if it makes one, or the
+     * one the rider picks) is then ridden from where the demo stands. Returns at once when not there yet (or, giving
+     * up the wrong turn, when no other road fits); otherwise it doesn't return until the demo is restarted.
+     */
+    private suspend fun takeWrongTurn(): Boolean {
+        val nav = navigator.state.value
+        val route = nav.route ?: return false
+        val p = nav.progress ?: return false
+        if (p.distanceToNextManeuver > 35) return false
+        val m = p.nextManeuver
+        if (m.type == ManeuverType.ARRIVE) { _demoWrongTurn.value = false; return false }
+        val at = route.points[m.pointIndex]
+        val before = route.points[(m.pointIndex - 3).coerceAtLeast(0)]
+        val inBearing = Geo.bearing(before.lat, before.lon, at.lat, at.lon)
+        val straight = m.type == ManeuverType.STRAIGHT || m.type == ManeuverType.KEEP_LEFT || m.type == ManeuverType.KEEP_RIGHT
+        val corner = LatLon(at.lat, at.lon)
+        val bearings = if (straight) listOf(inBearing + 90, inBearing - 90) else listOf(inBearing, inBearing + 90, inBearing - 90)
+        // A road from the turn that soon leaves the route (not the route itself, nor back the way the rider came).
+        val detour = bearings.firstNotNullOfOrNull { b ->
+            navigator.probeAhead(corner, (b + 360) % 360, 700.0)?.takeIf { d ->
+                val probe = d.points.firstOrNull { it.distanceFromStart > 120 } ?: return@takeIf false
+                route.points.none { Geo.distance(it.lat, it.lon, probe.lat, probe.lon) < 40 }
+            }
+        } ?: run { _demoWrongTurn.value = false; return false }
+        _demoWrongTurn.value = false
+        NavTrace.event("demo: wrong turn")
+        DemoRide.fixes(detour).collect(::demoFix)
+        // At the end of the side road: stand still there until Curveon's new route takes over the ride.
+        val end = detour.points.last()
+        while (true) {
+            demoFix(GpsFix(end.lat, end.lon, end.elevation, 0f, null, 4f, System.currentTimeMillis()))
+            delay(1000)
         }
     }
 

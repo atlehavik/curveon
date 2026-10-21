@@ -87,6 +87,9 @@
     <string name="settings_clock_hint">The time next to the speed</string>
     <string name="settings_battery">Battery</string>
     <string name="settings_battery_hint">This device\'s battery next to the clock</string>
+    <string name="settings_phone_battery">Phone battery</string>
+    <string name="settings_phone_battery_hint">The linked phone\'s battery, while it is connected</string>
+    <string name="phone_battery_level">Phone battery %1$d %%</string>
     <string name="settings_altitude_hint">Height above sea level under the speed</string>
     <string name="settings_road_info">Road info</string>
     <string name="stop_reached">Reached</string>
@@ -128,6 +131,11 @@
     <string name="settings_auto_follow">Auto-follow GPX tracks</string>
     <string name="settings_auto_follow_hint">Navigate when riding along a track shown on the map</string>
     <string name="map_demo_ride">DEMO</string>
+    <string name="demo_menu_title">Demo ride</string>
+    <string name="demo_signal_lose">Lose the GPS signal</string>
+    <string name="demo_signal_back">Get the signal back</string>
+    <string name="demo_wrong_turn">Take a wrong turn at the next junction</string>
+    <string name="demo_wrong_turn_set">Wrong turn at the next junction…</string>
     <string name="settings_demo_ride">Demo ride</string>
     <string name="settings_demo_ride_hint">Every trip you start is ridden as a simulation instead of on GPS</string>
     <string name="settings_offline_maps">Offline maps</string>

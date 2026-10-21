@@ -74,7 +74,11 @@
       "When you start riding, the map sits one step further out, so you see a little more of what lies around you",
       "The map and dashboard button now also closes whatever screen you have open from the menu, so one press takes you straight back to the map or the dashboard",
       "While the next turn is far off, its small card leaves out the road number too; it comes back as you get close, or when you tap the card",
-      "Curveon on a phone no longer freezes and closes when you come back to it from another app while navigating, and it no longer crashes when Android restarts it in the background"
+      "Curveon on a phone no longer freezes and closes when you come back to it from another app while navigating, and it no longer crashes when Android restarts it in the background",
+      "Riding with your phone in your pocket and Curveon on the tablet? A small phone symbol by the speed can show the phone's battery too (Settings → Display), so you know how both are doing",
+      "Tap the speed card and the clock and batteries show for a few seconds, even the ones you have switched off",
+      "The end button by your arrival time is a little smaller",
+      "The demo ride can now pretend to lose the GPS signal and take a wrong turn at the next junction: tap the DEMO tag under your arrow, and try tunnels and detours without leaving the sofa"
     ],
     "nb": [
       "En tur avsluttes nå etter fem minutters stopp i stedet for tjue, så turene dine blir lagret tidligere. Kjører du igjen innen to timer, spør Curveon med en gang om du vil fortsette turen du hadde eller starte en ny. Fortsett tar opp tråden der du stoppet og logger videre i samme tur. Ny tur (og det du får hvis du bare overser spørsmålet) lar den forrige turen være ferdig som den var",
@@ -149,7 +153,11 @@
       "Når du begynner å kjøre, ligger kartet ett trinn lenger ut, så du ser litt mer av det som er rundt deg",
       "Knappen for kart og dashbord lukker nå også skjermen du har åpen fra menyen, så ett trykk tar deg rett tilbake til kartet eller dashbordet",
       "Så lenge neste sving er langt unna, viser det lille kortet heller ikke veinummeret; det kommer tilbake når du nærmer deg, eller når du trykker på kortet",
-      "Curveon på telefonen fryser og lukkes ikke lenger når du kommer tilbake til den fra en annen app mens du navigerer, og den krasjer ikke lenger når Android starter den på nytt i bakgrunnen"
+      "Curveon på telefonen fryser og lukkes ikke lenger når du kommer tilbake til den fra en annen app mens du navigerer, og den krasjer ikke lenger når Android starter den på nytt i bakgrunnen",
+      "Har du telefonen i lomma og Curveon på nettbrettet? Et lite telefonsymbol ved farten kan vise telefonens batteri også (Innstillinger → Skjerm), så du vet hvordan det står til med begge",
+      "Trykk på fartskortet, så vises klokka og batteriene noen sekunder, også de du har skrudd av",
+      "Avslutt-knappen ved ankomsttiden er litt mindre",
+      "Demoturen kan nå late som den mister GPS-signalet og kjøre feil i neste kryss: trykk på DEMO-merket under pila, og prøv tunneler og omveier uten å gå fra sofaen"
     ]
   },
   {

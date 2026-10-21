@@ -86,6 +86,9 @@
     <string name="settings_clock_hint">Klokkeslettet ved farten</string>
     <string name="settings_battery">Batteri</string>
     <string name="settings_battery_hint">Batteriet på denne enheten ved klokka</string>
+    <string name="settings_phone_battery">Telefonbatteri</string>
+    <string name="settings_phone_battery_hint">Batteriet på den tilkoblede telefonen, når den er koblet til</string>
+    <string name="phone_battery_level">Telefonbatteri %1$d %%</string>
     <string name="settings_altitude_hint">Høyde over havet under farten</string>
     <string name="settings_road_info">Veiinformasjon</string>
     <string name="stop_reached">Fremme ved</string>
@@ -127,6 +130,11 @@
     <string name="settings_auto_follow">Følg GPX-spor automatisk</string>
     <string name="settings_auto_follow_hint">Naviger når du kjører langs et spor på kartet</string>
     <string name="map_demo_ride">DEMO</string>
+    <string name="demo_menu_title">Demotur</string>
+    <string name="demo_signal_lose">Mist GPS-signalet</string>
+    <string name="demo_signal_back">Få signalet tilbake</string>
+    <string name="demo_wrong_turn">Kjør feil i neste kryss</string>
+    <string name="demo_wrong_turn_set">Kjører feil i neste kryss…</string>
     <string name="settings_demo_ride">Demotur</string>
     <string name="settings_demo_ride_hint">Hver tur du starter kjøres som simulering i stedet for med GPS</string>
     <string name="settings_offline_maps">Frakoblede kart</string>

@@ -93,9 +93,9 @@ fun NavigationSummaryBar(
                 }
                 IconButton(
                     onClick = { askEnd = true },
-                    modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
+                    modifier = Modifier.size(36.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
                 ) {
-                    Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
+                    Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed, modifier = Modifier.size(24.dp))
                 }
             }
             if (open) {
@@ -898,4 +898,30 @@ fun PointByPointHelp(onOk: () -> Unit, onNever: () -> Unit, modifier: Modifier =
             TextButton(onClick = onOk) { Text(stringResource(R.string.ok), color = ElectricCyan, fontSize = 15.sp, fontWeight = FontWeight.Black) }
         }
     }
+}
+
+/** A tap on the demo ride's DEMO tag: play at losing the GPS signal, or at taking a wrong turn at the next junction. */
+@Composable
+fun DemoRideMenu(
+    signalLost: Boolean,
+    wrongTurnAhead: Boolean,
+    navigating: Boolean,
+    onSignalLost: (Boolean) -> Unit,
+    onWrongTurn: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CockpitSurface,
+        title = { HideSystemBars(); Text(stringResource(R.string.demo_menu_title), color = TextPrimary, fontWeight = FontWeight.Black) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PillButton(Icons.Default.SatelliteAlt, stringResource(if (signalLost) R.string.demo_signal_back else R.string.demo_signal_lose),
+                    NeonAmber.copy(alpha = 0.18f), NeonAmber, Modifier.fillMaxWidth().testTag("demo_signal")) { onSignalLost(!signalLost) }
+                if (navigating) PillButton(Icons.Default.AltRoute, stringResource(if (wrongTurnAhead) R.string.demo_wrong_turn_set else R.string.demo_wrong_turn),
+                    NeonAmber.copy(alpha = 0.18f), NeonAmber, Modifier.fillMaxWidth().testTag("demo_wrong_turn")) { if (!wrongTurnAhead) onWrongTurn() }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } }
+    )
 }

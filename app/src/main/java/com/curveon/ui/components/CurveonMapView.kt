@@ -11,6 +11,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MyLocation
@@ -174,6 +176,8 @@ fun CurveonMapView(
     riderFix: com.curveon.data.location.RiderMotion.Fix?,
     /** The position is simulated (demo ride): a DEMO tag sits at the arrow. */
     demoRide: Boolean = false,
+    /** The DEMO tag is tapped: the demo's tricks (lose the signal, take a wrong turn). */
+    onDemoTap: () -> Unit = {},
     /** Settings → Display: the day map with dark grey roads and black road edges. */
     headingDeg: Float,
     speedKmh: Float,
@@ -1187,7 +1191,7 @@ fun CurveonMapView(
             if (!ghost) RiderHalo(dark, riderColor) { puck }
             RiderArrow(riderOrange, ghost = ghost) { puck }
             if (ghost) RiderNoSatellite { puck }
-            if (demoRide) RiderDemoTag { puck }
+            if (demoRide) RiderDemoTag(onDemoTap) { puck }
         }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, riderColor, Modifier.matchParentSize()) }
 
@@ -1860,16 +1864,15 @@ private fun RiderNoSatellite(puck: () -> Puck?) {
 
 /** "DEMO" right under the arrow while the ride is a simulation, so it can't be taken for a real one. */
 @Composable
-private fun RiderDemoTag(puck: () -> Puck?) {
+private fun RiderDemoTag(onTap: () -> Unit, puck: () -> Puck?) {
     val below = with(androidx.compose.ui.platform.LocalDensity.current) { 26.dp.toPx() }
+    var width by remember { mutableIntStateOf(0) }
+    // Placed (not just drawn) at the arrow, so a tap on it lands on it: it opens the demo's tricks.
     Box(
         Modifier
-            .graphicsLayer {
-                val p = puck()
-                alpha = if (p == null) 0f else 1f
-                if (p != null) { translationX = p.x - size.width / 2; translationY = p.y + below }
-            }
-            .clip(RoundedCornerShape(50)).background(NeonAmber).border(2.dp, Color.Black, RoundedCornerShape(50))
+            .offset { puck()?.let { androidx.compose.ui.unit.IntOffset((it.x - width / 2).toInt(), (it.y + below).toInt()) } ?: androidx.compose.ui.unit.IntOffset(-10_000, 0) }
+            .onSizeChanged { size -> width = size.width }
+            .clip(RoundedCornerShape(50)).clickable(onClick = onTap).background(NeonAmber).border(2.dp, Color.Black, RoundedCornerShape(50))
             .padding(horizontal = 10.dp, vertical = 3.dp)
             .testTag("demo_ride_tag")
     ) {

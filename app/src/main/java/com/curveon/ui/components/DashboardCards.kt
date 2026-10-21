@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -98,6 +99,10 @@ fun MapSpeedCluster(
     /** Settings → Display: the clock, and this device's battery to the right of it. */
     showClock: Boolean = true,
     showBattery: Boolean = false,
+    /** The linked phone's battery (percent, charging); null when no companion phone is connected. */
+    phoneBattery: Pair<Int, Boolean>? = null,
+    /** Settings → Display: the phone's battery shown all the time (else only for a moment after a tap). */
+    showPhoneBattery: Boolean = false,
     /** The limit sign's size (Settings → Display). Over [SPEED_SIGN_BASE] it sticks out over the card's top and bottom. */
     signSize: Dp = SPEED_SIGN_BASE
 ) {
@@ -113,7 +118,10 @@ fun MapSpeedCluster(
     // No clip, and the edge drawn behind the content: a big sign sticks out over the card's edges and
     // must lie on top of the edge line, not under it.
     val sticksOut = ((signSize - SPEED_SIGN_BASE) / 2).coerceAtLeast(0.dp)
-    Box(modifier.testTag("full_map_speed_cluster")) {
+    // A tap shows the clock and batteries for a few seconds, even those switched off in Settings.
+    var peek by remember { mutableStateOf(false) }
+    LaunchedEffect(peek) { if (peek) { delay(5_000); peek = false } }
+    Box(modifier.clickable(interactionSource = null, indication = null) { peek = !peek }.animateContentSize().testTag("full_map_speed_cluster")) {
         Box(Modifier.matchParentSize().background(CockpitSurface.copy(alpha = 0.92f), RoundedCornerShape(16.dp)).border(1.dp, border, RoundedCornerShape(16.dp)))
         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.End) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -127,8 +135,9 @@ fun MapSpeedCluster(
                         val base = SPEED_SIGN_BASE.roundToPx()
                         layout(p.width, minOf(p.height, base)) { p.place(0, (minOf(p.height, base) - p.height) / 2) }
                     })
-                if (showClock) Clock(17.sp)
-                if (showBattery) BatteryLevel()
+                if (showClock || peek) Clock(17.sp)
+                if (showBattery || peek) BatteryLevel()
+                if (showPhoneBattery || peek) phoneBattery?.let { (p, c) -> PhoneBatteryLevel(p, c) }
             }
             // A lost GPS fix shows at the rider's arrow (see CurveonMapView), not here: the card keeps its height.
             val below = camera != null || (showAltitude && telemetry.hasGpsFix)
@@ -200,6 +209,37 @@ fun BatteryLevel(modifier: Modifier = Modifier) {
         val bottom = size.height - gap
         val h = (bottom - top) * level.coerceIn(0.05f, 1f)
         drawRect(fill, topLeft = Offset(gap, bottom - h), size = Size(size.width - gap * 2, h))
+    }
+}
+
+/**
+ * The linked phone's battery (the one in the pocket, running the companion): a slim phone filled to its
+ * level, so it can't be taken for this device's cell beside it. Green while charging, red when low.
+ */
+@Composable
+fun PhoneBatteryLevel(percent: Int, charging: Boolean, modifier: Modifier = Modifier) {
+    if (percent < 0) return
+    val level = percent / 100f
+    val fill = when {
+        charging -> EcoGreen
+        level < 0.15f -> WarningRed
+        else -> TextSecondary
+    }
+    val label = stringResource(R.string.phone_battery_level, percent)
+    androidx.compose.foundation.Canvas(
+        modifier.size(width = 12.dp, height = 20.dp).testTag("phone_battery").semantics { contentDescription = label }
+    ) {
+        val stroke = 1.5.dp.toPx()
+        val radius = CornerRadius(3.dp.toPx())
+        drawRoundRect(TextSecondary, topLeft = Offset(stroke / 2, stroke / 2), size = Size(size.width - stroke, size.height - stroke),
+            cornerRadius = radius, style = Stroke(stroke))
+        // The fill from the bottom, under a thicker top edge like a phone's earpiece end.
+        val gap = stroke + 1.dp.toPx()
+        val top = gap + 2.5.dp.toPx()
+        val bottom = size.height - gap
+        val h = (bottom - top) * level.coerceIn(0.05f, 1f)
+        drawRect(fill, topLeft = Offset(gap, bottom - h), size = Size(size.width - gap * 2, h))
+        drawLine(TextSecondary, Offset(size.width * 0.35f, gap + 0.8.dp.toPx()), Offset(size.width * 0.65f, gap + 0.8.dp.toPx()), 1.dp.toPx())
     }
 }
 

@@ -91,6 +91,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
     val demoMode by viewModel.demoMode.collectAsStateWithLifecycle()
     val demoRiding by viewModel.isDemoRiding.collectAsStateWithLifecycle()
+    val demoSignalLost by viewModel.demoSignalLost.collectAsStateWithLifecycle()
+    val demoWrongTurn by viewModel.demoWrongTurn.collectAsStateWithLifecycle()
+    var demoMenu by remember { mutableStateOf(false) }
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
     val gpxGroups by viewModel.gpxGroups.collectAsStateWithLifecycle()
     val overlayTracks by viewModel.overlayTracks.collectAsStateWithLifecycle()
@@ -110,6 +113,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val showClock by viewModel.showClock.collectAsStateWithLifecycle()
     val showBattery by viewModel.showBattery.collectAsStateWithLifecycle()
+    val showPhoneBattery by viewModel.showPhoneBattery.collectAsStateWithLifecycle()
+    val phoneStatusNow by phone.phoneStatus.collectAsStateWithLifecycle()
+    val thisDeviceIsPhone by phone.thisDevice.collectAsStateWithLifecycle()
     val speedSign by viewModel.speedSign.collectAsStateWithLifecycle()
     val roadCardSize by viewModel.roadCardSize.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
@@ -476,6 +482,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val leftClearance = if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
+        // The demo ride's tricks, from a tap on its DEMO tag: things that can't be tried at home on a real ride.
+        if (demoMenu && demoRiding) com.curveon.ui.components.DemoRideMenu(
+            signalLost = demoSignalLost, wrongTurnAhead = demoWrongTurn, navigating = isNavigating,
+            onSignalLost = { viewModel.setDemoSignalLost(it); demoMenu = false },
+            onWrongTurn = { viewModel.demoWrongTurnAhead(); demoMenu = false },
+            onDismiss = { demoMenu = false }
+        )
         // Where the map is, so the corners know how much room there is.
         Box(Modifier.matchParentSize().onGloballyPositioned { mapBox = it.boundsInRoot() })
         // The trip bar top left (folding out downwards), the speed top right.
@@ -494,7 +507,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
         MapSpeedCluster({ telemetryState.value }, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
-            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, signSize = speedSign.dp.dp)
+            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, signSize = speedSign.dp.dp,
+            // The pocket phone's battery: only with a companion phone connected (on "This device" it's the battery above).
+            phoneBattery = phoneStatusNow?.takeIf { !thisDeviceIsPhone && phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO }
+                ?.let { it.batteryPercent to it.charging }, showPhoneBattery = showPhoneBattery)
         // The road's number and priority sign in a card of their own: top left, under the arrival box (or the heat button).
         currentRoad?.let { road ->
             CurrentRoadCard(road, giveWay = giveWayAhead, scale = roadCardSize.scale, showName = roadNameShown,
@@ -705,7 +721,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier.tourTarget(TourTarget.MAP)) {
         CurveonMapView(
             location = currentLocationState.value,
-            riderFix = riderFixState.value, demoRide = demoRiding,
+            riderFix = riderFixState.value, demoRide = demoRiding, onDemoTap = { demoMenu = true },
             headingDeg = telemetryState.value.headingDeg,
             speedKmh = telemetryState.value.speedKmh,
             speedLimitKmh = telemetryState.value.speedLimitKmh,
@@ -1075,7 +1091,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, arrowLead = arrowLead, surfaceMode = surfaceMode,
-                    mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, speedSign = speedSign, roadCardSize = roadCardSize, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, showPhoneBattery = showPhoneBattery, phoneBatteryOffered = !thisDeviceIsPhone, speedSign = speedSign, roadCardSize = roadCardSize, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     navAlerts = viewModel.navAlerts.collectAsStateWithLifecycle().value,
                     offRouteAlerts = viewModel.offRouteAlerts.collectAsStateWithLifecycle().value,
@@ -1107,6 +1123,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onShowAltitude = viewModel::setShowAltitude,
                     onShowClock = viewModel::setShowClock,
                     onShowBattery = viewModel::setShowBattery,
+                    onShowPhoneBattery = viewModel::setShowPhoneBattery,
                     onSpeedSign = viewModel::setSpeedSign,
                     onRoadCardSize = viewModel::setRoadCardSize,
                     onShowRoadInfo = viewModel::setShowRoadInfo,
