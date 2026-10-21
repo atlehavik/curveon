@@ -793,6 +793,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onDismiss = { phone.dismissNotification(it.id) },
                 onSwipe = { phone.hideNotification(it.id) },
                 onAction = { n, i -> phone.invokeAction(n.id, i) },
+                onRead = { viewModel.readAloud(it.senderName, it.message) },
                 modifier = Modifier.weight(1f)
             )
         }

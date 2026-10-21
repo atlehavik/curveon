@@ -485,6 +485,7 @@ fun NotificationCard(
     onDismiss: (NotificationItem) -> Unit,
     onSwipe: (NotificationItem) -> Unit,
     onAction: (NotificationItem, Int) -> Unit,
+    onRead: (NotificationItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var index by remember(notifications.size) { mutableIntStateOf(0) }
@@ -498,7 +499,13 @@ fun NotificationCard(
                     Text(n.senderName, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("${n.appName} · ${ago(n.timestampMs)}", color = TextSecondary, fontSize = 12.sp, maxLines = 1)
                 }
+                // Read aloud in the headset, so the rider needn't take their eyes off the road.
+                if (!n.isIncomingCall) Box(
+                    Modifier.size(52.dp).clip(CircleShape).background(CockpitSurfaceVariant).clickable { onRead(n) }.testTag("notification_read_btn"),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Default.VolumeUp, stringResource(R.string.read_aloud), tint = ElectricCyan, modifier = Modifier.size(28.dp)) }
                 if (notifications.size > 1) {
+                    Spacer(Modifier.width(8.dp))
                     Box(
                         Modifier.clip(RoundedCornerShape(12.dp)).background(NeonAmber).clickable { index = (index + 1) % notifications.size }
                             .padding(horizontal = 10.dp, vertical = 6.dp)

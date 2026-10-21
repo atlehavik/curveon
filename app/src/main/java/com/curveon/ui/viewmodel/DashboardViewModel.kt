@@ -711,6 +711,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /** Reads a message out in the rider's headset (where navigation is spoken), so it needn't be read while riding. */
+    fun readAloud(sender: String, message: String) {
+        phoneCompanion.speak(str(R.string.speak_message, sender, message), navSpeech.language(_telemetry.value.useMph), true, Message.NavCue.CHOOSE, Message.CueSide.CENTER)
+    }
+
     /** Spoken or as a sound, as chosen; [p] and [road] give the words for turns. */
     /** Reached a stop on the way: a banner on screen and, as set in Settings → Navigation, a sound or the spoken name. */
     private fun announceStop(name: String) {

@@ -87,6 +87,8 @@
     <string name="settings_road_info">Road info</string>
     <string name="stop_reached">Reached</string>
     <string name="speak_stop_reached">You have reached %1$s</string>
+    <string name="speak_message">%1$s says: %2$s</string>
+    <string name="read_aloud">Read aloud</string>
     <string name="road_needs_map">Download the map for more about this road</string>
     <string name="road_needs_map_for">Download the map for %1$s for more about this road</string>
     <string name="size_normal">Normal</string>

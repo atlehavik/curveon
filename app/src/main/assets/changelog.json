@@ -61,7 +61,8 @@
       "Friends and groups now live in Curveon itself, whether or not your phone is nearby: you can show your friend code the moment you open it. If the tablet has no internet, groups use your phone's connection through Bluetooth by themselves, and you never have to think about which device does what",
       "Use Curveon on both your phone and your tablet? Link them once with a code under Friends, Me, and your friends, groups and name are the same on both. Add a friend on one, and it shows up on the other",
       "The SOS button can no longer go off by accident when you scroll: it only sends after you have held your thumb still on it for the whole three seconds, and sliding away from it cancels",
-      "On a phone held upright, a long message no longer pushes the Reply and Dismiss buttons out of sight: the text is shortened instead, so the buttons are always there"
+      "On a phone held upright, a long message no longer pushes the Reply and Dismiss buttons out of sight: the text is shortened instead, so the buttons are always there",
+      "Messages can be read aloud: tap the speaker next to the sender's name and Curveon reads the message in your headset, so you can keep your eyes on the road"
     ],
     "nb": [
       "En tur avsluttes nå etter fem minutters stopp i stedet for tjue, så turene dine blir lagret tidligere. Kjører du igjen innen to timer, spør Curveon med en gang om du vil fortsette turen du hadde eller starte en ny. Fortsett tar opp tråden der du stoppet og logger videre i samme tur. Ny tur (og det du får hvis du bare overser spørsmålet) lar den forrige turen være ferdig som den var",
@@ -123,7 +124,8 @@
       "Venner og grupper ligger nå i Curveon selv, enten telefonen er i nærheten eller ikke: du kan vise venne-koden din med en gang du åpner den. Har nettbrettet ikke nett, bruker gruppene telefonens forbindelse over Bluetooth av seg selv, og du trenger aldri tenke på hvilken enhet som gjør hva",
       "Bruker du Curveon både på telefonen og på nettbrettet? Koble dem én gang med en kode under Venner, Meg, så er vennene, gruppene og navnet ditt like på begge. Legger du til en venn på den ene, dukker den opp på den andre",
       "SOS-knappen kan ikke lenger utløses ved et uhell når du ruller: den sendes bare hvis tommelen blir liggende i ro på knappen i hele de tre sekundene, og glir du bort fra den, avbrytes det",
-      "På en telefon holdt på høykant dytter ikke lenger en lang melding Svar- og Avvis-knappene ut av syne: teksten kortes ned i stedet, så knappene alltid er der"
+      "På en telefon holdt på høykant dytter ikke lenger en lang melding Svar- og Avvis-knappene ut av syne: teksten kortes ned i stedet, så knappene alltid er der",
+      "Meldinger kan leses opp: trykk på høyttaleren ved navnet til avsenderen, så leser Curveon meldingen i hjelmen, og du kan holde blikket på veien"
     ]
   },
   {

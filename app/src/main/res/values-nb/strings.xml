@@ -86,6 +86,8 @@
     <string name="settings_road_info">Veiinformasjon</string>
     <string name="stop_reached">Fremme ved</string>
     <string name="speak_stop_reached">Du er framme ved %1$s</string>
+    <string name="speak_message">%1$s skriver: %2$s</string>
+    <string name="read_aloud">Les opp</string>
     <string name="road_needs_map">Last ned kartet for mer om veien</string>
     <string name="road_needs_map_for">Last ned kartet for %1$s for mer om veien</string>
     <string name="size_normal">Normal</string>
