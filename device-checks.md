@@ -6,7 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
-## 2026-10-21 — Settings tabs scroll to the open page; via point or stop when changing place (1.2.2)
+## 2026-10-21 — Settings tabs scroll to the open page; via point or stop when changing place; grey or dark grey roads (1.2.2)
+
+- [ ] X7, day map: Settings → Display → High contrast → Grey, then Dark grey: small roads and the
+      tarmac roads drawn by the gravel layer change shade together; place names stay on top and readable.
+      Your old "on" setting should show as Dark grey.
 
 - [ ] Plan a trip with a route point, tap it → Change place → Pick on map → tap: the bar offers
       Route point and Stop. Route point keeps it a white dot, Stop makes it a numbered stop. Same

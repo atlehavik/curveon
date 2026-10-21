@@ -85,7 +85,10 @@
     <string name="settings_altitude_hint">Høyde over havet under farten</string>
     <string name="settings_road_info">Veiinformasjon</string>
     <string name="settings_high_contrast">Høykontrast</string>
-    <string name="settings_high_contrast_hint">Dagkartet: mørkegrå veier med svart kant, hovedveiene er fortsatt gule</string>
+    <string name="settings_high_contrast_hint">Dagkartet: grå eller mørkegrå veier med svart kant, hovedveiene er fortsatt gule</string>
+    <string name="road_contrast_off">Av</string>
+    <string name="road_contrast_grey">Grå</string>
+    <string name="road_contrast_dark_grey">Mørkegrå</string>
     <string name="stop_reached">Fremme ved</string>
     <string name="speak_stop_reached">Du er framme ved %1$s</string>
     <string name="road_needs_map">Last ned kartet for mer om veien</string>

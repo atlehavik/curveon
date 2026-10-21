@@ -170,6 +170,8 @@ fun CurveonMapView(
     demoRide: Boolean = false,
     /** Settings → Display: the day map with dark grey roads and black road edges. */
     highContrast: Boolean = false,
+    /** High contrast: the grey the white roads and the light paths become. */
+    highContrastRoads: Pair<String, String> = com.curveon.data.map.OfflineMaps.HC_ROAD to com.curveon.data.map.OfflineMaps.HC_PATH,
     headingDeg: Float,
     speedKmh: Float,
     speedLimitKmh: Int,
@@ -596,12 +598,12 @@ fun CurveonMapView(
     }
 
     // Style: day or night. Switching style drops our layers, so they are re-added each time.
-    LaunchedEffect(map, dark, mapVersion, highContrast) {
+    LaunchedEffect(map, dark, mapVersion, highContrast, highContrastRoads) {
         val m = map ?: return@LaunchedEffect
-        val json = offlineMaps.styleJson(if (dark) "dark" else "light", highContrast)
+        val json = offlineMaps.styleJson(if (dark) "dark" else "light", highContrast, highContrastRoads.first, highContrastRoads.second)
         style = null
         m.setStyle(Style.Builder().fromJson(json)) { s ->
-            addOverlayLayers(s, dark, highContrast && !dark)
+            addOverlayLayers(s, dark, highContrast && !dark, highContrastRoads.first)
             poiBadges.forEach { (name, bmp) -> s.addImage(name, bmp) }
             signImages.forEach { (name, bmp) -> s.addImage(name, bmp) }
             style = s
@@ -1041,7 +1043,7 @@ fun CurveonMapView(
     // Planning a trip: a preview, editing it, picking places or drawing an area on the map.
     val planning = planningTrip || previewRoutes.isNotEmpty() || editor != null || onTap != null || onSketch != null
     val palette = if (surfacePaletteWhilePlanning && !planning) SurfacePalette.QUIET else surfacePalette
-    LaunchedEffect(style, palette, highContrast) {
+    LaunchedEffect(style, palette, highContrast, highContrastRoads) {
         val s = style ?: return@LaunchedEffect
         // The bright colours a little wider too, so they read at a glance.
         val wide = if (palette == SurfacePalette.QUIET) 1f else 1.3f
@@ -1055,7 +1057,7 @@ fun CurveonMapView(
         val hc = highContrast && !dark && !bright
         // High contrast, quiet: the same dark grey as the map's own small roads (no edge); see addSurfaceLayers.
         if (hc) s.getLayer("$SURFACE-country")?.setProperties(
-            lineColor(com.curveon.data.map.OfflineMaps.HC_ROAD), lineOpacity(countryOpacity),
+            lineColor(highContrastRoads.first), lineOpacity(countryOpacity),
             lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.6f), E.stop(13, 1.8f), E.stop(15, 2.4f))))
         else s.getLayer("$SURFACE-country-casing")?.setProperties(
             lineColor(if (!bright) "#808080" else if (dark) "#000000" else "#202020"), lineOpacity(countryOpacity),
@@ -1403,7 +1405,7 @@ private fun surfaceWidth(base: Float) = E.interpolate(E.linear(), E.zoom(),
     E.stop(14, E.product(E.literal(base), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
     E.stop(18, E.product(E.literal(base * 3f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))))
 
-private fun addSurfaceLayers(s: Style, dark: Boolean, highContrast: Boolean = false) {
+private fun addSurfaceLayers(s: Style, dark: Boolean, highContrast: Boolean = false, hcRoad: String = com.curveon.data.map.OfflineMaps.HC_ROAD) {
     s.addSource(GeoJsonSource(SURFACE))
     s.addSource(GeoJsonSource(HEAT))
     fun width(base: Float) = surfaceWidth(base)
@@ -1415,7 +1417,7 @@ private fun addSurfaceLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
     fun tarmac(kind: String, fadeFrom: Float, until: Float) = if (highContrast) listOf(
         // High contrast: the same dark grey as the map's own small roads, no edge, never thinner than they are.
         LineLayer("$SURFACE-$kind", SURFACE).withProperties(
-            lineColor(com.curveon.data.map.OfflineMaps.HC_ROAD), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
+            lineColor(hcRoad), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
             lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.6f), E.stop(13, 1.8f), E.stop(15, 2.4f)))
         ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until }
@@ -1497,8 +1499,8 @@ private fun addSurfaceOverLayers(s: Style, dark: Boolean) {
     }
 }
 
-private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = false) {
-    addSurfaceLayers(s, dark, highContrast)
+private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = false, hcRoad: String = com.curveon.data.map.OfflineMaps.HC_ROAD) {
+    addSurfaceLayers(s, dark, highContrast, hcRoad)
     s.addImage(ARROW_IMAGE, arrowBitmap(), true)
     s.addSource(GeoJsonSource(GPX))
     s.addSource(GeoJsonSource(GPX_POIS))

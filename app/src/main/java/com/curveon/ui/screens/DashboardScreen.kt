@@ -128,7 +128,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val roadNameProbe by viewModel.roadNameProbe.collectAsStateWithLifecycle()
     val mapDark by viewModel.mapDark.collectAsStateWithLifecycle()
     val mapTheme by viewModel.mapTheme.collectAsStateWithLifecycle()
-    val highContrast by viewModel.highContrast.collectAsStateWithLifecycle()
+    val roadContrast by viewModel.roadContrast.collectAsStateWithLifecycle()
     val mapDetail by viewModel.mapDetail.collectAsStateWithLifecycle()
     val fuelHint by viewModel.fuelHint.collectAsStateWithLifecycle()
     val cameraAlert by viewModel.cameraAlert.collectAsStateWithLifecycle()
@@ -687,7 +687,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onHeatButtonShown = { heatButtonShown = it },
             buttonsBottomInset = buttonsBottomInset,
             dark = mapDark,
-            highContrast = highContrast || isNavigating, // while navigating the day map is always high contrast
+            // While navigating the day map is always high contrast: dark grey unless grey is chosen.
+            highContrast = roadContrast != com.curveon.ui.viewmodel.RoadContrast.OFF || isNavigating,
+            highContrastRoads = (roadContrast.takeIf { it != com.curveon.ui.viewmodel.RoadContrast.OFF } ?: com.curveon.ui.viewmodel.RoadContrast.DARK_GREY)
+                .let { it.road!! to it.path!! },
             previewRoutes = mapPreviewRoutes,
             markers = mapMarkers,
             editor = editor,
@@ -1005,7 +1008,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             SettingsDialog(
                 state = SettingsState(
                     language = remember { com.curveon.AppLanguage.current(context) },
-                    useMph = useMph, mapTheme = mapTheme, highContrast = highContrast, mapDetail = mapDetail, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
+                    useMph = useMph, mapTheme = mapTheme, roadContrast = roadContrast, mapDetail = mapDetail, screenLock = viewModel.screenLock.collectAsStateWithLifecycle().value,
                     obdEnabled = obdEnabled, fuelSetUp = fuelCalibration.source != null && fuelCalibration.tankLiters != null,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
@@ -1030,7 +1033,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onLanguage = { com.curveon.AppLanguage.set(context, it) },
                     onUnits = viewModel::setUseMph,
                     onMapTheme = viewModel::setMapTheme,
-                    onHighContrast = viewModel::setHighContrast,
+                    onRoadContrast = viewModel::setRoadContrast,
                     onMapDetail = viewModel::setMapDetail,
                     onScreenLock = viewModel::setScreenLock,
                     onObd = viewModel::setObd,

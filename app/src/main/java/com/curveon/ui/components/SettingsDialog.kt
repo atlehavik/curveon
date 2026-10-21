@@ -34,6 +34,7 @@ import com.curveon.data.map.MapDownloadState
 import com.curveon.data.update.UpdateState
 import com.curveon.ui.theme.*
 import com.curveon.ui.viewmodel.MapDetail
+import com.curveon.ui.viewmodel.RoadContrast
 import com.curveon.ui.viewmodel.MapTheme
 
 private val OnCyan = Color(0xFF00363D)
@@ -52,7 +53,7 @@ data class SettingsState(
     val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
-    val highContrast: Boolean = false,
+    val roadContrast: RoadContrast = RoadContrast.OFF,
     val mapDetail: MapDetail = MapDetail.RESPONSE,
     val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
@@ -102,7 +103,7 @@ class SettingsActions(
     val onLanguage: (AppLanguage) -> Unit,
     val onUnits: (Boolean) -> Unit,
     val onMapTheme: (MapTheme) -> Unit,
-    val onHighContrast: (Boolean) -> Unit = {},
+    val onRoadContrast: (RoadContrast) -> Unit = {},
     val onMapDetail: (MapDetail) -> Unit = {},
     val onScreenLock: (com.curveon.ScreenLock) -> Unit,
     val onObd: (Boolean) -> Unit,
@@ -194,7 +195,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
                         }
                         Setting(stringResource(R.string.settings_high_contrast), stringResource(R.string.settings_high_contrast_hint)) {
-                            CockpitSwitch(state.highContrast, actions.onHighContrast)
+                            Choice(RoadContrast.entries, state.roadContrast, { stringResource(it.label) }, actions.onRoadContrast)
                         }
                         Setting(stringResource(R.string.settings_map_detail), stringResource(R.string.settings_map_detail_hint)) {
                             Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)

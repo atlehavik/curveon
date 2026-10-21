@@ -34,9 +34,9 @@ class OfflineMaps(private val context: Context) {
      * and labels still stack in the right order where countries meet. Under them all go the online
      * layers (OpenFreeMap, see tools/map/gen-online-style.py), which the map shows only where no
      * downloaded map covers the view ([covers]). [highContrast] (day map only) draws the white roads
-     * dark grey with no edge and the main roads' edge black, main roads staying yellow.
+     * [road] grey with no edge (light paths [path]) and the main roads' edge black, main roads staying yellow.
      */
-    fun styleJson(flavor: String, highContrast: Boolean = false): String {
+    fun styleJson(flavor: String, highContrast: Boolean = false, road: String = HC_ROAD, path: String = HC_PATH): String {
         val maps = installedMaps()
         val style = JSONObject(asset("map/styles/$flavor.json"))
         val online = JSONObject(asset("map/styles/online-$flavor.json"))
@@ -77,7 +77,7 @@ class OfflineMaps(private val context: Context) {
         }
         for (k in 0 until names.length()) rest.put(names.getJSONObject(k))
         out = rest
-        if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k))
+        if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k), road, path)
         style.put("layers", out)
         return style.toString()
     }
@@ -118,7 +118,7 @@ class OfflineMaps(private val context: Context) {
      * One layer of the day style in high contrast: the white roads and light paths a flat dark grey (the
      * same at every zoom, with no edge), the main roads' edge black.
      */
-    private fun highContrast(layer: JSONObject) {
+    private fun highContrast(layer: JSONObject, road: String, path: String) {
         val paint = layer.optJSONObject("paint") ?: return
         val id = layer.getString("id").substringBefore('~')
         when (id) {
@@ -126,8 +126,8 @@ class OfflineMaps(private val context: Context) {
             "places_subplace", "places_locality", "places_region", "online-places" -> {
                 paint.put("text-color", "#1f1f1f"); paint.put("text-halo-color", LAND_LIGHT)
             }
-            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { paint.put("line-color", HC_ROAD); atLeast(paint, HC_MIN_WIDTH) }
-            "roads_other", "roads_bridges_other", "online-roads_other" -> { paint.put("line-color", HC_PATH); atLeast(paint, HC_MIN_WIDTH) }
+            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { paint.put("line-color", road); atLeast(paint, HC_MIN_WIDTH) }
+            "roads_other", "roads_bridges_other", "online-roads_other" -> { paint.put("line-color", path); atLeast(paint, HC_MIN_WIDTH) }
             "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "online-roads_minor_casing" ->
                 // Not hidden by visibility: the online layers' visibility is switched by the map view.
                 paint.put("line-opacity", 0)
@@ -215,7 +215,7 @@ class OfflineMaps(private val context: Context) {
         private const val SOURCE = "protomaps"
         /** High contrast: the greys that white roads and light paths become, and the main roads' black edge width (px). */
         const val HC_ROAD = "#707070"
-        private const val HC_PATH = "#a0a0a0"
+        const val HC_PATH = "#a0a0a0"
         private const val HC_EDGE = 1.5
         /** The day map's land colour: place names sit on a halo of it, so they blend in instead of standing out white. */
         private const val LAND_LIGHT = "#e2dfda"

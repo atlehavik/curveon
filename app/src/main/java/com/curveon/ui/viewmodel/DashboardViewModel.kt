@@ -85,6 +85,16 @@ enum class MapDetail(val label: Int, val surfaceZoom: Float) {
     RESPONSE(com.curveon.R.string.map_detail_response, 11f), DETAIL(com.curveon.R.string.map_detail_detail, 10f)
 }
 
+/**
+ * High contrast on the day map (Settings → Display): the white roads and light paths drawn [road] and
+ * [path] grey, the main roads with a black edge; null colours = off.
+ */
+enum class RoadContrast(val label: Int, val road: String?, val path: String?) {
+    OFF(com.curveon.R.string.road_contrast_off, null, null),
+    GREY(com.curveon.R.string.road_contrast_grey, "#9a9a9a", "#c4c4c4"),
+    DARK_GREY(com.curveon.R.string.road_contrast_dark_grey, "#707070", "#a0a0a0")
+}
+
 /** How big the speed limit sign is on the map (Settings → Display); a big one sticks out over the speed card's height. */
 enum class SpeedSignSize(val label: Int, val dp: Int) {
     NORMAL(com.curveon.R.string.speed_sign_normal, 36), LARGE(com.curveon.R.string.speed_sign_large, 52), HUGE(com.curveon.R.string.speed_sign_huge, 68)
@@ -1011,9 +1021,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _mapTheme = MutableStateFlow(MapTheme.valueOf(settings.getString("mapTheme", MapTheme.AUTO.name)!!))
     val mapTheme: StateFlow<MapTheme> = _mapTheme.asStateFlow()
 
-    private val _highContrast = MutableStateFlow(settings.getBoolean("highContrast", false))
-    val highContrast: StateFlow<Boolean> = _highContrast.asStateFlow()
-    fun setHighContrast(on: Boolean) { _highContrast.value = on; settings.edit().putBoolean("highContrast", on).apply() }
+    // Was an on/off switch ("highContrast"), on being today's dark grey.
+    private val _roadContrast = MutableStateFlow(
+        settings.getString("roadContrast", null)?.let { n -> RoadContrast.entries.firstOrNull { it.name == n } }
+            ?: if (settings.getBoolean("highContrast", false)) RoadContrast.DARK_GREY else RoadContrast.OFF
+    )
+    val roadContrast: StateFlow<RoadContrast> = _roadContrast.asStateFlow()
+    fun setRoadContrast(c: RoadContrast) { _roadContrast.value = c; settings.edit().putString("roadContrast", c.name).apply() }
 
     private val _roadCardSize = MutableStateFlow(RoadCardSize.entries.firstOrNull { it.name == settings.getString("roadCardSize", null) } ?: RoadCardSize.NORMAL)
     val roadCardSize: StateFlow<RoadCardSize> = _roadCardSize.asStateFlow()

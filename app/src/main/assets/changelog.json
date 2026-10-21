@@ -54,7 +54,8 @@
       "Curveon has a new package name (com.curveon.app, was com.curveon.tablet) because it is the main app on both phone and tablet. Android treats it as a new app: install this version, then uninstall the old Curveon. Settings, downloaded maps and saved data do not carry over, and the Curveon Companion must be updated too",
       "Downloading maps is much faster: Curveon now fetches several pieces of the map at once instead of one at a time, so a country can finish in a third of the time. When you queue several countries, the next map starts downloading while the previous one gets its routes and search ready",
       "On a phone, the settings tabs scroll along when you pick one, so the name of the page you open, like Help at the far right, is always shown in full instead of sliding off the edge",
-      "When you change the place of a route point, or put a new point before another, and pick the spot on the map, you now choose whether it becomes a route point or a stop. Before, it always became a stop, so a route point you only wanted to move turned into a stop"
+      "When you change the place of a route point, or put a new point before another, and pick the spot on the map, you now choose whether it becomes a route point or a stop. Before, it always became a stop, so a route point you only wanted to move turned into a stop",
+      "High contrast in Settings → Display now has two shades: dark grey roads as before, or a lighter grey if you want a little softer map in daylight. Switch between them and see which one you like best on the road"
     ],
     "nb": [
       "Stopp du legger til underveis ligger nå alltid på ruten: før kunne en ny rute som unngår å snu hoppe over noen av stoppene (den kjørte forbi på avstand), og «stopp nådd» kunne meldes uten at du var der. Nå besøkes hvert stopp, og meldingen kommer bare når du er ved stoppet",
@@ -109,7 +110,8 @@
       "Curveon har fått nytt pakkenavn (com.curveon.app, før com.curveon.tablet) fordi det er hovedappen på både mobil og nettbrett. Android ser det som en ny app: installer denne versjonen, og avinstaller deretter den gamle Curveon. Innstillinger, nedlastede kart og lagrede data følger ikke med, og Curveon Companion må oppdateres samtidig",
       "Kartnedlastingen går mye raskere: Curveon henter nå flere deler av kartet samtidig i stedet for én om gangen, så et land kan bli ferdig på en tredjedel av tiden. Når du setter flere land i kø, begynner neste kart å laste ned mens det forrige gjør klart ruter og søk",
       "På mobilen ruller fanene i Innstillinger med når du velger en, så navnet på siden du åpner, som Hjelp helt til høyre, alltid vises helt i stedet for å forsvinne ut over kanten",
-      "Når du bytter sted for et hjelpepunkt, eller legger et nytt punkt før et annet, og velger stedet i kartet, velger du nå om det skal bli hjelpepunkt eller stopp. Før ble det alltid et stopp, så et hjelpepunkt du bare ville flytte, ble gjort om til et stopp"
+      "Når du bytter sted for et hjelpepunkt, eller legger et nytt punkt før et annet, og velger stedet i kartet, velger du nå om det skal bli hjelpepunkt eller stopp. Før ble det alltid et stopp, så et hjelpepunkt du bare ville flytte, ble gjort om til et stopp",
+      "Høykontrast under Innstillinger → Visning har nå to nyanser: mørkegrå veier som før, eller en lysere grå om du vil ha et litt mykere kart i dagslys. Bytt mellom dem og finn ut hva du liker best på veien"
     ]
   },
   {
