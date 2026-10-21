@@ -6,6 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Settings tabs scroll to the open page (1.2.2)
+
+- [ ] Pixel, portrait: Settings, tap the tabs from left to right up to Help: the open tab's name
+      shows in full each time, also Help at the far right (in Norwegian too).
+
 ## 2026-10-19 — Route colour, pruned via points, time to the next stop (1.2.2)
 
 - [ ] Navigate a route with gravel and offroad in it: asphalt keeps the usual blue, gravel is solid orange, offroad solid purple, no see-through dashes on the route. Night and day map, and at the rider arrow (orange at night) check it is still easy to see.

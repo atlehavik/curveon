@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -247,6 +248,7 @@ fun isNarrowScreen(): Boolean = androidx.compose.ui.platform.LocalConfiguration.
  * The left-hand page menu of a dialog (Settings, GPX & rides): icon and label per page. On a narrow
  * screen a row of tabs instead, which scrolls sideways if they don't fit.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun <T> DialogTabs(
     items: List<T>, selected: T, label: @Composable (T) -> String, icon: (T) -> ImageVector, onSelect: (T) -> Unit,
@@ -262,8 +264,12 @@ fun <T> DialogTabs(
         ) {
             items.forEach { t ->
                 val on = t == selected
+                // The open tab grows by its label: scroll so all of it shows, also at the right-hand end.
+                val inView = androidx.compose.runtime.remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+                LaunchedEffect(on) { if (on) { androidx.compose.runtime.withFrameNanos { }; inView.bringIntoView() } }
                 Row(
-                    Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                    Modifier.bringIntoViewRequester(inView)
+                        .clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
                         .clickable { onSelect(t) }.padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
