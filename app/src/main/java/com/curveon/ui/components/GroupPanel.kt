@@ -14,7 +14,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -515,9 +514,20 @@ private fun SosButton(onTrigger: () -> Unit) {
                     awaitEachGesture {
                         awaitFirstDown()
                         holding = true
-                        val released = withTimeoutOrNull(SOS_HOLD_MS.toLong()) { waitForUpOrCancellation() }
+                        // Only a thumb that stays put for the whole hold sets it off: lifting, sliding off the
+                        // button or the list taking over the gesture (scrolling) all cancel.
+                        var completed = true
+                        withTimeoutOrNull(SOS_HOLD_MS.toLong()) {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull() ?: run { completed = false; return@withTimeoutOrNull }
+                                if (!change.pressed || change.isConsumed || change.position.x !in 0f..size.width.toFloat() ||
+                                    change.position.y !in 0f..size.height.toFloat()
+                                ) { completed = false; return@withTimeoutOrNull }
+                            }
+                        }
                         holding = false
-                        if (released == null) onTrigger()
+                        if (completed) onTrigger()
                     }
                 },
             contentAlignment = Alignment.Center

@@ -6,6 +6,10 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — SOS-knappen utløses ikke lenger av å skli
+
+- [ ] Group ride-fanen: legg tommelen på SOS-knappen og dra opp/ned (scroll) eller ut av knappen. Fremdriftsbaren skal nullstilles og **ingen** nedtelling starte. Holdes den i ro i tre sekunder skal nedtellingen på 10 starte som før.
+
 ## 2026-10-20 — Friends and groups live in Curveon, the phone is the way to the internet (not released, in 1.2.2)
 
 Built and unit tested (the tunnel client and server against each other, and the new messages), tried on the X7 over USB: the friend code
