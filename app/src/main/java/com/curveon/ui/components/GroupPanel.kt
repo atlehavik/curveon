@@ -376,6 +376,7 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
     toCut?.let { bitmap ->
         PhotoCropDialog(
             bitmap,
+            colour,
             onDone = { square ->
                 val b64 = com.curveon.phone.ProfilePhoto.encode(square)
                 if (b64 != null) photo = b64 else toast(R.string.group_photo_failed)

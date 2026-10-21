@@ -988,6 +988,11 @@
     <string name="group_photo_preview">This is how the others see you</string>
     <string name="group_photo_crop_title">Cut your picture</string>
     <string name="group_photo_crop_hint">Drag and zoom so your face is inside the circle.</string>
+    <string name="group_photo_finding">Finding you in the picture…</string>
+    <string name="group_photo_style_plain">Plain</string>
+    <string name="group_photo_style_sticker">Sticker</string>
+    <string name="group_photo_style_neon">Neon</string>
+    <string name="group_photo_style_speed">Speed</string>
     <string name="group_photo_camera_denied">The camera is needed to take a picture. You can choose one from your pictures instead.</string>
     <string name="group_photo_remove">Remove</string>
     <string name="group_photo_failed">That picture could not be used.</string>

@@ -116,6 +116,16 @@ endrer seg på Play-siden:
   installert). `https`-formen trenger domene og App Links.
 - **SOS:** appen sier at den ikke er en nødtjeneste (teksten under knappen). Ingen automatisk krasjvarsling.
 
+## Profilbilde-stiler: ML Kit-utklipp (2026-10-22)
+
+`play-services-mlkit-subject-segmentation` (Googles ML Kit, gratis, Google APIs-vilkår) klipper rytteren ut av
+profilbildet for stilene Klistremerke / Neon / Fart. Modellen ligger i Google Play-tjenester og hentes av dem
+(manifest-meta-data `com.google.mlkit.vision.DEPENDENCIES = subject_segment`, ved installasjon), ikke av appen:
+ingen egen nedlasting etter installasjon, ingen nye native-biblioteker i APK-en (16 KB-kravet er uberørt), og
+bildet forlater ikke enheten. Ingen nye tillatelser. Uten Play-tjenester (eller uten nett første gang) vises
+bare «Vanlig». Datasikkerhetsskjemaet: ML Kit på enheten kan sende anonym bruks-/ytelsesstatistikk til Google;
+nevn det under «Data delt»/«samlet» hvis Google krever det for ML Kit.
+
 ## Største risikoer hos Google
 
 1. **`READ_CALL_LOG`** og **`SEND_SMS`**, se over. Største risiko.

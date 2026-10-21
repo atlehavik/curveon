@@ -986,6 +986,11 @@
     <string name="group_photo_preview">Slik ser de andre deg</string>
     <string name="group_photo_crop_title">Beskjær bildet</string>
     <string name="group_photo_crop_hint">Dra og zoom så ansiktet ditt er inni sirkelen.</string>
+    <string name="group_photo_finding">Finner deg i bildet …</string>
+    <string name="group_photo_style_plain">Vanlig</string>
+    <string name="group_photo_style_sticker">Klistremerke</string>
+    <string name="group_photo_style_neon">Neon</string>
+    <string name="group_photo_style_speed">Fart</string>
     <string name="group_photo_camera_denied">Kameraet trengs for å ta bilde. Du kan velge et fra bildene dine i stedet.</string>
     <string name="group_photo_remove">Fjern</string>
     <string name="group_photo_failed">Det bildet kunne ikke brukes.</string>
