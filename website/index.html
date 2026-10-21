@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Curveon</title>
+<link rel="icon" type="image/png" href="icon.png">
 <meta name="description" content="Motorsykkelnavigasjon som elsker svingete veier, og som virker uten dekning. / Motorcycle navigation that loves curvy roads, and works without a signal.">
 <style>
   :root { --bg:#0d1117; --card:#161b22; --text:#e6edf3; --muted:#9aa7b4; --cyan:#00e5ff; --amber:#ffb300; }
@@ -21,6 +22,10 @@
   ul { padding-left:1.2rem; } li { margin:.45rem 0; }
   footer { margin-top:3rem; padding-top:1rem; border-top:1px solid #30363d; color:var(--muted); font-size:.9rem; }
   a { color:var(--cyan); }
+  .brand { display:flex; align-items:center; gap:16px; margin:0 0 .5rem; }
+  .brand img { width:72px; height:72px; border-radius:50%; flex:none; }
+  .brand h1 { margin:0; }
+  .hero { display:block; width:100%; height:auto; border-radius:16px; margin:1.5rem 0 .5rem; border:1px solid #30363d; }
   .lang { float:right; font-size:.9rem; }
   [hidden] { display:none !important; }
 </style>
@@ -30,7 +35,7 @@
   <div class="lang"><a href="#" data-set="nb">Norsk</a> · <a href="#" data-set="en">English</a></div>
 
   <section lang="nb" data-lang="nb">
-    <h1>Curveon</h1>
+    <div class="brand"><img src="icon.png" alt="" width="72" height="72"><h1>Curveon</h1></div>
     <p class="lead">Motorsykkelnavigasjon som elsker svingete veier, og som virker uten dekning.</p>
     <p>Curveon gjør telefonen din, eller et Android-nettbrett på styret, til et instrumentbord for turen: kart, svingvis navigasjon, musikk, meldinger og samtaler på ett sted. Gratis, åpen kildekode og laget for motorsyklister.</p>
     <div class="buttons">
@@ -38,6 +43,7 @@
       <a class="btn secondary" href="https://github.com/atlehavik/curveon">Kildekode på GitHub</a>
     </div>
     <p class="note">Android 10 eller nyere · mobil eller nettbrett · norsk og engelsk</p>
+    <img class="hero" src="hero.png" width="1600" height="790" alt="Curveon på et nettbrett og en telefon: kart med navigasjon, melding, musikk og turteller">
 
     <h2>Hvorfor Curveon?</h2>
     <ul>
@@ -53,7 +59,7 @@
   </section>
 
   <section lang="en" data-lang="en" hidden>
-    <h1>Curveon</h1>
+    <div class="brand"><img src="icon.png" alt="" width="72" height="72"><h1>Curveon</h1></div>
     <p class="lead">Motorcycle navigation that loves curvy roads, and works without a signal.</p>
     <p>Curveon turns your phone, or an Android tablet on the handlebars, into a dashboard for the ride: maps, turn-by-turn navigation, your music, messages and calls, all in one place. Free, open source and made for riders.</p>
     <div class="buttons">
@@ -61,6 +67,7 @@
       <a class="btn secondary" href="https://github.com/atlehavik/curveon">Source code on GitHub</a>
     </div>
     <p class="note">Android 10 or newer · phone or tablet · English and Norwegian</p>
+    <img class="hero" src="hero.png" width="1600" height="790" alt="Curveon on a tablet and a phone: map with navigation, a message, music and a rev counter">
 
     <h2>Why Curveon?</h2>
     <ul>
