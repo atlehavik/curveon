@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material.icons.filled.SatelliteAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -178,6 +179,8 @@ fun CurveonMapView(
     speedKmh: Float,
     speedLimitKmh: Int,
     hasGpsFix: Boolean,
+    /** The GPS signal is lost (or the position only guessed, in a tunnel): the arrow is a ghost with a no-satellite badge. */
+    gpsLost: Boolean = false,
     routePoints: List<GeoPoint>,
     /** What is underfoot at each of [routePoints] (see [MapRoute]): gravel and tracks are drawn solid over the route's line. */
     routeSurfaces: List<Int>? = null,
@@ -1169,9 +1172,14 @@ fun CurveonMapView(
         // At night the rider is orange, so it stands out from the cyan route; cyan again on an orange (gravel) route.
         val riderOrange = dark
         val riderColor = if (riderOrange) NeonAmber else ElectricCyan
-        if (hasGpsFix && style != null) {
-            RiderHalo(dark, riderColor) { puck }
-            RiderArrow(riderOrange) { puck }
+        // No signal: a pale ghost of the arrow (where the rider was last seen, or is guessed to be in a tunnel)
+        // with an amber satellite by it, and no accuracy halo (there is no accuracy to show). Nothing when there has never been a place to put it.
+        val seen = location.latitude != 0.0 || location.longitude != 0.0
+        val ghost = !hasGpsFix || gpsLost
+        if (style != null && (hasGpsFix || seen)) {
+            if (!ghost) RiderHalo(dark, riderColor) { puck }
+            RiderArrow(riderOrange, ghost = ghost) { puck }
+            if (ghost) RiderNoSatellite { puck }
             if (demoRide) RiderDemoTag { puck }
         }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, riderColor, Modifier.matchParentSize()) }
@@ -1822,6 +1830,25 @@ private fun RiderHalo(dark: Boolean, color: Color, puck: () -> Puck?) {
     }
 }
 
+/** An amber satellite up to the right of the (ghost) arrow: no GPS signal (or only a guess, in a tunnel). */
+@Composable
+private fun RiderNoSatellite(puck: () -> Puck?) {
+    val off = with(androidx.compose.ui.platform.LocalDensity.current) { 22.dp.toPx() }
+    Box(
+        Modifier
+            .graphicsLayer {
+                val p = puck()
+                alpha = if (p == null) 0f else 1f
+                if (p != null) { translationX = p.x + off - size.width / 2; translationY = p.y - off - size.height / 2 }
+            }
+            .size(30.dp).clip(CircleShape).background(CockpitSurface).border(1.5.dp, NeonAmber, CircleShape)
+            .testTag("rider_no_gps"),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(Icons.Default.SatelliteAlt, stringResource(R.string.gps_lost), tint = NeonAmber, modifier = Modifier.size(19.dp))
+    }
+}
+
 /** "DEMO" right under the arrow while the ride is a simulation, so it can't be taken for a real one. */
 @Composable
 private fun RiderDemoTag(puck: () -> Puck?) {
@@ -1846,17 +1873,20 @@ private fun RiderDemoTag(puck: () -> Puck?) {
  * every frame only redraws the arrow. Tilted with the map in 3D so it lies on the road.
  */
 @Composable
-private fun RiderArrow(orange: Boolean, puck: () -> Puck?) {
+private fun RiderArrow(orange: Boolean, ghost: Boolean = false, puck: () -> Puck?) {
     val size = 44.dp
     val half = with(androidx.compose.ui.platform.LocalDensity.current) { size.toPx() / 2 }
+    // Without a fix: grey and see-through, a ghost of where the rider was.
+    val grey = remember { androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) }) }
     androidx.compose.foundation.Image(
         painter = androidx.compose.ui.res.painterResource(if (orange) com.curveon.R.drawable.ic_nav_arrow_night else com.curveon.R.drawable.ic_nav_arrow),
         contentDescription = null,
+        colorFilter = if (ghost) grey else null,
         modifier = Modifier
             .size(size)
             .graphicsLayer {
                 val p = puck()
-                alpha = if (p == null) 0f else 1f
+                alpha = if (p == null) 0f else if (ghost) 0.45f else 1f
                 if (p != null) {
                     translationX = p.x - half
                     translationY = p.y - half

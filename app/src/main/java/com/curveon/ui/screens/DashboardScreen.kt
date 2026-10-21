@@ -700,6 +700,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             speedKmh = telemetryState.value.speedKmh,
             speedLimitKmh = telemetryState.value.speedLimitKmh,
             hasGpsFix = telemetryState.value.hasGpsFix,
+            gpsLost = telemetryState.value.gpsLost || telemetryState.value.isDeadReckoning,
             routePoints = routePoints,
             routeSurfaces = routeSurfaces,
             giveWaySigns = mapGiveWays,

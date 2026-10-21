@@ -33,7 +33,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Arrival time, the distance to the next stop in orange under it (none without a stop), and the end button, at
+ * Arrival time, the arrival at the next stop smaller in orange under it (none without a stop), and the end button (asks first), at
  * the top of the map beside the speed. Tapping it folds it out: distance and time left, then each stop (opens
  * the route menu: stops, save) with its own, fuel when worth knowing (tapping it asks whether to go there)
  * and add stop.
@@ -55,12 +55,18 @@ fun NavigationSummaryBar(
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
     }
-    // Folded: the arrival time, and in orange under it how far it is to the next stop (the destination when there is none).
+    // Folded: the arrival time, and smaller in orange under it the arrival at the next stop (none without one).
     // A tap folds it out: the destination's distance and time left, then each stop with its own, all in the same columns.
     var open by remember { mutableStateOf(false) }
     var askFuel by remember { mutableStateOf(false) }
     var askRemove by remember { mutableStateOf<StopAhead?>(null) }
+    var askEnd by remember { mutableStateOf(false) }
     val next = summary.stops.firstOrNull()
+    // The next stop's arrival: the destination's, less the time from the stop on to it.
+    val nextEta = next?.let { s ->
+        val at = summary.arrivalTimeMillis - (summary.remainingMinutes - s.minutes).coerceAtLeast(0) * 60_000L
+        remember(at / 60_000) { SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(at)) }
+    }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -74,18 +80,19 @@ fun NavigationSummaryBar(
             Row(
                 Modifier.fillMaxWidth().heightIn(min = (foldedHeight - 12.dp).coerceAtLeast(0.dp)),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // Well apart, so reaching for the card (to add a stop) doesn't hit the end button.
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 // The end button keeps its place, at the right edge; the text gives way if it must.
                 Column(Modifier.weight(1f)) {
                     Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
-                    if (!open && next != null) Text(
-                        tripDistance(next.km), color = NeonAmber, fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                        maxLines = 1, softWrap = false, modifier = Modifier.testTag("nav_next_km")
+                    if (!open && nextEta != null) Text(
+                        nextEta, color = NeonAmber, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 1, softWrap = false, modifier = Modifier.testTag("nav_next_eta")
                     )
                 }
                 IconButton(
-                    onClick = onStop,
+                    onClick = { askEnd = true },
                     modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
                 ) {
                     Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
@@ -142,6 +149,14 @@ fun NavigationSummaryBar(
             }
         }
     }
+    if (askEnd) AlertDialog(
+        onDismissRequest = { askEnd = false },
+        containerColor = CockpitSurface,
+        title = { HideSystemBars(); Text(stringResource(R.string.nav_end_ask), color = TextPrimary, fontWeight = FontWeight.Black) },
+        text = if (summary.stops.isEmpty()) null else ({ Text(stringResource(R.string.nav_end_ask_stops), color = TextSecondary) }),
+        confirmButton = { TextButton(onClick = { askEnd = false; onStop() }, modifier = Modifier.testTag("nav_end_yes")) { Text(stringResource(R.string.nav_end), color = WarningRed) } },
+        dismissButton = { TextButton(onClick = { askEnd = false }, modifier = Modifier.testTag("nav_end_no")) { Text(stringResource(R.string.cancel)) } }
+    )
     askRemove?.let { stop ->
         AlertDialog(
             onDismissRequest = { askRemove = null },

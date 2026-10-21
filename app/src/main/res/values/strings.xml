@@ -225,8 +225,7 @@
     <string name="give_way">Give way</string>
     <string name="stop_sign">Stop</string>
     <string name="give_way_in" translatable="false">%1$d m</string>
-    <string name="gps_estimating">No GPS – estimating position</string>
-    <string name="gps_searching">Searching for GPS…</string>
+    <string name="gps_lost">No GPS signal</string>
     <string name="rpm_and">%1$d rpm · %2$s</string>
     <string name="trip_summary">Trip %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Previous</string>
@@ -476,6 +475,8 @@
     <!-- Navigation bar -->
     <string name="fuel_none_ahead">none ahead</string>
     <string name="fuel_none_on_route">No fuel on the rest of the route</string>
+    <string name="nav_end_ask">End the whole route?</string>
+    <string name="nav_end_ask_stops">Your stops on the way go too.</string>
     <string name="nav_stop">Stop navigation</string>
 
     <!-- Rides -->

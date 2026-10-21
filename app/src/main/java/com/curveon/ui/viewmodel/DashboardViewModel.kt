@@ -1293,6 +1293,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val nav = navigator.state.value
             val route = nav.route
             val gap = now - lastRealFixAt
+            val lost = lastRealFixAt != 0L && gap > GPS_LOST_MS
+            if (_telemetry.value.gpsLost != lost) _telemetry.value = _telemetry.value.copy(gpsLost = lost)
             if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || _isDemoRiding.value) {
                 anchorTime = 0L
                 if (_telemetry.value.isDeadReckoning) _telemetry.value = _telemetry.value.copy(isDeadReckoning = false)
@@ -1350,6 +1352,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             hasGpsFix = true,
             gpsAccuracyMeters = (fix.accuracyMeters ?: 0f).roundToInt(),
             isDeadReckoning = estimated,
+            gpsLost = estimated && _telemetry.value.gpsLost,
             tripDistanceKm = (stats.distanceMeters / 1000.0).toFloat(),
             tripDurationMinutes = (stats.movingTimeMillis / 60_000L).toInt()
         )
@@ -2249,6 +2252,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         /** Search data this small is fetched by itself on an unmetered connection. */
         private const val SEARCH_AUTO_MAX_BYTES = 8_000_000L
         private const val DR_START_MS = 3_000L
+        /** The GPS gives a fix every second, standing still too: this long without one, the signal is gone. */
+        private const val GPS_LOST_MS = 8_000L
         /** A single fix further from the route than this is shown as it is, even before off-route kicks in. */
         private const val SNAP_LEAVE_M = 20.0
         private const val SNAP_LEAVE_TURNING_M = 7.0

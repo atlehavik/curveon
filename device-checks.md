@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Spøkelsespil uten GPS, mindre manøverkort, neste stopp
+
+- [ ] I en tunnel (eller med GPS av en stund): pila blir blek med en oransje satellitt ved siden av, og fartskortet holder samme høyde. Når signalet er tilbake, er pila vanlig igjen. Står du stille med signal, skal spøkelset **ikke** komme.
+- [ ] Under navigering: manøverkortet nede til venstre er lite når neste sving er over 1,5 km unna, og vokser når du nærmer deg. Er 1,5 km riktig grense i fart?
+- [ ] Med et stopp: under ankomsttiden står klokkeslettet for stoppet i mindre oransje skrift.
+- [ ] X ved tiden spør «Avslutte hele ruten?» før ruten avsluttes.
+
 ## 2026-10-21 — Si stedet i «Hvor skal du?»
 
 - [ ] Med Pixel koblet til X7: åpne «Hvor skal du?», trykk mikrofonen til høyre i feltet og si et sted i hjelmen (f.eks. «Geiranger»). Feltet fylles mens du snakker, og søket viser stedet. Trykk mikrofonen igjen midt i for å stoppe.

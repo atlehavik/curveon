@@ -223,8 +223,7 @@
     <string name="speed_camera_in">Fotoboks %1$d m</string>
     <string name="give_way">Vikeplikt</string>
     <string name="stop_sign">Stopp</string>
-    <string name="gps_estimating">Ingen GPS – anslår posisjon</string>
-    <string name="gps_searching">Søker etter GPS…</string>
+    <string name="gps_lost">Ingen GPS-signal</string>
     <string name="rpm_and">%1$d o/min · %2$s</string>
     <string name="trip_summary">Tur %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Forrige</string>
@@ -474,6 +473,8 @@
     <!-- Navigation bar -->
     <string name="fuel_none_ahead">ingen foran</string>
     <string name="fuel_none_on_route">Ingen bensin resten av ruten</string>
+    <string name="nav_end_ask">Avslutte hele ruten?</string>
+    <string name="nav_end_ask_stops">Stoppene underveis forsvinner også.</string>
     <string name="nav_stop">Stopp navigasjonen</string>
 
     <!-- Rides -->

@@ -2,6 +2,7 @@ package com.curveon.ui.components
 
 import com.curveon.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -34,7 +35,8 @@ import com.curveon.ui.theme.*
 /**
  * The next turn, as small as it can be: the arrow (a roundabout with the exit's number inside it), the distance
  * and the number sign of the road. It grows by what has to be in it (a wide sign) up to [maxWidth].
- * A tap folds out the words about the turn (and what comes after) for a few seconds.
+ * A tap folds out the words about the turn (and what comes after) for a few seconds. While the turn is
+ * still far off ([FAR_METERS]) it is smaller, so it doesn't draw the eye before it matters.
  */
 @Composable
 fun TurnByTurnBanner(
@@ -45,49 +47,53 @@ fun TurnByTurnBanner(
 ) {
     var open by remember(instruction.index) { mutableStateOf(false) }
     LaunchedEffect(open, instruction.index) { if (open) { delay(8000); open = false } }
-    val shape = RoundedCornerShape(18.dp)
+    val far = instruction.distanceMeters > FAR_METERS && !open
+    val box = if (far) 38.dp else 52.dp
+    val shape = RoundedCornerShape(if (far) 14.dp else 18.dp)
     Column(
         modifier = modifier
+            .animateContentSize()
             .widthIn(max = maxWidth)
             .clip(shape)
             .background(CockpitSurface.copy(alpha = 0.95f))
             .border(1.5.dp, ElectricCyanDim, shape)
             .clickable { open = !open }
-            .padding(horizontal = 10.dp, vertical = 10.dp)
+            .padding(if (far) 7.dp else 10.dp)
             .testTag("turn_by_turn_banner")
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             // Big directional maneuver icon. A roundabout is three arrows round a wide ring, as on the Norwegian sign with the exit's number clear inside it.
             val roundabout = instruction.type == TurnType.ROUNDABOUT
             Box(
-                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(ElectricCyan).padding(if (roundabout) 0.dp else 3.dp),
+                modifier = Modifier.size(box).clip(RoundedCornerShape(if (far) 9.dp else 12.dp)).background(ElectricCyan).padding(if (roundabout) 0.dp else 3.dp),
                 contentAlignment = Alignment.Center
             ) {
                 if (roundabout) {
                     RoundaboutRing(instruction.leftHandTraffic, Modifier.fillMaxSize())
                     if (instruction.roundaboutExit > 0) Text(
-                        instruction.roundaboutExit.toString(), color = Color(0xFF00363D), fontSize = 22.sp, fontWeight = FontWeight.Black, lineHeight = 22.sp
+                        instruction.roundaboutExit.toString(), color = Color(0xFF00363D), fontSize = if (far) 16.sp else 22.sp, fontWeight = FontWeight.Black,
+                        lineHeight = if (far) 16.sp else 22.sp
                     )
                 } else Icon(
                     imageVector = getTurnIcon(instruction.type),
                     contentDescription = instruction.text,
                     tint = Color(0xFF00363D),
-                    modifier = Modifier.size(46.dp)
+                    modifier = Modifier.size(box - 6.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(if (far) 9.dp else 12.dp))
             Text(
                 text = formatDistance(instruction.distanceMeters),
                 color = TextPrimary,
-                fontSize = 24.sp,
+                fontSize = if (far) 18.sp else 24.sp,
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace,
                 letterSpacing = (-0.5).sp,
                 maxLines = 1
             )
             instruction.roadRef?.let {
-                Spacer(modifier = Modifier.width(12.dp))
-                RoadShield(it, 38.dp)
+                Spacer(modifier = Modifier.width(if (far) 9.dp else 12.dp))
+                RoadShield(it, if (far) 28.dp else 38.dp)
             }
         }
         if (open) Text(
@@ -136,6 +142,9 @@ private fun RoundaboutRing(leftHandTraffic: Boolean, modifier: Modifier = Modifi
         }
     }
 }
+
+/** Further than this to the turn: the card is the small one. */
+private const val FAR_METERS = 1500
 
 @Composable
 private fun formatDistance(meters: Int): String =

@@ -84,7 +84,7 @@ val SPEED_SIGN_BASE = 36.dp
 /**
  * Speed, the signed limit when known and the clock, in the map's top-right corner (always, not
  * only in full screen: the dashboard's side has the engine panel and music). A speed camera ahead
- * adds a line underneath, as does a lost GPS fix. (A junction where the rider gives way shows in the
+ * adds a line underneath. (A junction where the rider gives way shows in the
  * road card, see [CurrentRoadCard], not here.)
  */
 @Composable
@@ -130,7 +130,8 @@ fun MapSpeedCluster(
                 if (showClock) Clock(17.sp)
                 if (showBattery) BatteryLevel()
             }
-            val below = camera != null || telemetry.isDeadReckoning || !telemetry.hasGpsFix || (showAltitude && telemetry.hasGpsFix)
+            // A lost GPS fix shows at the rider's arrow (see CurveonMapView), not here: the card keeps its height.
+            val below = camera != null || (showAltitude && telemetry.hasGpsFix)
             if (below && limit > 0) Spacer(Modifier.height(sticksOut))
             when {
                 camera != null -> Row(verticalAlignment = Alignment.CenterVertically) {
@@ -139,8 +140,6 @@ fun MapSpeedCluster(
                     Text(stringResource(R.string.speed_camera_in, (camera.distanceMeters / 10).toInt() * 10),
                         color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
-                telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
-                !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
             }
             if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
                 Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))

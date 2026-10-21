@@ -19,6 +19,8 @@ data class TelemetryData(
     val hasGpsFix: Boolean = false,
     /** Position is estimated along the route because GPS is lost (tunnel). */
     val isDeadReckoning: Boolean = false,
+    /** No real fix for a while (GPS signal lost), navigating or not: the rider's arrow turns to a ghost. */
+    val gpsLost: Boolean = false,
     val gpsAccuracyMeters: Int = 0,
     val isObdEnabled: Boolean = false,
     val isObdConnected: Boolean = false,

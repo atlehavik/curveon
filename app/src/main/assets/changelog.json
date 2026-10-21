@@ -65,7 +65,11 @@
       "Messages can be read aloud: tap the speaker next to the sender's name and Curveon reads the message in your headset, so you can keep your eyes on the road",
       "Tap someone under Phone and you choose: call them, or speak a text message that your phone sends as an SMS, all without taking your hands off the bars for long. Has the contact several numbers? They are all listed, with the mobile number picked to begin with",
       "Where to? now has a microphone: tap it and just say the place you want to go, and it is searched for you through your headset, no typing with gloves on",
-      "You decide what sits next to the speed: the clock can be switched off, and a slim battery symbol can be shown beside it, green while charging and red when it is running low (Settings → Display)"
+      "You decide what sits next to the speed: the clock can be switched off, and a slim battery symbol can be shown beside it, green while charging and red when it is running low (Settings → Display)",
+      "Lost the GPS signal? The speed card no longer grows with a line of text: instead your arrow on the map turns into a pale ghost with a small satellite beside it, until the signal is back",
+      "Ending a route now asks first, and the end button sits a little further from the times, so you don't end the whole trip by accident when you only meant to add a stop",
+      "With a stop on the way, the orange time under your arrival is now when you reach that stop, a little smaller so you can tell the two apart at a glance",
+      "The next turn in the corner is smaller while it is still far off, and grows to full size as you get close, so it only takes your attention when it matters"
     ],
     "nb": [
       "En tur avsluttes nå etter fem minutters stopp i stedet for tjue, så turene dine blir lagret tidligere. Kjører du igjen innen to timer, spør Curveon med en gang om du vil fortsette turen du hadde eller starte en ny. Fortsett tar opp tråden der du stoppet og logger videre i samme tur. Ny tur (og det du får hvis du bare overser spørsmålet) lar den forrige turen være ferdig som den var",
@@ -131,7 +135,11 @@
       "Meldinger kan leses opp: trykk på høyttaleren ved navnet til avsenderen, så leser Curveon meldingen i hjelmen, og du kan holde blikket på veien",
       "Trykker du på noen under Telefon, velger du selv: ring, eller snakk inn en melding som telefonen sender som SMS. Har kontakten flere numre, står alle i lista, og mobilnummeret er valgt på forhånd",
       "Hvor skal du? har fått en mikrofon: trykk på den og si stedet du vil til, så søker Curveon etter det gjennom hjelmen, uten å taste med hansker på",
-      "Du bestemmer selv hva som står ved farten: klokka kan skrus av, og et smalt batterisymbol kan vises ved siden av, grønt når det lader og rødt når det begynner å bli tomt (Innstillinger → Skjerm)"
+      "Du bestemmer selv hva som står ved farten: klokka kan skrus av, og et smalt batterisymbol kan vises ved siden av, grønt når det lader og rødt når det begynner å bli tomt (Innstillinger → Skjerm)",
+      "Mister du GPS-signalet? Fartskortet blir ikke lenger høyere av en tekstlinje: i stedet blir pila di på kartet et blekt spøkelse med en liten satellitt ved siden av, til signalet er tilbake",
+      "Når du avslutter en rute, spør Curveon først, og avslutt-knappen står litt lenger fra tidene, så du ikke avslutter hele turen ved et uhell når du bare skulle legge til et stopp",
+      "Med et stopp underveis viser den oransje tiden under ankomsten nå når du er ved stoppet, litt mindre, så du lett skiller dem fra hverandre",
+      "Neste sving i hjørnet er mindre så lenge den er langt unna, og vokser til full størrelse når du nærmer deg, så den bare tar oppmerksomheten når det gjelder"
     ]
   },
   {
