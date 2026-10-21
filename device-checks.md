@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Tilt helt ned mens kartet følger deg (1.2.2)
+
+- [ ] 3D mens kartet følger deg (gjerne under navigering/demotur): hold inne 3D-knappen og trykk «−»
+      til det ikke går lenger. Blikket skal gå like lavt ned mot veien som når du har dratt i kartet,
+      og pilen din skal fortsatt sitte lavt på skjermen, uten å hoppe når du trykker.
+
 ## 2026-10-21 — Stiplet grus forblir stiplet når du zoomer inn (1.2.2)
 
 - [ ] Nattkart og dagkart, Veidekke = Stiplet: zoom inn på en grusvei helt til zoom 18: den er stiplet
