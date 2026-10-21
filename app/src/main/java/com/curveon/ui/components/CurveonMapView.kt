@@ -923,7 +923,7 @@ fun CurveonMapView(
         // Start from where the camera is, so coming back to following is a glide too.
         var zoom = m.cameraPosition.zoom
         var tilt = m.cameraPosition.tilt
-        var lift = m.cameraPosition.padding?.getOrNull(1) ?: 0.0
+        var lift = -1.0 // set from where the rider is on the first frame
         var camBearing = m.cameraPosition.bearing
         var last = 0L
         var lastPose: com.curveon.data.location.RiderMotion.Pose? = null
@@ -956,6 +956,7 @@ fun CurveonMapView(
                 // The rider sits at (height + lift) / 2: not so low that the arrow runs into the cards below.
                 val clear = clearanceState.value.value * mapView.resources.displayMetrics.density
                 if (clear > 0) wantLift = minOf(wantLift, (h - 2 * (clear + 40 * mapView.resources.displayMetrics.density)).coerceAtLeast(0.0))
+                if (lift < 0) lift = (2 * m.projection.toScreenLocation(target).y - h).coerceIn(0.0, h)
                 zoom = ease(zoom, wantZoom, dt, 1.2)
                 tilt = ease(tilt, wantTilt, dt, 0.4)
                 lift = ease(lift, wantLift, dt, 0.6)
@@ -966,18 +967,26 @@ fun CurveonMapView(
                 }
                 camBearing = (camBearing + com.curveon.routing.Geo.angleDiff(camBearing, wantBearing) * (1 - kotlin.math.exp(-dt / 0.25)) + 360.0) % 360.0
                 val cam = m.cameraPosition
-                val changed = cam.target?.let { kotlin.math.abs(it.latitude - target.latitude) > 1e-8 || kotlin.math.abs(it.longitude - target.longitude) > 1e-8 } != false ||
+                // The rider low on screen by moving the camera's centre ahead of them, not by padding
+                // the top: MapLibre caps the tilt by the padding, so a padded view couldn't tilt as far.
+                // How far ahead is read off the view as it is now (one frame behind, too little to see).
+                val padded = (cam.padding?.getOrNull(1) ?: 0.0) != 0.0
+                val center = if (lift < 0.5 || padded) target else {
+                    val ahead = m.projection.fromScreenLocation(android.graphics.PointF(mapView.width / 2f, ((h + lift) / 2).toFloat()))
+                    val at = cam.target ?: target
+                    LatLng(target.latitude - (ahead.latitude - at.latitude), target.longitude - (ahead.longitude - at.longitude))
+                }
+                val changed = padded || cam.target?.let { kotlin.math.abs(it.latitude - center.latitude) > 1e-7 || kotlin.math.abs(it.longitude - center.longitude) > 1e-7 } != false ||
                     kotlin.math.abs(cam.zoom - zoom) > 1e-3 || kotlin.math.abs(cam.tilt - tilt) > 0.05 ||
-                    kotlin.math.abs(com.curveon.routing.Geo.angleDiff(cam.bearing, camBearing)) > 0.05 ||
-                    kotlin.math.abs((cam.padding?.getOrNull(1) ?: 0.0) - lift) > 0.5
+                    kotlin.math.abs(com.curveon.routing.Geo.angleDiff(cam.bearing, camBearing)) > 0.05
                 settled = !changed
                 if (changed) m.moveCamera(CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder()
-                        .target(target)
+                        .target(center)
                         .zoom(zoom)
                         .bearing(camBearing)
                         .tilt(tilt)
-                        .padding(0.0, lift, 0.0, 0.0)
+                        .padding(0.0, 0.0, 0.0, 0.0)
                         .build()
                 ))
             }
