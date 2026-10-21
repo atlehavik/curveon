@@ -73,7 +73,8 @@
       "Tap the road sign card at the top of the map and the road's name shows beside the number for a few seconds; a tap anywhere else puts it away again",
       "When you start riding, the map sits one step further out, so you see a little more of what lies around you",
       "The map and dashboard button now also closes whatever screen you have open from the menu, so one press takes you straight back to the map or the dashboard",
-      "While the next turn is far off, its small card leaves out the road number too; it comes back as you get close, or when you tap the card"
+      "While the next turn is far off, its small card leaves out the road number too; it comes back as you get close, or when you tap the card",
+      "Curveon on a phone no longer freezes and closes when you come back to it from another app while navigating, and it no longer crashes when Android restarts it in the background"
     ],
     "nb": [
       "En tur avsluttes nå etter fem minutters stopp i stedet for tjue, så turene dine blir lagret tidligere. Kjører du igjen innen to timer, spør Curveon med en gang om du vil fortsette turen du hadde eller starte en ny. Fortsett tar opp tråden der du stoppet og logger videre i samme tur. Ny tur (og det du får hvis du bare overser spørsmålet) lar den forrige turen være ferdig som den var",
@@ -147,7 +148,8 @@
       "Trykk på veiskiltkortet øverst på kartet, så står veinavnet ved siden av nummeret noen sekunder; et trykk hvor som helst ellers tar det bort igjen",
       "Når du begynner å kjøre, ligger kartet ett trinn lenger ut, så du ser litt mer av det som er rundt deg",
       "Knappen for kart og dashbord lukker nå også skjermen du har åpen fra menyen, så ett trykk tar deg rett tilbake til kartet eller dashbordet",
-      "Så lenge neste sving er langt unna, viser det lille kortet heller ikke veinummeret; det kommer tilbake når du nærmer deg, eller når du trykker på kortet"
+      "Så lenge neste sving er langt unna, viser det lille kortet heller ikke veinummeret; det kommer tilbake når du nærmer deg, eller når du trykker på kortet",
+      "Curveon på telefonen fryser og lukkes ikke lenger når du kommer tilbake til den fra en annen app mens du navigerer, og den krasjer ikke lenger når Android starter den på nytt i bakgrunnen"
     ]
   },
   {

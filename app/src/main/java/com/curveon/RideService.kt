@@ -44,17 +44,22 @@ class RideService : Service() {
         when (intent?.action) {
             ACTION_QUIT -> { quit(); return START_NOT_STICKY }
             ACTION_NAV -> getSystemService(NotificationManager::class.java).notify(ID, notification())
-            else -> startForeground()
+            else -> if (!startForeground()) { stopSelf(); return START_NOT_STICKY }
         }
-        return START_STICKY
+        // Not sticky: brought back by Android after the process died, there is no screen or ViewModel for it to keep
+        // alive, and a location service started from the background is refused (it crashed the Pixel on 2026-10-21).
+        return START_NOT_STICKY
     }
 
-    private fun startForeground() {
+    /** False when Android won't have it in the foreground (started while Curveon is out of sight). */
+    private fun startForeground(): Boolean {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CHANNEL, getString(R.string.service_channel), NotificationManager.IMPORTANCE_LOW))
         nm.deleteNotificationChannel(OLD_WARNING_CHANNEL) // "still using GPS" warnings: sleeping instead now
-        if (Build.VERSION.SDK_INT >= 29) startForeground(ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
-        else startForeground(ID, notification())
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= 29) startForeground(ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+            else startForeground(ID, notification())
+        }.onFailure { android.util.Log.w("RideService", "Not allowed in the foreground now", it) }.isSuccess
     }
 
     /** Says whether a trip is being navigated, which the companion's battery test reads (NavWatch). */

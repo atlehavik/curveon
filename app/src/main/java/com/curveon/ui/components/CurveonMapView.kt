@@ -326,7 +326,14 @@ fun CurveonMapView(
         MapLibre.getInstance(context)
         // Online map tiles seen once stay usable offline (MapLibre's default cache is 50 MB).
         OfflineManager.getInstance(context).setMaximumAmbientCacheSize(AMBIENT_CACHE_BYTES, null)
-        MapView(context).apply { onCreate(null) }
+        // Android 14 and later: drawn in a TextureView. The SurfaceView deadlocked on the Pixel (Android 17, three
+        // "not responding" on 2026-10-21): coming back to the app resizes the window, the main thread waits for the
+        // map to draw at the new size, and the map's eglSwapBuffers waits for the main thread (BLASTBufferQueue).
+        // A TextureView draws with the rest of the screen and has no such wait; it costs a little more GPU and
+        // battery (one more copy a frame). The X7 (Android 13) has never shown it and keeps the SurfaceView.
+        val options = org.maplibre.android.maps.MapLibreMapOptions.createFromAttributes(context)
+            .textureMode(android.os.Build.VERSION.SDK_INT >= 34)
+        MapView(context, options).apply { onCreate(null) }
     }
 
     DisposableEffect(lifecycleOwner) {

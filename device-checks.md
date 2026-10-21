@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Pixel fryste ved retur fra en annen app
+
+Tre «svarer ikke» 17:49–17:55: kartets tegnetråd og skjermen ventet på hverandre da vinduet endret størrelse. Kartet tegnes nå i en TextureView på Android 14+.
+
+- [ ] Pixel: naviger, bytt til Claude Code (eller en annen app) og tilbake flere ganger. Ingen frys, ingen «svarer ikke», kartet tegnes med en gang.
+- [ ] Merker du at Pixel blir varmere eller batteriet går fortere under navigering enn før?
+
 ## 2026-10-21 — Veinavn på veikortet, zoom, kart-knappen
 
 - [ ] Trykk på veikortet (Fv-skiltet øverst til venstre) på en vei med navn: navnet står ved siden av skiltene i 6 s, et trykk et annet sted tar det bort. Er det navnet på veien du kjører på (ikke en sidevei)? Har veien ikke navn i kartet, skjer ingenting.
