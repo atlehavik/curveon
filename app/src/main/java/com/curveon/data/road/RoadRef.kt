@@ -69,12 +69,16 @@ data class RoadRef(val text: String, val style: Style) {
 }
 
 /** What is known about the road the rider is on: its number and whether it is a priority road. */
-data class CurrentRoad(val ref: RoadRef?, val priority: Boolean) {
+/** [name]: the road's name as the map has it, shown for a moment when the road card is tapped. */
+data class CurrentRoad(val ref: RoadRef?, val priority: Boolean, val name: String? = null) {
     val isEmpty get() = ref == null && !priority
 }
 
-/** A road as the map tiles have it: OpenStreetMap's ref, the road's class and its name. */
-data class MapRoad(val ref: String?, val kindDetail: String?, val name: String?)
+/**
+ * A road as the map tiles have it: OpenStreetMap's ref, the road's class and its name. [name] may come from a
+ * road next to it when this one has none; [ownName] is only this road's own.
+ */
+data class MapRoad(val ref: String?, val kindDetail: String?, val name: String?, val ownName: String? = name)
 
 /** The road after a maneuver: its number sign and name, each when known. */
 data class NextRoad(val ref: RoadRef?, val name: String?)

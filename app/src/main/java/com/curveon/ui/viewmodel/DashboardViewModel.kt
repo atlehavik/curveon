@@ -913,7 +913,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             readAt = here
             val ref = roadRefAt(lat, lon, heading, mapRoadHere)
             val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(lat, lon, heading) }
-            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority).takeUnless { it.isEmpty }
+            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority, mapRoadHere?.ownName) // the road's own name, not a side road's.takeUnless { it.isEmpty }
         }
     }
 

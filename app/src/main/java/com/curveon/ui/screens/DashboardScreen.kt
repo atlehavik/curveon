@@ -37,6 +37,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.ui.layout.positionInRoot
 import com.curveon.data.bluetooth.CompanionConnectionState
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GroundPreference
@@ -120,6 +123,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // when navigating, else on the road ridden): the one place for the junction's sign and its distance.
     val giveWayAhead = giveWayAlert ?: freeGiveWay
     val currentRoad = roadHere ?: giveWayAhead?.let { com.curveon.data.road.CurrentRoad(null, false) }
+    // A tap on the road card shows the road's name for a few seconds; a tap anywhere else puts it away.
+    var roadNameShown by remember { mutableStateOf(false) }
+    var roadCardBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    var rootTopLeft by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    LaunchedEffect(roadNameShown) { if (roadNameShown) { kotlinx.coroutines.delay(6_000); roadNameShown = false } }
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
@@ -489,9 +497,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, signSize = speedSign.dp.dp)
         // The road's number and priority sign in a card of their own: top left, under the arrival box (or the heat button).
         currentRoad?.let { road ->
-            CurrentRoadCard(road, giveWay = giveWayAhead, scale = roadCardSize.scale,
+            CurrentRoadCard(road, giveWay = giveWayAhead, scale = roadCardSize.scale, showName = roadNameShown,
                 modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = roadCardTop)
-                    .widthIn(max = (mapWidth - 14.dp - 14.dp - 8.dp - speedSize.width).coerceAtLeast(0.dp)))
+                    .widthIn(max = (mapWidth - 14.dp - 14.dp - 8.dp - speedSize.width).coerceAtLeast(0.dp))
+                    .onGloballyPositioned { roadCardBounds = it.boundsInRoot() }
+                    .clickable(enabled = road.name != null) { roadNameShown = !roadNameShown })
         }
         // The next turn bottom left, as narrow as it can be.
         if (showTurn) {
@@ -873,7 +883,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             recordingResting = recordingResting,
             active = activePanel,
             onPress = pressRail,
-            onToggleMap = { viewModel.toggleFullScreenMap() }
+            // A screen from the rail is open: it closes (as pressing its own button would), and the view switches too.
+            onToggleMap = { activePanel?.let(pressRail); viewModel.toggleFullScreenMap() }
         )
     }
 
@@ -1188,6 +1199,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         // A phone's camera hole sits on one edge: keep the rail and cards clear of it, whichever
         // way round the phone is held.
         .windowInsetsPadding(WindowInsets.displayCutout)
+        // While the road's name shows, any touch outside its card puts it away (and still does what it does).
+        .onGloballyPositioned { rootTopLeft = it.positionInRoot() }
+        .pointerInput(roadNameShown) {
+            if (!roadNameShown) return@pointerInput
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                if (!roadCardBounds.contains(down.position + rootTopLeft)) roadNameShown = false
+            }
+        }
         .testTag("dashboard_screen_root")
     CompositionLocalProvider(LocalTourTargets provides tourTargets) { Box(modifier.fillMaxSize()) {
     if (portrait) {

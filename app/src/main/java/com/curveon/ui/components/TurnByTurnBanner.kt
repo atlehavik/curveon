@@ -36,7 +36,8 @@ import com.curveon.ui.theme.*
  * The next turn, as small as it can be: the arrow (a roundabout with the exit's number inside it), the distance
  * and the number sign of the road. It grows by what has to be in it (a wide sign) up to [maxWidth].
  * A tap folds out the words about the turn (and what comes after) for a few seconds. While the turn is
- * still far off ([FAR_METERS]) it is smaller, so it doesn't draw the eye before it matters.
+ * still far off ([FAR_METERS]) it is smaller and leaves out the road's number, so it doesn't draw the eye
+ * before it matters; a tap shows it in full.
  */
 @Composable
 fun TurnByTurnBanner(
@@ -91,9 +92,10 @@ fun TurnByTurnBanner(
                 letterSpacing = (-0.5).sp,
                 maxLines = 1
             )
-            instruction.roadRef?.let {
-                Spacer(modifier = Modifier.width(if (far) 9.dp else 12.dp))
-                RoadShield(it, if (far) 28.dp else 38.dp)
+            // The road's number only once the turn is near (or the card is tapped open): far off, the arrow and distance do.
+            if (!far) instruction.roadRef?.let {
+                Spacer(modifier = Modifier.width(12.dp))
+                RoadShield(it, 38.dp)
             }
         }
         if (open) Text(

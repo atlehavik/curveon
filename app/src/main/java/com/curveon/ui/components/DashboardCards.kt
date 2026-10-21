@@ -311,7 +311,9 @@ fun StopSign(size: Dp, modifier: Modifier = Modifier) {
 fun CurrentRoadCard(
     road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier, giveWay: com.curveon.data.routing.GiveWayAlert? = null,
     /** Settings → Display → Road info size: the card and what is on it, 1 is normal. */
-    scale: Float = 1f
+    scale: Float = 1f,
+    /** The road's name next to the signs (for a moment after a tap on the card). */
+    showName: Boolean = false
 ) {
     Row(
         modifier
@@ -325,6 +327,8 @@ fun CurrentRoadCard(
     ) {
         road.ref?.let { RoadShield(it, 26.dp * scale) }
         if (road.priority) PriorityRoadSign(30.dp * scale)
+        if (showName && road.name != null) Text(road.name, color = TextPrimary, fontSize = (16 * scale).sp, fontWeight = FontWeight.Bold,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).testTag("current_road_name"))
         giveWay?.let { g ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("free_give_way")) {
                 if (g.stop) StopSign(30.dp * scale) else GiveWaySign(30.dp * scale)

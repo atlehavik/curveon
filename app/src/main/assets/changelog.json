@@ -69,7 +69,11 @@
       "Lost the GPS signal? The speed card no longer grows with a line of text: instead your arrow on the map turns into a pale ghost with a small satellite beside it, until the signal is back",
       "Ending a route now asks first, and the end button sits a little further from the times, so you don't end the whole trip by accident when you only meant to add a stop",
       "With a stop on the way, the orange time under your arrival is now when you reach that stop, a little smaller so you can tell the two apart at a glance",
-      "The next turn in the corner is smaller while it is still far off, and grows to full size as you get close, so it only takes your attention when it matters"
+      "The next turn in the corner is smaller while it is still far off, and grows to full size as you get close, so it only takes your attention when it matters",
+      "Tap the road sign card at the top of the map and the road's name shows beside the number for a few seconds; a tap anywhere else puts it away again",
+      "When you start riding, the map sits one step further out, so you see a little more of what lies around you",
+      "The map and dashboard button now also closes whatever screen you have open from the menu, so one press takes you straight back to the map or the dashboard",
+      "While the next turn is far off, its small card leaves out the road number too; it comes back as you get close, or when you tap the card"
     ],
     "nb": [
       "En tur avsluttes nå etter fem minutters stopp i stedet for tjue, så turene dine blir lagret tidligere. Kjører du igjen innen to timer, spør Curveon med en gang om du vil fortsette turen du hadde eller starte en ny. Fortsett tar opp tråden der du stoppet og logger videre i samme tur. Ny tur (og det du får hvis du bare overser spørsmålet) lar den forrige turen være ferdig som den var",
@@ -139,7 +143,11 @@
       "Mister du GPS-signalet? Fartskortet blir ikke lenger høyere av en tekstlinje: i stedet blir pila di på kartet et blekt spøkelse med en liten satellitt ved siden av, til signalet er tilbake",
       "Når du avslutter en rute, spør Curveon først, og avslutt-knappen står litt lenger fra tidene, så du ikke avslutter hele turen ved et uhell når du bare skulle legge til et stopp",
       "Med et stopp underveis viser den oransje tiden under ankomsten nå når du er ved stoppet, litt mindre, så du lett skiller dem fra hverandre",
-      "Neste sving i hjørnet er mindre så lenge den er langt unna, og vokser til full størrelse når du nærmer deg, så den bare tar oppmerksomheten når det gjelder"
+      "Neste sving i hjørnet er mindre så lenge den er langt unna, og vokser til full størrelse når du nærmer deg, så den bare tar oppmerksomheten når det gjelder",
+      "Trykk på veiskiltkortet øverst på kartet, så står veinavnet ved siden av nummeret noen sekunder; et trykk hvor som helst ellers tar det bort igjen",
+      "Når du begynner å kjøre, ligger kartet ett trinn lenger ut, så du ser litt mer av det som er rundt deg",
+      "Knappen for kart og dashbord lukker nå også skjermen du har åpen fra menyen, så ett trykk tar deg rett tilbake til kartet eller dashbordet",
+      "Så lenge neste sving er langt unna, viser det lille kortet heller ikke veinummeret; det kommer tilbake når du nærmer deg, eller når du trykker på kortet"
     ]
   },
   {

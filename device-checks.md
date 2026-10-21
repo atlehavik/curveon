@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Veinavn på veikortet, zoom, kart-knappen
+
+- [ ] Trykk på veikortet (Fv-skiltet øverst til venstre) på en vei med navn: navnet står ved siden av skiltene i 6 s, et trykk et annet sted tar det bort. Er det navnet på veien du kjører på (ikke en sidevei)? Har veien ikke navn i kartet, skjer ingenting.
+- [ ] Zoomen når du begynner å kjøre: ett trinn lenger ut enn før. Passer det, i by og på landevei?
+- [ ] Med en skjerm åpen fra menyen (f.eks. Innstillinger): kart/dashbord-knappen lukker den og bytter visning.
+
 ## 2026-10-21 — Spøkelsespil uten GPS, mindre manøverkort, neste stopp
 
 - [ ] I en tunnel (eller med GPS av en stund): pila blir blek med en oransje satellitt ved siden av, og fartskortet holder samme høyde. Når signalet er tilbake, er pila vanlig igjen. Står du stille med signal, skal spøkelset **ikke** komme.

@@ -1760,7 +1760,8 @@ private fun lineFeatures(lines: List<List<GeoPoint>>): FeatureCollection =
 internal fun mapRoad(features: List<Feature>): com.curveon.data.road.MapRoad? {
     val f = features.firstOrNull { !it.getStringProperty("ref").isNullOrBlank() } ?: features.firstOrNull() ?: return null
     val name = features.firstNotNullOfOrNull { it.getStringProperty("name")?.takeIf { n -> n.isNotBlank() } }
-    return com.curveon.data.road.MapRoad(f.getStringProperty("ref")?.takeIf { it.isNotBlank() }, f.getStringProperty("kind_detail"), name)
+    return com.curveon.data.road.MapRoad(f.getStringProperty("ref")?.takeIf { it.isNotBlank() }, f.getStringProperty("kind_detail"), name,
+        f.getStringProperty("name")?.takeIf { it.isNotBlank() })
 }
 
 /**
@@ -1795,8 +1796,9 @@ private fun followZoom(speedKmh: Float, toTurnMeters: Int?, threeD: Boolean): Do
     val nearTurn = toTurnMeters != null && toTurnMeters in 1..300 && speedKmh >= 8f
     val zoom = if (nearTurn) maxOf(bySpeed, 16.8) else bySpeed
     // Tilted, the road ahead runs off into the distance: a touch closer keeps the rider's
-    // surroundings at about the same scale as the flat view.
-    return zoom + if (threeD) 0.3 else 0.0
+    // surroundings at about the same scale as the flat view. All of it one step (one press on -)
+    // further out than it used to be: the rider asked to see more around the bike.
+    return zoom - 1.0 + if (threeD) 0.3 else 0.0
 }
 
 /** Moves [from] towards [to], [tau] seconds being roughly how long it takes to get two thirds there. */
