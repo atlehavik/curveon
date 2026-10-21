@@ -120,7 +120,7 @@ class OfflineMaps(private val context: Context) {
 
     /**
      * One layer of the day style in high contrast: the white roads and light paths a flat dark grey (the
-     * same at every zoom, with no edge), the main roads' edge black.
+     * same at every zoom, with no edge), the main roads' edge a near-black grey.
      */
     private fun highContrast(layer: JSONObject, road: String, path: String) {
         val paint = layer.optJSONObject("paint") ?: return
@@ -138,7 +138,7 @@ class OfflineMaps(private val context: Context) {
             "roads_link_casing", "roads_major_casing_early", "roads_major_casing_late", "roads_highway_casing_early", "roads_highway_casing_late",
             "roads_bridges_link_casing", "roads_bridges_major_casing", "roads_bridges_highway_casing",
             "online-roads_major_casing", "online-roads_highway_casing" -> {
-                paint.put("line-color", "#000000")
+                paint.put("line-color", HC_EDGE_COLOR)
                 // The edge grows with the zoom, from a hairline far out to full width close in (from where it starts).
                 val from = when (val w = paint.opt("line-width")) {
                     is JSONArray -> w.optDouble(3, 0.0)
@@ -263,6 +263,8 @@ class OfflineMaps(private val context: Context) {
         const val HC_ROAD = "#707070"
         const val HC_PATH = "#a0a0a0"
         private const val HC_EDGE = 1.5
+        /** The main roads' edge: dark, but not black, so it isn't so harsh next to the grey roads. */
+        private const val HC_EDGE_COLOR = "#404040"
         /** The day map's land colour: place names sit on a halo of it, so they blend in instead of standing out white. */
         private const val LAND_LIGHT = "#e2dfda"
         /** The night map's land colour (the dark styles' earth and background). */
