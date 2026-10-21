@@ -85,14 +85,10 @@ enum class MapDetail(val label: Int, val surfaceZoom: Float) {
     RESPONSE(com.curveon.R.string.map_detail_response, 11f), DETAIL(com.curveon.R.string.map_detail_detail, 10f)
 }
 
-/**
- * High contrast on the day map (Settings → Display): the white roads and light paths drawn [road] and
- * [path] grey, the main roads with a black edge; null colours = off.
- */
-enum class RoadContrast(val label: Int, val road: String?, val path: String?) {
-    OFF(com.curveon.R.string.road_contrast_off, null, null),
+/** The day map's small roads and light paths (Settings → Display → Roads): grey, or dark grey as they always were. */
+enum class RoadContrast(val label: Int, val road: String, val path: String) {
     GREY(com.curveon.R.string.road_contrast_grey, "#9a9a9a", "#c4c4c4"),
-    DARK_GREY(com.curveon.R.string.road_contrast_dark_grey, "#707070", "#a0a0a0")
+    DARK_GREY(com.curveon.R.string.road_contrast_dark_grey, com.curveon.data.map.OfflineMaps.HC_ROAD, com.curveon.data.map.OfflineMaps.HC_PATH)
 }
 
 /** How big the speed limit sign is on the map (Settings → Display); a big one sticks out over the speed card's height. */
@@ -114,6 +110,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val phoneCompanion = PhoneCompanionManager(application, viewModelScope)
     private val offlineMaps = OfflineMaps(application)
     private val navigator = Navigator(application, viewModelScope)
+
+    /** Trips shared with the rider's group: kept in step with the others', and shown under "Shared routes". */
+    val sharedTrips = com.curveon.data.groups.SharedTripsController(application, viewModelScope, navigator, phoneCompanion.groups)
     private val placeSearch = PlaceSearch(application)
     private val hazards by lazy { RouteHazards(placeSearch, speedLimits) }
     private val recentDestinations = RecentDestinations(application)
@@ -349,18 +348,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val autoZoom: StateFlow<Boolean> = _autoZoom.asStateFlow()
     fun setAutoZoom(on: Boolean) { _autoZoom.value = on; settings.edit().putBoolean("autoZoom", on).apply() }
 
-    /** Gravel and soft roads dashed on the map. */
-    private val _showSurfaces = MutableStateFlow(settings.getBoolean("showSurfaces", true))
-    val showSurfaces: StateFlow<Boolean> = _showSurfaces.asStateFlow()
-    fun setShowSurfaces(on: Boolean) { _showSurfaces.value = on; settings.edit().putBoolean("showSurfaces", on).apply() }
-    /** The dashes' colours, and whether they only take them while planning (quiet otherwise). */
-    private val _surfacePalette = MutableStateFlow(runCatching { com.curveon.ui.components.SurfacePalette.valueOf(settings.getString("surfacePalette", null)!!) }
-        .getOrDefault(com.curveon.ui.components.SurfacePalette.QUIET))
-    val surfacePalette: StateFlow<com.curveon.ui.components.SurfacePalette> = _surfacePalette.asStateFlow()
-    fun setSurfacePalette(p: com.curveon.ui.components.SurfacePalette) { _surfacePalette.value = p; settings.edit().putString("surfacePalette", p.name).apply() }
-    private val _surfacePaletteWhilePlanning = MutableStateFlow(settings.getBoolean("surfacePaletteWhilePlanning", false))
-    val surfacePaletteWhilePlanning: StateFlow<Boolean> = _surfacePaletteWhilePlanning.asStateFlow()
-    fun setSurfacePaletteWhilePlanning(on: Boolean) { _surfacePaletteWhilePlanning.value = on; settings.edit().putBoolean("surfacePaletteWhilePlanning", on).apply() }
+    /** Gravel and soft roads on the map: not shown, dashed like the road, or coloured like the route. */
+    private val _surfaceMode = MutableStateFlow(
+        runCatching { com.curveon.ui.components.SurfaceMode.valueOf(settings.getString("surfaceMode", null)!!) }.getOrNull()
+            ?: if (settings.getBoolean("showSurfaces", true)) com.curveon.ui.components.SurfaceMode.DASHED else com.curveon.ui.components.SurfaceMode.OFF)
+    val surfaceMode: StateFlow<com.curveon.ui.components.SurfaceMode> = _surfaceMode.asStateFlow()
+    fun setSurfaceMode(m: com.curveon.ui.components.SurfaceMode) { _surfaceMode.value = m; settings.edit().putString("surfaceMode", m.name).apply() }
     /** The gravel heat map while planning (its button on the map). */
     private val _showGravelHeat = MutableStateFlow(settings.getBoolean("gravelHeat", false))
     val showGravelHeat: StateFlow<Boolean> = _showGravelHeat.asStateFlow()
@@ -377,6 +370,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Settings → Display: the height above sea level under the speed. */
     private val _showAltitude = MutableStateFlow(settings.getBoolean("showAltitude", false))
     val showAltitude: StateFlow<Boolean> = _showAltitude.asStateFlow()
+    /** Settings → Display: the clock next to the speed, and this device's battery beside it. */
+    private val _showClock = MutableStateFlow(settings.getBoolean("showClock", true))
+    val showClock: StateFlow<Boolean> = _showClock.asStateFlow()
+    private val _showBattery = MutableStateFlow(settings.getBoolean("showBattery", false))
+    val showBattery: StateFlow<Boolean> = _showBattery.asStateFlow()
+    /** Settings → Display: the linked phone's battery too, while a companion phone is connected. */
+    private val _showPhoneBattery = MutableStateFlow(settings.getBoolean("showPhoneBattery", false))
+    val showPhoneBattery: StateFlow<Boolean> = _showPhoneBattery.asStateFlow()
     /** The welcome tour has been shown (or skipped) once; Settings → Help brings it back. */
     val tourSeen: Boolean get() = settings.getBoolean("tourSeen", false)
     fun markTourSeen() = settings.edit().putBoolean("tourSeen", true).apply()
@@ -460,6 +461,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun setShowAltitude(on: Boolean) { _showAltitude.value = on; settings.edit().putBoolean("showAltitude", on).apply() }
+    fun setShowClock(on: Boolean) { _showClock.value = on; settings.edit().putBoolean("showClock", on).apply() }
+    fun setShowBattery(on: Boolean) { _showBattery.value = on; settings.edit().putBoolean("showBattery", on).apply() }
+    fun setShowPhoneBattery(on: Boolean) { _showPhoneBattery.value = on; settings.edit().putBoolean("showPhoneBattery", on).apply() }
 
     fun setUseMph(on: Boolean) { if (_telemetry.value.useMph != on) toggleSpeedUnits() }
     fun setObd(on: Boolean) { if (_telemetry.value.isObdEnabled != on) toggleObd() }
@@ -724,6 +728,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    /** Reads a message out in the rider's headset (where navigation is spoken), so it needn't be read while riding. */
+    fun readAloud(sender: String, message: String) {
+        phoneCompanion.speak(str(R.string.speak_message, sender, message), navSpeech.language(_telemetry.value.useMph), true, Message.NavCue.CHOOSE, Message.CueSide.CENTER)
+    }
+
     /** Spoken or as a sound, as chosen; [p] and [road] give the words for turns. */
     /** Reached a stop on the way: a banner on screen and, as set in Settings → Navigation, a sound or the spoken name. */
     private fun announceStop(name: String) {
@@ -914,7 +923,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             readAt = here
             val ref = roadRefAt(lat, lon, heading, mapRoadHere)
             val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(lat, lon, heading) }
-            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority).takeUnless { it.isEmpty }
+            // The road's own name, not a side road's.
+            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority, mapRoadHere?.ownName).takeUnless { it.isEmpty }
         }
     }
 
@@ -1021,14 +1031,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _mapTheme = MutableStateFlow(MapTheme.valueOf(settings.getString("mapTheme", MapTheme.AUTO.name)!!))
     val mapTheme: StateFlow<MapTheme> = _mapTheme.asStateFlow()
 
-    // Was an on/off switch ("highContrast"), on being today's dark grey.
-    private val _roadContrast = MutableStateFlow(
-        settings.getString("roadContrast", null)?.let { n -> RoadContrast.entries.firstOrNull { it.name == n } }
-            ?: if (settings.getBoolean("highContrast", false)) RoadContrast.DARK_GREY else RoadContrast.OFF
-    )
-    val roadContrast: StateFlow<RoadContrast> = _roadContrast.asStateFlow()
-    fun setRoadContrast(c: RoadContrast) { _roadContrast.value = c; settings.edit().putString("roadContrast", c.name).apply() }
-
     private val _roadCardSize = MutableStateFlow(RoadCardSize.entries.firstOrNull { it.name == settings.getString("roadCardSize", null) } ?: RoadCardSize.NORMAL)
     val roadCardSize: StateFlow<RoadCardSize> = _roadCardSize.asStateFlow()
     fun setRoadCardSize(size: RoadCardSize) { _roadCardSize.value = size; settings.edit().putString("roadCardSize", size.name).apply() }
@@ -1036,6 +1038,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.NORMAL)
     val speedSign: StateFlow<SpeedSignSize> = _speedSign.asStateFlow()
     fun setSpeedSign(size: SpeedSignSize) { _speedSign.value = size; settings.edit().putString("speedSign", size.name).apply() }
+
+    private val _roadContrast = MutableStateFlow(
+        settings.getString("roadContrast", null)?.let { n -> RoadContrast.entries.firstOrNull { it.name == n } } ?: RoadContrast.DARK_GREY
+    )
+    val roadContrast: StateFlow<RoadContrast> = _roadContrast.asStateFlow()
+    fun setRoadContrast(c: RoadContrast) { _roadContrast.value = c; settings.edit().putString("roadContrast", c.name).apply() }
 
     private val _mapDetail = MutableStateFlow(MapDetail.valueOf(settings.getString("mapDetail", MapDetail.RESPONSE.name)!!))
     val mapDetail: StateFlow<MapDetail> = _mapDetail.asStateFlow()
@@ -1302,7 +1310,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val nav = navigator.state.value
             val route = nav.route
             val gap = now - lastRealFixAt
-            if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || _isDemoRiding.value) {
+            val lost = lastRealFixAt != 0L && gap > GPS_LOST_MS
+            if (_telemetry.value.gpsLost != lost) _telemetry.value = _telemetry.value.copy(gpsLost = lost)
+            // A demo ride guesses too while it plays at losing the signal (see demoSignalLost).
+            if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || (_isDemoRiding.value && !_demoSignalLost.value)) {
                 anchorTime = 0L
                 if (_telemetry.value.isDeadReckoning) _telemetry.value = _telemetry.value.copy(isDeadReckoning = false)
                 continue
@@ -1330,6 +1341,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun handleFix(fix: GpsFix, estimated: Boolean) {
         NavTrace.fix(fix, locationSource.satellitesUsed, estimated)
         tripTracker.onFix(fix)
+        if (!estimated) phoneCompanion.groups.onFix(fix)
         navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble(),
             tripTracker.headingDeg.toDouble().takeIf { tripTracker.speedKmh > 5 })
         val onRoad = snapToRoute(fix)
@@ -1358,6 +1370,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             hasGpsFix = true,
             gpsAccuracyMeters = (fix.accuracyMeters ?: 0f).roundToInt(),
             isDeadReckoning = estimated,
+            gpsLost = estimated && _telemetry.value.gpsLost,
             tripDistanceKm = (stats.distanceMeters / 1000.0).toFloat(),
             tripDurationMinutes = (stats.movingTimeMillis / 60_000L).toInt()
         )
@@ -1417,16 +1430,49 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val lean = _recordLean.value
         if (lean) leanSensor.onSpeed(tripTracker.speedKmh / 3.6f)
         when (rideRecorder.onFix(fix, tripTracker.speedKmh, if (lean) leanSensor.leanDeg else null)) {
-            RideRecorder.Event.STARTED -> viewModelScope.launch {
-                val id = rideDao.insert(rideRecorder.current!!)
-                rideRecorder.setId(id)
-                placeName(fix.latitude, fix.longitude)?.let { rideRecorder.setTitle(it) }
+            RideRecorder.Event.STARTED -> {
+                _resumeOffer.value = rideRecorder.resumeOffer
+                val started = rideRecorder.current!!
+                viewModelScope.launch {
+                    val id = rideDao.insert(started)
+                    // Picked up an earlier ride meanwhile: this row is not needed (the earlier one carries on).
+                    if (rideRecorder.current?.startMs == started.startMs && rideRecorder.current?.id == 0L) {
+                        rideRecorder.setId(id)
+                        placeName(fix.latitude, fix.longitude)?.let { rideRecorder.setTitle(it) }
+                    } else rideDao.delete(id)
+                }
             }
             RideRecorder.Event.UPDATED -> saveRide(finish = false)
             RideRecorder.Event.FINISHED -> saveRide(finish = true)
             RideRecorder.Event.NONE -> Unit
         }
         _currentRide.value = rideRecorder.current
+        if (rideRecorder.current == null) _resumeOffer.value = null
+    }
+
+    /** The ride that finished a short while ago, while a new one is under way: the rider is asked whether to go on with it. */
+    private val _resumeOffer = MutableStateFlow<Ride?>(null)
+    val resumeOffer: StateFlow<Ride?> = _resumeOffer.asStateFlow()
+
+    /** The GPX copy made of a finished ride, by ride: replaced when the ride is picked up again and finishes later. */
+    private val autoSavedGpx = java.util.concurrent.ConcurrentHashMap<Long, Long>()
+
+    /** Goes on logging the ride that finished a short while ago, with what has been ridden since added to it. */
+    fun resumeRide() {
+        val prev = _resumeOffer.value ?: return
+        _resumeOffer.value = null
+        val merged = rideRecorder.resume(prev) ?: return
+        _currentRide.value = merged
+        viewModelScope.launch(Dispatchers.IO) {
+            rideDao.update(merged)
+            autoSavedGpx.remove(prev.id)?.let { repository.deleteGpxTrack(it) }
+        }
+    }
+
+    /** A new ride: the earlier one stays finished as it is. */
+    fun startNewRide() {
+        _resumeOffer.value = null
+        rideRecorder.declineResume()
     }
 
     /** The rider ends the ride under way now, rather than waiting for the long stop. */
@@ -1475,7 +1521,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val groupId = _autoSaveRidesGroup.value ?: return
         // The group was deleted since: stop rather than scatter rides as loose tracks.
         if (db.gpxDao().getGroupById(groupId) == null) { setAutoSaveRides(null, null); return }
-        storeRideAsGpx(ride, groupId)
+        storeRideAsGpx(ride, groupId)?.let { autoSavedGpx[ride.id] = it }
     }
 
     /** Name for a ride end: the closest place, nudged towards real towns when distances are similar. */
@@ -1548,13 +1594,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         storeRideAsGpx(ride, newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId)
     }
 
-    private suspend fun storeRideAsGpx(ride: Ride, group: Long?, called: String? = null) {
+    private suspend fun storeRideAsGpx(ride: Ride, group: Long?, called: String? = null): Long? {
         // Each point keeps when it was ridden, so the GPX lines up with a video of the ride.
         val pts = RideRecorder.parseTrack(ride.track).map { GeoPoint(it.lat, it.lon, it.ele, ride.startMs + (it.secondsFromStart * 1000).toLong()) }
-        if (pts.size < 2) return
+        if (pts.size < 2) return null
         val name = called ?: (ride.title.ifEmpty { str(R.string.ride) } + " · " +
             java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.getDefault()).format(java.util.Date(ride.startMs)))
-        repository.saveGpxTrack(
+        return repository.saveGpxTrack(
             GpxTrack(
                 name = name,
                 totalDistanceKm = (ride.distanceMeters / 1000).toFloat(),
@@ -1616,6 +1662,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (demoJob?.isActive != true) return
         demoJob?.cancel()
         _isDemoRiding.value = false
+        _demoSignalLost.value = false
+        _demoWrongTurn.value = false
         startGps()
     }
 
@@ -1629,9 +1677,62 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         gpsJob?.cancel()
         _isDemoRiding.value = true
         demoJob = viewModelScope.launch {
-            DemoRide.fixes(route, speedFactor, startAt = startAt).collect(::onGpsFix)
+            DemoRide.fixes(route, speedFactor, startAt = startAt).collect { fix ->
+                // Once taken, the wrong turn rides on (and then stands) until the new route restarts the demo.
+                if (_demoWrongTurn.value) takeWrongTurn()
+                demoFix(fix)
+            }
             _isDemoRiding.value = false
             startGps()
+        }
+    }
+
+    /** Demo: the ride goes on, but no position reaches Curveon (a tunnel, a lost signal) until it is switched back. */
+    private val _demoSignalLost = MutableStateFlow(false)
+    val demoSignalLost: StateFlow<Boolean> = _demoSignalLost.asStateFlow()
+    fun setDemoSignalLost(lost: Boolean) { _demoSignalLost.value = lost }
+
+    /** Demo: at the next turn the ride takes another road (straight on, or right where the route goes straight). */
+    private val _demoWrongTurn = MutableStateFlow(false)
+    val demoWrongTurn: StateFlow<Boolean> = _demoWrongTurn.asStateFlow()
+    fun demoWrongTurnAhead() { _demoWrongTurn.value = true }
+
+    private fun demoFix(fix: GpsFix) { if (!_demoSignalLost.value) onGpsFix(fix) }
+
+    /**
+     * Close to the next turn with a wrong turn asked for: ride a short way down another road from it instead, then
+     * stand there. Curveon sees the rider leave the route as on a real ride; its new route (if it makes one, or the
+     * one the rider picks) is then ridden from where the demo stands. Returns at once when not there yet (or, giving
+     * up the wrong turn, when no other road fits); otherwise it doesn't return until the demo is restarted.
+     */
+    private suspend fun takeWrongTurn(): Boolean {
+        val nav = navigator.state.value
+        val route = nav.route ?: return false
+        val p = nav.progress ?: return false
+        if (p.distanceToNextManeuver > 35) return false
+        val m = p.nextManeuver
+        if (m.type == ManeuverType.ARRIVE) { _demoWrongTurn.value = false; return false }
+        val at = route.points[m.pointIndex]
+        val before = route.points[(m.pointIndex - 3).coerceAtLeast(0)]
+        val inBearing = Geo.bearing(before.lat, before.lon, at.lat, at.lon)
+        val straight = m.type == ManeuverType.STRAIGHT || m.type == ManeuverType.KEEP_LEFT || m.type == ManeuverType.KEEP_RIGHT
+        val corner = LatLon(at.lat, at.lon)
+        val bearings = if (straight) listOf(inBearing + 90, inBearing - 90) else listOf(inBearing, inBearing + 90, inBearing - 90)
+        // A road from the turn that soon leaves the route (not the route itself, nor back the way the rider came).
+        val detour = bearings.firstNotNullOfOrNull { b ->
+            navigator.probeAhead(corner, (b + 360) % 360, 700.0)?.takeIf { d ->
+                val probe = d.points.firstOrNull { it.distanceFromStart > 120 } ?: return@takeIf false
+                route.points.none { Geo.distance(it.lat, it.lon, probe.lat, probe.lon) < 40 }
+            }
+        } ?: run { _demoWrongTurn.value = false; return false }
+        _demoWrongTurn.value = false
+        NavTrace.event("demo: wrong turn")
+        DemoRide.fixes(detour).collect(::demoFix)
+        // At the end of the side road: stand still there until Curveon's new route takes over the ride.
+        val end = detour.points.last()
+        while (true) {
+            demoFix(GpsFix(end.lat, end.lon, end.elevation, 0f, null, 4f, System.currentTimeMillis()))
+            delay(1000)
         }
     }
 
@@ -2224,6 +2325,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         /** Search data this small is fetched by itself on an unmetered connection. */
         private const val SEARCH_AUTO_MAX_BYTES = 8_000_000L
         private const val DR_START_MS = 3_000L
+        /** The GPS gives a fix every second, standing still too: this long without one, the signal is gone. */
+        private const val GPS_LOST_MS = 8_000L
         /** A single fix further from the route than this is shown as it is, even before off-route kicks in. */
         private const val SNAP_LEAVE_M = 20.0
         private const val SNAP_LEAVE_TURNING_M = 7.0

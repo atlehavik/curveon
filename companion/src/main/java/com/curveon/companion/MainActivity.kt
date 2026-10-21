@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -35,11 +36,25 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        joinFromIntent(intent)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Cyan, background = Bg, surface = Surface)) {
                 Screen()
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        joinFromIntent(intent)
+    }
+
+    /** An invite link (curveon://join#...) opened on this phone. */
+    private fun joinFromIntent(intent: Intent?) {
+        val uri = intent?.dataString ?: return
+        intent.data = null // handled once, not again after a rotation
+        GroupMirror.join(uri)
     }
 
     override fun onResume() {
@@ -94,6 +109,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            FriendsCard()
+
+            GroupCard()
+
             BatteryTestCard(notificationAccess)
 
             if (BuildConfig.DEV) Card("Test") {
@@ -115,6 +134,102 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Text(if (status.serviceRunning) "Stop sharing" else "Start sharing with tablet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+
+    /**
+     * Friends: show your code (or send it as a link) and scan a friend's: the Curveon app may be on a tablet whose camera is
+     * not at hand, and the phone's is. The friends themselves, groups and the rest are in the Curveon app.
+     */
+    @Composable
+    private fun FriendsCard() {
+        // The code is made by the tablet (the friends are there) and comes back over the link.
+        val invite by GroupMirror.friendInvite.collectAsStateWithLifecycle()
+        var showing by remember { mutableStateOf(false) }
+        var sharing by remember { mutableStateOf(false) }
+        var scanning by remember { mutableStateOf(false) }
+        val code = if (showing) invite else null
+        LaunchedEffect(invite, sharing) {
+            val link = invite ?: return@LaunchedEffect
+            if (!sharing) return@LaunchedEffect
+            sharing = false
+            GroupMirror.forgetFriendInvite()
+            startActivity(Intent.createChooser(
+                Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, getString(R.string.friends_share_text, link)), null
+            ))
+        }
+        Card(stringResource(R.string.friends_title)) {
+            Text(stringResource(R.string.friends_hint), color = Muted, fontSize = 13.sp)
+            OutlinedButton(onClick = {
+                showing = true
+                GroupMirror.requestFriendInvite()
+            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.friends_my_code)) }
+            OutlinedButton(onClick = {
+                sharing = true
+                GroupMirror.requestFriendInvite()
+            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.friends_share_link)) }
+            if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.group_scan))
+            }
+        }
+        if (showing) {
+            val link = code
+            val bitmap = remember(link) { link?.let { QrCode.bitmap(it) } }
+            AlertDialog(
+                onDismissRequest = { showing = false; GroupMirror.forgetFriendInvite() },
+                confirmButton = { TextButton(onClick = { showing = false; GroupMirror.forgetFriendInvite() }) { Text(stringResource(R.string.friends_close)) } },
+                title = { Text(stringResource(R.string.friends_my_code)) },
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (bitmap == null) CircularProgressIndicator() // the tablet is making it
+                        bitmap?.let { androidx.compose.foundation.Image(it.asImageBitmap(), null, modifier = Modifier.size(240.dp).clip(RoundedCornerShape(12.dp))) }
+                        Text(stringResource(R.string.friends_code_hint), fontSize = 13.sp)
+                    }
+                }
+            )
+        }
+        if (scanning) com.curveon.qrscan.QrScanDialog(
+            onInvite = { link ->
+                scanning = false
+                GroupMirror.join(link)
+            },
+            onDismiss = { scanning = false }
+        )
+    }
+
+    /** The active group and how it is doing; groups are started and managed in the Curveon app. */
+    @Composable
+    private fun GroupCard() {
+        val summary by GroupMirror.summary.collectAsStateWithLifecycle()
+        LaunchedEffect(Unit) {
+            GroupMirror.errors.collect { code ->
+                val text = when (code) {
+                    com.curveon.protocol.Message.GroupErrorCode.INVALID_INVITE -> R.string.group_error_invalid_invite
+                    com.curveon.protocol.Message.GroupErrorCode.EXPIRED_INVITE -> R.string.group_error_expired_invite
+                    com.curveon.protocol.Message.GroupErrorCode.ALREADY_MEMBER -> R.string.group_error_already_member
+                    com.curveon.protocol.Message.GroupErrorCode.NO_RELAY -> R.string.group_error_no_relay
+                    com.curveon.protocol.Message.GroupErrorCode.NOT_LINKED -> R.string.group_error_not_linked
+                    else -> R.string.group_error_other
+                }
+                android.widget.Toast.makeText(this@MainActivity, text, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
+        Card(stringResource(R.string.group_ride)) {
+            val s = summary
+            if (s == null) Text(stringResource(R.string.group_status_none), color = Muted, fontSize = 13.sp)
+            else {
+                val status = stringResource(when (s.status) {
+                    com.curveon.protocol.Message.GroupStatus.CONNECTED -> R.string.group_connected
+                    com.curveon.protocol.Message.GroupStatus.OFFLINE -> R.string.group_offline
+                    com.curveon.protocol.Message.GroupStatus.PAUSED -> R.string.group_paused
+                    com.curveon.protocol.Message.GroupStatus.REMOVED -> R.string.group_removed
+                })
+                Text(
+                    stringResource(R.string.group_status_line, s.name ?: stringResource(R.string.group_unnamed), s.members, status),
+                    color = if (s.status == com.curveon.protocol.Message.GroupStatus.CONNECTED) Green else Amber,
+                    fontSize = 14.sp, fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -208,6 +323,7 @@ class MainActivity : ComponentActivity() {
             add(Manifest.permission.READ_CONTACTS)
             add(Manifest.permission.READ_CALL_LOG)
             add(Manifest.permission.CALL_PHONE)
+            add(Manifest.permission.SEND_SMS)
             if (android.os.Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
         }
     }

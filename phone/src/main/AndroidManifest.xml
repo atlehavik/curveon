@@ -2,11 +2,15 @@
 <!-- The notification listener is declared by each app (it needs the app's own label). -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Group rides: the phone is the only device that talks to the relay (end-to-end encrypted) -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Spoken navigation: an online-only voice is skipped when there is no connection -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- New text messages spoken from the tablet (Phone → contact → SMS). Restricted on Play: see google-play.md. -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
     <queries>
         <!-- To show "Spotify"/"WhatsApp" instead of package names for any app that posts or plays:
              every app with a launcher icon (instead of QUERY_ALL_PACKAGES, which Play restricts) -->

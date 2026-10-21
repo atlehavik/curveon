@@ -33,7 +33,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Arrival time, the distance to the next stop in orange under it (none without a stop), and the end button, at
+ * Arrival time, the arrival at the next stop smaller in orange under it (none without a stop), and the end button (asks first), at
  * the top of the map beside the speed. Tapping it folds it out: distance and time left, then each stop (opens
  * the route menu: stops, save) with its own, fuel when worth knowing (tapping it asks whether to go there)
  * and add stop.
@@ -55,12 +55,18 @@ fun NavigationSummaryBar(
     val eta = remember(summary.arrivalTimeMillis / 60_000) {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(summary.arrivalTimeMillis))
     }
-    // Folded: the arrival time, and in orange under it how far it is to the next stop (the destination when there is none).
+    // Folded: the arrival time, and smaller in orange under it the arrival at the next stop (none without one).
     // A tap folds it out: the destination's distance and time left, then each stop with its own, all in the same columns.
     var open by remember { mutableStateOf(false) }
     var askFuel by remember { mutableStateOf(false) }
     var askRemove by remember { mutableStateOf<StopAhead?>(null) }
+    var askEnd by remember { mutableStateOf(false) }
     val next = summary.stops.firstOrNull()
+    // The next stop's arrival: the destination's, less the time from the stop on to it.
+    val nextEta = next?.let { s ->
+        val at = summary.arrivalTimeMillis - (summary.remainingMinutes - s.minutes).coerceAtLeast(0) * 60_000L
+        remember(at / 60_000) { SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(at)) }
+    }
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
@@ -74,21 +80,22 @@ fun NavigationSummaryBar(
             Row(
                 Modifier.fillMaxWidth().heightIn(min = (foldedHeight - 12.dp).coerceAtLeast(0.dp)),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // Well apart, so reaching for the card (to add a stop) doesn't hit the end button.
+                horizontalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 // The end button keeps its place, at the right edge; the text gives way if it must.
                 Column(Modifier.weight(1f)) {
                     Text(eta, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
-                    if (!open && next != null) Text(
-                        tripDistance(next.km), color = NeonAmber, fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                        maxLines = 1, softWrap = false, modifier = Modifier.testTag("nav_next_km")
+                    if (!open && nextEta != null) Text(
+                        nextEta, color = NeonAmber, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                        maxLines = 1, softWrap = false, modifier = Modifier.testTag("nav_next_eta")
                     )
                 }
                 IconButton(
-                    onClick = onStop,
-                    modifier = Modifier.size(44.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
+                    onClick = { askEnd = true },
+                    modifier = Modifier.size(36.dp).clip(CircleShape).background(WarningRed.copy(alpha = 0.2f)).testTag("nav_stop_btn")
                 ) {
-                    Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed)
+                    Icon(Icons.Default.Close, stringResource(R.string.nav_stop), tint = WarningRed, modifier = Modifier.size(24.dp))
                 }
             }
             if (open) {
@@ -142,6 +149,14 @@ fun NavigationSummaryBar(
             }
         }
     }
+    if (askEnd) AlertDialog(
+        onDismissRequest = { askEnd = false },
+        containerColor = CockpitSurface,
+        title = { HideSystemBars(); Text(stringResource(R.string.nav_end_ask), color = TextPrimary, fontWeight = FontWeight.Black) },
+        text = if (summary.stops.isEmpty()) null else ({ Text(stringResource(R.string.nav_end_ask_stops), color = TextSecondary) }),
+        confirmButton = { TextButton(onClick = { askEnd = false; onStop() }, modifier = Modifier.testTag("nav_end_yes")) { Text(stringResource(R.string.nav_end), color = WarningRed) } },
+        dismissButton = { TextButton(onClick = { askEnd = false }, modifier = Modifier.testTag("nav_end_no")) { Text(stringResource(R.string.cancel)) } }
+    )
     askRemove?.let { stop ->
         AlertDialog(
             onDismissRequest = { askRemove = null },
@@ -193,6 +208,31 @@ fun StopReachedBanner(name: String, onDismiss: () -> Unit, modifier: Modifier = 
             Text(stringResource(R.string.stop_reached), color = TextSecondary, fontSize = 13.sp, maxLines = 1)
             Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        }
+    }
+}
+
+/**
+ * Riding again soon after a ride finished: go on logging that ride, or start a new one (the
+ * dashboard picks the new one itself after a while if nothing is pressed).
+ */
+@Composable
+fun RideResumeCard(title: String, onResume: () -> Unit, onNew: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(20.dp)
+    Column(
+        modifier.clip(shape).background(CockpitSurface).border(2.dp, ElectricCyan, shape).padding(horizontal = 18.dp, vertical = 12.dp)
+            .testTag("ride_resume"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(stringResource(R.string.ride_resume_title), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1)
+        if (title.isNotEmpty()) Text(title, color = TextSecondary, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(onClick = onResume, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan, contentColor = Color.Black),
+                modifier = Modifier.height(52.dp)) { Text(stringResource(R.string.ride_resume_continue), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
+            OutlinedButton(onClick = onNew, modifier = Modifier.height(52.dp)) {
+                Text(stringResource(R.string.ride_resume_new), fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            }
         }
     }
 }
@@ -481,6 +521,8 @@ fun RouteMenuDialog(
     onRemoveStop: ((Int) -> Unit)?,
     onAddStop: () -> Unit,
     onSave: () -> Unit,
+    /** Share the trip with the active group (null: no group, or this is not a trip with stops, or it is shared already). */
+    onShare: (() -> Unit)? = null,
     onEnd: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -513,6 +555,7 @@ fun RouteMenuDialog(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black, Modifier.weight(1f).testTag("menu_add_stop"), onAddStop)
                 PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("menu_save"), onSave)
+                if (onShare != null) PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("menu_share"), onShare)
                 PillButton(Icons.Default.Close, stringResource(R.string.nav_end), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("menu_end"), onEnd)
             }
         }
@@ -874,4 +917,30 @@ fun PointByPointHelp(onOk: () -> Unit, onNever: () -> Unit, modifier: Modifier =
             TextButton(onClick = onOk) { Text(stringResource(R.string.ok), color = ElectricCyan, fontSize = 15.sp, fontWeight = FontWeight.Black) }
         }
     }
+}
+
+/** A tap on the demo ride's DEMO tag: play at losing the GPS signal, or at taking a wrong turn at the next junction. */
+@Composable
+fun DemoRideMenu(
+    signalLost: Boolean,
+    wrongTurnAhead: Boolean,
+    navigating: Boolean,
+    onSignalLost: (Boolean) -> Unit,
+    onWrongTurn: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CockpitSurface,
+        title = { HideSystemBars(); Text(stringResource(R.string.demo_menu_title), color = TextPrimary, fontWeight = FontWeight.Black) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PillButton(Icons.Default.SatelliteAlt, stringResource(if (signalLost) R.string.demo_signal_back else R.string.demo_signal_lose),
+                    NeonAmber.copy(alpha = 0.18f), NeonAmber, Modifier.fillMaxWidth().testTag("demo_signal")) { onSignalLost(!signalLost) }
+                if (navigating) PillButton(Icons.Default.AltRoute, stringResource(if (wrongTurnAhead) R.string.demo_wrong_turn_set else R.string.demo_wrong_turn),
+                    NeonAmber.copy(alpha = 0.18f), NeonAmber, Modifier.fillMaxWidth().testTag("demo_wrong_turn")) { if (!wrongTurnAhead) onWrongTurn() }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } }
+    )
 }

@@ -18,6 +18,7 @@ import android.util.Log
 import com.curveon.data.model.MusicTrack
 import com.curveon.data.model.NotificationItem
 import com.curveon.phone.CurveonNotificationListener
+import com.curveon.phone.GroupHub
 import com.curveon.phone.MediaApps
 import com.curveon.phone.PhoneBook
 import com.curveon.phone.PhoneHub
@@ -55,13 +56,15 @@ data class PairedPhone(val name: String, val address: String)
  */
 data class MediaApp(val packageName: String, val name: String, val playing: Boolean, val icon: Bitmap?, val running: Boolean = true)
 
-/** A spoken reply in progress: recorded on the phone, confirmed on the tablet. */
+/** A spoken reply (or new SMS, see [isSms]) in progress: recorded on the phone, confirmed on the tablet. */
 data class VoiceReply(
     val notificationKey: String,
     val senderName: String,
     val state: Message.VoiceState,
     val text: String = ""
-)
+) {
+    val isSms get() = notificationKey.startsWith(Message.SMS_KEY_PREFIX)
+}
 
 /**
  * Tablet side of the phone link. Connects to the Curveon Companion app on the paired phone over
@@ -77,6 +80,32 @@ class PhoneCompanionManager(
 
     /** Messages from this device's own listener, handled in order on the main thread. */
     private val localSink: (Message) -> Unit = { msg -> scope.launch(Dispatchers.Main) { handle(msg) } }
+
+    /** The relay through the phone (see [com.curveon.phone.RelayTunnelClient]): used by the groups when this tablet has no internet itself. */
+    private val relayTunnel = com.curveon.phone.RelayTunnelClient { m ->
+        val w = writer
+        w != null && runCatching { w.write(m) }.isSuccess
+    }
+
+    /** Straight to the relay when there is internet here, else through the phone if it is linked; the group never knows which. */
+    private val relayTransports = com.curveon.groups.TransportFactory { url, listener ->
+        if (viaPhone && !hasInternet()) relayTunnel.open(url, listener) else GroupHub.directTransports.open(url, listener)
+    }
+
+    private val mirrorOut = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-group-mirror").apply { isDaemon = true } }
+
+    /** The linked companion shows how the active group is doing and a friend code it asked for; in order, and off the group thread. */
+    private val companionMirror: (Message) -> Unit = { m ->
+        if (m is Message.GroupList || m is Message.GroupConnection || m is Message.FriendInvite || m is Message.GroupError) {
+            mirrorOut.execute { writer?.let { w -> runCatching { w.write(m) } } }
+        }
+    }
+
+    private fun hasInternet(): Boolean {
+        val cm = context.getSystemService(android.net.ConnectivityManager::class.java) ?: return false
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
+        return caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
 
     /** This device is its own phone: no companion, no Bluetooth. */
     private val _thisDevice = MutableStateFlow(prefs.getBoolean(KEY_THIS_DEVICE, false))
@@ -126,6 +155,10 @@ class PhoneCompanionManager(
     private val _voiceReply = MutableStateFlow<VoiceReply?>(null)
     val voiceReply: StateFlow<VoiceReply?> = _voiceReply.asStateFlow()
 
+    /** A place name being spoken into "Where to?" (recorded on the phone like a reply); its text is the name heard. */
+    private val _voiceSearch = MutableStateFlow<VoiceReply?>(null)
+    val voiceSearch: StateFlow<VoiceReply?> = _voiceSearch.asStateFlow()
+
     /** The phone book; null until the phone has sent it. Kept while the phone is away. */
     private val _contacts = MutableStateFlow<List<Message.Contact>?>(null)
     val contacts: StateFlow<List<Message.Contact>?> = _contacts.asStateFlow()
@@ -149,6 +182,9 @@ class PhoneCompanionManager(
     /** Things that went wrong on the phone (e.g. a call that couldn't be placed), for a short toast. */
     private val _phoneErrors = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val phoneErrors: SharedFlow<String> = _phoneErrors
+
+    /** Group rides: what the phone tells about the group, and the rider's commands to it. */
+    val groups = com.curveon.data.groups.GroupManager(scope) { send(it) }
 
     @Volatile private var writer: MessageWriter? = null
     @Volatile private var socket: BluetoothSocket? = null
@@ -283,6 +319,7 @@ class PhoneCompanionManager(
 
     private fun start() {
         if (isThisDevice) return startThisDevice()
+        startLocalGroups()
         linkJob = scope.launch(Dispatchers.IO) {
             var slowFailures = 0
             var failures = 0
@@ -334,6 +371,8 @@ class PhoneCompanionManager(
     private fun startThisDevice() {
         PhoneHub.phoneBook = PhoneBook(context)
         PhoneHub.voice = VoiceReplier(context)
+        GroupHub.transports = GroupHub.directTransports // this device is the phone
+        GroupHub.start(context)
         _connectionState.value = CompanionConnectionState.CONNECTED
         _connectedSince.value = System.currentTimeMillis()
         _connectedDeviceName.value = Build.MODEL // "Nothing playing on Pixel 9a"
@@ -343,8 +382,20 @@ class PhoneCompanionManager(
         startTicker()
     }
 
+    /**
+     * Friends and groups live in Curveon itself, linked to a phone or not: a code can be shown and a group started with no
+     * phone near, and the phone is only the way to the internet when this tablet has none (see the relay tunnel).
+     */
+    private fun startLocalGroups() {
+        GroupHub.transports = relayTransports
+        GroupHub.start(context)
+        PhoneHub.addGroupListener(localSink)
+    }
+
     private fun stopThisDevice() {
         PhoneHub.removeTablet(localSink)
+        PhoneHub.removeGroupListener(localSink)
+        GroupHub.stop()
         PhoneHub.voice?.cancel()
         PhoneHub.voice = null
         PhoneHub.phoneBook?.shutdown()
@@ -365,6 +416,7 @@ class PhoneCompanionManager(
     }
 
     private fun stopLink() {
+        groups.stopDemo()
         stopThisDevice()
         linkJob?.cancel()
         tickerJob?.cancel()
@@ -396,20 +448,25 @@ class PhoneCompanionManager(
             _connectedSince.value = System.currentTimeMillis()
             _connectedDeviceName.value = device.name ?: address
             startTicker()
+            PhoneHub.addGroupListener(companionMirror)
+            if (!hasInternet()) GroupHub.reconnectNow() // the groups can use the phone's internet from now on
             val reader = MessageReader(s.inputStream)
             while (true) {
                 val msg = reader.read() ?: break
                 if (!active()) break
-                handle(msg)
+                handle(msg, fromPhone = true)
             }
         } finally {
             writer = null
+            PhoneHub.removeGroupListener(companionMirror)
+            relayTunnel.linkLost()
             tickerJob?.cancel()
             runCatching { s.close() }
         }
     }
 
-    private fun handle(msg: Message) {
+    /** [fromPhone]: came over Bluetooth. The groups are Curveon's own, so what a phone says about groups is not heard. */
+    private fun handle(msg: Message, fromPhone: Boolean = false) {
         when (msg) {
             is Message.Hello -> _connectedDeviceName.value = _connectedDeviceName.value.ifEmpty { msg.deviceName }
             is Message.MediaState -> {
@@ -460,7 +517,9 @@ class PhoneCompanionManager(
                 hidden.remove(msg.key)
                 _notifications.value = _notifications.value.filterNot { it.id == msg.key }
             }
-            is Message.VoiceReplyState -> {
+            is Message.VoiceReplyState -> if (msg.key == VOICE_SEARCH_KEY) {
+                _voiceSearch.value?.let { _voiceSearch.value = it.copy(state = msg.state, text = msg.text.ifEmpty { it.text }) }
+            } else {
                 val current = _voiceReply.value
                 if (current?.notificationKey == msg.key) {
                     _voiceReply.value = current.copy(state = msg.state, text = msg.text.ifEmpty { current.text })
@@ -474,9 +533,12 @@ class PhoneCompanionManager(
                 if (decoded.isNotEmpty()) _photos.value = _photos.value + decoded
             }
             is Message.PhoneError -> _phoneErrors.tryEmit(msg.text)
+            is Message.RelayOpened, is Message.RelayText, is Message.RelayClosed -> relayTunnel.onMessage(msg)
+            // What the companion scanned, or a friend code it wants to show: the groups are here, so they are answered here.
+            is Message.GroupJoin, is Message.RequestFriendInvite -> if (fromPhone) GroupHub.handle(msg)
             // Curveon as its own companion speaks on this device too.
             is Message.SpeechVoice -> _speechVoice.value = VoiceStatus(msg.language, msg.availability, onThisDevice = isThisDevice)
-            else -> Unit
+            else -> if (!fromPhone) groups.onMessage(msg) // group rides; ignores anything else
         }
     }
 
@@ -511,6 +573,7 @@ class PhoneCompanionManager(
 
     private fun send(message: Message) {
         if (_connectionState.value == CompanionConnectionState.DEMO) return demoCommand(message)
+        if (GroupHub.accepts(message)) return GroupHub.handle(message) // friends and groups are here, whatever the phone does
         if (isThisDevice) { scope.launch(Dispatchers.IO) { PhoneHub.handle(message) }; return }
         val w = writer ?: return
         scope.launch(Dispatchers.IO) { runCatching { w.write(message) } }
@@ -652,9 +715,35 @@ class PhoneCompanionManager(
     fun invokeAction(id: String, index: Int) = send(Message.InvokeAction(id, index))
 
     fun startVoiceReply(id: String) {
-        val n = _notifications.value.firstOrNull { it.id == id } ?: return
-        _voiceReply.value = VoiceReply(id, n.senderName, Message.VoiceState.LISTENING)
+        val name = _notifications.value.firstOrNull { it.id == id }?.senderName
+            ?: _voiceReply.value?.takeIf { it.notificationKey == id }?.senderName // Say again on an SMS
+            ?: return
+        _voiceReply.value = VoiceReply(id, name, Message.VoiceState.LISTENING)
         send(Message.StartVoiceReply(id))
+    }
+
+    /** Listen for a place name for the search. Returns false when there is no phone to listen with. */
+    fun startVoiceSearch(): Boolean {
+        val state = _connectionState.value
+        if (state != CompanionConnectionState.CONNECTED && state != CompanionConnectionState.DEMO) return false
+        _voiceSearch.value = VoiceReply(VOICE_SEARCH_KEY, "", Message.VoiceState.LISTENING)
+        send(Message.StartVoiceReply(VOICE_SEARCH_KEY))
+        return true
+    }
+
+    fun cancelVoiceSearch() {
+        if (_voiceSearch.value?.state.let { it == Message.VoiceState.LISTENING || it == Message.VoiceState.PARTIAL }) send(Message.CancelVoiceReply(VOICE_SEARCH_KEY))
+        _voiceSearch.value = null
+    }
+
+    /** A new SMS to [number], spoken like a reply. Returns false when there is no phone to send it with. */
+    fun startSms(number: String, name: String): Boolean {
+        val state = _connectionState.value
+        if (state != CompanionConnectionState.CONNECTED && state != CompanionConnectionState.DEMO) return false
+        val key = Message.SMS_KEY_PREFIX + number
+        _voiceReply.value = VoiceReply(key, name, Message.VoiceState.LISTENING)
+        send(Message.StartVoiceReply(key))
+        return true
     }
 
     fun cancelVoiceReply() {
@@ -706,11 +795,13 @@ class PhoneCompanionManager(
             Message.RecentCall("+47 400 00 000", null, "", null, Message.CallKind.INCOMING, System.currentTimeMillis() - 26 * 3600_000),
             Message.RecentCall("+47 934 56 789", "Per Hansen", "Mobile", null, Message.CallKind.REJECTED, System.currentTimeMillis() - 4 * 86400_000)
         )
+        groups.startDemo()
         startTicker()
     }
 
     private fun demoCommand(message: Message) {
         when (message) {
+            is Message.SosStart, Message.SosCancel, is Message.GroupSharing -> groups.demoCommand(message)
             is Message.PlayMediaApp -> {
                 if (sessionApps.none { it.packageName == message.packageName }) {
                     _installedApps.value.firstOrNull { it.packageName == message.packageName }?.let { sessionApps = sessionApps + it.copy(running = true) }
@@ -723,7 +814,12 @@ class PhoneCompanionManager(
             is Message.MediaCommand -> if (message.command != Message.MediaAction.PLAY_PAUSE) {
                 _currentTrack.value = _currentTrack.value?.copy(currentPositionSeconds = 0)
             }
-            is Message.StartVoiceReply -> scope.launch {
+            is Message.StartVoiceReply -> if (message.key == VOICE_SEARCH_KEY) scope.launch {
+                delay(1200)
+                _voiceSearch.value = _voiceSearch.value?.copy(state = Message.VoiceState.PARTIAL, text = "Geir")
+                delay(1200)
+                _voiceSearch.value = _voiceSearch.value?.copy(state = Message.VoiceState.RESULT, text = "Geiranger")
+            } else scope.launch {
                 delay(1500)
                 _voiceReply.value = _voiceReply.value?.copy(state = Message.VoiceState.PARTIAL, text = "Ja det passer")
                 delay(1500)
@@ -784,6 +880,9 @@ class PhoneCompanionManager(
             "com.google.android.apps.podcasts" to "Podcasts", "no.nrk.mobil.radio" to "NRK Radio",
             "com.spotify.music" to "Spotify", "com.google.android.apps.youtube.music" to "YouTube Music"
         ).map { (pkg, name) -> MediaApp(pkg, name, false, null, running = false) }
+
+        /** The voice reply key of a spoken search (see [voiceSearch]). */
+        private const val VOICE_SEARCH_KEY = "search"
 
         private val DEMO_CONTACTS = listOf(
             "Anne Lise Berg" to false, "Bjørn Dahl" to true, "Eirik Solberg" to false, "Ingrid Moe" to true,

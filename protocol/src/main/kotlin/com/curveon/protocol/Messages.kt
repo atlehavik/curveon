@@ -12,7 +12,8 @@ import java.util.UUID
 object Protocol {
     val SERVICE_UUID: UUID = UUID.fromString("6b3a1f6e-2c55-4e0b-9a4b-56a1f0b7c1d2")
     const val SERVICE_NAME = "Curveon Companion"
-    const val VERSION = 1
+    /** 2: group rides. A peer on version 1 ignores the group messages, so mixed versions keep working. */
+    const val VERSION = 2
 }
 
 sealed interface Message {
@@ -260,7 +261,313 @@ sealed interface Message {
 
     enum class CueSide { LEFT, CENTER, RIGHT }
 
+    // ---- groups, tablet -> phone (docs/groups-protocol.md; the phone talks to the relay, the tablet only draws) ----
+
+    /** Ask for [GroupList] and the state of the active group. */
+    data object RequestGroups : Message {
+        override fun toJson() = obj("request_groups")
+    }
+
+    /** Start a group; this rider becomes its admin. The phone answers with [GroupList] and [GroupInvite]. */
+    data class GroupCreate(val name: String?) : Message {
+        override fun toJson() = obj("group_create").put("name", name ?: JSONObject.NULL)
+    }
+
+    /** Join from an invite link scanned or opened on the phone, or typed in on the tablet. */
+    data class GroupJoin(val invite: String) : Message {
+        override fun toJson() = obj("group_join").put("invite", invite)
+    }
+
+    data class GroupLeave(val groupId: String) : Message {
+        override fun toJson() = obj("group_leave").put("id", groupId)
+    }
+
+    /** Make this the group that gets the rider's position and is shown on the map; null for none. */
+    data class GroupSelect(val groupId: String?) : Message {
+        override fun toJson() = obj("group_select").put("id", groupId ?: JSONObject.NULL)
+    }
+
+    /** Start or pause sharing the rider's position with the active group. The group stays either way. */
+    data class GroupSharing(val on: Boolean) : Message {
+        override fun toJson() = obj("group_sharing").put("on", on)
+    }
+
+    /** What others see: nickname, colour and one avatar ([icon] id from the bundled set, or a small [photoJpegBase64]). */
+    data class GroupProfile(val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?) : Message {
+        override fun toJson() = obj("group_profile").put("nick", nickname).put("colour", colour)
+            .put("icon", icon ?: JSONObject.NULL).put("photo", photoJpegBase64 ?: JSONObject.NULL)
+    }
+
+    /** The tablet's position, sent while sharing. The phone decides what is sent on and how often. */
+    data class MyPosition(
+        val lat: Double, val lon: Double, val speedMs: Float, val heading: Float, val accuracy: Float, val timeMs: Long
+    ) : Message {
+        override fun toJson() = obj("my_position").put("lat", lat).put("lon", lon).put("speed", speedMs.toDouble())
+            .put("heading", heading.toDouble()).put("acc", accuracy.toDouble()).put("time", timeMs)
+    }
+
+    /** Share a route or GPX track ([gpxGzBase64] is gzipped GPX) with the active group. */
+    data class ShareRoute(val name: String, val gpxGzBase64: String) : Message {
+        override fun toJson() = obj("share_route").put("name", name).put("gpx", gpxGzBase64)
+    }
+
+    data class SosStart(val lat: Double, val lon: Double) : Message {
+        override fun toJson() = obj("sos_start").put("lat", lat).put("lon", lon)
+    }
+
+    data object SosCancel : Message {
+        override fun toJson() = obj("sos_cancel")
+    }
+
+    /** "I'm coming" ([coming]) to the SOS of [sosRiderId]; false just says it was seen. */
+    data class SosAnswer(val sosRiderId: String, val coming: Boolean) : Message {
+        override fun toJson() = obj("sos_answer").put("sos", sosRiderId).put("coming", coming)
+    }
+
+    /**
+     * What the phone side is set up with: a relay of the rider's own ([relayHost], empty to use the standard one) and whether
+     * to share the position less often ([dataSaver]). The tablet sends it to change them, and the phone sends it back
+     * (also when the tablet connects), so the screen shows what is really set. An invite carries its own relay.
+     */
+    data class GroupSettings(val relayHost: String, val dataSaver: Boolean) : Message {
+        override fun toJson() = obj("group_settings").put("relay", relayHost).put("saver", dataSaver)
+    }
+
+    /** The rider has two devices in the group and chose this one to send their position; the other one is told to stop. */
+    data object GroupUseThisDevice : Message {
+        override fun toJson() = obj("group_use_device")
+    }
+
+    /** Admin only: give everyone but [riderId] a new group key. */
+    data class GroupRemoveRider(val groupId: String, val riderId: String) : Message {
+        override fun toJson() = obj("group_remove").put("id", groupId).put("rider", riderId)
+    }
+
+    /** Ask for an invite for the group; the phone answers with [GroupInvite]. [validDays] null for the default. */
+    data class RequestGroupInvite(val groupId: String, val validDays: Int?) : Message {
+        override fun toJson() = obj("request_invite").put("id", groupId).put("days", validDays ?: JSONObject.NULL)
+    }
+
+    /**
+     * Ask for a link that makes the rider's other device the same rider in [groupId] instead of a new one;
+     * the phone answers with [GroupDeviceLink]. The link carries the rider's secrets: show it only as a QR code.
+     */
+    data class RequestDeviceLink(val groupId: String) : Message {
+        override fun toJson() = obj("request_device_link").put("id", groupId)
+    }
+
+    // ---- friends and shared trips, tablet -> phone ----
+
+    /** Ask for [FriendList] (and make the phone look for invites its friends have sent). */
+    data object RequestFriends : Message {
+        override fun toJson() = obj("request_friends")
+    }
+
+    /** "Show my code": a new private channel for a friend to join. The phone answers with [FriendInvite]. */
+    data object RequestFriendInvite : Message {
+        override fun toJson() = obj("request_friend_invite")
+    }
+
+    /** Stop being friends with the one in [channelId]. */
+    data class FriendRemove(val channelId: String) : Message {
+        override fun toJson() = obj("friend_remove").put("id", channelId)
+    }
+
+    /** Offer the ride group [groupId] to these friends (their channel ids): each gets an invite to answer. */
+    data class FriendAddToGroup(val groupId: String, val friendIds: List<String>) : Message {
+        override fun toJson() = obj("friend_add_to_group").put("id", groupId).put("friends", JSONArray(friendIds))
+    }
+
+    /** The rider's answer to a [GroupInviteOffer]: join the group, or not. */
+    data class GroupInviteAnswer(val offerId: String, val accept: Boolean) : Message {
+        override fun toJson() = obj("group_invite_answer").put("offer", offerId).put("accept", accept)
+    }
+
+    /** A trip made or changed here, for the active group; [rev] only goes up and the highest wins ([doc] is JSON the app defines). */
+    data class TripShare(val tripId: String, val rev: Long, val name: String, val doc: String) : Message {
+        override fun toJson() = obj("trip_share").put("trip", tripId).put("rev", rev).put("name", name).put("doc", doc)
+    }
+
+    // ---- friends and shared trips, phone -> tablet ----
+
+    /** The friends, with who they are as last heard (the picture is the same small one riders have). */
+    data class FriendList(val friends: List<FriendInfo>) : Message {
+        override fun toJson() = obj("friend_list").put("list", JSONArray(friends.map {
+            JSONObject().put("id", it.id).put("nick", it.nickname).put("colour", it.colour)
+                .put("icon", it.icon ?: JSONObject.NULL).put("photo", it.photoJpegBase64 ?: JSONObject.NULL)
+        }))
+    }
+
+    data class FriendInfo(val id: String, val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?)
+
+    /** The answer to [RequestFriendInvite]: the link to show as a QR code or share. It is for one friend. */
+    data class FriendInvite(val channelId: String, val uri: String) : Message {
+        override fun toJson() = obj("friend_invite").put("id", channelId).put("uri", uri)
+    }
+
+    /** A friend asks the rider to join a ride group: shown once, with "join" or "ignore" ([GroupInviteAnswer]). */
+    data class GroupInviteOffer(
+        val offerId: String, val fromNickname: String, val groupName: String?, val fromPhotoJpegBase64: String?, val fromColour: Int
+    ) : Message {
+        override fun toJson() = obj("group_invite_offer").put("offer", offerId).put("from", fromNickname)
+            .put("group", groupName ?: JSONObject.NULL).put("photo", fromPhotoJpegBase64 ?: JSONObject.NULL).put("colour", fromColour)
+    }
+
+    /** A trip shared with the active group, new or changed, by [from] ([mine]: by the rider's own other device). */
+    data class GroupTrip(
+        val groupId: String, val tripId: String, val rev: Long, val from: String, val fromNickname: String?,
+        val name: String, val doc: String, val mine: Boolean
+    ) : Message {
+        override fun toJson() = obj("group_trip").put("id", groupId).put("trip", tripId).put("rev", rev).put("from", from)
+            .put("nick", fromNickname ?: JSONObject.NULL).put("name", name).put("doc", doc).put("mine", mine)
+    }
+
+    // ---- the rider's own devices: one set of friends, groups and profile on all of them ----
+
+    /** UI -> hub: a link for the rider's other device to scan; makes the private channel between them if there is none. Answered with [SelfLink]. */
+    data object RequestSelfLink : Message {
+        override fun toJson() = obj("request_self_link")
+    }
+
+    /** Hub -> UI: the link for the other device (short-lived: show it as a QR code only). */
+    data class SelfLink(val uri: String) : Message {
+        override fun toJson() = obj("self_link").put("uri", uri)
+    }
+
+    /** UI -> hub: stop keeping this device in step with the other one (what is here stays here). */
+    data object SelfUnlink : Message {
+        override fun toJson() = obj("self_unlink")
+    }
+
+    /** Hub -> UI: whether the rider's other device is linked ([waiting]: a link was made but the other device has not answered yet). */
+    data class SelfStatus(val linked: Boolean, val waiting: Boolean) : Message {
+        override fun toJson() = obj("self_status").put("linked", linked).put("waiting", waiting)
+    }
+
+    // ---- the relay through the phone: a tablet with no internet of its own reaches the relay over the Bluetooth link ----
+
+    /** Tablet -> phone: open a WebSocket to [url] and call it [id]; the phone answers [RelayOpened] or [RelayClosed]. */
+    data class RelayOpen(val id: Int, val url: String) : Message {
+        override fun toJson() = obj("relay_open").put("sock", id).put("url", url)
+    }
+
+    /** Tablet -> phone: a text frame for socket [id]. */
+    data class RelaySend(val id: Int, val text: String) : Message {
+        override fun toJson() = obj("relay_send").put("sock", id).put("text", text)
+    }
+
+    /** Tablet -> phone: close socket [id] with the WebSocket close [code]. */
+    data class RelayClose(val id: Int, val code: Int) : Message {
+        override fun toJson() = obj("relay_close").put("sock", id).put("code", code)
+    }
+
+    /** Phone -> tablet: socket [id] is open. */
+    data class RelayOpened(val id: Int) : Message {
+        override fun toJson() = obj("relay_opened").put("sock", id)
+    }
+
+    /** Phone -> tablet: a text frame from socket [id]. */
+    data class RelayText(val id: Int, val text: String) : Message {
+        override fun toJson() = obj("relay_text").put("sock", id).put("text", text)
+    }
+
+    /** Phone -> tablet: socket [id] closed, with the WebSocket close [code] (-1 if it failed). */
+    data class RelayClosed(val id: Int, val code: Int) : Message {
+        override fun toJson() = obj("relay_closed").put("sock", id).put("code", code)
+    }
+
+    // ---- groups, phone -> tablet ----
+
+    /** Every group on the phone, and which one is active. [sharing] is false while paused. */
+    data class GroupList(val groups: List<GroupInfo>, val activeId: String?, val sharing: Boolean) : Message {
+        override fun toJson() = obj("group_list").put("active", activeId ?: JSONObject.NULL).put("sharing", sharing)
+            .put("list", JSONArray(groups.map {
+                JSONObject().put("id", it.id).put("name", it.name ?: JSONObject.NULL).put("members", it.members).put("admin", it.admin)
+            }))
+    }
+
+    data class GroupInfo(val id: String, val name: String?, val members: Int, val admin: Boolean)
+
+    /**
+     * How the active group's link is doing. [otherDeviceActive]: another of the rider's own devices is the one sending
+     * their position, so this one keeps quiet until the rider takes over ([GroupUseThisDevice]).
+     */
+    data class GroupConnection(val groupId: String, val status: GroupStatus, val members: Int, val otherDeviceActive: Boolean = false) : Message {
+        override fun toJson() = obj("group_connection").put("id", groupId).put("status", status.name).put("members", members)
+            .put("other", otherDeviceActive)
+    }
+
+    enum class GroupStatus { CONNECTED, OFFLINE, PAUSED, REMOVED }
+
+    /** Sent when someone joins or changes their profile; the tablet caches the pictures per rider. The first entry is the rider themself. */
+    data class GroupMembers(val groupId: String, val members: List<GroupMemberInfo>) : Message {
+        override fun toJson() = obj("group_members").put("id", groupId).put("list", JSONArray(members.map {
+            JSONObject().put("id", it.id).put("nick", it.nickname).put("colour", it.colour)
+                .put("icon", it.icon ?: JSONObject.NULL).put("photo", it.photoJpegBase64 ?: JSONObject.NULL)
+        }))
+    }
+
+    data class GroupMemberInfo(val id: String, val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?)
+
+    /** Small and frequent; riders are referred to by id (see [GroupMembers]). */
+    data class GroupPositions(val groupId: String, val positions: List<GroupPositionInfo>) : Message {
+        override fun toJson() = obj("group_positions").put("id", groupId).put("list", JSONArray(positions.map {
+            JSONObject().put("id", it.id).put("lat", it.lat).put("lon", it.lon).put("heading", it.heading.toDouble())
+                .put("speed", it.speedMs.toDouble()).put("time", it.timeMs).put("stopped", it.stopped)
+                .put("since", it.stoppedSince ?: JSONObject.NULL).put("bat", it.battery ?: JSONObject.NULL)
+        }))
+    }
+
+    data class GroupPositionInfo(
+        val id: String, val lat: Double, val lon: Double, val heading: Float, val speedMs: Float, val timeMs: Long,
+        val stopped: Boolean, val stoppedSince: Long?, val battery: Int?
+    )
+
+    /**
+     * An SOS in the group, sent again whenever its answers change. [mine] is the rider's own, where [acks]
+     * counts who has seen it ([SosAckInfo.coming] false) and who is on the way. [active] false means it ended.
+     */
+    data class GroupSos(
+        val groupId: String, val from: String, val lat: Double, val lon: Double, val timeMs: Long,
+        val active: Boolean, val mine: Boolean, val acks: List<SosAckInfo>, val memberCount: Int
+    ) : Message {
+        override fun toJson() = obj("group_sos").put("id", groupId).put("from", from).put("lat", lat).put("lon", lon)
+            .put("time", timeMs).put("active", active).put("mine", mine).put("members", memberCount)
+            .put("acks", JSONArray(acks.map { JSONObject().put("rider", it.riderId).put("coming", it.coming) }))
+    }
+
+    data class SosAckInfo(val riderId: String, val coming: Boolean)
+
+    /** A route or track a rider shared; the tablet offers to open or save it. */
+    data class GroupRoute(val groupId: String, val from: String, val name: String, val gpxGzBase64: String) : Message {
+        override fun toJson() = obj("group_route").put("id", groupId).put("from", from).put("name", name).put("gpx", gpxGzBase64)
+    }
+
+    /** The invite for [groupId], to show as a QR code or share as a link. */
+    data class GroupInvite(val groupId: String, val uri: String) : Message {
+        override fun toJson() = obj("group_invite").put("id", groupId).put("uri", uri)
+    }
+
+    /** The answer to [RequestDeviceLink]; short-lived. */
+    data class GroupDeviceLink(val groupId: String, val uri: String) : Message {
+        override fun toJson() = obj("group_device_link").put("id", groupId).put("uri", uri)
+    }
+
+    /** Something about groups didn't work; the tablet shows its own (translated) text for [code]. */
+    data class GroupError(val code: GroupErrorCode) : Message {
+        override fun toJson() = obj("group_error").put("code", code.name)
+    }
+
+    /** [NO_RELAY]: no relay address to make a group on (not seen unless the standard one is blanked out). [NOT_LINKED]: the companion has no tablet to hand this to. */
+    enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER, NO_RELAY, NOT_LINKED }
+
     companion object {
+        /**
+         * A voice reply key ([StartVoiceReply], [SendReply]) starting with this is a new text message
+         * (SMS) to the number after it, not a reply to a notification.
+         */
+        const val SMS_KEY_PREFIX = "sms:"
+
         private fun obj(type: String) = JSONObject().put("type", type)
 
         fun fromJson(o: JSONObject): Message? = when (o.optString("type")) {
@@ -328,6 +635,77 @@ sealed interface Message {
             "play_cue" -> runCatching { NavCue.valueOf(o.getString("cue")) }.getOrNull()?.let { cue ->
                 PlayCue(cue, runCatching { CueSide.valueOf(o.optString("side")) }.getOrDefault(CueSide.CENTER))
             }
+            "request_self_link" -> RequestSelfLink
+            "self_link" -> SelfLink(o.getString("uri"))
+            "self_unlink" -> SelfUnlink
+            "self_status" -> SelfStatus(o.optBoolean("linked"), o.optBoolean("waiting"))
+            "relay_open" -> RelayOpen(o.getInt("sock"), o.getString("url"))
+            "relay_send" -> RelaySend(o.getInt("sock"), o.getString("text"))
+            "relay_close" -> RelayClose(o.getInt("sock"), o.optInt("code", 1000))
+            "relay_opened" -> RelayOpened(o.getInt("sock"))
+            "relay_text" -> RelayText(o.getInt("sock"), o.getString("text"))
+            "relay_closed" -> RelayClosed(o.getInt("sock"), o.optInt("code", -1))
+            // groups
+            "request_groups" -> RequestGroups
+            "group_create" -> GroupCreate(o.nullableString("name"))
+            "group_join" -> GroupJoin(o.getString("invite"))
+            "group_leave" -> GroupLeave(o.getString("id"))
+            "group_select" -> GroupSelect(o.nullableString("id"))
+            "group_sharing" -> GroupSharing(o.optBoolean("on"))
+            "group_profile" -> GroupProfile(o.optString("nick"), o.optInt("colour"), o.nullableString("icon"), o.nullableString("photo"))
+            "my_position" -> MyPosition(
+                o.getDouble("lat"), o.getDouble("lon"), o.optDouble("speed", 0.0).toFloat(), o.optDouble("heading", 0.0).toFloat(),
+                o.optDouble("acc", 0.0).toFloat(), o.optLong("time")
+            )
+            "share_route" -> ShareRoute(o.optString("name"), o.getString("gpx"))
+            "sos_start" -> SosStart(o.getDouble("lat"), o.getDouble("lon"))
+            "sos_cancel" -> SosCancel
+            "sos_answer" -> SosAnswer(o.getString("sos"), o.optBoolean("coming", true))
+            "request_friends" -> RequestFriends
+            "request_friend_invite" -> RequestFriendInvite
+            "friend_remove" -> FriendRemove(o.getString("id"))
+            "friend_add_to_group" -> FriendAddToGroup(o.getString("id"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
+            "group_invite_answer" -> GroupInviteAnswer(o.getString("offer"), o.optBoolean("accept"))
+            "trip_share" -> TripShare(o.getString("trip"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
+            "friend_list" -> FriendList(o.optJSONArray("list").objects().map {
+                FriendInfo(it.getString("id"), it.optString("nick"), it.optInt("colour"), it.nullableString("icon"), it.nullableString("photo"))
+            })
+            "friend_invite" -> FriendInvite(o.getString("id"), o.getString("uri"))
+            "group_invite_offer" -> GroupInviteOffer(o.getString("offer"), o.optString("from"), o.nullableString("group"), o.nullableString("photo"), o.optInt("colour"))
+            "group_trip" -> GroupTrip(
+                o.getString("id"), o.getString("trip"), o.getLong("rev"), o.getString("from"), o.nullableString("nick"),
+                o.optString("name"), o.getString("doc"), o.optBoolean("mine")
+            )
+            "group_use_device" -> GroupUseThisDevice
+            "group_settings" -> GroupSettings(o.optString("relay"), o.optBoolean("saver"))
+            "group_remove" -> GroupRemoveRider(o.getString("id"), o.getString("rider"))
+            "request_device_link" -> RequestDeviceLink(o.getString("id"))
+            "group_device_link" -> GroupDeviceLink(o.getString("id"), o.getString("uri"))
+            "request_invite" -> RequestGroupInvite(o.getString("id"), if (o.isNull("days")) null else o.optInt("days"))
+            "group_list" -> GroupList(o.optJSONArray("list").objects().map {
+                GroupInfo(it.getString("id"), it.nullableString("name"), it.optInt("members"), it.optBoolean("admin"))
+            }, o.nullableString("active"), o.optBoolean("sharing", true))
+            "group_connection" -> runCatching { GroupStatus.valueOf(o.getString("status")) }.getOrNull()
+                ?.let { GroupConnection(o.getString("id"), it, o.optInt("members"), o.optBoolean("other")) }
+            "group_members" -> GroupMembers(o.getString("id"), o.optJSONArray("list").objects().map {
+                GroupMemberInfo(it.getString("id"), it.optString("nick"), it.optInt("colour"), it.nullableString("icon"), it.nullableString("photo"))
+            })
+            "group_positions" -> GroupPositions(o.getString("id"), o.optJSONArray("list").objects().map {
+                GroupPositionInfo(
+                    it.getString("id"), it.getDouble("lat"), it.getDouble("lon"), it.optDouble("heading", 0.0).toFloat(),
+                    it.optDouble("speed", 0.0).toFloat(), it.optLong("time"), it.optBoolean("stopped"),
+                    if (it.isNull("since")) null else it.optLong("since"), if (it.isNull("bat")) null else it.optInt("bat")
+                )
+            })
+            "group_sos" -> GroupSos(
+                o.getString("id"), o.getString("from"), o.getDouble("lat"), o.getDouble("lon"), o.optLong("time"),
+                o.optBoolean("active", true), o.optBoolean("mine"),
+                o.optJSONArray("acks").objects().map { SosAckInfo(it.getString("rider"), it.optBoolean("coming")) }, o.optInt("members")
+            )
+            "group_route" -> GroupRoute(o.getString("id"), o.getString("from"), o.optString("name"), o.getString("gpx"))
+            "group_invite" -> GroupInvite(o.getString("id"), o.getString("uri"))
+            // An error code from a newer phone is skipped.
+            "group_error" -> runCatching { GroupErrorCode.valueOf(o.getString("code")) }.getOrNull()?.let { GroupError(it) }
             else -> null // unknown types from a newer peer are ignored
         }
     }

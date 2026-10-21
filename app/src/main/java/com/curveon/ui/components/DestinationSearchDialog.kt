@@ -1,6 +1,7 @@
 package com.curveon.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -75,9 +76,26 @@ fun DestinationSearchDialog(
     searchOffer: com.curveon.data.search.SearchOffer? = null,
     onDownloadSearch: () -> Unit = {},
     /** Called when the dialog opens, so an offer can be looked for. */
-    onShown: () -> Unit = {}
+    onShown: () -> Unit = {},
+    /** A place name being spoken (heard by the phone through the headset); its text goes into the field as it comes. */
+    voice: com.curveon.data.bluetooth.VoiceReply? = null,
+    /** Start listening; null when there is no phone to listen with (no microphone shown). */
+    onVoice: (() -> Unit)? = null,
+    onVoiceCancel: () -> Unit = {}
 ) {
     var query by remember { mutableStateOf("") }
+    var voiceError by remember { mutableStateOf<String?>(null) }
+    val listening = voice?.state == com.curveon.protocol.Message.VoiceState.LISTENING || voice?.state == com.curveon.protocol.Message.VoiceState.PARTIAL
+    LaunchedEffect(voice?.state, voice?.text) {
+        val v = voice ?: return@LaunchedEffect
+        when (v.state) {
+            com.curveon.protocol.Message.VoiceState.PARTIAL -> if (v.text.isNotBlank()) query = v.text
+            com.curveon.protocol.Message.VoiceState.RESULT -> { query = v.text; onVoiceCancel() }
+            com.curveon.protocol.Message.VoiceState.ERROR -> { voiceError = v.text; onVoiceCancel() }
+            else -> Unit
+        }
+    }
+    DisposableEffect(Unit) { onDispose { onVoiceCancel() } }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     var nearest by remember { mutableStateOf<NearestCategory?>(null) }
@@ -118,13 +136,17 @@ fun DestinationSearchDialog(
         header = {
             OutlinedTextField(
                 value = query,
-                onValueChange = { query = it },
+                onValueChange = { query = it; voiceError = null },
                 placeholder = {
-                    Text(when (purpose) {
-                        SearchPurpose.DESTINATION -> stringResource(R.string.search_placeholder)
-                        SearchPurpose.STOP -> stringResource(R.string.search_add_stop)
-                        SearchPurpose.START -> stringResource(R.string.search_start_from)
-                    })
+                    when {
+                        listening -> Text(stringResource(R.string.speak_now), color = ElectricCyan)
+                        voiceError != null -> Text(voiceError!!.ifEmpty { stringResource(R.string.something_went_wrong) }, color = NeonAmber)
+                        else -> Text(when (purpose) {
+                            SearchPurpose.DESTINATION -> stringResource(R.string.search_placeholder)
+                            SearchPurpose.STOP -> stringResource(R.string.search_add_stop)
+                            SearchPurpose.START -> stringResource(R.string.search_start_from)
+                        })
+                    }
                 },
                 leadingIcon = {
                     when (purpose) {
@@ -134,8 +156,16 @@ fun DestinationSearchDialog(
                     }
                 },
                 trailingIcon = {
-                    if (searching) CircularProgressIndicator(Modifier.size(20.dp), color = ElectricCyan, strokeWidth = 2.dp)
-                    else if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, stringResource(R.string.clear), tint = TextSecondary) }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (searching) CircularProgressIndicator(Modifier.size(20.dp), color = ElectricCyan, strokeWidth = 2.dp)
+                        else if (query.isNotEmpty() && !listening) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Clear, stringResource(R.string.clear), tint = TextSecondary) }
+                        // Say the place instead of typing it; tap again to stop listening.
+                        if (onVoice != null) IconButton(
+                            onClick = { voiceError = null; if (listening) onVoiceCancel() else { query = ""; onVoice() } },
+                            modifier = Modifier.padding(end = 4.dp).size(48.dp).clip(CircleShape)
+                                .background(if (listening) ElectricCyan else Color.Transparent).testTag("destination_search_voice")
+                        ) { Icon(Icons.Default.Mic, stringResource(R.string.search_by_voice), tint = if (listening) Color(0xFF00363D) else ElectricCyan) }
+                    }
                 },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),

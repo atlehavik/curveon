@@ -82,6 +82,7 @@ dependencies {
   implementation(project(":routing"))
   implementation(project(":protocol"))
   implementation(project(":phone"))
+  implementation(project(":groups"))
   implementation(project(":pmtiles"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)
@@ -92,6 +93,8 @@ dependencies {
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.core.ktx)
+  // Scanning a group invite's QR code, with the camera permission and the CameraX libraries.
+  implementation(project(":qrscan"))
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.lifecycle.viewmodel.compose)

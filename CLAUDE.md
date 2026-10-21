@@ -65,6 +65,10 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   Play's developer policies and technical requirements (e.g. 16 KB page-aligned native libraries),
   even though releases go out on GitHub today. Say when a choice breaks or risks a Play rule, and
   note it in [google-play.md](google-play.md).
+- **Place names are always on top.** A new or changed map layer (lines, fills, heat, dashes, route,
+  tracks) must never cover place names: they stay above every line layer (see `raisePlaceNames` in
+  CurveonMapView.kt, and the order in `OfflineMaps.styleJson`). Check it with the layer switched on,
+  not only off, at a zoom where names show.
 - **New visual elements: test for overlap.** Before a new visual element goes in, try it in the
   phone-size emulator (Pixel, see Build and run) in both portrait and landscape, while navigating and
   not navigating, and with the music player on and off. Overlap with other elements is the main
@@ -110,6 +114,12 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   `versionName` raised in `app/build.gradle.kts`) and put the point there; later changes go in the
   same entry until it is released. Never edit an already released entry, not even a typo, unless the
   rider asks.
+- **NEVER build a device from the wrong branch.** Do not create new worktrees or branches on your own
+  (not from `main`, not "to isolate" a fix): work in the branch the session starts in, and ask which
+  branch is current if it looks wrong. Before every install, check `git log --oneline HEAD..<branch>`
+  against `main` and every `worktree-*` / `origin/*` branch: if any has commits the device already
+  runs, stop and ask. (2026-10-21 a build from a fresh branch off `main` wiped 34 commits of group
+  rides, friends, mic search etc. off the Pixel.)
 - **Installing:** a device connected by USB (`adb devices` lists it with a `usb:` transport, e.g. the X7 at
   the desk) and the Pixel (over wifi) can always be installed on, after each change, without asking. The X7 when
   it is reached only over wifi (on the handlebars) is not: say what is waiting to be installed and end the

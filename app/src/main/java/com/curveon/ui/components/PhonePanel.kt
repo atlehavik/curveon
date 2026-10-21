@@ -5,6 +5,7 @@ import android.text.format.DateUtils
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -16,6 +17,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -76,9 +79,14 @@ data class PhonePanelState(
     val offlineText: String
 )
 
+/** Someone tapped in the phone panel: a contact, or the one number of a recent call. */
+private data class Person(val name: String, val photoKey: String?, val numbers: List<Message.PhoneNumber>)
+
+private fun Message.Contact.person() = Person(name, photoKey, numbers)
+
 /**
  * Android Auto-style phone app: Favorites (starred contacts), Recents, Contacts and a Keypad.
- * Tapping a person calls them on the phone.
+ * Tapping a person asks whether to call them or send a spoken SMS; the keypad calls at once.
  */
 @Composable
 fun PhoneDialog(
@@ -86,6 +94,7 @@ fun PhoneDialog(
     tab: PhoneTab,
     onTab: (PhoneTab) -> Unit,
     onCall: (number: String, name: String) -> Unit,
+    onSms: (number: String, name: String) -> Unit,
     onNeedPhoto: (String) -> Unit,
     onReconnect: () -> Unit,
     onClose: () -> Unit
@@ -100,21 +109,31 @@ fun PhoneDialog(
                 if (key != null) LaunchedEffect(key) { onNeedPhoto(key) }
                 key?.let { state.photos[it] }
             }
+            var picked by remember { mutableStateOf<Person?>(null) }
+            val pick: (Person) -> Unit = { picked = it }
             when (which) {
                 PhoneTab.FAVORITES -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect) { all ->
                     val favorites = all.filter { it.starred }
                     if (favorites.isEmpty()) Empty(Icons.Default.StarBorder, stringResource(R.string.phone_no_favorites), stringResource(R.string.phone_no_favorites_hint))
-                    else Favorites(favorites, photo, onCall)
+                    else Favorites(favorites, photo, pick)
                 }
                 PhoneTab.RECENTS -> ContactsGate(state, state.recents, state.callLogAllowed, stringResource(R.string.phone_no_share_calls), onReconnect) { calls ->
                     if (calls.isEmpty()) Empty(Icons.Default.History, stringResource(R.string.phone_no_recents), "")
-                    else Recents(calls, photo, onCall)
+                    else Recents(calls, photo, pick)
                 }
                 PhoneTab.CONTACTS -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect) { all ->
                     if (all.isEmpty()) Empty(Icons.Default.Contacts, stringResource(R.string.phone_no_contacts), "")
-                    else ContactList(all, photo, onCall)
+                    else ContactList(all, photo, pick)
                 }
                 PhoneTab.KEYPAD -> Keypad(onCall)
+            }
+            picked?.let { p ->
+                PersonActions(
+                    p, photo(p.photoKey),
+                    onCall = { n -> picked = null; onCall(n, p.name) },
+                    onSms = { n -> picked = null; onSms(n, p.name) },
+                    onDismiss = { picked = null }
+                )
             }
         }
     }
@@ -160,14 +179,13 @@ private fun Empty(icon: ImageVector, title: String, text: String) {
 
 // ---------------------------------------------------------------------------------- favorites
 
-/** Big photo tiles, like Android Auto's favourites: one tap calls. */
+/** Big photo tiles, like Android Auto's favourites. */
 @Composable
 private fun Favorites(
     favorites: List<Message.Contact>,
     photo: @Composable (String?) -> Bitmap?,
-    onCall: (String, String) -> Unit
+    onPick: (Person) -> Unit
 ) {
-    var choosing by remember { mutableStateOf<Message.Contact?>(null) }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(150.dp),
         contentPadding = PaddingValues(12.dp),
@@ -176,12 +194,9 @@ private fun Favorites(
         modifier = Modifier.fillMaxSize()
     ) {
         items(favorites, key = { it.id }) { c ->
-            FavoriteTile(c, photo(c.photoKey)) {
-                if (c.numbers.size == 1) onCall(c.numbers[0].number, c.name) else choosing = c
-            }
+            FavoriteTile(c, photo(c.photoKey)) { onPick(c.person()) }
         }
     }
-    choosing?.let { c -> NumberChooser(c, photo(c.photoKey), onCall = { n -> choosing = null; onCall(n, c.name) }, onDismiss = { choosing = null }) }
 }
 
 @Composable
@@ -207,11 +222,11 @@ private fun FavoriteTile(c: Message.Contact, photo: Bitmap?, onClick: () -> Unit
 // ---------------------------------------------------------------------------------- recents
 
 @Composable
-private fun Recents(calls: List<Message.RecentCall>, photo: @Composable (String?) -> Bitmap?, onCall: (String, String) -> Unit) {
+private fun Recents(calls: List<Message.RecentCall>, photo: @Composable (String?) -> Bitmap?, onPick: (Person) -> Unit) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 6.dp)) {
         items(calls) { call ->
             val name = call.name ?: call.number
-            PersonRow(name, photo(call.photoKey), onClick = { onCall(call.number, name) }) {
+            PersonRow(name, photo(call.photoKey), onClick = { onPick(Person(name, call.photoKey, listOf(Message.PhoneNumber(call.number, call.label)))) }) {
                 val (icon, color) = when (call.kind) {
                     Message.CallKind.MISSED -> Icons.AutoMirrored.Filled.CallMissed to WarningRed
                     Message.CallKind.REJECTED -> Icons.Default.PhoneDisabled to TextMuted
@@ -249,18 +264,17 @@ private fun whenText(ms: Long): String {
 
 /**
  * Alphabetical list with letter headers. A letter strip on the right jumps (drag along it with a
- * glove); a contact with several numbers opens them inline.
+ * glove).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ContactList(contacts: List<Message.Contact>, photo: @Composable (String?) -> Bitmap?, onCall: (String, String) -> Unit) {
+private fun ContactList(contacts: List<Message.Contact>, photo: @Composable (String?) -> Bitmap?, onPick: (Person) -> Unit) {
     val groups = remember(contacts) { contacts.groupBy { letterOf(it.name) } }
     // Index of each letter's header in the list (header + its contacts per group).
     val letterIndex = remember(groups) {
         var i = 0
         groups.mapValues { (_, list) -> i.also { i += 1 + list.size } }
     }
-    var expanded by remember(contacts) { mutableStateOf<Long?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -272,19 +286,11 @@ private fun ContactList(contacts: List<Message.Contact>, photo: @Composable (Str
                         modifier = Modifier.fillMaxWidth().background(CockpitBackground).padding(horizontal = 20.dp, vertical = 4.dp))
                 }
                 items(list, key = { it.id }) { c ->
-                    Column {
-                        PersonRow(c.name, photo(c.photoKey), onClick = {
-                            if (c.numbers.size == 1) onCall(c.numbers[0].number, c.name)
-                            else expanded = if (expanded == c.id) null else c.id
-                        }) {
-                            Text(
-                                if (c.numbers.size == 1) c.numbers[0].label.ifEmpty { c.numbers[0].number } else pluralStringResource(R.plurals.phone_numbers, c.numbers.size, c.numbers.size),
-                                color = TextSecondary, fontSize = 14.sp, maxLines = 1
-                            )
-                        }
-                        if (expanded == c.id) c.numbers.forEach { n ->
-                            NumberRow(n, Modifier.padding(start = 84.dp, end = 16.dp, bottom = 6.dp)) { onCall(n.number, c.name) }
-                        }
+                    PersonRow(c.name, photo(c.photoKey), onClick = { onPick(c.person()) }) {
+                        Text(
+                            if (c.numbers.size == 1) c.numbers[0].label.ifEmpty { c.numbers[0].number } else pluralStringResource(R.plurals.phone_numbers, c.numbers.size, c.numbers.size),
+                            color = TextSecondary, fontSize = 14.sp, maxLines = 1
+                        )
                     }
                 }
             }
@@ -322,38 +328,82 @@ private fun letterOf(name: String): String {
     return if (base.isLetter()) base.toString() else "#"
 }
 
+/**
+ * Call or text someone: their name and photo, Call and SMS (spoken, sent from the phone) and Cancel.
+ * Several numbers are listed to pick from, the mobile one picked to begin with, since that is the
+ * one an SMS can reach and usually the one to call on the road.
+ */
 @Composable
-private fun NumberChooser(c: Message.Contact, photo: Bitmap?, onCall: (String) -> Unit, onDismiss: () -> Unit) {
-    Box(
+private fun PersonActions(p: Person, photo: Bitmap?, onCall: (String) -> Unit, onSms: (String) -> Unit, onDismiss: () -> Unit) {
+    var chosen by remember(p) { mutableStateOf(p.numbers.firstOrNull { isMobile(it.label) } ?: p.numbers.firstOrNull()) }
+    BoxWithConstraints(
         Modifier.fillMaxSize().background(Color(0xCC000000)).clickable(onClick = onDismiss),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            Modifier.widthIn(max = 420.dp).fillMaxWidth().padding(24.dp).clip(RoundedCornerShape(20.dp))
-                .background(CockpitSurface).clickable(enabled = false) {}.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        // A phone on its side has little height: the buttons go in a column beside the name and numbers.
+        val beside = maxHeight < 400.dp && maxWidth > 420.dp
+        val who: @Composable ColumnScope.() -> Unit = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                ContactAvatar(c.name, photo, 52.dp)
-                Spacer(Modifier.width(12.dp))
-                Text(c.name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                ContactAvatar(p.name, photo, if (beside) 48.dp else 64.dp)
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(p.name, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    // One number: shown under the name; several: picked below.
+                    if (p.numbers.size == 1) Text(
+                        listOf(p.numbers[0].label, p.numbers[0].number).filter { it.isNotEmpty() && it != p.name }.joinToString(" · "),
+                        color = TextSecondary, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
-            c.numbers.forEach { n -> NumberRow(n) { onCall(n.number) } }
+            if (p.numbers.size > 1) Column(
+                Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                p.numbers.forEach { n -> NumberOption(n, selected = n == chosen) { chosen = n } }
+            }
+        }
+        val call: @Composable (Modifier) -> Unit = { m ->
+            PillButton(Icons.Default.Call, stringResource(R.string.call), EcoGreen, Color.Black, m.testTag("person_call")) { chosen?.let { onCall(it.number) } }
+        }
+        val sms: @Composable (Modifier) -> Unit = { m ->
+            PillButton(Icons.Default.Mic, stringResource(R.string.sms), ElectricCyan, OnCyan, m.testTag("person_sms")) { chosen?.let { onSms(it.number) } }
+        }
+        val cancel: @Composable (Modifier) -> Unit = { m ->
+            PillButton(Icons.Default.Close, stringResource(R.string.cancel), CockpitSurfaceVariant, TextPrimary, m.testTag("person_cancel"), onDismiss)
+        }
+        val card = Modifier.padding(16.dp).clip(RoundedCornerShape(20.dp)).background(CockpitSurface).clickable(enabled = false) {}
+            .padding(16.dp).testTag("person_actions")
+        if (beside) Row(Modifier.widthIn(max = 640.dp).fillMaxWidth().then(card), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp), content = who)
+            Column(Modifier.width(170.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                call(Modifier.fillMaxWidth()); sms(Modifier.fillMaxWidth()); cancel(Modifier.fillMaxWidth())
+            }
+        } else Column(Modifier.widthIn(max = 440.dp).fillMaxWidth().then(card), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            who()
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { call(Modifier.weight(1f)); sms(Modifier.weight(1f)) }
+            cancel(Modifier.fillMaxWidth())
         }
     }
 }
 
+/** The phone book's label for a mobile number, in the languages it is likely to be in. */
+private fun isMobile(label: String) = label.lowercase().let { "mob" in it || "cell" in it }
+
 @Composable
-private fun NumberRow(n: Message.PhoneNumber, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun NumberOption(n: Message.PhoneNumber, selected: Boolean, onClick: () -> Unit) {
     Row(
-        modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(28.dp)).background(CockpitSurfaceVariant)
+        Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(28.dp))
+            .background(if (selected) ElectricCyan.copy(alpha = 0.16f) else CockpitSurfaceVariant)
+            .border(2.dp, if (selected) ElectricCyan else Color.Transparent, RoundedCornerShape(28.dp))
             .clickable(onClick = onClick).padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.Call, null, tint = EcoGreen, modifier = Modifier.size(22.dp))
+        Icon(if (selected) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked, null,
+            tint = if (selected) ElectricCyan else TextMuted, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(12.dp))
-        Text(n.label, color = TextSecondary, fontSize = 15.sp, modifier = Modifier.width(90.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(n.number, color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        if (n.label.isNotEmpty()) Text(n.label, color = TextSecondary, fontSize = 15.sp, modifier = Modifier.widthIn(max = 100.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.width(10.dp))
+        Text(n.number, color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -438,6 +488,8 @@ fun ContactAvatar(name: String, photo: Bitmap?, size: Dp) {
         else Text(initials(name), color = Color.White, fontSize = (size.value * 0.36f).sp, fontWeight = FontWeight.Black)
     }
 }
+
+private val OnCyan = Color(0xFF00363D)
 
 private val TileColors = listOf(
     Color(0xFF1E5A7A), Color(0xFF5B3F8C), Color(0xFF2E6B4F), Color(0xFF8C4A2F),

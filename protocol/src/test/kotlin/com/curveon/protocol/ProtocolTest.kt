@@ -52,8 +52,83 @@ class ProtocolTest {
         Message.PhoneError("Calls aren't allowed"),
         Message.RequestPhoneBook,
         Message.RequestContactPhotos(listOf("7:12", "9:1")),
-        Message.PlaceCall("+47 912 34 567")
+        Message.PlaceCall("+47 912 34 567"),
+        // groups
+        Message.RequestGroups,
+        Message.GroupCreate("Lofoten"),
+        Message.GroupCreate(null),
+        Message.GroupJoin("https://relay.example.org/join#v=1&g=abc"),
+        Message.GroupLeave("0123"),
+        Message.GroupSelect("0123"),
+        Message.GroupSelect(null),
+        Message.GroupSharing(false),
+        Message.GroupProfile("Ola æøå", -65536, "helmet", null),
+        Message.GroupProfile("Kari", 255, null, "/9j/"),
+        Message.MyPosition(59.91, 10.75, 21.5f, 90f, 4f, 1_700_000_000_000),
+        Message.ShareRoute("Lofoten", "H4sI"),
+        Message.SosStart(68.1, 13.6),
+        Message.SosCancel,
+        Message.SosAnswer("rider1", true),
+        Message.GroupRemoveRider("0123", "rider2"),
+        Message.RequestGroupInvite("0123", 7),
+        Message.RequestGroupInvite("0123", null),
+        Message.GroupList(listOf(Message.GroupInfo("0123", "Lofoten", 4, true), Message.GroupInfo("4567", null, 2, false)), "0123", true),
+        Message.GroupList(emptyList(), null, false),
+        Message.GroupConnection("0123", Message.GroupStatus.OFFLINE, 3),
+        Message.GroupConnection("0123", Message.GroupStatus.CONNECTED, 3, otherDeviceActive = true),
+        Message.GroupUseThisDevice,
+        Message.RequestFriends,
+        Message.RequestFriendInvite,
+        Message.FriendRemove("abc"),
+        Message.FriendAddToGroup("0123", listOf("f1", "f2")),
+        Message.FriendAddToGroup("0123", emptyList()),
+        Message.GroupInviteAnswer("o1", true),
+        Message.RequestSelfLink,
+        Message.SelfLink("curveon://join#x"),
+        Message.SelfUnlink,
+        Message.SelfStatus(linked = true, waiting = false),
+        Message.RelayOpen(1, "wss://relay.curveon.no/g/00?p=x"),
+        Message.RelaySend(1, """{"v":1,"t":"pos"}"""),
+        Message.RelayClose(1, 1000),
+        Message.RelayOpened(1),
+        Message.RelayText(2, "{\"é\":1}"),
+        Message.RelayClosed(2, -1),
+        Message.TripShare("t1", 3, "Dagstur", """{"stops":[{"name":"Kafé","lat":59.1,"lon":5.2}]}"""),
+        Message.FriendList(listOf(Message.FriendInfo("f1", "Kari", 5, "bike", null), Message.FriendInfo("f2", "Per", 6, null, "/9j/"))),
+        Message.FriendList(emptyList()),
+        Message.FriendInvite("c1", "curveon://join#v=1&t=f"),
+        Message.GroupInviteOffer("o1", "Ola", "Lofoten", "/9j/", 77),
+        Message.GroupInviteOffer("o2", "Ola", null, null, 0),
+        Message.GroupTrip("0123", "t1", 4, "r1", "Kari", "Dagstur", """{"stops":[]}""", false),
+        Message.GroupTrip("0123", "t1", 5, "r2", null, "Dagstur", "{}", true),
+        Message.GroupSettings("relay.example.org", true),
+        Message.GroupSettings("", false),
+        Message.GroupMembers("0123", listOf(
+            Message.GroupMemberInfo("r1", "Ola", -1, "helmet", null),
+            Message.GroupMemberInfo("r2", "Kari", 5, null, "/9j/"),
+            Message.GroupMemberInfo("r3", "Per", 6, null, null)
+        )),
+        Message.GroupPositions("0123", listOf(
+            Message.GroupPositionInfo("r1", 59.9, 10.7, 180f, 22f, 5L, false, null, 80),
+            Message.GroupPositionInfo("r2", 60.0, 11.0, 0f, 0f, 6L, true, 3L, null)
+        )),
+        Message.GroupSos("0123", "r1", 68.1, 13.6, 7L, true, false, listOf(Message.SosAckInfo("r2", false), Message.SosAckInfo("r3", true)), 4),
+        Message.GroupSos("0123", "r1", 68.1, 13.6, 7L, false, true, emptyList(), 4),
+        Message.GroupRoute("0123", "r1", "Lofoten", "H4sI"),
+        Message.GroupInvite("0123", "curveon://join#v=1"),
+        Message.RequestDeviceLink("0123"),
+        Message.GroupDeviceLink("0123", "curveon://join#v=1&me=abc"),
+        Message.GroupError(Message.GroupErrorCode.EXPIRED_INVITE),
+        Message.GroupError(Message.GroupErrorCode.NO_RELAY)
     )
+
+    @Test
+    fun `an error code or status from a newer peer is skipped`() {
+        val unknownCode = org.json.JSONObject("""{"type":"group_error","code":"FROM_THE_FUTURE"}""")
+        assertNull(Message.fromJson(unknownCode))
+        val unknownStatus = org.json.JSONObject("""{"type":"group_connection","id":"x","status":"FROM_THE_FUTURE","members":1}""")
+        assertNull(Message.fromJson(unknownStatus))
+    }
 
     @Test
     fun `every message survives a round trip through the framing`() {

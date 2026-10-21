@@ -53,7 +53,7 @@ data class SettingsState(
     val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
-    val roadContrast: RoadContrast = RoadContrast.OFF,
+    val roadContrast: RoadContrast = RoadContrast.DARK_GREY,
     val mapDetail: MapDetail = MapDetail.RESPONSE,
     val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
@@ -66,13 +66,16 @@ data class SettingsState(
     val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
     val arrowLead: Double = com.curveon.data.location.RiderMotion.DEFAULT_LEAD_S,
-    val showSurfaces: Boolean,
-    val surfacePalette: SurfacePalette = SurfacePalette.QUIET,
-    val surfacePaletteWhilePlanning: Boolean = false,
+    val surfaceMode: SurfaceMode = SurfaceMode.DASHED,
     /** Whether the map is drawn dark now, so the dash colours are shown as they look on it. */
     val mapDark: Boolean = true,
     val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,
     val showAltitude: Boolean,
+    val showClock: Boolean = true,
+    val showBattery: Boolean = false,
+    val showPhoneBattery: Boolean = false,
+    /** A companion phone is linked: Curveon on a phone of its own has no other phone to show the battery of. */
+    val phoneBatteryOffered: Boolean = true,
     val speedSign: com.curveon.ui.viewmodel.SpeedSignSize = com.curveon.ui.viewmodel.SpeedSignSize.NORMAL,
     val showRoadInfo: Boolean = true,
     val roadCardSize: com.curveon.ui.viewmodel.RoadCardSize = com.curveon.ui.viewmodel.RoadCardSize.NORMAL,
@@ -112,11 +115,12 @@ class SettingsActions(
     val onFuelSetup: () -> Unit = {},
     val onAutoZoom: (Boolean) -> Unit,
     val onArrowLead: (Double) -> Unit = {},
-    val onShowSurfaces: (Boolean) -> Unit,
-    val onSurfacePalette: (SurfacePalette) -> Unit = {},
-    val onSurfacePaletteWhilePlanning: (Boolean) -> Unit = {},
+    val onSurfaceMode: (SurfaceMode) -> Unit = {},
     val onGravelHeatButton: (GravelHeatButton) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
+    val onShowClock: (Boolean) -> Unit = {},
+    val onShowBattery: (Boolean) -> Unit = {},
+    val onShowPhoneBattery: (Boolean) -> Unit = {},
     val onSpeedSign: (com.curveon.ui.viewmodel.SpeedSignSize) -> Unit = {},
     val onRoadCardSize: (com.curveon.ui.viewmodel.RoadCardSize) -> Unit = {},
     val onShowRoadInfo: (Boolean) -> Unit = {},
@@ -194,20 +198,16 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Setting(stringResource(R.string.settings_map), stringResource(R.string.settings_map_hint)) {
                             Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
                         }
-                        Setting(stringResource(R.string.settings_high_contrast), stringResource(R.string.settings_high_contrast_hint)) {
+                        Setting(stringResource(R.string.settings_roads), stringResource(R.string.settings_roads_hint)) {
                             Choice(RoadContrast.entries, state.roadContrast, { stringResource(it.label) }, actions.onRoadContrast)
                         }
                         Setting(stringResource(R.string.settings_map_detail), stringResource(R.string.settings_map_detail_hint)) {
                             Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)
                         }
                         Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = {
-                            if (state.showSurfaces) SurfaceColours(state.surfacePalette, state.mapDark, state.surfacePaletteWhilePlanning, actions.onSurfacePaletteWhilePlanning)
+                            if (state.surfaceMode != SurfaceMode.OFF) SurfaceColours(state.surfaceMode, state.mapDark)
                         }) {
-                            // Standard (no dashes) or one of the dash colours, each shown as drawn.
-                            Choice(listOf<SurfacePalette?>(null) + SurfacePalette.entries, state.surfacePalette.takeIf { state.showSurfaces },
-                                { stringResource(it?.label ?: R.string.settings_surfaces_off) },
-                                { p -> actions.onShowSurfaces(p != null); if (p != null) actions.onSurfacePalette(p) },
-                                icon = { PaletteSample(it, state.mapDark) })
+                            Choice(SurfaceMode.entries, state.surfaceMode, { stringResource(it.label) }, actions.onSurfaceMode)
                         }
                         Setting(stringResource(R.string.settings_gravel_heat), stringResource(R.string.settings_gravel_heat_hint)) {
                             CockpitSwitch(state.gravelHeatButton == GravelHeatButton.MAP, onCheckedChange = {
@@ -216,6 +216,15 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint)) {
                             CockpitSwitch(state.showAltitude, actions.onShowAltitude)
+                        }
+                        Setting(stringResource(R.string.settings_clock), stringResource(R.string.settings_clock_hint)) {
+                            CockpitSwitch(state.showClock, actions.onShowClock)
+                        }
+                        Setting(stringResource(R.string.settings_battery), stringResource(R.string.settings_battery_hint)) {
+                            CockpitSwitch(state.showBattery, actions.onShowBattery)
+                        }
+                        if (state.phoneBatteryOffered) Setting(stringResource(R.string.settings_phone_battery), stringResource(R.string.settings_phone_battery_hint)) {
+                            CockpitSwitch(state.showPhoneBattery, actions.onShowPhoneBattery)
                         }
                         Setting(stringResource(R.string.settings_speed_sign), stringResource(R.string.settings_speed_sign_hint)) {
                             Choice(com.curveon.ui.viewmodel.SpeedSignSize.entries, state.speedSign, { stringResource(it.label) }, actions.onSpeedSign)
@@ -678,32 +687,15 @@ private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
     }
 }
 
-/**
- * The key under the dash colours chosen above: gravel and soft ground as drawn on the map in use,
- * and whether the colours are only for planning.
- */
+/** The key under the choice above: gravel and soft ground as drawn on the map in use. */
 @Composable
-private fun SurfaceColours(palette: SurfacePalette, dark: Boolean, whilePlanning: Boolean, onWhilePlanning: (Boolean) -> Unit) {
+private fun SurfaceColours(mode: SurfaceMode, dark: Boolean) {
     Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        DashSample(palette.gravel(dark))
+        DashSample(mode.gravel(dark))
         Text(stringResource(R.string.surface_gravel), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, end = 16.dp))
-        DashSample(palette.soft(dark))
+        DashSample(mode.soft(dark))
         Text(stringResource(R.string.surface_soft), color = TextMuted, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 6.dp))
     }
-    if (palette != SurfacePalette.QUIET) Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(R.string.settings_surfaces_planning_only), color = TextSecondary, fontSize = 14.sp, modifier = Modifier.weight(1f, fill = false).padding(end = 12.dp))
-        CockpitSwitch(whilePlanning, onWhilePlanning)
-    }
-}
-
-/** A dash colour set in the Veidekke list: gravel then soft ground, as drawn on the map in use; blank for Standard, to line up. */
-@Composable
-private fun PaletteSample(p: SurfacePalette?, dark: Boolean) {
-    if (p == null) { Spacer(Modifier.width(32.dp)); return }
-    DashSample(p.gravel(dark), width = 10.dp)
-    Spacer(Modifier.width(4.dp))
-    DashSample(p.soft(dark), width = 10.dp)
-    Spacer(Modifier.width(8.dp))
 }
 
 @Composable

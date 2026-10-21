@@ -8,9 +8,9 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 ## 2026-10-21 — Settings tabs scroll to the open page; via point or stop when changing place; grey or dark grey roads (1.2.2)
 
-- [ ] X7, day map: Settings → Display → High contrast → Grey, then Dark grey: small roads and the
-      tarmac roads drawn by the gravel layer change shade together; place names stay on top and readable.
-      Your old "on" setting should show as Dark grey.
+- [ ] X7, day map: Settings → Display → Roads → Grey, then Dark grey: small roads, the tarmac roads
+      drawn by the gravel layer and the plain gravel dashes change shade together; place names stay on
+      top and readable. Dark grey looks as before.
 
 - [ ] Plan a trip with a route point, tap it → Change place → Pick on map → tap: the bar offers
       Route point and Stop. Route point keeps it a white dot, Stop makes it a numbered stop. Same
@@ -18,6 +18,116 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 - [ ] Pixel, portrait: Settings, tap the tabs from left to right up to Help: the open tab's name
       shows in full each time, also Help at the far right (in Norwegian too).
+## 2026-10-21 — Telefonbatteri, kikk på fartskortet, demo-triks
+
+- [ ] X7 med Pixel koblet til: slå på Innstillinger → Skjerm → Telefonbatteri. Et lite telefonsymbol ved farten viser Pixel-batteriet (grønt når den lader). På Pixel med «Denne enheten» skal bryteren ikke finnes.
+- [ ] Trykk på fartskortet: klokke og batterier vises i 5 s også når de er skrudd av.
+- [ ] Demotur: trykk DEMO under pila → «Mist GPS-signalet» gir spøkelsespil og tunnel-gjetting; «Kjør feil i neste kryss» kjører av ruten i neste kryss, og navigasjonen svarer som på tur.
+- [ ] Det tomme veikortet (liten mørk pille øverst til venstre) fra forrige versjon skal være borte.
+
+## 2026-10-21 — Pixel fryste ved retur fra en annen app
+
+Tre «svarer ikke» 17:49–17:55: kartets tegnetråd og skjermen ventet på hverandre da vinduet endret størrelse. Kartet tegnes nå i en TextureView på Android 14+.
+
+- [ ] Pixel: naviger, bytt til Claude Code (eller en annen app) og tilbake flere ganger. Ingen frys, ingen «svarer ikke», kartet tegnes med en gang.
+- [ ] Merker du at Pixel blir varmere eller batteriet går fortere under navigering enn før?
+
+## 2026-10-21 — Veinavn på veikortet, zoom, kart-knappen
+
+- [ ] Trykk på veikortet (Fv-skiltet øverst til venstre) på en vei med navn: navnet står ved siden av skiltene i 6 s, et trykk et annet sted tar det bort. Er det navnet på veien du kjører på (ikke en sidevei)? Har veien ikke navn i kartet, skjer ingenting.
+- [ ] Zoomen når du begynner å kjøre: ett trinn lenger ut enn før. Passer det, i by og på landevei?
+- [ ] Med en skjerm åpen fra menyen (f.eks. Innstillinger): kart/dashbord-knappen lukker den og bytter visning.
+
+## 2026-10-21 — Spøkelsespil uten GPS, mindre manøverkort, neste stopp
+
+- [ ] I en tunnel (eller med GPS av en stund): pila blir blek med en oransje satellitt ved siden av, og fartskortet holder samme høyde. Når signalet er tilbake, er pila vanlig igjen. Står du stille med signal, skal spøkelset **ikke** komme.
+- [ ] Under navigering: manøverkortet nede til venstre er lite når neste sving er over 1,5 km unna, og vokser når du nærmer deg. Er 1,5 km riktig grense i fart?
+- [ ] Med et stopp: under ankomsttiden står klokkeslettet for stoppet i mindre oransje skrift.
+- [ ] X ved tiden spør «Avslutte hele ruten?» før ruten avsluttes.
+
+## 2026-10-21 — Si stedet i «Hvor skal du?»
+
+- [ ] Med Pixel koblet til X7: åpne «Hvor skal du?», trykk mikrofonen til høyre i feltet og si et sted i hjelmen (f.eks. «Geiranger»). Feltet fylles mens du snakker, og søket viser stedet. Trykk mikrofonen igjen midt i for å stoppe.
+
+## 2026-10-21 — Ring eller SMS fra Telefon
+
+Companion og Curveon («Denne enheten») ber nå om lov til å sende SMS: godta den på Pixel, i companion og i Telefon-innstillingene.
+
+- [ ] Telefon → Favoritter/Kontakter/Nylige: trykk en person. Dialogen viser navnet, numrene (mobil valgt), Ring, SMS og Avbryt.
+- [ ] SMS: si en kort melding i hjelmen, se teksten på kortet «SMS til …», trykk Send. Kommer SMS-en fram, og ligger den i Meldinger-appen på Pixel som sendt?
+- [ ] «Si igjen» på SMS-kortet starter opptak på nytt, X avbryter uten å sende.
+- [ ] Ring fra dialogen ringer det valgte nummeret (prøv en kontakt med to numre).
+
+## 2026-10-21 — Les opp meldinger
+
+- [ ] Med Pixel koblet til X7: få en melding, trykk høyttaleren ved avsendernavnet. Meldingen skal leses opp i hjelmen («Navn skriver: …»), musikken dempes litt mens den leses. Uten norsk stemme lastet ned på telefonen kommer bare en lyd.
+
+## 2026-10-21 — SOS-knappen utløses ikke lenger av å skli
+
+- [ ] Group ride-fanen: legg tommelen på SOS-knappen og dra opp/ned (scroll) eller ut av knappen. Fremdriftsbaren skal nullstilles og **ingen** nedtelling starte. Holdes den i ro i tre sekunder skal nedtellingen på 10 starte som før.
+
+## 2026-10-20 — Friends and groups live in Curveon, the phone is the way to the internet (not released, in 1.2.2)
+
+Built and unit tested (the tunnel client and server against each other, and the new messages), tried on the X7 over USB: the friend code
+shows at once with no phone near, and nothing crashes. **Not tried, because it needs the Pixel and the relay on the net:** everything below.
+The companion no longer keeps friends or groups of its own; it shows how the tablet's active group is doing, asks the tablet for a friend
+code and hands over what it scans. The tablet uses its own internet if it has some, else the phone's through Bluetooth.
+
+- [ ] **X7 with the Pixel linked, X7 has no internet** (wifi off, no hotspot): Friends → My friends → Show my code: the code comes up within a second or two (made on the X7, nothing sent to the phone).
+- [ ] **Same, start a group** (needs the relay: `relay.curveon.no` once the VPS is up, or a debug build and `adb reverse tcp:8787 tcp:8787` on the Pixel with the relay on this PC). The group should say "connected" through the phone. Check `adb -s <X7> logcat -s Curveon GroupHub`, and that the phone's data use is small.
+- [ ] **Turn wifi on at the X7 while a group is running:** the group moves to the X7's own internet by itself (a short "offline" at most). Turn wifi off again: back through the phone.
+- [ ] **Pixel companion → Friends → Show my code / Share link / Scan:** the code is the X7's (a friend who scans it shows up in the X7's friend list, not on the phone). With the X7 not linked or switched off you get "Open Curveon on your tablet or this phone first".
+- [ ] **Companion's Group ride card** shows the X7's active group and "connected" / "offline" like the X7 does. It clears when the X7 disconnects.
+- [ ] **Old companion on the Pixel with the new X7 build:** the X7 ignores what the old companion says about groups, so nothing doubles up. (Update the companion to get the tunnel.)
+- [ ] **My devices (Pixel's Curveon app + X7).** Friends → Me → My devices: "Show code for my other device" on one, "Scan code from my other device" on the other; both then say "Linked". Tried on the X7 and a phone emulator against the relay on this PC (link by intent, not by camera): both said linked and a group started on the X7 showed up on the emulator. **Not tried:** scanning the code with the real camera, the profile (name, colour, picture) following, a friend added on one showing on the other, leaving a group on one removing it on the other, Unlink, and the Pixel itself. Do the camera scan, then add a friend on the X7 and open Curveon on the Pixel: the friend should be there within seconds (a friend is not shown until their hello has been heard).
+
+## 2026-10-21 — Rides end after 5 minutes, "Continue the ride?" (not released, in 1.2.2)
+
+Only the logic is tested (unit tests); the question card hasn't been seen with real riding.
+
+- [ ] Ride a few km (Rides on, in Settings), stop for 5+ minutes: the ride is finished in the ride log (and its GPX copy made if auto-save is on), the red dot is gone.
+- [ ] Ride on within two hours: a card "Continue the ride?" with Continue / New ride appears at the top of the map after a few seconds of riding. Check it doesn't cover the arrival box, speed card or road card on the X7 and the Pixel, while navigating too.
+- [ ] Continue: the ride log shows one ride (no new one), the distance grows, and with auto-save the GPX group has one track for the whole ride, not two.
+- [ ] New ride (or ignore it for 30 s): the card goes away, and the earlier ride is left as it was.
+- [ ] A stop you end with the stop button, or longer than two hours, does not ask.
+
+## 2026-10-20 — Gravel and rough ground on the map (not released, in 1.2.2)
+
+Installed on the X7, but no gravel showed near the desk, so the new look hasn't been seen yet.
+
+- [ ] Ride or pan to a gravel road (zoom 11 or closer) in Settings → Display → Road surfaces = Dashed: the road itself should look dashed, same colour and no thicker than the neighbouring roads, brown for rough ground. Check the gaps don't show a pale line over forest.
+- [ ] Same with Coloured: orange gravel, purple rough ground, as the route. Also on the night map.
+- [ ] With Dashed or Coloured on, place names (towns, villages) lie above the gravel dashes, the route and GPX tracks, as they do with Off. Dashes should look thinner than the main road and the thin country road, e.g. at Helland.
+- [ ] Day map is high contrast without the old switch; small roads stay dark grey.
+
+## 2026-10-19 — Group rides (not released, no version bump yet)
+
+Tried 2026-10-19 on the X7 (as its own phone, over a relay on this PC with simulated riders): joining by link,
+positions both ways, the map markers, the group dialog, the invite QR, SOS in both directions and "I'm coming".
+Not tried, because it needs the Pixel: the real chain X7 → Bluetooth → companion → relay.
+
+Set up a test group without a second rider (the relay and the simulated riders live in `~/develop/curveon-relay`):
+`npm start` there; `node test/rider.ts create --riders 3 --lat <lat> --lon <lon> --sos-after 120` prints an invite
+link (`curveon://join#...`) and keeps three riders circling the point. `adb -s <phone> reverse tcp:8787 tcp:8787`, then
+open the link on the phone: `adb -s <phone> shell "am start -a android.intent.action.VIEW -d '<link>'"`.
+
+- [ ] **Pixel + X7 together.** Install `:companion:installDebug` on the Pixel and keep the X7 on the build with groups. Everything about groups (start a group, name and picture, invite, relay address, data saver) is done in Curveon on the X7; the companion only shows the group's status, scans a QR code and opens invite links. On the X7: Group → Settings → relay address; start a group. On the Pixel, scan its QR code (companion: Group ride → Scan a QR code) or open the link: the X7 should then show the group's riders, and the X7's position should show up for the others. (Needs a relay: `localhost:8787` through `adb reverse` on the Pixel, debug builds only, or a real `wss` relay.)
+- [ ] **After restarting Curveon** (force-stop, start) with a group active: the group button and the riders are back within about 10 s. Seen once on the X7 (as own phone) that they were *not* back after a restart although the group was stored (`shared_prefs/groups.xml` held it): if it happens again, pull `adb logcat -s GroupHub` and say when.
+- [ ] **SOS sent from the dialog:** the red "SOS sent" card sits at the top of the dialog (it was behind the dialog before this fix) with "Received by n of m" counting up, and "Cancel SOS" works.
+- [ ] **Overlap (CLAUDE.md):** the group button is in the main menu (rail) between Phone and Settings, so the map button column is as before. Check on the Pixel (portrait: six buttons along the bottom; landscape: six down the side with the map toggle still reachable) and the X7 landscape. The dialog opens in the panel area like the Phone one.
+- [ ] **Curveon alone on a phone (no companion installed):** a whole group ride must work: Group → Settings → relay address, start a group, invite with the QR or Share link, your name and picture, scan or open someone else's invite, SOS. Nothing may say you need the companion app.
+- [ ] **Your picture, from the camera:** Group → Your name in the group → Take a picture: the camera opens (the app asks for the camera permission first, as it holds it for scanning), then the picture comes back in a cutting window: drag and zoom with two fingers until your face is in the circle, Use this picture, and the big round preview shows exactly what the others will see. Save. Also try Choose from pictures and Remove. Seen on the X7: choosing a picture, cutting it (dragging) and the preview; not seen: the camera path and two-finger zoom.
+- [ ] **Companion: scanning a QR code** (Group ride → Scan a QR code): same as in Curveon; joining from the phone's camera is for a tablet whose camera is out of reach.
+- [ ] **Scanning a QR code in Curveon** (Group → Scan a QR code): the camera permission is asked only now. Hold the camera in front of an invite's QR (from the other device's Group → Invite riders) and then in front of the "My other device" one, at arm's length and closer: it should read both within a second or two and join. Seen so far: the camera opens without errors on the X7 (rear camera 0) and a QR drawn and read in unit tests, also turned and small; not seen: a code held in front of the real camera. Say if a dense code is hard to read and I will raise the picture size.
+- [ ] **Your own picture:** Group → Your name in the group → Choose a picture of you (the system photo picker, no permission asked). The marker on the map and the row in the group list show it round; the others see it after a few seconds. Try a portrait photo taken sideways (it must be turned right) and remove it again.
+- [ ] **Only one device sends your position:** with Curveon on both the tablet and the phone in the same group (as one rider, see below), drive with one: the other shows "Your position is shared from your other device" with "Use this device"; pressing it on the other moves the sending there (and the first one then shows the note). A device left behind with the app open takes over by itself after three minutes if the other has gone quiet.
+- [ ] **One rider on two devices:** in a group, Group → "My other device" on the tablet shows a QR; open it with the phone camera (or `adb shell am start -a android.intent.action.VIEW -d '<link>'`) on the phone running Curveon: the others must see one rider, not two, and a position sent from either device reaches them. The code stops working after 15 minutes.
+- [ ] **SOS from someone else** is a small red dialog (not full screen): "Drive there" starts a route to them, "Ignore" closes it, and it says how many are on the way. The alarm stops when you do either.
+- [ ] **Tunnel / no coverage:** drive into a tunnel or switch the phone to flight mode: the group says "No contact with the group", the position is sent once when coverage is back, and an SOS made without coverage goes out when it returns.
+- [ ] **Battery:** one hour of riding with a group active, phone screen off: compare with the same ride without a group (the phone uses the radio every 5 s; data saver 15 s).
+- [ ] **Invite links with both apps on one phone:** `curveon://join` is handled by both Curveon and the companion, so Android asks which to use. Pick the companion when it is paired with a tablet, otherwise Curveon.
+- [ ] **Samsung/Xiaomi-type phones** (not the Pixel) may kill the companion in the background: if a group goes quiet on someone's phone, note the model.
+- [ ] **Not built yet, so do not look for it:** sharing a route to the group from the route screens, and a notification for SOS when Curveon is not open on the phone.
 
 ## 2026-10-19 — Route colour, pruned via points, time to the next stop (1.2.2)
 

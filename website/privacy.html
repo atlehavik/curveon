@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curveon – personvern</title>
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --text:#e6edf3; --muted:#9aa7b4; --cyan:#00e5ff; --line:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.55; }
+  main { max-width:48rem; margin:0 auto; padding:2.5rem 16px 4rem; }
+  h1 { font-size:2rem; margin:0 0 .5rem; }
+  h2 { font-size:1.2rem; margin:2rem 0 .5rem; color:var(--cyan); }
+  a { color:var(--cyan); }
+  .lang { float:right; font-size:.9rem; }
+  .short { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.1rem; }
+  .tablewrap { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; min-width:34rem; font-size:.95rem; }
+  th, td { border-bottom:1px solid var(--line); padding:.55rem .6rem; text-align:left; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  li { margin:.4rem 0; }
+  .muted { color:var(--muted); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="lang"><a href="index.html">Curveon</a> · <a href="#" data-set="nb">Norsk</a> · <a href="#" data-set="en">English</a></div>
+
+  <section lang="nb" data-lang="nb">
+    <h1>Personvernerklæring for Curveon</h1>
+    <p class="muted">Gjelder fra [dato]. Erklæringen gjelder appene <strong>Curveon</strong> (<code>com.curveon.app</code>) og <strong>Curveon Companion</strong> (<code>com.curveon.companion</code>).</p>
+
+    <p class="short"><strong>Kort fortalt:</strong> Curveon har ingen kontoer, ingen reklame og ingen analyse. Det appene leser på telefonen din blir værende på dine egne enheter. Det som forlater dem, er forespørsler til nettbaserte kart- og søketjenester, og, hvis du velger å kjøre sammen med andre, krypterte meldinger via en reléserver som utvikleren driver. Reléen kan ikke lese innholdet.</p>
+
+    <p>Behandlingsansvarlig og kontakt: [navn], [e-postadresse].</p>
+
+    <h2>Hva appene bruker, og hvorfor</h2>
+    <div class="tablewrap"><table>
+      <tr><th>Hva</th><th>Hvorfor</th><th>Hvor det går</th></tr>
+      <tr><td><strong>Posisjon</strong> (GPS)</td><td>For å vise deg på kartet, navigere og lagre turer</td><td>Blir på enheten. En tekstlogg over de siste turene (posisjon, fart) ligger i appens egen mappe i 14 dager, og slettes så. Når du deler posisjon i en gruppe, se «Kjøregrupper» under</td></tr>
+      <tr><td><strong>Kontakter</strong></td><td>For å vise favoritter, navn og bilder i telefonvisningen, og for å ringe</td><td>Leses på telefonen og vises på Curveon-skjermen din. Sendes ikke til andre</td></tr>
+      <tr><td><strong>Anropslogg</strong></td><td>For å vise siste og ubesvarte anrop, så du kan ringe tilbake uten å ta på telefonen</td><td>Leses når telefonen kobler til og når du åpner telefonvisningen, maks de 200 siste anropene, bare i minnet. Endres aldri og sendes aldri til noen server</td></tr>
+      <tr><td><strong>Varsler</strong> (tilgang til varsler)</td><td>For å vise meldinger, anrop og musikken som spilles, og la deg svare</td><td>Leses på telefonen og sendes videre til skjermen din. Lagres ikke</td></tr>
+      <tr><td><strong>Mikrofon</strong></td><td>Stemmesvar på meldinger</td><td>Håndteres av telefonens egen talegjenkjenning, som foretrekker å gjøre det uten nett. Bruker telefonens taletjeneste nettet, er det den tjenesten (vanligvis Googles) som sender lyden, på egne vilkår. Curveon lagrer ingen opptak</td></tr>
+      <tr><td><strong>Bluetooth</strong></td><td>Koblingen mellom telefon og skjerm, og en valgfri OBD2-adapter for motordata</td><td>Blir mellom enhetene dine</td></tr>
+      <tr><td><strong>Installerte apper</strong> (apper med startikon og musikkapper)</td><td>For å vise navnet på appen som sendte en melding eller spiller musikk</td><td>Brukes bare på enheten</td></tr>
+      <tr><td><strong>Kamera</strong></td><td>For å skanne QR-koden til en venn eller en gruppeinvitasjon</td><td>Bildet brukes bare til å lese koden og lagres ikke</td></tr>
+    </table></div>
+
+    <h2>Hva som sendes over internett</h2>
+    <p>Bare når du bruker disse funksjonene, og bare over kryptert forbindelse (HTTPS):</p>
+    <ul>
+      <li><strong>Stedssøk.</strong> Det du skriver og omtrentlig posisjon (så de nærmeste treffene kommer først) går til Photon (photon.komoot.io, Komoot) og, for norske stedsnavn og adresser, det du skriver til Kartverket (ws.geonorge.no). Tjenestene ser IP-adressen din, og Curveon rår ikke over hva de lagrer.</li>
+      <li><strong>Nettkart.</strong> Kartflisene kommer fra OpenFreeMap (tiles.openfreemap.org). De ser hvilket område du ser på og IP-adressen din.</li>
+      <li><strong>Nedlasting av kart og veidata</strong> (Innstillinger): kartfiler fra Protomaps (build.protomaps.com) og rutedata fra BRouter (brouter.de). De ser IP-adressen din og hvilke områder du ber om.</li>
+    </ul>
+    <p>Med nedlastede kart kan du kjøre helt uten nett.</p>
+
+    <h2>Kjøregrupper og venner</h2>
+    <p>Dette er valgfritt og er av til du selv legger til en venn eller starter en gruppe.</p>
+    <ul>
+      <li><strong>Hva du deler:</strong> posisjon (bare mens du deler, og bare med den aktive gruppen), kallenavn, farge og profilbilde, ruter og delte turer, og SOS-varsel hvis du utløser det. Gruppens medlemmer ser dette.</li>
+      <li><strong>Ende-til-ende-kryptering:</strong> alt dette krypteres på enheten din med en nøkkel bare gruppens medlemmer har, før det sendes. Reléen kan ikke lese posisjoner, navn, bilder eller ruter.</li>
+      <li><strong>Reléen</strong> (relay.curveon.no) drives av utvikleren på en server hos netcup i Tyskland. Den videresender de krypterte meldingene. Den ser IP-adressen din når du kobler til (brukt til å begrense misbruk, ikke lagret i logg), gruppe- og rytter-ID-er som ikke kan knyttes til deg som person, og størrelsen på og tidspunktet for meldingene.</li>
+      <li><strong>Hva reléen lagrer</strong> (krypterte): siste profil per rytter, de siste rutene, endringer i delte turer, vennenes invitasjoner og et aktivt SOS-varsel (til det avbrytes, maks 12 timer). Posisjoner lagres aldri. Alt slettes automatisk etter 30 dager uten bruk.</li>
+      <li><strong>Venner</strong> er private kanaler mellom to personer. Venneinvitasjoner går som kode eller QR-kode du selv gir videre.</li>
+      <li><strong>Forlate og slette:</strong> du kan forlate en gruppe eller fjerne en venn når som helst. Det som ligger igjen på reléen, er krypterte data som utløper av seg selv. Kontakt meg hvis du vil ha dem fjernet tidligere.</li>
+    </ul>
+
+    <h2>Hva som lagres på enheten din</h2>
+    <p>Lagrede ruter, steder, spor, turer, innstillinger, venner og delte ruter ligger i appen. Slett dem i appen, ved å tømme appens data eller ved å avinstallere. Android-sikkerhetskopi kan kopiere appdata til Google-kontoen din hvis du har slått det på. Det styres av Google og kontoinnstillingene dine.</p>
+
+    <h2>Deling, salg og barn</h2>
+    <p>Vi selger eller deler ikke dataene dine, bruker dem ikke til reklame eller profilering, og bygger ingen profiler. Appene er ikke rettet mot barn.</p>
+
+    <h2>Dine rettigheter og valg</h2>
+    <p>Du bestemmer hver tillatelse i Android-innstillingene, og appen sier hva som slutter å virke uten den. Utvikleren har ingen personopplysninger om deg utenom det krypterte som ligger midlertidig på reléen, så det er lite å be om innsyn i. Du har rett til innsyn, retting og sletting etter personvernforordningen (GDPR), og kan klage til Datatilsynet. Ta kontakt på [e-postadresse].</p>
+
+    <h2>Nettsiden</h2>
+    <p>Siden curveon.no og invitasjonssiden på relay.curveon.no bruker ingen sporing eller informasjonskapsler. Tjeneren ser IP-adressen din når du åpner dem, og den lagres ikke i logg.</p>
+
+    <h2>Endringer</h2>
+    <p>Endres dette, erstatter den nye versjonen denne siden, og datoen øverst endres.</p>
+  </section>
+
+  <section lang="en" data-lang="en" hidden>
+    <h1>Curveon privacy policy</h1>
+    <p class="muted">Effective [date]. This policy covers the apps <strong>Curveon</strong> (<code>com.curveon.app</code>) and <strong>Curveon Companion</strong> (<code>com.curveon.companion</code>).</p>
+
+    <p class="short"><strong>In short:</strong> Curveon has no accounts, no advertising and no analytics. What the apps read on your phone stays on your own devices. What leaves them is requests to online map and search services and, if you choose to ride with others, encrypted messages through a relay server run by the developer. The relay cannot read the content.</p>
+
+    <p>Controller and contact: [name], [email address].</p>
+
+    <h2>What the apps use, and why</h2>
+    <div class="tablewrap"><table>
+      <tr><th>What</th><th>Why</th><th>Where it goes</th></tr>
+      <tr><td><strong>Location</strong> (GPS)</td><td>To show you on the map, navigate and record rides</td><td>Stays on the device. A plain-text trace of recent rides (positions, speed) is kept in the app's own folder for 14 days, then deleted. When you share your position in a group, see "Riding groups" below</td></tr>
+      <tr><td><strong>Contacts</strong></td><td>To show favourites, names and photos in the phone view, and to call</td><td>Read on your phone, shown on your Curveon display. Not sent to anyone else</td></tr>
+      <tr><td><strong>Call log</strong></td><td>To show recent and missed calls so you can call back without touching the phone</td><td>Read when the phone connects and when you open the phone view, up to the 200 latest calls, kept in memory only. Never changed or sent to a server</td></tr>
+      <tr><td><strong>Notifications</strong> (notification access)</td><td>To show messages, calls and the music that plays, and to let you reply</td><td>Read on the phone, passed to your display. Not stored</td></tr>
+      <tr><td><strong>Microphone</strong></td><td>Voice replies to messages</td><td>Handled by the phone's own speech recognition, which prefers offline recognition. If the phone's speech service uses the network, that service (normally Google's) sends the audio, under its own terms. Curveon keeps no recordings</td></tr>
+      <tr><td><strong>Bluetooth</strong></td><td>The link between the phone and the display, and an optional OBD2 adapter for engine data</td><td>Stays between your devices</td></tr>
+      <tr><td><strong>Installed apps</strong> (apps with a launcher icon and music apps)</td><td>To show the name of the app that sent a message or plays music</td><td>Used on the device only</td></tr>
+      <tr><td><strong>Camera</strong></td><td>To scan a friend's QR code or a group invite</td><td>The image is only used to read the code and is not stored</td></tr>
+    </table></div>
+
+    <h2>What is sent over the internet</h2>
+    <p>Only when you use these functions, and only over an encrypted connection (HTTPS):</p>
+    <ul>
+      <li><strong>Place search.</strong> What you type, and your approximate position (so the nearest results come first), go to Photon (photon.komoot.io, Komoot) and, for Norwegian place names and addresses, what you type goes to Kartverket (ws.geonorge.no). These services see your IP address, and Curveon does not control what they keep.</li>
+      <li><strong>Online map.</strong> The map tiles come from OpenFreeMap (tiles.openfreemap.org). They see which area you look at and your IP address.</li>
+      <li><strong>Downloads of maps and road data</strong> (Settings): map files from Protomaps (build.protomaps.com) and routing data from BRouter (brouter.de). They see your IP address and which regions you ask for.</li>
+    </ul>
+    <p>With downloaded maps you can ride fully offline.</p>
+
+    <h2>Riding groups and friends</h2>
+    <p>This is optional and off until you add a friend or start a group.</p>
+    <ul>
+      <li><strong>What you share:</strong> your position (only while sharing, and only with the active group), nickname, colour and profile picture, routes and shared trips, and an SOS alert if you trigger one. The group's members see this.</li>
+      <li><strong>End-to-end encrypted:</strong> all of this is encrypted on your device with a key only the group's members hold, before it is sent. The relay cannot read positions, names, pictures or routes.</li>
+      <li><strong>The relay</strong> (relay.curveon.no) is run by the developer on a server at netcup in Germany. It forwards the encrypted messages. It sees your IP address when you connect (used to limit abuse, not kept in a log), group and rider IDs that cannot be tied to you as a person, and the size and timing of messages.</li>
+      <li><strong>What the relay stores</strong> (encrypted): the latest profile per rider, the latest routes, changes to shared trips, friends' invitations and an active SOS alert (until cancelled, at most 12 hours). Positions are never stored. Everything is deleted automatically after 30 days of inactivity.</li>
+      <li><strong>Friends</strong> are private channels between two people. Friend invitations travel as a code or QR code you hand over yourself.</li>
+      <li><strong>Leaving and deleting:</strong> you can leave a group or remove a friend at any time. What is left on the relay is encrypted and expires by itself. Contact me if you want it removed sooner.</li>
+    </ul>
+
+    <h2>What is kept on your device</h2>
+    <p>Saved routes, places, tracks, rides, settings, friends and shared routes are stored in the app. Delete them in the app, by clearing the app's data or by uninstalling it. The Android backup may copy app data to your Google account if you have turned device backup on; that is handled by Google under your account's settings.</p>
+
+    <h2>Sharing, selling, children</h2>
+    <p>We do not sell or share your data, do not use it for advertising or profiling, and do not build profiles. The apps are not aimed at children.</p>
+
+    <h2>Your rights and choices</h2>
+    <p>You decide each permission in Android's settings, and the apps tell you what stops working without it. The developer holds no personal data about you apart from the encrypted data kept temporarily on the relay, so there is little to request access to. You have the right to access, correction and deletion under the GDPR, and to complain to the Norwegian Data Protection Authority (Datatilsynet). Contact [email address].</p>
+
+    <h2>The website</h2>
+    <p>curveon.no and the invite page at relay.curveon.no use no tracking or cookies. The server sees your IP address when you open them, and it is not kept in a log.</p>
+
+    <h2>Changes</h2>
+    <p>If this changes, the new version replaces this page and the date at the top.</p>
+  </section>
+</main>
+<script>
+  function show(l) { document.querySelectorAll("[data-lang]").forEach(function (s) { s.hidden = s.dataset.lang !== l; }); document.documentElement.lang = l; }
+  document.querySelectorAll("[data-set]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); show(a.dataset.set); }); });
+  var n = (navigator.language || "nb").toLowerCase();
+  show(n.indexOf("nb") === 0 || n.indexOf("no") === 0 || n.indexOf("nn") === 0 ? "nb" : "en");
+</script>
+</body>
+</html>

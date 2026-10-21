@@ -11,6 +11,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MyLocation
@@ -18,6 +20,7 @@ import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material.icons.filled.SatelliteAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -70,6 +73,7 @@ import org.maplibre.geojson.Point
 private const val ROUTE = "curveon-route"
 private const val ALT = "curveon-alternatives"
 private const val MARKERS = "curveon-markers"
+private const val GROUP = "curveon-group"
 private const val PICK = "curveon-pick"
 private const val APPROACH = "curveon-approach"
 /** At most this often is a camera that keeps moving (following the rider) reported as settled. */
@@ -100,18 +104,17 @@ private const val SURFACE = "curveon-surface"
 private const val HEAT = "curveon-gravel-heat"
 
 /**
- * The road surface dashes' colours, picked in Settings (where the dark ones are the key). Quiet
- * sits with the map's own roads; the others stand out, for when gravel is what the trip is about.
- * Orange and purple are the route's own gravel and track colours.
+ * How gravel and soft ground are shown on the map (Settings → Display → Road surfaces): not at all,
+ * as the road itself dashed (the road's own colour, never wider than it; brown for soft ground), or
+ * coloured like the route is (orange gravel, purple soft ground).
  */
-enum class SurfacePalette(val label: Int, val gravelDark: String, val softDark: String, val gravelLight: String, val softLight: String) {
-    QUIET(R.string.surface_palette_quiet, "#8A919C", "#8F7458", "#9AA0A6", "#B39A82"),
-    ROUTE(R.string.surface_palette_route, GRAVEL_COLOR, TRACK_COLOR, "#F57C00", "#AA00FF"),
-    YELLOW(R.string.surface_palette_yellow, "#FFD600", "#FF6E40", "#FFD000", "#F4511E"),
-    GREEN(R.string.surface_palette_green, "#76FF03", "#FFC400", "#2EB83E", "#EF6C00");
+enum class SurfaceMode(val label: Int) {
+    OFF(R.string.settings_surfaces_off), DASHED(R.string.surface_mode_dashed), COLOURED(R.string.surface_mode_coloured);
 
-    fun gravel(dark: Boolean) = if (dark) gravelDark else gravelLight
-    fun soft(dark: Boolean) = if (dark) softDark else softLight
+    /** The dash colour for gravel on the day or night map. */
+    fun gravel(dark: Boolean, road: String = com.curveon.data.map.OfflineMaps.HC_ROAD) = when { this == COLOURED -> GRAVEL_COLOR; dark -> "#EBEBEB"; else -> road }
+    /** The dash colour for soft ground (the route's track colour when coloured). */
+    fun soft(dark: Boolean) = when { this == COLOURED -> TRACK_COLOR; dark -> "#A07850"; else -> "#7A5230" }
 }
 
 /** Settings → Display: whether the gravel heat map's button shows (planning and on the map); off for riders who don't look for gravel. */
@@ -130,6 +133,8 @@ interface GravelHeatSource {
  * start here either way (they hold their width below it).
  */
 private const val SURFACE_ZOOM = 11f
+/** From this zoom the map's own tiles have the small roads. */
+private const val MAP_ROADS_ZOOM = 12.2f
 private const val FOLLOW_ZOOM = 15.5
 /** 3D tilt; car navigators sit around 45–50 (Mapbox's navigation camera: 45). */
 private const val TILT_3D = 55.0
@@ -157,6 +162,9 @@ const val SURFACE_PAVED = 0
 const val SURFACE_GRAVEL = 1
 const val SURFACE_TRACK = 2
 
+/** Another rider in the active group, drawn as a coloured ring with their name. [stale] when not heard from for a while. */
+data class MapGroupRider(val id: String, val point: GeoPoint, val label: String, val color: Int, val stale: Boolean, val avatar: android.graphics.Bitmap? = null)
+
 /**
  * The main map: MapLibre rendering the offline Norway vector map (day or night style), the
  * rider, the active route or the previewed alternatives, and stop markers.
@@ -168,14 +176,15 @@ fun CurveonMapView(
     riderFix: com.curveon.data.location.RiderMotion.Fix?,
     /** The position is simulated (demo ride): a DEMO tag sits at the arrow. */
     demoRide: Boolean = false,
+    /** The DEMO tag is tapped: the demo's tricks (lose the signal, take a wrong turn). */
+    onDemoTap: () -> Unit = {},
     /** Settings → Display: the day map with dark grey roads and black road edges. */
-    highContrast: Boolean = false,
-    /** High contrast: the grey the white roads and the light paths become. */
-    highContrastRoads: Pair<String, String> = com.curveon.data.map.OfflineMaps.HC_ROAD to com.curveon.data.map.OfflineMaps.HC_PATH,
     headingDeg: Float,
     speedKmh: Float,
     speedLimitKmh: Int,
     hasGpsFix: Boolean,
+    /** The GPS signal is lost (or the position only guessed, in a tunnel): the arrow is a ghost with a no-satellite badge. */
+    gpsLost: Boolean = false,
     routePoints: List<GeoPoint>,
     /** What is underfoot at each of [routePoints] (see [MapRoute]): gravel and tracks are drawn solid over the route's line. */
     routeSurfaces: List<Int>? = null,
@@ -189,8 +198,12 @@ fun CurveonMapView(
     buttonsBottomInset: androidx.compose.ui.unit.Dp = 0.dp,
     modifier: Modifier = Modifier,
     dark: Boolean = true,
+    /** The day map's small roads and light paths (Settings → Display → Roads). */
+    roadShade: Pair<String, String> = com.curveon.data.map.OfflineMaps.HC_ROAD to com.curveon.data.map.OfflineMaps.HC_PATH,
     previewRoutes: List<MapRoute> = emptyList(),
     markers: List<MapPin> = emptyList(),
+    /** The other riders in the active group. */
+    groupRiders: List<MapGroupRider> = emptyList(),
     roadNameProbe: Pair<Int, GeoPoint>? = null,
     onRoadName: (Int, com.curveon.data.road.MapRoad?) -> Unit = { _, _ -> },
     /** Called now and then with the road under the rider as the tiles have it; null = don't read it. */
@@ -237,12 +250,10 @@ fun CurveonMapView(
     /** Gravel and soft roads in an area (south, west, north, east), drawn dashed when zoomed in. */
     surfaceWays: (suspend (Double, Double, Double, Double) -> List<com.curveon.routing.SurfaceWay>)? = null,
     /** Settings → Display: draw the road surfaces at all. */
-    showSurfaces: Boolean = true,
+    surfaceMode: SurfaceMode = SurfaceMode.DASHED,
     /** Settings → Display → Map detail: the zoom the gravel dashes and small roads start at. */
     surfaceZoom: Float = SURFACE_ZOOM,
     /** Settings → Display: the dashes' colours, and whether only while planning (quiet otherwise). */
-    surfacePalette: SurfacePalette = SurfacePalette.QUIET,
-    surfacePaletteWhilePlanning: Boolean = false,
     /** Where the gravel is, as a heat map, with its button while planning (and [showGravelHeat] on). */
     gravelHeat: GravelHeatSource? = null,
     showGravelHeat: Boolean = false,
@@ -321,7 +332,14 @@ fun CurveonMapView(
         MapLibre.getInstance(context)
         // Online map tiles seen once stay usable offline (MapLibre's default cache is 50 MB).
         OfflineManager.getInstance(context).setMaximumAmbientCacheSize(AMBIENT_CACHE_BYTES, null)
-        MapView(context).apply { onCreate(null) }
+        // Android 14 and later: drawn in a TextureView. The SurfaceView deadlocked on the Pixel (Android 17, three
+        // "not responding" on 2026-10-21): coming back to the app resizes the window, the main thread waits for the
+        // map to draw at the new size, and the map's eglSwapBuffers waits for the main thread (BLASTBufferQueue).
+        // A TextureView draws with the rest of the screen and has no such wait; it costs a little more GPU and
+        // battery (one more copy a frame). The X7 (Android 13) has never shown it and keeps the SurfaceView.
+        val options = org.maplibre.android.maps.MapLibreMapOptions.createFromAttributes(context)
+            .textureMode(android.os.Build.VERSION.SDK_INT >= 34)
+        MapView(context, options).apply { onCreate(null) }
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -598,12 +616,12 @@ fun CurveonMapView(
     }
 
     // Style: day or night. Switching style drops our layers, so they are re-added each time.
-    LaunchedEffect(map, dark, mapVersion, highContrast, highContrastRoads) {
+    LaunchedEffect(map, dark, mapVersion, roadShade) {
         val m = map ?: return@LaunchedEffect
-        val json = offlineMaps.styleJson(if (dark) "dark" else "light", highContrast, highContrastRoads.first, highContrastRoads.second)
+        val json = offlineMaps.styleJson(if (dark) "dark" else "light", roadShade.first, roadShade.second)
         style = null
         m.setStyle(Style.Builder().fromJson(json)) { s ->
-            addOverlayLayers(s, dark, highContrast && !dark, highContrastRoads.first)
+            addOverlayLayers(s, dark)
             poiBadges.forEach { (name, bmp) -> s.addImage(name, bmp) }
             signImages.forEach { (name, bmp) -> s.addImage(name, bmp) }
             style = s
@@ -751,6 +769,30 @@ fun CurveonMapView(
                     it.addStringProperty("color", when (m.kind) { PinKind.START -> PIN_START; PinKind.END -> PIN_END; PinKind.STOP -> PIN_STOP })
                     it.addStringProperty("text", if (m.kind == PinKind.END) "#FFFFFF" else "#0B0E14")
                     it.addNumberProperty("radius", if (m.kind == PinKind.STOP) 11f else 14f)
+                }
+            })
+        )
+    }
+
+    // Riders with a picture get it as a round marker; the image is made once per picture and per style.
+    val groupImages = remember(style) { HashMap<String, android.graphics.Bitmap>() }
+    val groupDensity = androidx.compose.ui.platform.LocalDensity.current.density
+    LaunchedEffect(style, groupRiders) {
+        val s = style ?: return@LaunchedEffect
+        groupRiders.forEach { r ->
+            val a = r.avatar
+            if (a != null && groupImages[r.id] !== a) {
+                s.addImage("grp-${r.id}", ringedAvatar(a, r.color, groupDensity))
+                groupImages[r.id] = a
+            }
+        }
+        s.getSourceAs<GeoJsonSource>(GROUP)?.setGeoJson(
+            FeatureCollection.fromFeatures(groupRiders.map { r ->
+                Feature.fromGeometry(Point.fromLngLat(r.point.longitude, r.point.latitude)).also {
+                    if (r.avatar != null) it.addStringProperty("icon", "grp-${r.id}")
+                    it.addStringProperty("label", r.label)
+                    it.addStringProperty("color", hex(r.color))
+                    it.addNumberProperty("alpha", if (r.stale) 0.45f else 1f)
                 }
             })
         )
@@ -992,23 +1034,22 @@ fun CurveonMapView(
 
     // Gravel and soft roads, dashed over the map's own roads once zoomed in far enough to choose by them.
     var surfaceBounds by remember { mutableStateOf<LatLngBounds?>(null) }
-    LaunchedEffect(style, showSurfaces) {
+    LaunchedEffect(style, surfaceMode) {
         val s = style ?: return@LaunchedEffect
-        val v = if (showSurfaces) Property.VISIBLE else Property.NONE
+        val v = if (surfaceMode != SurfaceMode.OFF) Property.VISIBLE else Property.NONE
         s.layers.filter { it.id.startsWith(SURFACE) }.forEach { it.setProperties(visibility(v)) }
     }
-    // The zoom the dashes and small roads start at. The tarmac roads leading to gravel (access) hold
-    // to the ordinary one: the map has those itself, if only close up. The gravel heat fades out as the dashes come in.
+    // The zoom the dashes start at. The gravel heat fades out as the dashes come in.
     LaunchedEffect(style, surfaceZoom) {
         val s = style ?: return@LaunchedEffect
-        s.layers.filter { it.id.startsWith(SURFACE) && !it.id.startsWith("$SURFACE-access") }.forEach { it.setMinZoom(surfaceZoom) }
+        s.layers.filter { it.id.startsWith(SURFACE) }.forEach { it.setMinZoom(surfaceZoom) }
         s.getLayer("$HEAT-layer")?.setProperties(heatmapOpacity(E.interpolate(E.linear(), E.zoom(),
             E.stop(surfaceZoom, if (dark) 0.8f else 0.7f), E.stop(surfaceZoom + 1.5f, 0f))))
     }
-    LaunchedEffect(style, cameraIdleTick, showSurfaces, surfaceZoom) {
+    LaunchedEffect(style, cameraIdleTick, surfaceMode != SurfaceMode.OFF, surfaceZoom) {
         val m = map ?: return@LaunchedEffect
         val s = style ?: return@LaunchedEffect
-        val fetch = surfaceWays?.takeIf { showSurfaces } ?: return@LaunchedEffect
+        val fetch = surfaceWays?.takeIf { surfaceMode != SurfaceMode.OFF } ?: return@LaunchedEffect
         if (m.cameraPosition.zoom < surfaceZoom) return@LaunchedEffect
         val b = m.projection.visibleRegion.latLngBounds
         val have = surfaceBounds
@@ -1026,9 +1067,7 @@ fun CurveonMapView(
                     addStringProperty("kind", when (w.kind) {
                         com.curveon.routing.SurfaceKind.GRAVEL -> "gravel"
                         com.curveon.routing.SurfaceKind.SOFT -> "soft"
-                        com.curveon.routing.SurfaceKind.PAVED -> "paved"
-                        com.curveon.routing.SurfaceKind.COUNTRY -> "country"
-                        com.curveon.routing.SurfaceKind.ACCESS -> "access"
+                        else -> "road" // tarmac leading to gravel
                     })
                     addNumberProperty("rank", w.rank)
                 }
@@ -1042,34 +1081,22 @@ fun CurveonMapView(
 
     // Planning a trip: a preview, editing it, picking places or drawing an area on the map.
     val planning = planningTrip || previewRoutes.isNotEmpty() || editor != null || onTap != null || onSketch != null
-    val palette = if (surfacePaletteWhilePlanning && !planning) SurfacePalette.QUIET else surfacePalette
-    LaunchedEffect(style, palette, highContrast, highContrastRoads) {
+    LaunchedEffect(style, surfaceMode, roadShade) {
         val s = style ?: return@LaunchedEffect
-        // The bright colours a little wider too, so they read at a glance.
-        val wide = if (palette == SurfacePalette.QUIET) 1f else 1.3f
-        s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(if (dark) palette.gravelDark else palette.gravelLight), lineWidth(surfaceWidth(2.8f * wide)))
-        s.getLayer("$SURFACE-soft")?.setProperties(lineColor(if (dark) palette.softDark else palette.softLight), lineWidth(surfaceWidth(2.2f * wide)))
-        // Country roads: quiet like the map's own small roads, or a solid line in the gravel colour
-        // (kept until the map's own roads are wide enough to see) so they can be found between the dashes.
-        val bright = palette != SurfacePalette.QUIET
-        val fade = if (bright) 14.8f to 15.6f else 13.2f to 14f
-        val countryOpacity = E.interpolate(E.linear(), E.zoom(), E.stop(fade.first, 1f), E.stop(fade.second, 0f))
-        val hc = highContrast && !dark && !bright
-        // High contrast, quiet: the same dark grey as the map's own small roads (no edge); see addSurfaceLayers.
-        if (hc) s.getLayer("$SURFACE-country")?.setProperties(
-            lineColor(highContrastRoads.first), lineOpacity(countryOpacity),
-            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.6f), E.stop(13, 1.8f), E.stop(15, 2.4f))))
-        else s.getLayer("$SURFACE-country-casing")?.setProperties(
-            lineColor(if (!bright) "#808080" else if (dark) "#000000" else "#202020"), lineOpacity(countryOpacity),
-            lineWidth(if (bright) E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 2.8f), E.stop(13, 3.8f), E.stop(15, 5f))
-                else E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(15, 3.6f))))
-        if (!hc) s.getLayer("$SURFACE-country")?.setProperties(
-            lineColor(if (!bright) (if (dark) "#EBEBEB" else "#FFFFFF") else if (dark) palette.gravelDark else palette.gravelLight), lineOpacity(countryOpacity),
-            lineWidth(if (bright) E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.4f), E.stop(13, 2.2f), E.stop(15, 3.2f))
-                else E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(15, 2.2f))))
-        // The same over the route and GPX tracks, slim (see overWidth).
-        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(palette.gravel(dark)))
-        s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(palette.soft(dark)))
+        val coloured = surfaceMode == SurfaceMode.COLOURED
+        // Dashed: the road itself, never wider than it is; coloured: a little wider, so it reads at a glance.
+        val gravelWidth = if (coloured) roadWidth(1.2f) else roadWidth()
+        val softWidth = gravelWidth
+        s.getLayer("$SURFACE-road")?.setProperties(lineColor(if (dark) "#EBEBEB" else roadShade.first))
+        s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark, roadShade.first)), lineWidth(gravelWidth))
+        s.getLayer("$SURFACE-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
+        // Coloured dashes on the day map get a dark line right under them, a little wider: orange and purple alone
+        // on the green map have no contrast. (The night map has its own dark ground.)
+        s.getLayer("$SURFACE-base")?.setProperties(lineWidth(roadWidth(1.2f, 0.8f)),
+            visibility(if (coloured && !dark) Property.VISIBLE else Property.NONE))
+        // The same over the route and GPX tracks, as wide as the dashes.
+        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark, roadShade.first)), lineWidth(gravelWidth))
+        s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
     }
 
     // Gravel heat map while planning: counted per routing data file in the background (once), shown
@@ -1159,10 +1186,15 @@ fun CurveonMapView(
         // At night the rider is orange, so it stands out from the cyan route; cyan again on an orange (gravel) route.
         val riderOrange = dark
         val riderColor = if (riderOrange) NeonAmber else ElectricCyan
-        if (hasGpsFix && style != null) {
-            RiderHalo(dark, riderColor) { puck }
-            RiderArrow(riderOrange) { puck }
-            if (demoRide) RiderDemoTag { puck }
+        // No signal: a pale ghost of the arrow (where the rider was last seen, or is guessed to be in a tunnel)
+        // with an amber satellite by it, and no accuracy halo (there is no accuracy to show). Nothing when there has never been a place to put it.
+        val seen = location.latitude != 0.0 || location.longitude != 0.0
+        val ghost = !hasGpsFix || gpsLost
+        if (style != null && (hasGpsFix || seen)) {
+            if (!ghost) RiderHalo(dark, riderColor) { puck }
+            RiderArrow(riderOrange, ghost = ghost) { puck }
+            if (ghost) RiderNoSatellite { puck }
+            if (demoRide) RiderDemoTag(onDemoTap) { puck }
         }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, riderColor, Modifier.matchParentSize()) }
 
@@ -1241,6 +1273,7 @@ fun CurveonMapView(
                     Icon(Icons.Default.MyLocation, stringResource(R.string.map_follow_me), tint = Color(0xFF00363D), modifier = Modifier.size(24.dp))
                 }
             }
+
         }
 
         // Zoom to extents: the whole trip being planned, at a tap; under the speed and road cards.
@@ -1381,6 +1414,29 @@ private fun speedSignImage(limit: Int, density: Float): android.graphics.Bitmap 
     return bmp
 }
 
+/** A rider's picture as a round marker with a white edge and a ring in their colour. */
+private fun ringedAvatar(photo: android.graphics.Bitmap, color: Int, density: Float): android.graphics.Bitmap {
+    val d = (44 * density).toInt()
+    val bmp = android.graphics.Bitmap.createBitmap(d, d, android.graphics.Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bmp)
+    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    val r = d / 2f
+    paint.color = android.graphics.Color.WHITE
+    canvas.drawCircle(r, r, r, paint)
+    paint.color = color
+    canvas.drawCircle(r, r, r - 3 * density, paint)
+    val inner = r - 6 * density
+    val size = (inner * 2).toInt().coerceAtLeast(1)
+    val shader = android.graphics.BitmapShader(
+        android.graphics.Bitmap.createScaledBitmap(photo, size, size, true),
+        android.graphics.Shader.TileMode.CLAMP, android.graphics.Shader.TileMode.CLAMP
+    )
+    shader.setLocalMatrix(android.graphics.Matrix().apply { setTranslate(r - inner, r - inner) })
+    paint.shader = shader
+    canvas.drawCircle(r, r, inner, paint)
+    return bmp
+}
+
 private fun arrowBitmap(): android.graphics.Bitmap {
     val size = 48
     val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
@@ -1400,45 +1456,38 @@ private fun arrowBitmap(): android.graphics.Bitmap {
  * the road names, in quiet colours that sit with the map's own roads. Wider for bigger roads, like
  * the map draws them.
  */
+/** Thin dashes, a little under the map's own small roads (which are at least 1.6 px), so a gravel road is never the heaviest line on the map. */
+private fun roadWidth(scale: Float = 1f, extra: Float = 0f) = E.interpolate(E.exponential(1.6f), E.zoom(),
+    E.stop(SURFACE_ZOOM, 1f * scale + extra), E.stop(14.5, 1.2f * scale + extra), E.stop(15, 1.6f * scale + extra), E.stop(18, 7f * scale + extra))
+
 private fun surfaceWidth(base: Float) = E.interpolate(E.linear(), E.zoom(),
     E.stop(SURFACE_ZOOM, E.product(E.literal(base * 0.6f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
     E.stop(14, E.product(E.literal(base), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))),
     E.stop(18, E.product(E.literal(base * 3f), E.match(E.get("rank"), E.literal(1f), E.stop(2, 1.8f), E.stop(1, 1.3f)))))
 
-private fun addSurfaceLayers(s: Style, dark: Boolean, highContrast: Boolean = false, hcRoad: String = com.curveon.data.map.OfflineMaps.HC_ROAD) {
+private fun addSurfaceLayers(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(SURFACE))
     s.addSource(GeoJsonSource(HEAT))
     fun width(base: Float) = surfaceWidth(base)
     val gravel = E.eq(E.get("kind"), E.literal("gravel"))
     val soft = E.eq(E.get("kind"), E.literal("soft"))
-    // Small tarmac roads like the map's own minor roads (white in a grey casing), until the map's
-    // own are wide enough to see, so a gravel road visibly starts somewhere: small roads until
-    // zoom 14, access roads leading to gravel (the map draws those even later) until 15.5.
-    fun tarmac(kind: String, fadeFrom: Float, until: Float) = if (highContrast) listOf(
-        // High contrast: the same dark grey as the map's own small roads, no edge, never thinner than they are.
-        LineLayer("$SURFACE-$kind", SURFACE).withProperties(
-            lineColor(hcRoad), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
-            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
-            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.6f), E.stop(13, 1.8f), E.stop(15, 2.4f)))
-        ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until }
-    ) else listOf(
-        LineLayer("$SURFACE-$kind-casing", SURFACE).withProperties(
-            lineColor("#808080"), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
-            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
-            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 1.8f), E.stop(13, 2.6f), E.stop(15, 3.6f)))
-        ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until },
-        LineLayer("$SURFACE-$kind", SURFACE).withProperties(
-            lineColor(if (dark) "#EBEBEB" else "#FFFFFF"), lineOpacity(E.interpolate(E.linear(), E.zoom(), E.stop(fadeFrom, 1f), E.stop(until, 0f))),
-            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
-            lineWidth(E.interpolate(E.linear(), E.zoom(), E.stop(SURFACE_ZOOM, 0.8f), E.stop(13, 1.4f), E.stop(15, 2.2f)))
-        ).withFilter(E.eq(E.get("kind"), E.literal(kind))).also { it.maxZoom = until }
-    )
-    val layers = tarmac("access", 14.8f, 15.6f) + tarmac("paved", 13.2f, 14f) + tarmac("country", 13.2f, 15.6f) + listOf(
+    // The tarmac roads leading to gravel, thin in the small roads' colour, until the map's own small roads
+    // are in its tiles (from zoom 12): without them a gravel road seems to join nothing.
+    // Dashes over the map's own roads: as wide as the road when plain, so the road reads as dashed.
+    val layers = listOf(
+        LineLayer("$SURFACE-road", SURFACE).withProperties(
+            lineColor(if (dark) "#EBEBEB" else com.curveon.data.map.OfflineMaps.HC_ROAD), lineWidth(roadWidth()),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
+        ).withFilter(E.eq(E.get("kind"), E.literal("road"))).also { it.maxZoom = MAP_ROADS_ZOOM },
+        LineLayer("$SURFACE-base", SURFACE).withProperties(
+            lineColor("#1F1F1F"), lineWidth(roadWidth(1.2f, 0.8f)), lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND),
+            visibility(Property.NONE)
+        ).withFilter(E.any(E.eq(E.get("kind"), E.literal("gravel")), E.eq(E.get("kind"), E.literal("soft")))),
         LineLayer("$SURFACE-soft", SURFACE).withProperties(
-            lineColor(if (dark) SurfacePalette.QUIET.softDark else SurfacePalette.QUIET.softLight), lineWidth(width(2.2f)), lineDasharray(arrayOf(2f, 1.5f))
+            lineColor(SurfaceMode.DASHED.soft(dark)), lineWidth(roadWidth()), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),
         LineLayer("$SURFACE-gravel", SURFACE).withProperties(
-            lineColor(if (dark) SurfacePalette.QUIET.gravelDark else SurfacePalette.QUIET.gravelLight), lineWidth(width(2.8f)), lineDasharray(arrayOf(2.5f, 1.5f))
+            lineColor(SurfaceMode.DASHED.gravel(dark)), lineWidth(roadWidth()), lineDasharray(arrayOf(1.8f, 1.7f))
         ).withFilter(gravel)
     )
     // Under the downloaded map's first label layer, so road names stay on top (the online map's
@@ -1471,36 +1520,34 @@ private fun addSurfaceLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
 
 /**
  * The gravel and soft dashes again, over the route and the GPX tracks (which are drawn above the
- * ones under the road names and would hide them): a dark edge under each dash so it reads on any
- * line colour. Same source, filters and palette as the dashes below, shown and hidden with them.
+ * ones under the road names and would hide them). Same source, filters, colours and width as the
+ * dashes below (set with them), shown and hidden with them; no edge, so they are never heavier
+ * than the road they sit on.
  */
-/**
- * The dashes over the route and GPX tracks: slim, about 40 % of the line under them, so the route
- * stays the clear thing to follow and only shows what the ground is like, with a thin dark edge.
- */
-private fun overWidth(extra: Float) = E.interpolate(E.linear(), E.zoom(),
-    E.stop(SURFACE_ZOOM - 1, 2.4f + extra), E.stop(14, 4.4f + extra), E.stop(17, 6.4f + extra))
-
 private fun addSurfaceOverLayers(s: Style, dark: Boolean) {
-    fun over(kind: String, dash: Array<Float>, color: String) = listOf(
-        LineLayer("$SURFACE-over-$kind-casing", SURFACE).withProperties(
-            lineColor(if (dark) "#000000" else "#202020"), lineOpacity(0.55f), lineWidth(overWidth(1.2f)),
-            lineDasharray(dash), lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
-        ).withFilter(E.eq(E.get("kind"), E.literal(kind))),
-        LineLayer("$SURFACE-over-$kind", SURFACE).withProperties(
-            lineColor(color), lineWidth(overWidth(0f)), lineDasharray(dash),
-            lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
-        ).withFilter(E.eq(E.get("kind"), E.literal(kind)))
-    )
-    val palette = SurfacePalette.QUIET
-    (over("soft", arrayOf(2f, 1.5f), palette.soft(dark)) + over("gravel", arrayOf(2.5f, 1.5f), palette.gravel(dark))).forEach { l ->
+    fun over(kind: String, dash: Array<Float>, color: String) = LineLayer("$SURFACE-over-$kind", SURFACE).withProperties(
+        lineColor(color), lineWidth(roadWidth()), lineDasharray(dash),
+        lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
+    ).withFilter(E.eq(E.get("kind"), E.literal(kind)))
+    listOf(over("soft", arrayOf(2f, 1.5f), SurfaceMode.DASHED.soft(dark)), over("gravel", arrayOf(1.8f, 1.7f), SurfaceMode.DASHED.gravel(dark))).forEach { l ->
         l.minZoom = SURFACE_ZOOM
         s.addLayer(l)
     }
 }
 
-private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = false, hcRoad: String = com.curveon.data.map.OfflineMaps.HC_ROAD) {
-    addSurfaceLayers(s, dark, highContrast, hcRoad)
+/**
+ * Place names above every line layer added so far (route, GPX tracks, dashes): the map's own layers
+ * keep them last, but our lines are added after them and would cover them. Pins and signs
+ * added after this still sit above the names.
+ */
+private fun raisePlaceNames(s: Style) {
+    s.layers.filter { l -> l.id.substringBefore('~').let { it.startsWith("places_") || it == "online-places" } }.forEach { l ->
+        if (s.removeLayer(l)) s.addLayer(l)
+    }
+}
+
+private fun addOverlayLayers(s: Style, dark: Boolean) {
+    addSurfaceLayers(s, dark)
     s.addImage(ARROW_IMAGE, arrowBitmap(), true)
     s.addSource(GeoJsonSource(GPX))
     s.addSource(GeoJsonSource(GPX_POIS))
@@ -1588,6 +1635,7 @@ private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
         )
     )
     addSurfaceOverLayers(s, dark)
+    raisePlaceNames(s)
     // Zoomed out: small dots in the category colour (many waypoints stay readable). Zoomed in:
     // a badge with an icon per kind, and the name.
     s.addLayer(
@@ -1622,6 +1670,40 @@ private fun addOverlayLayers(s: Style, dark: Boolean, highContrast: Boolean = fa
             textAllowOverlap(true), textIgnorePlacement(true)
         )
     )
+    // The other riders of a group ride: a ring in their colour with the name under it, dimmed when not heard from for a while.
+    s.addSource(GeoJsonSource(GROUP))
+    val noPicture = org.maplibre.android.style.expressions.Expression.not(org.maplibre.android.style.expressions.Expression.has("icon"))
+    val hasPicture = org.maplibre.android.style.expressions.Expression.has("icon")
+    s.addLayer(
+        CircleLayer("$GROUP-dots", GROUP).withProperties(
+            circleRadius(10f),
+            circleColor(org.maplibre.android.style.expressions.Expression.get("color")),
+            circleOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+            circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f),
+            circleStrokeOpacity(org.maplibre.android.style.expressions.Expression.get("alpha"))
+        ).also { it.setFilter(noPicture) }
+    )
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$GROUP-photos", GROUP).withProperties(
+            iconImage(org.maplibre.android.style.expressions.Expression.get("icon")),
+            iconOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+            iconAllowOverlap(true), iconIgnorePlacement(true)
+        ).also { it.setFilter(hasPicture) }
+    )
+    // The name sits under the dot, or further down under a picture, which is bigger.
+    for ((id, filter, offset) in listOf(Triple("$GROUP-labels", noPicture, 1f), Triple("$GROUP-photo-labels", hasPicture, 2.6f))) {
+        s.addLayer(
+            org.maplibre.android.style.layers.SymbolLayer(id, GROUP).withProperties(
+                textField(org.maplibre.android.style.expressions.Expression.get("label")),
+                textFont(arrayOf("Noto Sans Medium")), textSize(14f),
+                textColor(if (dark) "#FFFFFF" else "#0B0E14"),
+                textHaloColor(if (dark) "#0B0E14" else "#FFFFFF"), textHaloWidth(2f),
+                textOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+                textAnchor(Property.TEXT_ANCHOR_TOP), textOffset(arrayOf(0f, offset)),
+                textAllowOverlap(true), textIgnorePlacement(true)
+            ).also { it.setFilter(filter) }
+        )
+    }
     addEditLayers(s, dark)
     s.addSource(GeoJsonSource(SKETCH))
     s.addLayer(
@@ -1692,7 +1774,8 @@ private fun lineFeatures(lines: List<List<GeoPoint>>): FeatureCollection =
 internal fun mapRoad(features: List<Feature>): com.curveon.data.road.MapRoad? {
     val f = features.firstOrNull { !it.getStringProperty("ref").isNullOrBlank() } ?: features.firstOrNull() ?: return null
     val name = features.firstNotNullOfOrNull { it.getStringProperty("name")?.takeIf { n -> n.isNotBlank() } }
-    return com.curveon.data.road.MapRoad(f.getStringProperty("ref")?.takeIf { it.isNotBlank() }, f.getStringProperty("kind_detail"), name)
+    return com.curveon.data.road.MapRoad(f.getStringProperty("ref")?.takeIf { it.isNotBlank() }, f.getStringProperty("kind_detail"), name,
+        f.getStringProperty("name")?.takeIf { it.isNotBlank() })
 }
 
 /**
@@ -1727,8 +1810,9 @@ private fun followZoom(speedKmh: Float, toTurnMeters: Int?, threeD: Boolean): Do
     val nearTurn = toTurnMeters != null && toTurnMeters in 1..300 && speedKmh >= 8f
     val zoom = if (nearTurn) maxOf(bySpeed, 16.8) else bySpeed
     // Tilted, the road ahead runs off into the distance: a touch closer keeps the rider's
-    // surroundings at about the same scale as the flat view.
-    return zoom + if (threeD) 0.3 else 0.0
+    // surroundings at about the same scale as the flat view. All of it one step (one press on -)
+    // further out than it used to be: the rider asked to see more around the bike.
+    return zoom - 1.0 + if (threeD) 0.3 else 0.0
 }
 
 /** Moves [from] towards [to], [tau] seconds being roughly how long it takes to get two thirds there. */
@@ -1762,18 +1846,36 @@ private fun RiderHalo(dark: Boolean, color: Color, puck: () -> Puck?) {
     }
 }
 
-/** "DEMO" right under the arrow while the ride is a simulation, so it can't be taken for a real one. */
+/** An amber satellite up to the right of the (ghost) arrow: no GPS signal (or only a guess, in a tunnel). */
 @Composable
-private fun RiderDemoTag(puck: () -> Puck?) {
-    val below = with(androidx.compose.ui.platform.LocalDensity.current) { 26.dp.toPx() }
+private fun RiderNoSatellite(puck: () -> Puck?) {
+    val off = with(androidx.compose.ui.platform.LocalDensity.current) { 22.dp.toPx() }
     Box(
         Modifier
             .graphicsLayer {
                 val p = puck()
                 alpha = if (p == null) 0f else 1f
-                if (p != null) { translationX = p.x - size.width / 2; translationY = p.y + below }
+                if (p != null) { translationX = p.x + off - size.width / 2; translationY = p.y - off - size.height / 2 }
             }
-            .clip(RoundedCornerShape(50)).background(NeonAmber).border(2.dp, Color.Black, RoundedCornerShape(50))
+            .size(30.dp).clip(CircleShape).background(CockpitSurface).border(1.5.dp, NeonAmber, CircleShape)
+            .testTag("rider_no_gps"),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(Icons.Default.SatelliteAlt, stringResource(R.string.gps_lost), tint = NeonAmber, modifier = Modifier.size(19.dp))
+    }
+}
+
+/** "DEMO" right under the arrow while the ride is a simulation, so it can't be taken for a real one. */
+@Composable
+private fun RiderDemoTag(onTap: () -> Unit, puck: () -> Puck?) {
+    val below = with(androidx.compose.ui.platform.LocalDensity.current) { 26.dp.toPx() }
+    var width by remember { mutableIntStateOf(0) }
+    // Placed (not just drawn) at the arrow, so a tap on it lands on it: it opens the demo's tricks.
+    Box(
+        Modifier
+            .offset { puck()?.let { androidx.compose.ui.unit.IntOffset((it.x - width / 2).toInt(), (it.y + below).toInt()) } ?: androidx.compose.ui.unit.IntOffset(-10_000, 0) }
+            .onSizeChanged { size -> width = size.width }
+            .clip(RoundedCornerShape(50)).clickable(onClick = onTap).background(NeonAmber).border(2.dp, Color.Black, RoundedCornerShape(50))
             .padding(horizontal = 10.dp, vertical = 3.dp)
             .testTag("demo_ride_tag")
     ) {
@@ -1786,17 +1888,20 @@ private fun RiderDemoTag(puck: () -> Puck?) {
  * every frame only redraws the arrow. Tilted with the map in 3D so it lies on the road.
  */
 @Composable
-private fun RiderArrow(orange: Boolean, puck: () -> Puck?) {
+private fun RiderArrow(orange: Boolean, ghost: Boolean = false, puck: () -> Puck?) {
     val size = 44.dp
     val half = with(androidx.compose.ui.platform.LocalDensity.current) { size.toPx() / 2 }
+    // Without a fix: grey and see-through, a ghost of where the rider was.
+    val grey = remember { androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) }) }
     androidx.compose.foundation.Image(
         painter = androidx.compose.ui.res.painterResource(if (orange) com.curveon.R.drawable.ic_nav_arrow_night else com.curveon.R.drawable.ic_nav_arrow),
         contentDescription = null,
+        colorFilter = if (ghost) grey else null,
         modifier = Modifier
             .size(size)
             .graphicsLayer {
                 val p = puck()
-                alpha = if (p == null) 0f else 1f
+                alpha = if (p == null) 0f else if (ghost) 0.45f else 1f
                 if (p != null) {
                     translationX = p.x - half
                     translationY = p.y - half

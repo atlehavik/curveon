@@ -1,7 +1,7 @@
 # Groups: ride together (design draft)
 
-Status: idea and design only, nothing built. Decided in discussion 2026-10-11, revised 2026-10-18
-(Apple not ruled out, no hard group limit in the protocol, relay self-hosted).
+Status: design, plus the protocol library `:groups` (not wired into any app yet). Decided in discussion 2026-10-11, revised 2026-10-18
+(Apple not ruled out, no hard group limit in the protocol, relay on a VPS).
 
 ## Goal
 A rider can start a group, friends join with a QR code or link, and everyone sees the others on the
@@ -19,7 +19,7 @@ learns who anyone is or where anyone is. Free to run (or close to it).
   Bluetooth as today, companion <-> relay over mobile data. On a phone running Curveon itself
   ("This device") the same code runs in-process.
 - **Planned for Google Play** later (the whole app, not just this feature), so design for review now.
-- The rider hosts the relay himself (see Hosting options); riders in a group need nothing.
+- The rider runs the relay on a VPS (see Hosting); riders in a group need nothing.
 
 ```
 tablet --Bluetooth--> companion --mobile data--> relay <-- companion <--Bluetooth-- tablet
@@ -122,7 +122,7 @@ limit, but the *group* stays, so the next morning is one tap on "Start sharing",
   Traffic per rider grows with group size (each receives N-1 positions): 100 riders at 5 s is about
   10 MB/hour per phone, so slower updates for far-away riders matter more in big groups.
 
-## Relay (small WebSocket server run by the rider)
+## Relay (small WebSocket server run on a VPS)
 The traffic is tiny (about 100 bytes per position per rider every 5-10 s). One long-running process
 keeps the sockets and the groups in memory, plus a small SQLite file for the rare things below.
 Written in TypeScript on Node (runs the same on PC, Raspberry Pi and VPS), in `~/develop/curveon-relay`.
@@ -147,7 +147,7 @@ Caddy in front for TLS; the same host serves the `https` invite landing page.
   the small one (~4-5 EUR/month) and move up only if it is full.
 - Keep the relay portable: the logic (copy an encrypted message to the others in the group, keep the
   few rare things) is small and the protocol is plain WebSocket; the client does not care where it
-  runs. A home machine can be moved to a VPS by copying one folder.
+  runs. Moving to another host is copying one folder.
 - The app has a **relay address** setting, so anyone can run their own relay and it is an escape
   hatch if the default one gets too expensive.
 - Cost control either way: cap concurrent groups and connections per IP ("service is full" rather
@@ -156,39 +156,31 @@ Caddy in front for TLS; the same host serves the `https` invite landing page.
 - Who pays if it grows (voluntary support, or riders running their own relay) is undecided. No
   payment system: that would go against "no accounts".
 
-## Hosting options (decided 2026-10-18: the rider runs it himself; no usage-based costs)
+## Hosting (decided 2026-10-18: a small fixed-price VPS; no usage-based costs)
 The point is a fixed price with a cap, not pay-per-use, and no dependence on a third-party platform.
-1. **Small fixed-price VPS** (about 4-5 EUR/month, e.g. Hetzner). Cannot get more expensive; if too
-   many use it, it slows down or says "full". Probably holds thousands of riders (to be tested).
-   Needs someone to keep it running; a small process. **Fallback** if home hosting does not work
-   (CGNAT, uptime) or the app outgrows a Raspberry Pi.
-2. **Other people's public servers** (Nostr relays, MQTT brokers, ntfy.sh): free and nothing to run,
-   and E2E encryption keeps content private. But it depends on their goodwill and limits, and they
-   may block a large app. Fine for prototyping, not as the lasting answer.
-3. **Phone to phone with Nearby Connections:** no server, free, works without internet, but only
-   within tens to ~100 m and needs Google Play services. A useful addition when riders are close,
-   with the relay for when they are apart.
-4. **Riders host their own relay** (Raspberry Pi etc.): zero cost for the developer, but not
-   "no setup". Possible for a few, not the main path.
-5. **A computer at the rider's own home** (Raspberry Pi, mini PC, old PC): no rent, only electricity
-   and the domain. Assuming ~2 NOK/kWh: a Pi (3-5 W) costs roughly 50-100 NOK/year, a mini PC
-   (10-15 W) 200-300 NOK/year, an old desktop (~50 W) 700-1000 NOK/year, so as much as the VPS
-   (~600 NOK/year). Domain ~100-150 NOK/year either way. **Chosen.**
-   What it takes: the router forwards port 443 (and 80 for the certificate)
-   to the machine, a dynamic DNS record follows the home IP if it changes, and Caddy terminates TLS
-   with a Let's Encrypt certificate and serves the landing page. It only works if the ISP gives the
-   router a public IP: with CGNAT (the router's WAN address is not the address the internet sees)
-   nothing can come in, and then the VPS is the answer.
-   Downsides: the home IP is public in DNS; uptime depends on home power, router and ISP (matters
-   for SOS); the machine should be kept apart from the home network (container or VLAN); the ISP's
-   terms may restrict servers on a home line. The **relay address** setting makes a later move to
-   the VPS painless.
-   **Plan (2026-10-18):** run it on the rider's Linux PC first, then on a Raspberry Pi once bought.
-   Everything the server needs lives in one plain folder outside the repo (no disk image): the
-   relay, the static invite landing page, config (`relay.env`), `data/` (SQLite), a systemd unit,
-   the Caddy config and a small install script. Moving to the Pi (ARM, the PC is x86_64) or later
-   a VPS is copying that folder and running the script, so the relay must not depend on the CPU
-   architecture (interpreted runtime, not a compiled binary).
+- **Small fixed-price VPS** (about 4-5 EUR/month, e.g. Hetzner, ~600 NOK/year). Cannot get more
+  expensive; if too many use it, it slows down or says "full". Probably holds thousands of riders
+  (to be tested). Fixed IP, steady uptime (matters for SOS), nothing opened on the rider's home
+  network. Domain ~100-150 NOK/year on top. Caddy terminates TLS with a Let's Encrypt certificate and
+  serves the landing page.
+- **Why not at home:** the rider's ISP offers no fixed IP, which points to CGNAT (nothing can come in
+  from outside), and home uptime and exposure are a poor fit for SOS. Dropped as a plan.
+- **Development** runs on the rider's Linux PC; the relay is the same everywhere.
+- Everything the server needs lives in one plain folder outside the repo (no disk image): the relay,
+  the static invite landing page, config (`relay.env`), `data/` (SQLite), a systemd unit, the Caddy
+  config and a small install script. Moving to another host (or CPU architecture) is copying that
+  folder and running the script, so the relay must not depend on the CPU architecture (interpreted
+  runtime, not a compiled binary).
+- The **relay address** setting means anyone can run their own relay (a Raspberry Pi etc.): zero cost
+  for the developer, but not "no setup". Possible for a few, not the main path.
+
+Other ideas, not chosen:
+- **Other people's public servers** (Nostr relays, MQTT brokers, ntfy.sh): free and nothing to run,
+  and E2E encryption keeps content private. But it depends on their goodwill and limits, and they
+  may block a large app. Fine for prototyping, not as the lasting answer.
+- **Phone to phone with Nearby Connections:** no server, free, works without internet, but only
+  within tens to ~100 m and needs Google Play services. A useful addition when riders are close,
+  with the relay for when they are apart.
 
 ## Messages inside the encrypted payload
 - `pos`: lat, lon, speed, heading, accuracy, timestamp, optional battery and "paused", plus movement:
@@ -268,6 +260,34 @@ Kotlin, so an iOS (or any other) client can be written by anyone who wants to.
 - With public users the relay needs abuse limits, and someone to keep it running.
 
 ## Gaps found 2026-10-18 (resolve before building)
+**Status 2026-10-19:** gaps 1-5 are specified in [docs/groups-protocol.md](docs/groups-protocol.md)
+and implemented and unit tested in `:groups` (invite, keys, frames, replay guard, rekey; Tink for
+X25519/Ed25519, Apache 2.0). The relay side of 5 and 6 is done too (`~/develop/curveon-relay`: access
+proof, new frame types, SQLite storage and replay, per-IP creation limit, signed rekey, tested; the
+Kotlin and Node sides agree on the rekey signature byte for byte). Not done yet: "make admin" (a change
+signed by an existing admin), test vectors, JSON encoding of frames in `:groups`, wiring into the apps.
+Decided 2026-10-19 after the rider's first look: (1) groups get a **button in the main menu** (the rail, a "friends" icon), not a map button;
+(2) a rider with several devices (tablet and phone) is **one rider**: a device that is in the group makes a short-lived link or QR
+for the other ("My other device") that hands over the rider id and keys, see `docs/groups-protocol.md`; (3) an incoming SOS is a **small red
+dialog** with "Drive there" (says "on the way" to the group and starts a route) and "Ignore", and shows how many are already on the way, because
+it may be nothing and not everyone has to go. The word stays "group" in the app, though the rider thinks of it as friends.
+Decided 2026-10-20: **groups live in the Curveon app; the companion is only status, QR scanning and invite links.** A rider with only Curveon on a phone must
+be able to do everything (relay address, data saver, name and picture, invite with QR or Share link) without the companion; the tablet sets the same things on
+the phone side with `GroupSettings`. The companion scans because the Curveon app may sit on a tablet whose camera is out of reach. The profile picture can be taken
+or chosen, is cut in a round window, and the result is shown as the others will see it before saving.
+Built 2026-10-19: the group library (`:groups`: client, payloads, position sharing, SOS tracking), the Bluetooth messages
+(`:protocol` version 2), the phone side (`GroupHub` in `:phone`, encrypted store, OkHttp), a Group ride card in the companion, and on the
+tablet the other riders on the map, a group button, the group dialog (also Settings → Group ride) with invite QR, pause, profile, remove
+rider and SOS (hold 3 s, 10 s countdown, full-screen alert), in English and Norwegian. Tried on the X7 against a relay on the PC with
+simulated riders (`~/develop/curveon-relay/test/rider.ts`, an independent implementation of the protocol, which also reads what the Kotlin
+side sends). Added the same day: only one of a rider's devices sends their position (a `claim` frame, the other device shows "Use this device"; a left-behind device
+is taken over after three minutes), the rider's own picture (96 px, on the list and on the map marker), and QR scanning inside Curveon (CameraX + ZXing; the
+camera opens on the X7, a code held in front of it is not yet tried). The companion has no scanner.
+Still open: the real Pixel + X7 chain (see `device-checks.md`), QR scanning in the apps, sharing a route to the group from
+the route screens, an SOS notification when the app is not open, "Call him" in the SOS alert (there are no phone numbers in the protocol,
+dropped on purpose), the `https` invite and landing page (domain), a VPS, and the Play decisions in `google-play.md`.
+Spec fix found while building the relay: the rekey signature must cover the new proof, or a member
+could swap it and lock everyone out.
 Wire format (expensive to change once people use it):
 1. **Invite lacks the relay address.** Add `r=<host>` so a moved or self-run relay still works.
 2. **Admin public key is not in the invite.** Otherwise any member (who has the group key) could pose
@@ -295,8 +315,6 @@ Operations and law:
 - **Domain not bought yet.** Blocks `https` invites, certificates and App Links (`assetlinks.json`,
   needs the release signing fingerprint). Without App Links the link opens in a browser, so the
   landing page needs an "Open in Curveon" button.
-- **CGNAT unchecked.** Home hosting needs a public IP on the router; compare the router's WAN address
-  with what the internet sees. If they differ, use the VPS.
 - GDPR: the operator handles IP addresses and metadata, so the privacy policy must be online (on the
   domain) before anyone outside the friends uses it.
 - Phone lost or app reinstalled: groups live only on the device, so the rider needs a new invite and
@@ -311,3 +329,36 @@ Operations and law:
 - Avatar: decided, photo or curated emoji/icon or initials. Open: which icons go in the set.
 - Marker clutter beyond ~8 riders: collapse names, show "Ola, 400 m behind".
 - Admins: creator is admin and can promote others. Decide how many admins and how handover works.
+
+### Shared trips (built)
+- A trip shared with the active group is one document (`TripDoc`: destination, stops, route options) that anyone can
+  change. Whoever changes it sends the whole document with a higher revision; the highest revision wins, a tie goes to
+  the larger rider id, so every device ends on the same trip.
+- Stops a rider has passed are kept in the shared document but dropped from that rider's own route, so Kari adding a
+  stop reaches Ola and Jens, and Ola passing one does not remove it for the others.
+- A trip someone else shares is offered once: Ride now, Save in shared, or Ignore (never offered again). Saved trips are
+  under "Shared routes" in the GPX dialog. Only a trip with a destination can be shared (not a track or a loop).
+- Not tested yet: two phones on a real ride. The relay and merge rules are covered by unit and relay tests.
+
+### Friends and groups live in Curveon; the phone is only the way to the internet (decided and built 2026-10-20)
+The rider's complaint: it must not matter whether the tablet is linked to the companion or alone. A friend code on the tablet spun for
+ever because the command was sent to the phone, which was not there. So:
+- **Curveon owns the identity, always.** `GroupHub` runs inside Curveon on the device the rider holds, linked to a phone or not
+  (`PhoneCompanionManager.startLocalGroups`). Group and friend commands never go over Bluetooth (`GroupHub.accepts`).
+- **The companion owns nothing.** It no longer runs `GroupHub`. `GroupMirror` shows the active group's status that the tablet pushes, asks the
+  tablet for a friend code (`RequestFriendInvite`) and hands over what it scans or opens (`GroupJoin`). No tablet linked: "Open Curveon first".
+  What an old companion says about groups is ignored by the tablet.
+- **The way to the relay is chosen per connection, invisibly.** `relayTransports`: straight to the relay if the tablet has validated internet, else
+  through the phone (`RelayTunnelClient` on the tablet, `RelayTunnelServer` in the companion; messages `relay_open/send/close` and
+  `relay_opened/text/closed` in `:protocol`). The group library only sees a `TransportFactory`. A dropped link fails every tunnelled socket,
+  so the library reconnects by itself, by whichever way is there then. Companion opens only ws/wss and at most 8 sockets.
+- **One rider on several devices (built 2026-10-20).** The rider uses Curveon alone on the Pixel at times and with the X7 at others, so both hold the
+  identity. Linking is one QR in Friends → Me → My devices; it makes a private `GroupKind.SELF` channel (invite `t=s`) between the two. Over it they
+  keep every friend and ride group (with this rider's own id and keys in each, so a friend sees one rider) and the profile in step: `SyncDoc` in
+  `:groups` (an entry per key with a time stamp, the newer wins, a deletion stays as a tombstone, so merging gives the same result in any order),
+  carried as a `trip` frame with id `me` (the relay keeps the latest 30 and replays them; nothing changed in the relay). `GroupHub` stamps what changes,
+  sends it a moment later (and every 10 minutes with the friend sweep), and applies what arrives. A friend's picture is not synced (heard again from the
+  friend); the same friend met on both devices shows once. Edge cases left as they are: a group joined separately on both devices before linking ends
+  with one of the two identities (the one that sorts higher); a group left on one device before linking can come back from the other.
+  "My other device" per ride group (the link with `me=`) is still there.
+

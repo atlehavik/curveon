@@ -33,10 +33,10 @@ class OfflineMaps(private val context: Context) {
      * map gets its own source and a copy of each layer right after the first map's, so water, roads
      * and labels still stack in the right order where countries meet. Under them all go the online
      * layers (OpenFreeMap, see tools/map/gen-online-style.py), which the map shows only where no
-     * downloaded map covers the view ([covers]). [highContrast] (day map only) draws the white roads
+     * downloaded map covers the view ([covers]). The day map draws the white roads
      * [road] grey with no edge (light paths [path]) and the main roads' edge black, main roads staying yellow.
      */
-    fun styleJson(flavor: String, highContrast: Boolean = false, road: String = HC_ROAD, path: String = HC_PATH): String {
+    fun styleJson(flavor: String, road: String = HC_ROAD, path: String = HC_PATH): String {
         val maps = installedMaps()
         val style = JSONObject(asset("map/styles/$flavor.json"))
         val online = JSONObject(asset("map/styles/online-$flavor.json"))
@@ -77,7 +77,11 @@ class OfflineMaps(private val context: Context) {
         }
         for (k in 0 until names.length()) rest.put(names.getJSONObject(k))
         out = rest
-        if (highContrast && flavor == "light") for (k in 0 until out.length()) highContrast(out.getJSONObject(k), road, path)
+        for (k in 0 until out.length()) {
+            val layer = out.getJSONObject(k)
+            if (flavor == "light") highContrast(layer, road, path) else nightRoadWidths(layer)
+            minorRoadsFromSurfaceZoom(layer)
+        }
         style.put("layers", out)
         return style.toString()
     }
@@ -135,11 +139,12 @@ class OfflineMaps(private val context: Context) {
             "roads_bridges_link_casing", "roads_bridges_major_casing", "roads_bridges_highway_casing",
             "online-roads_major_casing", "online-roads_highway_casing" -> {
                 paint.put("line-color", "#000000")
-                // Edge at least this wide wherever it is drawn at all (a 0 stop is where it starts).
-                when (val w = paint.opt("line-width")) {
-                    is JSONArray -> for (i in 4 until w.length() step 2) if (w.optDouble(i, 0.0) > 0.0) w.put(i, HC_EDGE)
-                    is Number -> paint.put("line-width", HC_EDGE)
+                // The edge grows with the zoom, from a hairline far out to full width close in (from where it starts).
+                val from = when (val w = paint.opt("line-width")) {
+                    is JSONArray -> w.optDouble(3, 0.0)
+                    else -> layer.optDouble("minzoom", 0.0)
                 }
+                paint.put("line-width", edgeWidth(from))
             }
         }
     }
@@ -148,11 +153,52 @@ class OfflineMaps(private val context: Context) {
      * Keeps a line at least [min] px wide wherever it is drawn at all: a thinner one is only part-covered
      * pixels, and a dark grey one fades to nearly white on the light map when zoomed out.
      */
+    private fun edgeWidth(from: Double): JSONArray {
+        // (zoom, px): thin where the whole map is in view, full width when riding close in.
+        val steps = listOf(7.0 to 0.2, 10.0 to 0.4, 12.0 to 0.8, 14.0 to 1.2, 16.0 to HC_EDGE)
+        fun at(z: Double): Double {
+            val hi = steps.indexOfFirst { it.first >= z }
+            return when {
+                hi == 0 -> steps[0].second
+                hi < 0 -> steps.last().second
+                else -> { val (z0, v0) = steps[hi - 1]; val (z1, v1) = steps[hi]; v0 + (v1 - v0) * (z - z0) / (z1 - z0) }
+            }
+        }
+        val out = JSONArray().put("interpolate").put(JSONArray().put("linear")).put(JSONArray().put("zoom"))
+        out.put(from).put(0)
+        out.put(from + 0.5).put(at(from + 0.5))
+        for ((z, v) in steps) if (z > from + 0.5) out.put(z).put(v)
+        return out
+    }
+
     private fun atLeast(paint: JSONObject, min: Double) {
         when (val w = paint.opt("line-width")) {
             is JSONArray -> for (i in 4 until w.length() step 2) { val v = w.optDouble(i, 0.0); if (v > 0.0 && v < min) w.put(i, min) }
             is Number -> if (w.toDouble() in 0.0..min) paint.put("line-width", min)
         }
+    }
+
+    /**
+     * The night map's small roads and paths are never thinner than the day map's (see [highContrast]): the
+     * hair-thin ones fade out, and a gravel dash that ends in nothing looks like it joins no road.
+     */
+    private fun nightRoadWidths(layer: JSONObject) {
+        val paint = layer.optJSONObject("paint") ?: return
+        when (layer.getString("id").substringBefore('~')) {
+            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor",
+            "roads_other", "roads_bridges_other", "online-roads_other" -> atLeast(paint, HC_MIN_WIDTH)
+        }
+    }
+
+    /**
+     * The small roads are drawn from the zoom the gravel and offroad dashes start at (day and night map), at least
+     * [HC_MIN_WIDTH] wide from there: a dashed road always meets a road on the map, not bare ground.
+     */
+    private fun minorRoadsFromSurfaceZoom(layer: JSONObject) {
+        val id = layer.getString("id").substringBefore('~')
+        if (id != "roads_minor" && id != "online-roads_minor") return
+        val w = layer.optJSONObject("paint")?.optJSONArray("line-width") ?: return
+        for (i in 4 until w.length() step 2) if (w.optDouble(i - 1, 0.0) >= SURFACE_ZOOM && w.optDouble(i, 0.0) < HC_MIN_WIDTH) w.put(i, HC_MIN_WIDTH)
     }
 
     private fun asset(path: String) = context.assets.open(path).bufferedReader().use { it.readText() }
@@ -228,6 +274,8 @@ class OfflineMaps(private val context: Context) {
         private const val ROAD_LABEL_ZOOM = 15
         /** The thinnest the grey roads and paths are drawn, at any zoom (px). */
         private const val HC_MIN_WIDTH = 1.6
+        /** Where the gravel and offroad dashes start on the map (fast setting): the small roads start here too. */
+        private const val SURFACE_ZOOM = 11.0
         /** How long the list of downloaded maps is trusted before the folder is looked at again. */
         private const val COVERAGE_RECHECK_MS = 10_000L
 

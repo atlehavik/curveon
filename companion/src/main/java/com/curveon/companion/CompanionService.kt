@@ -33,6 +33,9 @@ import kotlin.concurrent.thread
 class CompanionService : Service() {
 
     @Volatile private var running = false
+
+    /** The relay for a tablet that has no internet of its own. */
+    private val relayTransports = OkHttpTransportFactory()
     private var serverSocket: BluetoothServerSocket? = null
     /** The tablet's connection; closed on stop so the tablet hears at once and nothing more comes through. */
     @Volatile private var clientSocket: BluetoothSocket? = null
@@ -134,6 +137,8 @@ class CompanionService : Service() {
         val name = runCatching { socket.remoteDevice.name }.getOrNull() ?: "tablet"
         val writer = MessageWriter(socket.outputStream)
         val sink: (Message) -> Unit = writer::write
+        // The tablet may have no internet: its groups reach the relay over this phone's.
+        val relay = RelayTunnelServer(relayTransports) { m -> runCatching { writer.write(m) } }
         try {
             writer.write(Message.Hello(Build.MODEL))
             PhoneHub.addTablet(sink, name)
@@ -146,12 +151,15 @@ class CompanionService : Service() {
                 when (msg) {
                     is Message.Ping -> writer.write(Message.Ping)
                     is Message.Hello -> Unit
-                    else -> PhoneHub.handle(msg)
+                    is Message.RelayOpen, is Message.RelaySend, is Message.RelayClose -> relay.handle(msg)
+                    else -> if (!GroupMirror.onMessage(msg)) PhoneHub.handle(msg) // how the tablet's groups are doing, or a command
                 }
             }
         } catch (e: Exception) {
             Log.i(TAG, "Tablet connection ended: ${e.message}")
         } finally {
+            relay.closeAll()
+            GroupMirror.clear()
             PhoneHub.removeTablet(sink)
             runCatching { socket.close() }
             clientSocket = null

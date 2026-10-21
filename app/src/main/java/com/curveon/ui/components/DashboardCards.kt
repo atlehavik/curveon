@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
@@ -34,6 +36,10 @@ import java.util.Locale
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.asImageBitmap
@@ -79,7 +85,7 @@ val SPEED_SIGN_BASE = 36.dp
 /**
  * Speed, the signed limit when known and the clock, in the map's top-right corner (always, not
  * only in full screen: the dashboard's side has the engine panel and music). A speed camera ahead
- * adds a line underneath, as does a lost GPS fix. (A junction where the rider gives way shows in the
+ * adds a line underneath. (A junction where the rider gives way shows in the
  * road card, see [CurrentRoadCard], not here.)
  */
 @Composable
@@ -90,6 +96,13 @@ fun MapSpeedCluster(
     modifier: Modifier = Modifier,
     /** Settings → Display: the height above sea level under the speed. */
     showAltitude: Boolean = false,
+    /** Settings → Display: the clock, and this device's battery to the right of it. */
+    showClock: Boolean = true,
+    showBattery: Boolean = false,
+    /** The linked phone's battery (percent, charging); null when no companion phone is connected. */
+    phoneBattery: Pair<Int, Boolean>? = null,
+    /** Settings → Display: the phone's battery shown all the time (else only for a moment after a tap). */
+    showPhoneBattery: Boolean = false,
     /** The limit sign's size (Settings → Display). Over [SPEED_SIGN_BASE] it sticks out over the card's top and bottom. */
     signSize: Dp = SPEED_SIGN_BASE
 ) {
@@ -105,7 +118,10 @@ fun MapSpeedCluster(
     // No clip, and the edge drawn behind the content: a big sign sticks out over the card's edges and
     // must lie on top of the edge line, not under it.
     val sticksOut = ((signSize - SPEED_SIGN_BASE) / 2).coerceAtLeast(0.dp)
-    Box(modifier.testTag("full_map_speed_cluster")) {
+    // A tap shows the clock and batteries for a few seconds, even those switched off in Settings.
+    var peek by remember { mutableStateOf(false) }
+    LaunchedEffect(peek) { if (peek) { delay(5_000); peek = false } }
+    Box(modifier.clickable(interactionSource = null, indication = null) { peek = !peek }.animateContentSize().testTag("full_map_speed_cluster")) {
         Box(Modifier.matchParentSize().background(CockpitSurface.copy(alpha = 0.92f), RoundedCornerShape(16.dp)).border(1.dp, border, RoundedCornerShape(16.dp)))
         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.End) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -119,9 +135,12 @@ fun MapSpeedCluster(
                         val base = SPEED_SIGN_BASE.roundToPx()
                         layout(p.width, minOf(p.height, base)) { p.place(0, (minOf(p.height, base) - p.height) / 2) }
                     })
-                Clock(17.sp)
+                if (showClock || peek) Clock(17.sp)
+                if (showBattery || peek) BatteryLevel()
+                if (showPhoneBattery || peek) phoneBattery?.let { (p, c) -> PhoneBatteryLevel(p, c) }
             }
-            val below = camera != null || telemetry.isDeadReckoning || !telemetry.hasGpsFix || (showAltitude && telemetry.hasGpsFix)
+            // A lost GPS fix shows at the rider's arrow (see CurveonMapView), not here: the card keeps its height.
+            val below = camera != null || (showAltitude && telemetry.hasGpsFix)
             if (below && limit > 0) Spacer(Modifier.height(sticksOut))
             when {
                 camera != null -> Row(verticalAlignment = Alignment.CenterVertically) {
@@ -130,8 +149,6 @@ fun MapSpeedCluster(
                     Text(stringResource(R.string.speed_camera_in, (camera.distanceMeters / 10).toInt() * 10),
                         color = NeonAmber, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
-                telemetry.isDeadReckoning -> Text(stringResource(R.string.gps_estimating), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
-                !telemetry.hasGpsFix -> Text(stringResource(R.string.gps_searching), color = NeonAmber, fontSize = 12.sp, maxLines = 1)
             }
             if (showAltitude && telemetry.hasGpsFix) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("map_altitude")) {
                 Icon(Icons.Default.Terrain, null, tint = TextSecondary, modifier = Modifier.size(16.dp))
@@ -143,6 +160,86 @@ fun MapSpeedCluster(
                 )
         }
         }
+    }
+}
+
+/**
+ * This device's battery as a slim upright cell: filled to the level, green while charging, red when
+ * low. Listens to the system's battery broadcast only while shown.
+ */
+@Composable
+fun BatteryLevel(modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var level by remember { mutableFloatStateOf(-1f) }
+    var charging by remember { mutableStateOf(false) }
+    DisposableEffect(context) {
+        fun read(i: android.content.Intent?) {
+            i ?: return
+            val scale = i.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
+            level = i.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) / scale.toFloat()
+            charging = i.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) != 0
+        }
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: android.content.Context, i: android.content.Intent) = read(i)
+        }
+        read(context.registerReceiver(receiver, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)))
+        onDispose { context.unregisterReceiver(receiver) }
+    }
+    if (level < 0f) return
+    val fill = when {
+        charging -> EcoGreen
+        level < 0.15f -> WarningRed
+        else -> TextSecondary
+    }
+    val percent = (level * 100).toInt()
+    androidx.compose.foundation.Canvas(
+        modifier.size(width = 11.dp, height = 20.dp).testTag("battery")
+            .semantics { contentDescription = "$percent %" }
+    ) {
+        val stroke = 1.5.dp.toPx()
+        val cap = 2.dp.toPx()
+        // The terminal nub on top, then the cell and its fill from the bottom.
+        drawRect(TextSecondary, topLeft = Offset(size.width * 0.3f, 0f), size = Size(size.width * 0.4f, cap))
+        val body = Size(size.width - stroke, size.height - cap - stroke)
+        drawRoundRect(TextSecondary, topLeft = Offset(stroke / 2, cap + stroke / 2), size = body,
+            cornerRadius = CornerRadius(2.dp.toPx()), style = Stroke(stroke))
+        // The fill sits a small gap inside the outline.
+        val gap = stroke + 1.dp.toPx()
+        val top = cap + gap
+        val bottom = size.height - gap
+        val h = (bottom - top) * level.coerceIn(0.05f, 1f)
+        drawRect(fill, topLeft = Offset(gap, bottom - h), size = Size(size.width - gap * 2, h))
+    }
+}
+
+/**
+ * The linked phone's battery (the one in the pocket, running the companion): a slim phone filled to its
+ * level, so it can't be taken for this device's cell beside it. Green while charging, red when low.
+ */
+@Composable
+fun PhoneBatteryLevel(percent: Int, charging: Boolean, modifier: Modifier = Modifier) {
+    if (percent < 0) return
+    val level = percent / 100f
+    val fill = when {
+        charging -> EcoGreen
+        level < 0.15f -> WarningRed
+        else -> TextSecondary
+    }
+    val label = stringResource(R.string.phone_battery_level, percent)
+    androidx.compose.foundation.Canvas(
+        modifier.size(width = 12.dp, height = 20.dp).testTag("phone_battery").semantics { contentDescription = label }
+    ) {
+        val stroke = 1.5.dp.toPx()
+        val radius = CornerRadius(3.dp.toPx())
+        drawRoundRect(TextSecondary, topLeft = Offset(stroke / 2, stroke / 2), size = Size(size.width - stroke, size.height - stroke),
+            cornerRadius = radius, style = Stroke(stroke))
+        // The fill from the bottom, under a thicker top edge like a phone's earpiece end.
+        val gap = stroke + 1.dp.toPx()
+        val top = gap + 2.5.dp.toPx()
+        val bottom = size.height - gap
+        val h = (bottom - top) * level.coerceIn(0.05f, 1f)
+        drawRect(fill, topLeft = Offset(gap, bottom - h), size = Size(size.width - gap * 2, h))
+        drawLine(TextSecondary, Offset(size.width * 0.35f, gap + 0.8.dp.toPx()), Offset(size.width * 0.65f, gap + 0.8.dp.toPx()), 1.dp.toPx())
     }
 }
 
@@ -254,7 +351,9 @@ fun StopSign(size: Dp, modifier: Modifier = Modifier) {
 fun CurrentRoadCard(
     road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier, giveWay: com.curveon.data.routing.GiveWayAlert? = null,
     /** Settings → Display → Road info size: the card and what is on it, 1 is normal. */
-    scale: Float = 1f
+    scale: Float = 1f,
+    /** The road's name next to the signs (for a moment after a tap on the card). */
+    showName: Boolean = false
 ) {
     Row(
         modifier
@@ -268,6 +367,8 @@ fun CurrentRoadCard(
     ) {
         road.ref?.let { RoadShield(it, 26.dp * scale) }
         if (road.priority) PriorityRoadSign(30.dp * scale)
+        if (showName && road.name != null) Text(road.name, color = TextPrimary, fontSize = (16 * scale).sp, fontWeight = FontWeight.Bold,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).testTag("current_road_name"))
         giveWay?.let { g ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("free_give_way")) {
                 if (g.stop) StopSign(30.dp * scale) else GiveWaySign(30.dp * scale)
@@ -484,6 +585,7 @@ fun NotificationCard(
     onDismiss: (NotificationItem) -> Unit,
     onSwipe: (NotificationItem) -> Unit,
     onAction: (NotificationItem, Int) -> Unit,
+    onRead: (NotificationItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var index by remember(notifications.size) { mutableIntStateOf(0) }
@@ -497,7 +599,13 @@ fun NotificationCard(
                     Text(n.senderName, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text("${n.appName} · ${ago(n.timestampMs)}", color = TextSecondary, fontSize = 12.sp, maxLines = 1)
                 }
+                // Read aloud in the headset, so the rider needn't take their eyes off the road.
+                if (!n.isIncomingCall) Box(
+                    Modifier.size(52.dp).clip(CircleShape).background(CockpitSurfaceVariant).clickable { onRead(n) }.testTag("notification_read_btn"),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Default.VolumeUp, stringResource(R.string.read_aloud), tint = ElectricCyan, modifier = Modifier.size(28.dp)) }
                 if (notifications.size > 1) {
+                    Spacer(Modifier.width(8.dp))
                     Box(
                         Modifier.clip(RoundedCornerShape(12.dp)).background(NeonAmber).clickable { index = (index + 1) % notifications.size }
                             .padding(horizontal = 10.dp, vertical = 6.dp)
@@ -505,11 +613,13 @@ fun NotificationCard(
                 }
             }
             Spacer(Modifier.height(10.dp))
-            Text(
-                n.message, color = TextPrimary, fontSize = 17.sp, lineHeight = 22.sp,
-                maxLines = 4, overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.weight(1f))
+            // The message gets what height is left, so a short card (a phone upright) cuts the text, never the buttons.
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
+                Text(
+                    n.message, color = TextPrimary, fontSize = 17.sp, lineHeight = 22.sp,
+                    maxLines = 4, overflow = TextOverflow.Ellipsis
+                )
+            }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (n.isIncomingCall && n.actions.isNotEmpty()) {
@@ -613,7 +723,7 @@ private fun Modifier.swipeAway(key: Any, onSwiped: () -> Unit): Modifier = compo
 fun VoiceReplyCard(reply: VoiceReply, onSend: () -> Unit, onRetry: () -> Unit, onCancel: () -> Unit, modifier: Modifier = Modifier) {
     DashCard(modifier.fillMaxWidth().testTag("voice_reply_card"), border = ElectricCyan) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Text(stringResource(R.string.reply_to, reply.senderName), color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(stringResource(if (reply.isSms) R.string.sms_to else R.string.reply_to, reply.senderName), color = TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 when (reply.state) {

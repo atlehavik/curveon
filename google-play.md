@@ -45,6 +45,11 @@ Kilde: https://support.google.com/googleplay/android-developer/answer/10208820 (
   Hovedappen faller under navigasjonsraden også når den er sin egen companion på Pixel. Reserveplan hvis det avslås: egen
   avskalert Play-variant (anropslogg erstattes av en liste Curveon fører selv over anrop den ser), eller
   READ_CALL_LOG bare i companion.
+- **`SEND_SMS`** (lagt til 2026-10-21, Telefon → kontakt → SMS: rytteren snakker meldingen, telefonen sender den
+  med `SmsManager`) er begrenset på samme måte som `READ_CALL_LOG`, og dekkes av de samme to unntaksradene
+  («connected device companion» og «in-vehicle hands-free»). Den må med i samme erklæring og søknad. Uten
+  tillatelsen finnes ingen håndfri vei: `ACTION_SENDTO` åpner SMS-appen og krever et trykk på telefonen. Avslås den,
+  fjernes SMS-knappen i Play-varianten (stemmesvar på varsler bruker varselets egen svarhandling og trenger den ikke).
 - **`CALL_PHONE`**: Googles policyside om SMS og anropslogg nevner bare SMS- og anropsloggtillatelsene, ikke
   `CALL_PHONE`. Den er altså trolig ikke begrenset (sjekkes i erklæringsskjemaet i Play Console).
   Vi bruker den i `PhoneBook.placeCall` (`TelecomManager.placeCall`). **Ikke bytt til `ACTION_DIAL`:** den må
@@ -79,14 +84,41 @@ endrer seg på Play-siden:
 - **Personvernerklæringen** må få et eget avsnitt om grupper (valgfritt, av som standard, hva reléet ser, hvor lenge det
   lagrer: posisjoner lagres ikke, øvrig ca. 30 dager) og si hvem som drifter reléet.
 - **Foreground service og posisjon:** companion trenger en tjeneste av riktig type; deklarasjon og demovideo i Play Console.
-- **Anbefaling: første Play-versjon uten grupper.** Da har companion fortsatt ingen `INTERNET`, den sterkeste
+- **Anbefaling: første Play-versjon uten grupper.** (Companion er nå bare status, QR-skanning og lenker; alt oppsett gjøres i Curveon selv.) Da har companion fortsatt ingen `INTERNET`, den sterkeste
   setningen i unntakssøknaden står, og første vurdering blir enklere. Gruppene kommer som en oppdatering sammen med
   oppdatert Data safety og personvernerklæring. Test gruppene i lukket testing og via GitHub-APK først.
 - Domenet som `groups.md` trenger for `https`-invitasjonslenken kan også hoste personvernerklæringen (én løsning for begge).
 
+### Slik ble det bygget (2026-10-19), og hva det betyr for Play
+
+- **Companion har `INTERNET` nå**, via `:phone`-manifestet (det samme manifestet gir hovedappen det den allerede hadde). Hver bygging
+  av companion har det, også en Play-bygging: for «første Play-versjon uten grupper» må `INTERNET` fjernes i en play-bygging
+  (`tools:node="remove"`, slik `app/src/play` gjør for `REQUEST_INSTALL_PACKAGES`) og gruppene slås av. Ikke gjort.
+- **Nye biblioteker, alle Apache 2.0, ingen native kode (16 KB-kravet berøres ikke):** Tink (`tink-android`, X25519/Ed25519/HKDF),
+  ZXing core (QR-kode for invitasjon), OkHttp (var der fra før, nå også i `:phone`). Ført i `THIRD_PARTY_LICENSES.md` (Tink; ZXing mangler
+  der ennå).
+- **Nøkler på enheten:** gruppene (nøkkel og rytter-identitet) lagres kryptert med en nøkkel i Android Keystore (`GroupStore`), og er
+  utelatt fra Android-backup (`backup_rules.xml`, `data_extraction_rules.xml`). Ny telefon eller reinstallasjon betyr ny invitasjon.
+- **Ny tillatelse i hovedappen:** `VIBRATE` (vanlig, gis automatisk) til SOS-varselet. Ikke brukt: `USE_FULL_SCREEN_INTENT`. SOS-varselet er et
+  vindu i appen og vises bare når Curveon er åpen; på en telefon i lommen kommer ingenting (varsel for det er ikke bygget).
+- **Foreground service-typen i companion er uendret** (`connectedDevice|microphone`). Å sende posisjoner over nett for en tilkoblet tavle er
+  en grei, men ikke opplagt, beskrivelse av `connectedDevice`: skriv det rett ut i deklarasjonen. Posisjon hentes på tavla, ikke i companion.
+- **Kamera (QR-skanning):** `CAMERA` i hovedappen, spurt først når rytteren starter skanning, med `uses-feature camera required=false` så Play ikke
+  skjuler appen for enheter uten kamera. Bildet leses på enheten (ZXing, ingen Play-tjenester) og lagres eller sendes ikke. CameraX (Jetpack,
+  Apache 2.0, ingen egen native kode). Skanneren ligger i en egen modul (`:qrscan`) som både Curveon og companion bruker, så companion har også `CAMERA` (kravet kommer fra modulens manifest).
+- **Profilbilde:** velges med systemets bildevelger (`PickVisualMedia`, uten tillatelse) eller tas med kameraappen (`TakePicture` via en `FileProvider` i cachemappa; bildet slettes straks etter at det er beskåret). Beskjæres i appen. Bildet skaleres til 96 px (maks 8 KB) og går ende-til-ende-kryptert
+  til gruppa; det er personopplysning som må med i personvernerklæringen og Data safety (valgfritt, bare til gruppa).
+- **Flere enheter, én rytter:** overføringslenken inneholder rytterens private nøkler og vises bare som QR på skjermen, utløper etter 15 minutter. Ingenting
+  av det går til noen server.
+- **Ukryptert `ws://`** brukes aldri i produksjon: bare i debug-bygg (`debuggable`) mot lokale adresser (`GroupHub.scheme`); debug-manifestene
+  tillater ukryptert trafikk (`app/src/debug`, `companion/src/debug`), release-manifestene gjør ikke det.
+- **Invitasjonslenker:** `curveon://join` er registrert i både Curveon og companion (Android spør hvilken som skal brukes når begge er
+  installert). `https`-formen trenger domene og App Links.
+- **SOS:** appen sier at den ikke er en nødtjeneste (teksten under knappen). Ingen automatisk krasjvarsling.
+
 ## Største risikoer hos Google
 
-1. **`READ_CALL_LOG`**, se over. Største risiko.
+1. **`READ_CALL_LOG`** og **`SEND_SMS`**, se over. Største risiko.
 2. **Erklæringer i Play Console:** notification listener, mikrofon (`RECORD_AUDIO`), foreground services
    (location i hovedappen; connectedDevice og microphone i companion). Noen krever kort demovideo.
 3. Reell unntakssøknad for anropslogg trenger tekst og trolig demovideo av tavla som viser anropslogg og ringing.

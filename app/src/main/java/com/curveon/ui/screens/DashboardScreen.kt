@@ -37,6 +37,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.ui.layout.positionInRoot
 import com.curveon.data.bluetooth.CompanionConnectionState
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GroundPreference
@@ -76,6 +79,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val albumArt by phone.albumArt.collectAsStateWithLifecycle()
     val notifications by phone.notifications.collectAsStateWithLifecycle()
     val voiceReply by phone.voiceReply.collectAsStateWithLifecycle()
+    val voiceSearch by phone.voiceSearch.collectAsStateWithLifecycle()
     val phoneState by phone.connectionState.collectAsStateWithLifecycle()
     val phoneName by phone.connectedDeviceName.collectAsStateWithLifecycle()
     val mediaApps by phone.mediaApps.collectAsStateWithLifecycle()
@@ -87,6 +91,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val routingDataStatus by viewModel.routingDataStatus.collectAsStateWithLifecycle()
     val demoMode by viewModel.demoMode.collectAsStateWithLifecycle()
     val demoRiding by viewModel.isDemoRiding.collectAsStateWithLifecycle()
+    val demoSignalLost by viewModel.demoSignalLost.collectAsStateWithLifecycle()
+    val demoWrongTurn by viewModel.demoWrongTurn.collectAsStateWithLifecycle()
+    var demoMenu by remember { mutableStateOf(false) }
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
     val gpxGroups by viewModel.gpxGroups.collectAsStateWithLifecycle()
     val overlayTracks by viewModel.overlayTracks.collectAsStateWithLifecycle()
@@ -100,12 +107,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
     val mapAutoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
     val arrowLead by viewModel.arrowLead.collectAsStateWithLifecycle()
-    val showSurfaces by viewModel.showSurfaces.collectAsStateWithLifecycle()
-    val surfacePalette by viewModel.surfacePalette.collectAsStateWithLifecycle()
-    val surfacePaletteWhilePlanning by viewModel.surfacePaletteWhilePlanning.collectAsStateWithLifecycle()
+    val surfaceMode by viewModel.surfaceMode.collectAsStateWithLifecycle()
     val showGravelHeat by viewModel.showGravelHeat.collectAsStateWithLifecycle()
     val gravelHeatButton by viewModel.gravelHeatButton.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
+    val showClock by viewModel.showClock.collectAsStateWithLifecycle()
+    val showBattery by viewModel.showBattery.collectAsStateWithLifecycle()
+    val showPhoneBattery by viewModel.showPhoneBattery.collectAsStateWithLifecycle()
+    val phoneStatusNow by phone.phoneStatus.collectAsStateWithLifecycle()
+    val thisDeviceIsPhone by phone.thisDevice.collectAsStateWithLifecycle()
     val speedSign by viewModel.speedSign.collectAsStateWithLifecycle()
     val roadCardSize by viewModel.roadCardSize.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
@@ -119,6 +129,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // when navigating, else on the road ridden): the one place for the junction's sign and its distance.
     val giveWayAhead = giveWayAlert ?: freeGiveWay
     val currentRoad = roadHere ?: giveWayAhead?.let { com.curveon.data.road.CurrentRoad(null, false) }
+    // A tap on the road card shows the road's name for a few seconds; a tap anywhere else puts it away.
+    var roadNameShown by remember { mutableStateOf(false) }
+    var roadCardBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+    var rootTopLeft by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    LaunchedEffect(roadNameShown) { if (roadNameShown) { kotlinx.coroutines.delay(6_000); roadNameShown = false } }
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
@@ -139,6 +154,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val searchOffer by viewModel.searchOffer.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
+    val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
+    // Nothing pressed: it is a new ride, and the question goes away.
+    LaunchedEffect(resumeOffer) { if (resumeOffer != null) { kotlinx.coroutines.delay(30_000); viewModel.startNewRide() } }
     val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
     val logRides by viewModel.logRides.collectAsStateWithLifecycle()
     val recordLean by viewModel.recordLean.collectAsStateWithLifecycle()
@@ -212,6 +230,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     // Saveable: changing the language restarts the screen, and the rider should stay in Settings.
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showGroup by rememberSaveable { mutableStateOf(false) }
     /** Settings opened from the engine panel: start on its page. */
     var settingsOnEngine by remember { mutableStateOf(false) }
     /** Settings opened while a new version waits: start on Help, where it is. */
@@ -237,6 +256,20 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
     LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
+    // Trips shared with the group: what to ride, the offer from a friend, and sharing the trip on screen.
+    val sharingGroup by phone.groups.activeId.collectAsStateWithLifecycle()
+    val sharedTripList by viewModel.sharedTrips.shared.collectAsStateWithLifecycle()
+    val sharedOffer by viewModel.sharedTrips.offer.collectAsStateWithLifecycle()
+    val sharedChanged by viewModel.sharedTrips.justChanged.collectAsStateWithLifecycle()
+    val shareTrip: () -> Unit = {
+        toast = context.getString(if (viewModel.sharedTrips.shareCurrent()) R.string.toast_trip_shared else R.string.toast_trip_not_shared)
+    }
+    LaunchedEffect(sharedChanged) {
+        sharedChanged?.let {
+            toast = context.getString(R.string.toast_shared_trip_changed, it.fromNickname ?: "", it.doc.name)
+            viewModel.sharedTrips.clearJustChanged()
+        }
+    }
     var reachedStop by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) { viewModel.stopReached.collect { reachedStop = it } }
     LaunchedEffect(reachedStop) { if (reachedStop != null) { delay(8000); reachedStop = null } }
@@ -450,6 +483,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val leftClearance = if (showTurn) BOTTOM_CARD_HEIGHT + 14.dp else 0.dp
 
     val mapOverlays: @Composable BoxScope.() -> Unit = {
+        // The demo ride's tricks, from a tap on its DEMO tag: things that can't be tried at home on a real ride.
+        if (demoMenu && demoRiding) com.curveon.ui.components.DemoRideMenu(
+            signalLost = demoSignalLost, wrongTurnAhead = demoWrongTurn, navigating = isNavigating,
+            onSignalLost = { viewModel.setDemoSignalLost(it); demoMenu = false },
+            onWrongTurn = { viewModel.demoWrongTurnAhead(); demoMenu = false },
+            onDismiss = { demoMenu = false }
+        )
         // Where the map is, so the corners know how much room there is.
         Box(Modifier.matchParentSize().onGloballyPositioned { mapBox = it.boundsInRoot() })
         // The trip bar top left (folding out downwards), the speed top right.
@@ -468,12 +508,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
         MapSpeedCluster({ telemetryState.value }, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
-            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, signSize = speedSign.dp.dp)
+            .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, signSize = speedSign.dp.dp,
+            // The pocket phone's battery: only with a companion phone connected (on "This device" it's the battery above).
+            phoneBattery = phoneStatusNow?.takeIf { !thisDeviceIsPhone && phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO }
+                ?.let { it.batteryPercent to it.charging }, showPhoneBattery = showPhoneBattery)
         // The road's number and priority sign in a card of their own: top left, under the arrival box (or the heat button).
         currentRoad?.let { road ->
-            CurrentRoadCard(road, giveWay = giveWayAhead, scale = roadCardSize.scale,
+            CurrentRoadCard(road, giveWay = giveWayAhead, scale = roadCardSize.scale, showName = roadNameShown,
                 modifier = Modifier.align(Alignment.TopStart).padding(start = 14.dp, top = roadCardTop)
-                    .widthIn(max = (mapWidth - 14.dp - 14.dp - 8.dp - speedSize.width).coerceAtLeast(0.dp)))
+                    .widthIn(max = (mapWidth - 14.dp - 14.dp - 8.dp - speedSize.width).coerceAtLeast(0.dp))
+                    .onGloballyPositioned { roadCardBounds = it.boundsInRoot() }
+                    .clickable(enabled = road.name != null) { roadNameShown = !roadNameShown })
         }
         // The next turn bottom left, as narrow as it can be.
         if (showTurn) {
@@ -603,6 +648,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onReverse = viewModel::reversePreviewTrack,
                     onTrackToTrip = viewModel::trackToTrip,
                     onSave = askSaveName,
+                    onShare = if (sharingGroup != null) { { shareTrip() } } else null,
                     onGo = viewModel::startPreview,
                     onClose = viewModel::cancelPreview,
                     minimized = previewMinimized,
@@ -666,15 +712,33 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }?.map { GeoPoint(it.lat, it.lon) }.orEmpty()
     }
 
+    // Group ride: the other riders on the map, and the button that opens the group.
+    val groupActive by phone.groups.activeId.collectAsStateWithLifecycle()
+    val groupPositions by phone.groups.positions.collectAsStateWithLifecycle()
+    val groupMembers by phone.groups.members.collectAsStateWithLifecycle()
+    val groupSos by phone.groups.sos.collectAsStateWithLifecycle()
+    var groupTick by remember { mutableIntStateOf(0) }
+    // A rider not heard from for two minutes is dimmed, even if nothing else changes on screen.
+    LaunchedEffect(groupActive) { while (groupActive != null) { kotlinx.coroutines.delay(30_000); groupTick++ } }
+    val groupRiders = remember(groupPositions, groupMembers, groupTick) {
+        groupPositions.values.map { p ->
+            val m = groupMembers[p.id]
+            com.curveon.ui.components.MapGroupRider(
+                p.id, GeoPoint(p.lat, p.lon), m?.nickname.orEmpty(), m?.colour ?: 0xFF00E5FF.toInt(), System.currentTimeMillis() - p.timeMs > 120_000, m?.photo
+            )
+        }
+    }
+
     // The map, as big as the layout allows.
     val mapArea: @Composable (Modifier) -> Unit = { mapModifier -> Box(mapModifier.tourTarget(TourTarget.MAP)) {
         CurveonMapView(
             location = currentLocationState.value,
-            riderFix = riderFixState.value, demoRide = demoRiding,
+            riderFix = riderFixState.value, demoRide = demoRiding, onDemoTap = { demoMenu = true },
             headingDeg = telemetryState.value.headingDeg,
             speedKmh = telemetryState.value.speedKmh,
             speedLimitKmh = telemetryState.value.speedLimitKmh,
             hasGpsFix = telemetryState.value.hasGpsFix,
+            gpsLost = telemetryState.value.gpsLost || telemetryState.value.isDeadReckoning,
             routePoints = routePoints,
             routeSurfaces = routeSurfaces,
             giveWaySigns = mapGiveWays,
@@ -687,22 +751,18 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onHeatButtonShown = { heatButtonShown = it },
             buttonsBottomInset = buttonsBottomInset,
             dark = mapDark,
-            // While navigating the day map is always high contrast: dark grey unless grey is chosen.
-            highContrast = roadContrast != com.curveon.ui.viewmodel.RoadContrast.OFF || isNavigating,
-            highContrastRoads = (roadContrast.takeIf { it != com.curveon.ui.viewmodel.RoadContrast.OFF } ?: com.curveon.ui.viewmodel.RoadContrast.DARK_GREY)
-                .let { it.road!! to it.path!! },
+            roadShade = roadContrast.road to roadContrast.path,
             previewRoutes = mapPreviewRoutes,
             markers = mapMarkers,
+            groupRiders = groupRiders,
             editor = editor,
             // The route starts on the nearest road the map joins up: show the way to it.
             approachTo = mapApproachTo,
             onEditRoute = if (planGoal != null && mapPick == null) editOnMap else null,
             previewSheetMinimized = previewMinimized,
             surfaceWays = viewModel::surfaceWays,
-            showSurfaces = showSurfaces,
+            surfaceMode = surfaceMode,
             surfaceZoom = mapDetail.surfaceZoom,
-            surfacePalette = surfacePalette,
-            surfacePaletteWhilePlanning = surfacePaletteWhilePlanning,
             gravelHeat = viewModel.gravelHeat.takeIf { gravelHeatButton != com.curveon.ui.components.GravelHeatButton.OFF },
             showGravelHeat = showGravelHeat,
             gravelHeatOnMap = gravelHeatButton == com.curveon.ui.components.GravelHeatButton.MAP,
@@ -745,6 +805,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             mapVersion = mapVersion,
             overlays = mapOverlays
         )
+        resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp)) }
         reachedStop?.let { StopReachedBanner(it, onDismiss = { reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
         toast?.let {
             Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
@@ -774,6 +836,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onDismiss = { phone.dismissNotification(it.id) },
                 onSwipe = { phone.hideNotification(it.id) },
                 onAction = { n, i -> phone.invokeAction(n.id, i) },
+                onRead = { viewModel.readAloud(it.senderName, it.message) },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -805,6 +868,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         searchPurpose != null -> RailPanel.SEARCH
         showGpx -> RailPanel.GPX
         phoneTab != null -> RailPanel.PHONE
+        showGroup -> RailPanel.GROUP
         showSettings -> RailPanel.SETTINGS
         else -> null
     }
@@ -814,11 +878,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         closeSearch()
         showGpx = false
         phoneTab = null
+        showGroup = false
         showSettings = false
         if (panel != activePanel) when (panel) {
             RailPanel.SEARCH -> searchPurpose = SearchPurpose.DESTINATION
             RailPanel.GPX -> showGpx = true
             RailPanel.PHONE -> phoneTab = PhoneTab.FAVORITES
+            RailPanel.GROUP -> showGroup = true
             RailPanel.SETTINGS -> { settingsOnHelp = appUpdate is com.curveon.data.update.UpdateState.Available; showSettings = true }
         }
     }
@@ -842,10 +908,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             isFullScreenMap = isFullScreenMap,
             unread = notifications.size,
             updateWaiting = appUpdate is com.curveon.data.update.UpdateState.Available,
+            groupAlert = groupSos.values.any { !it.mine },
             recordingResting = recordingResting,
             active = activePanel,
             onPress = pressRail,
-            onToggleMap = { viewModel.toggleFullScreenMap() }
+            // A screen from the rail is open: it closes (as pressing its own button would), and the view switches too.
+            onToggleMap = { activePanel?.let(pressRail); viewModel.toggleFullScreenMap() }
         )
     }
 
@@ -876,15 +944,33 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     if (phone.placeCall(number)) { toast = context.getString(R.string.toast_calling, name); phoneTab = null }
                     else toast = context.getString(R.string.toast_phone_not_connected)
                 },
+                // The phone listens for the message; it is read back on the dashboard card to send or say again.
+                onSms = { number, name ->
+                    if (phone.startSms(number, name)) phoneTab = null
+                    else toast = context.getString(R.string.toast_phone_not_connected)
+                },
                 onNeedPhoto = phone::requestPhoto,
                 onReconnect = phone::retryNow,
                 onClose = { phoneTab = null }
             )
         }
 
+        sharedOffer?.let { t ->
+            com.curveon.ui.components.SharedTripOfferDialog(
+                trip = t,
+                onRideNow = { viewModel.sharedTrips.open(t) },
+                onSave = { viewModel.sharedTrips.accept(t); toast = context.getString(R.string.toast_shared_trip_saved) },
+                onIgnore = { viewModel.sharedTrips.ignore(t) }
+            )
+        }
+        if (showGroup) com.curveon.ui.components.FriendsDialog(phone.groups, onDismiss = { showGroup = false })
+
         searchPurpose?.let { purpose -> key(purpose) {
             DestinationSearchDialog(
                 searchStatus = remember { viewModel.searchStatus() },
+                voice = voiceSearch,
+                onVoice = if (phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO) ({ phone.startVoiceSearch() }) else null,
+                onVoiceCancel = phone::cancelVoiceSearch,
                 onSearch = { viewModel.searchPlaces(it) },
                 onPick = { r ->
                     if (purpose == SearchPurpose.START && r.kind == KIND_HERE) {
@@ -992,6 +1078,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onRenameGroup = viewModel::renamePlannedGroup,
                     onDeleteGroup = viewModel::deletePlannedGroup
                 )
+                TracksTab.SHARED -> SharedTripsPage(
+                    trips = sharedTripList,
+                    onRide = { t -> showGpx = false; viewModel.sharedTrips.open(t) },
+                    onRemove = viewModel.sharedTrips::remove
+                )
             }
         }
 
@@ -1012,8 +1103,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obdEnabled = obdEnabled, fuelSetUp = fuelCalibration.source != null && fuelCalibration.tankLiters != null,
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
-                    autoZoom = autoZoom, arrowLead = arrowLead, showSurfaces = showSurfaces, surfacePalette = surfacePalette,
-                    surfacePaletteWhilePlanning = surfacePaletteWhilePlanning, mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, speedSign = speedSign, roadCardSize = roadCardSize, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    autoZoom = autoZoom, arrowLead = arrowLead, surfaceMode = surfaceMode,
+                    mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, showPhoneBattery = showPhoneBattery, phoneBatteryOffered = !thisDeviceIsPhone, speedSign = speedSign, roadCardSize = roadCardSize, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     navAlerts = viewModel.navAlerts.collectAsStateWithLifecycle().value,
                     offRouteAlerts = viewModel.offRouteAlerts.collectAsStateWithLifecycle().value,
@@ -1041,11 +1132,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onObdValue = viewModel::toggleObdValue,
                     onAutoZoom = viewModel::setAutoZoom,
                     onArrowLead = viewModel::setArrowLead,
-                    onShowSurfaces = viewModel::setShowSurfaces,
-                    onSurfacePalette = viewModel::setSurfacePalette,
-                    onSurfacePaletteWhilePlanning = viewModel::setSurfacePaletteWhilePlanning,
+                    onSurfaceMode = viewModel::setSurfaceMode,
                     onGravelHeatButton = viewModel::setGravelHeatButton,
                     onShowAltitude = viewModel::setShowAltitude,
+                    onShowClock = viewModel::setShowClock,
+                    onShowBattery = viewModel::setShowBattery,
+                    onShowPhoneBattery = viewModel::setShowPhoneBattery,
                     onSpeedSign = viewModel::setSpeedSign,
                     onRoadCardSize = viewModel::setRoadCardSize,
                     onShowRoadInfo = viewModel::setShowRoadInfo,
@@ -1098,7 +1190,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
       }
     }
     val panelLayer: @Composable BoxScope.() -> Unit = {
-        val open = searchPurpose != null || showGpx || phoneTab != null || showSettings
+        val open = searchPurpose != null || showGpx || phoneTab != null || showGroup || showSettings
         // The cover takes every touch, so nothing reaches the map underneath.
         if (open) Box(Modifier.matchParentSize().pointerInput(Unit) { detectTapGestures { } }) {
             Box(Modifier.fillMaxSize().imePadding().padding(8.dp)) {
@@ -1121,6 +1213,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
 
+    // The group ride: its dialog, the rider's own SOS and the alert for someone else's.
+    val groupLayer: @Composable BoxScope.() -> Unit = {
+        com.curveon.ui.components.GroupInviteOfferDialog(phone.groups)
+        com.curveon.ui.components.GroupSosOverlay(
+            phone.groups, currentLocationState.value.latitude, currentLocationState.value.longitude,
+            navigateTo = { lat, lon, name -> viewModel.previewDestination(GeoPoint(lat, lon), name) }
+        )
+    }
+
     val rootModifier = Modifier
         .fillMaxSize()
         .background(CockpitBackground)
@@ -1129,6 +1230,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         // A phone's camera hole sits on one edge: keep the rail and cards clear of it, whichever
         // way round the phone is held.
         .windowInsetsPadding(WindowInsets.displayCutout)
+        // While the road's name shows, any touch outside its card puts it away (and still does what it does).
+        .onGloballyPositioned { rootTopLeft = it.positionInRoot() }
+        .pointerInput(roadNameShown) {
+            if (!roadNameShown) return@pointerInput
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                if (!roadCardBounds.contains(down.position + rootTopLeft)) roadNameShown = false
+            }
+        }
         .testTag("dashboard_screen_root")
     CompositionLocalProvider(LocalTourTargets provides tourTargets) { Box(modifier.fillMaxSize()) {
     if (portrait) {
@@ -1148,6 +1258,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             }
             panelLayer()
             callLayer()
+            groupLayer()
             }
             rail()
         }
@@ -1167,6 +1278,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 }
                 panelLayer()
                 callLayer()
+                groupLayer()
             }
         }
     }
@@ -1270,6 +1382,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onRemoveStop = if (navState.goal is com.curveon.data.routing.NavigationGoal.Destination) { i: Int -> showRouteMenu = false; realStops.getOrNull(i)?.let { viewModel.removeStop(it.index) } } else null,
                 onAddStop = { showRouteMenu = false; searchPurpose = SearchPurpose.STOP },
                 onSave = { showRouteMenu = false; askSaveName() },
+                onShare = if (sharingGroup != null && (navState.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.shared == null) { { showRouteMenu = false; shareTrip() } } else null,
                 onEnd = { showRouteMenu = false; viewModel.stopNavigation() },
                 onDismiss = { showRouteMenu = false }
             )
@@ -1312,7 +1425,7 @@ private const val PORTRAIT_CARDS_SHARE = 0.34f
 private val FULL_MAP_SPEED_CLEARANCE = 80.dp
 
 /** The screens the rail opens over the map. */
-private enum class RailPanel { SEARCH, GPX, PHONE, SETTINGS }
+private enum class RailPanel { SEARCH, GPX, PHONE, GROUP, SETTINGS }
 
 @Composable
 private fun Rail(
@@ -1324,6 +1437,8 @@ private fun Rail(
     unread: Int,
     /** A new version of the app is out: a dot on Settings. */
     updateWaiting: Boolean,
+    /** Someone in the group has sent an SOS: a red dot on the group button. */
+    groupAlert: Boolean = false,
     /** A ride is being recorded while standing still: a red dot on the GPX button. */
     recordingResting: Boolean = false,
     /** The screen that is open: its button is lit. */
@@ -1346,6 +1461,14 @@ private fun Rail(
     val phone: @Composable () -> Unit = {
         RailButton(Icons.Default.Phone, stringResource(R.string.phone), ElectricCyan, EcoGreen, filled = active == RailPanel.PHONE,
             tag = "rail_phone", target = TourTarget.PHONE, onClick = { onPress(RailPanel.PHONE) })
+    }
+    // Friends riding together; a dot while someone has sent an SOS.
+    val group: @Composable () -> Unit = {
+        Box {
+            RailButton(Icons.Default.Diversity3, stringResource(R.string.friends_title), ElectricCyan, NeonAmber, filled = active == RailPanel.GROUP,
+                tag = "rail_group", target = null, onClick = { onPress(RailPanel.GROUP) })
+            if (groupAlert) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(WarningRed))
+        }
     }
     val settings: @Composable () -> Unit = {
         Box {
@@ -1375,7 +1498,7 @@ private fun Rail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
     ) {
-        search(); gpx(); phone(); settings()
+        search(); gpx(); phone(); group(); settings()
         Spacer(Modifier.weight(1f))
         mapToggle()
     } else Row(
@@ -1384,7 +1507,7 @@ private fun Rail(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         // The landscape rail turned a quarter: its bottom (the map toggle) ends up at the left.
-        mapToggle(); settings(); phone(); gpx(); search()
+        mapToggle(); settings(); group(); phone(); gpx(); search()
     }
 }
 
@@ -1398,7 +1521,8 @@ private fun RailButton(
     /** Changes (above 0) each time the button should blink: something was just put where it leads. */
     flashKey: Int = 0,
     tag: String,
-    target: TourTarget,
+    /** What the welcome tour lights up; null for a button the tour does not mention. */
+    target: TourTarget?,
     onClick: () -> Unit
 ) {
     // Smaller on a phone: sideways it is low, upright it is narrow.
@@ -1415,7 +1539,7 @@ private fun RailButton(
     Box(
         Modifier
             .size(if (compact) 48.dp else 56.dp)
-            .tourTarget(target)
+            .then(if (target != null) Modifier.tourTarget(target) else Modifier)
             .graphicsLayer { scaleX = 1f + 0.25f * blink.value; scaleY = 1f + 0.25f * blink.value }
             .clip(RoundedCornerShape(16.dp))
             .background(androidx.compose.ui.graphics.lerp(base, NeonAmber, blink.value))
@@ -1461,7 +1585,8 @@ private sealed interface StopTarget {
 private enum class TracksTab(val label: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     GPX(R.string.gpx_tab, Icons.Default.Route),
     RIDES(R.string.rides, Icons.Default.History),
-    PLANNED(R.string.planned_tab, Icons.Default.EventNote)
+    PLANNED(R.string.planned_tab, Icons.Default.EventNote),
+    SHARED(R.string.shared_tab, Icons.Default.Diversity3)
 }
 
 /** An adventure being drawn: where to, and how long it should take (minutes of estimated riding). */

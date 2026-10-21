@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curveon</title>
+<meta name="description" content="Motorsykkelnavigasjon som elsker svingete veier, og som virker uten dekning. / Motorcycle navigation that loves curvy roads, and works without a signal.">
+<style>
+  :root { --bg:#0d1117; --card:#161b22; --text:#e6edf3; --muted:#9aa7b4; --cyan:#00e5ff; --amber:#ffb300; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.55; }
+  main { max-width:44rem; margin:0 auto; padding:3rem 16px 4rem; }
+  h1 { font-size:2.6rem; margin:0 0 .25rem; letter-spacing:-.02em; }
+  h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; color:var(--cyan); }
+  .lead { font-size:1.2rem; color:var(--muted); margin:.25rem 0 1.5rem; }
+  .buttons { display:flex; flex-wrap:wrap; gap:12px; margin:1.5rem 0 .5rem; }
+  .btn { display:inline-block; padding:.8rem 1.3rem; border-radius:999px; font-weight:700; text-decoration:none; }
+  .primary { background:var(--cyan); color:#00363d; }
+  .secondary { background:var(--card); color:var(--text); border:1px solid #30363d; }
+  .note { color:var(--muted); font-size:.9rem; }
+  ul { padding-left:1.2rem; } li { margin:.45rem 0; }
+  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid #30363d; color:var(--muted); font-size:.9rem; }
+  a { color:var(--cyan); }
+  .lang { float:right; font-size:.9rem; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <div class="lang"><a href="#" data-set="nb">Norsk</a> · <a href="#" data-set="en">English</a></div>
+
+  <section lang="nb" data-lang="nb">
+    <h1>Curveon</h1>
+    <p class="lead">Motorsykkelnavigasjon som elsker svingete veier, og som virker uten dekning.</p>
+    <p>Curveon gjør telefonen din, eller et Android-nettbrett på styret, til et instrumentbord for turen: kart, svingvis navigasjon, musikk, meldinger og samtaler på ett sted. Gratis, åpen kildekode og laget for motorsyklister.</p>
+    <div class="buttons">
+      <a class="btn primary" href="PLAY_LINK">Last ned fra Google Play</a>
+      <a class="btn secondary" href="https://github.com/atlehavik/curveon">Kildekode på GitHub</a>
+    </div>
+    <p class="note">Android 10 eller nyere · mobil eller nettbrett · norsk og engelsk</p>
+
+    <h2>Hvorfor Curveon?</h2>
+    <ul>
+      <li><strong>Finner de morsomme veiene.</strong> Velg Raskest, Svingete eller Veldig svingete, og se alle tre ved siden av hverandre før du kjører.</li>
+      <li><strong>Virker uten nett.</strong> Last ned landene du kjører i én gang. Kart, ruter og søk virker i fjellet, i tunneler og i utlandet.</li>
+      <li><strong>Alt på én skjerm.</strong> Musikk, meldinger og samtaler fra telefonen vises ved siden av kartet, med store knapper du treffer med hansker på.</li>
+      <li><strong>Kjør sammen.</strong> Legg til venner, start en gruppe og se hverandre på kartet. Del en rute, og alle får endringene med en gang. Alt er ende-til-ende-kryptert.</li>
+      <li><strong>Planlegg på din måte.</strong> Dra ruten dit du vil, tegn en rundtur med ett fingerstrøk, ta vare på turer til senere og kjør hvilket som helst GPX-spor.</li>
+    </ul>
+
+    <h2>Personvern</h2>
+    <p>Ingen kontoer, ingen reklame og ingen analyse. Les <a href="privacy.html">personvernerklæringen</a>.</p>
+  </section>
+
+  <section lang="en" data-lang="en" hidden>
+    <h1>Curveon</h1>
+    <p class="lead">Motorcycle navigation that loves curvy roads, and works without a signal.</p>
+    <p>Curveon turns your phone, or an Android tablet on the handlebars, into a dashboard for the ride: maps, turn-by-turn navigation, your music, messages and calls, all in one place. Free, open source and made for riders.</p>
+    <div class="buttons">
+      <a class="btn primary" href="PLAY_LINK">Get it on Google Play</a>
+      <a class="btn secondary" href="https://github.com/atlehavik/curveon">Source code on GitHub</a>
+    </div>
+    <p class="note">Android 10 or newer · phone or tablet · English and Norwegian</p>
+
+    <h2>Why Curveon?</h2>
+    <ul>
+      <li><strong>Finds the fun roads.</strong> Choose Fastest, Curvy or Super curvy and see all three side by side before you go.</li>
+      <li><strong>Works offline.</strong> Download the countries you ride in once. Maps, routes and search then work in the mountains, in tunnels and abroad.</li>
+      <li><strong>Everything on one screen.</strong> Music, messages and calls from your phone show up next to the map, with big buttons you can hit with gloves on.</li>
+      <li><strong>Ride together.</strong> Add friends, start a group and see each other on the map. Share a route and everyone gets the changes at once. Everything is end-to-end encrypted.</li>
+      <li><strong>Plan your way.</strong> Drag the route where you want it, draw a roundtrip with one finger, keep trips for later, and ride any GPX track.</li>
+    </ul>
+
+    <h2>Privacy</h2>
+    <p>No accounts, no advertising and no analytics. Read the <a href="privacy.html">privacy policy</a>.</p>
+  </section>
+
+  <footer>Curveon · <a href="privacy.html">Personvern / Privacy</a> · <a href="https://github.com/atlehavik/curveon">GitHub</a></footer>
+</main>
+<script>
+  // Both languages are in the page; show the reader's own (Norwegian by default), and let them switch.
+  function show(l) { document.querySelectorAll("[data-lang]").forEach(function (s) { s.hidden = s.dataset.lang !== l; }); document.documentElement.lang = l; }
+  document.querySelectorAll("[data-set]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); show(a.dataset.set); }); });
+  show((navigator.language || "nb").toLowerCase().indexOf("nb") === 0 || (navigator.language || "").toLowerCase().indexOf("no") === 0 ? "nb" : "en");
+</script>
+</body>
+</html>

@@ -37,6 +37,9 @@ object PhoneHub {
 
     /** Where messages go: one per connected tablet, or Curveon's own screen. */
     private val tablets = CopyOnWriteArrayList<(Message) -> Unit>()
+
+    /** Curveon on a tablet that is linked to a phone: it hears the groups (which it runs itself) but not the phone's notifications and media. */
+    private val groupListeners = CopyOnWriteArrayList<(Message) -> Unit>()
     private val notifications = ConcurrentHashMap<String, Message.NotificationPosted>()
 
     @Volatile var media: Message.MediaState? = null
@@ -72,11 +75,35 @@ object PhoneHub {
         tablets += sink
         update { it.copy(tabletName = name, lastEvent = "Connected to $name") }
         snapshot().forEach { runCatching { sink(it) } }
+        GroupHub.sendSnapshot(sink)
+        GroupHub.tabletsChanged()
     }
 
     fun removeTablet(sink: (Message) -> Unit) {
         tablets -= sink
         if (tablets.isEmpty()) update { it.copy(tabletName = null, lastEvent = "Tablet disconnected") }
+        GroupHub.tabletsChanged()
+    }
+
+    /** Hears what the groups tell, and starts them; for a tablet that rides with a phone and still keeps its own friends and groups. */
+    fun addGroupListener(sink: (Message) -> Unit) {
+        groupListeners += sink
+        GroupHub.sendSnapshot(sink)
+        GroupHub.tabletsChanged()
+    }
+
+    fun removeGroupListener(sink: (Message) -> Unit) {
+        groupListeners -= sink
+        GroupHub.tabletsChanged()
+    }
+
+    /** How many tablets (or Curveon's own screen) are listening; the group link is kept up only while someone is. */
+    val tabletCount: Int get() = tablets.size + groupListeners.size
+
+    /** What the groups tell: to the tablets, and to a tablet's own group listener. */
+    fun broadcastGroup(message: Message) {
+        broadcast(message)
+        for (t in groupListeners) runCatching { t(message) }.onFailure { groupListeners -= t }
     }
 
     fun broadcast(message: Message) {
@@ -131,7 +158,10 @@ object PhoneHub {
             is Message.PlayMediaApp -> listener?.playApp(message.packageName)
             is Message.DismissNotification -> listener?.dismiss(message.key)
             is Message.InvokeAction -> listener?.invokeAction(message.key, message.actionIndex)
-            is Message.SendReply -> listener?.reply(message.key, message.text)
+            is Message.SendReply -> if (message.key.startsWith(Message.SMS_KEY_PREFIX)) {
+                phoneBook?.sendSms(message.key, message.key.removePrefix(Message.SMS_KEY_PREFIX), message.text)
+                    ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "SMS unavailable"))
+            } else listener?.reply(message.key, message.text)
             is Message.StartVoiceReply -> voice?.start(message.key)
                 ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "Voice reply unavailable"))
             is Message.CancelVoiceReply -> voice?.cancel()
@@ -140,7 +170,7 @@ object PhoneHub {
             is Message.PlaceCall -> phoneBook?.placeCall(message.number)
             is Message.PlayCue -> cues?.play(message.cue, message.side)
             is Message.Speak -> speaker?.speak(message.text, message.language, message.interrupt) { cues?.play(message.cue, message.side) }
-            else -> Unit
+            else -> GroupHub.handle(message) // group messages; GroupHub ignores anything else
         }
     }
 
