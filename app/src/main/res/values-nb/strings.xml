@@ -242,6 +242,7 @@
     <string name="reply_to">Svar til %1$s</string>
     <string name="sms">SMS</string>
     <string name="sms_to">SMS til %1$s</string>
+    <string name="search_by_voice">Si stedet</string>
     <string name="speak_now">Snakk nå…</string>
     <string name="something_went_wrong">Noe gikk galt</string>
     <string name="sent">Sendt</string>

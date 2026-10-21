@@ -6,6 +6,10 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-21 — Si stedet i «Hvor skal du?»
+
+- [ ] Med Pixel koblet til X7: åpne «Hvor skal du?», trykk mikrofonen til høyre i feltet og si et sted i hjelmen (f.eks. «Geiranger»). Feltet fylles mens du snakker, og søket viser stedet. Trykk mikrofonen igjen midt i for å stoppe.
+
 ## 2026-10-21 — Ring eller SMS fra Telefon
 
 Companion og Curveon («Denne enheten») ber nå om lov til å sende SMS: godta den på Pixel, i companion og i Telefon-innstillingene.

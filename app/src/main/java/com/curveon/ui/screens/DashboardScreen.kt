@@ -76,6 +76,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val albumArt by phone.albumArt.collectAsStateWithLifecycle()
     val notifications by phone.notifications.collectAsStateWithLifecycle()
     val voiceReply by phone.voiceReply.collectAsStateWithLifecycle()
+    val voiceSearch by phone.voiceSearch.collectAsStateWithLifecycle()
     val phoneState by phone.connectionState.collectAsStateWithLifecycle()
     val phoneName by phone.connectedDeviceName.collectAsStateWithLifecycle()
     val mediaApps by phone.mediaApps.collectAsStateWithLifecycle()
@@ -924,6 +925,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         searchPurpose?.let { purpose -> key(purpose) {
             DestinationSearchDialog(
                 searchStatus = remember { viewModel.searchStatus() },
+                voice = voiceSearch,
+                onVoice = if (phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO) ({ phone.startVoiceSearch() }) else null,
+                onVoiceCancel = phone::cancelVoiceSearch,
                 onSearch = { viewModel.searchPlaces(it) },
                 onPick = { r ->
                     if (purpose == SearchPurpose.START && r.kind == KIND_HERE) {

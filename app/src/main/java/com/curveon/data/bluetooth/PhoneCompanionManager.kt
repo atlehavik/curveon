@@ -155,6 +155,10 @@ class PhoneCompanionManager(
     private val _voiceReply = MutableStateFlow<VoiceReply?>(null)
     val voiceReply: StateFlow<VoiceReply?> = _voiceReply.asStateFlow()
 
+    /** A place name being spoken into "Where to?" (recorded on the phone like a reply); its text is the name heard. */
+    private val _voiceSearch = MutableStateFlow<VoiceReply?>(null)
+    val voiceSearch: StateFlow<VoiceReply?> = _voiceSearch.asStateFlow()
+
     /** The phone book; null until the phone has sent it. Kept while the phone is away. */
     private val _contacts = MutableStateFlow<List<Message.Contact>?>(null)
     val contacts: StateFlow<List<Message.Contact>?> = _contacts.asStateFlow()
@@ -513,7 +517,9 @@ class PhoneCompanionManager(
                 hidden.remove(msg.key)
                 _notifications.value = _notifications.value.filterNot { it.id == msg.key }
             }
-            is Message.VoiceReplyState -> {
+            is Message.VoiceReplyState -> if (msg.key == VOICE_SEARCH_KEY) {
+                _voiceSearch.value?.let { _voiceSearch.value = it.copy(state = msg.state, text = msg.text.ifEmpty { it.text }) }
+            } else {
                 val current = _voiceReply.value
                 if (current?.notificationKey == msg.key) {
                     _voiceReply.value = current.copy(state = msg.state, text = msg.text.ifEmpty { current.text })
@@ -716,6 +722,20 @@ class PhoneCompanionManager(
         send(Message.StartVoiceReply(id))
     }
 
+    /** Listen for a place name for the search. Returns false when there is no phone to listen with. */
+    fun startVoiceSearch(): Boolean {
+        val state = _connectionState.value
+        if (state != CompanionConnectionState.CONNECTED && state != CompanionConnectionState.DEMO) return false
+        _voiceSearch.value = VoiceReply(VOICE_SEARCH_KEY, "", Message.VoiceState.LISTENING)
+        send(Message.StartVoiceReply(VOICE_SEARCH_KEY))
+        return true
+    }
+
+    fun cancelVoiceSearch() {
+        if (_voiceSearch.value?.state.let { it == Message.VoiceState.LISTENING || it == Message.VoiceState.PARTIAL }) send(Message.CancelVoiceReply(VOICE_SEARCH_KEY))
+        _voiceSearch.value = null
+    }
+
     /** A new SMS to [number], spoken like a reply. Returns false when there is no phone to send it with. */
     fun startSms(number: String, name: String): Boolean {
         val state = _connectionState.value
@@ -794,7 +814,12 @@ class PhoneCompanionManager(
             is Message.MediaCommand -> if (message.command != Message.MediaAction.PLAY_PAUSE) {
                 _currentTrack.value = _currentTrack.value?.copy(currentPositionSeconds = 0)
             }
-            is Message.StartVoiceReply -> scope.launch {
+            is Message.StartVoiceReply -> if (message.key == VOICE_SEARCH_KEY) scope.launch {
+                delay(1200)
+                _voiceSearch.value = _voiceSearch.value?.copy(state = Message.VoiceState.PARTIAL, text = "Geir")
+                delay(1200)
+                _voiceSearch.value = _voiceSearch.value?.copy(state = Message.VoiceState.RESULT, text = "Geiranger")
+            } else scope.launch {
                 delay(1500)
                 _voiceReply.value = _voiceReply.value?.copy(state = Message.VoiceState.PARTIAL, text = "Ja det passer")
                 delay(1500)
@@ -855,6 +880,9 @@ class PhoneCompanionManager(
             "com.google.android.apps.podcasts" to "Podcasts", "no.nrk.mobil.radio" to "NRK Radio",
             "com.spotify.music" to "Spotify", "com.google.android.apps.youtube.music" to "YouTube Music"
         ).map { (pkg, name) -> MediaApp(pkg, name, false, null, running = false) }
+
+        /** The voice reply key of a spoken search (see [voiceSearch]). */
+        private const val VOICE_SEARCH_KEY = "search"
 
         private val DEMO_CONTACTS = listOf(
             "Anne Lise Berg" to false, "Bjørn Dahl" to true, "Eirik Solberg" to false, "Ingrid Moe" to true,
