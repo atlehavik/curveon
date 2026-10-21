@@ -699,6 +699,7 @@
     <string name="pick_shaping_point">Hjelpepunkt</string>
     <string name="pick_along_the_way">På veien</string>
     <string name="pick_new_end">Nytt mål</string>
+    <string name="pick_as_stop">Stopp</string>
     <string name="back_to_search">Tilbake til søket</string>
     <string name="edit_on_map">Endre i kartet</string>
     <string name="edit_route_mark">Marker delen som skal endres</string>

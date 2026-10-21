@@ -514,6 +514,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onMark = { marking = !marking },
                 locked = routeLocked.takeIf { planGoal != null },
                 onLock = { routeLocked = !routeLocked },
+                onConfirmShapingPoint = stopTarget?.takeIf { pickPurpose == SearchPurpose.STOP }?.let { t -> {
+                    picked?.let { (p, n) ->
+                        if (n != null) {
+                            when (t) {
+                                is StopTarget.Before -> viewModel.insertPreviewStop(t.index, p, n, via = true)
+                                is StopTarget.Instead -> viewModel.replacePreviewStop(t.index, p, n, via = true)
+                            }
+                            endMapPick()
+                        }
+                    }
+                } },
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
             )
             // How it works, the first times: over the bar, until "Don't show again".

@@ -617,7 +617,9 @@ fun MapPickBar(
     onMark: () -> Unit = {},
     /** The route locked against dragging (panning only); null = no trip to lock yet. */
     locked: Boolean? = null,
-    onLock: () -> Unit = {}
+    onLock: () -> Unit = {},
+    /** A point put instead of or before another one: the picked place may also go in as a via point, not only a stop. */
+    onConfirmShapingPoint: (() -> Unit)? = null
 ) {
     // Grows out of the shrinking dialog (bottom centre).
     val grow = remember { androidx.compose.animation.core.Animatable(0f) }
@@ -693,6 +695,23 @@ fun MapPickBar(
             }
             Box(Modifier.testTag("map_pick_done")) {
                 RoundButton(Icons.Default.Check, stringResource(R.string.done), 56.dp, ElectricCyan, OnCyanDark, onCancel)
+            }
+        } else if (picked != null && onConfirmShapingPoint != null) {
+            // Two rows so it fits a phone: the place with ✕ above, via point or stop below.
+            Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(picked, color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
+                    Box(Modifier.testTag("map_pick_cancel")) {
+                        RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 40.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    PillButton(Icons.Default.RadioButtonUnchecked, stringResource(R.string.pick_shaping_point), Color.White, Color.Black,
+                        Modifier.testTag("map_pick_confirm_via"), onConfirmShapingPoint)
+                    PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.pick_as_stop), NeonAmber, Color.Black,
+                        Modifier.testTag("map_pick_confirm"), onConfirm)
+                }
             }
         } else {
             Text(

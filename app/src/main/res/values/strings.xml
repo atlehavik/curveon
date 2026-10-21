@@ -701,6 +701,7 @@
     <string name="pick_shaping_point">Route point</string>
     <string name="pick_along_the_way">On the way</string>
     <string name="pick_new_end">New end</string>
+    <string name="pick_as_stop">Stop</string>
     <string name="back_to_search">Back to search</string>
     <string name="edit_on_map">Edit on map</string>
     <string name="edit_route_mark">Mark the part to change</string>
