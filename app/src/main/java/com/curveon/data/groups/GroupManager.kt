@@ -165,9 +165,9 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     // ---- the rider's commands ----
 
     fun requestGroups() = send(Message.RequestGroups)
-    fun setSettings(relayHost: String, dataSaver: Boolean) {
-        _settings.value = Message.GroupSettings(relayHost, dataSaver)
-        send(Message.GroupSettings(relayHost, dataSaver))
+    fun setDataSaver(on: Boolean) {
+        _settings.value = Message.GroupSettings(on)
+        send(Message.GroupSettings(on))
     }
     fun create(name: String?) = send(Message.GroupCreate(name))
     fun join(invite: String) = send(Message.GroupJoin(invite))

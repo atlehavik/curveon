@@ -82,7 +82,7 @@ private fun MeTab(manager: GroupManager) {
             ProfileEditor(me, alwaysOpen = true) { nick, colour, icon, picture -> manager.setProfile(nick, colour, icon, picture) }
         }
         MyDevicesSection(manager)
-        settings?.let { s -> GroupSettingsSection(s) { relay, saver -> manager.setSettings(relay, saver) } }
+        settings?.let { s -> GroupSettingsSection(s, manager::setDataSaver) }
     }
 }
 

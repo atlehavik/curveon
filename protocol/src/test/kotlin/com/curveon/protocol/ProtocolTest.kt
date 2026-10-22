@@ -102,8 +102,8 @@ class ProtocolTest {
         Message.GroupInviteOffer("o2", "Ola", null, null, 0),
         Message.GroupTrip("0123", "t1", 4, "r1", "Kari", "Dagstur", """{"stops":[]}""", false),
         Message.GroupTrip("0123", "t1", 5, "r2", null, "Dagstur", "{}", true),
-        Message.GroupSettings("relay.example.org", true),
-        Message.GroupSettings("", false),
+        Message.GroupSettings(true),
+        Message.GroupSettings(false),
         Message.GroupMembers("0123", listOf(
             Message.GroupMemberInfo("r1", "Ola", -1, "helmet", null),
             Message.GroupMemberInfo("r2", "Kari", 5, null, "/9j/"),

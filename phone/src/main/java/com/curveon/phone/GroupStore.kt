@@ -6,14 +6,20 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import com.curveon.groups.GroupState
 import com.curveon.protocol.Message
+import org.json.JSONObject
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-/** The relay Curveon runs, used unless the rider sets another one under Advanced. */
-const val DEFAULT_RELAY_HOST = "relay.curveon.no"
+/** The relay Curveon runs. Every group and friend uses it; there is nothing to set up. */
+const val RELAY_HOST = "relay.curveon.no"
+
+/** [state] on Curveon's relay: a group saved or invited with another address (a test relay, before it was fixed) is moved there. */
+fun onCurveonRelay(state: GroupState): GroupState =
+    if (state.relayHost == RELAY_HOST) state
+    else GroupState.fromJson(JSONObject(state.toJson()).put("relay", RELAY_HOST).toString()) ?: state
 
 /**
  * What the phone remembers about group rides. The groups (keys and the rider's identity in each) are
@@ -24,9 +30,12 @@ const val DEFAULT_RELAY_HOST = "relay.curveon.no"
 class GroupStore(context: Context) {
     private val prefs = context.getSharedPreferences("groups", Context.MODE_PRIVATE)
 
-    fun loadGroups(): List<GroupState> = prefs.all.keys.filter { it.startsWith(GROUP) }.mapNotNull { key ->
-        decrypt(prefs.getString(key, null))?.let { GroupState.fromJson(it) }
-            ?: run { prefs.edit().remove(key).apply(); null }
+    fun loadGroups(): List<GroupState> {
+        prefs.edit().remove(RELAY).apply() // the old "relay address" setting
+        return prefs.all.keys.filter { it.startsWith(GROUP) }.mapNotNull { key ->
+            decrypt(prefs.getString(key, null))?.let { GroupState.fromJson(it) }?.let { st -> onCurveonRelay(st).also { if (it !== st) save(it) } }
+                ?: run { prefs.edit().remove(key).apply(); null }
+        }
     }
 
     fun save(state: GroupState) {
@@ -48,14 +57,6 @@ class GroupStore(context: Context) {
     var sharing: Boolean
         get() = prefs.getBoolean(SHARING, true)
         set(v) = prefs.edit().putBoolean(SHARING, v).apply()
-
-    /** A relay the rider chose themselves (someone running their own); empty to use [DEFAULT_RELAY_HOST]. */
-    var customRelay: String
-        get() = prefs.getString(RELAY, "").orEmpty()
-        set(v) = prefs.edit().putString(RELAY, v.trim()).apply()
-
-    /** Host of the relay new groups are made on: the rider's own if set, else Curveon's (invites carry their own). */
-    val relayHost: String get() = customRelay.ifBlank { DEFAULT_RELAY_HOST }
 
     /** Invites from friends that have been answered (or are out of date): each is shown once, although the relay keeps them for a week. */
     fun isOfferHandled(id: String) = id in handledOffers()

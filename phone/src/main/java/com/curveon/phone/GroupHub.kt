@@ -175,9 +175,7 @@ object GroupHub {
         when (m) {
             is Message.RequestGroups -> snapshot().forEach(::send)
             is Message.GroupCreate -> {
-                val relay = store.relayHost
-                if (relay.isBlank()) return error(Message.GroupErrorCode.NO_RELAY)
-                add(GroupState.create(relay, m.name?.takeIf { it.isNotBlank() }))
+                add(GroupState.create(RELAY_HOST, m.name?.takeIf { it.isNotBlank() }))
             }
             is Message.GroupJoin -> {
                 val invite = Invite.parse(m.invite) ?: return error(Message.GroupErrorCode.INVALID_INVITE)
@@ -185,7 +183,7 @@ object GroupHub {
                 if (invite.kind == GroupKind.SELF) return joinSelf(invite)
                 val id = invite.groupId.joinToString("") { "%02x".format(it) }
                 if (id in groups) return error(Message.GroupErrorCode.ALREADY_MEMBER).also { if (groups[id]?.kind == GroupKind.RIDE) select(id) }
-                GroupState.join(invite).let { if (it.kind == GroupKind.FRIEND) addFriend(it) else add(it) }
+                onCurveonRelay(GroupState.join(invite)).let { if (it.kind == GroupKind.FRIEND) addFriend(it) else add(it) }
             }
             is Message.GroupLeave -> {
                 val state = groups[m.groupId] ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
@@ -240,7 +238,6 @@ object GroupHub {
                 send(Message.GroupDeviceLink(m.groupId, deviceLink(m.groupId) ?: return))
             }
             is Message.GroupSettings -> {
-                store.customRelay = m.relayHost
                 store.dataSaver = m.dataSaver
                 sharer.dataSaver = m.dataSaver
                 send(settingsMessage())
@@ -310,18 +307,10 @@ object GroupHub {
         sos = SosTracker(myIdOf(state))
         val c = GroupClient(
             state, transports, { e -> exec.execute { onEvent(state, e) } }, { s -> exec.execute { stateSaved(s) } },
-            scheme = scheme(state.relayHost)
         )
         c.setProfile(helloFor(state))
         client = c
         c.start()
-    }
-
-    /** TLS always, except in a debuggable build talking to this PC (adb reverse, or the emulator's host address). */
-    private fun scheme(host: String): String {
-        val debuggable = (context?.applicationInfo?.flags ?: 0) and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
-        val local = host.startsWith("localhost") || host.startsWith("127.") || host.startsWith("10.0.2.2") || host.startsWith("192.168.")
-        return if (debuggable && local) "ws" else "wss"
     }
 
     /** Stop talking to the relay and forget what was seen in this group (it is replayed on the next connect). */
@@ -371,7 +360,6 @@ object GroupHub {
         if (c == null) {
             c = GroupClient(
                 state, transports, { e -> exec.execute { onFriendEvent(state, e) } }, { s -> exec.execute { stateSaved(s) } },
-                scheme = scheme(state.relayHost)
             )
             c.setProfile(helloFor(state))
             friendClients[id] = c
@@ -463,9 +451,8 @@ object GroupHub {
     /** A new private channel for one friend to join (the code and the link). Kept open while the code is on show. */
     private fun makeFriendInvite(): Pair<String, String>? {
         val store = store ?: return null
-        if (store.relayHost.isBlank()) { error(Message.GroupErrorCode.NO_RELAY); return null }
         val state = friendStates().firstOrNull { it.peer == null && it.isAdmin }
-            ?: GroupState.create(store.relayHost, null, GroupKind.FRIEND).also { groups[it.groupIdHex] = it; store.save(it) }
+            ?: GroupState.create(RELAY_HOST, null, GroupKind.FRIEND).also { groups[it.groupIdHex] = it; store.save(it) }
         touchFriend(state.groupIdHex, 15 * 60_000L)
         return state.groupIdHex to state.invite(System.currentTimeMillis() / 1000 + DEFAULT_INVITE_DAYS * 86_400L).toUri()
     }
@@ -659,7 +646,7 @@ object GroupHub {
     /** A link the rider's other device scans; the channel between the two is made the first time. */
     private fun makeSelfLink() {
         val store = store ?: return
-        val state = selfState() ?: GroupState.create(store.relayHost, null, GroupKind.SELF).also { groups[it.groupIdHex] = it; store.save(it) }
+        val state = selfState() ?: GroupState.create(RELAY_HOST, null, GroupKind.SELF).also { groups[it.groupIdHex] = it; store.save(it) }
         touchFriend(state.groupIdHex, 15 * 60_000L) // open while the code is on show, to hear the other device say hello
         send(Message.SelfLink(state.invite(System.currentTimeMillis() / 1000 + DEVICE_LINK_MINUTES * 60L).toUri()))
         send(selfStatus())
@@ -667,7 +654,7 @@ object GroupHub {
 
     private fun joinSelf(invite: Invite) {
         selfState()?.let { old -> stopFriend(old.groupIdHex); groups.remove(old.groupIdHex); store?.delete(old.groupIdHex) }
-        val state = GroupState.join(invite)
+        val state = onCurveonRelay(GroupState.join(invite))
         groups[state.groupIdHex] = state
         store?.save(state)
         syncSeen = SyncDoc()
@@ -773,7 +760,7 @@ object GroupHub {
     /** The rider's own name, colour and picture (what is set also when there is no group). */
     private fun profileMessage() = store?.profile ?: Message.GroupProfile("Rider", 0xFF00E5FF.toInt(), null, null)
 
-    private fun settingsMessage() = Message.GroupSettings(store?.customRelay.orEmpty(), store?.dataSaver ?: false)
+    private fun settingsMessage() = Message.GroupSettings(store?.dataSaver ?: false)
 
     private fun snapshot(): List<Message> = buildList {
         add(settingsMessage())

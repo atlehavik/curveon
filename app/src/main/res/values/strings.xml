@@ -971,9 +971,6 @@
     <string name="group_invite">Invite riders</string>
     <string name="group_scan">Scan a QR code</string>
     <string name="group_settings">Settings</string>
-    <string name="group_relay">Relay address</string>
-    <string name="group_relay_hint">Only if you run a relay server of your own. Leave it empty to use the standard one. Invites carry their own address.</string>
-    <string name="group_advanced">Advanced</string>
     <string name="group_data_saver">Data saver</string>
     <string name="group_data_saver_hint">Shares your position every 15 seconds instead of every 5.</string>
     <string name="group_share_link">Share link</string>
@@ -1007,7 +1004,7 @@
     <string name="group_error_expired_invite">That invite has expired. Ask for a new one.</string>
     <string name="group_error_not_admin">Only the group\'s admin can remove riders.</string>
     <string name="group_error_already_member">You are already in that group.</string>
-    <string name="group_error_no_relay">Set a relay address under Friends, Me first.</string>
+    <string name="group_error_no_relay">Update Curveon and Curveon Companion to the newest version.</string>
     <string name="group_error_other">Something went wrong with the group.</string>
     <string name="sos_hold">Hold for SOS</string>
     <string name="sos_hold_hint">Hold for 3 seconds. Alerts everyone in the group with your position. This is not an emergency service: call 112 yourself if you need to.</string>

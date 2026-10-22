@@ -335,12 +335,12 @@ sealed interface Message {
     }
 
     /**
-     * What the phone side is set up with: a relay of the rider's own ([relayHost], empty to use the standard one) and whether
-     * to share the position less often ([dataSaver]). The tablet sends it to change them, and the phone sends it back
-     * (also when the tablet connects), so the screen shows what is really set. An invite carries its own relay.
+     * What the phone side is set up with: whether to share the position less often ([dataSaver]). The tablet sends it
+     * to change it, and the phone sends it back (also when the tablet connects), so the screen shows what is really set.
+     * Older versions also sent a `relay` address of the rider's own; it is ignored, as every group uses Curveon's relay.
      */
-    data class GroupSettings(val relayHost: String, val dataSaver: Boolean) : Message {
-        override fun toJson() = obj("group_settings").put("relay", relayHost).put("saver", dataSaver)
+    data class GroupSettings(val dataSaver: Boolean) : Message {
+        override fun toJson() = obj("group_settings").put("saver", dataSaver)
     }
 
     /** The rider has two devices in the group and chose this one to send their position; the other one is told to stop. */
@@ -568,7 +568,7 @@ sealed interface Message {
         override fun toJson() = obj("group_error").put("code", code.name)
     }
 
-    /** [NO_RELAY]: no relay address to make a group on (not seen unless the standard one is blanked out). [NOT_LINKED]: the companion has no tablet to hand this to. */
+    /** [NO_RELAY]: only from older versions, which had a relay address to set. [NOT_LINKED]: the companion has no tablet to hand this to. */
     enum class GroupErrorCode { INVALID_INVITE, EXPIRED_INVITE, NOT_ADMIN, NO_SUCH_GROUP, ALREADY_MEMBER, NO_RELAY, NOT_LINKED }
 
     companion object {
@@ -688,7 +688,7 @@ sealed interface Message {
                 o.optString("name"), o.getString("doc"), o.optBoolean("mine")
             )
             "group_use_device" -> GroupUseThisDevice
-            "group_settings" -> GroupSettings(o.optString("relay"), o.optBoolean("saver"))
+            "group_settings" -> GroupSettings(o.optBoolean("saver"))
             "group_remove" -> GroupRemoveRider(o.getString("id"), o.getString("rider"))
             "request_device_link" -> RequestDeviceLink(o.getString("id"))
             "group_device_link" -> GroupDeviceLink(o.getString("id"), o.getString("uri"))

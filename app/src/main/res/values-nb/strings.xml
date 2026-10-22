@@ -969,9 +969,6 @@
     <string name="group_invite">Inviter ryttere</string>
     <string name="group_scan">Skann QR-kode</string>
     <string name="group_settings">Innstillinger</string>
-    <string name="group_relay">Reléadresse</string>
-    <string name="group_relay_hint">Bare hvis du driver en egen reléserver. La feltet stå tomt for å bruke Curveons. Invitasjoner har sin egen adresse.</string>
-    <string name="group_advanced">Avansert</string>
     <string name="group_data_saver">Datasparing</string>
     <string name="group_data_saver_hint">Deler posisjonen hvert 15. sekund i stedet for hvert 5.</string>
     <string name="group_share_link">Del lenke</string>
@@ -1005,7 +1002,7 @@
     <string name="group_error_expired_invite">Invitasjonen har gått ut. Be om en ny.</string>
     <string name="group_error_not_admin">Bare administratoren kan fjerne ryttere.</string>
     <string name="group_error_already_member">Du er allerede med i den gruppa.</string>
-    <string name="group_error_no_relay">Legg inn en reléadresse under Venner, Meg først.</string>
+    <string name="group_error_no_relay">Oppdater Curveon og Curveon Companion til nyeste versjon.</string>
     <string name="group_error_other">Noe gikk galt med gruppa.</string>
     <string name="sos_hold">Hold inne for SOS</string>
     <string name="sos_hold_hint">Hold i 3 sekunder. Varsler alle i gruppa med posisjonen din. Dette er ikke en nødtjeneste: ring 112 selv om du trenger det.</string>

@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Grupper og venner bruker alltid relay.curveon.no (1.2.2)
+
+Serveren er oppe (`https://relay.curveon.no/health` svarer `ok`), og innstillingen «Reléadresse» under Avansert er borte.
+
+- [ ] **X7 og Pixel:** Venner → Meg: under Innstillinger står bare Datasparing, ingen «Avansert».
+- [ ] **Start en gruppe på X7** og bli med fra Pixel (QR eller lenke): begge sier «tilkoblet», og posisjonene vises hos den andre.
+- [ ] **Venner og grupper fra testing mot PC-en** (localhost:8787): de flyttes selv til relay.curveon.no ved oppstart. En venn på begge enhetene skal komme tilbake som tilkoblet når begge har den nye versjonen.
+- [ ] **Invitasjonslenken** åpnet i nettleseren på en telefon uten Curveon: siden på `https://relay.curveon.no/join` vises.
+
 ## 2026-10-22 — Send tur fra telefonen til nettbrettet, og «si fra når noe mangler» (1.2.2)
 
 Telefonsiden er prøvd i emulatoren (knappene, «venter på nettbrettet», «Companion deler ikke», «Åpne Companion»);
@@ -115,7 +124,7 @@ The companion no longer keeps friends or groups of its own; it shows how the tab
 code and hands over what it scans. The tablet uses its own internet if it has some, else the phone's through Bluetooth.
 
 - [ ] **X7 with the Pixel linked, X7 has no internet** (wifi off, no hotspot): Friends → My friends → Show my code: the code comes up within a second or two (made on the X7, nothing sent to the phone).
-- [ ] **Same, start a group** (needs the relay: `relay.curveon.no` once the VPS is up, or a debug build and `adb reverse tcp:8787 tcp:8787` on the Pixel with the relay on this PC). The group should say "connected" through the phone. Check `adb -s <X7> logcat -s Curveon GroupHub`, and that the phone's data use is small.
+- [ ] **Same, start a group** (uses `relay.curveon.no`). The group should say "connected" through the phone. Check `adb -s <X7> logcat -s Curveon GroupHub`, and that the phone's data use is small.
 - [ ] **Turn wifi on at the X7 while a group is running:** the group moves to the X7's own internet by itself (a short "offline" at most). Turn wifi off again: back through the phone.
 - [ ] **Pixel companion → Friends → Show my code / Share link / Scan:** the code is the X7's (a friend who scans it shows up in the X7's friend list, not on the phone). With the X7 not linked or switched off you get "Open Curveon on your tablet or this phone first".
 - [ ] **Companion's Group ride card** shows the X7's active group and "connected" / "offline" like the X7 does. It clears when the X7 disconnects.
@@ -152,7 +161,7 @@ Set up a test group without a second rider (the relay and the simulated riders l
 link (`curveon://join#...`) and keeps three riders circling the point. `adb -s <phone> reverse tcp:8787 tcp:8787`, then
 open the link on the phone: `adb -s <phone> shell "am start -a android.intent.action.VIEW -d '<link>'"`.
 
-- [ ] **Pixel + X7 together.** Install `:companion:installDebug` on the Pixel and keep the X7 on the build with groups. Everything about groups (start a group, name and picture, invite, relay address, data saver) is done in Curveon on the X7; the companion only shows the group's status, scans a QR code and opens invite links. On the X7: Group → Settings → relay address; start a group. On the Pixel, scan its QR code (companion: Group ride → Scan a QR code) or open the link: the X7 should then show the group's riders, and the X7's position should show up for the others. (Needs a relay: `localhost:8787` through `adb reverse` on the Pixel, debug builds only, or a real `wss` relay.)
+- [ ] **Pixel + X7 together.** Install `:companion:installDebug` on the Pixel and keep the X7 on the build with groups. Everything about groups (start a group, name and picture, invite, data saver) is done in Curveon on the X7; the companion only shows the group's status, scans a QR code and opens invite links. On the X7: start a group. On the Pixel, scan its QR code (companion: Group ride → Scan a QR code) or open the link: the X7 should then show the group's riders, and the X7's position should show up for the others.
 - [ ] **After restarting Curveon** (force-stop, start) with a group active: the group button and the riders are back within about 10 s. Seen once on the X7 (as own phone) that they were *not* back after a restart although the group was stored (`shared_prefs/groups.xml` held it): if it happens again, pull `adb logcat -s GroupHub` and say when.
 - [ ] **SOS sent from the dialog:** the red "SOS sent" card sits at the top of the dialog (it was behind the dialog before this fix) with "Received by n of m" counting up, and "Cancel SOS" works.
 - [ ] **Overlap (CLAUDE.md):** the group button is in the main menu (rail) between Phone and Settings, so the map button column is as before. Check on the Pixel (portrait: six buttons along the bottom; landscape: six down the side with the map toggle still reachable) and the X7 landscape. The dialog opens in the panel area like the Phone one.

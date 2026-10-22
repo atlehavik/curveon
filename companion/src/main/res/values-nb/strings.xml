@@ -24,7 +24,7 @@
     <string name="friends_share_text">Bli vennen min i Curveon: %1$s</string>
     <string name="friends_code_hint">Vennen din skanner denne for å bli vennen din. Den gjelder én venn: vis en ny kode til neste.</string>
     <string name="friends_close">Lukk</string>
-    <string name="group_error_no_relay">Legg inn en reléadresse i Curveon-appen først (Venner, Meg).</string>
+    <string name="group_error_no_relay">Oppdater Curveon og Curveon Companion til nyeste versjon.</string>
     <string name="group_unnamed">Gruppe</string>
     <string name="group_status_line">%1$s · %2$d ryttere · %3$s</string>
     <string name="group_connected">tilkoblet</string>

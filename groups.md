@@ -148,8 +148,8 @@ Caddy in front for TLS; the same host serves the `https` invite landing page.
 - Keep the relay portable: the logic (copy an encrypted message to the others in the group, keep the
   few rare things) is small and the protocol is plain WebSocket; the client does not care where it
   runs. Moving to another host is copying one folder.
-- The app has a **relay address** setting, so anyone can run their own relay and it is an escape
-  hatch if the default one gets too expensive.
+- The app always uses `relay.curveon.no` (decided 2026-10-22: works out of the box, nothing to set).
+  The relay address setting was removed; moving host is a DNS change, not an app change.
 - Cost control either way: cap concurrent groups and connections per IP ("service is full" rather
   than a surprise bill), drop idle connections quickly, sharing stops automatically after a ride,
   and set a spending alert with the host.
@@ -171,8 +171,8 @@ The point is a fixed price with a cap, not pay-per-use, and no dependence on a t
   config and a small install script. Moving to another host (or CPU architecture) is copying that
   folder and running the script, so the relay must not depend on the CPU architecture (interpreted
   runtime, not a compiled binary).
-- The **relay address** setting means anyone can run their own relay (a Raspberry Pi etc.): zero cost
-  for the developer, but not "no setup". Possible for a few, not the main path.
+- Riders running their own relay was dropped with the relay address setting (2026-10-22). The VPS is
+  live at `relay.curveon.no` since 2026-10-22.
 
 Other ideas, not chosen:
 - **Other people's public servers** (Nostr relays, MQTT brokers, ntfy.sh): free and nothing to run,
