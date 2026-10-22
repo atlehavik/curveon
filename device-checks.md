@@ -6,6 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Eventyrruter som ikke kjører samme vei tilbake (1.2.2)
+
+- [ ] Lag den samme eventyrturen som før (Bømlo → østover rundt Sunnhordland, ca. 8 t) noen ganger
+      (ny variant hver gang): turen skal ikke lenger gå opp en vei og ned igjen samme vei, eller ut
+      til en blindvei og snu. Si fra hvis noe ser rart ut (gjerne med skjermbilde).
+- [ ] Det tar ikke merkbart lenger tid før forslaget kommer enn før.
+
 ## 2026-10-22 — Del en rute med venner (1.2.2)
 
 Trenger to telefoner med Curveon som er venner (emulatoren har ingen venner).

@@ -57,6 +57,16 @@ class AdventurePlanner(
         fun cellsFrom(node: Int) = if (node == a) cellList else cellList.asReversed()
         var outside = 0.0
         fun other(n: Int) = if (n == a) b else a
+        /** Metres it rides into a dead end and back on its own (between its anchors), worked out when first asked. */
+        val spur by lazy { Spurs.wastedMeters(route) }
+        /** Its place in the walks' list of roads. */
+        var id = -1
+        /** How many cells it shares with another road (worked out once: the roads stay the same from round to round). */
+        val shares = HashMap<Edge, Int>()
+        val minRow = cells.minOfOrNull { it / ROW } ?: 0L
+        val maxRow = cells.maxOfOrNull { it / ROW } ?: 0L
+        val minCol = cells.minOfOrNull { it % ROW } ?: 0L
+        val maxCol = cells.maxOfOrNull { it % ROW } ?: 0L
     }
 
     /**
@@ -356,11 +366,13 @@ class AdventurePlanner(
         // A level that finds only a handful of walks is not enough to choose from: the next, looser one adds to them
         // (the score still counts riding in and out of dead ends against a walk).
         val all = LinkedHashMap<List<Int>, Walk>()
-        var loosest = 3
-        for (maxShared in listOf(3, 10, Int.MAX_VALUE)) for (edges in listOf(others, allEdges)) {
+        var loosest = STRICTEST
+        allEdges.forEachIndexed { i, e -> e.id = i }
+        val again = sharedRoads(allEdges)
+        for (maxShared in listOf(STRICTEST, 10, Int.MAX_VALUE)) for (edges in listOf(others, allEdges)) {
             // Over the ceiling a little rather than nothing at all (the trip can be too close to the quickest way for more room).
             val found = listOf(CLOSE_WALK, LOOSE_CEILING).firstNotNullOfOrNull { over ->
-                walksOver(nodeCount, edges, targetS, options, random, maxShared, over).takeIf { it.isNotEmpty() }
+                walksOver(nodeCount, edges, again, targetS, options, random, maxShared, over).takeIf { it.isNotEmpty() }
             } ?: continue
             // The quickest way itself is no adventure: it only does when it is what the time asks for.
             if (edges === allEdges && found.none { it.seconds >= targetS * NEAR_FULL }) continue
@@ -375,11 +387,39 @@ class AdventurePlanner(
         return all.values.sortedByDescending { it.score }
     }
 
-    private fun walksOver(nodeCount: Int, edges: List<Edge>, targetS: Double, options: RouteOptions, random: Random, maxShared: Int, over: Double): List<Walk> {
+    /**
+     * For each road (by [Edge.id]): the other roads that share more than a crossing with it, and how many cells.
+     * A walk looks these up instead of comparing cells, so keeping it off roads already ridden costs next to nothing.
+     */
+    private class SharedRoads(val ids: Array<IntArray>, val cells: Array<IntArray>)
+
+    private fun sharedRoads(edges: List<Edge>): SharedRoads {
+        val ids = List(edges.size) { ArrayList<Int>() }
+        val cells = List(edges.size) { ArrayList<Int>() }
+        for (i in edges.indices) for (j in i + 1 until edges.size) {
+            val a = edges[i]; val b = edges[j]
+            if (a.maxRow + 1 < b.minRow || b.maxRow + 1 < a.minRow || a.maxCol + 1 < b.minCol || b.maxCol + 1 < a.minCol) continue
+            val n = a.shares.getOrPut(b) { a.cellList.count { c -> NEIGHBOURS_OF.any { c + it in b.cells } } }
+            if (n <= CROSSING_CELLS) continue
+            ids[i] += j; cells[i] += n; ids[j] += i; cells[j] += n
+        }
+        return SharedRoads(Array(edges.size) { ids[it].toIntArray() }, Array(edges.size) { cells[it].toIntArray() })
+    }
+
+    private fun walksOver(nodeCount: Int, edges: List<Edge>, again: SharedRoads, targetS: Double, options: RouteOptions, random: Random, maxShared: Int, over: Double): List<Walk> {
         // How far the road in and the road out of an anchor ride the same stretch (remembered: the same pairs come up again and again).
         val shared = HashMap<Triple<Int, Edge, Edge>, Int>()
-        fun turnsBack(node: Int, from: Edge, to: Edge) = maxShared != Int.MAX_VALUE &&
-            shared.getOrPut(Triple(node, from, to)) { sharedStart(from.cellsFrom(node), to.cells) } >= maxShared
+        fun sharedAt(node: Int, from: Edge, to: Edge) = shared.getOrPut(Triple(node, from, to)) { sharedStart(from.cellsFrom(node), to.cells) }
+        fun turnsBack(node: Int, from: Edge, to: Edge) = maxShared != Int.MAX_VALUE && sharedAt(node, from, to) >= maxShared
+        // How much of a road an earlier one (not the one just ridden: that is [turnsBack]'s) already rode: riding up
+        // a valley and back down the same road is no better than a dead end, even with anchors in between.
+        val maxAgain = if (maxShared == Int.MAX_VALUE) Int.MAX_VALUE else maxShared * AGAIN_PER_SHARED
+        val ridden = IntArray(again.ids.size)
+        fun ridesAgain(e: Edge) = ridden[e.id] >= maxAgain
+        fun rode(e: Edge) {
+            val ids = again.ids[e.id]; val cells = again.cells[e.id]
+            for (k in ids.indices) if (cells[k] > ridden[ids[k]]) ridden[ids[k]] = cells[k]
+        }
         val adjacent = List(nodeCount) { ArrayList<Edge>() }
         edges.forEach { adjacent[it.a] += it; adjacent[it.b] += it }
         // Quickest time from every node to the destination, and the first road to take, so that a walk
@@ -407,6 +447,7 @@ class AdventurePlanner(
                 val used = HashSet<Edge>()
                 val visited = hashSetOf(0)
                 val steps = ArrayList<Pair<Int, Edge>>()
+                ridden.fill(0)
                 while (steps.size < MAX_STEPS) {
                     val home = toDest[node]
                     if (node == 1 || (home < Double.MAX_VALUE && seconds + home in lo..hi &&
@@ -419,6 +460,8 @@ class AdventurePlanner(
                         while (n != 1) {
                             val e = next[n] ?: return@attempt
                             if (last != null && turnsBack(n, last, e)) return@attempt
+                            if (ridesAgain(e)) return@attempt
+                            last?.let { rode(it) }
                             last = e
                             // Back through an anchor already ridden is how a trip ends up riding in and out of the same road.
                             if (e.other(n) != 1 && e.other(n) in visited) return@attempt
@@ -432,10 +475,15 @@ class AdventurePlanner(
                     }
                     // Each anchor once: coming back to one means riding some road in and out again.
                     val choices = adjacent[node].filter {
-                        it !in used && it.other(node) !in visited && (arrived == null || !turnsBack(node, arrived!!, it)) && toDest[it.other(node)] < Double.MAX_VALUE && seconds + it.seconds + toDest[it.other(node)] <= hi
+                        it !in used && it.other(node) !in visited && (arrived == null || !turnsBack(node, arrived!!, it)) && !ridesAgain(it) && toDest[it.other(node)] < Double.MAX_VALUE && seconds + it.seconds + toDest[it.other(node)] <= hi
                     }
                     if (choices.isEmpty()) return@attempt
-                    val e = choices.random(random)
+                    // Allowed is not wanted: mostly a road on that neither turns back nor rides one already ridden, when there is one.
+                    val clean = if (maxShared <= STRICTEST || random.nextDouble() >= PREFER_CLEAN) choices else choices.filter {
+                        (arrived == null || sharedAt(node, arrived!!, it) < STRICTEST) && ridden[it.id] < STRICTEST * AGAIN_PER_SHARED
+                    }
+                    val e = clean.ifEmpty { choices }.random(random)
+                    arrived?.let { rode(it) }
                     used += e; seconds += e.seconds; steps += node to e; arrived = e
                     node = e.other(node); visited += node
                 }
@@ -455,7 +503,7 @@ class AdventurePlanner(
         val curves = if (options.roadStyle == RoadStyle.FASTEST) 0.0 else weighted { it.route.curviness.toDouble() }
         val unpaved = weighted { it.route.unpavedMeters / it.metres.coerceAtLeast(1.0) }
         // An anchor on a dead end: the way in and the way out ride the same stretch, there and back.
-        var wasted = 0.0
+        var wasted = steps.sumOf { it.second.spur }
         for (i in 1 until steps.size) {
             val (node, out) = steps[i]
             wasted += 2 * CELL_M * sharedStart(steps[i - 1].second.cellsFrom(node), out.cells)
@@ -464,7 +512,7 @@ class AdventurePlanner(
         val onQuickest = steps.sumOf { (_, e) -> e.metres * (e.cellList.count { c -> NEIGHBOURS_OF.any { c + it in quickest } }.toDouble() / e.cellList.size.coerceAtLeast(1)) }
         val freshKm = (metres * (1 - twice) - wasted - onQuickest).coerceAtLeast(0.0) / 1000
         return curves + funBonus(freshKm, curves, options) + surfaceScore(unpaved, options) - overTimePenalty(seconds, targetS) -
-            twice * 300 - weighted { it.outside } * 200 - wasted / metres * WASTE_WEIGHT
+            twice * TWICE_WEIGHT - weighted { it.outside } * 200 - wasted / metres * WASTE_WEIGHT
     }
 
     /** The walk as a trip, each road ridden the way the walk goes. */
@@ -504,7 +552,7 @@ class AdventurePlanner(
     private fun score(route: Route, area: SketchArea, targetS: Double, options: RouteOptions): Double {
         val timePenalty = overTimePenalty(route.durationSeconds, targetS)
         val outsidePenalty = area.outsideShare(route) * 200
-        val twicePenalty = RoundtripPlanner.overlapFraction(route) * 300                  // 20% twice: -60
+        val twicePenalty = RoundtripPlanner.overlapFraction(route) * TWICE_WEIGHT         // 5% twice: -75
         val spur = Spurs.wastedMeters(route)
         val spurPenalty = spur / route.distanceMeters * WASTE_WEIGHT
         val curves = if (options.roadStyle == RoadStyle.FASTEST) 0.0 else route.curviness.toDouble()
@@ -581,6 +629,16 @@ class AdventurePlanner(
         const val FASTEST_FUN_SHARE = 0.3
         /** Score lost per share of the trip that is dead ends ridden in and out. */
         const val WASTE_WEIGHT = 3000.0
+        /** Road ridden a second time (going back the way you came, not a dead end) costs about as much. */
+        const val TWICE_WEIGHT = 1500.0
+        /** Two roads sharing no more cells than this only cross (or meet at an anchor). */
+        const val CROSSING_CELLS = 3
+        /** At each strictness, a road may share this many times as many cells with any earlier one as with the road just ridden. */
+        const val AGAIN_PER_SHARED = 3
+        /** Cells the road in and the road out of an anchor may share at the strictest. */
+        const val STRICTEST = 3
+        /** How often a looser walk still takes a clean road on when there is one. */
+        const val PREFER_CLEAN = 0.85
         const val MAX_STEPS = 40
         const val FINISH_CHANCE = 0.4
         /** A walk this close to the asked time competes on how fun it is. */

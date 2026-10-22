@@ -73,6 +73,20 @@ class AdventurePlannerTest {
     }
 
     @Test
+    fun `a long day around Sunnhordland rides little road twice`() {
+        val engine = engine()!!
+        val olen = LatLon(59.6, 5.81)
+        val area = listOf(LatLon(60.1, 5.1), LatLon(60.1, 6.4), LatLon(59.4, 6.4), LatLon(59.4, 5.1))
+        val t0 = System.nanoTime()
+        for (variant in 0..1) {
+            val r = AdventurePlanner(engine, log = { println(it) }, roads = roads()).plan(home, olen, area, 500, RouteOptions(RoadStyle.CURVY), variant)
+            println("SUNNHORDLAND v%d -> %.0f km %.0f min twice=%.0f%% spur=%.0f m (%.1f s)".format(variant, r.distanceMeters / 1000, r.durationSeconds / 60,
+                RoundtripPlanner.overlapFraction(r) * 100, Spurs.wastedMeters(r), (System.nanoTime() - t0) / 1e9))
+            assertTrue(r.durationSeconds / 60 in 500 * 0.4..500 * 1.15)
+        }
+    }
+
+    @Test
     fun `a narrow coastal area down to Egersund`() {
         val engine = engine()!!
         val egersund = LatLon(58.4514, 5.9996)
