@@ -81,6 +81,11 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   dialog window `adb shell dumpsys window windows` shows its `Requested` size inside its `frame`. Every
   `Dialog` calls `HideSystemBars()` (CockpitDialog.kt), which lets the window cover the camera hole;
   without it Android puts the window below the hole at full height and cuts off its bottom.
+  The Pixel and X7 are not enough on their own: run **`python3 -I tools/ui_matrix.py -s <Curveon_Phone>`**,
+  which dresses the emulator up as eight common screens (360-411 dp phones, 720p budget phone, 21:9,
+  large text, foldable inner screen, 10" tablet, X7; camera holes, notches, 3-button and gesture
+  navigation) in portrait and landscape, and checks automatically that the named buttons are wholly on
+  screen. Look over its contact sheets too. A new screen or dialog gets a scenario in that script.
 - **Every text in two languages.** The rider picks English or Norwegian in Settings → Display. Any
   text the rider can see goes in `res/values/strings.xml` (English) *and* `res/values-nb/strings.xml`
   (Norwegian Bokmål), never as a literal in Kotlin: `stringResource(R.string.x)` in Compose,

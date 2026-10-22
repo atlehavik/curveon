@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -142,15 +143,16 @@ fun PhotoCropDialog(source: Bitmap, colour: Int, onDone: (Bitmap) -> Unit, onCan
         }
     }
     val cancel = @Composable { modifier: Modifier ->
-        OutlinedButton(onClick = onCancel, modifier = modifier.height(52.dp).testTag("photo_crop_cancel")) {
-            Text(stringResource(R.string.cancel), color = Color.White, fontWeight = FontWeight.Bold)
+        OutlinedButton(onClick = onCancel, modifier = modifier.heightIn(min = 52.dp).testTag("photo_crop_cancel")) {
+            Text(stringResource(R.string.cancel), color = Color.White, fontWeight = FontWeight.Bold, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
     val done = @Composable { modifier: Modifier ->
         Button(
             onClick = { if (scale > 0f) onDone(cut()) },
-            colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan), modifier = modifier.height(52.dp).testTag("photo_crop_done")
-        ) { Text(stringResource(R.string.group_photo_use), color = Color(0xFF00363D), fontWeight = FontWeight.Black, maxLines = 1) }
+            colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan), modifier = modifier.heightIn(min = 52.dp).testTag("photo_crop_done")
+            // Large text: the label goes onto two lines and the button grows, rather than being cut short.
+        ) { Text(stringResource(R.string.group_photo_use), color = Color(0xFF00363D), fontWeight = FontWeight.Black, textAlign = androidx.compose.ui.text.style.TextAlign.Center) }
     }
 
     // Drawn edge to edge, under where the hidden bars would be: laid out in the safe area, so the buttons are never off screen.
@@ -164,9 +166,12 @@ fun PhotoCropDialog(source: Bitmap, colour: Int, onDone: (Bitmap) -> Unit, onCan
                 // Lying down: the photo on the left, the words and buttons beside it.
                 photo(Modifier.weight(1f).fillMaxHeight())
                 Column(Modifier.width(300.dp).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    title()
-                    Spacer(Modifier.weight(1f))
-                    styles()
+                    // The buttons stay at the bottom; where the screen is low (or the text large) the words and styles scroll.
+                    Column(Modifier.weight(1f).verticalScroll(androidx.compose.foundation.rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        title()
+                        Spacer(Modifier.height(6.dp))
+                        styles()
+                    }
                     done(Modifier.fillMaxWidth())
                     cancel(Modifier.fillMaxWidth())
                 }

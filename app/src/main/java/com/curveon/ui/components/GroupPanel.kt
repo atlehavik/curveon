@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.curveon.ui.components
 
 import android.content.Context
@@ -342,7 +344,7 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
                 Text(stringResource(R.string.group_photo_preview), color = TextSecondary, fontSize = 13.sp)
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { takePhoto() }, modifier = Modifier.testTag("group_take_photo")) {
                 Icon(Icons.Default.PhotoCamera, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))

@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.curveon.ui.components
 
 import androidx.compose.foundation.background
@@ -123,7 +125,7 @@ fun GpxManagerDialog(
             }
             CockpitSwitch(checked = autoFollow, onCheckedChange = onAutoFollow)
         } }
-        item { Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        item { FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             PoiCategory.entries.forEach { c ->
                 val on = c in poiCategories
                 Row(

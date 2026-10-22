@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.curveon.ui.components
 
 import com.curveon.R
@@ -319,7 +321,8 @@ fun PlaceActionDialog(
                     Text(track, color = TextSecondary, fontSize = 15.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                 }
             }
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Wraps onto a second line rather than running off the edge where a phone is narrow or the text large.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (onAddStop != null) PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black,
                     Modifier.testTag("add_stop_btn"), onAddStop)
                 PillButton(Icons.Default.Flag, stringResource(R.string.go_here), ElectricCyan, OnCyanDark,
@@ -827,7 +830,7 @@ fun SketchBar(
             RoundButton(Icons.Default.Close, stringResource(R.string.cancel), 48.dp, CockpitSurfaceVariant, TextPrimary, onCancel)
         }
     }
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (adventure) AdventureTimeChip(adventureMinutes, onAdventureMinutes) else LoopMaxChip(maxKm, onMaxKm)
         SurfaceChip(surface, onSurface)
         if (surface >= com.curveon.routing.SurfacePreference.GRAVEL) GravelReachChip(gravelReachKm, onGravelReach)
