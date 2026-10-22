@@ -1294,9 +1294,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    /** GPS, with the service that keeps it going behind another app; not while Curveon sleeps. */
+    /**
+     * GPS, with the service that keeps it going behind another app; not while Curveon sleeps, nor while a demo ride
+     * stands in for it (both at once made the rider jump between home and the demo, the trip with them). The demo
+     * starts it again when it ends.
+     */
     fun startGps() {
-        if (gpsJob?.isActive == true || !awake.value) return
+        if (gpsJob?.isActive == true || !awake.value || _isDemoRiding.value) return
         com.curveon.RideService.start(getApplication())
         locationSource.lastKnown()?.let {
             _currentLocation.value = GeoPoint(it.latitude, it.longitude, it.altitudeMeters ?: 0.0)

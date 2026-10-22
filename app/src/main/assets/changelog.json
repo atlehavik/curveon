@@ -104,7 +104,8 @@
       "The roads on the day map can now be grey as well as dark grey: pick the shade under Settings → Display → Roads and see which one you like best on the road",
       "The edge along the yellow main roads is now dark grey instead of pitch black, so it sits more calmly next to the grey roads when you zoom in",
       "Gravel roads shown as dashes now stay dashed however far you zoom in, by night too: before, the road under them filled the gaps, so a gravel road looked like an ordinary white road up close",
-      "Adventure routes ride less of the same road twice: they no longer take you up a valley just to come back down the same way, nor out to the end of a road where you have to turn around, so more of the day goes to new roads"
+      "Adventure routes ride less of the same road twice: they no longer take you up a valley just to come back down the same way, nor out to the end of a road where you have to turn around, so more of the day goes to new roads",
+      "The demo ride no longer gets stuck jumping back and forth between home and the road: turning the screen or popping out to another app during a demo used to wake the real GPS alongside it, so the map and arrival time kept hopping between the two"
     ],
     "nb": [
       "Curveon snakker nå ni nye språk: svensk, dansk, finsk, islandsk, tysk, spansk, fransk, nederlandsk og polsk. Velg ditt under Innstillinger → Skjerm eller første gang du starter Curveon, så følger alle skjermer, kort og talte veibeskrivelser med",
@@ -209,7 +210,8 @@
       "Veiene på dagkartet kan nå være grå i tillegg til mørkegrå: velg nyanse under Innstillinger → Skjerm → Veier, og finn ut hva du liker best på veien",
       "Kanten langs de gule hovedveiene er nå mørkegrå i stedet for kullsvart, så den skiller seg ikke så skarpt fra de grå veiene når du zoomer inn",
       "Grusveier som vises stiplet, forblir nå stiplet uansett hvor langt du zoomer inn, også om natta: før fylte veien under mellomrommene, så grusveien så ut som en vanlig hvit vei på nært hold",
-      "Eventyrruter kjører sjeldnere samme vei to ganger: de sender deg ikke lenger opp en dal bare for å komme ned igjen samme vei, eller ut til enden av en vei der du må snu, så mer av dagen går på nye veier"
+      "Eventyrruter kjører sjeldnere samme vei to ganger: de sender deg ikke lenger opp en dal bare for å komme ned igjen samme vei, eller ut til enden av en vei der du må snu, så mer av dagen går på nye veier",
+      "Demoturen henger seg ikke lenger opp og hopper fram og tilbake mellom hjemme og veien: snudde du skjermen eller var innom en annen app under en demo, våknet den ekte GPS-en ved siden av, og kart og ankomsttid vekslet mellom de to"
     ],
     "sv": [
       "Curveon pratar nu nio språk till: svenska, danska, finska, isländska, tyska, spanska, franska, nederländska och polska. Välj ditt under Inställningar → Skärm eller första gången du startar Curveon, så följer varje skärm, kort och uppläst vägbeskrivning med",
@@ -314,7 +316,8 @@
       "Vägarna på dagkartan kan nu vara grå såväl som mörkgrå: välj nyans under Inställningar → Skärm → Vägar och se vilken du gillar bäst ute på vägen",
       "Kanten längs de gula huvudvägarna är nu mörkgrå i stället för kolsvart, så den ligger lugnare bredvid de grå vägarna när du zoomar in",
       "Grusvägar som visas streckade förblir nu streckade hur långt du än zoomar in, även på natten: förut fyllde vägen under dem i mellanrummen, så en grusväg såg ut som en vanlig vit väg på nära håll",
-      "Äventyrsrutter kör mer sällan samma väg två gånger: de skickar dig inte längre upp i en dal bara för att komma ner samma väg, eller ut till slutet av en väg där du måste vända, så mer av dagen går på nya vägar"
+      "Äventyrsrutter kör mer sällan samma väg två gånger: de skickar dig inte längre upp i en dal bara för att komma ner samma väg, eller ut till slutet av en väg där du måste vända, så mer av dagen går på nya vägar",
+      "Demoturen fastnar inte längre i att hoppa fram och tillbaka mellan hemma och vägen: vände du skärmen eller tittade in i en annan app under en demo vaknade den riktiga GPS:en bredvid, och kartan och ankomsttiden växlade mellan de två"
     ],
     "da": [
       "Curveon taler nu ni sprog mere: svensk, dansk, finsk, islandsk, tysk, spansk, fransk, hollandsk og polsk. Vælg dit under Indstillinger → Skærm eller første gang, du starter Curveon, så følger hver skærm, hvert kort og hver talt rutevejledning med",
@@ -419,7 +422,8 @@
       "Vejene på dagkortet kan nu være grå såvel som mørkegrå: vælg nuancen under Indstillinger → Skærm → Veje, og se, hvilken du bedst kan lide ude på vejen",
       "Kanten langs de gule hovedveje er nu mørkegrå i stedet for kulsort, så den falder mere til ro ved siden af de grå veje, når du zoomer ind",
       "Grusveje vist som streger forbliver nu stiplede, uanset hvor langt du zoomer ind, også om natten: før fyldte vejen under dem hullerne ud, så en grusvej lignede en almindelig hvid vej tæt på",
-      "Eventyrruter kører sjældnere den samme vej to gange: de sender dig ikke længere op ad en dal bare for at komme ned ad samme vej, eller ud til enden af en vej, hvor du må vende om, så mere af dagen går på nye veje"
+      "Eventyrruter kører sjældnere den samme vej to gange: de sender dig ikke længere op ad en dal bare for at komme ned ad samme vej, eller ud til enden af en vej, hvor du må vende om, så mere af dagen går på nye veje",
+      "Demoturen hænger ikke længere fast i at hoppe frem og tilbage mellem hjemme og vejen: vendte du skærmen eller kiggede ind i en anden app under en demo, vågnede den rigtige GPS ved siden af, og kort og ankomsttid skiftede mellem de to"
     ],
     "fi": [
       "Curveon puhuu nyt yhdeksää uutta kieltä: ruotsia, tanskaa, suomea, islantia, saksaa, espanjaa, ranskaa, hollantia ja puolaa. Valitse omasi kohdassa Asetukset → Näyttö tai kun käynnistät Curveonin ensimmäistä kertaa, niin jokainen näkymä, kortti ja puhuttu ajo-ohje seuraa mukana",
@@ -524,7 +528,8 @@
       "Päiväkartan tiet voivat nyt olla harmaita tai tummanharmaita: valitse sävy kohdassa Asetukset → Näyttö → Tiet ja katso, kumpi miellyttää tiellä eniten",
       "Keltaisten päätien reunus on nyt tummanharmaa pikimustan sijaan, joten se sopii rauhallisemmin harmaiden teiden viereen lähennettäessä",
       "Katkoviivoina näkyvät soratiet pysyvät nyt katkoviivoina kuinka paljon tahansa lähennät, myös yöllä: ennen niiden alla oleva tie täytti välit, joten soratie näytti läheltä tavalliselta valkoiselta tieltä",
-      "Seikkailureitit ajavat harvemmin saman tien kahteen kertaan: ne eivät enää vie sinua laaksoon vain palataksesi samaa tietä takaisin tai tien päähän, jossa pitää kääntyä, joten useampi päivän kilometri on uutta tietä"
+      "Seikkailureitit ajavat harvemmin saman tien kahteen kertaan: ne eivät enää vie sinua laaksoon vain palataksesi samaa tietä takaisin tai tien päähän, jossa pitää kääntyä, joten useampi päivän kilometri on uutta tietä",
+      "Demoajo ei enää jää jumiin hyppimään kodin ja tien välillä: jos käänsit näyttöä tai kävit toisessa sovelluksessa demon aikana, oikea GPS heräsi sen rinnalle, ja kartta ja saapumisaika vaihtelivat näiden kahden välillä"
     ],
     "is": [
       "Curveon talar nú níu tungumál í viðbót: sænsku, dönsku, finnsku, íslensku, þýsku, spænsku, frönsku, hollensku og pólsku. Veldu þitt undir Stillingar → Skjár eða í fyrsta sinn sem þú opnar Curveon, og allir skjáir, spjöld og töluð leiðsögn fylgja með",
@@ -629,7 +634,8 @@
       "Vegirnir á dagkortinu geta nú verið gráir jafnt sem dökkgráir: veldu litinn undir Stillingar → Skjár → Vegir og sjáðu hvor þér líkar best á ferðinni",
       "Brúnin meðfram gulu aðalvegunum er nú dökkgrá í stað kolsvartrar, svo hún fer betur við gráu vegina þegar þú þysjar inn",
       "Malarvegir sýndir sem strik haldast nú strikaðir hversu nærri sem þú þysjar, líka á nóttunni: áður fyllti vegurinn undir í eyðurnar, svo malarvegur leit út eins og venjulegur hvítur vegur í návígi",
-      "Ævintýraleiðir aka sjaldnar sama veginn tvisvar: þær senda þig ekki lengur upp dal bara til að koma sömu leið niður aftur, eða út á enda vegar þar sem þú þarft að snúa við, svo meira af deginum fer í nýja vegi"
+      "Ævintýraleiðir aka sjaldnar sama veginn tvisvar: þær senda þig ekki lengur upp dal bara til að koma sömu leið niður aftur, eða út á enda vegar þar sem þú þarft að snúa við, svo meira af deginum fer í nýja vegi",
+      "Prufuferðin festist ekki lengur í því að hoppa fram og til baka milli heimilisins og vegarins: ef þú snerir skjánum eða kíktir í annað forrit í prufuferð vaknaði raunverulega GPS-staðsetningin við hliðina, og kortið og komutíminn skiptust á"
     ],
     "de": [
       "Curveon spricht jetzt neun weitere Sprachen: Schwedisch, Dänisch, Finnisch, Isländisch, Deutsch, Spanisch, Französisch, Niederländisch und Polnisch. Wähl deine unter Einstellungen → Anzeige oder gleich beim ersten Start, und jeder Bildschirm, jede Karte und jede gesprochene Ansage zieht mit",
@@ -734,7 +740,8 @@
       "Die Straßen auf der Tageskarte können jetzt grau oder dunkelgrau sein: Wähl den Ton unter Einstellungen → Anzeige → Straßen und schau, welcher dir unterwegs am besten gefällt",
       "Der Rand entlang der gelben Hauptstraßen ist jetzt dunkelgrau statt pechschwarz, so wirkt er beim Reinzoomen ruhiger neben den grauen Straßen",
       "Als Striche gezeigte Schotterstraßen bleiben jetzt gestrichelt, egal wie weit du hineinzoomst, auch nachts: Früher füllte die Straße darunter die Lücken, und aus der Nähe sah eine Schotterstraße aus wie eine normale weiße Straße",
-      "Abenteuerrouten fahren seltener dieselbe Straße zweimal: Sie schicken dich nicht mehr ein Tal hinauf, nur um denselben Weg wieder herunterzukommen, oder bis ans Ende einer Straße, wo du wenden musst. So bleibt mehr vom Tag für neue Straßen"
+      "Abenteuerrouten fahren seltener dieselbe Straße zweimal: Sie schicken dich nicht mehr ein Tal hinauf, nur um denselben Weg wieder herunterzukommen, oder bis ans Ende einer Straße, wo du wenden musst. So bleibt mehr vom Tag für neue Straßen",
+      "Die Demofahrt hängt nicht mehr fest und springt nicht mehr zwischen Zuhause und der Straße hin und her: Hast du während einer Demo den Bildschirm gedreht oder kurz eine andere App geöffnet, wachte das echte GPS daneben auf, und Karte und Ankunftszeit wechselten ständig"
     ],
     "es": [
       "¡Curveon ya habla nueve idiomas más: sueco, danés, finés, islandés, alemán, español, francés, neerlandés y polaco! Elige el tuyo en Ajustes → Pantalla o la primera vez que abras Curveon, y todas las pantallas, tarjetas e indicaciones habladas te seguirán",
@@ -839,7 +846,8 @@
       "Las carreteras del mapa diurno ahora pueden ser grises además de gris oscuro: elige el tono en Ajustes → Pantalla → Carreteras y mira cuál te gusta más en la carretera",
       "El borde de las carreteras principales amarillas es ahora gris oscuro en lugar de negro puro, así queda más tranquilo junto a las carreteras grises al acercar",
       "Los caminos de tierra mostrados como rayas siguen ahora en discontinuo por mucho que acerques, también de noche: antes, la carretera de debajo rellenaba los huecos, y de cerca un camino de tierra parecía una carretera blanca normal",
-      "Las rutas de aventura repiten menos la misma carretera: ya no te suben por un valle solo para bajar por el mismo camino, ni te llevan al final de una carretera donde tienes que dar la vuelta, así que más parte del día es carretera nueva"
+      "Las rutas de aventura repiten menos la misma carretera: ya no te suben por un valle solo para bajar por el mismo camino, ni te llevan al final de una carretera donde tienes que dar la vuelta, así que más parte del día es carretera nueva",
+      "La ruta de demostración ya no se queda atascada saltando entre casa y la carretera: si girabas la pantalla o pasabas a otra app durante una demo, el GPS real se despertaba a la vez, y el mapa y la hora de llegada iban y venían entre los dos"
     ],
     "fr": [
       "Curveon parle désormais neuf langues de plus : suédois, danois, finnois, islandais, allemand, espagnol, français, néerlandais et polonais. Choisis la tienne dans Réglages → Affichage ou au premier lancement de Curveon, et chaque écran, chaque carte et chaque indication vocale suit le mouvement",
@@ -944,7 +952,8 @@
       "Les routes de la carte de jour peuvent maintenant être grises aussi bien que gris foncé : choisis la teinte dans Réglages → Affichage → Routes et vois laquelle te plaît le plus sur la route",
       "Le bord des routes principales jaunes est maintenant gris foncé au lieu de noir profond, il s’accorde donc plus calmement avec les routes grises quand tu zoomes",
       "Les routes en gravier affichées en pointillés le restent maintenant quel que soit le zoom, de nuit aussi : avant, la route en dessous remplissait les trous, donc une route en gravier ressemblait de près à une route blanche ordinaire",
-      "Les itinéraires d'aventure empruntent moins souvent deux fois la même route : ils ne vous font plus remonter une vallée pour redescendre par le même chemin, ni aller au bout d'une route où il faut faire demi-tour. Plus de la journée se passe sur des routes nouvelles"
+      "Les itinéraires d'aventure empruntent moins souvent deux fois la même route : ils ne vous font plus remonter une vallée pour redescendre par le même chemin, ni aller au bout d'une route où il faut faire demi-tour. Plus de la journée se passe sur des routes nouvelles",
+      "La balade de démonstration ne reste plus bloquée à sauter entre la maison et la route : tourner l'écran ou passer dans une autre app pendant une démo réveillait le vrai GPS en parallèle, et la carte comme l'heure d'arrivée alternaient entre les deux"
     ],
     "nl": [
       "Curveon spreekt nu negen talen meer: Zweeds, Deens, Fins, IJslands, Duits, Spaans, Frans, Nederlands en Pools. Kies de jouwe onder Instellingen → Weergave of de eerste keer dat je Curveon start, en elk scherm, elke kaart en elke gesproken aanwijzing doet mee",
@@ -1049,7 +1058,8 @@
       "De wegen op de dagkaart kunnen nu ook grijs zijn in plaats van donkergrijs: kies de tint onder Instellingen → Weergave → Wegen en kijk onderweg welke je het mooist vindt",
       "De rand langs de gele hoofdwegen is nu donkergrijs in plaats van pikzwart, zodat hij rustiger naast de grijze wegen ligt als je inzoomt",
       "Gravelwegen die als streepjes worden getoond blijven nu gestreept hoe ver je ook inzoomt, ook 's nachts: vroeger vulde de weg eronder de gaten op, zodat een gravelweg van dichtbij leek op een gewone witte weg",
-      "Avonturenroutes rijden minder vaak twee keer dezelfde weg: ze sturen je niet meer een dal in om via dezelfde weg terug te komen, of naar het eind van een weg waar je moet keren, zodat meer van je dag op nieuwe wegen gaat"
+      "Avonturenroutes rijden minder vaak twee keer dezelfde weg: ze sturen je niet meer een dal in om via dezelfde weg terug te komen, of naar het eind van een weg waar je moet keren, zodat meer van je dag op nieuwe wegen gaat",
+      "De demorit blijft niet meer hangen in heen en weer springen tussen thuis en de weg: draaide je het scherm of ging je even naar een andere app tijdens een demo, dan werd de echte gps ernaast wakker en wisselden kaart en aankomsttijd steeds tussen de twee"
     ],
     "pl": [
       "Curveon mówi teraz w dziewięciu kolejnych językach: szwedzkim, duńskim, fińskim, islandzkim, niemieckim, hiszpańskim, francuskim, niderlandzkim i polskim. Wybierz swój w Ustawienia → Wyświetlanie albo przy pierwszym uruchomieniu Curveon, a każdy ekran, karta i głosowa wskazówka pójdą za tobą",
@@ -1154,7 +1164,8 @@
       "Drogi na mapie dziennej mogą być teraz szare albo ciemnoszare: wybierz odcień w Ustawienia → Wyświetlanie → Drogi i sprawdź na trasie, który podoba ci się bardziej",
       "Obwódka wzdłuż żółtych dróg głównych jest teraz ciemnoszara zamiast smoliście czarnej, więc przy przybliżeniu spokojniej wygląda obok szarych dróg",
       "Drogi szutrowe pokazane jako kreski zostają teraz przerywane przy każdym przybliżeniu, także nocą: wcześniej droga pod nimi wypełniała przerwy, więc z bliska szutrówka wyglądała jak zwykła biała droga",
-      "Trasy przygodowe rzadziej prowadzą dwa razy tą samą drogą: nie każą już jechać w górę doliny tylko po to, by wrócić tą samą drogą, ani na koniec drogi, gdzie trzeba zawrócić, więc więcej dnia upływa na nowych drogach"
+      "Trasy przygodowe rzadziej prowadzą dwa razy tą samą drogą: nie każą już jechać w górę doliny tylko po to, by wrócić tą samą drogą, ani na koniec drogi, gdzie trzeba zawrócić, więc więcej dnia upływa na nowych drogach",
+      "Przejazd demonstracyjny nie zawiesza się już, skacząc między domem a drogą: obrócenie ekranu lub zajrzenie do innej aplikacji w trakcie demo budziło obok prawdziwy GPS, więc mapa i godzina przyjazdu przeskakiwały między nimi"
     ]
   },
   {
