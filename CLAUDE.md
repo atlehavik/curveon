@@ -85,7 +85,9 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   which dresses the emulator up as eight common screens (360-411 dp phones, 720p budget phone, 21:9,
   large text, foldable inner screen, 10" tablet, X7; camera holes, notches, 3-button and gesture
   navigation) in portrait and landscape, and checks automatically that the named buttons are wholly on
-  screen. Look over its contact sheets too. A new screen or dialog gets a scenario in that script.
+  screen. Look over its contact sheets too. Not for every feature: run it whenever a change could
+  plausibly look wrong on some kind of screen (layout, dialogs, rows of buttons, text that may not fit,
+  anything sized to the screen), and add a scenario for a new screen or dialog when it is run.
 - **Every text in two languages.** The rider picks English or Norwegian in Settings → Display. Any
   text the rider can see goes in `res/values/strings.xml` (English) *and* `res/values-nb/strings.xml`
   (Norwegian Bokmål), never as a literal in Kotlin: `stringResource(R.string.x)` in Compose,

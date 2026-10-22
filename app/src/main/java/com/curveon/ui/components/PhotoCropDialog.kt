@@ -172,8 +172,11 @@ fun PhotoCropDialog(source: Bitmap, colour: Int, onDone: (Bitmap) -> Unit, onCan
                         Spacer(Modifier.height(6.dp))
                         styles()
                     }
-                    done(Modifier.fillMaxWidth())
-                    cancel(Modifier.fillMaxWidth())
+                    // Side by side, so a low screen keeps room for the styles above.
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        cancel(Modifier.weight(1f))
+                        done(Modifier.weight(1f))
+                    }
                 }
             } else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 title()
