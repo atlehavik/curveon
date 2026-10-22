@@ -6,10 +6,21 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Profilbilde: «jobber med det» og krasj ved utklipping (1.2.2)
+
+Emulatoren finner ingen person i bildet (ML Kit mangler GPU der), så effektene kan bare prøves på ekte enhet.
+
+- [ ] **Pixel og X7:** Venner → Meg → Velg fra bilder (eller ta et bilde) av deg selv: en cyan ring går rundt bildet med
+  «Finner deg i bildet …», så kommer stilene. Velg Neon: ringen og «Lager effekten …» vises til effekten er klar, og «Bruk dette bildet»
+  er grå så lenge.
+- [ ] **Ingen krasj:** gjør det to-tre ganger etter hverandre med ulike bilder. Curveon skal ikke lukke seg (før lukket ML Kit seg med en
+  krasj). Ved krasj: `adb pull /sdcard/Android/data/com.curveon.app/files/crashes`.
+
 ## 2026-10-22 — Venn via lenke, og high-five (1.2.2)
 
 Prøvd i emulatoren: «Send lenke» åpner delingsmenyen med `https://relay.curveon.no/join#…`, nettsiden (fra et lokalt relé) viser
-«Åpne i Curveon», og knappen åpner Curveon; high-fiven og at koden forsvinner er prøvd med demo-data. Trenger det nye reléet på VPS-en.
+«Åpne i Curveon», og knappen åpner Curveon; high-fiven og at koden forsvinner er prøvd med demo-data. Det nye reléet er ute på
+relay.curveon.no (`assetlinks.json` godkjent av Googles sjekk).
 
 - [ ] **Lenke mellom Pixel og X7:** på Pixel, Mine venner → Send lenke → send til deg selv (f.eks. Messenger/SMS), åpne den på X7
   (eller send den til en venn). Begge får high-five, og vennen står i lista på begge.
@@ -22,7 +33,7 @@ Prøvd i emulatoren: «Send lenke» åpner delingsmenyen med `https://relay.curv
 ## 2026-10-22 — Flere grupper, og venner som alltid ser hvor du er (1.2.2)
 
 Lista med grupper, bytte av gruppe og vennelista er prøvd i emulatoren (også med demo-venner på kartet). Selve delingen mellom
-to ekte enheter er ikke prøvd. Den trenger det nye reléet på VPS-en (siste posisjon i minnet).
+to ekte enheter er ikke prøvd. Det nye reléet (siste posisjon i minnet) er ute på relay.curveon.no.
 
 - [ ] **To grupper på X7:** Venner → Gruppetur viser begge som kort. Slår du på bryteren på den ene, slås den andre av, og
   kartet viser rytterne i den du slo på. Trykk på et kort: detaljene, «Gruppene dine» tilbake.

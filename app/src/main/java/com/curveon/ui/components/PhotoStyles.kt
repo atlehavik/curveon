@@ -35,8 +35,11 @@ object PhotoStyles {
      * While Google Play services is still fetching the model (the first time) it is asked again for half a minute.
      */
     suspend fun findSubject(photo: Bitmap): Bitmap? = runCatching {
-        val segmenter = SubjectSegmentation.getClient(SubjectSegmenterOptions.Builder().enableForegroundBitmap().build())
-        try {
+        // Never closed: closing it crashed the whole app from ML Kit's own thread (2026-10-22, "Tensor should have 2, 3, or 4
+        // dims" while releasing the model), where nothing here can catch it. One for as long as the app runs is also quicker.
+        val segmenter = segmenter
+        // A phone that hangs on it (no GPU, Play services stuck) gets the plain photo instead of a spinner for ever.
+        kotlinx.coroutines.withTimeoutOrNull(40_000) {
             var found: Result<Bitmap?> = Result.success(null)
             for (attempt in 0 until 10) {
                 found = suspendCancellableCoroutine { cont ->
@@ -49,10 +52,10 @@ object PhotoStyles {
                 kotlinx.coroutines.delay(3_000)
             }
             found.getOrNull()
-        } finally {
-            segmenter.close()
         }
     }.getOrNull()?.takeIf { covers(it) }
+
+    private val segmenter by lazy { SubjectSegmentation.getClient(SubjectSegmenterOptions.Builder().enableForegroundBitmap().build()) }
 
     /** Something worth styling was found: at least a few percent of the photo. */
     private fun covers(subject: Bitmap): Boolean {

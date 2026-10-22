@@ -23,6 +23,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -67,10 +69,15 @@ fun PhotoCropDialog(source: Bitmap, colour: Int, onDone: (Bitmap) -> Unit, onCan
         looking = false
     }
     var style by remember(source) { mutableStateOf(PhotoStyle.PLAIN) }
-    val styled by produceState<Bitmap?>(null, source, subject, style, colour) {
+    // The style made last, with what it was made for: while a new one is being made, the old one is not passed off as it.
+    val made by produceState<Pair<Any, Bitmap?>?>(null, source, subject, style, colour) {
         val cut = subject
-        value = if (cut == null || style == PhotoStyle.PLAIN) null else withContext(Dispatchers.Default) { PhotoStyles.render(source, cut, style, colour) }
+        val key = listOf(style, colour)
+        value = key to (if (cut == null || style == PhotoStyle.PLAIN) null else withContext(Dispatchers.Default) { PhotoStyles.render(source, cut, style, colour) })
     }
+    val rendering = subject != null && style != PhotoStyle.PLAIN && made?.first != listOf(style, colour)
+    val busy = looking || rendering
+    val styled = made?.takeIf { !rendering }?.second
     val shown = styled ?: source
     val image = remember(shown) { shown.asImageBitmap() }
 
@@ -94,6 +101,10 @@ fun PhotoCropDialog(source: Bitmap, colour: Int, onDone: (Bitmap) -> Unit, onCan
     }
 
     LaunchedEffect(box) { if (box != IntSize.Zero && scale == 0f) scale = minScale }
+    val spin by androidx.compose.animation.core.rememberInfiniteTransition(label = "busy").animateFloat(
+        0f, 360f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1100, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "spin"
+    )
 
     val title = @Composable {
         Text(stringResource(R.string.group_photo_crop_title), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
@@ -124,13 +135,25 @@ fun PhotoCropDialog(source: Bitmap, colour: Int, onDone: (Bitmap) -> Unit, onCan
                 val window = Path().apply { addOval(Rect(Offset(cx, cy), diameter / 2)) }
                 clipPath(window, clipOp = ClipOp.Difference) { drawRect(Color(0xCC000000)) }
                 drawCircle(Color.White, radius = diameter / 2, center = Offset(cx, cy), style = Stroke(3.dp.toPx()))
+                // Working on it: a cyan arc runs round the window.
+                if (busy) drawArc(
+                    ElectricCyan, startAngle = spin, sweepAngle = 100f, useCenter = false,
+                    topLeft = Offset(cx - diameter / 2, cy - diameter / 2), size = androidx.compose.ui.geometry.Size(diameter, diameter),
+                    style = Stroke(6.dp.toPx(), cap = StrokeCap.Round)
+                )
             }
+            if (busy) Text(
+                stringResource(if (looking) R.string.group_photo_finding else R.string.group_photo_making),
+                color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.Center).clip(RoundedCornerShape(20.dp)).background(Color(0xCC0B0E14))
+                    .padding(horizontal = 16.dp, vertical = 10.dp).testTag("photo_busy")
+            )
         }
     }
     // The styles show once the rider has been found in the photo; on a phone that can't, there is just the photo.
     val styles = @Composable {
-        if (looking) Text(stringResource(R.string.group_photo_finding), color = Color(0xFF94A3B8), fontSize = 13.sp)
-        else if (subject != null) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // While looking, that is said on the photo itself.
+        if (!looking && subject != null) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             PhotoStyle.entries.forEach { s ->
                 val on = s == style
                 Text(
@@ -149,7 +172,7 @@ fun PhotoCropDialog(source: Bitmap, colour: Int, onDone: (Bitmap) -> Unit, onCan
     }
     val done = @Composable { modifier: Modifier ->
         Button(
-            onClick = { if (scale > 0f) onDone(cut()) },
+            onClick = { if (scale > 0f && !rendering) onDone(cut()) }, enabled = !rendering,
             colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan), modifier = modifier.heightIn(min = 52.dp).testTag("photo_crop_done")
             // Large text: the label goes onto two lines and the button grows, rather than being cut short.
         ) { Text(stringResource(R.string.group_photo_use), color = Color(0xFF00363D), fontWeight = FontWeight.Black, textAlign = androidx.compose.ui.text.style.TextAlign.Center) }

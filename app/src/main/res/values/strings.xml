@@ -982,6 +982,7 @@
     <string name="group_photo_crop_title">Cut your picture</string>
     <string name="group_photo_crop_hint">Drag and zoom so your face is inside the circle.</string>
     <string name="group_photo_finding">Finding you in the picture…</string>
+    <string name="group_photo_making">Making the effect…</string>
     <string name="group_photo_style_plain">Plain</string>
     <string name="group_photo_style_sticker">Sticker</string>
     <string name="group_photo_style_neon">Neon</string>

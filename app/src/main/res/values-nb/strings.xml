@@ -980,6 +980,7 @@
     <string name="group_photo_crop_title">Beskjær bildet</string>
     <string name="group_photo_crop_hint">Dra og zoom så ansiktet ditt er inni sirkelen.</string>
     <string name="group_photo_finding">Finner deg i bildet …</string>
+    <string name="group_photo_making">Lager effekten …</string>
     <string name="group_photo_style_plain">Vanlig</string>
     <string name="group_photo_style_sticker">Klistremerke</string>
     <string name="group_photo_style_neon">Neon</string>
