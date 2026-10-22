@@ -1153,6 +1153,8 @@
     <string name="route_from_phone_kept">Zachowana w Planowane, gotowa, kiedy zechcesz.</string>
     <string name="toast_route_from_phone_unreadable">Nie udało się odczytać trasy z telefonu (%1$s). Zaktualizuj Curveon na tablecie i wyślij ją ponownie.</string>
     <string name="share_trip_short">Udostępnij</string>
+    <string name="share_trip_done">Udostępniono</string>
+    <string name="share_trip_needs_group">Zacznij jazdę w grupie, a potem udostępnij jej trasę.</string>
     <string name="toast_trip_shared">Trasa udostępniona grupie</string>
     <string name="toast_trip_not_shared">Udostępnić można tylko trasę z celem</string>
     <string name="toast_shared_trip_saved">Zapisano we Wspólnych trasach</string>

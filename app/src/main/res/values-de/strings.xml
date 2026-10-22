@@ -1118,6 +1118,8 @@
     <string name="route_from_phone_kept">Unter Geplant gespeichert, bereit, wann immer du es bist.</string>
     <string name="toast_route_from_phone_unreadable">Eine Tour vom Handy (%1$s) konnte nicht gelesen werden. Aktualisiere Curveon auf dem Tablet und sende sie erneut.</string>
     <string name="share_trip_short">Teilen</string>
+    <string name="share_trip_done">Geteilt</string>
+    <string name="share_trip_needs_group">Starte eine Gruppenausfahrt, dann kannst du die Route mit ihr teilen.</string>
     <string name="toast_trip_shared">Route mit der Gruppe geteilt</string>
     <string name="toast_trip_not_shared">Nur eine Route mit Ziel kann geteilt werden</string>
     <string name="toast_shared_trip_saved">Unter Geteilte Routen gespeichert</string>

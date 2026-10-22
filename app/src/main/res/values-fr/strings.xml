@@ -1136,6 +1136,8 @@
     <string name="route_from_phone_kept">Gardé dans Prévus, prêt quand tu l’es.</string>
     <string name="toast_route_from_phone_unreadable">Un trajet du téléphone (%1$s) n’a pas pu être lu. Mets à jour Curveon sur la tablette et renvoie-le.</string>
     <string name="share_trip_short">Partager</string>
+    <string name="share_trip_done">Partagé</string>
+    <string name="share_trip_needs_group">Lance une balade en groupe, puis tu pourras lui partager l’itinéraire.</string>
     <string name="toast_trip_shared">Itinéraire partagé avec le groupe</string>
     <string name="toast_trip_not_shared">Seul un itinéraire avec une destination peut être partagé</string>
     <string name="toast_shared_trip_saved">Enregistré dans Itinéraires partagés</string>

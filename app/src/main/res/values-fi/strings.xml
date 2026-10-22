@@ -1070,6 +1070,8 @@
     <string name="route_from_phone_kept">Säilytetty kohdassa Suunnitellut, valmiina kun sinä olet.</string>
     <string name="toast_route_from_phone_unreadable">Puhelimesta tullutta matkaa (%1$s) ei voitu lukea. Päivitä tabletin Curveon ja lähetä se uudelleen.</string>
     <string name="share_trip_short">Jaa</string>
+    <string name="share_trip_done">Jaettu</string>
+    <string name="share_trip_needs_group">Aloita ryhmäajo, niin voit jakaa reitin sille.</string>
     <string name="toast_trip_shared">Reitti jaettu ryhmälle</string>
     <string name="toast_trip_not_shared">Vain reitin, jolla on määränpää, voi jakaa</string>
     <string name="toast_shared_trip_saved">Tallennettu kohtaan Jaetut reitit</string>

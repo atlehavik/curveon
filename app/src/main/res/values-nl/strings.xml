@@ -1091,6 +1091,8 @@
     <string name="route_from_phone_kept">Bewaard onder Gepland, klaar wanneer jij dat bent.</string>
     <string name="toast_route_from_phone_unreadable">Een rit van de telefoon (%1$s) kon niet worden gelezen. Werk Curveon op de tablet bij en stuur hem opnieuw.</string>
     <string name="share_trip_short">Delen</string>
+    <string name="share_trip_done">Gedeeld</string>
+    <string name="share_trip_needs_group">Start een groepsrit, dan kun je de route ermee delen.</string>
     <string name="toast_trip_shared">Route gedeeld met de groep</string>
     <string name="toast_trip_not_shared">Alleen een route met een bestemming kan worden gedeeld</string>
     <string name="toast_shared_trip_saved">Opgeslagen onder Gedeelde routes</string>

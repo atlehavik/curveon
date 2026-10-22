@@ -148,6 +148,17 @@ fun NavigationSummaryBar(
                     Spacer(Modifier.width(6.dp))
                     Text(stringResource(R.string.add_stop), color = NeonAmber, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
+                // The whole route (save it, share it with the group), with or without stops.
+                Row(
+                    Modifier.clip(RoundedCornerShape(14.dp)).background(ElectricCyan.copy(alpha = 0.15f))
+                        .clickable(onClick = onOpen).padding(horizontal = 10.dp, vertical = 8.dp)
+                        .testTag("nav_route_chip"),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Route, null, tint = ElectricCyan, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.nav_route), color = ElectricCyan, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
             }
         }
     }
@@ -526,6 +537,10 @@ fun RouteMenuDialog(
     onSave: () -> Unit,
     /** Share the trip with the active group (null: no group, or this is not a trip with stops, or it is shared already). */
     onShare: (() -> Unit)? = null,
+    /** Shared with the group already: says so where the share button would be. */
+    shared: Boolean = false,
+    /** A trip that could be shared but there is no group yet: says so, and the button goes to Group ride. */
+    onFindGroup: (() -> Unit)? = null,
     onEnd: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -555,11 +570,21 @@ fun RouteMenuDialog(
                     else Spacer(Modifier.width(10.dp))
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black, Modifier.weight(1f).testTag("menu_add_stop"), onAddStop)
-                PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("menu_save"), onSave)
-                if (onShare != null) PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("menu_share"), onShare)
-                PillButton(Icons.Default.Close, stringResource(R.string.nav_end), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("menu_end"), onEnd)
+            if (onFindGroup != null) Text(stringResource(R.string.share_trip_needs_group), color = TextMuted, fontSize = 14.sp)
+            val buttons = listOfNotNull<@Composable (Modifier) -> Unit>(
+                { m -> PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black, m.testTag("menu_add_stop"), onAddStop) },
+                { m -> PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), CockpitSurfaceVariant, TextPrimary, m.testTag("menu_save"), onSave) },
+                when {
+                    shared -> { m -> PillButton(Icons.Default.Check, stringResource(R.string.share_trip_done), EcoGreen.copy(alpha = 0.15f), EcoGreen, m.testTag("menu_share")) {} }
+                    onShare != null -> { m -> PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextPrimary, m.testTag("menu_share"), onShare) }
+                    onFindGroup != null -> { m -> PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextSecondary, m.testTag("menu_share"), onFindGroup) }
+                    else -> null
+                },
+                { m -> PillButton(Icons.Default.Close, stringResource(R.string.nav_end), WarningRed.copy(alpha = 0.25f), WarningRed, m.testTag("menu_end"), onEnd) }
+            )
+            // Two to a row on a phone, so every label fits.
+            buttons.chunked(if (isNarrowScreen()) 2 else 4).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { row.forEach { it(Modifier.weight(1f)) } }
             }
         }
     }

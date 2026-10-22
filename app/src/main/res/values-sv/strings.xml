@@ -1119,6 +1119,8 @@
     <string name="route_from_phone_kept">Sparad under Planerade, redo när du är.</string>
     <string name="toast_route_from_phone_unreadable">En tur från telefonen (%1$s) kunde inte läsas. Uppdatera Curveon på surfplattan och skicka den igen.</string>
     <string name="share_trip_short">Dela</string>
+    <string name="share_trip_done">Delad</string>
+    <string name="share_trip_needs_group">Starta en gruppkörning, så kan du dela rutten med den.</string>
     <string name="toast_trip_shared">Rutten delad med gruppen</string>
     <string name="toast_trip_not_shared">Bara en rutt med ett mål kan delas</string>
     <string name="toast_shared_trip_saved">Sparad under Delade rutter</string>

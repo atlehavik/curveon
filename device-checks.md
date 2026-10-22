@@ -6,6 +6,12 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Rute-knappen i ankomstlinjen (1.2.2)
+
+- [ ] **Pixel:** Mens du navigerer til et sted: trykk på ankomsttiden (folder seg ut som før), så på den nye **Rute**-knappen. Med en
+  gruppetur på: **Del** sender ruten til gruppen, og neste gang står det «Delt». Uten gruppe: teksten sier at du må starte en
+  gruppetur, og Del åpner Gruppetur.
+
 ## 2026-10-22 — Ni nye språk (1.2.2)
 
 - [ ] **Pixel:** Innstillinger → Skjerm → Språk: velg f.eks. Deutsch og Polski. Se over hovedskjermen mens du navigerer og med musikk på:

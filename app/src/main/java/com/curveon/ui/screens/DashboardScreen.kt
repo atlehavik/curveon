@@ -1449,6 +1449,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onAddStop = { showRouteMenu = false; searchPurpose = SearchPurpose.STOP },
                 onSave = { showRouteMenu = false; askSaveName() },
                 onShare = if (sharingGroup != null && (navState.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.shared == null) { { showRouteMenu = false; shareTrip() } } else null,
+                shared = (navState.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.shared != null,
+                // A trip to a place with no group yet: Share leads to Group ride, to start or pick one.
+                onFindGroup = if (sharingGroup == null && navState.goal is com.curveon.data.routing.NavigationGoal.Destination) { { showRouteMenu = false; pressRail(RailPanel.GROUP) } } else null,
                 onEnd = { showRouteMenu = false; viewModel.stopNavigation() },
                 onDismiss = { showRouteMenu = false }
             )

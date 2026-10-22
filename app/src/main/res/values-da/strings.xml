@@ -1119,6 +1119,8 @@
     <string name="route_from_phone_kept">Gemt under Planlagt, klar når du er.</string>
     <string name="toast_route_from_phone_unreadable">En tur fra telefonen (%1$s) kunne ikke læses. Opdater Curveon på tabletten, og send den igen.</string>
     <string name="share_trip_short">Del</string>
+    <string name="share_trip_done">Delt</string>
+    <string name="share_trip_needs_group">Start en gruppetur, så kan du dele ruten med den.</string>
     <string name="toast_trip_shared">Rute delt med gruppen</string>
     <string name="toast_trip_not_shared">Kun en rute med et mål kan deles</string>
     <string name="toast_shared_trip_saved">Gemt under Delte ruter</string>

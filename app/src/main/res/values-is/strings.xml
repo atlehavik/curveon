@@ -1118,6 +1118,8 @@
     <string name="route_from_phone_kept">Geymd undir Fyrirhugað, tilbúin þegar þú ert það.</string>
     <string name="toast_route_from_phone_unreadable">Ekki tókst að lesa ferð úr símanum (%1$s). Uppfærðu Curveon í spjaldtölvunni og sendu hana aftur.</string>
     <string name="share_trip_short">Deila</string>
+    <string name="share_trip_done">Deilt</string>
+    <string name="share_trip_needs_group">Byrjaðu hópferð, þá geturðu deilt leiðinni með henni.</string>
     <string name="toast_trip_shared">Leið deilt með hópnum</string>
     <string name="toast_trip_not_shared">Aðeins er hægt að deila leið með áfangastað</string>
     <string name="toast_shared_trip_saved">Vistað undir Deildar leiðir</string>
