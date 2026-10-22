@@ -166,7 +166,7 @@ object GroupHub {
         is Message.GroupSharing, is Message.GroupProfile, is Message.MyPosition, is Message.ShareRoute, is Message.SosStart,
         is Message.SosCancel, is Message.SosAnswer, is Message.GroupRemoveRider, is Message.RequestDeviceLink, is Message.GroupSettings,
         is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
-        is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.TripToFriends, is Message.RequestGroupInvite,
+        is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.TripToFriends, is Message.KeepFriendsOpen, is Message.RequestGroupInvite,
         is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing, is Message.RequestFriendLink -> true
         else -> false
     }
@@ -283,12 +283,14 @@ object GroupHub {
             is Message.TripShare -> client?.sendTrip(Payload.Trip(m.tripId, m.rev, m.name, m.doc))
             is Message.TripToFriends -> m.friendIds.forEach { id ->
                 touchFriend(id, 8_000) { c ->
-                    c.sendTrip(Payload.Trip(m.tripId, 1, m.name, m.doc))
+                    c.sendTrip(Payload.Trip(m.tripId, m.rev, m.name, m.doc))
                     // The relay keeps only the newest trips in a channel: say again that this friend sees the rider, so a
                     // run of shared trips never pushes that out.
                     if (id in seeingMe()) c.sendTrip(Payload.Trip(SHARE_TRIP, System.currentTimeMillis(), "", "1"))
                 }
             }
+            // Kept a little longer than the screen asks again, so the channel doesn't blink shut in between.
+            is Message.KeepFriendsOpen -> m.friendIds.forEach { touchFriend(it, 90_000) }
             is Message.RequestGroupInvite -> {
                 val state = groups[m.groupId] ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
                 val days = m.validDays ?: DEFAULT_INVITE_DAYS

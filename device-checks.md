@@ -11,7 +11,10 @@ Commands assume the device is connected over USB. With both connected, pick one 
 Trenger to telefoner med Curveon som er venner (emulatoren har ingen venner).
 
 - [ ] **Pixel → en venn:** Planlegg en tur til et sted, Del → **Del med venner**, kryss av en venn, Send. Hos vennen (innen
-  ti minutter, eller med en gang hvis vennen åpner Venner): «X delte en rute», med «Den er din egen kopi …» og Kjør nå / Lagre / Ignorer.
+  ti minutter, eller med en gang hvis vennen åpner Venner): «X delte en rute», med «Dere kan alle endre den …» og Kjør nå / Lagre / Ignorer.
+- [ ] **Endringer følger alle:** Med turen åpen eller underveis hos begge: vennen legger til et stopp → det dukker opp hos deg innen
+  et minutt. Du bytter stil eller fjerner et stopp → vennen får det. Med to venner (A og B): A sin endring når B (går via deg).
+- [ ] **Venner + gruppe:** En tur du har sendt til venner, del den så med gruppen: endringer fra gruppen når vennene og omvendt.
 - [ ] **Under kjøring:** ankomsttiden → Rute → Del → Del med venner gjør det samme for turen du kjører.
 - [ ] **X7 via Companion:** det samme fra nettbrettet (Companion på Pixel er oppdatert med dette; en eldre Companion gjør ingenting).
 - [ ] Ser vennen deg fortsatt på kartet etter at du har sendt den noen turer?

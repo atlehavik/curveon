@@ -12,11 +12,13 @@ import java.io.File
 
 /**
  * A trip shared with a group, as this device has it: the newest revision it has seen. [accepted] is false for a trip a
- * friend has just shared and the rider has not answered yet (see [SharedTripsController.offer]).
+ * friend has just shared and the rider has not answered yet (see [SharedTripsController.offer]). [groupId] is where it
+ * came from: a group, the channel to the friend who sent it, or empty for one this rider sent to friends. [friendIds] are
+ * the friends (channel ids) this rider sent it on to: changes go to them too, and theirs come back through here.
  */
 class SharedTrip(
     val tripId: String, val groupId: String, val groupName: String?, val rev: Long, val from: String, val fromNickname: String?,
-    val doc: TripDoc, val accepted: Boolean, val receivedAt: Long
+    val doc: TripDoc, val accepted: Boolean, val receivedAt: Long, val friendIds: List<String> = emptyList()
 )
 
 /**
@@ -45,9 +47,10 @@ class SharedTrips(context: Context) {
         val doc = TripDoc.fromJson(m.doc) ?: return Merged.STALE
         val current = latest(m.tripId)
         if (current != null && !TripDoc.isNewer(m.rev, m.from, current.rev, current.from)) return Merged.STALE
+        // Where it first came from stays: a change a friend sends back is still the same trip (see SharedTrip.groupId).
         val trip = SharedTrip(
-            m.tripId, m.groupId, groupName ?: current?.groupName, m.rev, m.from, m.fromNickname ?: current?.fromNickname, doc,
-            accepted = current?.accepted ?: m.mine, receivedAt = current?.receivedAt ?: now
+            m.tripId, current?.groupId ?: m.groupId, groupName ?: current?.groupName, m.rev, m.from, m.fromNickname ?: current?.fromNickname, doc,
+            accepted = current?.accepted ?: m.mine, receivedAt = current?.receivedAt ?: now, friendIds = current?.friendIds.orEmpty()
         )
         put(trip)
         return if (current == null && !m.mine) Merged.NEW else Merged.UPDATED
@@ -58,7 +61,19 @@ class SharedTrips(context: Context) {
     fun putOwn(trip: SharedTrip) = put(trip)
 
     @Synchronized
-    fun accept(tripId: String) = latest(tripId)?.let { put(SharedTrip(it.tripId, it.groupId, it.groupName, it.rev, it.from, it.fromNickname, it.doc, true, it.receivedAt)) }
+    fun accept(tripId: String) = latest(tripId)?.let { put(SharedTrip(it.tripId, it.groupId, it.groupName, it.rev, it.from, it.fromNickname, it.doc, true, it.receivedAt, it.friendIds)) }
+
+    /** A trip so far only shared with friends now goes to a group too. */
+    @Synchronized
+    fun setGroup(tripId: String, groupId: String, groupName: String?) = latest(tripId)?.let {
+        put(SharedTrip(it.tripId, groupId, groupName, it.rev, it.from, it.fromNickname, it.doc, it.accepted, it.receivedAt, it.friendIds))
+    }
+
+    /** The trip now also goes to these friends. */
+    @Synchronized
+    fun addFriends(tripId: String, ids: Collection<String>) = latest(tripId)?.let {
+        put(SharedTrip(it.tripId, it.groupId, it.groupName, it.rev, it.from, it.fromNickname, it.doc, it.accepted, it.receivedAt, (it.friendIds + ids).distinct()))
+    }
 
     /** Not offered again, and removed from the list. */
     @Synchronized
@@ -93,7 +108,7 @@ class SharedTrips(context: Context) {
                 .put("trips", JSONArray(_trips.value.map {
                     JSONObject().put("id", it.tripId).put("group", it.groupId).put("gname", it.groupName ?: JSONObject.NULL).put("rev", it.rev)
                         .put("from", it.from).put("nick", it.fromNickname ?: JSONObject.NULL).put("doc", it.doc.toJson())
-                        .put("accepted", it.accepted).put("at", it.receivedAt)
+                        .put("accepted", it.accepted).put("at", it.receivedAt).put("friends", JSONArray(it.friendIds))
                 }))
                 .put("passed", JSONObject().apply { passed.forEach { (id, keys) -> put(id, JSONArray(keys.toList())) } })
                 .put("ignored", JSONArray(ignored.toList()))
@@ -111,7 +126,8 @@ class SharedTrips(context: Context) {
             val doc = TripDoc.fromJson(t.getString("doc")) ?: return@mapNotNull null
             SharedTrip(
                 t.getString("id"), t.getString("group"), if (t.isNull("gname")) null else t.getString("gname"), t.getLong("rev"), t.getString("from"),
-                if (t.isNull("nick")) null else t.getString("nick"), doc, t.optBoolean("accepted"), t.optLong("at")
+                if (t.isNull("nick")) null else t.getString("nick"), doc, t.optBoolean("accepted"), t.optLong("at"),
+                t.optJSONArray("friends")?.let { f -> (0 until f.length()).map { f.getString(it) } }.orEmpty()
             )
         }
     }.getOrDefault(emptyList())

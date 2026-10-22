@@ -1130,7 +1130,7 @@
     <string name="share_trip_no_friends">Du hast noch keine Freunde in Curveon. Füge welche unter Meine Freunde hinzu.</string>
     <string name="share_trip_send">Senden</string>
     <string name="toast_trip_sent_friends">Route an deine Freunde gesendet</string>
-    <string name="shared_trip_offer_hint_friend">Das ist deine eigene Kopie: ändere sie, wie du willst.</string>
+    <string name="shared_trip_offer_hint_friend">Ihr könnt sie alle ändern, und die Änderungen gehen an alle.</string>
     <string name="share_trip_done_group">Mit der Gruppe geteilt</string>
     <string name="share_trip_start_group">Starte zuerst eine Gruppenausfahrt</string>
     <string name="toast_trip_shared">Route mit der Gruppe geteilt</string>
