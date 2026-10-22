@@ -219,6 +219,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     /** A new or changed shared trip, to the active group. [rev] only goes up; the highest wins. */
     fun shareTrip(tripId: String, rev: Long, name: String, doc: String) = send(Message.TripShare(tripId, rev, name, doc))
 
+    /** A copy of a trip for each of these friends (channel ids), to ride or keep. */
+    fun sendTripToFriends(tripId: String, name: String, doc: String, friendIds: List<String>) =
+        send(Message.TripToFriends(tripId, name, doc, friendIds))
+
     fun requestSelfLink() = send(Message.RequestSelfLink)
     fun forgetSelfLink() { _selfLink.value = null }
     fun unlinkSelf() = send(Message.SelfUnlink)

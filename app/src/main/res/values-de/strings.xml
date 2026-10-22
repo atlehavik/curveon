@@ -1125,6 +1125,14 @@
     <string name="share_trip_short">Teilen</string>
     <string name="share_trip_done">Geteilt</string>
     <string name="share_trip_needs_group">Starte eine Gruppenausfahrt, dann kannst du die Route mit ihr teilen.</string>
+    <string name="share_trip_with_friends">Mit Freunden teilen</string>
+    <string name="share_trip_pick_friends">Welche Freunde bekommen die Route?</string>
+    <string name="share_trip_no_friends">Du hast noch keine Freunde in Curveon. Füge welche unter Meine Freunde hinzu.</string>
+    <string name="share_trip_send">Senden</string>
+    <string name="toast_trip_sent_friends">Route an deine Freunde gesendet</string>
+    <string name="shared_trip_offer_hint_friend">Das ist deine eigene Kopie: ändere sie, wie du willst.</string>
+    <string name="share_trip_done_group">Mit der Gruppe geteilt</string>
+    <string name="share_trip_start_group">Starte zuerst eine Gruppenausfahrt</string>
     <string name="toast_trip_shared">Route mit der Gruppe geteilt</string>
     <string name="toast_trip_not_shared">Nur eine Route mit Ziel kann geteilt werden</string>
     <string name="toast_shared_trip_saved">Unter Geteilte Routen gespeichert</string>

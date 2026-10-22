@@ -1125,6 +1125,14 @@
     <string name="share_trip_short">Deila</string>
     <string name="share_trip_done">Deilt</string>
     <string name="share_trip_needs_group">Byrjaðu hópferð, þá geturðu deilt leiðinni með henni.</string>
+    <string name="share_trip_with_friends">Deila með vinum</string>
+    <string name="share_trip_pick_friends">Hvaða vinir eiga að fá leiðina?</string>
+    <string name="share_trip_no_friends">Þú átt enga vini í Curveon ennþá. Bættu við undir Vinir mínir.</string>
+    <string name="share_trip_send">Senda</string>
+    <string name="toast_trip_sent_friends">Leiðin var send til vina þinna</string>
+    <string name="shared_trip_offer_hint_friend">Þetta er þitt eigið eintak: breyttu því eins og þú vilt.</string>
+    <string name="share_trip_done_group">Deilt með hópnum</string>
+    <string name="share_trip_start_group">Byrjaðu hópferð fyrst</string>
     <string name="toast_trip_shared">Leið deilt með hópnum</string>
     <string name="toast_trip_not_shared">Aðeins er hægt að deila leið með áfangastað</string>
     <string name="toast_shared_trip_saved">Vistað undir Deildar leiðir</string>

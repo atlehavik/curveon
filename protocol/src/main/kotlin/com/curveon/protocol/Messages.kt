@@ -414,6 +414,15 @@ sealed interface Message {
         override fun toJson() = obj("trip_share").put("trip", tripId).put("rev", rev).put("name", name).put("doc", doc)
     }
 
+    /**
+     * A trip sent to some friends ([friendIds], channel ids): each gets their own copy to ride or keep, with no changes
+     * going back and forth (unlike [TripShare]). A message of its own, so a phone too old to know it ignores it rather
+     * than sending the trip to the group.
+     */
+    data class TripToFriends(val tripId: String, val name: String, val doc: String, val friendIds: List<String>) : Message {
+        override fun toJson() = obj("trip_to_friends").put("trip", tripId).put("name", name).put("doc", doc).put("friends", JSONArray(friendIds))
+    }
+
     // ---- friends and shared trips, phone -> tablet ----
 
     /**
@@ -717,6 +726,10 @@ sealed interface Message {
             "friend_add_to_group" -> FriendAddToGroup(o.getString("id"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "group_invite_answer" -> GroupInviteAnswer(o.getString("offer"), o.optBoolean("accept"))
             "trip_share" -> TripShare(o.getString("trip"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
+            "trip_to_friends" -> TripToFriends(
+                o.getString("trip"), o.optString("name"), o.getString("doc"),
+                o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty()
+            )
             "request_friend_link" -> RequestFriendLink
             "friend_link" -> FriendLink(o.getString("uri"))
             "friend_added" -> FriendAdded(o.getString("id"), o.optString("nick"))

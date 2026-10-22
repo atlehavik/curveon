@@ -1077,6 +1077,14 @@
     <string name="share_trip_short">Jaa</string>
     <string name="share_trip_done">Jaettu</string>
     <string name="share_trip_needs_group">Aloita ryhmäajo, niin voit jakaa reitin sille.</string>
+    <string name="share_trip_with_friends">Jaa kavereille</string>
+    <string name="share_trip_pick_friends">Kenelle kavereista reitti?</string>
+    <string name="share_trip_no_friends">Sinulla ei ole vielä kavereita Curveonissa. Lisää heitä kohdassa Kaverini.</string>
+    <string name="share_trip_send">Lähetä</string>
+    <string name="toast_trip_sent_friends">Reitti lähetetty kavereillesi</string>
+    <string name="shared_trip_offer_hint_friend">Se on oma kopiosi: muokkaa sitä vapaasti.</string>
+    <string name="share_trip_done_group">Jaettu ryhmälle</string>
+    <string name="share_trip_start_group">Aloita ensin ryhmäajo</string>
     <string name="toast_trip_shared">Reitti jaettu ryhmälle</string>
     <string name="toast_trip_not_shared">Vain reitin, jolla on määränpää, voi jakaa</string>
     <string name="toast_shared_trip_saved">Tallennettu kohtaan Jaetut reitit</string>

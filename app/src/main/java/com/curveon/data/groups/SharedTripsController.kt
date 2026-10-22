@@ -119,9 +119,14 @@ class SharedTripsController(
         val d = trip.doc
         return NavigationGoal.Destination(
             d.destination.name, LatLon(d.destination.lat, d.destination.lon), options ?: SavedRoutes.optionsFromJson(d.options),
-            d.remaining(store.passed(trip.tripId)).map { it.toStop() }, shared = trip.tripId
+            d.remaining(store.passed(trip.tripId)).map { it.toStop() },
+            // One a friend sent is the rider's own copy: their changes stay with them (nor go to a group).
+            shared = trip.tripId.takeIf { !fromFriend(trip) }
         )
     }
+
+    /** Sent by a friend rather than shared in a group: it came through the channel between the two of you. */
+    fun fromFriend(trip: SharedTrip) = manager.friends.value.any { it.id == trip.groupId }
 
     // ---- what the rider does ----
 
@@ -149,6 +154,19 @@ class SharedTripsController(
         if (g.shared != null) return true
         val doc = TripDoc(g.name, TripStop(g.name, g.destination.lat, g.destination.lon), g.stops.map { it.toTrip() }, SavedRoutes.optionsToJson(g.options))
         share(doc, groupId)?.let { navigator.tagShared(it) }
+        return true
+    }
+
+    /**
+     * Send a copy of the trip on screen to some friends ([friendIds], channel ids): the one in the preview when [preview],
+     * else the one being ridden. Each friend gets it to ride or keep; nothing about it is kept in step afterwards.
+     */
+    fun sendToFriends(friendIds: List<String>, preview: Boolean): Boolean {
+        if (friendIds.isEmpty()) return false
+        val s = navigator.state.value
+        val g = (if (preview) s.preview?.goal else s.goal) as? NavigationGoal.Destination ?: return false
+        val doc = TripDoc(g.name, TripStop(g.name, g.destination.lat, g.destination.lon), g.stops.map { it.toTrip() }, SavedRoutes.optionsToJson(g.options))
+        manager.sendTripToFriends(UUID.randomUUID().toString(), doc.name, doc.toJson(), friendIds)
         return true
     }
 

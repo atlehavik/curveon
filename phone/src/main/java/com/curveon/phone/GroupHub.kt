@@ -166,7 +166,7 @@ object GroupHub {
         is Message.GroupSharing, is Message.GroupProfile, is Message.MyPosition, is Message.ShareRoute, is Message.SosStart,
         is Message.SosCancel, is Message.SosAnswer, is Message.GroupRemoveRider, is Message.RequestDeviceLink, is Message.GroupSettings,
         is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
-        is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.RequestGroupInvite,
+        is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.TripToFriends, is Message.RequestGroupInvite,
         is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing, is Message.RequestFriendLink -> true
         else -> false
     }
@@ -281,6 +281,14 @@ object GroupHub {
                 if (m.accept) handleNow(Message.GroupJoin(offer.link))
             }
             is Message.TripShare -> client?.sendTrip(Payload.Trip(m.tripId, m.rev, m.name, m.doc))
+            is Message.TripToFriends -> m.friendIds.forEach { id ->
+                touchFriend(id, 8_000) { c ->
+                    c.sendTrip(Payload.Trip(m.tripId, 1, m.name, m.doc))
+                    // The relay keeps only the newest trips in a channel: say again that this friend sees the rider, so a
+                    // run of shared trips never pushes that out.
+                    if (id in seeingMe()) c.sendTrip(Payload.Trip(SHARE_TRIP, System.currentTimeMillis(), "", "1"))
+                }
+            }
             is Message.RequestGroupInvite -> {
                 val state = groups[m.groupId] ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
                 val days = m.validDays ?: DEFAULT_INVITE_DAYS
@@ -469,6 +477,10 @@ object GroupHub {
             is GroupEvent.TripReceived -> when {
                 state.kind == GroupKind.SELF && e.trip.tripId == SYNC_TRIP -> onSyncReceived(e.trip.doc)
                 state.kind == GroupKind.FRIEND && e.trip.tripId == SHARE_TRIP && !e.mine -> friendSharesWithMe(id, e.trip.doc == "1")
+                // A trip the friend sent: offered like a group's, from them (the channel's id stands for the group).
+                state.kind == GroupKind.FRIEND && e.trip.tripId != SHARE_TRIP && !e.mine -> send(Message.GroupTrip(
+                    id, e.trip.tripId, e.trip.rev, e.riderId, state.peer?.nickname, e.trip.name, e.trip.doc, false
+                ))
             }
             // Only from a friend who has said they share: a position the relay still holds after they stopped is not shown.
             is GroupEvent.Position -> if (state.kind == GroupKind.FRIEND && id in store?.friendsSharingWithMe.orEmpty()) {

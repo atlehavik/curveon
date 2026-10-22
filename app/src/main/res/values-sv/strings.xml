@@ -1126,6 +1126,14 @@
     <string name="share_trip_short">Dela</string>
     <string name="share_trip_done">Delad</string>
     <string name="share_trip_needs_group">Starta en gruppkörning, så kan du dela rutten med den.</string>
+    <string name="share_trip_with_friends">Dela med vänner</string>
+    <string name="share_trip_pick_friends">Vilka vänner ska få rutten?</string>
+    <string name="share_trip_no_friends">Du har inga vänner i Curveon än. Lägg till några under Mina vänner.</string>
+    <string name="share_trip_send">Skicka</string>
+    <string name="toast_trip_sent_friends">Rutten är skickad till dina vänner</string>
+    <string name="shared_trip_offer_hint_friend">Den är din egen kopia: ändra den som du vill.</string>
+    <string name="share_trip_done_group">Delad med gruppen</string>
+    <string name="share_trip_start_group">Starta en gruppkörning först</string>
     <string name="toast_trip_shared">Rutten delad med gruppen</string>
     <string name="toast_trip_not_shared">Bara en rutt med ett mål kan delas</string>
     <string name="toast_shared_trip_saved">Sparad under Delade rutter</string>

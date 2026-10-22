@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Del en rute med venner (1.2.2)
+
+Trenger to telefoner med Curveon som er venner (emulatoren har ingen venner).
+
+- [ ] **Pixel → en venn:** Planlegg en tur til et sted, Del → **Del med venner**, kryss av en venn, Send. Hos vennen (innen
+  ti minutter, eller med en gang hvis vennen åpner Venner): «X delte en rute», med «Den er din egen kopi …» og Kjør nå / Lagre / Ignorer.
+- [ ] **Under kjøring:** ankomsttiden → Rute → Del → Del med venner gjør det samme for turen du kjører.
+- [ ] **X7 via Companion:** det samme fra nettbrettet (Companion på Pixel er oppdatert med dette; en eldre Companion gjør ingenting).
+- [ ] Ser vennen deg fortsatt på kartet etter at du har sendt den noen turer?
+
 ## 2026-10-22 — Rediger rute under kjøring, sprø profilbilde-effekter (1.2.2)
 
 - [ ] **Pixel:** Under navigering til et sted: ankomsttiden → Rute → **Rediger rute**. Ruteplanleggeren åpner fra der du er, med

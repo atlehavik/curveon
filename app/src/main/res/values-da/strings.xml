@@ -1126,6 +1126,14 @@
     <string name="share_trip_short">Del</string>
     <string name="share_trip_done">Delt</string>
     <string name="share_trip_needs_group">Start en gruppetur, så kan du dele ruten med den.</string>
+    <string name="share_trip_with_friends">Del med venner</string>
+    <string name="share_trip_pick_friends">Hvilke venner skal have ruten?</string>
+    <string name="share_trip_no_friends">Du har ingen venner i Curveon endnu. Tilføj nogle under Mine venner.</string>
+    <string name="share_trip_send">Send</string>
+    <string name="toast_trip_sent_friends">Ruten er sendt til dine venner</string>
+    <string name="shared_trip_offer_hint_friend">Den er din egen kopi: ret den, som du vil.</string>
+    <string name="share_trip_done_group">Delt med gruppen</string>
+    <string name="share_trip_start_group">Start en gruppetur først</string>
     <string name="toast_trip_shared">Rute delt med gruppen</string>
     <string name="toast_trip_not_shared">Kun en rute med et mål kan deles</string>
     <string name="toast_shared_trip_saved">Gemt under Delte ruter</string>

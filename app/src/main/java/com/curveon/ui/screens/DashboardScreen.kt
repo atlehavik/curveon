@@ -279,6 +279,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val sharingGroup by phone.groups.activeId.collectAsStateWithLifecycle()
     // The trip being ridden is open in the planner (Edit route): closing it just keeps riding it as it was.
     var editingRoute by remember { mutableStateOf(false) }
+    // Picking friends to send a trip to: true for the one in the preview, false for the one being ridden.
+    var pickFriends by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(navState.preview == null) { if (navState.preview == null) editingRoute = false }
     val sharedTripList by viewModel.sharedTrips.shared.collectAsStateWithLifecycle()
     val sharedOffer by viewModel.sharedTrips.offer.collectAsStateWithLifecycle()
@@ -673,6 +675,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onSave = askSaveName,
                     onShare = if (sharingGroup != null) { { shareTrip() } } else null,
                     onSendToTablet = if (companionInstalled) { { scope.launch { sendToTablet(viewModel.previewForTablet()) } } } else null,
+                    onShareFriends = if (p.goal is com.curveon.data.routing.NavigationGoal.Destination) { { pickFriends = true } } else null,
                     onGo = viewModel::startPreview,
                     onClose = viewModel::cancelPreview,
                     minimized = previewMinimized,
@@ -1339,7 +1342,18 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             trip = t,
             onRideNow = { viewModel.sharedTrips.open(t) },
             onSave = { viewModel.sharedTrips.accept(t); toast = context.getString(R.string.toast_shared_trip_saved) },
-            onIgnore = { viewModel.sharedTrips.ignore(t) }
+            onIgnore = { viewModel.sharedTrips.ignore(t) },
+            fromFriend = viewModel.sharedTrips.fromFriend(t)
+        )
+    }
+    pickFriends?.let { fromPreview ->
+        com.curveon.ui.components.FriendPickerDialog(
+            friendList,
+            onSend = { ids ->
+                pickFriends = null
+                toast = context.getString(if (viewModel.sharedTrips.sendToFriends(ids, fromPreview)) R.string.toast_trip_sent_friends else R.string.toast_trip_not_shared)
+            },
+            onDismiss = { pickFriends = null }
         )
     }
     routeFromPhone?.let { t ->
@@ -1457,6 +1471,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 // A trip to a place with no group yet: Share leads to Group ride, to start or pick one.
                 onFindGroup = if (sharingGroup == null && navState.goal is com.curveon.data.routing.NavigationGoal.Destination) { { showRouteMenu = false; pressRail(RailPanel.GROUP) } } else null,
                 onEdit = if (navState.goal is com.curveon.data.routing.NavigationGoal.Destination) { { showRouteMenu = false; editingRoute = viewModel.editRoute() } } else null,
+                onShareFriends = if (navState.goal is com.curveon.data.routing.NavigationGoal.Destination) { { showRouteMenu = false; pickFriends = false } } else null,
                 onEnd = { showRouteMenu = false; viewModel.stopNavigation() },
                 onDismiss = { showRouteMenu = false }
             )

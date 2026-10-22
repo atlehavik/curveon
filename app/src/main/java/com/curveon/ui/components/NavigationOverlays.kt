@@ -541,6 +541,8 @@ fun RouteMenuDialog(
     shared: Boolean = false,
     /** A trip that could be shared but there is no group yet: says so, and the button goes to Group ride. */
     onFindGroup: (() -> Unit)? = null,
+    /** Send a copy to some friends (null: a track, which can't be): with it, Share offers the group or friends. */
+    onShareFriends: (() -> Unit)? = null,
     /** Open the trip in the full planner to change it (null: a track, which can't be). */
     onEdit: (() -> Unit)? = null,
     onEnd: () -> Unit,
@@ -572,11 +574,12 @@ fun RouteMenuDialog(
                     else Spacer(Modifier.width(10.dp))
                 }
             }
-            if (onFindGroup != null) Text(stringResource(R.string.share_trip_needs_group), color = TextMuted, fontSize = 14.sp)
+            if (onFindGroup != null && onShareFriends == null) Text(stringResource(R.string.share_trip_needs_group), color = TextMuted, fontSize = 14.sp)
             val buttons = listOfNotNull<@Composable (Modifier) -> Unit>(
                 { m -> PillButton(Icons.Default.AddLocationAlt, stringResource(R.string.add_stop), NeonAmber, Color.Black, m.testTag("menu_add_stop"), onAddStop) },
                 { m -> PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), CockpitSurfaceVariant, TextPrimary, m.testTag("menu_save"), onSave) },
                 when {
+                    onShareFriends != null -> { m -> ShareChoice(m, shared, onShare, onFindGroup, onShareFriends) }
                     shared -> { m -> PillButton(Icons.Default.Check, stringResource(R.string.share_trip_done), EcoGreen.copy(alpha = 0.15f), EcoGreen, m.testTag("menu_share")) {} }
                     onShare != null -> { m -> PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextPrimary, m.testTag("menu_share"), onShare) }
                     onFindGroup != null -> { m -> PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextSecondary, m.testTag("menu_share"), onFindGroup) }
@@ -589,6 +592,27 @@ fun RouteMenuDialog(
             buttons.chunked(if (isNarrowScreen()) 2 else if (buttons.size > 4) 3 else 4).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { row.forEach { it(Modifier.weight(1f)) } }
             }
+        }
+    }
+}
+
+/** Share in the route menu: a choice of the group (shared already, share, or start one first) or some friends. */
+@Composable
+private fun ShareChoice(modifier: Modifier, shared: Boolean, onGroup: (() -> Unit)?, onFindGroup: (() -> Unit)?, onFriends: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box(modifier) {
+        PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextPrimary, Modifier.fillMaxWidth().testTag("menu_share")) { open = true }
+        DropdownMenu(open, { open = false }, containerColor = CockpitSurfaceVariant) {
+            when {
+                shared -> DropdownMenuItem({ Text(stringResource(R.string.share_trip_done_group), color = EcoGreen) }, {}, enabled = false,
+                    leadingIcon = { Icon(Icons.Default.Check, null, tint = EcoGreen) })
+                onGroup != null -> DropdownMenuItem({ Text(stringResource(R.string.share_trip_with_group), color = TextPrimary) }, { open = false; onGroup() },
+                    leadingIcon = { Icon(Icons.Default.Groups, null, tint = TextSecondary) }, modifier = Modifier.testTag("menu_share_group"))
+                onFindGroup != null -> DropdownMenuItem({ Text(stringResource(R.string.share_trip_start_group), color = TextSecondary) }, { open = false; onFindGroup() },
+                    leadingIcon = { Icon(Icons.Default.Groups, null, tint = TextMuted) }, modifier = Modifier.testTag("menu_share_group"))
+            }
+            DropdownMenuItem({ Text(stringResource(R.string.share_trip_with_friends), color = TextPrimary) }, { open = false; onFriends() },
+                leadingIcon = { Icon(Icons.Default.People, null, tint = TextSecondary) }, modifier = Modifier.testTag("menu_share_friends"))
         }
     }
 }
