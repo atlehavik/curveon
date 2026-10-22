@@ -1,6 +1,10 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.curveon.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -142,36 +146,52 @@ private fun FriendsTabContent(manager: GroupManager) {
     var confirmRemove by remember { mutableStateOf<Message.FriendInfo?>(null) }
     val context = LocalContext.current
 
-    // A new friend appears while the code is on show: that code has done its job.
-    var known by remember { mutableIntStateOf(friends.size) }
-    LaunchedEffect(friends.size) {
-        if (friends.size > known && showCode) {
-            showCode = false
-            manager.forgetFriendInvite()
-            android.widget.Toast.makeText(context, context.getString(R.string.friends_new_friend, friends.last().nickname), android.widget.Toast.LENGTH_LONG).show()
-        }
-        known = friends.size
+    // A new friend: the code on show has done its job, so it goes (the high five is shown over everything, see FriendHighFive).
+    LaunchedEffect(Unit) { manager.friendAdded.collect { showCode = false; manager.forgetFriendInvite() } }
+
+    // "Send a link": a new link for one friend far away, straight into Android's share sheet (any chat, any country).
+    val link by manager.friendLink.collectAsStateWithLifecycle()
+    var linkWanted by remember { mutableStateOf(false) }
+    var linkFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(linkWanted, link) {
+        val l = link
+        if (linkWanted && l != null) {
+            linkWanted = false
+            manager.forgetFriendLink()
+            context.startActivity(android.content.Intent.createChooser(
+                android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+                    .putExtra(android.content.Intent.EXTRA_TEXT, context.getString(R.string.friends_share_text, l)), null
+            ))
+        } else if (linkWanted) { kotlinx.coroutines.delay(6_000); if (linkWanted) { linkWanted = false; linkFailed = true } }
     }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(stringResource(R.string.friends_hint), color = TextSecondary, fontSize = 14.sp)
-        OutlinedButton(onClick = {
-            showCode = !showCode
-            codeFailed = false
-            manager.forgetFriendInvite()
-            if (showCode) manager.requestFriendInvite()
-        }, modifier = Modifier.testTag("friends_my_code")) {
-            Icon(Icons.Default.QrCode2, null, tint = ElectricCyan)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.friends_my_code), color = ElectricCyan, fontWeight = FontWeight.Bold)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = {
+                showCode = !showCode
+                codeFailed = false
+                manager.forgetFriendInvite()
+                if (showCode) manager.requestFriendInvite()
+            }, modifier = Modifier.testTag("friends_my_code")) {
+                Icon(Icons.Default.QrCode2, null, tint = ElectricCyan)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.friends_my_code), color = ElectricCyan, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(onClick = { linkFailed = false; linkWanted = true; manager.requestFriendLink() }, modifier = Modifier.testTag("friends_send_link")) {
+                Icon(Icons.Default.Share, null, tint = ElectricCyan)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.friends_send_link), color = ElectricCyan, fontWeight = FontWeight.Bold)
+            }
+            if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.testTag("friends_scan")) {
+                Icon(Icons.Default.QrCodeScanner, null, tint = ElectricCyan)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.group_scan), color = ElectricCyan, fontWeight = FontWeight.Bold)
+            }
         }
+        if (linkFailed) Text(stringResource(R.string.friends_link_failed), color = WarningRed, fontSize = 14.sp)
         if (showCode && codeFailed) Text(stringResource(R.string.friends_code_failed), color = WarningRed, fontSize = 14.sp, modifier = Modifier.testTag("friends_code_failed"))
-        else if (showCode) QrBlock(invite, R.string.friends_code_hint, R.string.friends_my_code, shareLink = true, shareText = R.string.friends_share_text)
-        if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.testTag("friends_scan")) {
-            Icon(Icons.Default.QrCodeScanner, null, tint = ElectricCyan)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.group_scan), color = ElectricCyan, fontWeight = FontWeight.Bold)
-        }
+        else if (showCode) QrBlock(invite, R.string.friends_code_hint, R.string.friends_my_code)
 
         FriendsSectionLabel(stringResource(R.string.friends_list))
         if (friends.isEmpty()) Text(stringResource(R.string.friends_none), color = TextMuted, fontSize = 14.sp)
@@ -262,4 +282,63 @@ fun GroupInviteOfferDialog(manager: GroupManager) {
             }
         }
     }
+}
+
+/**
+ * A new friend: two hands fly in from the sides and slap together with a burst, then the friend's picture and "You and Ola are
+ * friends now". Shown over everything (also when the friend opened a link long after it was sent), on both sides at once.
+ * A tap or three and a half seconds closes it.
+ */
+@Composable
+fun FriendHighFive(manager: GroupManager) {
+    val friends by manager.friends.collectAsStateWithLifecycle()
+    var shown by remember { mutableStateOf<Message.FriendAdded?>(null) }
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { manager.friendAdded.collect { shown = it } }
+    val added = shown ?: return
+    val friend = friends.firstOrNull { it.id == added.channelId } ?: Message.FriendInfo(added.channelId, added.nickname, 0xFF00E5FF.toInt(), null, null)
+    val close = { shown = null }
+    val meet = remember(added) { androidx.compose.animation.core.Animatable(0f) }
+    val burst = remember(added) { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(added) {
+        meet.animateTo(1f, androidx.compose.animation.core.tween(420, easing = androidx.compose.animation.core.FastOutSlowInEasing))
+        highFiveBuzz(context)
+        burst.animateTo(1f, androidx.compose.animation.core.tween(500))
+        kotlinx.coroutines.delay(2_600)
+        close()
+    }
+    Dialog(onDismissRequest = close) {
+        HideSystemBars()
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(CockpitSurface)
+                .clickable(onClick = close).padding(24.dp).testTag("friend_high_five"),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Box(Modifier.fillMaxWidth().height(130.dp), contentAlignment = Alignment.Center) {
+                // The burst where the hands meet.
+                if (burst.value > 0f) Box(
+                    Modifier.size((60 + 90 * burst.value).dp).clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(NeonAmber.copy(alpha = 0.45f * (1f - burst.value)))
+                )
+                val gap = 110f * (1f - meet.value)
+                val tilt = 25f * (1f - meet.value) - 12f * meet.value // leaning out as they fly in, then in against each other
+                Text("✋", fontSize = 64.sp, modifier = Modifier.offset(x = (-24 - gap).dp)
+                    .graphicsLayer { scaleX = -1f; rotationZ = tilt })
+                Text("✋", fontSize = 64.sp, modifier = Modifier.offset(x = (24 + gap).dp)
+                    .graphicsLayer { rotationZ = -tilt })
+            }
+            Text(stringResource(R.string.friends_high_five_title), color = NeonAmber, fontSize = 26.sp, fontWeight = FontWeight.Black)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                FriendAvatar(friend, 48.dp)
+                Text(stringResource(R.string.friends_high_five_text, friend.nickname), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+/** Two quick taps in the hand, like a slap. */
+private fun highFiveBuzz(context: android.content.Context) = runCatching {
+    val v: android.os.Vibrator? = if (android.os.Build.VERSION.SDK_INT >= 31) context.getSystemService(android.os.VibratorManager::class.java)?.defaultVibrator
+    else @Suppress("DEPRECATION") context.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? android.os.Vibrator
+    v?.vibrate(android.os.VibrationEffect.createWaveform(longArrayOf(0, 40, 60, 40), -1))
 }

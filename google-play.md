@@ -100,6 +100,11 @@ endrer seg på Play-siden:
   Den skrives aldri til disk, og reléet kan ikke lese den. Avsnittet i personvernerklæringen om at «posisjoner lagres ikke» må endres
   til «siste posisjon holdes kryptert i minnet i inntil 30 minutter».
 
+- **Invitasjonslenker som App Links (2026-10-22):** `https://relay.curveon.no/join` åpner Curveon direkte, verifisert med
+  `/.well-known/assetlinks.json` på reléet (`~/develop/curveon-relay/public/assetlinks.json`), som lister GitHub-release-nøkkelen og
+  debug-nøkkelen. **Med Play App Signing signerer Google appen med en annen nøkkel:** dens SHA-256 (Play Console → App integrity) må legges
+  til i `assetlinks.json` før Play-versjonen, ellers åpnes lenken i nettleseren (siden har da en «Åpne i Curveon»-knapp).
+
 ### Slik ble det bygget (2026-10-19), og hva det betyr for Play
 
 - **Companion har `INTERNET` nå**, via `:phone`-manifestet (det samme manifestet gir hovedappen det den allerede hadde). Hver bygging

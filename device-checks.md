@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Venn via lenke, og high-five (1.2.2)
+
+Prøvd i emulatoren: «Send lenke» åpner delingsmenyen med `https://relay.curveon.no/join#…`, nettsiden (fra et lokalt relé) viser
+«Åpne i Curveon», og knappen åpner Curveon; high-fiven og at koden forsvinner er prøvd med demo-data. Trenger det nye reléet på VPS-en.
+
+- [ ] **Lenke mellom Pixel og X7:** på Pixel, Mine venner → Send lenke → send til deg selv (f.eks. Messenger/SMS), åpne den på X7
+  (eller send den til en venn). Begge får high-five, og vennen står i lista på begge.
+- [ ] **Lenken rett inn i appen:** trykk på lenken i en chat på Pixel (release-bygg). Den skal åpne Curveon direkte (App Links). Gjør den
+  ikke det: `adb shell pm get-app-links com.curveon.app` skal si `relay.curveon.no: verified`; ellers åpnes siden med knappen.
+- [ ] **Lenke åpnet dagen etter:** send en lenke, start Curveon på nytt, åpne lenken på den andre enheten etterpå: vennskapet kommer
+  i stand (innen ~10 min, eller med en gang du åpner Venner).
+- [ ] **QR-kode:** vis koden, skann den med den andre enheten: koden forsvinner og begge får high-five; «Vis koden min» igjen gir en ny kode.
+
 ## 2026-10-22 — Flere grupper, og venner som alltid ser hvor du er (1.2.2)
 
 Lista med grupper, bytte av gruppe og vennelista er prøvd i emulatoren (også med demo-venner på kartet). Selve delingen mellom

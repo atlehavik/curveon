@@ -835,7 +835,7 @@ class PhoneCompanionManager(
 
     private fun demoCommand(message: Message) {
         when (message) {
-            is Message.SosStart, Message.SosCancel, is Message.GroupSharing -> groups.demoCommand(message)
+            is Message.SosStart, Message.SosCancel, is Message.GroupSharing, Message.RequestFriendInvite, Message.RequestFriendLink -> groups.demoCommand(message)
             is Message.PlayMediaApp -> {
                 if (sessionApps.none { it.packageName == message.packageName }) {
                     _installedApps.value.firstOrNull { it.packageName == message.packageName }?.let { sessionApps = sessionApps + it.copy(running = true) }

@@ -73,6 +73,13 @@ class GroupStore(context: Context) {
         get() = prefs.getStringSet(SHARING_WITH_ME, emptySet()).orEmpty().toSet()
         set(v) = prefs.edit().putStringSet(SHARING_WITH_ME, v).apply()
 
+    /** Friend links sent through a chat and not opened yet: channel id -> when the link stops working (epoch seconds). */
+    var pendingLinks: Map<String, Long>
+        get() = prefs.getStringSet(PENDING_LINKS, emptySet()).orEmpty().mapNotNull { e ->
+            e.substringAfter(':').toLongOrNull()?.let { e.substringBefore(':') to it }
+        }.toMap()
+        set(v) = prefs.edit().putStringSet(PENDING_LINKS, v.map { (id, until) -> "$id:$until" }.toSet()).apply()
+
     /** Invites from friends that have been answered (or are out of date): each is shown once, although the relay keeps them for a week. */
     fun isOfferHandled(id: String) = id in handledOffers()
 
@@ -120,6 +127,7 @@ class GroupStore(context: Context) {
         const val HANDLED = "handled_offers"
         const val PROFILE = "profile"
         const val FRIEND_SHARING = "friend_sharing"
+        const val PENDING_LINKS = "pending_friend_links"
         const val SEEING_ME = "friends_seeing_me"
         const val SHARING_WITH_ME = "friends_sharing_with_me"
         const val KEYSTORE = "AndroidKeyStore"

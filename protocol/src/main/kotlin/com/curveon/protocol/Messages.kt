@@ -378,6 +378,14 @@ sealed interface Message {
         override fun toJson() = obj("request_friend_invite")
     }
 
+    /**
+     * "Send a link": a new private channel for one friend far away, kept (for the week the link works) until they open it.
+     * The phone answers with [FriendLink].
+     */
+    data object RequestFriendLink : Message {
+        override fun toJson() = obj("request_friend_link")
+    }
+
     /** Stop being friends with the one in [channelId]. */
     data class FriendRemove(val channelId: String) : Message {
         override fun toJson() = obj("friend_remove").put("id", channelId)
@@ -429,6 +437,16 @@ sealed interface Message {
     /** The answer to [RequestFriendInvite]: the link to show as a QR code or share. It is for one friend. */
     data class FriendInvite(val channelId: String, val uri: String) : Message {
         override fun toJson() = obj("friend_invite").put("id", channelId).put("uri", uri)
+    }
+
+    /** The answer to [RequestFriendLink]: a link for one friend, to send through any chat. */
+    data class FriendLink(val uri: String) : Message {
+        override fun toJson() = obj("friend_link").put("uri", uri)
+    }
+
+    /** A new friendship has just begun (the friend opened the code or the link, or the rider opened theirs): time for a high five. */
+    data class FriendAdded(val channelId: String, val nickname: String) : Message {
+        override fun toJson() = obj("friend_added").put("id", channelId).put("nick", nickname)
     }
 
     /** A friend asks the rider to join a ride group: shown once, with "join" or "ignore" ([GroupInviteAnswer]). */
@@ -699,7 +717,10 @@ sealed interface Message {
             "friend_add_to_group" -> FriendAddToGroup(o.getString("id"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "group_invite_answer" -> GroupInviteAnswer(o.getString("offer"), o.optBoolean("accept"))
             "trip_share" -> TripShare(o.getString("trip"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
-            "friend_sharing" -> FriendSharing(o.optBoolean("on"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
+            "request_friend_link" -> RequestFriendLink
+            "friend_link" -> FriendLink(o.getString("uri"))
+            "friend_added" -> FriendAdded(o.getString("id"), o.optString("nick"))
+            "friend_sharing" ->FriendSharing(o.optBoolean("on"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "friend_list" -> FriendList(o.optJSONArray("list").objects().map {
                 FriendInfo(
                     it.getString("id"), it.optString("nick"), it.optInt("colour"), it.nullableString("icon"), it.nullableString("photo"),

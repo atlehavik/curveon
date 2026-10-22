@@ -108,8 +108,12 @@ object GroupHub {
         this.context = app
         store = GroupStore(app).also { s ->
             s.loadGroups().forEach { groups[it.groupIdHex] = it }
-            // A friend code that was shown but never scanned is of no use after a restart.
-            groups.values.filter { it.kind == GroupKind.FRIEND && it.peer == null && it.isAdmin }.map { it.groupIdHex }.forEach { id ->
+            // A friend code that was shown but never scanned is of no use after a restart. A link sent through a chat is kept
+            // for as long as it works: the friend may open it days later, in another country.
+            val now = System.currentTimeMillis() / 1000
+            val links = s.pendingLinks.filter { (id, until) -> until > now && id in groups }
+            s.pendingLinks = links
+            groups.values.filter { it.kind == GroupKind.FRIEND && it.peer == null && it.isAdmin && it.groupIdHex !in links }.map { it.groupIdHex }.forEach { id ->
                 groups.remove(id)
                 s.delete(id)
             }
@@ -163,7 +167,7 @@ object GroupHub {
         is Message.SosCancel, is Message.SosAnswer, is Message.GroupRemoveRider, is Message.RequestDeviceLink, is Message.GroupSettings,
         is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
         is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.RequestGroupInvite,
-        is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing -> true
+        is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing, is Message.RequestFriendLink -> true
         else -> false
     }
 
@@ -260,6 +264,7 @@ object GroupHub {
             is Message.SelfUnlink -> unlinkSelf()
             is Message.RequestFriends -> { send(friendList()); sweepFriends() }
             is Message.RequestFriendInvite -> makeFriendInvite()?.let { (id, uri) -> send(Message.FriendInvite(id, uri)) }
+            is Message.RequestFriendLink -> makeFriendLink()
             is Message.FriendRemove -> removeFriend(m.channelId)
             is Message.FriendSharing -> {
                 setFriendSharing(m.on, m.friendIds.toSet())
@@ -448,10 +453,17 @@ object GroupHub {
                 }
                 // A friend channel is for two: whoever said hello first is the friend.
                 if (state.peer?.riderId != null && state.peer?.riderId != m.id) return
+                val isNew = state.peer == null
                 val photo = (m.avatar as? Avatar.Photo)?.let { Base64.getEncoder().encodeToString(it.jpeg) }
                 state.peer = PeerProfile(m.nickname, m.colour, (m.avatar as? Avatar.Icon)?.id, photo, m.id)
                 store?.save(state)
                 send(friendList())
+                if (isNew) {
+                    // The code or link has done its job: a new friend, on both sides at once.
+                    store?.let { s -> if (id in s.pendingLinks) s.pendingLinks = s.pendingLinks - id }
+                    send(Message.FriendAdded(id, m.nickname))
+                    scheduleSync()
+                }
             }
             is GroupEvent.InviteReceived -> offer(state, e.invite)
             is GroupEvent.TripReceived -> when {
@@ -494,10 +506,24 @@ object GroupHub {
     /** A new private channel for one friend to join (the code and the link). Kept open while the code is on show. */
     private fun makeFriendInvite(): Pair<String, String>? {
         val store = store ?: return null
-        val state = friendStates().firstOrNull { it.peer == null && it.isAdmin }
+        val links = store.pendingLinks
+        val state = friendStates().firstOrNull { it.peer == null && it.isAdmin && it.groupIdHex !in links }
             ?: GroupState.create(RELAY_HOST, null, GroupKind.FRIEND).also { groups[it.groupIdHex] = it; store.save(it) }
         touchFriend(state.groupIdHex, 15 * 60_000L)
         return state.groupIdHex to state.invite(System.currentTimeMillis() / 1000 + DEFAULT_INVITE_DAYS * 86_400L).toUri()
+    }
+
+    /**
+     * A link for one friend far away, a new channel each time (two friends must never share one). Opened now so the relay keeps
+     * this rider's hello for the friend; the friend's hello is heard on the next look-in (every 10 minutes, or at once in Friends).
+     */
+    private fun makeFriendLink() {
+        val store = store ?: return
+        val until = System.currentTimeMillis() / 1000 + DEFAULT_INVITE_DAYS * 86_400L
+        val state = GroupState.create(RELAY_HOST, null, GroupKind.FRIEND).also { groups[it.groupIdHex] = it; store.save(it) }
+        store.pendingLinks = store.pendingLinks + (state.groupIdHex to until)
+        touchFriend(state.groupIdHex, 20_000)
+        send(Message.FriendLink(state.invite(until).toUri()))
     }
 
     /** For the companion's own screen: a friend code, delivered on the main thread (null if there is no relay set). */

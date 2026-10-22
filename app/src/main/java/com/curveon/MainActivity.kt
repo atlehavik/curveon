@@ -118,8 +118,9 @@ class MainActivity : ComponentActivity() {
                 androidx.core.content.IntentCompat.getParcelableExtra(intent, android.content.Intent.EXTRA_STREAM, android.net.Uri::class.java)
             else -> null
         } ?: return
-        // An invite link to a group ride (curveon://join#...) goes to the phone side, not the GPX importer.
-        if (uri.scheme == "curveon" && uri.host == "join") return dashboardViewModel.phoneCompanion.groups.join(uri.toString())
+        // An invite link to a group ride or a friend (curveon://join#... or https://relay.curveon.no/join#...) goes to the phone side, not the GPX importer.
+        if ((uri.scheme == "curveon" && uri.host == "join") || (uri.scheme == "https" && uri.host == com.curveon.phone.RELAY_HOST && uri.path == "/join"))
+            return dashboardViewModel.phoneCompanion.groups.join(uri.toString())
         dashboardViewModel.openGpx(uri)
     }
 

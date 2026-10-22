@@ -1262,6 +1262,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // The group ride: its dialog, the rider's own SOS and the alert for someone else's.
     val groupLayer: @Composable BoxScope.() -> Unit = {
         com.curveon.ui.components.GroupInviteOfferDialog(phone.groups)
+        com.curveon.ui.components.FriendHighFive(phone.groups)
         com.curveon.ui.components.GroupSosOverlay(
             phone.groups, currentLocationState.value.latitude, currentLocationState.value.longitude,
             navigateTo = { lat, lon, name -> viewModel.previewDestination(GeoPoint(lat, lon), name) }

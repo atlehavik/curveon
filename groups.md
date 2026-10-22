@@ -378,3 +378,14 @@ Outside any group, a rider can let chosen friends always see where they are (My 
 - **Receiver:** friends who share are looked in on every 2 minutes, all at once, while Curveon runs (6 s per channel); the relay replays
   the latest position. They are drawn on the map like riders (dimmed after 10 min) and listed with when they were seen.
 - The choice is synced to the rider's other devices (`share` in `SyncDoc`). Older versions ignore the new frames and messages.
+
+### Friends far away: links, and the high five (built 2026-10-22)
+- **Send a link** (My friends) makes a new friend channel each time (`RequestFriendLink`, never shared between two friends) and hands
+  its `https://relay.curveon.no/join#…` link to the share sheet. It is kept across restarts until it is opened or its week runs out
+  (`GroupStore.pendingLinks`); an unscanned QR code is still dropped on restart. The rider's hello is left on the relay at once, and the
+  friend's is heard on the next look-in (10-minute sweep, or opening Friends).
+- **The link opens Curveon:** App Links (`autoVerify` on `https://relay.curveon.no/join`, `/.well-known/assetlinks.json` on the relay
+  with the release and debug signing keys). Without verification the page there has an "Open in Curveon" button (`curveon://join#…`);
+  the invite stays in the fragment, which never reaches the server.
+- **A new friendship** (the friend channel's peer heard for the first time, on both sides) sends `FriendAdded`: the code on show is
+  dropped (the next friend gets a new one) and `FriendHighFive` shows over everything, also when it happens days later.

@@ -39,6 +39,14 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     private val _friends = MutableStateFlow<List<Message.FriendInfo>>(emptyList())
     val friends: StateFlow<List<Message.FriendInfo>> = _friends.asStateFlow()
 
+    /** A link for one friend far away, to hand to the share sheet; for one friend. */
+    private val _friendLink = MutableStateFlow<String?>(null)
+    val friendLink: StateFlow<String?> = _friendLink.asStateFlow()
+
+    /** A friendship that has just begun: the high five. */
+    private val _friendAdded = MutableSharedFlow<Message.FriendAdded>(extraBufferCapacity = 4)
+    val friendAdded: SharedFlow<Message.FriendAdded> = _friendAdded
+
     /** The switch for letting friends see where the rider is (which ones: [Message.FriendInfo.seesMe]). */
     private val _friendSharing = MutableStateFlow(false)
     val friendSharing: StateFlow<Boolean> = _friendSharing.asStateFlow()
@@ -135,6 +143,12 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 _friendPositions.value = _friendPositions.value.filterKeys { id -> m.friends.any { it.id == id && it.sharesWithMe } }
             }
             is Message.FriendInvite -> _friendInvite.value = m.uri
+            is Message.FriendLink -> _friendLink.value = m.uri
+            is Message.FriendAdded -> {
+                // The code on show has done its job: the next friend gets a new one.
+                _friendInvite.value = null
+                _friendAdded.tryEmit(m)
+            }
             is Message.GroupInviteOffer -> if (_offers.value.none { it.offerId == m.offerId }) _offers.value = _offers.value + m
             is Message.GroupList -> {
                 _groups.value = m.groups
@@ -212,6 +226,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun requestFriends() = send(Message.RequestFriends)
     fun requestFriendInvite() = send(Message.RequestFriendInvite)
     fun forgetFriendInvite() { _friendInvite.value = null }
+    fun requestFriendLink() { _friendLink.value = null; send(Message.RequestFriendLink) }
+    fun forgetFriendLink() { _friendLink.value = null }
     fun removeFriend(channelId: String) = send(Message.FriendRemove(channelId))
 
     /** The switch for all friends ([on]), and whether [friendId] always sees the rider while it is on ([sees]). */
@@ -325,6 +341,16 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
             }
             is Message.SosCancel -> _sos.value[_myId.value ?: "me"]?.let { onMessage(it.copy(active = false)) }
             is Message.GroupSharing -> onMessage(Message.GroupList(_groups.value, _activeId.value, m.on))
+            // A code or link on show, and a few seconds later Siri takes it: the high five.
+            Message.RequestFriendInvite, Message.RequestFriendLink -> scope.launch {
+                val uri = "https://relay.curveon.no/join#v=1&demo&t=f"
+                onMessage(if (m is Message.RequestFriendLink) Message.FriendLink(uri) else Message.FriendInvite("siri", uri))
+                delay(4_000)
+                if (_friends.value.none { it.id == "siri" }) {
+                    onMessage(Message.FriendList(_friends.value + Message.FriendInfo("siri", "Siri", 0xFFFFD740.toInt(), "helmet", null), _friendSharing.value))
+                    onMessage(Message.FriendAdded("siri", "Siri"))
+                }
+            }
             else -> Unit
         }
     }
