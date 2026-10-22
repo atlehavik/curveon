@@ -35,6 +35,8 @@ sealed interface GroupEvent {
 }
 
 private const val CLAIM_HEARTBEAT_MS = 60_000L
+/** How long the relay keeps a trip for those who look in later (its own limit may be shorter). */
+private const val TRIP_KEEP_S = 30L * 24 * 3600
 private const val CLAIM_STALE_MS = 180_000L
 
 /**
@@ -153,8 +155,14 @@ class GroupClient(
     connected && send(Payload.GroupInvite(B64.encode(GroupKeys.randomBytes(9)), link, groupName))
   }
 
-  /** Shares a new or changed trip with the group. False if it could not go out now. */
-  fun sendTrip(trip: Payload.Trip): Boolean = synchronized(lock) { connected && send(trip) }
+  /**
+   * Shares a new or changed trip with the group. False if it could not go out now. The relay keeps the latest of each
+   * trip per device of this rider, so a trip that changes often does not push other trips (or a friend's "I share with
+   * you") out of what someone who connects later is given.
+   */
+  fun sendTrip(trip: Payload.Trip): Boolean = synchronized(lock) {
+    connected && send(trip, Keep(state.keys.slot("trip/${trip.tripId}/${state.deviceId}"), TRIP_KEEP_S))
+  }
 
   fun answerSos(sosRiderId: String, coming: Boolean) = synchronized(lock) { if (connected) send(Payload.SosAck(sosRiderId, coming)) }
 
@@ -221,7 +229,7 @@ class GroupClient(
 
   private fun connect() {
     if (stopped || transport != null) return
-    val url = "$scheme://${state.relayHost}/g/${state.groupIdHex}?p=${state.keys.accessProof()}&a=${B64.encode(state.adminPublicKey)}"
+    val url = "$scheme://${state.relayHost}/g/${state.groupIdHex}?p=${state.keys.accessProof()}&a=${B64.encode(state.adminPublicKey)}&pv=${Wire.REVISION}"
     val gen = ++generation
     transport = factory.open(url, object : TransportListener {
       override fun onOpen() {
@@ -256,11 +264,11 @@ class GroupClient(
     })
   }
 
-  private fun send(p: Payload): Boolean {
+  private fun send(p: Payload, keep: Keep? = null): Boolean {
     val seq = maxOf(lastSeq + 1, clock())
     lastSeq = seq
     val frame = FrameCrypto.seal(state.keys, p.type, state.riderId, PayloadCodec.encode(seq, clock(), p, state.deviceId))
-    return transport?.send(Wire.encode(frame)) == true
+    return transport?.send(Wire.encode(frame, keep)) == true
   }
 
   // ---- receiving ----

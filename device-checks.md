@@ -6,6 +6,16 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Ny relay (tåler nye funksjoner) med gammel og ny app sammen
+
+Relayen på relay.curveon.no er oppdatert, og Pixelen har den nye appen. X7 har fortsatt den gamle: det er
+akkurat blandingen som skal virke.
+- [ ] Venner: Pixel og X7 ser hverandre på kartet når «Ser alltid hvor jeg er» er på (begge veier).
+- [ ] Send en rute til en venn fra Pixelen og fra X7: den kommer fram begge veier.
+- [ ] Del en tur med en kjøregruppe, endre den mange ganger (stopp, stil), og la en tredje enhet koble til etterpå:
+      den får turen slik den er nå.
+- [ ] Ingen nye krasj: `adb -s <enhet> pull /sdcard/Android/data/com.curveon.app/files/crashes`
+
 ## 2026-10-22 — Eventyrruter som ikke kjører samme vei tilbake (1.2.2)
 
 - [ ] Lag den samme eventyrturen som før (Bømlo → østover rundt Sunnhordland, ca. 8 t) noen ganger

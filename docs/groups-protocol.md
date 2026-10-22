@@ -55,7 +55,10 @@ its claim every minute while it sends; a claim more than three minutes old no lo
 behind in a pocket does not block the other one. Only `pos` is held back: profile, SOS and routes are not.
 
 ## Relay connection
-`wss://<relay>/g/<groupId hex>?p=<proof>[&a=<adminPub>]`
+`wss://<relay>/g/<groupId hex>?p=<proof>[&a=<adminPub>][&pv=<revision>]`
+
+`pv` is what the client understands (`Wire.REVISION`; none means 1, the clients from before it). Revision 2 knows
+the `relay` frame, any frame type and keeping in slots. The relay ignores query parameters it does not know.
 
 - The first connection to a group creates it and fixes the `proof` and the admin public key (`a`).
   Later connections must send the same `proof`, or the relay answers 403.
@@ -63,7 +66,9 @@ behind in a pocket does not block the other one. Only `pos` is held back: profil
   accepts only the new `proof`, which locks out a removed rider.
 - The relay limits sockets per group, groups created per IP and hour, frame size and rate.
 - Answers: 403 wrong or missing proof, 429 too many new groups from this address, 503 relay full.
-- On connect the relay replays what it stored: `hello`, `route`, then `sos`. Positions are never stored.
+- On connect the relay first sends its `relay` frame (see "What the relay says"), then replays what it stored:
+  `hello`, `route`, then the rest in the order it came (`sos`, `claim`, `invite`, `trip`, slots), then what it keeps in
+  memory (the latest `pos` of each rider, memory slots). Positions are never written to disk.
 - A frame is dropped unless `e` equals the group's current epoch.
 - After an accepted `rekey` the relay closes every socket with code **4001**; clients reconnect with the
   new proof. A client that connects with the proof from just before the last rekey (it was offline)
@@ -82,7 +87,14 @@ tag. Associated data (authenticated, not hidden):
     "curveon/1" || groupId || riderId || epoch_be32 || type (ASCII)
 
 so a frame cannot be moved to another group, rider, epoch or type. The relay forwards `v`, `t`, `r`, `e`,
-`n`, `c` and nothing else; a frame of an unknown type or with extra fields is dropped.
+`n`, `c` and nothing else: other fields are not passed on (an unknown one is ignored, not a reason to drop the frame).
+
+`t` is any name matching `[a-z][a-z0-9_]{0,23}` except `rekey` (its own shape, below) and names starting with `relay`
+(only the relay sends those). The relay forwards a type it does not know like any other; the types in the table also
+have a meaning of their own on the relay. A client ignores a frame of a type it does not know.
+
+The envelope may also ask the relay to keep the frame (see "Keeping a frame"): `k`, `x`, `m`. These are for the
+relay only and are never forwarded.
 
 | `t` | Relay | Payload (JSON, inside the ciphertext) |
 |---|---|---|
@@ -95,6 +107,65 @@ so a frame cannot be moved to another group, rider, epoch or type. The relay for
 | `leave` | forward | `seq`, `ts` |
 | `claim` | forward; keep the latest per rider | `seq`, `ts`, `dev` (see below) |
 | `rekey` | forward; keep ~30 days | see below (not encrypted with `encKey`) |
+
+## Keeping a frame
+A sender asks the relay to hand a frame to those who connect later with three optional envelope fields:
+
+| Field | Meaning |
+|---|---|
+| `k` | the slot, base64url, at most 43 characters. The relay keeps the **latest frame per rider and slot**. |
+| `x` | seconds to keep it (left out: as long as the relay allows). `0` forgets the slot (the frame is still forwarded). |
+| `m` | `true`: in memory only (gone at a relay restart). |
+
+- Slots are opaque to the relay. Clients make them with `slot = base64url(HMAC-SHA256(slotKey, "curveon/1 slot" || name)[0..16])`,
+  `slotKey` = HKDF-SHA256(`ikm = groupKey`, `salt = groupId`, info `"curveon/1 slot"`), so the relay cannot tell what
+  a slot holds, and slots change with every rekey.
+- A frame with a slot is kept that way instead of by the relay's own rule for its type. The type's other effects
+  stay (`leave` still removes the rider's profile, `sos_cancel` the stored `sos`).
+- A `pos` is never written to disk, whatever it asks: it is kept in memory.
+- `leave` removes every slot of that rider; a rekey drops them all (they were made with the old key).
+- The relay cuts what it is asked to its own limits, sent in its `relay` frame: the longest time on disk (`keep`,
+  30 days) and in memory (`memKeep`, 1 hour), the largest frame kept in memory (`memFrame`), and slots and bytes per
+  rider (`slots`, `slotBytes`). Past a quota the rider's (or the group's) oldest slots are forgotten first.
+- A malformed `k`, `x` or `m` is ignored: the frame is forwarded and kept by the type's own rule.
+- A relay from before slots ignores the fields, so a client that asks gets the old behaviour there, never an error.
+
+What the reference client keeps this way: every `trip` (slot `trip/<tid>/<device id>`, 30 days), so a trip that
+changes often never pushes other trips, the sync document or "I share with you" out of what a later joiner gets.
+
+## What the relay says
+The first message on every connection (not a catch-up after a rekey) is the relay's own:
+
+    { "v": 1, "t": "relay", "f": ["any-type", "keep", "keep-memory"],
+      "lim": { "frame": 524288, "rate10s": 30, "keep": 2592000, "memKeep": 3600, "memFrame": 4096, "slots": 64, "slotBytes": 2097152 } }
+
+`f` lists what this relay can do; a feature is only ever added, never renamed or taken away. `lim` are its limits
+(bytes, frames per 10 s per socket, seconds). Clients from before it drop it (it has no `r`), which is why it may be sent
+to everyone. A client may use it to choose how to send; none needs it to work.
+
+## Evolving the protocol
+Riders do not all update at once, and a friend may run a version from months ago. Every change must leave the older
+apps working, and the relay must keep serving every older client. The rules:
+
+1. **Add, never change.** Payload fields are only added, and optional: an older app ignores fields it does not know.
+   A field is never removed, renamed or given another type or meaning; a new meaning is a new field. Fields an
+   older app reads as required must always be sent: `seq`, `ts` (all), `lat`, `lon` (`pos`, `sos`), `nick`, `colour`,
+   `ak` (`hello`), `id`, `name`, `data` (`route`), `sos` (`sos_ack`), `dev` (`claim`), `oid`, `link` (`invite`),
+   `tid`, `rev`, `doc` (`trip`); inside a trip document `destination` with `lat`, `lon`, and `lat`, `lon` of each
+   stop; inside the sync document (`tid` `me`) `items` with `k` and `t`. Leaving one out makes older apps drop the
+   whole message, silently.
+2. **Something new is a new frame type**, not a new use of an old one. Older apps ignore an unknown type; the relay
+   forwards it with no change on the server. (Not, say, a new `tid` in `trip`: older apps would try to read it as a trip.)
+3. **What should reach those who connect later** asks for a slot (`k`, `x`, `m`) instead of a new rule on the relay.
+4. **The relay changes only for something it must do itself.** Then the relay goes out first and the apps after,
+   and what it does for older clients stays as it was. It can tell clients apart by `pv`, and tells them what it can
+   do in its `relay` frame.
+5. **`v` stays 1.** It is raised only for an envelope older clients and relays could not read at all, which would cut
+   them off; a new field or type never needs it. The same goes for `v` in the trip document (`TripDoc`) and the invite.
+6. **Close codes:** a client reconnects with back-off on any code it does not know, so a new code never strands one.
+7. **Before it goes out:** `npm test` in `curveon-relay`, and `RelayIntegrationTest` in `:groups`, which runs the
+   Kotlin clients against the real relay. A relay change is also tried with the clients of the release before
+   (an older `:groups` against the new relay).
 
 ## Replay protection
 Every payload has `seq`, a number that rises per rider and epoch, and `ts`. A receiver accepts a frame

@@ -345,6 +345,21 @@ class RelayIntegrationTest {
     assertEquals(setOf(1L, 2L), seen)
   }
 
+  @Test fun aTripThatChangesOftenPushesNothingElseOutOfWhatALaterJoinerGets() {
+    val (a, invite) = group()
+    a.client.start()
+    a.await { it as? GroupEvent.Connected }
+    // "I share with you" first, then a trip changed forty times (the relay used to keep the last 30 trip frames of all).
+    assertTrue(a.client.sendTrip(Payload.Trip("share", 1, "", "1")))
+    for (rev in 1L..40L) assertTrue(a.client.sendTrip(Payload.Trip("t1", rev, "Dagstur", """{"stops":[]}""")))
+    Thread.sleep(500)
+
+    val kari = joined(invite, "Kari").also { it.client.start() }
+    assertEquals("1", kari.await { (it as? GroupEvent.TripReceived)?.takeIf { e -> e.trip.tripId == "share" } }.trip.doc)
+    assertEquals(40L, kari.await { (it as? GroupEvent.TripReceived)?.takeIf { e -> e.trip.tripId == "t1" } }.trip.rev)
+    assertTrue("only the latest of each trip is handed over", kari.none { it is GroupEvent.TripReceived })
+  }
+
   @Test fun aTripChangedOnMyOtherDeviceReachesThisOneToo() {
     val (phone, tablet, _) = twoDevices()
     phone.client.sendTrip(Payload.Trip("t9", 1, "Min tur", """{"stops":[]}"""))

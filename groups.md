@@ -142,6 +142,11 @@ Caddy in front for TLS; the same host serves the `https` invite landing page.
   (see "Friends who always see you"). A rekey or `leave` drops it.
 - Limits (all configurable): sockets per group (default 30), frame max ~512 KB (GPX gzipped), per-socket rate limit, max groups
   per IP per hour. Nothing else is logged.
+- **Built to change without breaking (2026-10-22).** The relay forwards any frame type (a new kind of message needs no
+  server change; older apps ignore it), a sender can ask for a frame to be kept in a slot (latest per rider and slot, `k`/`x`/`m`)
+  instead of the relay learning a new rule, the relay says what it can do in a `relay` frame first on every connection, and
+  clients say what they understand (`pv`). Shared trips use slots, so a trip changed often no longer pushes "I share with you" or
+  the sync document out of the relay's last 30. The rules: "Evolving the protocol" in [docs/groups-protocol.md](docs/groups-protocol.md).
 - Reconnect with backoff; the relay needs no state beyond the above. A restart loses only memory;
   the SQLite file keeps `hello`, `route`, `rekey` and `sos`.
 

@@ -6,13 +6,24 @@ import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-/** Frame types the relay forwards. Everything else is dropped. `hello`, `route`, `sos`, `claim`, `invite`, `trip` and `rekey` are also stored and replayed. */
+/**
+ * Frame types this client knows; a frame of any other type is ignored (it is from a newer app). The relay forwards every
+ * type with a valid name, and keeps `hello`, `route`, `sos`, `claim`, `invite`, `trip` and `rekey` by its own rules
+ * unless the frame asks for a [Keep]. A new kind of message is a new type here (docs/groups-protocol.md, "Evolving").
+ */
 enum class FrameType(val wire: String) {
   POS("pos"), HELLO("hello"), ROUTE("route"), SOS("sos"), SOS_ACK("sos_ack"), SOS_CANCEL("sos_cancel"),
   LEAVE("leave"), CLAIM("claim"), INVITE("invite"), TRIP("trip"), REKEY("rekey");
 
   companion object { fun of(wire: String) = entries.firstOrNull { it.wire == wire } }
 }
+
+/**
+ * How the relay should keep a frame for those who connect later: the latest frame per rider and [slot] (made with
+ * [GroupKeys.slot], so the relay cannot tell what it is), for [seconds] (0 forgets the slot), in memory only when [memory].
+ * Not encrypted or authenticated: it is an ask to the relay, which applies its own limits.
+ */
+class Keep(val slot: String, val seconds: Long, val memory: Boolean = false)
 
 /** One message on the wire, the part the relay sees. */
 class Frame(val type: FrameType, val riderId: ByteArray, val epoch: Int, val nonce: ByteArray, val ciphertext: ByteArray)

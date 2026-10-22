@@ -89,6 +89,39 @@ class GroupsTest {
     assertNull(FrameCrypto.open(GroupKeys(GroupKeys.newGroupId(), keys.groupKey), f))
   }
 
+  @Test fun slotsAreTheSameForTheGroupAndTellTheRelayNothing() {
+    val id = GroupKeys.newGroupId()
+    val key = GroupKeys.newGroupKey()
+    val s = GroupKeys(id, key).slot("trip/t1/dev")
+    assertEquals(s, GroupKeys(id, key).slot("trip/t1/dev"))
+    assertTrue("short base64url, as the relay wants", Regex("[A-Za-z0-9_-]{22}").matches(s))
+    assertFalse("the name does not show", s.contains("trip"))
+    assertNotEquals(s, GroupKeys(id, key).slot("trip/t2/dev"))
+    assertNotEquals(s, GroupKeys(id, GroupKeys.newGroupKey()).slot("trip/t1/dev"))
+  }
+
+  @Test fun theAskToKeepGoesOnTheEnvelopeOnly() {
+    val keys = GroupKeys(GroupKeys.newGroupId(), GroupKeys.newGroupKey())
+    val frame = FrameCrypto.seal(keys, FrameType.TRIP, GroupKeys.newRiderId(), "x".toByteArray())
+    val o = org.json.JSONObject(Wire.encode(frame, Keep("slot1", 60, memory = true)))
+    assertEquals("slot1", o.getString("k"))
+    assertEquals(60, o.getInt("x"))
+    assertTrue(o.getBoolean("m"))
+    val plain = org.json.JSONObject(Wire.encode(frame))
+    assertFalse(plain.has("k") || plain.has("x") || plain.has("m"))
+    // A frame that still carries it (a relay that forwards it) reads the same.
+    assertArrayEquals(frame.ciphertext, Wire.decode(o.toString())!!.ciphertext)
+  }
+
+  @Test fun whatANewerAppOrTheRelaySaysIsIgnored() {
+    // The relay's own frame, sent first on every connection.
+    assertNull(Wire.decode("""{"v":1,"t":"relay","f":["any-type","keep"],"lim":{"frame":524288}}"""))
+    // A type from a newer app.
+    assertNull(Wire.decode("""{"v":1,"t":"newthing","r":"AAAAAAAAAAAAAAAAAAAAAA","e":0,"n":"AAAAAAAAAAAAAAAA","c":"AAAA"}"""))
+    // A newer envelope version.
+    assertNull(Wire.decode("""{"v":2,"t":"pos","r":"AAAAAAAAAAAAAAAAAAAAAA","e":0,"n":"AAAAAAAAAAAAAAAA","c":"AAAA"}"""))
+  }
+
   @Test fun accessProofDependsOnGroupAndEpoch() {
     val id = GroupKeys.newGroupId()
     val key = GroupKeys.newGroupKey()
