@@ -9,7 +9,8 @@ Commands assume the device is connected over USB. With both connected, pick one 
 ## 2026-10-22 — Profilbilde: knapper synlige og stiler (1.2.2)
 
 - [ ] Pixel, portrett og landskap: Venner → Meg → velg eller ta et bilde. «Avbryt» og «Bruk dette bildet»
-      er synlige uten å scrolle, og ingen stripe av kartet skimtes øverst/nederst.
+      er helt synlige nederst (feilen var at vinduet havnet under kamerahullet), og ingen stripe av kartet
+      skimtes. Se også at andre vinduer som spretter opp (Kartpunkt, «Forkast tur?») ikke er kuttet nederst.
 - [ ] Etter et par sekunder dukker Vanlig / Klistremerke / Neon / Fart opp (første gang kan Play-tjenester
       bruke litt tid på å hente modellen; uten nett vises bare bildet). Prøv et bilde av deg med hjelm/uten,
       og se at utklippet følger hodet. Lagre og se at runden i profilen og på kartet ser bra ut.

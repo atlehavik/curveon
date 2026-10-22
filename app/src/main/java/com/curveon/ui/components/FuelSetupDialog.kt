@@ -213,7 +213,7 @@ fun FuelSetupDialog(
     }
     if (confirmReset) AlertDialog(
         onDismissRequest = { confirmReset = false },
-        title = { Text(stringResource(R.string.fuel_start_over)) },
+        title = { HideSystemBars(); Text(stringResource(R.string.fuel_start_over)) },
         text = { Text(stringResource(R.string.fuel_start_over_body)) },
         confirmButton = { TextButton(onClick = { onReset(); ready = false; confirmReset = false }) { Text(stringResource(R.string.delete), color = WarningRed) } },
         dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(stringResource(R.string.cancel)) } }

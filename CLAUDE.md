@@ -73,6 +73,14 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   phone-size emulator (Pixel, see Build and run) in both portrait and landscape, while navigating and
   not navigating, and with the music player on and off. Overlap with other elements is the main
   thing to look for every time; check the X7 layout too.
+- **Nothing off screen on the Pixel (recurring bug, ~14 times).** The Pixel 9a has a camera hole and
+  runs API 37; the X7 AVD has neither, so it hides this. Any new or changed screen, dialog or sheet is
+  checked on `Curveon_Phone` (API 36) with the hole cutout switched on
+  (`adb shell cmd overlay enable-exclusive --category com.android.internal.display.cutout.emulation.hole`),
+  in portrait *and* landscape, before it is called done: every button fully on screen, and for a
+  dialog window `adb shell dumpsys window windows` shows its `Requested` size inside its `frame`. Every
+  `Dialog` calls `HideSystemBars()` (CockpitDialog.kt), which lets the window cover the camera hole;
+  without it Android puts the window below the hole at full height and cuts off its bottom.
 - **Every text in two languages.** The rider picks English or Norwegian in Settings → Display. Any
   text the rider can see goes in `res/values/strings.xml` (English) *and* `res/values-nb/strings.xml`
   (Norwegian Bokmål), never as a literal in Kotlin: `stringResource(R.string.x)` in Compose,

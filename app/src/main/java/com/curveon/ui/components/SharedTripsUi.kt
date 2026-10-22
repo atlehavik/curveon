@@ -52,6 +52,7 @@ private fun sharedTripInfo(t: SharedTrip): String {
 @Composable
 fun SharedTripOfferDialog(trip: SharedTrip, onRideNow: () -> Unit, onSave: () -> Unit, onIgnore: () -> Unit) {
     Dialog(onDismissRequest = onSave, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        HideSystemBars()
         Column(
             Modifier.clip(RoundedCornerShape(20.dp)).background(CockpitSurface).padding(20.dp).widthIn(max = 520.dp).testTag("shared_trip_offer"),
             verticalArrangement = Arrangement.spacedBy(12.dp)

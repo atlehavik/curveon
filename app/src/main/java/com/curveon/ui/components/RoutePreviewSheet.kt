@@ -553,6 +553,7 @@ fun StopMenuDialog(
     removeLabel: String = stringResource(R.string.preview_remove_stop)
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        HideSystemBars()
         Column(
             Modifier.clip(RoundedCornerShape(20.dp)).background(CockpitSurface).border(1.dp, CockpitBorder, RoundedCornerShape(20.dp))
                 .padding(20.dp).widthIn(max = 760.dp).testTag("stop_menu"),

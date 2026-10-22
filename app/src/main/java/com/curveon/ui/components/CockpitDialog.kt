@@ -131,6 +131,11 @@ fun HideSystemBars() {
     val view = LocalView.current
     val window = (view.parent as? DialogWindowProvider)?.window ?: return
     LaunchedEffect(window) {
+        // A phone with a camera hole (the Pixel): Android otherwise puts the dialog's window below the hole but
+        // keeps it the screen's full height, so its bottom (with the buttons) ends up below the screen.
+        window.attributes = window.attributes.apply {
+            layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+        }
         WindowCompat.getInsetsController(window, view).apply {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())

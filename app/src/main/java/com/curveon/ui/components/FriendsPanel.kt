@@ -204,6 +204,7 @@ fun GroupInviteOfferDialog(manager: GroupManager) {
     val offers by manager.offers.collectAsStateWithLifecycle()
     val o = offers.firstOrNull() ?: return
     Dialog(onDismissRequest = { manager.answerOffer(o.offerId, false) }) {
+        HideSystemBars()
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(CockpitSurface).padding(18.dp).testTag("group_offer"),
             verticalArrangement = Arrangement.spacedBy(12.dp)
