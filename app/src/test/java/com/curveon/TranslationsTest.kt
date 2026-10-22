@@ -7,8 +7,9 @@ import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * Every English text has a Norwegian one with the same placeholders, so switching language can
- * neither show a missing text nor crash on a format that doesn't match its arguments.
+ * Every English text is in every language the rider can pick, with the same placeholders, so
+ * switching language can neither show a missing text nor crash on a format that doesn't match its
+ * arguments.
  */
 class TranslationsTest {
 
@@ -33,23 +34,26 @@ class TranslationsTest {
 
     private fun placeholders(text: String) = placeholder.findAll(text).map { it.value.replace(Regex("""\.\d+|0\d"""), "") }.toSortedSet()
 
+    private val languages = AppLanguage.entries.filter { it != AppLanguage.ENGLISH }.map { it.tag }
+
     @Test
-    fun `norwegian has every english text`() {
+    fun `every language has every english text`() {
         val en = load("values")
-        val nb = load("values-nb")
-        assertEquals(en.keys.sorted(), nb.keys.sorted())
+        languages.forEach { assertEquals(it, en.keys.sorted(), load("values-$it").keys.sorted()) }
     }
 
     @Test
     fun `placeholders match between languages`() {
         val en = load("values")
-        val nb = load("values-nb")
-        for ((name, texts) in en) {
-            val want = placeholders(texts.last())
-            nb[name]!!.forEach { t ->
-                // A Norwegian "one" may leave the count out ("Inkluderer en ferje").
-                if (name.startsWith("plurals/")) assertTrue(name, placeholders(t).all { it in want })
-                else assertEquals(name, want, placeholders(t))
+        for (lang in languages) {
+            val tr = load("values-$lang")
+            for ((name, texts) in en) {
+                val want = placeholders(texts.last())
+                tr[name]!!.forEach { t ->
+                    // A "one" may leave the count out ("Inkluderer en ferje").
+                    if (name.startsWith("plurals/")) assertTrue("$lang $name", placeholders(t).all { it in want })
+                    else assertEquals("$lang $name", want, placeholders(t))
+                }
             }
         }
     }

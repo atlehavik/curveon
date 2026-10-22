@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_scan_title">Zeskanuj kod QR</string>
+    <string name="qr_scan_hint">Skieruj aparat na kod QR zaproszenia albo na kod z drugiego urządzenia.</string>
+    <string name="qr_scan_denied">Do skanowania potrzebny jest aparat. Zezwól na to w ustawieniach Androida albo otwórz link z zaproszeniem.</string>
+    <string name="qr_scan_wrong">To nie jest zaproszenie do Curveon.</string>
+    <string name="qr_scan_cancel">Anuluj</string>
+</resources>

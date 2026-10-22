@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_scan_title">Skanna QR-kod</string>
+    <string name="qr_scan_hint">Håll kameran framför inbjudans QR-kod, eller den för din andra enhet.</string>
+    <string name="qr_scan_denied">Kameran behövs för att skanna. Tillåt den i Androids inställningar, eller öppna inbjudningslänken i stället.</string>
+    <string name="qr_scan_wrong">Det är inte en Curveon-inbjudan.</string>
+    <string name="qr_scan_cancel">Avbryt</string>
+</resources>

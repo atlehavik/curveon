@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_scan_title">Escanear un código QR</string>
+    <string name="qr_scan_hint">Pon la cámara delante del código QR de la invitación o del de tu otro dispositivo.</string>
+    <string name="qr_scan_denied">Hace falta la cámara para escanear. Permítela en los ajustes de Android o abre el enlace de la invitación.</string>
+    <string name="qr_scan_wrong">Eso no es una invitación de Curveon.</string>
+    <string name="qr_scan_cancel">Cancelar</string>
+</resources>

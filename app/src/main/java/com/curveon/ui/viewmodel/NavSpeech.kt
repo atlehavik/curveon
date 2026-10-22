@@ -9,7 +9,6 @@ import com.curveon.routing.Maneuver
 import com.curveon.routing.ManeuverType
 import com.curveon.routing.NavigationProgress
 import com.curveon.ui.viewmodel.DashboardViewModel.Companion.describe
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -42,10 +41,7 @@ class NavSpeech(private val context: Context) {
         distance(300.0, useMph) + ", " + lowerFirst(Maneuver(ManeuverType.RIGHT, 0, 0.0).describe(context))
 
     /** The voice to ask the text-to-speech engine for. */
-    fun language(useMph: Boolean) = when (AppLanguage.current(context)) {
-        AppLanguage.NORWEGIAN -> "nb-NO"
-        AppLanguage.ENGLISH -> if (useMph) "en-US" else "en-GB"
-    }
+    fun language(useMph: Boolean) = AppLanguage.current(context).let { if (it == AppLanguage.ENGLISH && useMph) "en-US" else it.speech }
 
     /** "In 300 metres": rounded to what is worth saying (10 m close by, 50 m, then 100 m). */
     private fun distance(meters: Double, useMph: Boolean): String {
@@ -59,8 +55,8 @@ class NavSpeech(private val context: Context) {
         return str(R.string.speak_in_km, "%.1f".format(numbers(), meters / 1000))
     }
 
-    /** Decimal comma in Norwegian, so the voice says "komma". */
-    private fun numbers() = if (AppLanguage.current(context) == AppLanguage.NORWEGIAN) Locale.forLanguageTag("nb-NO") else Locale.UK
+    /** Decimal comma where the language uses one, so the voice says "komma". */
+    private fun numbers() = AppLanguage.current(context).speechLocale
 
     private fun round(v: Double, step: Int) = maxOf(step, (v / step).roundToInt() * step)
 

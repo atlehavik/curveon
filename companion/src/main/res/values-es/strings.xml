@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_test">Prueba de batería</string>
+    <string name="battery_test_hint">Compara cuánta batería gastan Google Maps y Curveon en este móvil. Desenchufa el móvil, empieza la prueba, ve de A a B navegando con una app y de B a A con la otra, y para. Usa el mismo brillo de pantalla en los dos trayectos.</string>
+    <string name="battery_test_start">Empezar prueba de batería</string>
+    <string name="battery_test_stop">Parar prueba de batería</string>
+    <string name="battery_test_running">En marcha desde hace %1$s · ahora: %2$s</string>
+    <string name="battery_test_last">Última prueba</string>
+    <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/h · brillo %4$d</string>
+    <string name="battery_test_short">%1$s · aún es muy pronto para saberlo</string>
+    <string name="battery_test_charging">%1$s cargando, no cuenta</string>
+    <string name="battery_test_no_access">Necesita acceso a las notificaciones (Configuración) para ver qué app está navegando.</string>
+    <string name="battery_test_file">Registro: %1$s</string>
+    <string name="battery_nav_none">Sin navegación</string>
+    <string name="battery_nav_maps">Google Maps</string>
+    <string name="battery_nav_curveon">Curveon</string>
+    <string name="group_ride">Salida en grupo</string>
+    <string name="group_status_none">No hay ningún grupo activo. Crea uno en la app Curveon.</string>
+    <string name="group_scan">Escanear un código QR</string>
+    <string name="friends_title">Amigos</string>
+    <string name="friends_hint">Enseña tu código a un amigo o escanea el suyo. Todo lo demás sobre amigos y grupos está en la app Curveon.</string>
+    <string name="friends_my_code">Mostrar mi código</string>
+    <string name="friends_share_link">Compartir enlace</string>
+    <string name="friends_share_text">Sé mi amigo en Curveon: %1$s</string>
+    <string name="friends_code_hint">Tu amigo lo escanea para haceros amigos. Sirve para un solo amigo: muestra un código nuevo para el siguiente.</string>
+    <string name="friends_close">Cerrar</string>
+    <string name="group_error_no_relay">Actualiza Curveon y Curveon Companion a la última versión.</string>
+    <string name="group_unnamed">Grupo</string>
+    <string name="group_status_line">%1$s · %2$d motoristas · %3$s</string>
+    <string name="group_connected">conectado</string>
+    <string name="group_offline">sin conexión</string>
+    <string name="group_paused">en pausa</string>
+    <string name="group_removed">eliminado</string>
+    <string name="group_error_invalid_invite">Esa invitación no funciona.</string>
+    <string name="group_error_expired_invite">Esa invitación ha caducado. Pide una nueva.</string>
+    <string name="group_error_already_member">Ya estás en ese grupo.</string>
+    <string name="group_error_other">Algo ha fallado con el grupo.</string>
+    <string name="group_error_not_linked">Abre primero Curveon en tu tablet o en este móvil: ahí están tus amigos y grupos.</string>
+</resources>

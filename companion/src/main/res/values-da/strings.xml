@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_test">Batteritest</string>
+    <string name="battery_test_hint">Sammenligner, hvor meget batteri Google Maps og Curveon bruger på denne telefon. Tag laderen ud, start testen, kør A→B med navigation i den ene og B→A med den anden, og stop så. Brug samme skærmlysstyrke begge veje.</string>
+    <string name="battery_test_start">Start batteritest</string>
+    <string name="battery_test_stop">Stop batteritest</string>
+    <string name="battery_test_running">Kører i %1$s · nu: %2$s</string>
+    <string name="battery_test_last">Seneste test</string>
+    <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/t · lysstyrke %4$d</string>
+    <string name="battery_test_short">%1$s · for kort til at sige noget endnu</string>
+    <string name="battery_test_charging">%1$s i opladeren, tælles ikke med</string>
+    <string name="battery_test_no_access">Kræver adgang til notifikationer (Opsætning) for at se, hvilken app der navigerer.</string>
+    <string name="battery_test_file">Log: %1$s</string>
+    <string name="battery_nav_none">Ingen navigation</string>
+    <string name="battery_nav_maps">Google Maps</string>
+    <string name="battery_nav_curveon">Curveon</string>
+    <string name="group_ride">Gruppetur</string>
+    <string name="group_status_none">Ingen aktiv gruppe. Start en i Curveon-appen.</string>
+    <string name="group_scan">Scan en QR-kode</string>
+    <string name="friends_title">Venner</string>
+    <string name="friends_hint">Vis din kode til en ven, eller scan vennens. Alt andet om venner og grupper finder du i Curveon-appen.</string>
+    <string name="friends_my_code">Vis min kode</string>
+    <string name="friends_share_link">Del link</string>
+    <string name="friends_share_text">Bliv min ven i Curveon: %1$s</string>
+    <string name="friends_code_hint">Din ven scanner denne for at blive din ven. Den gælder én ven: vis en ny kode til den næste.</string>
+    <string name="friends_close">Luk</string>
+    <string name="group_error_no_relay">Opdater Curveon og Curveon Companion til den nyeste version.</string>
+    <string name="group_unnamed">Gruppe</string>
+    <string name="group_status_line">%1$s · %2$d kørere · %3$s</string>
+    <string name="group_connected">forbundet</string>
+    <string name="group_offline">offline</string>
+    <string name="group_paused">sat på pause</string>
+    <string name="group_removed">fjernet</string>
+    <string name="group_error_invalid_invite">Den invitation virker ikke.</string>
+    <string name="group_error_expired_invite">Den invitation er udløbet. Bed om en ny.</string>
+    <string name="group_error_already_member">Du er allerede med i den gruppe.</string>
+    <string name="group_error_other">Noget gik galt med gruppen.</string>
+    <string name="group_error_not_linked">Åbn Curveon på din tablet eller denne telefon først: dine venner og grupper bor der.</string>
+</resources>

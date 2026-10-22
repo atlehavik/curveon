@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Ni nye språk (1.2.2)
+
+- [ ] **Pixel:** Innstillinger → Skjerm → Språk: velg f.eks. Deutsch og Polski. Se over hovedskjermen mens du navigerer og med musikk på:
+  tekst som er kuttet eller går over to linjer der den ikke burde (tysk og finsk er lengst). Si fra om ord som høres rare ut.
+- [ ] **Pixel:** Med talte veibeskrivelser på og et nytt språk valgt: snakker stemmen det språket? Mangler telefonen stemmen,
+  sier Android det i Innstillinger → Tekst til tale.
+- [ ] **Pixel:** Systemets Innstillinger → Apper → Curveon → Språk viser alle elleve språkene.
+
 ## 2026-10-22 — Profilbilde: «jobber med det» og krasj ved utklipping (1.2.2)
 
 Emulatoren finner ingen person i bildet (ML Kit mangler GPU der), så effektene kan bare prøves på ekte enhet.

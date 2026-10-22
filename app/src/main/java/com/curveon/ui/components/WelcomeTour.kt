@@ -377,17 +377,23 @@ private fun LanguageContent(current: AppLanguage, onPick: (AppLanguage) -> Unit)
         Spacer(Modifier.height(10.dp))
         Text("Language · Språk", color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
         Spacer(Modifier.height(18.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            AppLanguage.entries.forEach { lang ->
-                val on = lang == current
-                Box(
-                    Modifier.weight(1f).height(56.dp).clip(RoundedCornerShape(28.dp))
-                        .background(if (on) ElectricCyan else CockpitBackground.copy(alpha = 0.7f))
-                        .border(1.dp, if (on) ElectricCyan else CockpitBorder, RoundedCornerShape(28.dp))
-                        .clickable { onPick(lang) }.testTag("tour_lang_${lang.tag}"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(lang.label, color = if (on) Color(0xFF00363D) else TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black)
+        // Three to a row, the last row filled out so all are as wide.
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            AppLanguage.entries.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    row.forEach { lang ->
+                        val on = lang == current
+                        Box(
+                            Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(24.dp))
+                                .background(if (on) ElectricCyan else CockpitBackground.copy(alpha = 0.7f))
+                                .border(1.dp, if (on) ElectricCyan else CockpitBorder, RoundedCornerShape(24.dp))
+                                .clickable { onPick(lang) }.testTag("tour_lang_${lang.tag}"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(lang.label, color = if (on) Color(0xFF00363D) else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1)
+                        }
+                    }
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }

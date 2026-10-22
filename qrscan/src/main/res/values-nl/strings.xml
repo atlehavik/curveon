@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="qr_scan_title">QR-code scannen</string>
+    <string name="qr_scan_hint">Houd de camera voor de QR-code van de uitnodiging, of die van je andere apparaat.</string>
+    <string name="qr_scan_denied">De camera is nodig om te scannen. Sta hem toe in de instellingen van Android, of open de uitnodigingslink.</string>
+    <string name="qr_scan_wrong">Dat is geen Curveon-uitnodiging.</string>
+    <string name="qr_scan_cancel">Annuleren</string>
+</resources>

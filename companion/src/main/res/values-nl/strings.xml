@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_test">Batterijtest</string>
+    <string name="battery_test_hint">Vergelijkt hoeveel batterij Google Maps en Curveon op deze telefoon gebruiken. Haal de telefoon van de lader, start de test, rij A→B met de ene app als navigatie en B→A met de andere, en stop dan. Houd voor beide dezelfde schermhelderheid aan.</string>
+    <string name="battery_test_start">Batterijtest starten</string>
+    <string name="battery_test_stop">Batterijtest stoppen</string>
+    <string name="battery_test_running">Loopt al %1$s · nu: %2$s</string>
+    <string name="battery_test_last">Laatste test</string>
+    <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/u · helderheid %4$d</string>
+    <string name="battery_test_short">%1$s · nog te kort om iets te zeggen</string>
+    <string name="battery_test_charging">%1$s aan de lader, telt niet mee</string>
+    <string name="battery_test_no_access">Heeft toegang tot meldingen nodig (Instellen) om te zien welke app navigeert.</string>
+    <string name="battery_test_file">Log: %1$s</string>
+    <string name="battery_nav_none">Geen navigatie</string>
+    <string name="battery_nav_maps">Google Maps</string>
+    <string name="battery_nav_curveon">Curveon</string>
+    <string name="group_ride">Groepsrit</string>
+    <string name="group_status_none">Geen actieve groep. Start er een in de Curveon-app.</string>
+    <string name="group_scan">QR-code scannen</string>
+    <string name="friends_title">Vrienden</string>
+    <string name="friends_hint">Laat je code aan een vriend zien, of scan die van hem of haar. Al het andere over vrienden en groepen staat in de Curveon-app.</string>
+    <string name="friends_my_code">Mijn code tonen</string>
+    <string name="friends_share_link">Link delen</string>
+    <string name="friends_share_text">Word mijn vriend in Curveon: %1$s</string>
+    <string name="friends_code_hint">Je vriend scant deze code om je vriend te worden. Hij geldt voor één vriend: toon een nieuwe code voor de volgende.</string>
+    <string name="friends_close">Sluiten</string>
+    <string name="group_error_no_relay">Werk Curveon en Curveon Companion bij naar de nieuwste versie.</string>
+    <string name="group_unnamed">Groep</string>
+    <string name="group_status_line">%1$s · %2$d rijders · %3$s</string>
+    <string name="group_connected">verbonden</string>
+    <string name="group_offline">offline</string>
+    <string name="group_paused">gepauzeerd</string>
+    <string name="group_removed">verwijderd</string>
+    <string name="group_error_invalid_invite">Die uitnodiging werkt niet.</string>
+    <string name="group_error_expired_invite">Die uitnodiging is verlopen. Vraag om een nieuwe.</string>
+    <string name="group_error_already_member">Je zit al in die groep.</string>
+    <string name="group_error_other">Er ging iets mis met de groep.</string>
+    <string name="group_error_not_linked">Open eerst Curveon op je tablet of op deze telefoon: daar staan je vrienden en groepen.</string>
+</resources>

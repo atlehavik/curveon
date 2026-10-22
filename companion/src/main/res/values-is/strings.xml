@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_test">Rafhlöðupróf</string>
+    <string name="battery_test_hint">Ber saman hve mikla rafhlöðu Google Maps og Curveon nota í þessum síma. Taktu símann úr sambandi, byrjaðu prófið, aktu A→B með leiðsögn í öðru og B→A í hinu, og stöðvaðu svo. Hafðu sömu birtu á skjánum í bæði skiptin.</string>
+    <string name="battery_test_start">Byrja rafhlöðupróf</string>
+    <string name="battery_test_stop">Stöðva rafhlöðupróf</string>
+    <string name="battery_test_running">Í gangi í %1$s · núna: %2$s</string>
+    <string name="battery_test_last">Síðasta próf</string>
+    <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/klst · birta %4$d</string>
+    <string name="battery_test_short">%1$s · of stutt til að segja enn</string>
+    <string name="battery_test_charging">%1$s í hleðslu, ekki talið</string>
+    <string name="battery_test_no_access">Þarf tilkynningaaðgang (Uppsetning) til að sjá hvaða app er með leiðsögn.</string>
+    <string name="battery_test_file">Skrá: %1$s</string>
+    <string name="battery_nav_none">Engin leiðsögn</string>
+    <string name="battery_nav_maps">Google Maps</string>
+    <string name="battery_nav_curveon">Curveon</string>
+    <string name="group_ride">Hópferð</string>
+    <string name="group_status_none">Enginn virkur hópur. Stofnaðu einn í Curveon-appinu.</string>
+    <string name="group_scan">Skanna QR-kóða</string>
+    <string name="friends_title">Vinir</string>
+    <string name="friends_hint">Sýndu vini kóðann þinn, eða skannaðu hans. Allt annað um vini og hópa er í Curveon-appinu.</string>
+    <string name="friends_my_code">Sýna kóðann minn</string>
+    <string name="friends_share_link">Deila hlekk</string>
+    <string name="friends_share_text">Vertu vinur minn í Curveon: %1$s</string>
+    <string name="friends_code_hint">Vinur þinn skannar þetta til að verða vinur þinn. Hann er fyrir einn vin: sýndu nýjan kóða fyrir þann næsta.</string>
+    <string name="friends_close">Loka</string>
+    <string name="group_error_no_relay">Uppfærðu Curveon og Curveon Companion í nýjustu útgáfu.</string>
+    <string name="group_unnamed">Hópur</string>
+    <string name="group_status_line">%1$s · %2$d ökumenn · %3$s</string>
+    <string name="group_connected">tengt</string>
+    <string name="group_offline">ótengt</string>
+    <string name="group_paused">í hléi</string>
+    <string name="group_removed">fjarlægð(ur)</string>
+    <string name="group_error_invalid_invite">Þetta boð virkar ekki.</string>
+    <string name="group_error_expired_invite">Þetta boð er útrunnið. Biddu um nýtt.</string>
+    <string name="group_error_already_member">Þú ert þegar í þessum hópi.</string>
+    <string name="group_error_other">Eitthvað fór úrskeiðis með hópinn.</string>
+    <string name="group_error_not_linked">Opnaðu fyrst Curveon í spjaldtölvunni eða þessum síma: vinir þínir og hópar búa þar.</string>
+</resources>

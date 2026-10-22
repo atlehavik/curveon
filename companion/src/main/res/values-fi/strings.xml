@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="battery_test">Akkutesti</string>
+    <string name="battery_test_hint">Vertaa, kuinka paljon akkua Google Maps ja Curveon kuluttavat tässä puhelimessa. Irrota laturi, aloita testi, aja A→B navigoiden toisella ja B→A toisella, ja lopeta. Pidä näytön kirkkaus samana molempiin suuntiin.</string>
+    <string name="battery_test_start">Aloita akkutesti</string>
+    <string name="battery_test_stop">Lopeta akkutesti</string>
+    <string name="battery_test_running">Käynnissä %1$s · nyt: %2$s</string>
+    <string name="battery_test_last">Edellinen testi</string>
+    <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/h · kirkkaus %4$d</string>
+    <string name="battery_test_short">%1$s · liian lyhyt vielä</string>
+    <string name="battery_test_charging">%1$s laturissa, ei lasketa</string>
+    <string name="battery_test_no_access">Tarvitsee ilmoitusten käyttöoikeuden (Asetukset), jotta näkee, mikä sovellus navigoi.</string>
+    <string name="battery_test_file">Loki: %1$s</string>
+    <string name="battery_nav_none">Ei navigointia</string>
+    <string name="battery_nav_maps">Google Maps</string>
+    <string name="battery_nav_curveon">Curveon</string>
+    <string name="group_ride">Ryhmäajo</string>
+    <string name="group_status_none">Ei aktiivista ryhmää. Aloita sellainen Curveon-sovelluksessa.</string>
+    <string name="group_scan">Skannaa QR-koodi</string>
+    <string name="friends_title">Kaverit</string>
+    <string name="friends_hint">Näytä koodisi kaverille tai skannaa hänen koodinsa. Kaikki muu kavereista ja ryhmistä hoidetaan Curveon-sovelluksessa.</string>
+    <string name="friends_my_code">Näytä koodini</string>
+    <string name="friends_share_link">Jaa linkki</string>
+    <string name="friends_share_text">Ryhdy kaverikseni Curveonissa: %1$s</string>
+    <string name="friends_code_hint">Kaverisi skannaa tämän ryhtyäkseen kaveriksesi. Koodi käy yhdelle kaverille: näytä seuraavalle uusi koodi.</string>
+    <string name="friends_close">Sulje</string>
+    <string name="group_error_no_relay">Päivitä Curveon ja Curveon Companion uusimpaan versioon.</string>
+    <string name="group_unnamed">Ryhmä</string>
+    <string name="group_status_line">%1$s · %2$d ajajaa · %3$s</string>
+    <string name="group_connected">yhdistetty</string>
+    <string name="group_offline">ei yhteyttä</string>
+    <string name="group_paused">tauolla</string>
+    <string name="group_removed">poistettu</string>
+    <string name="group_error_invalid_invite">Kutsu ei toimi.</string>
+    <string name="group_error_expired_invite">Kutsu on vanhentunut. Pyydä uusi.</string>
+    <string name="group_error_already_member">Olet jo siinä ryhmässä.</string>
+    <string name="group_error_other">Ryhmän kanssa meni jotain vikaan.</string>
+    <string name="group_error_not_linked">Avaa ensin Curveon tabletilla tai tällä puhelimella: kaverisi ja ryhmäsi ovat siellä.</string>
+</resources>

@@ -446,7 +446,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** What changed, newest version first, in the rider's language. */
     fun changelog(): List<ChangelogEntry> =
-        Changelog.read(app, com.curveon.AppLanguage.current(app) == com.curveon.AppLanguage.NORWEGIAN)
+        Changelog.read(app, com.curveon.AppLanguage.current(app).tag)
 
     /**
      * The versions installed since the app last ran, to show once after an update; empty on a

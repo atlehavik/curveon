@@ -1,0 +1,7 @@
+<resources>
+    <string name="qr_scan_title">Skannaa QR-koodi</string>
+    <string name="qr_scan_hint">Pidä kameraa kutsun QR-koodin edessä tai toisen laitteesi koodin edessä.</string>
+    <string name="qr_scan_denied">Skannaus tarvitsee kameran. Salli se Androidin asetuksissa tai avaa kutsulinkki.</string>
+    <string name="qr_scan_wrong">Tämä ei ole Curveon-kutsu.</string>
+    <string name="qr_scan_cancel">Peruuta</string>
+</resources>

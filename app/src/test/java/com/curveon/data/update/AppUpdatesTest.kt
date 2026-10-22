@@ -29,11 +29,15 @@ class AppUpdatesTest {
     @Test
     fun `changelog has this version in both languages, newest first`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val en = Changelog.read(context, norwegian = false)
-        val nb = Changelog.read(context, norwegian = true)
+        val en = Changelog.read(context, "en")
+        val nb = Changelog.read(context, "nb")
         assertEquals(BuildConfig.VERSION_NAME, en.first().version)
         assertEquals(en.map { it.version }, nb.map { it.version })
         en.zip(nb).forEach { (e, n) -> assertEquals("lines in ${e.version}", e.changes.size, n.changes.size) }
+        // The other languages may fall back to English, but a translation has every line.
+        com.curveon.AppLanguage.entries.forEach { lang ->
+            en.zip(Changelog.read(context, lang.tag)).forEach { (e, t) -> assertEquals("${lang.tag} lines in ${e.version}", e.changes.size, t.changes.size) }
+        }
         en.zipWithNext().forEach { (newer, older) -> assertTrue(AppUpdates.isNewer(newer.version, older.version)) }
         assertEquals(en.map { it.version }.takeWhile { it != "1.0" }, Changelog.since(en, "1.0").map { it.version })
     }
