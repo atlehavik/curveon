@@ -13,13 +13,14 @@ class TripStop(val name: String, val lat: Double, val lon: Double, val via: Bool
 
 /**
  * A trip shared with a group, as everyone sees it: where to, the stops on the way, and how to ride ([options], JSON the
- * app understands and the library only carries). It is the content of a [Payload.Trip]; whoever changes it sends the whole
+ * app understands and the library only carries). [line] is the road itself as whoever last changed the trip planned it
+ * (text the app understands), so everyone rides the same roads rather than each their own pick; null when not known. It is the content of a [Payload.Trip]; whoever changes it sends the whole
  * new document with a higher revision, and the highest revision wins.
  *
  * Riders pass stops at different times, and a passed stop is dropped from that rider's own route. So [stops] is always
  * the whole list, and what a rider still has to ride is [remaining] without the stops they have passed.
  */
-class TripDoc(val name: String, val destination: TripStop, val stops: List<TripStop>, val options: String = "{}") {
+class TripDoc(val name: String, val destination: TripStop, val stops: List<TripStop>, val options: String = "{}", val line: String? = null) {
 
   /** The stops this rider has not passed yet, in order. */
   fun remaining(passed: Set<String>): List<TripStop> = stops.filter { it.key !in passed }
@@ -32,11 +33,11 @@ class TripDoc(val name: String, val destination: TripStop, val stops: List<TripS
    * The document after this rider changed their route to [remaining] stops and [destination]: the stops they have
    * passed stay in it, first and in their old order, so the others (who may not have passed them yet) still have them.
    */
-  fun edited(passed: Set<String>, remaining: List<TripStop>, destination: TripStop): TripDoc =
-    TripDoc(name, destination, stops.filter { it.key in passed } + remaining, options)
+  fun edited(passed: Set<String>, remaining: List<TripStop>, destination: TripStop, options: String = this.options, line: String? = null): TripDoc =
+    TripDoc(name, destination, stops.filter { it.key in passed } + remaining, options, line)
 
   fun toJson(): String = JSONObject().put("v", 1).put("name", name).put("destination", stopJson(destination))
-    .put("stops", JSONArray(stops.map(::stopJson))).put("options", JSONObject(options)).toString()
+    .put("stops", JSONArray(stops.map(::stopJson))).put("options", JSONObject(options)).apply { if (line != null) put("line", line) }.toString()
 
   companion object {
     /** Null for a document that is not valid or is from a newer version. */
@@ -47,6 +48,7 @@ class TripDoc(val name: String, val destination: TripStop, val stops: List<TripS
         o.optString("name"), parseStop(o.getJSONObject("destination")),
         o.optJSONArray("stops")?.let { a -> (0 until a.length()).map { parseStop(a.getJSONObject(it)) } }.orEmpty(),
         o.optJSONObject("options")?.toString() ?: "{}",
+        o.optString("line").takeIf { it.isNotEmpty() },
       )
     } catch (_: Exception) {
       null

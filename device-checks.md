@@ -15,6 +15,10 @@ Trenger to telefoner med Curveon som er venner (emulatoren har ingen venner).
 - [ ] **Under kjøring:** ankomsttiden → Rute → Del → Del med venner gjør det samme for turen du kjører.
 - [ ] **X7 via Companion:** det samme fra nettbrettet (Companion på Pixel er oppdatert med dette; en eldre Companion gjør ingenting).
 - [ ] Ser vennen deg fortsatt på kartet etter at du har sendt den noen turer?
+- [ ] **Samme rute:** Mottakeren får ett kort med din linje (ikke Raskest/Svingete/Supersvingete), og KJØR følger akkurat de veiene
+  du valgte. Står mottakeren et stykke unna (f.eks. midt på turen), kobler den seg på nærmeste del av linjen, ikke starten.
+- [ ] **Gruppe, ombestemme seg:** Del med gruppen fra planleggeren, bytt så til en annen stil (eller legg til et stopp): de andre i
+  gruppen får den nye linjen innen kort tid og kjører den.
 
 ## 2026-10-22 — Rediger rute under kjøring, sprø profilbilde-effekter (1.2.2)
 

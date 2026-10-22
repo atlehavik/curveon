@@ -21,6 +21,8 @@ class TripDocTest {
     assertEquals(doc.stops, back.stops)
     assertTrue(back.stops[1].via)
     assertTrue(back.options.contains("CURVY"))
+    assertNull(back.line)
+    assertEquals("59.1,5.1;59.2,5.2", TripDoc.fromJson(TripDoc("T", dest, emptyList(), line = "59.1,5.1;59.2,5.2").toJson())!!.line)
     assertNull(TripDoc.fromJson("junk"))
     assertNull(TripDoc.fromJson("""{"v":2,"destination":{"lat":1,"lon":2}}"""))
   }
