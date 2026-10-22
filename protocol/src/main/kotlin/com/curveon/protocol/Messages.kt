@@ -415,16 +415,12 @@ sealed interface Message {
     }
 
     /**
-     * A trip, or a change to it ([rev] only goes up, as in [TripShare]), sent to some friends ([friendIds], channel ids).
-     * A message of its own, so a phone too old to know it ignores it rather than sending the trip to the group.
+     * A trip sent to some friends ([friendIds], channel ids): each gets their own copy to ride or keep, with no changes
+     * going back and forth (unlike [TripShare]). A message of its own, so a phone too old to know it ignores it rather
+     * than sending the trip to the group.
      */
-    data class TripToFriends(val tripId: String, val rev: Long, val name: String, val doc: String, val friendIds: List<String>) : Message {
-        override fun toJson() = obj("trip_to_friends").put("trip", tripId).put("rev", rev).put("name", name).put("doc", doc).put("friends", JSONArray(friendIds))
-    }
-
-    /** Keep the channels to these friends open for a while (a trip shared with them is being ridden: their changes come at once). */
-    data class KeepFriendsOpen(val friendIds: List<String>) : Message {
-        override fun toJson() = obj("keep_friends_open").put("friends", JSONArray(friendIds))
+    data class TripToFriends(val tripId: String, val name: String, val doc: String, val friendIds: List<String>) : Message {
+        override fun toJson() = obj("trip_to_friends").put("trip", tripId).put("name", name).put("doc", doc).put("friends", JSONArray(friendIds))
     }
 
     // ---- friends and shared trips, phone -> tablet ----
@@ -730,9 +726,8 @@ sealed interface Message {
             "friend_add_to_group" -> FriendAddToGroup(o.getString("id"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "group_invite_answer" -> GroupInviteAnswer(o.getString("offer"), o.optBoolean("accept"))
             "trip_share" -> TripShare(o.getString("trip"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
-            "keep_friends_open" -> KeepFriendsOpen(o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "trip_to_friends" -> TripToFriends(
-                o.getString("trip"), o.optLong("rev", 1), o.optString("name"), o.getString("doc"),
+                o.getString("trip"), o.optString("name"), o.getString("doc"),
                 o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty()
             )
             "request_friend_link" -> RequestFriendLink

@@ -1131,7 +1131,7 @@
     <string name="share_trip_no_friends">Du har ingen venner i Curveon endnu. Tilføj nogle under Mine venner.</string>
     <string name="share_trip_send">Send</string>
     <string name="toast_trip_sent_friends">Ruten er sendt til dine venner</string>
-    <string name="shared_trip_offer_hint_friend">I kan alle ændre den, og ændringerne følger alle.</string>
+    <string name="shared_trip_offer_hint_friend">Den er din egen kopi: ret den, som du vil.</string>
     <string name="share_trip_done_group">Delt med gruppen</string>
     <string name="share_trip_start_group">Start en gruppetur først</string>
     <string name="toast_trip_shared">Rute delt med gruppen</string>

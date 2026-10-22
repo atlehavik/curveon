@@ -1082,7 +1082,7 @@
     <string name="share_trip_no_friends">Sinulla ei ole vielä kavereita Curveonissa. Lisää heitä kohdassa Kaverini.</string>
     <string name="share_trip_send">Lähetä</string>
     <string name="toast_trip_sent_friends">Reitti lähetetty kavereillesi</string>
-    <string name="shared_trip_offer_hint_friend">Voitte kaikki muuttaa sitä, ja muutokset menevät kaikille.</string>
+    <string name="shared_trip_offer_hint_friend">Se on oma kopiosi: muokkaa sitä vapaasti.</string>
     <string name="share_trip_done_group">Jaettu ryhmälle</string>
     <string name="share_trip_start_group">Aloita ensin ryhmäajo</string>
     <string name="toast_trip_shared">Reitti jaettu ryhmälle</string>

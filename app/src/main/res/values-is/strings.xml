@@ -1130,7 +1130,7 @@
     <string name="share_trip_no_friends">Þú átt enga vini í Curveon ennþá. Bættu við undir Vinir mínir.</string>
     <string name="share_trip_send">Senda</string>
     <string name="toast_trip_sent_friends">Leiðin var send til vina þinna</string>
-    <string name="shared_trip_offer_hint_friend">Þið getið öll breytt henni og breytingarnar fylgja öllum.</string>
+    <string name="shared_trip_offer_hint_friend">Þetta er þitt eigið eintak: breyttu því eins og þú vilt.</string>
     <string name="share_trip_done_group">Deilt með hópnum</string>
     <string name="share_trip_start_group">Byrjaðu hópferð fyrst</string>
     <string name="toast_trip_shared">Leið deilt með hópnum</string>

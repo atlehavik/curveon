@@ -15,7 +15,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -65,25 +64,8 @@ class SharedTripsController(
             manager.trips.collect { m ->
                 val groupName = manager.groups.value.firstOrNull { it.id == m.groupId }?.name
                 when (store.merge(m, groupName)) {
-                    SharedTrips.Merged.UPDATED -> store.latest(m.tripId)?.let {
-                        // Passed on to everyone else this rider shares it with (the friends they sent it to, or where it came from).
-                        if (!m.mine) sendOn(it, m.rev, m.doc, except = m.groupId)
-                        if (it.accepted) applyToNavigator(it, byOthers = !m.mine)
-                    }
+                    SharedTrips.Merged.UPDATED -> store.latest(m.tripId)?.let { if (it.accepted) applyToNavigator(it, byOthers = !m.mine) }
                     else -> Unit
-                }
-            }
-        }
-        // While a trip shared with friends is ridden or planned, their channels stay open, so their changes come at once.
-        scope.launch {
-            navigator.state.map { s ->
-                ((s.goal as? NavigationGoal.Destination)?.shared ?: (s.preview?.goal as? NavigationGoal.Destination)?.shared)
-            }.distinctUntilChanged().collectLatest { id ->
-                while (id != null) {
-                    val friends = store.latest(id)?.let { friendLinks(it) }.orEmpty()
-                    if (friends.isEmpty()) break
-                    manager.keepFriendsOpen(friends)
-                    kotlinx.coroutines.delay(60_000)
                 }
             }
         }
@@ -154,8 +136,8 @@ class SharedTripsController(
         lineTaken[id] = edited.line
         val rev = trip.rev + 1
         Log.i("Curveon", "Shared trip $id changed here: ${edited.stops.size} stops, revision $rev")
-        store.putOwn(SharedTrip(id, trip.groupId, trip.groupName, rev, mine, null, edited, true, trip.receivedAt, trip.friendIds))
-        sendOn(trip, rev, edited.toJson(), except = null)
+        store.putOwn(SharedTrip(id, trip.groupId, trip.groupName, rev, mine, null, edited, true, trip.receivedAt))
+        manager.shareTrip(id, rev, trip.doc.name, edited.toJson())
     }
 
     /** The group changed a trip: if the rider is riding or planning it, their route takes the change. */
@@ -181,42 +163,13 @@ class SharedTripsController(
             d.remaining(store.passed(trip.tripId)).map { it.toStop() },
             // The road whoever planned it took, so everyone rides the same one (not each their own style).
             fixedLine = d.line?.let(SavedRoutes::decode)?.takeIf { it.size >= 2 },
-            shared = trip.tripId
+            // One a friend sent is the rider's own copy: their changes stay with them (nor go to a group).
+            shared = trip.tripId.takeIf { !fromFriend(trip) }
         )
-    }
-
-    /** Whether the trip [g] is already shared with the active group (not only with friends). */
-    fun sharedWithGroup(g: NavigationGoal.Destination): Boolean {
-        val id = g.shared ?: return false
-        val trip = store.latest(id) ?: return true
-        return trip.groupId.isNotEmpty() && !fromFriend(trip)
-    }
-
-    /** Whether [g] can go to the group: not shared yet, or shared by this rider with friends only (one a friend sent can't). */
-    fun canShareWithGroup(g: NavigationGoal.Destination): Boolean {
-        val id = g.shared ?: return true
-        return store.latest(id)?.groupId?.isEmpty() == true
     }
 
     /** Sent by a friend rather than shared in a group: it came through the channel between the two of you. */
     fun fromFriend(trip: SharedTrip) = manager.friends.value.any { it.id == trip.groupId }
-
-    /** The friends (channel ids) this trip goes to and comes from on this device: the one who sent it, and those it was sent on to. */
-    private fun friendLinks(trip: SharedTrip) =
-        (listOfNotNull(trip.groupId.takeIf { fromFriend(trip) }) + trip.friendIds).distinct()
-
-    /**
-     * Sends a revision of [trip] to everyone it is shared with from here, but not back to [except] (where it just came
-     * from): the group it is in, and the friends. So a friend's change reaches the others through the rider who sent it
-     * to them, and a change seen before is not sent again (it is not newer), so nothing goes round in circles.
-     */
-    private fun sendOn(trip: SharedTrip, rev: Long, doc: String, except: String?) {
-        val name = TripDoc.fromJson(doc)?.name ?: trip.doc.name
-        if (trip.groupId.isNotEmpty() && trip.groupId != except && !fromFriend(trip) && trip.groupId == manager.activeId.value)
-            manager.shareTrip(trip.tripId, rev, name, doc)
-        val friends = friendLinks(trip).filter { it != except }
-        if (friends.isNotEmpty()) manager.sendTripToFriends(trip.tripId, rev, name, doc, friends)
-    }
 
     // ---- what the rider does ----
 
@@ -241,14 +194,6 @@ class SharedTripsController(
         val s = navigator.state.value
         val g = (s.goal as? NavigationGoal.Destination) ?: (s.preview?.goal as? NavigationGoal.Destination) ?: return false
         val groupId = manager.activeId.value ?: return false
-        g.shared?.let { store.latest(it) }?.let { trip ->
-            // Shared with friends only, by this rider: the group gets the same trip, and changes go both ways.
-            if (trip.groupId.isEmpty()) {
-                store.setGroup(trip.tripId, groupId, manager.groups.value.firstOrNull { it.id == groupId }?.name)
-                manager.shareTrip(trip.tripId, trip.rev, trip.doc.name, trip.doc.toJson())
-            }
-            return true
-        }
         if (g.shared != null) return true
         val doc = TripDoc(g.name, TripStop(g.name, g.destination.lat, g.destination.lon), g.stops.map { it.toTrip() }, optionsOf(s, g), lineOf(s, g))
         share(doc, groupId)?.let { id -> lineTaken[id] = doc.line; navigator.tagShared(id) }
@@ -256,26 +201,15 @@ class SharedTripsController(
     }
 
     /**
-     * Share the trip on screen with some friends ([friendIds], channel ids): the one in the preview when [preview], else the
-     * one being ridden. From then on it is one trip for all of you, as in a group: anyone's change goes to everyone. A trip
-     * already shared (with the group, or other friends) stays that same trip, now with these friends too.
+     * Send a copy of the trip on screen to some friends ([friendIds], channel ids): the one in the preview when [preview],
+     * else the one being ridden. Each friend gets it to ride or keep; nothing about it is kept in step afterwards.
      */
     fun sendToFriends(friendIds: List<String>, preview: Boolean): Boolean {
         if (friendIds.isEmpty()) return false
         val s = navigator.state.value
         val g = (if (preview) s.preview?.goal else s.goal) as? NavigationGoal.Destination ?: return false
-        g.shared?.let { store.latest(it) }?.let { trip ->
-            val fresh = friendIds.filter { it !in friendLinks(trip) }
-            store.addFriends(trip.tripId, fresh)
-            if (fresh.isNotEmpty()) manager.sendTripToFriends(trip.tripId, trip.rev, trip.doc.name, trip.doc.toJson(), fresh)
-            return true
-        }
         val doc = TripDoc(g.name, TripStop(g.name, g.destination.lat, g.destination.lon), g.stops.map { it.toTrip() }, optionsOf(s, g), lineOf(s, g))
-        val id = UUID.randomUUID().toString()
-        store.putOwn(SharedTrip(id, "", null, 1, manager.myId.value ?: "me", null, doc, true, System.currentTimeMillis(), friendIds))
-        manager.sendTripToFriends(id, 1, doc.name, doc.toJson(), friendIds)
-        lineTaken[id] = doc.line
-        navigator.tagShared(id)
+        manager.sendTripToFriends(UUID.randomUUID().toString(), doc.name, doc.toJson(), friendIds)
         return true
     }
 

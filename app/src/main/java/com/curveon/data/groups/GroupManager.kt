@@ -220,11 +220,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun shareTrip(tripId: String, rev: Long, name: String, doc: String) = send(Message.TripShare(tripId, rev, name, doc))
 
     /** A copy of a trip for each of these friends (channel ids), to ride or keep. */
-    fun sendTripToFriends(tripId: String, rev: Long, name: String, doc: String, friendIds: List<String>) =
-        send(Message.TripToFriends(tripId, rev, name, doc, friendIds))
-
-    /** Keep the channels to these friends open a while: a trip shared with them is being ridden or planned. */
-    fun keepFriendsOpen(friendIds: List<String>) = send(Message.KeepFriendsOpen(friendIds))
+    fun sendTripToFriends(tripId: String, name: String, doc: String, friendIds: List<String>) =
+        send(Message.TripToFriends(tripId, name, doc, friendIds))
 
     fun requestSelfLink() = send(Message.RequestSelfLink)
     fun forgetSelfLink() { _selfLink.value = null }

@@ -1148,7 +1148,7 @@
     <string name="share_trip_no_friends">Tu n’as pas encore d’amis dans Curveon. Ajoutes-en dans Mes amis.</string>
     <string name="share_trip_send">Envoyer</string>
     <string name="toast_trip_sent_friends">Itinéraire envoyé à tes amis</string>
-    <string name="shared_trip_offer_hint_friend">Vous pouvez tous le modifier, et les changements suivent tout le monde.</string>
+    <string name="shared_trip_offer_hint_friend">C’est ta propre copie : modifie-la comme tu veux.</string>
     <string name="share_trip_done_group">Partagé avec le groupe</string>
     <string name="share_trip_start_group">Lance d’abord une balade en groupe</string>
     <string name="toast_trip_shared">Itinéraire partagé avec le groupe</string>
