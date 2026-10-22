@@ -25,6 +25,10 @@ enum class PhotoStyle(@StringRes val label: Int) {
     STICKER(R.string.group_photo_style_sticker),
     NEON(R.string.group_photo_style_neon),
     SPEED(R.string.group_photo_style_speed),
+    POP(R.string.group_photo_style_pop),
+    GLITCH(R.string.group_photo_style_glitch),
+    THERMAL(R.string.group_photo_style_thermal),
+    TRIPPY(R.string.group_photo_style_trippy),
 }
 
 /** Cutting the rider (or the dog) out of a photo, and drawing them on a new background in a [PhotoStyle]. */
@@ -81,6 +85,8 @@ object PhotoStyles {
         val reach = hypot(maxOf(cx, w - cx), maxOf(cy, h - cy))
         val light = ColorUtils.blendARGB(colour, android.graphics.Color.WHITE, 0.45f)
         val dark = ColorUtils.blendARGB(colour, android.graphics.Color.BLACK, 0.55f)
+        // The crazy ones change the rider too, and draw their own version in front.
+        var front: Bitmap? = subject
         when (style) {
             PhotoStyle.STICKER -> {
                 canvas.drawPaint(Paint().apply { shader = RadialGradient(cx, cy, reach, light, dark, Shader.TileMode.CLAMP) })
@@ -99,9 +105,61 @@ object PhotoStyles {
                 edge(canvas, alpha, unit * 0.05f, android.graphics.Color.BLACK)
                 edge(canvas, alpha, unit * 0.03f, android.graphics.Color.WHITE)
             }
+            PhotoStyle.POP -> {
+                // Warhol: flat background with big halftone dots, the rider in three flat inks with a fat black edge.
+                canvas.drawColor(light)
+                halftone(canvas, w, h, unit * 0.035f, dark)
+                edge(canvas, alpha, unit * 0.04f, android.graphics.Color.BLACK)
+                front = recolour(subject) { r, g, b ->
+                    val l = luma(r, g, b)
+                    when {
+                        l < 0.33f -> 0xFF111111.toInt()
+                        l < 0.62f -> 0xFFFF2E88.toInt()
+                        else -> 0xFFFFE135.toInt()
+                    }
+                }
+            }
+            PhotoStyle.GLITCH -> {
+                // A broken screen: the rider split into red and cyan, slices torn sideways, scan lines over it all.
+                canvas.drawColor(0xFF07070C.toInt())
+                val shift = unit * 0.03f
+                val red = recolour(subject) { r, _, _ -> android.graphics.Color.rgb(r, 0, 0) }
+                val cyan = recolour(subject) { _, g, b -> android.graphics.Color.rgb(0, g, b) }
+                val add = Paint(Paint.FILTER_BITMAP_FLAG).apply { xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.ADD) }
+                canvas.drawBitmap(red, -shift, 0f, add)
+                canvas.drawBitmap(cyan, shift, 0f, add)
+                red.recycle(); cyan.recycle()
+                tear(canvas, out, unit, colour)
+                scanLines(canvas, w, h, unit)
+                front = null
+            }
+            PhotoStyle.THERMAL -> {
+                // A heat camera: the rider glows from black through purple and red to yellow, on a cold blue night.
+                canvas.drawPaint(Paint().apply { shader = RadialGradient(cx, cy, reach, 0xFF0A1A6B.toInt(), 0xFF020414.toInt(), Shader.TileMode.CLAMP) })
+                glow(canvas, subject, unit * 0.05f, 0xFF7B1FA2.toInt())
+                front = recolour(subject) { r, g, b -> heat(luma(r, g, b)) }
+            }
+            PhotoStyle.TRIPPY -> {
+                // Far out: a spinning rainbow behind, the rider in turned-inside-out colours with a rainbow halo.
+                trippyBackground(canvas, cx, cy, reach, unit)
+                glow(canvas, subject, unit * 0.07f, 0xFFFF00FF.toInt())
+                glow(canvas, subject, unit * 0.035f, 0xFF00FFFF.toInt())
+                glow(canvas, subject, unit * 0.015f, 0xFFFFFF00.toInt())
+                front = recolour(subject) { r, g, b ->
+                    val hsv = FloatArray(3)
+                    android.graphics.Color.RGBToHSV(255 - r, 255 - g, 255 - b, hsv)
+                    hsv[0] = (hsv[0] + 120f) % 360f
+                    hsv[1] = minOf(1f, hsv[1] * 1.8f + 0.25f)
+                    hsv[2] = minOf(1f, hsv[2] * 1.15f + 0.1f)
+                    android.graphics.Color.HSVToColor(hsv)
+                }
+            }
             PhotoStyle.PLAIN -> Unit
         }
-        canvas.drawBitmap(subject, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
+        front?.let {
+            canvas.drawBitmap(it, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
+            if (it !== subject) it.recycle()
+        }
         alpha.recycle()
         return out
     }
@@ -133,6 +191,89 @@ object PhotoStyles {
         val paint = Paint(Paint.FILTER_BITMAP_FLAG).apply { color = colour }
         repeat(2) { canvas.drawBitmap(blurred, at[0].toFloat(), at[1].toFloat(), paint) }
         blurred.recycle()
+    }
+
+    /** [subject] with each seen pixel's colour from [paint] (r, g, b in 0..255), its see-through edge kept. */
+    private inline fun recolour(subject: Bitmap, paint: (Int, Int, Int) -> Int): Bitmap {
+        val w = subject.width; val h = subject.height
+        val px = IntArray(w * h)
+        subject.getPixels(px, 0, w, 0, 0, w, h)
+        for (i in px.indices) {
+            val c = px[i]
+            val a = c ushr 24
+            if (a == 0) continue
+            val painted = paint((c shr 16) and 0xFF, (c shr 8) and 0xFF, c and 0xFF)
+            px[i] = (a shl 24) or (painted and 0xFFFFFF)
+        }
+        return Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
+    }
+
+    private fun luma(r: Int, g: Int, b: Int) = (0.299f * r + 0.587f * g + 0.114f * b) / 255f
+
+    /** A heat camera's colours: cold black, purple, red, orange, yellow, hot white. */
+    private val heatStops = intArrayOf(0xFF000014.toInt(), 0xFF4A0A8C.toInt(), 0xFFD0105A.toInt(), 0xFFFF6A00.toInt(), 0xFFFFD400.toInt(), 0xFFFFFFE0.toInt())
+
+    private fun heat(t: Float): Int {
+        // Lifted a little, so even a dark jacket is warm: a person is never as cold as the night.
+        val v = (0.18f + t * 0.95f).coerceIn(0f, 1f) * (heatStops.size - 1)
+        val i = minOf(v.toInt(), heatStops.size - 2)
+        return ColorUtils.blendARGB(heatStops[i], heatStops[i + 1], v - i)
+    }
+
+    /** Big dots in rows, like a cheap comic print. */
+    private fun halftone(canvas: Canvas, w: Int, h: Int, step: Float, colour: Int) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colour }
+        var row = 0
+        var y = 0f
+        while (y < h + step) {
+            var x = if (row % 2 == 0) 0f else step / 2
+            while (x < w + step) { canvas.drawCircle(x, y, step * 0.32f, paint); x += step }
+            y += step * 0.87f; row++
+        }
+    }
+
+    /** Bands of the picture torn sideways, and a few bars of broken colour. */
+    private fun tear(canvas: Canvas, picture: Bitmap, unit: Float, colour: Int) {
+        val random = java.util.Random(13)
+        val copy = picture.copy(Bitmap.Config.ARGB_8888, false)
+        val paint = Paint()
+        repeat(9) {
+            val top = random.nextInt(picture.height)
+            val tall = (unit * (0.01f + random.nextFloat() * 0.05f)).toInt().coerceAtLeast(2)
+            val dx = (unit * (random.nextFloat() - 0.5f) * 0.16f).toInt()
+            val from = android.graphics.Rect(0, top, picture.width, minOf(picture.height, top + tall))
+            canvas.drawBitmap(copy, from, android.graphics.Rect(dx, from.top, dx + picture.width, from.bottom), paint)
+        }
+        copy.recycle()
+        val bars = intArrayOf(0xFFFF00FF.toInt(), 0xFF00FF66.toInt(), colour)
+        repeat(5) {
+            paint.color = bars[random.nextInt(bars.size)]
+            paint.alpha = 110 + random.nextInt(110)
+            val top = random.nextFloat() * picture.height
+            val left = random.nextFloat() * picture.width * 0.7f
+            canvas.drawRect(left, top, left + unit * (0.1f + random.nextFloat() * 0.35f), top + unit * 0.012f, paint)
+        }
+    }
+
+    /** Dark lines across, like an old screen. */
+    private fun scanLines(canvas: Canvas, w: Int, h: Int, unit: Float) {
+        val paint = Paint().apply { color = 0x55000000 }
+        val step = (unit / 70f).coerceAtLeast(3f)
+        var y = 0f
+        while (y < h) { canvas.drawRect(0f, y, w.toFloat(), y + step / 2, paint); y += step }
+    }
+
+    /** A rainbow wheel with rings running out from behind the rider. */
+    private fun trippyBackground(canvas: Canvas, cx: Float, cy: Float, reach: Float, unit: Float) {
+        val rainbow = intArrayOf(0xFFFF0040.toInt(), 0xFFFFB000.toInt(), 0xFFB4FF00.toInt(), 0xFF00FFC8.toInt(), 0xFF0070FF.toInt(), 0xFFB000FF.toInt(), 0xFFFF0040.toInt())
+        canvas.drawPaint(Paint().apply { shader = android.graphics.SweepGradient(cx, cy, rainbow, null) })
+        val ring = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = unit * 0.035f
+            shader = android.graphics.SweepGradient(cx, cy, rainbow.reversedArray(), null)
+        }
+        var r = unit * 0.05f
+        while (r < reach * 1.1f) { canvas.drawCircle(cx, cy, r, ring); r += unit * 0.075f }
     }
 
     /** Streaks rushing out from behind the subject, like a comic drawing of speed. */

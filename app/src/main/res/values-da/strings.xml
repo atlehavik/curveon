@@ -744,6 +744,7 @@
     <string name="preview_after_dark">efter mørkets frembrud</string>
     <string name="preview_planned_hint">Planlagt fra et andet sted: KØR fører dig til linjen og derefter langs den</string>
     <string name="route_menu_title">Rute</string>
+    <string name="route_edit">Rediger rute</string>
     <string name="route_stops_none">Ingen stop. Tilføj et her, eller tryk længe på kortet.</string>
     <string name="nav_end">Afslut navigation</string>
     <!-- Wrong turn -->
@@ -985,6 +986,10 @@
     <string name="group_photo_style_sticker">Klistermærke</string>
     <string name="group_photo_style_neon">Neon</string>
     <string name="group_photo_style_speed">Fart</string>
+    <string name="group_photo_style_pop">Popkunst</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Varmekamera</string>
+    <string name="group_photo_style_trippy">Syretrip</string>
     <string name="group_photo_camera_denied">Kameraet skal bruges til at tage et billede. Du kan vælge et blandt dine billeder i stedet.</string>
     <string name="group_photo_remove">Fjern</string>
     <string name="group_photo_failed">Det billede kunne ikke bruges.</string>

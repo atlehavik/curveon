@@ -56,6 +56,8 @@ private val OnCyan = Color(0xFF00363D)
 @Composable
 fun RoutePreviewSheet(
     preview: RoutePreview,
+    /** False while changing the trip being ridden: closing just keeps riding it as it was, so nothing to ask. */
+    askBeforeClosing: Boolean = true,
     onSelect: (Int) -> Unit,
     onSurface: (SurfacePreference) -> Unit,
     onToggleFerries: () -> Unit,
@@ -158,7 +160,7 @@ fun RoutePreviewSheet(
             if (preview.selectedRoute != null) ShareIcon(onShare, onSendToTablet)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
             // A trip on the map may be half an hour of planning: ask before throwing it away.
-            SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { if (preview.selectedRoute != null) askDiscard = true else onClose() }
+            SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { if (preview.selectedRoute != null && askBeforeClosing) askDiscard = true else onClose() }
         }
         if (askDiscard) DiscardTripDialog(
             onDiscard = { askDiscard = false; onClose() },

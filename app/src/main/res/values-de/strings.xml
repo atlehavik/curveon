@@ -743,6 +743,7 @@
     <string name="preview_after_dark">nach Einbruch der Dunkelheit</string>
     <string name="preview_planned_hint">Woanders geplant: LOS fährt zur Linie, dann an ihr entlang</string>
     <string name="route_menu_title">Route</string>
+    <string name="route_edit">Route ändern</string>
     <string name="route_stops_none">Keine Stopps. Füge hier einen hinzu oder drück lange auf die Karte.</string>
     <string name="nav_end">Navigation beenden</string>
     <!-- Wrong turn -->
@@ -984,6 +985,10 @@
     <string name="group_photo_style_sticker">Sticker</string>
     <string name="group_photo_style_neon">Neon</string>
     <string name="group_photo_style_speed">Speed</string>
+    <string name="group_photo_style_pop">Pop-Art</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Wärmebild</string>
+    <string name="group_photo_style_trippy">Psychedelisch</string>
     <string name="group_photo_camera_denied">Für ein Foto wird die Kamera gebraucht. Du kannst stattdessen eins aus deinen Bildern wählen.</string>
     <string name="group_photo_remove">Entfernen</string>
     <string name="group_photo_failed">Dieses Bild konnte nicht verwendet werden.</string>

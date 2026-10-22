@@ -746,6 +746,7 @@
     <string name="preview_after_dark">after dark</string>
     <string name="preview_planned_hint">Planned from elsewhere: GO rides to the line, then along it</string>
     <string name="route_menu_title">Route</string>
+    <string name="route_edit">Edit route</string>
     <string name="route_stops_none">No stops. Add one here, or long-press the map.</string>
     <string name="nav_end">End navigation</string>
     <!-- Wrong turn -->
@@ -987,6 +988,10 @@
     <string name="group_photo_style_sticker">Sticker</string>
     <string name="group_photo_style_neon">Neon</string>
     <string name="group_photo_style_speed">Speed</string>
+    <string name="group_photo_style_pop">Pop art</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Heat cam</string>
+    <string name="group_photo_style_trippy">Trippy</string>
     <string name="group_photo_camera_denied">The camera is needed to take a picture. You can choose one from your pictures instead.</string>
     <string name="group_photo_remove">Remove</string>
     <string name="group_photo_failed">That picture could not be used.</string>

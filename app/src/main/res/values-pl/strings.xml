@@ -774,6 +774,7 @@
     <string name="preview_after_dark">po zmroku</string>
     <string name="preview_planned_hint">Zaplanowana skądinąd: JEDŹ prowadzi do linii, a potem wzdłuż niej</string>
     <string name="route_menu_title">Trasa</string>
+    <string name="route_edit">Edytuj trasę</string>
     <string name="route_stops_none">Brak przystanków. Dodaj tutaj albo przytrzymaj mapę.</string>
     <string name="nav_end">Zakończ nawigację</string>
     <!-- Wrong turn -->
@@ -1017,6 +1018,10 @@
     <string name="group_photo_style_sticker">Naklejka</string>
     <string name="group_photo_style_neon">Neon</string>
     <string name="group_photo_style_speed">Pęd</string>
+    <string name="group_photo_style_pop">Pop-art</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Termowizja</string>
+    <string name="group_photo_style_trippy">Odlot</string>
     <string name="group_photo_camera_denied">Do zrobienia zdjęcia potrzebny jest aparat. Możesz zamiast tego wybrać jedno ze swoich zdjęć.</string>
     <string name="group_photo_remove">Usuń</string>
     <string name="group_photo_failed">Nie da się użyć tego zdjęcia.</string>

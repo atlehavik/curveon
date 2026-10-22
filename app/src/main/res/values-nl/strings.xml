@@ -721,6 +721,7 @@
     <string name="preview_after_dark">na donker</string>
     <string name="preview_planned_hint">Elders gepland: GA rijdt naar de lijn en dan erlangs</string>
     <string name="route_menu_title">Route</string>
+    <string name="route_edit">Route wijzigen</string>
     <string name="route_stops_none">Geen stops. Voeg er hier een toe, of druk lang op de kaart.</string>
     <string name="nav_end">Navigatie beëindigen</string>
     <string name="wrong_turn_title">Van de route af</string>
@@ -958,6 +959,10 @@
     <string name="group_photo_style_sticker">Sticker</string>
     <string name="group_photo_style_neon">Neon</string>
     <string name="group_photo_style_speed">Snelheid</string>
+    <string name="group_photo_style_pop">Popart</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Warmtecamera</string>
+    <string name="group_photo_style_trippy">Psychedelisch</string>
     <string name="group_photo_camera_denied">De camera is nodig om een foto te maken. Je kunt er ook een uit je foto\'s kiezen.</string>
     <string name="group_photo_remove">Verwijderen</string>
     <string name="group_photo_failed">Die foto kon niet worden gebruikt.</string>

@@ -759,6 +759,7 @@
     <string name="preview_after_dark">après la nuit tombée</string>
     <string name="preview_planned_hint">Prévu ailleurs : GO te mène jusqu’à la ligne, puis le long de celle-ci</string>
     <string name="route_menu_title">Itinéraire</string>
+    <string name="route_edit">Modifier</string>
     <string name="route_stops_none">Aucune étape. Ajoutes-en une ici, ou appuie longuement sur la carte.</string>
     <string name="nav_end">Terminer la navigation</string>
     <!-- Wrong turn -->
@@ -1001,6 +1002,10 @@
     <string name="group_photo_style_sticker">Autocollant</string>
     <string name="group_photo_style_neon">Néon</string>
     <string name="group_photo_style_speed">Vitesse</string>
+    <string name="group_photo_style_pop">Pop art</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Caméra thermique</string>
+    <string name="group_photo_style_trippy">Psychédélique</string>
     <string name="group_photo_camera_denied">La caméra est nécessaire pour prendre une photo. Tu peux plutôt en choisir une dans tes photos.</string>
     <string name="group_photo_remove">Retirer</string>
     <string name="group_photo_failed">Cette photo n’a pas pu être utilisée.</string>

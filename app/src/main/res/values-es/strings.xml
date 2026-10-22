@@ -759,6 +759,7 @@
     <string name="preview_after_dark">de noche</string>
     <string name="preview_planned_hint">Planificada desde otro sitio: VAMOS te lleva hasta la línea y luego por ella</string>
     <string name="route_menu_title">Ruta</string>
+    <string name="route_edit">Editar ruta</string>
     <string name="route_stops_none">Sin paradas. Añade una aquí o mantén pulsado el mapa.</string>
     <string name="nav_end">Terminar navegación</string>
     <!-- Wrong turn -->
@@ -1001,6 +1002,10 @@
     <string name="group_photo_style_sticker">Pegatina</string>
     <string name="group_photo_style_neon">Neón</string>
     <string name="group_photo_style_speed">Velocidad</string>
+    <string name="group_photo_style_pop">Pop art</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Cámara térmica</string>
+    <string name="group_photo_style_trippy">Psicodélico</string>
     <string name="group_photo_camera_denied">Hace falta la cámara para hacer una foto. Puedes elegir una de tus fotos.</string>
     <string name="group_photo_remove">Quitar</string>
     <string name="group_photo_failed">No se pudo usar esa foto.</string>

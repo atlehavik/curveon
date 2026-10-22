@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Rediger rute under kjøring, sprø profilbilde-effekter (1.2.2)
+
+- [ ] **Pixel:** Under navigering til et sted: ankomsttiden → Rute → **Rediger rute**. Ruteplanleggeren åpner fra der du er, med
+  stoppene du har igjen. Velg en annen stil eller legg til et stopp, trykk KJØR: navigeringen fortsetter på den nye ruten.
+  Lukk med X i stedet: du kjører videre som før, uten spørsmål.
+- [ ] **Pixel:** Venner → Meg → velg et bilde av deg selv og prøv **Pop art, Glitch, Varmekamera og Syretripp** (emulatoren finner
+  ingen person, så de er ikke sett i bruk). Ser de bra ut i den lille runde avataren hos en venn?
+
 ## 2026-10-22 — Rute-knappen i ankomstlinjen (1.2.2)
 
 - [ ] **Pixel:** Mens du navigerer til et sted: trykk på ankomsttiden (folder seg ut som før), så på den nye **Rute**-knappen. Med en

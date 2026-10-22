@@ -541,6 +541,8 @@ fun RouteMenuDialog(
     shared: Boolean = false,
     /** A trip that could be shared but there is no group yet: says so, and the button goes to Group ride. */
     onFindGroup: (() -> Unit)? = null,
+    /** Open the trip in the full planner to change it (null: a track, which can't be). */
+    onEdit: (() -> Unit)? = null,
     onEnd: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -580,10 +582,11 @@ fun RouteMenuDialog(
                     onFindGroup != null -> { m -> PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextSecondary, m.testTag("menu_share"), onFindGroup) }
                     else -> null
                 },
-                { m -> PillButton(Icons.Default.Close, stringResource(R.string.nav_end), WarningRed.copy(alpha = 0.25f), WarningRed, m.testTag("menu_end"), onEnd) }
+                { m -> PillButton(Icons.Default.Close, stringResource(R.string.nav_end), WarningRed.copy(alpha = 0.25f), WarningRed, m.testTag("menu_end"), onEnd) },
+                onEdit?.let { edit -> { m: Modifier -> PillButton(Icons.Default.EditRoad, stringResource(R.string.route_edit), ElectricCyan.copy(alpha = 0.18f), ElectricCyan, m.testTag("menu_edit"), edit) } }
             )
-            // Two to a row on a phone, so every label fits.
-            buttons.chunked(if (isNarrowScreen()) 2 else 4).forEach { row ->
+            // Two to a row on a phone, so every label fits; three when there are five, so none gets squeezed.
+            buttons.chunked(if (isNarrowScreen()) 2 else if (buttons.size > 4) 3 else 4).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { row.forEach { it(Modifier.weight(1f)) } }
             }
         }

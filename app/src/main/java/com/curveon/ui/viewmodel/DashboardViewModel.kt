@@ -1975,6 +1975,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun cancelPreview() = navigator.cancelPreview()
 
+    /** The trip being ridden, opened in the planner to change it (true when it could be). */
+    fun editRoute() = navigator.editActive()
+
     /** The previewed trip ends at its last stop instead; with no stops there is no trip left. */
     fun removePreviewDestination() {
         val g = navigator.state.value.preview?.goal as? NavigationGoal.Destination ?: return

@@ -743,6 +743,7 @@
     <string name="preview_after_dark">eftir myrkur</string>
     <string name="preview_planned_hint">Skipulagt annars staðar frá: AF STAÐ ekur að línunni og svo eftir henni</string>
     <string name="route_menu_title">Leið</string>
+    <string name="route_edit">Breyta leið</string>
     <string name="route_stops_none">Engir viðkomustaðir. Bættu við hér, eða haltu fingri á kortinu.</string>
     <string name="nav_end">Hætta leiðsögn</string>
     <!-- Wrong turn -->
@@ -984,6 +985,10 @@
     <string name="group_photo_style_sticker">Límmiði</string>
     <string name="group_photo_style_neon">Neon</string>
     <string name="group_photo_style_speed">Hraði</string>
+    <string name="group_photo_style_pop">Popplist</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Hitamyndavél</string>
+    <string name="group_photo_style_trippy">Sýrutripp</string>
     <string name="group_photo_camera_denied">Myndavélin þarf til að taka mynd. Þú getur valið mynd úr myndunum þínum í staðinn.</string>
     <string name="group_photo_remove">Fjarlægja</string>
     <string name="group_photo_failed">Ekki var hægt að nota þessa mynd.</string>

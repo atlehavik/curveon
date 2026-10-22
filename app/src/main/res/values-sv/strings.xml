@@ -744,6 +744,7 @@
     <string name="preview_after_dark">efter mörkrets inbrott</string>
     <string name="preview_planned_hint">Planerad från annat håll: KÖR tar dig till linjen och sedan längs den</string>
     <string name="route_menu_title">Rutt</string>
+    <string name="route_edit">Ändra rutt</string>
     <string name="route_stops_none">Inga stopp. Lägg till ett här, eller tryck länge på kartan.</string>
     <string name="nav_end">Avsluta navigering</string>
     <!-- Wrong turn -->
@@ -985,6 +986,10 @@
     <string name="group_photo_style_sticker">Klistermärke</string>
     <string name="group_photo_style_neon">Neon</string>
     <string name="group_photo_style_speed">Fart</string>
+    <string name="group_photo_style_pop">Popkonst</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Värmekamera</string>
+    <string name="group_photo_style_trippy">Syretripp</string>
     <string name="group_photo_camera_denied">Kameran behövs för att ta en bild. Du kan välja en bland dina bilder i stället.</string>
     <string name="group_photo_remove">Ta bort</string>
     <string name="group_photo_failed">Den bilden kunde inte användas.</string>

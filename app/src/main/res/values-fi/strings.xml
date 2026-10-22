@@ -700,6 +700,7 @@
     <string name="preview_after_dark">pimeän jälkeen</string>
     <string name="preview_planned_hint">Suunniteltu muualta: AJA vie ensin viivalle ja sitten sitä pitkin</string>
     <string name="route_menu_title">Reitti</string>
+    <string name="route_edit">Muokkaa reittiä</string>
     <string name="route_stops_none">Ei pysähdyksiä. Lisää täältä tai paina karttaa pitkään.</string>
     <string name="nav_end">Lopeta navigointi</string>
     <string name="wrong_turn_title">Reitiltä poikettu</string>
@@ -937,6 +938,10 @@
     <string name="group_photo_style_sticker">Tarra</string>
     <string name="group_photo_style_neon">Neon</string>
     <string name="group_photo_style_speed">Vauhti</string>
+    <string name="group_photo_style_pop">Pop-taide</string>
+    <string name="group_photo_style_glitch">Glitch</string>
+    <string name="group_photo_style_thermal">Lämpökamera</string>
+    <string name="group_photo_style_trippy">Happotrippi</string>
     <string name="group_photo_camera_denied">Kuvan ottamiseen tarvitaan kamera. Voit sen sijaan valita kuvan kuvistasi.</string>
     <string name="group_photo_remove">Poista</string>
     <string name="group_photo_failed">Kuvaa ei voitu käyttää.</string>

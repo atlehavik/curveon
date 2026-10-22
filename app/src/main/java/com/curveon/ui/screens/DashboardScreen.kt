@@ -277,6 +277,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     // Trips shared with the group: what to ride, the offer from a friend, and sharing the trip on screen.
     val sharingGroup by phone.groups.activeId.collectAsStateWithLifecycle()
+    // The trip being ridden is open in the planner (Edit route): closing it just keeps riding it as it was.
+    var editingRoute by remember { mutableStateOf(false) }
+    LaunchedEffect(navState.preview == null) { if (navState.preview == null) editingRoute = false }
     val sharedTripList by viewModel.sharedTrips.shared.collectAsStateWithLifecycle()
     val sharedOffer by viewModel.sharedTrips.offer.collectAsStateWithLifecycle()
     val sharedChanged by viewModel.sharedTrips.justChanged.collectAsStateWithLifecycle()
@@ -622,6 +625,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             preview?.let { p ->
                 RoutePreviewSheet(
                     preview = p,
+                    askBeforeClosing = !editingRoute,
                     onSelect = viewModel::selectCandidate,
                     onSurface = viewModel::setPreviewSurface,
                     onToggleFerries = viewModel::togglePreviewAvoidFerries,
@@ -1452,6 +1456,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 shared = (navState.goal as? com.curveon.data.routing.NavigationGoal.Destination)?.shared != null,
                 // A trip to a place with no group yet: Share leads to Group ride, to start or pick one.
                 onFindGroup = if (sharingGroup == null && navState.goal is com.curveon.data.routing.NavigationGoal.Destination) { { showRouteMenu = false; pressRail(RailPanel.GROUP) } } else null,
+                onEdit = if (navState.goal is com.curveon.data.routing.NavigationGoal.Destination) { { showRouteMenu = false; editingRoute = viewModel.editRoute() } } else null,
                 onEnd = { showRouteMenu = false; viewModel.stopNavigation() },
                 onDismiss = { showRouteMenu = false }
             )

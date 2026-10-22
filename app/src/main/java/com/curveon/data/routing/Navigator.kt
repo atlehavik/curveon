@@ -277,6 +277,16 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     /** A saved A→B route: its stops stay editable, and it rides its saved line until changed. */
     fun previewPlanned(goal: NavigationGoal.Destination) = preview(goal)
 
+    /**
+     * The trip being ridden, opened in the planner from here with the stops still ahead, in the style it is ridden in.
+     * Navigation carries on underneath; GO rides the changed trip. False when it is not a trip to a place (a track).
+     */
+    fun editActive(): Boolean {
+        val g = _state.value.goal as? NavigationGoal.Destination ?: return false
+        preview(g.copy(start = null, fixedLine = null), keepSelection = RoadStyle.entries.indexOf(g.options.roadStyle).takeIf { it >= 0 })
+        return true
+    }
+
     /** A trip that was being planned when Curveon was last ended, waiting for where the rider is. */
     private var pendingPreview: Pair<NavigationGoal, Int>? = null
 
@@ -921,9 +931,14 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             val g = current.goal as? NavigationGoal.Destination
             // A shared trip is told first, so passing a stop is not mistaken for the rider removing it.
             if (g?.shared != null) onStopsPassed?.invoke(g, passed.map { it.first })
+            val gone = passed.map { it.first }.toSet()
+            // The same trip open in the planner (being changed while riding) loses them too, so GO doesn't go back for them.
+            val p = current.preview
+            val pg = p?.goal as? NavigationGoal.Destination
             current = current.copy(
-                goal = g?.copy(stops = g.stops - passed.map { it.first }.toSet()) ?: current.goal,
-                stopsAlong = current.stopsAlong - passed.toSet()
+                goal = g?.copy(stops = g.stops - gone) ?: current.goal,
+                stopsAlong = current.stopsAlong - passed.toSet(),
+                preview = if (pg != null && pg.stops.any { it in gone }) p.copy(goal = pg.copy(stops = pg.stops - gone)) else p
             )
         }
         _state.value = current
@@ -1138,10 +1153,13 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     fun tagShared(tripId: String) {
         val s = _state.value
         val g = s.goal as? NavigationGoal.Destination
-        if (g != null) { _state.value = s.copy(goal = g.copy(shared = tripId)); return }
-        val p = s.preview ?: return
-        val pg = p.goal as? NavigationGoal.Destination ?: return
-        _state.value = s.copy(preview = p.copy(goal = pg.copy(shared = tripId)))
+        val p = s.preview
+        val pg = p?.goal as? NavigationGoal.Destination
+        // Both, when the trip being ridden is open in the planner: GO then rides it still shared.
+        _state.value = s.copy(
+            goal = g?.copy(shared = tripId) ?: s.goal,
+            preview = if (pg != null && (g == null || pg.destination == g.destination)) p.copy(goal = pg.copy(shared = tripId)) else p
+        )
     }
 
     /** Called when stops of a shared trip are ridden past (and so dropped from this rider's own route). */
