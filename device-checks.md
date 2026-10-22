@@ -24,8 +24,8 @@ relay.curveon.no (`assetlinks.json` godkjent av Googles sjekk).
 
 - [ ] **Lenke mellom Pixel og X7:** på Pixel, Mine venner → Send lenke → send til deg selv (f.eks. Messenger/SMS), åpne den på X7
   (eller send den til en venn). Begge får high-five, og vennen står i lista på begge.
-- [ ] **Lenken rett inn i appen:** trykk på lenken i en chat på Pixel (release-bygg). Den skal åpne Curveon direkte (App Links). Gjør den
-  ikke det: `adb shell pm get-app-links com.curveon.app` skal si `relay.curveon.no: verified`; ellers åpnes siden med knappen.
+- [ ] **Lenken rett inn i appen:** trykk på lenken i en chat på Pixel. Den skal åpne Curveon direkte (App Links; Pixel-en sier
+  `relay.curveon.no: verified` etter installasjonen 2026-10-22).
 - [ ] **Lenke åpnet dagen etter:** send en lenke, start Curveon på nytt, åpne lenken på den andre enheten etterpå: vennskapet kommer
   i stand (innen ~10 min, eller med en gang du åpner Venner).
 - [ ] **QR-kode:** vis koden, skann den med den andre enheten: koden forsvinner og begge får high-five; «Vis koden min» igjen gir en ny kode.
