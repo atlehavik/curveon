@@ -128,6 +128,8 @@ private fun MyDevicesSection(manager: GroupManager) {
 @Composable
 private fun FriendsTabContent(manager: GroupManager) {
     val friends by manager.friends.collectAsStateWithLifecycle()
+    val shareOn by manager.friendSharing.collectAsStateWithLifecycle()
+    val friendPositions by manager.friendPositions.collectAsStateWithLifecycle()
     val invite by manager.friendInvite.collectAsStateWithLifecycle()
     var showCode by rememberSaveable { mutableStateOf(false) }
     var scanning by rememberSaveable { mutableStateOf(false) }
@@ -173,15 +175,36 @@ private fun FriendsTabContent(manager: GroupManager) {
 
         FriendsSectionLabel(stringResource(R.string.friends_list))
         if (friends.isEmpty()) Text(stringResource(R.string.friends_none), color = TextMuted, fontSize = 14.sp)
+        else {
+            // Outside any group: the friends who may always see where the rider is. Off until turned on, and then only the chosen.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.friends_share_title), color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.friends_share_hint), color = TextMuted, fontSize = 12.sp)
+                }
+                CockpitSwitch(shareOn, { manager.setFriendSharing(it) }, Modifier.testTag("friends_share"))
+            }
+        }
         friends.forEach { f ->
-            Row(
+            Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                FriendAvatar(f, 44.dp)
-                Spacer(Modifier.width(12.dp))
-                Text(f.nickname, color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1)
-                IconButton(onClick = { confirmRemove = f }) { Icon(Icons.Default.PersonRemove, stringResource(R.string.friends_remove), tint = TextSecondary) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    FriendAvatar(f, 44.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(f.nickname, color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                        if (f.sharesWithMe) Text(
+                            stringResource(R.string.friends_shares_with_you, friendSeen(friendPositions[f.id])), color = EcoGreen, fontSize = 13.sp
+                        )
+                    }
+                    IconButton(onClick = { confirmRemove = f }) { Icon(Icons.Default.PersonRemove, stringResource(R.string.friends_remove), tint = TextSecondary) }
+                }
+                if (shareOn) Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(R.string.friends_sees_me), color = TextSecondary, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    CockpitSwitch(f.seesMe, { manager.setFriendSharing(true, f.id, it) }, Modifier.testTag("friends_sees_me"))
+                }
             }
         }
     }
@@ -196,6 +219,18 @@ private fun FriendsTabContent(manager: GroupManager) {
         )
     }
     if (scanning) com.curveon.qrscan.QrScanDialog(onInvite = { link -> scanning = false; manager.join(link) }, onDismiss = { scanning = false })
+}
+
+/** When a friend who shares with the rider was last heard: "now", "3 min ago", "2 h ago", or "not yet" before the first position. */
+@Composable
+private fun friendSeen(p: Message.GroupPositionInfo?): String {
+    p ?: return stringResource(R.string.friends_not_seen_yet)
+    val min = ((System.currentTimeMillis() - p.timeMs) / 60_000).toInt()
+    return when {
+        min < 1 -> stringResource(R.string.group_seen_now)
+        min < 120 -> stringResource(R.string.group_seen_min, min)
+        else -> stringResource(R.string.friends_seen_hours, min / 60)
+    }
 }
 
 /** A friend asks you to a ride: join or ignore. Shown over everything, one at a time. */

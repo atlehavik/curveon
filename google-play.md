@@ -89,6 +89,17 @@ endrer seg på Play-siden:
   oppdatert Data safety og personvernerklæring. Test gruppene i lukket testing og via GitHub-APK først.
 - Domenet som `groups.md` trenger for `https`-invitasjonslenken kan også hoste personvernerklæringen (én løsning for begge).
 
+### Venner ser alltid hvor du er (2026-10-22)
+
+- **Posisjon deles nå også utenfor en kjøretur:** under Mine venner kan rytteren la valgte venner se posisjonen (omtrent hvert minutt)
+  så lenge Curveon kjører og har GPS. Av som standard, valgt per venn, og en grønn prikk på Venner-knappen viser at noen ser deg.
+  Det er «deling av posisjon med andre brukere» i Plays forstand: Data safety må si at posisjon deles (ende-til-ende-kryptert),
+  og personvernerklæringen må beskrive venne-delingen. Ingen bakgrunnsposisjon (`ACCESS_BACKGROUND_LOCATION`) er lagt til: posisjonen
+  kommer bare fra Curveons egen GPS mens appen kjører, så kravet om tydelig forhåndsvarsel for bakgrunnsposisjon gjelder ikke **(skjønn)**.
+- **Reléet holder nå siste (krypterte) posisjon per rytter i minnet i 30 min**, så en venn som titter innom ser hvor du var sist.
+  Den skrives aldri til disk, og reléet kan ikke lese den. Avsnittet i personvernerklæringen om at «posisjoner lagres ikke» må endres
+  til «siste posisjon holdes kryptert i minnet i inntil 30 minutter».
+
 ### Slik ble det bygget (2026-10-19), og hva det betyr for Play
 
 - **Companion har `INTERNET` nå**, via `:phone`-manifestet (det samme manifestet gir hovedappen det den allerede hadde). Hver bygging

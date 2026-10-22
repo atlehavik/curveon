@@ -83,6 +83,9 @@ tablet --Bluetooth--> companion --mobile data--> relay <-- companion <--Bluetoot
   is shown on the map; the others cost nothing (no connection, no battery) and are not told anything.
   Switching is one tap in the group list; going back to an earlier group needs no new invite. Sharing
   with several groups at once is not planned (more complexity, weaker privacy).
+  **Built 2026-10-22:** Group ride is a list of cards, each with a "Share my position" switch (turning one on selects it, so the one
+  before goes off; turning the active one off pauses it, as before). A card opens the group (riders, invite, add friends, my other
+  device, SOS, leave); a group not in use can still invite and be left. A new group can be started at any time.
 - **Profile per group:** by default one profile (nickname, colour, avatar) for all groups, with the
   option to override it per group. `riderId` is already per group, so the relay cannot link groups.
 - **Relay expiry:** latest positions after minutes, routes and profiles after ~30 days idle. Nothing
@@ -134,8 +137,9 @@ Caddy in front for TLS; the same host serves the `https` invite landing page.
 - Client frame: `{ "t": "pos"|"route"|"hello", "r": "<riderId>", "n": "<nonce>", "c": "<ciphertext>" }`.
 - Relay broadcasts to the other sockets and stores only rare things (latest `hello` per rider, last
   few `route` frames, `rekey`, active `sos`), replaying them to a newly connected client. **Positions
-  are not stored:** they are relayed and forgotten, since the next one arrives in seconds, and not
-  keeping them is better for privacy.
+  are not written to disk:** since 2026-10-22 the latest `pos` frame per rider (still encrypted) is kept in memory for 30 minutes
+  (`POS_KEEP_MS`) and replayed after the stored frames, so a friend who looks in now and then sees where the rider was last
+  (see "Friends who always see you"). A rekey or `leave` drops it.
 - Limits (all configurable): sockets per group (default 30), frame max ~512 KB (GPX gzipped), per-socket rate limit, max groups
   per IP per hour. Nothing else is logged.
 - Reconnect with backoff; the relay needs no state beyond the above. A restart loses only memory;
@@ -362,3 +366,15 @@ ever because the command was sent to the phone, which was not there. So:
   with one of the two identities (the one that sorts higher); a group left on one device before linking can come back from the other.
   "My other device" per ride group (the link with `me=`) is still there.
 
+
+### Friends who always see you (built 2026-10-22)
+Outside any group, a rider can let chosen friends always see where they are (My friends: a switch for all, off by default, and
+"Always sees where I am" per friend). It goes over the private friend channel, so a friend sees one rider and no group is needed.
+- **Sender** (`GroupHub.position`): a second `PositionSharer` (every 60 s moving, 5 min stopped) sends to each chosen friend while Curveon
+  has GPS (`GroupManager.onFix` passes fixes on also with no group). The channel stays open 3 min after each position, so while riding it
+  is one socket per chosen friend, and it closes when the positions stop.
+- **"I share with you"** is a `trip` frame with id `share` and doc `1`/`0` in the friend channel; the relay keeps trips, so the friend
+  learns it whenever they look in. Positions from a friend who has not said `1` (or said `0` since) are ignored.
+- **Receiver:** friends who share are looked in on every 2 minutes, all at once, while Curveon runs (6 s per channel); the relay replays
+  the latest position. They are drawn on the map like riders (dimmed after 10 min) and listed with when they were seen.
+- The choice is synced to the rider's other devices (`share` in `SyncDoc`). Older versions ignore the new frames and messages.

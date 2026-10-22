@@ -388,6 +388,14 @@ sealed interface Message {
         override fun toJson() = obj("friend_add_to_group").put("id", groupId).put("friends", JSONArray(friendIds))
     }
 
+    /**
+     * Who may see where the rider is, outside any group: [on] is the switch for all friends, [friendIds] (channel ids) the
+     * friends who always see the rider while it is on. Sent whole each time.
+     */
+    data class FriendSharing(val on: Boolean, val friendIds: List<String>) : Message {
+        override fun toJson() = obj("friend_sharing").put("on", on).put("friends", JSONArray(friendIds))
+    }
+
     /** The rider's answer to a [GroupInviteOffer]: join the group, or not. */
     data class GroupInviteAnswer(val offerId: String, val accept: Boolean) : Message {
         override fun toJson() = obj("group_invite_answer").put("offer", offerId).put("accept", accept)
@@ -400,15 +408,23 @@ sealed interface Message {
 
     // ---- friends and shared trips, phone -> tablet ----
 
-    /** The friends, with who they are as last heard (the picture is the same small one riders have). */
-    data class FriendList(val friends: List<FriendInfo>) : Message {
-        override fun toJson() = obj("friend_list").put("list", JSONArray(friends.map {
+    /**
+     * The friends, with who they are as last heard (the picture is the same small one riders have). [sharing] is the rider's
+     * switch for letting friends see them (see [FriendSharing]).
+     */
+    data class FriendList(val friends: List<FriendInfo>, val sharing: Boolean = false) : Message {
+        override fun toJson() = obj("friend_list").put("sharing", sharing).put("list", JSONArray(friends.map {
             JSONObject().put("id", it.id).put("nick", it.nickname).put("colour", it.colour)
                 .put("icon", it.icon ?: JSONObject.NULL).put("photo", it.photoJpegBase64 ?: JSONObject.NULL)
+                .put("seesMe", it.seesMe).put("sharesWithMe", it.sharesWithMe)
         }))
     }
 
-    data class FriendInfo(val id: String, val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?)
+    /** [seesMe]: the rider lets this friend always see where they are; [sharesWithMe]: the friend does the same for the rider. */
+    data class FriendInfo(
+        val id: String, val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?,
+        val seesMe: Boolean = false, val sharesWithMe: Boolean = false,
+    )
 
     /** The answer to [RequestFriendInvite]: the link to show as a QR code or share. It is for one friend. */
     data class FriendInvite(val channelId: String, val uri: String) : Message {
@@ -519,8 +535,13 @@ sealed interface Message {
 
     data class GroupMemberInfo(val id: String, val nickname: String, val colour: Int, val icon: String?, val photoJpegBase64: String?)
 
-    /** Small and frequent; riders are referred to by id (see [GroupMembers]). */
+    /**
+     * Small and frequent; riders are referred to by id (see [GroupMembers]). With [groupId] [FRIENDS], the positions of friends
+     * who share theirs with the rider, by friend (channel) id (see [FriendList]).
+     */
     data class GroupPositions(val groupId: String, val positions: List<GroupPositionInfo>) : Message {
+        companion object { const val FRIENDS = "friends" }
+
         override fun toJson() = obj("group_positions").put("id", groupId).put("list", JSONArray(positions.map {
             JSONObject().put("id", it.id).put("lat", it.lat).put("lon", it.lon).put("heading", it.heading.toDouble())
                 .put("speed", it.speedMs.toDouble()).put("time", it.timeMs).put("stopped", it.stopped)
@@ -678,9 +699,13 @@ sealed interface Message {
             "friend_add_to_group" -> FriendAddToGroup(o.getString("id"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "group_invite_answer" -> GroupInviteAnswer(o.getString("offer"), o.optBoolean("accept"))
             "trip_share" -> TripShare(o.getString("trip"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
+            "friend_sharing" -> FriendSharing(o.optBoolean("on"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "friend_list" -> FriendList(o.optJSONArray("list").objects().map {
-                FriendInfo(it.getString("id"), it.optString("nick"), it.optInt("colour"), it.nullableString("icon"), it.nullableString("photo"))
-            })
+                FriendInfo(
+                    it.getString("id"), it.optString("nick"), it.optInt("colour"), it.nullableString("icon"), it.nullableString("photo"),
+                    it.optBoolean("seesMe"), it.optBoolean("sharesWithMe")
+                )
+            }, o.optBoolean("sharing"))
             "friend_invite" -> FriendInvite(o.getString("id"), o.getString("uri"))
             "group_invite_offer" -> GroupInviteOffer(o.getString("offer"), o.optString("from"), o.nullableString("group"), o.nullableString("photo"), o.optInt("colour"))
             "group_trip" -> GroupTrip(

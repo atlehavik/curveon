@@ -49,6 +49,14 @@ object GroupHub {
     private const val DEFAULT_INVITE_DAYS = 7
     private const val DEVICE_LINK_MINUTES = 15
     private const val SYNC_TRIP = "me"
+    /** In a friend channel: "1" when the sender lets the friend see where they are, "0" when no more. */
+    private const val SHARE_TRIP = "share"
+    /** In the rider's sync document: who of the friends see the rider. */
+    private const val SHARE_KEY = "share"
+    /** How long the channel to a friend who sees the rider stays open after a position. */
+    private const val FRIEND_SHARE_KEEP_MS = 3 * 60_000L
+    /** How often Curveon looks for where the friends who share with the rider are. */
+    private const val FRIEND_WATCH_MINUTES = 2L
     private val exec = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
     /** The relay straight over the internet. */
     val directTransports: com.curveon.groups.TransportFactory = OkHttpTransportFactory()
@@ -132,6 +140,7 @@ object GroupHub {
         store = null
         groups.clear()
         positions.clear()
+        friendPositions.clear()
         activeId = null
         publish()
     }
@@ -154,7 +163,7 @@ object GroupHub {
         is Message.SosCancel, is Message.SosAnswer, is Message.GroupRemoveRider, is Message.RequestDeviceLink, is Message.GroupSettings,
         is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
         is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.RequestGroupInvite,
-        is Message.RequestSelfLink, is Message.SelfUnlink -> true
+        is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing -> true
         else -> false
     }
 
@@ -252,6 +261,10 @@ object GroupHub {
             is Message.RequestFriends -> { send(friendList()); sweepFriends() }
             is Message.RequestFriendInvite -> makeFriendInvite()?.let { (id, uri) -> send(Message.FriendInvite(id, uri)) }
             is Message.FriendRemove -> removeFriend(m.channelId)
+            is Message.FriendSharing -> {
+                setFriendSharing(m.on, m.friendIds.toSet())
+                track(SHARE_KEY, sharePayload())
+            }
             is Message.FriendAddToGroup -> {
                 val ride = groups[m.groupId]?.takeIf { it.kind == GroupKind.RIDE } ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
                 val link = ride.invite(System.currentTimeMillis() / 1000 + DEFAULT_INVITE_DAYS * 86_400L).toUri()
@@ -349,9 +362,17 @@ object GroupHub {
 
     private fun friendStates() = groups.values.filter { it.kind == GroupKind.FRIEND }
 
-    private fun friendList() = Message.FriendList(friendStates().mapNotNull { st ->
-        st.peer?.let { Message.FriendInfo(st.groupIdHex, it.nickname, it.colour, it.icon, it.photoBase64) to (it.riderId ?: st.groupIdHex) }
-    }.distinctBy { it.second }.map { it.first }) // a friend met on both of the rider's devices is one friend
+    private fun friendList(): Message.FriendList {
+        val store = store
+        val seeing = store?.friendsSeeingMe.orEmpty()
+        val sharing = store?.friendsSharingWithMe.orEmpty()
+        return Message.FriendList(friendStates().mapNotNull { st ->
+            st.peer?.let {
+                val id = st.groupIdHex
+                Message.FriendInfo(id, it.nickname, it.colour, it.icon, it.photoBase64, id in seeing, id in sharing) to (it.riderId ?: id)
+            }
+        }.distinctBy { it.second }.map { it.first }, store?.friendSharing ?: false) // a friend met on both of the rider's devices is one friend
+    }
 
     /** Keeps the channel to a friend open for at least [keepMs] more, and runs [action] as soon as it is. */
     private fun touchFriend(id: String, keepMs: Long, action: ((GroupClient) -> Unit)? = null) {
@@ -385,15 +406,25 @@ object GroupHub {
     private fun stopAllFriends() {
         sweepJob?.cancel(false)
         sweepJob = null
+        watchJob?.cancel(false)
+        watchJob = null
         friendClients.keys.toList().forEach(::stopFriend)
     }
 
-    /** While a tablet listens, look in on every friend now and then: an invite from one may be waiting. */
+    /**
+     * While a tablet listens, look in on every friend now and then: an invite from one may be waiting. Friends who share where
+     * they are are looked in on more often, all at once (one wake of the radio), and the relay hands over their latest position.
+     */
     private fun updateFriendSweep() {
         val listening = PhoneHub.tabletCount > 0
         if (listening && sweepJob == null) sweepJob = exec.scheduleWithFixedDelay({ sweepFriends() }, 0, 10, TimeUnit.MINUTES)
         else if (!listening && sweepJob != null) stopAllFriends()
+        val watching = listening && store?.friendsSharingWithMe.orEmpty().isNotEmpty()
+        if (watching && watchJob == null) watchJob = exec.scheduleWithFixedDelay({ watchFriends() }, 0, FRIEND_WATCH_MINUTES, TimeUnit.MINUTES)
+        else if (!watching && watchJob != null) { watchJob?.cancel(false); watchJob = null }
     }
+
+    private fun watchFriends() = store?.friendsSharingWithMe.orEmpty().forEach { touchFriend(it, 6_000) }
 
     private fun sweepFriends() {
         friendStates().forEach { touchFriend(it.groupIdHex, 6_000) }
@@ -423,7 +454,17 @@ object GroupHub {
                 send(friendList())
             }
             is GroupEvent.InviteReceived -> offer(state, e.invite)
-            is GroupEvent.TripReceived -> if (state.kind == GroupKind.SELF && e.trip.tripId == SYNC_TRIP) onSyncReceived(e.trip.doc)
+            is GroupEvent.TripReceived -> when {
+                state.kind == GroupKind.SELF && e.trip.tripId == SYNC_TRIP -> onSyncReceived(e.trip.doc)
+                state.kind == GroupKind.FRIEND && e.trip.tripId == SHARE_TRIP && !e.mine -> friendSharesWithMe(id, e.trip.doc == "1")
+            }
+            // Only from a friend who has said they share: a position the relay still holds after they stopped is not shown.
+            is GroupEvent.Position -> if (state.kind == GroupKind.FRIEND && id in store?.friendsSharingWithMe.orEmpty()) {
+                val p = e.pos
+                val info = Message.GroupPositionInfo(id, p.lat, p.lon, p.heading, p.speed, e.tsMs, p.stopped, p.stoppedSince, p.battery)
+                friendPositions[id] = info
+                send(Message.GroupPositions(Message.GroupPositions.FRIENDS, listOf(info)))
+            }
             else -> Unit
         }
     }
@@ -444,6 +485,8 @@ object GroupHub {
         store?.delete(id)
         trackGone(id)
         offers.entries.removeAll { it.value.friendId == id }
+        forgetFriendSharing(id)
+        track(SHARE_KEY, sharePayload())
         publish()
         send(friendList())
     }
@@ -477,6 +520,66 @@ object GroupHub {
     private fun offerMessage(id: String, o: Offer): Message.GroupInviteOffer {
         val peer = groups[o.friendId]?.peer
         return Message.GroupInviteOffer(id, peer?.nickname ?: "?", o.groupName, peer?.photoBase64, peer?.colour ?: 0)
+    }
+
+    // ---- friends who always see where the rider is, and friends the rider sees ----
+
+    /**
+     * Friends see the rider through the private channel between them, outside any group: less often than a group (a friend
+     * wants to know where you are, not follow every bend), and only while Curveon has a position. The channel to each is kept
+     * open while positions flow and closes a while after they stop. The relay keeps the latest one for a friend who looks later.
+     */
+    private val friendSharer = PositionSharer(movingIntervalMs = 60_000, stoppedIntervalMs = 300_000, dataSaverIntervalMs = 60_000)
+    private val friendPositions = LinkedHashMap<String, Message.GroupPositionInfo>()
+    private var watchJob: ScheduledFuture<*>? = null
+
+    /** The friends who see the rider now: the switch is on and they are chosen. */
+    private fun seeingMe(): Set<String> = store?.takeIf { it.friendSharing }?.friendsSeeingMe.orEmpty().filter { groups[it]?.kind == GroupKind.FRIEND }.toSet()
+
+    private fun setFriendSharing(on: Boolean, ids: Set<String>) {
+        val store = store ?: return
+        val before = seeingMe()
+        // A friend met on both of the rider's devices has two channels: both are chosen together.
+        val riders = ids.mapNotNull { groups[it]?.peer?.riderId }.toSet()
+        store.friendsSeeingMe = ids + friendStates().filter { it.peer?.riderId in riders }.map { it.groupIdHex }
+        store.friendSharing = on
+        val after = seeingMe()
+        (before - after).forEach { tellFriend(it, false) }
+        (after - before).forEach { tellFriend(it, true) }
+        friendSharer.reset()
+        send(friendList())
+    }
+
+    /** Says in the channel whether the friend sees the rider from now on; the relay keeps it for when the friend looks. */
+    private fun tellFriend(id: String, sharing: Boolean) = touchFriend(id, 8_000) { c ->
+        c.sendTrip(Payload.Trip(SHARE_TRIP, System.currentTimeMillis(), "", if (sharing) "1" else "0"))
+    }
+
+    private fun friendSharesWithMe(id: String, on: Boolean) {
+        val store = store ?: return
+        val now = store.friendsSharingWithMe
+        if (on == (id in now)) return
+        store.friendsSharingWithMe = if (on) now + id else now - id
+        if (!on && friendPositions.remove(id) != null) send(friendPositionsMessage())
+        send(friendList())
+        updateFriendSweep()
+    }
+
+    private fun friendPositionsMessage() = Message.GroupPositions(Message.GroupPositions.FRIENDS, friendPositions.values.toList())
+
+    private fun forgetFriendSharing(id: String) {
+        val store = store ?: return
+        if (id in store.friendsSeeingMe) store.friendsSeeingMe = store.friendsSeeingMe - id
+        if (id in store.friendsSharingWithMe) store.friendsSharingWithMe = store.friendsSharingWithMe - id
+        if (friendPositions.remove(id) != null) send(friendPositionsMessage())
+    }
+
+    private fun sharePayload(): String? = store?.let { s -> JSONObject().put("on", s.friendSharing).put("ids", org.json.JSONArray(s.friendsSeeingMe.sorted())).toString() }
+
+    private fun applyRemoteShare(payload: String) {
+        val o = runCatching { JSONObject(payload) }.getOrNull() ?: return
+        val ids = o.optJSONArray("ids")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty().toSet()
+        setFriendSharing(o.optBoolean("on"), ids)
     }
 
     // ---- the rider's other devices: one set of friends, groups and profile ----
@@ -532,10 +635,11 @@ object GroupHub {
             if (e == null) changes += SyncEntry(key, 0L, false, payload)
             else if (!e.deleted && e.payload != payload) changes += SyncEntry(key, now, false, payload)
         }
-        profilePayload()?.let { p ->
-            val e = syncDoc.entries[SyncDoc.PROFILE]
-            if (e == null) changes += SyncEntry(SyncDoc.PROFILE, 0L, false, p)
-            else if (!e.deleted && e.payload != p) changes += SyncEntry(SyncDoc.PROFILE, now, false, p)
+        for ((key, payload) in listOf(SyncDoc.PROFILE to profilePayload(), SHARE_KEY to sharePayload())) {
+            val p = payload ?: continue
+            val e = syncDoc.entries[key]
+            if (e == null) changes += SyncEntry(key, 0L, false, p)
+            else if (!e.deleted && e.payload != p) changes += SyncEntry(key, now, false, p)
         }
         if (changes.isNotEmpty()) { syncDoc = syncDoc.with(changes); saveSync() }
     }
@@ -580,6 +684,9 @@ object GroupHub {
             if (e.key == SyncDoc.PROFILE) {
                 if (!e.deleted) e.payload?.let(::applyRemoteProfile)
                 syncDoc = syncDoc.with(e)
+            } else if (e.key == SHARE_KEY) {
+                if (!e.deleted) e.payload?.let(::applyRemoteShare)
+                syncDoc = syncDoc.with(e)
             } else if (e.key.startsWith("g:")) {
                 val id = e.key.removePrefix("g:")
                 if (e.deleted) {
@@ -622,6 +729,7 @@ object GroupHub {
         if (st.kind == GroupKind.FRIEND) {
             stopFriend(id)
             offers.entries.removeAll { it.value.friendId == id }
+            forgetFriendSharing(id)
         }
         if (id == activeId) { detach(); activeId = null; store?.activeId = null }
         groups.remove(id)
@@ -673,10 +781,13 @@ object GroupHub {
     // ---- position ----
 
     private fun position(m: Message.MyPosition) {
-        val c = client ?: return
-        if (store?.sharing != true) return
-        val pos = sharer.offer(Fix(m.lat, m.lon, m.speedMs, m.heading, m.accuracy), battery()) ?: return
-        c.sendPosition(pos)
+        val fix = Fix(m.lat, m.lon, m.speedMs, m.heading, m.accuracy)
+        val c = client
+        if (c != null && store?.sharing == true) sharer.offer(fix, battery())?.let(c::sendPosition)
+        val friends = seeingMe()
+        if (friends.isNotEmpty()) friendSharer.offer(fix, battery())?.let { pos ->
+            friends.forEach { id -> touchFriend(id, FRIEND_SHARE_KEEP_MS); friendClients[id]?.sendPosition(pos) }
+        }
     }
 
     private fun battery(): Int? {
@@ -766,6 +877,7 @@ object GroupHub {
         add(settingsMessage())
         add(profileMessage())
         add(friendList())
+        if (friendPositions.isNotEmpty()) add(friendPositionsMessage())
         add(selfStatus())
         offers.forEach { (id, o) -> add(offerMessage(id, o)) }
         add(groupList())

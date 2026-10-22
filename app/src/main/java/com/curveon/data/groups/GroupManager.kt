@@ -39,6 +39,18 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     private val _friends = MutableStateFlow<List<Message.FriendInfo>>(emptyList())
     val friends: StateFlow<List<Message.FriendInfo>> = _friends.asStateFlow()
 
+    /** The switch for letting friends see where the rider is (which ones: [Message.FriendInfo.seesMe]). */
+    private val _friendSharing = MutableStateFlow(false)
+    val friendSharing: StateFlow<Boolean> = _friendSharing.asStateFlow()
+
+    /** Where the friends who share with the rider were last, by friend id. */
+    private val _friendPositions = MutableStateFlow<Map<String, Message.GroupPositionInfo>>(emptyMap())
+    val friendPositions: StateFlow<Map<String, Message.GroupPositionInfo>> = _friendPositions.asStateFlow()
+
+    /** The friends as markers (the picture decoded once per change). */
+    private val _friendRiders = MutableStateFlow<Map<String, GroupRider>>(emptyMap())
+    val friendRiders: StateFlow<Map<String, GroupRider>> = _friendRiders.asStateFlow()
+
     /** The code (a link) a friend can scan or be sent to become a friend; for one friend. */
     private val _friendInvite = MutableStateFlow<String?>(null)
     val friendInvite: StateFlow<String?> = _friendInvite.asStateFlow()
@@ -112,7 +124,16 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
         when (m) {
             is Message.GroupSettings -> _settings.value = m
             is Message.GroupProfile -> _profile.value = m
-            is Message.FriendList -> _friends.value = m.friends
+            is Message.FriendList -> {
+                _friends.value = m.friends
+                _friendSharing.value = m.sharing
+                val old = _friendRiders.value
+                _friendRiders.value = m.friends.associate { f ->
+                    val keep = old[f.id]?.takeIf { it.nickname == f.nickname && it.colour == f.colour && it.icon == f.icon && it.photoBase64 == f.photoJpegBase64 }
+                    f.id to (keep ?: GroupRider(f.id, f.nickname, f.colour, f.icon, f.photoJpegBase64?.let(::decode), f.photoJpegBase64))
+                }
+                _friendPositions.value = _friendPositions.value.filterKeys { id -> m.friends.any { it.id == id && it.sharesWithMe } }
+            }
             is Message.FriendInvite -> _friendInvite.value = m.uri
             is Message.GroupInviteOffer -> if (_offers.value.none { it.offerId == m.offerId }) _offers.value = _offers.value + m
             is Message.GroupList -> {
@@ -132,7 +153,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 // Someone who left takes their dot with them.
                 _positions.value = _positions.value.filterKeys { it in _members.value }
             }
-            is Message.GroupPositions -> if (m.groupId == _activeId.value) _positions.value = _positions.value + m.positions.associateBy { it.id }
+            is Message.GroupPositions -> if (m.groupId == Message.GroupPositions.FRIENDS) {
+                _friendPositions.value = if (m.positions.size == 1) _friendPositions.value + (m.positions[0].id to m.positions[0])
+                else m.positions.associateBy { it.id } // the whole list: one that stopped sharing is gone from it
+            } else if (m.groupId == _activeId.value) _positions.value = _positions.value + m.positions.associateBy { it.id }
             is Message.GroupSos -> if (m.groupId == _activeId.value || !m.active) {
                 _sos.value = if (m.active) _sos.value + (m.from to m) else _sos.value - m.from
             }
@@ -189,6 +213,17 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun requestFriendInvite() = send(Message.RequestFriendInvite)
     fun forgetFriendInvite() { _friendInvite.value = null }
     fun removeFriend(channelId: String) = send(Message.FriendRemove(channelId))
+
+    /** The switch for all friends ([on]), and whether [friendId] always sees the rider while it is on ([sees]). */
+    fun setFriendSharing(on: Boolean, friendId: String? = null, sees: Boolean = false) {
+        val chosen = _friends.value.filter { it.seesMe }.map { it.id }.toSet().let { s -> if (friendId == null) s else if (sees) s + friendId else s - friendId }
+        _friendSharing.value = on
+        _friends.value = _friends.value.map { it.copy(seesMe = it.id in chosen) }
+        send(Message.FriendSharing(on, chosen.toList()))
+    }
+
+    /** True while some friend sees where the rider is. */
+    private val sharingWithFriends: Boolean get() = _friendSharing.value && _friends.value.any { it.seesMe }
     fun addFriendsToGroup(groupId: String, friendIds: List<String>) = send(Message.FriendAddToGroup(groupId, friendIds))
 
     /** The rider's answer to a friend's invite to a ride group. */
@@ -217,10 +252,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun sosCancel() = send(Message.SosCancel)
     fun sosAnswer(sosRiderId: String, coming: Boolean) = send(Message.SosAnswer(sosRiderId, coming))
 
-    /** The tablet's GPS, passed on while a group is active and sharing. The phone decides what goes out and how often. */
+    /** The tablet's GPS, passed on while a group is active and sharing, or a friend sees the rider. The phone decides what goes out and how often. */
     fun onFix(fix: GpsFix) {
         lastFix = fix
-        if (!active || !_sharing.value) return
+        if (!(active && _sharing.value) && !sharingWithFriends) return
         val now = System.currentTimeMillis()
         if (now - lastPositionSent < MIN_POSITION_GAP_MS) return
         lastPositionSent = now
@@ -239,6 +274,11 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
             onMessage(Message.GroupMembers(gid, listOf(Message.GroupMemberInfo("me", "Me", 0xFF00E5FF.toInt(), "helmet", null)) +
                 names.map { Message.GroupMemberInfo(it.first, it.second, it.third, null, null) }))
             onMessage(Message.GroupInvite(gid, "curveon://join#v=1&demo"))
+            // Two friends outside the group: Ola shares where he is, Anne does not.
+            onMessage(Message.FriendList(listOf(
+                Message.FriendInfo("ola", "Ola", 0xFFE040FB.toInt(), "bike", null, sharesWithMe = true),
+                Message.FriendInfo("anne", "Anne", 0xFFFF9100.toInt(), null, null),
+            )))
             var t = 0.0
             while (isActive) {
                 val c = lastFix
@@ -251,6 +291,9 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                             System.currentTimeMillis() - if (id == "siri") 200_000 else 0, false, null, 70 - i * 10
                         )
                     }))
+                    onMessage(Message.GroupPositions(Message.GroupPositions.FRIENDS, listOf(Message.GroupPositionInfo(
+                        "ola", c.latitude - 0.012, c.longitude + 0.02, 45f, 20f, System.currentTimeMillis() - 180_000, false, null, 55
+                    ))))
                 }
                 t += 0.05
                 delay(2000)
@@ -264,6 +307,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
         demoJob = null
         _groups.value = emptyList()
         _activeId.value = null
+        _friends.value = emptyList()
+        _friendPositions.value = emptyMap()
         clearLive()
     }
 

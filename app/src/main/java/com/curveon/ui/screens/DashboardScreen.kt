@@ -737,15 +737,34 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val groupPositions by phone.groups.positions.collectAsStateWithLifecycle()
     val groupMembers by phone.groups.members.collectAsStateWithLifecycle()
     val groupSos by phone.groups.sos.collectAsStateWithLifecycle()
+    val groupSharing by phone.groups.sharing.collectAsStateWithLifecycle()
+    val groupConnection by phone.groups.connection.collectAsStateWithLifecycle()
+    val friendSharing by phone.groups.friendSharing.collectAsStateWithLifecycle()
+    val friendList by phone.groups.friends.collectAsStateWithLifecycle()
+    val friendPositions by phone.groups.friendPositions.collectAsStateWithLifecycle()
+    val friendRiders by phone.groups.friendRiders.collectAsStateWithLifecycle()
+    val sharingPosition = (groupActive != null && groupSharing && groupConnection?.status == com.curveon.protocol.Message.GroupStatus.CONNECTED) ||
+        (friendSharing && friendList.any { it.seesMe })
     var groupTick by remember { mutableIntStateOf(0) }
     // A rider not heard from for two minutes is dimmed, even if nothing else changes on screen.
-    LaunchedEffect(groupActive) { while (groupActive != null) { kotlinx.coroutines.delay(30_000); groupTick++ } }
-    val groupRiders = remember(groupPositions, groupMembers, groupTick) {
-        groupPositions.values.map { p ->
+    LaunchedEffect(groupActive != null || friendPositions.isNotEmpty()) {
+        while (groupActive != null || friendPositions.isNotEmpty()) { kotlinx.coroutines.delay(30_000); groupTick++ }
+    }
+    val groupRiders = remember(groupPositions, groupMembers, friendPositions, friendRiders, groupTick) {
+        val now = System.currentTimeMillis()
+        val riders = groupPositions.values.map { p ->
             val m = groupMembers[p.id]
             com.curveon.ui.components.MapGroupRider(
-                p.id, GeoPoint(p.lat, p.lon), m?.nickname.orEmpty(), m?.colour ?: 0xFF00E5FF.toInt(), System.currentTimeMillis() - p.timeMs > 120_000, m?.photo
+                p.id, GeoPoint(p.lat, p.lon), m?.nickname.orEmpty(), m?.colour ?: 0xFF00E5FF.toInt(), now - p.timeMs > 120_000, m?.photo
             )
+        }
+        // Friends who share where they are, outside the group: seen once a minute or so, so dimmed only after ten. A friend
+        // riding in the group too is shown once, from the group.
+        val inGroup = groupMembers.values.map { it.nickname to it.colour }.toSet()
+        riders + friendPositions.values.mapNotNull { p ->
+            val f = friendRiders[p.id] ?: return@mapNotNull null
+            if ((f.nickname to f.colour) in inGroup && groupPositions.isNotEmpty()) return@mapNotNull null
+            com.curveon.ui.components.MapGroupRider("friend:${p.id}", GeoPoint(p.lat, p.lon), f.nickname, f.colour, now - p.timeMs > 600_000, f.photo)
         }
     }
 
@@ -938,6 +957,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             unread = notifications.size,
             updateWaiting = appUpdate is com.curveon.data.update.UpdateState.Available,
             groupAlert = groupSos.values.any { !it.mine },
+            sharingPosition = sharingPosition,
             recordingResting = recordingResting,
             active = activePanel,
             onPress = pressRail,
@@ -1484,6 +1504,8 @@ private fun Rail(
     updateWaiting: Boolean,
     /** Someone in the group has sent an SOS: a red dot on the group button. */
     groupAlert: Boolean = false,
+    /** A group or a friend gets the rider's position: a green dot on the group button, so it is never forgotten. */
+    sharingPosition: Boolean = false,
     /** A ride is being recorded while standing still: a red dot on the GPX button. */
     recordingResting: Boolean = false,
     /** The screen that is open: its button is lit. */
@@ -1513,6 +1535,7 @@ private fun Rail(
             RailButton(Icons.Default.Diversity3, stringResource(R.string.friends_title), ElectricCyan, NeonAmber, filled = active == RailPanel.GROUP,
                 tag = "rail_group", target = null, onClick = { onPress(RailPanel.GROUP) })
             if (groupAlert) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(WarningRed))
+            else if (sharingPosition) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(10.dp).clip(CircleShape).background(EcoGreen).testTag("rail_sharing"))
         }
     }
     val settings: @Composable () -> Unit = {

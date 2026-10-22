@@ -6,6 +6,20 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Flere grupper, og venner som alltid ser hvor du er (1.2.2)
+
+Lista med grupper, bytte av gruppe og vennelista er prøvd i emulatoren (også med demo-venner på kartet). Selve delingen mellom
+to ekte enheter er ikke prøvd. Den trenger det nye reléet på VPS-en (siste posisjon i minnet).
+
+- [ ] **To grupper på X7:** Venner → Gruppetur viser begge som kort. Slår du på bryteren på den ene, slås den andre av, og
+  kartet viser rytterne i den du slo på. Trykk på et kort: detaljene, «Gruppene dine» tilbake.
+- [ ] **Venn ser deg:** på Pixel, Mine venner → slå på «La venner se hvor jeg er» og «Ser alltid hvor jeg er» for X7-en (som venn).
+  Kjør eller gå litt med Pixel-en med Curveon åpen. Innen et par minutter skal X7 vise vennen med «Deler posisjonen sin · nå/… min siden»
+  og en markør på kartet, også uten noen gruppe.
+- [ ] **Slå av igjen** på Pixel: markøren og «Deler posisjonen sin» forsvinner fra X7 innen et par minutter.
+- [ ] **Grønn prikk** på Venner-knappen mens en gruppe eller en venn får posisjonen din, og ingen prikk når ingen gjør det.
+- [ ] **Batteri:** en times kjøring med deling til én venn på. Batteribruken skal være omtrent som uten (én åpen forbindelse, en posisjon i minuttet).
+
 ## 2026-10-22 — Grupper og venner bruker alltid relay.curveon.no (1.2.2)
 
 Serveren er oppe (`https://relay.curveon.no/health` svarer `ok`), og innstillingen «Reléadresse» under Avansert er borte.

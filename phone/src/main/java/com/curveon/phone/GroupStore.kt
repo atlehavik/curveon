@@ -58,6 +58,21 @@ class GroupStore(context: Context) {
         get() = prefs.getBoolean(SHARING, true)
         set(v) = prefs.edit().putBoolean(SHARING, v).apply()
 
+    /** The switch for letting friends see where the rider is (off until the rider turns it on). */
+    var friendSharing: Boolean
+        get() = prefs.getBoolean(FRIEND_SHARING, false)
+        set(v) = prefs.edit().putBoolean(FRIEND_SHARING, v).apply()
+
+    /** The friends (channel ids) who always see the rider while [friendSharing] is on. */
+    var friendsSeeingMe: Set<String>
+        get() = prefs.getStringSet(SEEING_ME, emptySet()).orEmpty().toSet()
+        set(v) = prefs.edit().putStringSet(SEEING_ME, v).apply()
+
+    /** The friends (channel ids) who have said they share where they are with this rider. */
+    var friendsSharingWithMe: Set<String>
+        get() = prefs.getStringSet(SHARING_WITH_ME, emptySet()).orEmpty().toSet()
+        set(v) = prefs.edit().putStringSet(SHARING_WITH_ME, v).apply()
+
     /** Invites from friends that have been answered (or are out of date): each is shown once, although the relay keeps them for a week. */
     fun isOfferHandled(id: String) = id in handledOffers()
 
@@ -104,6 +119,9 @@ class GroupStore(context: Context) {
         const val DATA_SAVER = "data_saver"
         const val HANDLED = "handled_offers"
         const val PROFILE = "profile"
+        const val FRIEND_SHARING = "friend_sharing"
+        const val SEEING_ME = "friends_seeing_me"
+        const val SHARING_WITH_ME = "friends_sharing_with_me"
         const val KEYSTORE = "AndroidKeyStore"
         const val ALIAS = "curveon_groups"
     }

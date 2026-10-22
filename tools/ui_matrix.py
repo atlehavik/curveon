@@ -175,8 +175,32 @@ def scenario_sendtablet(d):
     return [["~^(OK|Open Companion|Åpne Companion)$"]]
 
 
+def scenario_groups(d):
+    """The group list (with demo phone data on, Settings -> Phone: the demo group). The rest is reached by scrolling."""
+    go_home(d)
+    d.tap(["Friends", "Venner"])
+    d.tap(["Group ride", "Gruppetur"])
+    return [["~(?i)^(your groups|gruppene dine)$"], ["Demo ride"]]
+
+
+def scenario_groupdetail(d):
+    """One group opened from the list (demo phone data): the way back and the sharing switch, above the riders."""
+    scenario_groups(d)
+    d.tap(["Demo ride"])
+    return [["Your groups", "Gruppene dine"], ["Share my position", "Del posisjonen min"]]
+
+
+def scenario_friends(d):
+    """My friends (demo phone data: Ola shares his position, Anne does not). Look over the sheet for the rows and switches."""
+    go_home(d)
+    d.tap(["Friends", "Venner"])
+    d.tap(["My friends", "Mine venner"])
+    return [["Show my code", "Vis koden min"], ["Scan a QR code", "Skann QR-kode"]]
+
+
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
-             "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet}
+             "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
+             "groupdetail": scenario_groupdetail, "friends": scenario_friends}
 
 
 def apply_variant(d, v, rotation):

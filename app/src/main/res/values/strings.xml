@@ -1026,7 +1026,7 @@
     <string name="friends_tab_friends">My friends</string>
     <string name="friends_tab_group">Group ride</string>
     <string name="friends_no_phone">No phone is linked, so your profile cannot be set.</string>
-    <string name="friends_hint">Friends are people you have met here. Show your code to a friend, or scan theirs. Then you can invite each other to group rides.</string>
+    <string name="friends_hint">Friends are people you have met here. Show your code to a friend, or scan theirs. Then you can invite each other to group rides, and choose who may always see where you are.</string>
     <string name="friends_my_code">Show my code</string>
     <string name="friends_code_hint">Your friend scans this to become your friend. It is for one friend: show a new code for the next. A friend who is not here? Use Share link.</string>
     <string name="friends_share_text">Be my friend in Curveon: %1$s</string>
@@ -1040,6 +1040,21 @@
     <string name="group_add_friends_none">You have no friends to add yet. Add some under My friends.</string>
     <string name="group_add_friends_send">Send invitation</string>
     <string name="group_add_friends_sent">Invitation sent</string>
+    <string name="group_new">New group</string>
+    <string name="group_card_idle">Not in use</string>
+    <string name="group_card_paused">Not sharing · you see the others</string>
+    <plurals name="group_card_sharing">
+        <item quantity="one">Sharing your position · %1$d rider</item>
+        <item quantity="other">Sharing your position · %1$d riders</item>
+    </plurals>
+    <string name="group_one_at_a_time">Your position goes to one group at a time. Turning one on turns the other off.</string>
+    <string name="group_not_active">Share your position with this group to see who is in it and where they are.</string>
+    <string name="friends_share_title">Let friends see where I am</string>
+    <string name="friends_share_hint">Only the friends you choose below, and only while Curveon is running. They see you about once a minute.</string>
+    <string name="friends_sees_me">Always sees where I am</string>
+    <string name="friends_shares_with_you">Shares their position · %1$s</string>
+    <string name="friends_not_seen_yet">not seen yet</string>
+    <string name="friends_seen_hours">%1$d h ago</string>
     <string name="offer_title">%1$s invites you to %2$s</string>
     <string name="offer_title_unnamed">%1$s invites you to a group ride</string>
     <string name="offer_join">Join</string>
