@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
+import com.curveon.protocol.PhoneErrorCode
 import com.curveon.protocol.Message
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -100,6 +101,9 @@ object PhoneHub {
     /** How many tablets (or Curveon's own screen) are listening; the group link is kept up only while someone is. */
     val tabletCount: Int get() = tablets.size + groupListeners.size
 
+    /** Whether a tablet is connected over Bluetooth right now (not Curveon's own screen). */
+    val hasTablet: Boolean get() = tablets.isNotEmpty()
+
     /** What the groups tell: to the tablets, and to a tablet's own group listener. */
     fun broadcastGroup(message: Message) {
         broadcast(message)
@@ -160,10 +164,10 @@ object PhoneHub {
             is Message.InvokeAction -> listener?.invokeAction(message.key, message.actionIndex)
             is Message.SendReply -> if (message.key.startsWith(Message.SMS_KEY_PREFIX)) {
                 phoneBook?.sendSms(message.key, message.key.removePrefix(Message.SMS_KEY_PREFIX), message.text)
-                    ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "SMS unavailable"))
+                    ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "SMS unavailable", PhoneErrorCode.SMS_UNAVAILABLE))
             } else listener?.reply(message.key, message.text)
             is Message.StartVoiceReply -> voice?.start(message.key)
-                ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "Voice reply unavailable"))
+                ?: broadcast(Message.VoiceReplyState(message.key, Message.VoiceState.ERROR, "Voice reply unavailable", PhoneErrorCode.VOICE_UNAVAILABLE))
             is Message.CancelVoiceReply -> voice?.cancel()
             is Message.RequestPhoneBook -> phoneBook?.sendPhoneBook()
             is Message.RequestContactPhotos -> phoneBook?.sendPhotos(message.keys)

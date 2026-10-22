@@ -113,8 +113,9 @@ sealed interface Message {
     }
 
     /** Progress of a spoken reply recorded on the phone. */
-    data class VoiceReplyState(val key: String, val state: VoiceState, val text: String = "") : Message {
-        override fun toJson() = obj("voice_state").put("key", key).put("state", state.name).put("text", text)
+    /** [code]: a [PhoneErrorCode] for an error, so the tablet says it in the rider's language ([text] is the English fallback). */
+    data class VoiceReplyState(val key: String, val state: VoiceState, val text: String = "", val code: String? = null) : Message {
+        override fun toJson() = obj("voice_state").put("key", key).put("state", state.name).put("text", text).apply { code?.let { put("code", it) } }
     }
 
     enum class VoiceState { LISTENING, PARTIAL, RESULT, ERROR, SENT }
@@ -177,8 +178,9 @@ sealed interface Message {
     data class Photo(val key: String, val jpegBase64: String?)
 
     /** Something the rider asked for didn't work on the phone, e.g. a call that couldn't be placed. */
-    data class PhoneError(val text: String) : Message {
-        override fun toJson() = obj("phone_error").put("text", text)
+    /** [code]: a [PhoneErrorCode], so the tablet says it in the rider's language ([text] is the English fallback). */
+    data class PhoneError(val text: String, val code: String? = null) : Message {
+        override fun toJson() = obj("phone_error").put("text", text).apply { code?.let { put("code", it) } }
     }
 
     /**
@@ -309,6 +311,14 @@ sealed interface Message {
     /** Share a route or GPX track ([gpxGzBase64] is gzipped GPX) with the active group. */
     data class ShareRoute(val name: String, val gpxGzBase64: String) : Message {
         override fun toJson() = obj("share_route").put("name", name).put("gpx", gpxGzBase64)
+    }
+
+    /**
+     * A trip the rider planned (or picked from rides, planned trips or GPX) in Curveon on the phone, for the tablet
+     * to keep among its planned trips and offer to ride. [routeGzBase64] is the saved route as gzipped JSON.
+     */
+    data class RouteFromPhone(val name: String, val routeGzBase64: String) : Message {
+        override fun toJson() = obj("route_from_phone").put("name", name).put("route", routeGzBase64)
     }
 
     data class SosStart(val lat: Double, val lon: Double) : Message {
@@ -598,7 +608,7 @@ sealed interface Message {
                 o.optBoolean("ongoing")
             )
             "notification_removed" -> NotificationRemoved(o.getString("key"))
-            "voice_state" -> VoiceReplyState(o.getString("key"), VoiceState.valueOf(o.getString("state")), o.optString("text"))
+            "voice_state" -> VoiceReplyState(o.getString("key"), VoiceState.valueOf(o.getString("state")), o.optString("text"), o.nullableString("code"))
             "media_command" -> MediaCommand(MediaAction.valueOf(o.getString("command")))
             "play_media_app" -> PlayMediaApp(o.getString("pkg"))
             "dismiss" -> DismissNotification(o.getString("key"))
@@ -620,7 +630,7 @@ sealed interface Message {
                 )
             }, o.optBoolean("granted", true))
             "contact_photos" -> ContactPhotos(o.optJSONArray("list").objects().map { Photo(it.getString("key"), it.nullableString("jpeg")) })
-            "phone_error" -> PhoneError(o.optString("text"))
+            "phone_error" -> PhoneError(o.optString("text"), o.nullableString("code"))
             "request_phone_book" -> RequestPhoneBook
             "request_photos" -> RequestContactPhotos(o.optJSONArray("keys")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "place_call" -> PlaceCall(o.getString("number"))
@@ -658,6 +668,7 @@ sealed interface Message {
                 o.optDouble("acc", 0.0).toFloat(), o.optLong("time")
             )
             "share_route" -> ShareRoute(o.optString("name"), o.getString("gpx"))
+            "route_from_phone" -> RouteFromPhone(o.optString("name"), o.getString("route"))
             "sos_start" -> SosStart(o.getDouble("lat"), o.getDouble("lon"))
             "sos_cancel" -> SosCancel
             "sos_answer" -> SosAnswer(o.getString("sos"), o.optBoolean("coming", true))

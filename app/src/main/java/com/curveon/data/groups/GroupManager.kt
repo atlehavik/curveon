@@ -204,9 +204,14 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun removeRider(groupId: String, riderId: String) = send(Message.GroupRemoveRider(groupId, riderId))
     fun shareRoute(name: String, gpxGz: ByteArray) = send(Message.ShareRoute(name, Base64.encodeToString(gpxGz, Base64.NO_WRAP)))
 
-    fun sosStart() {
-        val fix = lastFix ?: return
-        send(Message.SosStart(fix.latitude, fix.longitude))
+    /**
+     * Sends the SOS where the rider is; with no fix yet, where Android last knew ([fallback]).
+     * False: no position at all and nothing sent, so the rider must be told.
+     */
+    fun sosStart(fallback: Pair<Double, Double>? = null): Boolean {
+        val (lat, lon) = lastFix?.let { it.latitude to it.longitude } ?: fallback ?: return false
+        send(Message.SosStart(lat, lon))
+        return true
     }
 
     fun sosCancel() = send(Message.SosCancel)

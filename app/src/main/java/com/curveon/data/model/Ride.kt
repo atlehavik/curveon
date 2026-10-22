@@ -15,8 +15,6 @@ data class Ride(
     val movingMillis: Long = 0,
     val maxSpeedKmh: Float = 0f,
     val ascentMeters: Double = 0.0,
-    val maxLeanLeftDeg: Float = 0f,
-    val maxLeanRightDeg: Float = 0f,
     /** "lat,lon,ele,secondsFromStart;…" */
     val track: String = ""
 ) {

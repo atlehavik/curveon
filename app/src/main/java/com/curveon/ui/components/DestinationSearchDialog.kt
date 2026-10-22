@@ -81,7 +81,11 @@ fun DestinationSearchDialog(
     voice: com.curveon.data.bluetooth.VoiceReply? = null,
     /** Start listening; null when there is no phone to listen with (no microphone shown). */
     onVoice: (() -> Unit)? = null,
-    onVoiceCancel: () -> Unit = {}
+    onVoiceCancel: () -> Unit = {},
+    /** Said when a "nearest …" search finds nothing (no position yet, or no offline search here). */
+    nearestEmpty: String = "",
+    /** Why there is no phone to listen with: the microphone shows dimmed and says this when tapped (null: no microphone). */
+    voiceUnavailable: String? = null
 ) {
     var query by remember { mutableStateOf("") }
     var voiceError by remember { mutableStateOf<String?>(null) }
@@ -165,6 +169,10 @@ fun DestinationSearchDialog(
                             modifier = Modifier.padding(end = 4.dp).size(48.dp).clip(CircleShape)
                                 .background(if (listening) ElectricCyan else Color.Transparent).testTag("destination_search_voice")
                         ) { Icon(Icons.Default.Mic, stringResource(R.string.search_by_voice), tint = if (listening) Color(0xFF00363D) else ElectricCyan) }
+                        else if (voiceUnavailable != null) IconButton(
+                            onClick = { query = ""; voiceError = voiceUnavailable },
+                            modifier = Modifier.padding(end = 4.dp).size(48.dp).testTag("destination_search_voice")
+                        ) { Icon(Icons.Default.Mic, stringResource(R.string.search_by_voice), tint = TextMuted) }
                     }
                 },
                 singleLine = true,
@@ -292,6 +300,9 @@ fun DestinationSearchDialog(
             }
             if (results.isEmpty() && query.trim().length >= 2 && !searching) {
                 item { Text(stringResource(R.string.search_no_matches), color = TextMuted, modifier = Modifier.padding(12.dp)) }
+            }
+            if (results.isEmpty() && nearest != null && query.isEmpty() && !searching) {
+                item { Text(nearestEmpty.ifEmpty { stringResource(R.string.search_no_matches) }, color = TextMuted, modifier = Modifier.padding(12.dp).testTag("search_nearest_empty")) }
             }
         }
     }

@@ -166,8 +166,17 @@ def scenario_mappoint(d):
     return [["Map point", "Kartpunkt"], ["Go here", "Kjør hit"]]
 
 
+def scenario_sendtablet(d):
+    """Send a GPX track to the tablet (needs Curveon Companion installed and a track under GPX): how it went."""
+    go_home(d)
+    d.tap(["GPX & rides", "GPX og turer"])
+    d.tap(["More", "Mer"], wait=1.5)
+    d.tap(["Send to tablet", "Send til nettbrettet"], wait=3)
+    return [["~^(OK|Open Companion|Åpne Companion)$"]]
+
+
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
-             "mappoint": scenario_mappoint}
+             "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet}
 
 
 def apply_variant(d, v, rotation):

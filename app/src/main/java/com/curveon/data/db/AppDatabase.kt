@@ -12,13 +12,30 @@ import com.curveon.data.model.RouteItem
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [RouteItem::class, RouteGroup::class, GpxTrack::class, GpxGroup::class, Ride::class], version = 6, exportSchema = false)
+@Database(entities = [RouteItem::class, RouteGroup::class, GpxTrack::class, GpxGroup::class, Ride::class], version = 7, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun routeDao(): RouteDao
     abstract fun gpxDao(): GpxDao
     abstract fun rideDao(): RideDao
 
     companion object {
+        /** v7: rides no longer note the lean angle. Rebuilt, as Android 13's SQLite can't drop a column; every ride is kept. */
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE `rides_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, " +
+                        "`startMs` INTEGER NOT NULL, `endMs` INTEGER NOT NULL, `distanceMeters` REAL NOT NULL, `movingMillis` INTEGER NOT NULL, " +
+                        "`maxSpeedKmh` REAL NOT NULL, `ascentMeters` REAL NOT NULL, `track` TEXT NOT NULL)"
+                )
+                db.execSQL(
+                    "INSERT INTO `rides_new` (id, title, startMs, endMs, distanceMeters, movingMillis, maxSpeedKmh, ascentMeters, track) " +
+                        "SELECT id, title, startMs, endMs, distanceMeters, movingMillis, maxSpeedKmh, ascentMeters, track FROM `rides`"
+                )
+                db.execSQL("DROP TABLE `rides`")
+                db.execSQL("ALTER TABLE `rides_new` RENAME TO `rides`")
+            }
+        }
+
         /** v6: a saved route is in Where to? and/or among the planned trips (old ones stay in Where to? only). */
         private val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -89,7 +106,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "curveon_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance

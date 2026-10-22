@@ -61,7 +61,7 @@ phone, with an optional companion app on the phone when a tablet is used.
 - **Road numbers/names** in the turn banner ("Turn right · Fv33 Storgata").
 - **Day/night map** that follows the sun at your position (or fixed in Settings).
 - **Tunnels**: position keeps moving along the route at your speed when GPS drops out.
-- **Ride log**: rides record automatically (distance, time, speeds, climb, gyro lean angle);
+- **Ride log**: rides record automatically (distance, time, speeds, climb);
   find them under Rides in the GPX & rides dialog (rail), save one to the GPX collection or ride one again.
 - **Speed limit sign**, while navigating and while free riding: the official limit where a country
   publishes them freely (Norway: Statens vegvesen NVDB; Finland: Digiroad; the Netherlands: NDW/RWS;

@@ -14,6 +14,7 @@ import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.telecom.TelecomManager
 import android.telephony.SmsManager
 import android.util.Log
+import com.curveon.protocol.PhoneErrorCode
 import com.curveon.protocol.Message
 import java.util.concurrent.Executors
 
@@ -42,7 +43,7 @@ class PhoneBook(private val context: Context) {
     @SuppressLint("MissingPermission") // checked
     fun placeCall(number: String) {
         if (!has(Manifest.permission.CALL_PHONE)) {
-            PhoneHub.broadcast(Message.PhoneError("Allow Curveon to make calls on the phone"))
+            PhoneHub.broadcast(Message.PhoneError("Allow Curveon to make calls on the phone", PhoneErrorCode.CALL_NOT_ALLOWED))
             return
         }
         runCatching {
@@ -50,7 +51,7 @@ class PhoneBook(private val context: Context) {
             PhoneHub.update { it.copy(lastEvent = "Calling $number") }
         }.onFailure {
             Log.w(TAG, "Call failed", it)
-            PhoneHub.broadcast(Message.PhoneError("Couldn't call $number"))
+            PhoneHub.broadcast(Message.PhoneError("Couldn't call $number", PhoneErrorCode.CALL_FAILED))
         }
     }
 
@@ -58,7 +59,7 @@ class PhoneBook(private val context: Context) {
     @SuppressLint("MissingPermission") // checked
     fun sendSms(key: String, number: String, text: String) = worker.execute {
         if (!has(Manifest.permission.SEND_SMS)) {
-            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Allow Curveon to send SMS on the phone"))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Allow Curveon to send SMS on the phone", PhoneErrorCode.SMS_NOT_ALLOWED))
             return@execute
         }
         runCatching {
@@ -68,7 +69,7 @@ class PhoneBook(private val context: Context) {
             PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.SENT, text))
         }.onFailure {
             Log.w(TAG, "SMS failed", it)
-            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Couldn't send the SMS"))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Couldn't send the SMS", PhoneErrorCode.SMS_FAILED))
         }
     }
 

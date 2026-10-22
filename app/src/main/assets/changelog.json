@@ -2,6 +2,12 @@
   {
     "version": "1.2.2",
     "en": [
+      "Plan over lunch, ride on the tablet: with Curveon Companion on your phone, Curveon on the phone can now send a trip straight to the tablet on the bike. It works for a trip you have just planned, your planned trips, rides you have done before and GPX tracks. Is the tablet off or out of reach? The trip waits on the phone and goes over as soon as the tablet connects, and the tablet keeps it under Planned and asks whether to ride it now",
+      "Curveon now always tells you when something is missing instead of quietly doing nothing: if location is not allowed or switched off, if Bluetooth for the engine adapter is off or not allowed, if the phone has no notification access for music, or if the group can't be reached, you see why and get a button that sorts it where one can",
+      "An SOS sent before the GPS has found you now uses the last position the device knew. If there is no position at all, Curveon says plainly that the SOS was not sent, so you can call 112 instead",
+      "Messages from the phone, like a call that couldn't be made or a voice reply that wasn't heard, now come in your own language and say what to do",
+      "Nearest fuel, camping, hotel and food now say why the list is empty: waiting for your position, or no offline search for this country yet",
+      "The Note lean angle switch under Rides is gone, together with the motion sensors it ran: the angle was never shown anywhere, so it only cost battery",
       "A ride now ends after a stop of five minutes instead of twenty, so your rides are saved sooner. Start riding again within two hours and Curveon asks at once whether to continue the ride you had or start a new one. Continue picks the ride up where it stopped and keeps logging in the same ride; a new ride (also what you get if you just ignore the question) leaves the earlier one finished as it was",
       "Gravel and rough ground on the map now look like the road itself, just dashed: same colour and no thicker than the road, brown where the ground is rough. Settings → Display → Road surfaces can instead colour them like the route, orange for gravel and purple for rough ground",
       "The day map is always high contrast now, since it is the clearest in the sun, so the High contrast switch is gone. The extra lines for ordinary country roads are gone too: the clear roads show them well enough",
@@ -90,6 +96,12 @@
       "Gravel roads shown as dashes now stay dashed however far you zoom in, by night too: before, the road under them filled the gaps, so a gravel road looked like an ordinary white road up close"
     ],
     "nb": [
+      "Planlegg over lunsjen, kjør på nettbrettet: med Curveon Companion på telefonen kan Curveon på telefonen nå sende en tur rett til nettbrettet på sykkelen. Det gjelder turen du nettopp har planlagt, de planlagte turene dine, turer du har kjørt før og GPX-spor. Er nettbrettet av eller utenfor rekkevidde? Da venter turen på telefonen og går over så snart nettbrettet kobler seg til, og nettbrettet legger den under Planlagte og spør om du vil kjøre den nå",
+      "Curveon sier nå alltid fra når noe mangler i stedet for å bare ikke gjøre noe: er posisjon ikke tillatt eller slått av, er Bluetooth for motoradapteret av eller ikke tillatt, mangler telefonen varseltilgang for musikk, eller får du ikke kontakt med gruppen, ser du hvorfor og får en knapp som ordner det der det går an",
+      "En SOS som sendes før GPS-en har funnet deg, bruker nå den siste posisjonen enheten kjente til. Finnes det ingen posisjon i det hele tatt, sier Curveon tydelig at SOS-en ikke ble sendt, så du kan ringe 112 i stedet",
+      "Beskjeder fra telefonen, som at en samtale ikke kunne ringes eller at et talesvar ikke ble hørt, kommer nå på ditt eget språk og sier hva du kan gjøre",
+      "Nærmeste bensin, camping, overnatting og mat sier nå hvorfor listen er tom: venter på posisjonen din, eller ikke noe frakoblet søk for dette landet ennå",
+      "Bryteren Noter helningsvinkel under Turer er borte, sammen med bevegelsessensorene den brukte: vinkelen ble aldri vist noe sted, så den kostet bare batteri",
       "En tur avsluttes nå etter fem minutters stopp i stedet for tjue, så turene dine blir lagret tidligere. Kjører du igjen innen to timer, spør Curveon med en gang om du vil fortsette turen du hadde eller starte en ny. Fortsett tar opp tråden der du stoppet og logger videre i samme tur. Ny tur (og det du får hvis du bare overser spørsmålet) lar den forrige turen være ferdig som den var",
       "Grus og ulendt underlag ser nå ut som selve veien, bare stiplet: samme farge og ikke tykkere enn veien, brun der det er ulendt. Under Innstillinger → Skjerm → Veidekke kan du i stedet farge dem som ruta, oransje for grus og lilla for ulendt",
       "Dagkartet er alltid høykontrast nå, siden det er tydeligst i sol, så bryteren for høykontrast er borte. De ekstra linjene for vanlige landeveier er også borte: de tydelige veiene viser dem godt nok",

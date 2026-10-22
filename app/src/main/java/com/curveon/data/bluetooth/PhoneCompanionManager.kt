@@ -15,6 +15,7 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.util.Base64
 import android.util.Log
+import com.curveon.R
 import com.curveon.data.model.MusicTrack
 import com.curveon.data.model.NotificationItem
 import com.curveon.phone.CurveonNotificationListener
@@ -23,6 +24,7 @@ import com.curveon.phone.MediaApps
 import com.curveon.phone.PhoneBook
 import com.curveon.phone.PhoneHub
 import com.curveon.phone.VoiceReplier
+import com.curveon.protocol.PhoneErrorCode
 import com.curveon.protocol.Message
 import com.curveon.protocol.MessageReader
 import com.curveon.protocol.MessageWriter
@@ -182,6 +184,10 @@ class PhoneCompanionManager(
     /** Things that went wrong on the phone (e.g. a call that couldn't be placed), for a short toast. */
     private val _phoneErrors = MutableSharedFlow<String>(extraBufferCapacity = 4)
     val phoneErrors: SharedFlow<String> = _phoneErrors
+
+    /** Trips the rider sent from Curveon on the phone (through its companion), for the tablet to keep and offer. */
+    private val _routesFromPhone = MutableSharedFlow<Message.RouteFromPhone>(extraBufferCapacity = 4)
+    val routesFromPhone: SharedFlow<Message.RouteFromPhone> = _routesFromPhone
 
     /** Group rides: what the phone tells about the group, and the rider's commands to it. */
     val groups = com.curveon.data.groups.GroupManager(scope) { send(it) }
@@ -518,11 +524,12 @@ class PhoneCompanionManager(
                 _notifications.value = _notifications.value.filterNot { it.id == msg.key }
             }
             is Message.VoiceReplyState -> if (msg.key == VOICE_SEARCH_KEY) {
-                _voiceSearch.value?.let { _voiceSearch.value = it.copy(state = msg.state, text = msg.text.ifEmpty { it.text }) }
+                val text = phoneErrorText(msg.code, msg.text)
+                _voiceSearch.value?.let { _voiceSearch.value = it.copy(state = msg.state, text = text.ifEmpty { it.text }) }
             } else {
                 val current = _voiceReply.value
                 if (current?.notificationKey == msg.key) {
-                    _voiceReply.value = current.copy(state = msg.state, text = msg.text.ifEmpty { current.text })
+                    _voiceReply.value = current.copy(state = msg.state, text = phoneErrorText(msg.code, msg.text).ifEmpty { current.text })
                     if (msg.state == Message.VoiceState.SENT) scope.launch { delay(2500); if (_voiceReply.value?.state == Message.VoiceState.SENT) _voiceReply.value = null }
                 }
             }
@@ -532,7 +539,8 @@ class PhoneCompanionManager(
                 val decoded = msg.photos.mapNotNull { p -> p.jpegBase64?.let(::decode)?.let { p.key to it } }
                 if (decoded.isNotEmpty()) _photos.value = _photos.value + decoded
             }
-            is Message.PhoneError -> _phoneErrors.tryEmit(msg.text)
+            is Message.PhoneError -> _phoneErrors.tryEmit(phoneErrorText(msg.code, msg.text))
+            is Message.RouteFromPhone -> _routesFromPhone.tryEmit(msg)
             is Message.RelayOpened, is Message.RelayText, is Message.RelayClosed -> relayTunnel.onMessage(msg)
             // What the companion scanned, or a friend code it wants to show: the groups are here, so they are answered here.
             is Message.GroupJoin, is Message.RequestFriendInvite -> if (fromPhone) GroupHub.handle(msg)
@@ -598,6 +606,32 @@ class PhoneCompanionManager(
     private val localSpeaker by lazy { com.curveon.phone.Speaker(context) { lang, a -> _speechVoice.value = VoiceStatus(lang, a, onThisDevice = true) } }
 
     /** How the voice was last found where speech plays, for Settings to suggest downloading it. */
+    /**
+     * What went wrong on the phone, in the rider's language and saying what to do; [fallback] (English, from the phone)
+     * for a code this version doesn't know, or none.
+     */
+    private fun phoneErrorText(code: String?, fallback: String): String {
+        val here = isThisDevice
+        val res = when (code) {
+            PhoneErrorCode.CALL_NOT_ALLOWED -> if (here) R.string.phone_err_call_not_allowed_here else R.string.phone_err_call_not_allowed
+            PhoneErrorCode.CALL_FAILED -> R.string.phone_err_call_failed
+            PhoneErrorCode.SMS_NOT_ALLOWED -> if (here) R.string.phone_err_sms_not_allowed_here else R.string.phone_err_sms_not_allowed
+            PhoneErrorCode.SMS_FAILED -> R.string.phone_err_sms_failed
+            PhoneErrorCode.SMS_UNAVAILABLE -> R.string.phone_err_sms_unavailable
+            PhoneErrorCode.VOICE_UNAVAILABLE -> R.string.phone_err_voice_unavailable
+            PhoneErrorCode.NO_RECOGNIZER -> R.string.phone_err_no_recognizer
+            PhoneErrorCode.NOT_CAUGHT -> R.string.phone_err_not_caught
+            PhoneErrorCode.MIC_NOT_ALLOWED -> if (here) R.string.phone_err_mic_not_allowed_here else R.string.phone_err_mic_not_allowed
+            PhoneErrorCode.NEEDS_CONNECTION -> R.string.phone_err_needs_connection
+            PhoneErrorCode.RECOGNIZER_ERROR -> R.string.phone_err_recognizer
+            PhoneErrorCode.CANT_REPLY -> R.string.phone_err_cant_reply
+            PhoneErrorCode.REPLY_FAILED -> R.string.phone_err_reply_failed
+            PhoneErrorCode.CALL_ACTION_FAILED -> R.string.phone_err_call_action
+            else -> return fallback
+        }
+        return context.getString(res)
+    }
+
     data class VoiceStatus(val language: String, val availability: Message.VoiceAvailability, val onThisDevice: Boolean)
 
     private val _speechVoice = MutableStateFlow<VoiceStatus?>(null)

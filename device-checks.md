@@ -6,6 +6,25 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-22 — Send tur fra telefonen til nettbrettet, og «si fra når noe mangler» (1.2.2)
+
+Telefonsiden er prøvd i emulatoren (knappene, «venter på nettbrettet», «Companion deler ikke», «Åpne Companion»);
+selve overføringen over Bluetooth og mottaket på nettbrettet kan ikke prøves der.
+
+- [ ] Pixel (Curveon + Companion, Start sharing) og X7 koblet: planlegg en tur på Pixel, trykk nettbrett-ikonet i
+      forhåndsvisningen. Pixel sier «Ligger nå på nettbrettet»; X7 viser «Tur fra telefonen» med Kjør / Senere, og
+      turen ligger under GPX og turer → Planlagte. «Kjør» åpner den i forhåndsvisningen med samme linje.
+- [ ] Det samme fra en planlagt tur (⋮ → Send til nettbrettet), en kjørt tur (nettbrett-knappen ved Lagre) og et
+      GPX-spor (⋮ → Send til nettbrettet).
+- [ ] Med X7 av: send en tur fra Pixel («Nettbrettet er ikke koblet til ennå…»), slå på X7: turen kommer når den
+      kobler seg til telefonen. `adb -s <x7> logcat -s PhoneLink` om den ikke kommer.
+- [ ] Uten Companion på Pixel finnes ingen «Send til nettbrettet» noe sted.
+- [ ] Databasen er oppgradert (helningsvinkel fjernet): GPX og turer → Turer viser alle de gamle turene på
+      X7 og Pixel, og nye turer lagres.
+- [ ] Varsel med anrop: avslutt anropet på telefonen og trykk Svar på X7 med en gang: «Fikk ikke gjort det på
+      telefonen…» kommer i stedet for ingenting.
+- [ ] Innstillinger → Motor med Bluetooth av på X7: «Bluetooth er slått av på enheten» med «Slå på»-knapp.
+
 ## 2026-10-22 — Profilbilde: knapper synlige og stiler (1.2.2)
 
 - [ ] Pixel, portrett og landskap: Venner → Meg → velg eller ta et bilde. «Avbryt» og «Bruk dette bildet»
@@ -704,8 +723,6 @@ standing still the app went from ~23 % of a core to ~5 %; riding, the main threa
 - [ ] The road name after the next turn, the online map where no downloaded map reaches and the
   gravel roads still appear while riding (they are now looked for once a second instead of on
   every frame).
-- [ ] GPX & rides → Rides: "Note lean angle" is off by default (lean is stored but not shown
-  anywhere yet). Switched on, ride a few bends: the ride still gets a lean angle.
 - [ ] Battery over an hour's ride, compared with before:
   `adb shell dumpsys batterystats --charged com.curveon.app`.
 
@@ -715,7 +732,7 @@ Installed on the X7 and the Pixel. Scrolling and the Planned page were checked o
 
 - [ ] Plan a trip: start = green A (only when planned from elsewhere), stops = orange 1, 2…, destination = red B. A planned trip ridden the other way: A at its new start, B at the end.
 - [ ] Bookmark a route: "Save route" shows Planned trips and GPX, both unticked; pick a group for each; save to either or both.
-- [ ] Rides: open a ride: one "Save…" button (same dialog); no lean figures.
+- [ ] Rides: open a ride: one "Save…" button (same dialog).
 - [ ] Planned: a thumbnail of the line and the km; tap for time, climb and curves; Ride / Ride the other way / Save to GPX.
 - [ ] Sideways on the Pixel: GPX, Rides and Planned scroll as one list (the switches and chips scroll away).
 

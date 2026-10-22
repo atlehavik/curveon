@@ -50,7 +50,7 @@ fun EnginePanel(state: ObdState, values: List<ObdValue>, onOpenSettings: () -> U
         if (!live) Text(
             stringResource(when (state.status) {
                 ObdState.Status.OFF -> R.string.obd_choose_adapter
-                ObdState.Status.NO_ADAPTER -> R.string.obd_bluetooth_off
+                ObdState.Status.NO_ADAPTER -> rememberBluetoothProblem()?.text ?: R.string.obd_bluetooth_off
                 ObdState.Status.CONNECTING -> R.string.obd_connecting
                 else -> R.string.obd_not_answering
             }),

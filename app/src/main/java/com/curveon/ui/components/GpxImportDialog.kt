@@ -179,9 +179,10 @@ fun GpxManagerDialog(
                             onColorClick = { colorFor = if (colorFor == "t${t.id}") null else "t${t.id}" },
                             onColor = { actions.onColor(t, it); colorFor = null },
                             actions = actions,
-                            menu = listOf(
+                            menu = listOfNotNull(
                                 MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = t },
                                 MenuItem(Icons.Default.IosShare, stringResource(R.string.gpx_export)) { export(null, t) },
+                                actions.onSendToTablet?.let { send -> MenuItem(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet)) { send(t) } },
                                 MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t },
                                 MenuItem(Icons.Default.DeleteOutline, stringResource(R.string.delete)) { confirmDelete = t }
                             )
@@ -250,7 +251,9 @@ class GpxActions(
     /** true: ungroup (keep the tracks). */
     val onDeleteGroup: (GpxGroup, Boolean) -> Unit,
     /** A group (track null) or one track, to the picked file. */
-    val onExport: (GpxGroup?, GpxTrack?, android.net.Uri) -> Unit
+    val onExport: (GpxGroup?, GpxTrack?, android.net.Uri) -> Unit,
+    /** Send the track to the tablet through Curveon Companion (null: no companion on this phone). */
+    val onSendToTablet: ((GpxTrack) -> Unit)? = null
 )
 
 internal class MenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit)

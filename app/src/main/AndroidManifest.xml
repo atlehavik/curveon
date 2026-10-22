@@ -19,6 +19,11 @@
     <!-- Updates from the GitHub releases page (Settings → Help). Not allowed on Google Play: the play build type (src/play) removes it. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- "Send to tablet" is offered only with Curveon Companion on the phone, which carries the trip to the tablet. -->
+    <queries>
+        <package android:name="com.curveon.companion" />
+    </queries>
+
     <application
         android:largeHeap="true"
         android:allowBackup="true"

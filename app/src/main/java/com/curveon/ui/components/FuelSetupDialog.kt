@@ -82,7 +82,7 @@ fun FuelSetupDialog(
                     stringResource(when (obd.status) {
                         ObdState.Status.CONNECTED -> R.string.settings_obd_status_connected
                         ObdState.Status.CONNECTING -> R.string.obd_connecting
-                        ObdState.Status.NO_ADAPTER -> R.string.obd_bluetooth_off
+                        ObdState.Status.NO_ADAPTER -> rememberBluetoothProblem()?.text ?: R.string.obd_bluetooth_off
                         ObdState.Status.OFF -> R.string.obd_choose_adapter
                         else -> R.string.obd_not_answering
                     }),

@@ -11,7 +11,6 @@ data class TelemetryData(
     val coolantTempC: Int = 0,
     val batteryVoltage: Float = 0f,
     val fuelPercent: Int = 0,
-    val leanAngleDeg: Float = 0f,
     val headingDeg: Float = 0f,
     val tripDistanceKm: Float = 0f,
     val tripDurationMinutes: Int = 0,

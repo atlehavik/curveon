@@ -411,9 +411,12 @@ private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsAc
     if (!state.obdEnabled) return
     SectionTitle(stringResource(R.string.settings_obd_adapter))
     Text(stringResource(R.string.settings_obd_adapter_hint), color = TextSecondary, fontSize = 13.sp)
-    val paired = remember { state.pairedDevices() }
+    // Bluetooth not allowed or off: say which, with the button that sorts it (the list of adapters is empty until then).
+    val btProblem = rememberBluetoothProblem()
+    val paired = remember(btProblem) { state.pairedDevices() }
     val choices = paired.map { it.address to it.name } + (if (com.curveon.BuildConfig.DEV) listOf(com.curveon.data.obd.ObdLink.DEMO to stringResource(R.string.settings_obd_demo)) else emptyList())
-    if (paired.isEmpty()) Text(stringResource(R.string.settings_obd_none_paired), color = NeonAmber, fontSize = 13.sp)
+    if (btProblem != null) BluetoothFix(btProblem)
+    else if (paired.isEmpty()) Text(stringResource(R.string.settings_obd_none_paired), color = NeonAmber, fontSize = 13.sp)
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         choices.forEach { (address, name) ->
             val chosen = address == state.obdDevice
@@ -433,7 +436,7 @@ private fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsAc
                     stringResource(when (state.obd.status) {
                         com.curveon.data.obd.ObdState.Status.CONNECTED -> R.string.settings_obd_status_connected
                         com.curveon.data.obd.ObdState.Status.CONNECTING -> R.string.obd_connecting
-                        com.curveon.data.obd.ObdState.Status.NO_ADAPTER -> R.string.obd_bluetooth_off
+                        com.curveon.data.obd.ObdState.Status.NO_ADAPTER -> btProblem?.text ?: R.string.obd_bluetooth_off
                         else -> R.string.obd_not_answering
                     }),
                     color = if (state.obd.status == com.curveon.data.obd.ObdState.Status.CONNECTED) EcoGreen else NeonAmber,

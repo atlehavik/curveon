@@ -19,6 +19,7 @@ import android.provider.ContactsContract
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import com.curveon.protocol.PhoneErrorCode
 import com.curveon.protocol.Message
 import java.security.MessageDigest
 
@@ -143,8 +144,10 @@ class CurveonNotificationListener : NotificationListenerService() {
     fun dismiss(key: String) = main.post { runCatching { cancelNotification(key) } }
 
     fun invokeAction(key: String, index: Int) {
-        val sbn = synchronized(active) { active[key] } ?: return
-        val intent = sbn.notification.actions?.getOrNull(index)?.actionIntent ?: return
+        // The call (or its button) is gone already, e.g. answered on the headset: say so rather than do nothing.
+        val failed = { PhoneHub.broadcast(Message.PhoneError("Couldn't do that on the phone", PhoneErrorCode.CALL_ACTION_FAILED)) }
+        val sbn = synchronized(active) { active[key] } ?: return failed()
+        val intent = sbn.notification.actions?.getOrNull(index)?.actionIntent ?: return failed()
         // Android 14+ lets the dialer's Answer / Decline start its call screen only if the one sending
         // it says so: without this the button did nothing when Curveon ran on the phone itself.
         val options = if (Build.VERSION.SDK_INT >= 34) android.app.ActivityOptions.makeBasic()
@@ -153,6 +156,7 @@ class CurveonNotificationListener : NotificationListenerService() {
             intent.send(this, 0, null, null, null, null, options)
         } catch (e: PendingIntent.CanceledException) {
             Log.w(TAG, "Call action $index of $key failed", e)
+            failed()
         }
     }
 
@@ -161,7 +165,7 @@ class CurveonNotificationListener : NotificationListenerService() {
         val sbn = synchronized(active) { active[key] }
         val action = sbn?.let { findReplyAction(it.notification) }
         if (action == null) {
-            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "This message can't be replied to"))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "This message can't be replied to", PhoneErrorCode.CANT_REPLY))
             return
         }
         val intent = Intent()
@@ -172,7 +176,7 @@ class CurveonNotificationListener : NotificationListenerService() {
             action.actionIntent.send(this, 0, intent)
             PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.SENT, text))
         } catch (e: PendingIntent.CanceledException) {
-            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Reply failed"))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Reply failed", PhoneErrorCode.REPLY_FAILED))
         }
     }
 

@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.curveon.R
 import com.curveon.data.bluetooth.PhoneCompanionManager
+import com.curveon.data.bluetooth.TabletRoutes
 import com.curveon.data.db.AppDatabase
 import com.curveon.data.gpx.GpxGroups
 import com.curveon.data.gpx.GpxWriter
@@ -19,7 +20,6 @@ import com.curveon.data.location.TripTracker
 import com.curveon.data.map.OfflineMaps
 import com.curveon.data.model.*
 import com.curveon.data.repository.CurveonRepository
-import com.curveon.data.ride.LeanSensor
 import com.curveon.data.ride.RideRecorder
 import com.curveon.data.routing.CameraAlert
 import com.curveon.data.routing.FuelHint
@@ -591,6 +591,29 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     val savedRoutes = repository.allRoutes.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** A trip the rider just sent from Curveon on the phone: already kept among the planned trips, offered to ride now. */
+    private val _routeFromPhone = MutableStateFlow<RouteItem?>(null)
+    val routeFromPhone: StateFlow<RouteItem?> = _routeFromPhone.asStateFlow()
+    /** A trip came from the phone but could not be read (a newer Curveon there?): its name, to say so. */
+    private val _routeFromPhoneUnreadable = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val routeFromPhoneUnreadable: SharedFlow<String> = _routeFromPhoneUnreadable
+
+    init {
+        viewModelScope.launch {
+            phoneCompanion.routesFromPhone.collect { msg ->
+                val item = TabletRoutes.decode(msg.routeGzBase64)
+                    ?: return@collect run { _routeFromPhoneUnreadable.tryEmit(msg.name) }
+                // Sent twice (once more after a change of mind): the same trip is kept once.
+                val same = savedRoutes.value.firstOrNull { it.title == item.title && it.polylineJson == item.polylineJson }
+                val id = same?.id ?: repository.saveRoute(item)
+                if (same != null && !same.inPlanned) repository.saveRoute(same.copy(inPlanned = true))
+                _routeFromPhone.value = item.copy(id = id)
+            }
+        }
+    }
+
+    fun dismissRouteFromPhone() { _routeFromPhone.value = null }
     /** Named sets of planned trips ("Trips for the weekend"). */
     val routeGroups = repository.allRouteGroups.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -1083,7 +1106,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     // ---------------------------------------------------------------- ride log
 
     private val rideRecorder = RideRecorder()
-    private val leanSensor = LeanSensor(application)
 
     private val _currentRide = MutableStateFlow<Ride?>(null)
     val currentRide: StateFlow<Ride?> = _currentRide.asStateFlow()
@@ -1224,7 +1246,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     override fun onCleared() {
         obd.use(null)
-        leanSensor.stop()
         NavTrace.flush()
         saveRide(finish = true)
         super.onCleared()
@@ -1245,7 +1266,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         awake.value = false
         gpsJob?.cancel()
         gpsJob = null
-        leanSensor.stop()
         phoneCompanion.pause()
         obd.use(null)
         saveRide(finish = false)
@@ -1415,21 +1435,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         settings.edit().putBoolean("logRides", on).apply()
     }
 
-    /** Whether the gyro and accelerometer are used to note the lean angle in rides. Off by default: they cost battery. */
-    private val _recordLean = MutableStateFlow(settings.getBoolean("recordLean", false))
-    val recordLean: StateFlow<Boolean> = _recordLean.asStateFlow()
-
-    fun setRecordLean(on: Boolean) {
-        _recordLean.value = on
-        settings.edit().putBoolean("recordLean", on).apply()
-        if (!on) leanSensor.stop()
-    }
-
     private fun recordRide(fix: GpsFix) {
         if (!_logRides.value && rideRecorder.current == null) return
-        val lean = _recordLean.value
-        if (lean) leanSensor.onSpeed(tripTracker.speedKmh / 3.6f)
-        when (rideRecorder.onFix(fix, tripTracker.speedKmh, if (lean) leanSensor.leanDeg else null)) {
+        when (rideRecorder.onFix(fix, tripTracker.speedKmh)) {
             RideRecorder.Event.STARTED -> {
                 _resumeOffer.value = rideRecorder.resumeOffer
                 val started = rideRecorder.current!!
@@ -1587,6 +1595,36 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // ---- trips for the tablet (sent with Curveon Companion) ----
+
+    /** The previewed trip, as it would be saved, for the tablet; null when there is no route yet. */
+    suspend fun previewForTablet(): RouteItem? {
+        val s = navigator.state.value
+        val p = s.preview ?: return null
+        val route = p.selectedRoute ?: return null
+        val goal = p.goal.let { g ->
+            if (g is NavigationGoal.Destination) g.copy(options = g.options.copy(roadStyle = p.candidates[p.selected].style ?: g.options.roadStyle)) else g
+        }
+        return SavedRoutes.toItem(goal, route, suggestedRouteName().ifBlank { str(R.string.ride) })
+    }
+
+    fun rideForTablet(ride: Ride): RouteItem? {
+        val pts = RideRecorder.parseTrack(ride.track).map { LatLon(it.lat, it.lon) }
+        if (pts.size < 2) return null
+        return SavedRoutes.trackItem(ride.title.ifEmpty { str(R.string.ride_earlier) }, pts, ride.distanceMeters,
+            (ride.movingMillis / 60_000).toInt(), RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED), null)
+    }
+
+    /** A GPX track for the tablet, in the direction set for it. */
+    fun gpxForTablet(track: GpxTrack): RouteItem? {
+        val inverted = GpxGroups.reversed(track, track.groupId?.let { id -> gpxGroups.value.firstOrNull { it.id == id } })
+        val pts = com.curveon.data.osm.GpxParser.decodePoints(track.trackPointsJson).map { LatLon(it.latitude, it.longitude) }
+        if (pts.size < 2) return null
+        // A GPX has no times to go by: about an hour per 60 km.
+        return SavedRoutes.trackItem(track.name, if (inverted) pts.reversed() else pts, track.totalDistanceKm * 1000.0,
+            track.totalDistanceKm.roundToInt(), RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED), null)
+    }
+
     fun deleteRides(ids: Collection<Long>) = viewModelScope.launch { rideDao.delete(ids.toList()) }
 
     /** Keeps a ride as a track in the GPX collection, in [groupId] or a new group called [newGroup]. */
@@ -1613,6 +1651,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             )
         )
     }
+
+    /** Whether the ride has a line to ride or keep (a very short one the GPS hardly caught may not). */
+    fun rideHasTrack(ride: Ride) = RideRecorder.parseTrack(ride.track).size >= 2
 
     /** Ride a logged ride again, as a track; [reverse] the other way round. */
     fun rideAgain(ride: Ride, reverse: Boolean = false) {
@@ -2115,7 +2156,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun searchPlaces(query: String) =
         placeSearch.search(query, _currentLocation.value.latitude, _currentLocation.value.longitude)
 
+    /** The nearest places of [kinds]; none before the GPS has found the rider (the screen says so), not ones near a guess. */
     suspend fun nearest(kinds: List<String>): List<SearchResult> {
+        if (!_telemetry.value.hasGpsFix) return emptyList()
         val p = _currentLocation.value
         return placeSearch.nearest(kinds, p.latitude, p.longitude, 8)
     }

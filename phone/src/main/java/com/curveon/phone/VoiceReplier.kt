@@ -8,6 +8,7 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import com.curveon.protocol.PhoneErrorCode
 import com.curveon.protocol.Message
 import com.curveon.protocol.Message.VoiceState
 
@@ -25,7 +26,7 @@ class VoiceReplier(private val context: Context) {
     fun start(key: String) = main.post {
         cancelInternal()
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, "Speech recognition not available on the phone"))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, "Speech recognition not available on the phone", PhoneErrorCode.NO_RECOGNIZER))
             return@post
         }
         currentKey = key
@@ -61,20 +62,20 @@ class VoiceReplier(private val context: Context) {
         override fun onResults(results: Bundle?) {
             val text = best(results)
             PhoneHub.broadcast(
-                if (text.isNullOrBlank()) Message.VoiceReplyState(key, VoiceState.ERROR, "Didn't catch that")
+                if (text.isNullOrBlank()) Message.VoiceReplyState(key, VoiceState.ERROR, "Didn't catch that", PhoneErrorCode.NOT_CAUGHT)
                 else Message.VoiceReplyState(key, VoiceState.RESULT, text)
             )
             main.post { cancelInternal() }
         }
 
         override fun onError(error: Int) {
-            val reason = when (error) {
-                SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Didn't catch that"
-                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission missing on the phone"
-                SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Speech recognition needs a connection"
-                else -> "Speech recognition error ($error)"
+            val (reason, code) = when (error) {
+                SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Didn't catch that" to PhoneErrorCode.NOT_CAUGHT
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission missing on the phone" to PhoneErrorCode.MIC_NOT_ALLOWED
+                SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Speech recognition needs a connection" to PhoneErrorCode.NEEDS_CONNECTION
+                else -> "Speech recognition error ($error)" to PhoneErrorCode.RECOGNIZER_ERROR
             }
-            PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, reason))
+            PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, reason, code))
             main.post { cancelInternal() }
         }
 

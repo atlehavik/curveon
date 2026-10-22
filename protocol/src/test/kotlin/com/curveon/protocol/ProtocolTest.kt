@@ -66,6 +66,7 @@ class ProtocolTest {
         Message.GroupProfile("Kari", 255, null, "/9j/"),
         Message.MyPosition(59.91, 10.75, 21.5f, 90f, 4f, 1_700_000_000_000),
         Message.ShareRoute("Lofoten", "H4sI"),
+        Message.RouteFromPhone("Helgetur", "H4sI"),
         Message.SosStart(68.1, 13.6),
         Message.SosCancel,
         Message.SosAnswer("rider1", true),

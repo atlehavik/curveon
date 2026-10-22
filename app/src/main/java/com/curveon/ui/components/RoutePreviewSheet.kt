@@ -90,6 +90,8 @@ fun RoutePreviewSheet(
     onSave: () -> Unit,
     /** Share the trip with the active group (null: no group, or this is not a trip with stops). */
     onShare: (() -> Unit)? = null,
+    /** Send the trip to the tablet through Curveon Companion (null: no companion on this phone). */
+    onSendToTablet: (() -> Unit)? = null,
     onGo: () -> Unit,
     onClose: () -> Unit,
     /** Folded down to one line (name, time, GO) so more of the route shows on the map. */
@@ -153,7 +155,7 @@ fun RoutePreviewSheet(
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
             if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.EditRoad, stringResource(R.string.preview_track_to_trip), onTrackToTrip)
             if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
-            if (onShare != null && preview.selectedRoute != null) SmallIcon(Icons.Default.Share, stringResource(R.string.share_trip_with_group), onShare)
+            if (preview.selectedRoute != null) ShareIcon(onShare, onSendToTablet)
             SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
             // A trip on the map may be half an hour of planning: ask before throwing it away.
             SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { if (preview.selectedRoute != null) askDiscard = true else onClose() }
@@ -512,6 +514,28 @@ private fun CurvinessBar(curviness: Int) {
         }
         Spacer(Modifier.width(6.dp))
         Icon(Icons.Default.Gesture, stringResource(R.string.preview_curviness), tint = TextMuted, modifier = Modifier.size(14.dp))
+    }
+}
+
+/**
+ * Sharing the trip: with the group, to the tablet, or both behind one icon (a phone's title row has no room for
+ * two). Nothing shows when neither is possible.
+ */
+@Composable
+private fun ShareIcon(onGroup: (() -> Unit)?, onTablet: (() -> Unit)?) {
+    when {
+        onGroup != null && onTablet != null -> Box {
+            var open by remember { mutableStateOf(false) }
+            SmallIcon(Icons.Default.Share, stringResource(R.string.share_trip)) { open = true }
+            DropdownMenu(open, { open = false }, containerColor = CockpitSurfaceVariant) {
+                DropdownMenuItem({ Text(stringResource(R.string.share_trip_with_group), color = TextPrimary) }, { open = false; onGroup() },
+                    leadingIcon = { Icon(Icons.Default.Groups, null, tint = TextSecondary) })
+                DropdownMenuItem({ Text(stringResource(R.string.send_to_tablet), color = TextPrimary) }, { open = false; onTablet() },
+                    leadingIcon = { Icon(Icons.Default.TabletAndroid, null, tint = TextSecondary) }, modifier = Modifier.testTag("send_to_tablet"))
+            }
+        }
+        onGroup != null -> SmallIcon(Icons.Default.Share, stringResource(R.string.share_trip_with_group), onGroup)
+        onTablet != null -> Box(Modifier.testTag("send_to_tablet")) { SmallIcon(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet), onTablet) }
     }
 }
 

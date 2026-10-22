@@ -144,6 +144,8 @@ class CompanionService : Service() {
             PhoneHub.addTablet(sink, name)
             writer.write(phoneStatus().also { lastStatus = it })
             writer.write(MediaApps.installed(this))
+            // A trip planned in Curveon on this phone while the tablet was away.
+            RouteForTablet.take(this)?.let(writer::write)
             val reader = MessageReader(socket.inputStream)
             while (running) {
                 val msg = reader.read() ?: break

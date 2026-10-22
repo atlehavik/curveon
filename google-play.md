@@ -159,4 +159,11 @@ nevn det under «Data delt»/«samlet» hvis Google krever det for ML Kit.
 - **Lyd og stemme (se `docs/audio.md`):** bruker Androids innebygde talemotor (`<queries>` for `TTS_SERVICE`),
   ingen egne biblioteker eller nedlastinger. sherpa-onnx er strøket, så ingen GPL. Eneste nye tillatelse er
   `ACCESS_NETWORK_STATE` i companion (vanlig, gis automatisk).
+- **Send tur til nettbrettet (2026-10-22):** hovedappen har `<queries>` for én pakke (`com.curveon.companion`) for å
+  vise valget bare når Companion er installert. Det er innenfor Plays regler for pakkesynlighet (én navngitt pakke,
+  ikke `QUERY_ALL_PACKAGES`). Companion har en eksportert `BroadcastReceiver` (`RouteForTablet$Receiver`) uten
+  tillatelse, fordi Curveon fra GitHub og Companion kan være signert med ulike nøkler. En annen app kan derfor legge
+  en tur i køen til nettbrettet. Det er ingen sikkerhetsrisiko for data, fordi nettbrettet alltid spør før turen kjøres,
+  men en `signature`-tillatelse bør inn når begge appene signeres likt (Play App Signing).
+- **Helningsvinkel fjernet (2026-10-22):** gyro og akselerometer brukes ikke lenger (`LeanSensor` er slettet).
 - Lisens og tredjepartsnotiser finnes (MIT, `THIRD_PARTY_LICENSES.md`). Sjekk at OSM/Overture-kreditering vises i appen.

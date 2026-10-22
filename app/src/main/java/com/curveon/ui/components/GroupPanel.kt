@@ -99,6 +99,7 @@ fun GroupTab(manager: GroupManager, modifier: Modifier = Modifier) {
     var confirmLeave by remember { mutableStateOf(false) }
     var confirmRemove by remember { mutableStateOf<GroupRider?>(null) }
     var countdown by remember { mutableStateOf<Int?>(null) }
+    var sosNoPosition by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     // A countdown to sending the SOS, with a way out.
@@ -107,9 +108,16 @@ fun GroupTab(manager: GroupManager, modifier: Modifier = Modifier) {
             val now = countdown ?: break
             delay(1000)
             if (countdown == null) break // cancelled meanwhile
-            if (now <= 1) { countdown = null; manager.sosStart(); break } else countdown = now - 1
+            if (now <= 1) { countdown = null; if (!manager.sosStart(lastKnownPosition(context))) sosNoPosition = true; break } else countdown = now - 1
         }
     }
+    if (sosNoPosition) AlertDialog(
+        onDismissRequest = { sosNoPosition = false },
+        icon = { Icon(Icons.Default.LocationOff, null, tint = WarningRed) },
+        title = { HideSystemBars(); Text(stringResource(R.string.sos_no_position_title)) },
+        text = { Text(stringResource(R.string.sos_no_position_text), Modifier.verticalScroll(rememberScrollState())) },
+        confirmButton = { TextButton(onClick = { sosNoPosition = false }) { Text(stringResource(R.string.ok)) } }
+    )
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         sos.values.firstOrNull { it.mine }?.let { MySosCard(it, manager) }
@@ -164,6 +172,11 @@ fun GroupTab(manager: GroupManager, modifier: Modifier = Modifier) {
                     else -> NeonAmber
                 },
                 fontSize = 14.sp, fontWeight = FontWeight.Bold
+            )
+            // No contact: why, and what to do about it.
+            if (status == Message.GroupStatus.OFFLINE) Text(
+                stringResource(if (hasInternet(context)) R.string.group_offline_trying else R.string.group_offline_no_internet),
+                color = TextSecondary, fontSize = 13.sp
             )
 
             // My other device (tablet or phone) is the one sending my position: say so, and let me take over.
@@ -665,3 +678,15 @@ private fun SosAlertSound() {
         }
     }
 }
+
+/** Where Android last knew this device was (any source), for an SOS sent before Curveon's own GPS has a fix. */
+@android.annotation.SuppressLint("MissingPermission") // no permission: no position, and the rider is told
+private fun lastKnownPosition(context: Context): Pair<Double, Double>? = runCatching {
+    val lm = context.getSystemService(android.location.LocationManager::class.java)
+    lm.getProviders(true).mapNotNull { lm.getLastKnownLocation(it) }.maxByOrNull { it.time }?.let { it.latitude to it.longitude }
+}.getOrNull()
+
+private fun hasInternet(context: Context): Boolean = runCatching {
+    val cm = context.getSystemService(android.net.ConnectivityManager::class.java)
+    cm.getNetworkCapabilities(cm.activeNetwork)?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+}.getOrDefault(false)

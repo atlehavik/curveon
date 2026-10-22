@@ -411,7 +411,10 @@ fun FullMediaCard(
     onPrevious: () -> Unit,
     onPlayApp: (String) -> Unit,
     onReconnect: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Why no music can come (notification access off on the phone), and what tapping does about it (null: nothing to do here). */
+    blocked: String? = null,
+    onFixBlocked: (() -> Unit)? = null
 ) {
     val current = apps.indexOfFirst { it.name == track?.sourceApp }
     val switchable = track != null && apps.size > 1
@@ -427,9 +430,10 @@ fun FullMediaCard(
                 phoneState == CompanionConnectionState.CONNECTING
             // Connected but silent: pick an app, or tap to make the phone resume whatever played last.
             // Not connected: tap to try right now (e.g. sharing was just turned on on the phone).
-            Box(Modifier.matchParentSize().clickable(enabled = (connected && apps.isEmpty()) || canRetry,
-                onClick = if (connected) onPlayPause else onReconnect)) {
-                NothingPlaying(phoneState, phoneName, choosing = connected && apps.isNotEmpty())
+            val stuck = connected && blocked != null
+            Box(Modifier.matchParentSize().clickable(enabled = if (stuck) onFixBlocked != null else (connected && apps.isEmpty()) || canRetry,
+                onClick = if (stuck) ({ onFixBlocked?.invoke(); Unit }) else if (connected) onPlayPause else onReconnect)) {
+                NothingPlaying(phoneState, phoneName, choosing = connected && apps.isNotEmpty() && !stuck, blocked = if (connected) blocked else null)
                 if (connected && apps.isNotEmpty()) {
                     Row(Modifier.align(Alignment.BottomCenter).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         apps.take(4).forEach { app ->
@@ -542,7 +546,7 @@ private fun MediaAppIcon(app: MediaApp, size: Dp, current: Boolean, onClick: () 
 }
 
 @Composable
-private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: String, choosing: Boolean) {
+private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: String, choosing: Boolean, blocked: String? = null) {
     Column(
         Modifier.align(if (choosing) Alignment.TopCenter else Alignment.Center).padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -553,7 +557,7 @@ private fun BoxScope.NothingPlaying(state: CompanionConnectionState, phoneName: 
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            when (state) {
+            if (blocked != null) blocked else when (state) {
                 CompanionConnectionState.CONNECTED -> stringResource(if (choosing) R.string.media_nothing_pick else R.string.media_nothing_tap, phoneName)
                 CompanionConnectionState.CONNECTING -> stringResource(R.string.phone_connecting_to, phoneName)
                 // Curveon on a phone: that phone itself is the obvious choice.

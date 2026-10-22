@@ -446,7 +446,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      * riding it. Joins the track where the rider is.
      */
     fun followTrackNow(name: String, points: List<LatLon>, options: RouteOptions) {
-        val from = lastPosition ?: return
+        val from = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
         val tiles = tilesAround(points + from)
         if (!canRoute(tiles)) return fail(routingData.describe())
         calcJob?.cancel()
@@ -957,7 +957,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
         val goal = s.goal ?: return previewDestination(stop.name, stop.point, RouteOptions(preferredStyle)).also { trace("no goal, planning a trip instead") }
         val route = s.route ?: return trace("no route, nothing done")
-        val pos = lastPosition ?: return trace("no position yet, nothing done")
+        val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps)).also { trace("no position yet, nothing done") }
         trace("started, ${(goal as? NavigationGoal.Destination)?.stops?.size ?: -1} stops before, route ${route.points.size} points, calculating was ${calcJob?.isActive}")
         calcJob?.cancel()
         _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_adding_stop, stop.name)))
@@ -1090,7 +1090,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         followUntil = if (carryOn) System.currentTimeMillis() + FOLLOW_MS else 0L
         val goal = s.goal ?: return
         val route = s.route ?: return
-        val pos = lastPosition ?: return
+        val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
         calcJob?.cancel()
         _state.value = s.copy(wrongTurn = null, status = RoutingStatus.Calculating(context.getString(message)))
         calcJob = scope.launch {
@@ -1159,7 +1159,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
         val g = s.goal as? NavigationGoal.Destination ?: return
         if (g.shared != change.shared) return
-        val pos = lastPosition ?: return
+        val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
         val updated = g.copy(destination = change.destination, stops = change.stops, fixedLine = null)
         calcJob?.cancel()
         _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))
@@ -1182,7 +1182,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val s = _state.value
         val g = s.goal as? NavigationGoal.Destination ?: return
         if (index !in g.stops.indices) return
-        val pos = lastPosition ?: return
+        val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
         val newGoal = g.copy(stops = g.stops.filterIndexed { i, _ -> i != index })
         calcJob?.cancel()
         _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))

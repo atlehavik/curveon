@@ -47,6 +47,14 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+        <!-- Curveon on this phone hands over a trip for the tablet; the tablet asks before riding it. -->
+        <receiver
+            android:name=".RouteForTablet$Receiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.curveon.companion.SEND_ROUTE" />
+            </intent-filter>
+        </receiver>
         <receiver
             android:name=".TestScenarios$TestActionReceiver"
             android:exported="false" />

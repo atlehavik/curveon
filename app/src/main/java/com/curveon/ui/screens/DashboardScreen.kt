@@ -41,6 +41,8 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.ui.layout.positionInRoot
 import com.curveon.data.bluetooth.CompanionConnectionState
+import com.curveon.data.bluetooth.TabletRoutes
+import com.curveon.data.model.RouteItem
 import com.curveon.data.model.GeoPoint
 import com.curveon.data.model.GroundPreference
 import com.curveon.ui.components.*
@@ -159,7 +161,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     LaunchedEffect(resumeOffer) { if (resumeOffer != null) { kotlinx.coroutines.delay(30_000); viewModel.startNewRide() } }
     val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
     val logRides by viewModel.logRides.collectAsStateWithLifecycle()
-    val recordLean by viewModel.recordLean.collectAsStateWithLifecycle()
     val wrongTurn by viewModel.wrongTurn.collectAsStateWithLifecycle()
     val navState by viewModel.navigation.collectAsStateWithLifecycle()
     val appUpdate by viewModel.appUpdate.collectAsStateWithLifecycle()
@@ -254,8 +255,26 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** The GPX tracks under a finger held on the map (name, colour), for the place there. */
     var pressedTracks by remember { mutableStateOf<Pair<GeoPoint, List<Pair<String, String>>>?>(null) }
     var toast by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(toast) { if (toast != null) { delay(2500); toast = null } }
+    // Long enough to read: a message that says what to do stays up longer than "Saved".
+    LaunchedEffect(toast) { toast?.let { delay((2500L + (it.length - 60).coerceAtLeast(0) * 40L).coerceAtMost(7000L)); toast = null } }
     LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
+    // Trips for the tablet, sent from Curveon on the phone through Curveon Companion: only offered when it is installed.
+    var companionInstalled by remember { mutableStateOf(TabletRoutes.companionInstalled(context)) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        companionInstalled = TabletRoutes.companionInstalled(context)
+        onPauseOrDispose { }
+    }
+    var tabletResult by remember { mutableStateOf<TabletRoutes.Outcome?>(null) }
+    val sendToTablet: (RouteItem?) -> Unit = { item ->
+        if (item == null) tabletResult = TabletRoutes.Outcome.EMPTY
+        else TabletRoutes.send(context, item) { outcome ->
+            tabletResult = outcome
+        }
+    }
+    val routeFromPhone by viewModel.routeFromPhone.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel) {
+        viewModel.routeFromPhoneUnreadable.collect { toast = context.getString(R.string.toast_route_from_phone_unreadable, it) }
+    }
     // Trips shared with the group: what to ride, the offer from a friend, and sharing the trip on screen.
     val sharingGroup by phone.groups.activeId.collectAsStateWithLifecycle()
     val sharedTripList by viewModel.sharedTrips.shared.collectAsStateWithLifecycle()
@@ -649,6 +668,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onTrackToTrip = viewModel::trackToTrip,
                     onSave = askSaveName,
                     onShare = if (sharingGroup != null) { { shareTrip() } } else null,
+                    onSendToTablet = if (companionInstalled) { { scope.launch { sendToTablet(viewModel.previewForTablet()) } } } else null,
                     onGo = viewModel::startPreview,
                     onClose = viewModel::cancelPreview,
                     minimized = previewMinimized,
@@ -808,6 +828,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide,
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp)) }
         reachedStop?.let { StopReachedBanner(it, onDismiss = { reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
+        // Top left, beside the speed: clear of the preview sheet and the cards, however low the screen.
+        LocationBanner(onAllowed = viewModel::startGps, modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp, start = 12.dp, end = 120.dp))
         toast?.let {
             Text(it, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp).clip(RoundedCornerShape(12.dp))
@@ -849,7 +871,14 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 track = track, art = albumArt, phoneState = phoneState, phoneName = phoneName, apps = mediaApps,
                 onPlayPause = { phone.togglePlayPause() }, onNext = { phone.skipNext() }, onPrevious = { phone.skipPrevious() },
                 onPlayApp = phone::playApp, onReconnect = phone::retryNow,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                // No notification access on the phone: no music can come, so say why instead of "tap to play".
+                blocked = phoneStatusNow?.takeIf { !it.notificationAccess }?.let {
+                    stringResource(if (thisDeviceIsPhone) R.string.media_this_no_notification_access else R.string.link_no_notification_access)
+                },
+                onFixBlocked = if (thisDeviceIsPhone) ({
+                    runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
+                }) else null
             )
         }
     }
@@ -955,14 +984,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             )
         }
 
-        sharedOffer?.let { t ->
-            com.curveon.ui.components.SharedTripOfferDialog(
-                trip = t,
-                onRideNow = { viewModel.sharedTrips.open(t) },
-                onSave = { viewModel.sharedTrips.accept(t); toast = context.getString(R.string.toast_shared_trip_saved) },
-                onIgnore = { viewModel.sharedTrips.ignore(t) }
-            )
-        }
         if (showGroup) com.curveon.ui.components.FriendsDialog(phone.groups, onDismiss = { showGroup = false })
 
         searchPurpose?.let { purpose -> key(purpose) {
@@ -971,6 +992,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 voice = voiceSearch,
                 onVoice = if (phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO) ({ phone.startVoiceSearch() }) else null,
                 onVoiceCancel = phone::cancelVoiceSearch,
+                voiceUnavailable = stringResource(R.string.voice_needs_phone),
                 onSearch = { viewModel.searchPlaces(it) },
                 onPick = { r ->
                     if (purpose == SearchPurpose.START && r.kind == KIND_HERE) {
@@ -988,6 +1010,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onPickSaved = { closeSearch(); viewModel.previewSaved(it) },
                 onDeleteSaved = { viewModel.deleteSavedRoute(it) },
                 onNearest = { viewModel.nearest(it) },
+                nearestEmpty = stringResource(if (telemetryState.value.hasGpsFix) R.string.search_nearest_none else R.string.search_nearest_no_position),
                 searchOffer = searchOffer, onDownloadSearch = viewModel::downloadSearchIndex, onShown = viewModel::checkSearchOffer,
                 purpose = purpose,
                 onPickOnMap = { startMapPick(purpose) },
@@ -1016,7 +1039,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     message = gpxMessage,
                     poiCategories = poiCategories,
                     autoFollow = autoFollow,
-                    actions = remember(viewModel) {
+                    actions = remember(viewModel, companionInstalled) {
                         GpxActions(
                             onImport = { importGpxLauncher.launch(arrayOf("*/*")) },
                             onToggleOnMap = { t, on -> viewModel.setTrackOnMap(t, on) },
@@ -1033,7 +1056,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                             onGroupColor = { g, c -> viewModel.setGroupColor(g, c) },
                             onRenameGroup = { g, name -> viewModel.renameGroup(g, name) },
                             onDeleteGroup = { g, keep -> viewModel.deleteGroup(g, keep) },
-                            onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) }
+                            onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) },
+                            onSendToTablet = if (companionInstalled) { t -> sendToTablet(viewModel.gpxForTablet(t)) } else null
                         )
                     },
                     onTogglePoiCategory = viewModel::togglePoiCategory,
@@ -1044,22 +1068,23 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 TracksTab.RIDES -> RideLogDialog(
                     current = currentRide,
                     rides = rides,
-                    onRideAgain = { showGpx = false; viewModel.rideAgain(it) },
-                    onRideReversed = { showGpx = false; viewModel.rideAgain(it, reverse = true) },
+                    // A ride the GPS hardly caught has no line to ride or keep: say so rather than do nothing.
+                    onRideAgain = { if (viewModel.rideHasTrack(it)) { showGpx = false; viewModel.rideAgain(it) } else tabletResult = TabletRoutes.Outcome.EMPTY },
+                    onRideReversed = { if (viewModel.rideHasTrack(it)) { showGpx = false; viewModel.rideAgain(it, reverse = true) } else tabletResult = TabletRoutes.Outcome.EMPTY },
                     plannedGroups = routeGroups.map { com.curveon.data.model.GpxGroup(id = it.id, name = it.name) },
                     gpxGroups = gpxGroups,
                     saveGroups = viewModel.saveGroups,
                     onSave = { r, name, t ->
+                        if (!viewModel.rideHasTrack(r)) { tabletResult = TabletRoutes.Outcome.EMPTY; return@RideLogDialog }
                         viewModel.saveRide(r, name, t)
                         toast = context.getString(savedToast(t))
                         flashRail(t)
                     },
                     logRides = logRides,
                     onLogRides = { viewModel.setLogRides(it) },
-                    recordLean = recordLean,
-                    onRecordLean = { viewModel.setRecordLean(it) },
                     onStopRecording = viewModel::stopRide,
                     onMerge = viewModel::mergeRides,
+                    onSendToTablet = if (companionInstalled) { r -> sendToTablet(viewModel.rideForTablet(r)) } else null,
                     autoSaveGroup = autoSaveRidesGroup,
                     onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
                     onDelete = { viewModel.deleteRides(it) },
@@ -1076,7 +1101,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onMove = viewModel::movePlanned,
                     onDelete = viewModel::deletePlannedTrips,
                     onRenameGroup = viewModel::renamePlannedGroup,
-                    onDeleteGroup = viewModel::deletePlannedGroup
+                    onDeleteGroup = viewModel::deletePlannedGroup,
+                    onSendToTablet = if (companionInstalled) sendToTablet else null
                 )
                 TracksTab.SHARED -> SharedTripsPage(
                     trips = sharedTripList,
@@ -1281,6 +1307,25 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 groupLayer()
             }
         }
+    }
+    // Offers and answers that may come at any time, also with no rail screen open.
+    sharedOffer?.let { t ->
+        com.curveon.ui.components.SharedTripOfferDialog(
+            trip = t,
+            onRideNow = { viewModel.sharedTrips.open(t) },
+            onSave = { viewModel.sharedTrips.accept(t); toast = context.getString(R.string.toast_shared_trip_saved) },
+            onIgnore = { viewModel.sharedTrips.ignore(t) }
+        )
+    }
+    routeFromPhone?.let { t ->
+        com.curveon.ui.components.RouteFromPhoneDialog(
+            trip = t,
+            onRideNow = { viewModel.dismissRouteFromPhone(); showGpx = false; viewModel.previewSaved(t) },
+            onLater = viewModel::dismissRouteFromPhone
+        )
+    }
+    tabletResult?.let { o ->
+        com.curveon.ui.components.SendToTabletResultDialog(o, onOpenCompanion = { TabletRoutes.openCompanion(context) }, onDismiss = { tabletResult = null })
     }
     whatsNew?.let { WhatsNewDialog(it, onDismiss = { whatsNew = null }) }
     if (showTour) WelcomeTour(tourTargets, firstStart = tourIsFirst, onFinish = { showTour = false; tourIsFirst = false; viewModel.markTourSeen() })

@@ -35,7 +35,7 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
     /** The rider ended a ride by hand: no new one until the bike has stood still once. */
     private var holdUntilStopped = false
 
-    fun onFix(fix: GpsFix, speedKmh: Float, leanDeg: Float?): Event {
+    fun onFix(fix: GpsFix, speedKmh: Float): Event {
         val t = now()
         val moving = speedKmh >= MOVING_KMH
         if (moving) lastMovingAt = t
@@ -78,15 +78,12 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
                 lastEle = e
             }
         }
-        val lean = if (moving) leanDeg ?: 0f else 0f
         ride = ride.copy(
             endMs = t,
             distanceMeters = distance,
             movingMillis = movingMs,
             maxSpeedKmh = maxOf(ride.maxSpeedKmh, speedKmh),
-            ascentMeters = ascent,
-            maxLeanLeftDeg = maxOf(ride.maxLeanLeftDeg, -lean),
-            maxLeanRightDeg = maxOf(ride.maxLeanRightDeg, lean)
+            ascentMeters = ascent
         )
         if (prev == null || TripTracker.distanceMeters(prev, fix) >= POINT_SPACING_M - 1 || fix.timeMillis - prev.timeMillis > 30_000) {
             append(fix, ride.startMs)
@@ -187,8 +184,6 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
                 movingMillis = sorted.sumOf { it.movingMillis },
                 maxSpeedKmh = sorted.maxOf { it.maxSpeedKmh },
                 ascentMeters = sorted.sumOf { it.ascentMeters },
-                maxLeanLeftDeg = sorted.maxOf { it.maxLeanLeftDeg },
-                maxLeanRightDeg = sorted.maxOf { it.maxLeanRightDeg },
                 track = track
             )
         }

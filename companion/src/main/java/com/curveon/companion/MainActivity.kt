@@ -77,7 +77,13 @@ class MainActivity : ComponentActivity() {
         val lifecycle = LocalLifecycleOwner.current.lifecycle
         LaunchedEffect(Unit) { lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { refresh++ } }
 
-        val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { refresh++ }
+        val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            refresh++
+            // Refused twice: Android no longer asks, so Grant would do nothing. Open the app's settings page instead.
+            val missing = RUNTIME_PERMISSIONS.filter { !has(it) }
+            if (result.values.any { !it } && missing.isNotEmpty() && missing.none { shouldShowRequestPermissionRationale(it) })
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", packageName, null)))
+        }
         val notificationAccess = remember(refresh) { hasNotificationAccess() }
         val runtimeGranted = remember(refresh) { RUNTIME_PERMISSIONS.associateWith { has(it) } }
 
@@ -135,6 +141,9 @@ class MainActivity : ComponentActivity() {
             ) {
                 Text(if (status.serviceRunning) "Stop sharing" else "Start sharing with tablet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
+            // Greyed out: say why, so it doesn't look broken.
+            if (!status.serviceRunning && !has(Manifest.permission.BLUETOOTH_CONNECT))
+                Text("Needs the Bluetooth permission first: tap Grant under Setup.", color = Muted, fontSize = 13.sp)
         }
     }
 

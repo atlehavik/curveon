@@ -60,9 +60,6 @@ fun RideLogDialog(
     /** Whether new rides are kept at all; off also means no GPX auto-save. Only affects future rides. */
     logRides: Boolean,
     onLogRides: (Boolean) -> Unit,
-    /** Note the lean angle in new rides (uses the motion sensors, so it costs battery). */
-    recordLean: Boolean = false,
-    onRecordLean: (Boolean) -> Unit = {},
     /** Group every finished ride is saved into, or null when that is off. */
     autoSaveGroup: Long?,
     /** (existing group or null, new group name or null); both null turns auto-saving off. */
@@ -72,6 +69,8 @@ fun RideLogDialog(
     onStopRecording: () -> Unit = {},
     /** Joins the picked rides (two or more) into one. */
     onMerge: (Collection<Long>) -> Unit = {},
+    /** Send the ride to the tablet through Curveon Companion (null: no companion on this phone). */
+    onSendToTablet: ((Ride) -> Unit)? = null,
     onDismiss: () -> Unit,
     /** Page menu when shown inside the GPX & rides dialog. */
     sideBar: (@Composable () -> Unit)? = null,
@@ -142,30 +141,18 @@ fun RideLogDialog(
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.rides_auto_save), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    if (autoGroup != null) stringResource(R.string.rides_auto_save_group, autoGroup.name) else stringResource(R.string.rides_auto_save_off),
+                    when {
+                        // Greyed out: say why, so it doesn't look broken.
+                        !logRides -> stringResource(R.string.rides_auto_save_needs_log)
+                        autoGroup != null -> stringResource(R.string.rides_auto_save_group, autoGroup.name)
+                        else -> stringResource(R.string.rides_auto_save_off)
+                    },
                     color = TextMuted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                 )
             }
             CockpitSwitch(
                 checked = autoGroup != null,
                 onCheckedChange = { on -> if (logRides) { if (on) pickingAutoGroup = true else onAutoSave(null, null) } })
-        } }
-
-        // Lean angle: off unless wanted, since the motion sensors run for it.
-        item { Row(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitSurfaceVariant)
-                .clickable(enabled = logRides) { onRecordLean(!recordLean) }.alpha(if (logRides) 1f else 0.4f)
-                .padding(horizontal = 14.dp, vertical = 8.dp).testTag("rides_lean"),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.Speed, null, tint = if (recordLean) ElectricCyan else TextMuted, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.rides_lean), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Text(stringResource(if (recordLean) R.string.rides_lean_on else R.string.rides_lean_off),
-                    color = TextMuted, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            }
-            CockpitSwitch(checked = recordLean, onCheckedChange = { if (logRides) onRecordLean(it) })
         } }
 
         if (current != null) item {
@@ -247,6 +234,11 @@ fun RideLogDialog(
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.rides_save), CockpitSurface, TextPrimary, Modifier.weight(1f)) { saving = r }
+                            onSendToTablet?.let { send ->
+                                Box(Modifier.testTag("send_to_tablet")) {
+                                    RoundButton(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet), 56.dp, CockpitSurface, TextPrimary) { send(r) }
+                                }
+                            }
                             RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 56.dp, CockpitSurface, TextMuted) { onDelete(listOf(r.id)) }
                         }
                     }

@@ -60,7 +60,9 @@ fun ColumnScope.PlannedTripsPage(
     onDelete: (Collection<RouteItem>) -> Unit,
     onRenameGroup: (RouteGroup, String) -> Unit,
     /** (group, keep its trips as loose ones). */
-    onDeleteGroup: (RouteGroup, Boolean) -> Unit
+    onDeleteGroup: (RouteGroup, Boolean) -> Unit,
+    /** Send the trip to the tablet through Curveon Companion (null: no companion on this phone). */
+    onSendToTablet: ((RouteItem) -> Unit)? = null
 ) {
     var expandedGroups by rememberSaveable { mutableStateOf(listOf<Long>()) }
     /** The trip whose details are open. */
@@ -177,9 +179,10 @@ fun ColumnScope.PlannedTripsPage(
                         Spacer(Modifier.height(10.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                             PillButton(Icons.Default.Route, stringResource(R.string.rides_save_to_gpx), CockpitSurface, TextPrimary, Modifier.weight(1f)) { savingToGpx = t }
-                            RowMenu(listOf(
+                            RowMenu(listOfNotNull(
                                 MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = t },
-                                MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t }
+                                MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t },
+                                onSendToTablet?.let { send -> MenuItem(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet)) { send(t) } }
                             ))
                             // Taken out of the planned trips at once, as a ride is from the log.
                             RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 56.dp, CockpitSurface, TextMuted) { onDelete(listOf(t)) }
