@@ -71,7 +71,7 @@ fun QrScanDialog(onInvite: (String) -> Unit, onDismiss: () -> Unit) {
         Box(Modifier.fillMaxSize().background(Color.Black).testTag("qr_scan")) {
             if (granted) CameraScan(onInvite = onInvite, onOther = { wrong = true })
             Column(
-                Modifier.align(Alignment.TopCenter).fillMaxWidth().background(Color(0xAA000000)).padding(20.dp),
+                Modifier.align(Alignment.TopCenter).fillMaxWidth().background(Color(0xAA000000)).displayCutoutPadding().padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(stringResource(R.string.qr_scan_title), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
@@ -82,7 +82,7 @@ fun QrScanDialog(onInvite: (String) -> Unit, onDismiss: () -> Unit) {
             }
             Button(
                 onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                modifier = Modifier.align(Alignment.BottomCenter).padding(24.dp).height(56.dp).widthIn(min = 220.dp).testTag("qr_scan_cancel")
+                modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding().padding(24.dp).height(56.dp).widthIn(min = 220.dp).testTag("qr_scan_cancel")
             ) { Text(stringResource(R.string.qr_scan_cancel), color = Color.Black, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
         }
     }
@@ -94,6 +94,11 @@ private fun HideBars() {
     val view = LocalView.current
     val window = (view.parent as? DialogWindowProvider)?.window ?: return
     LaunchedEffect(window) {
+        // A phone with a camera hole: otherwise Android puts the window below the hole at the screen's full height,
+        // and the Cancel button at its bottom ends up below the screen.
+        window.attributes = window.attributes.apply {
+            layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+        }
         WindowCompat.getInsetsController(window, view).apply {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())

@@ -47,8 +47,14 @@ private enum class FriendsTab(val label: Int, val icon: ImageVector) {
 @Composable
 fun FriendsDialog(manager: GroupManager, onDismiss: () -> Unit) {
     val activeId by manager.activeId.collectAsStateWithLifecycle()
-    var tab by rememberSaveable { mutableStateOf(if (activeId != null) FriendsTab.GROUP else FriendsTab.FRIENDS) }
     val context = LocalContext.current
+    // The first time: Me, to set the name and picture the others will see.
+    var tab by rememberSaveable {
+        val prefs = context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+        val first = !prefs.getBoolean("friendsOpened", false)
+        if (first) prefs.edit().putBoolean("friendsOpened", true).apply()
+        mutableStateOf(when { first -> FriendsTab.ME; activeId != null -> FriendsTab.GROUP; else -> FriendsTab.FRIENDS })
+    }
     LaunchedEffect(Unit) { manager.requestGroups(); manager.requestFriends() }
     LaunchedEffect(Unit) {
         manager.errors.collect { code ->

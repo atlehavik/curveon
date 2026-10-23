@@ -987,9 +987,9 @@
     <string name="group_unnamed">Grupa</string>
     <string name="group_status_connected">Połączono</string>
     <string name="group_status_offline">Brak kontaktu z grupą</string>
-    <string name="group_status_paused">Nie udostępniasz pozycji</string>
+    <string name="group_status_paused">Przerwa</string>
     <string name="group_status_removed">Usunięto cię z tej grupy</string>
-    <string name="group_share_position">Udostępniaj moją pozycję</string>
+    <string name="group_share_position">Jedź z tą grupą</string>
     <string name="group_riders">Motocykliści</string>
     <string name="group_rider_you">%1$s (ty)</string>
     <string name="group_stopped_for">postój %1$d min</string>
@@ -998,7 +998,6 @@
     <string name="group_no_position">brak pozycji</string>
     <string name="group_profile">Twoje imię w grupie</string>
     <string name="group_nickname">Pseudonim</string>
-    <string name="group_save">Zapisz</string>
     <string name="group_invite">Zaproś motocyklistów</string>
     <string name="group_scan">Zeskanuj kod QR</string>
     <string name="group_settings">Ustawienia</string>
@@ -1081,7 +1080,7 @@
     <string name="group_add_friends_sent">Wysłano zaproszenie</string>
     <string name="group_new">Nowa grupa</string>
     <string name="group_card_idle">Nieużywana</string>
-    <string name="group_card_paused">Nie udostępniasz · widzisz innych</string>
+    <string name="group_card_paused">Przerwa · nie widzicie się</string>
     <plurals name="group_card_sharing">
         <item quantity="one">Udostępniasz pozycję · %1$d motocyklista</item>
         <item quantity="few">Udostępniasz pozycję · %1$d motocyklistów</item>
@@ -1089,7 +1088,7 @@
         <item quantity="other">Udostępniasz pozycję · %1$d motocyklisty</item>
     </plurals>
     <string name="group_one_at_a_time">Twoja pozycja trafia do jednej grupy naraz. Włączenie jednej wyłącza drugą.</string>
-    <string name="group_not_active">Udostępnij pozycję tej grupie, by zobaczyć, kto w niej jest i gdzie.</string>
+    <string name="group_not_active">Włącz, by jechać z tą grupą i zobaczyć, kto w niej jest i gdzie.</string>
     <string name="friends_share_title">Pozwól znajomym widzieć, gdzie jestem</string>
     <string name="friends_share_hint">Tylko znajomi wybrani poniżej i tylko gdy Curveon działa. Widzą cię mniej więcej raz na minutę.</string>
     <string name="friends_sees_me">Zawsze widzi, gdzie jestem</string>
@@ -1193,5 +1192,9 @@
     <string name="rider_info_seen">Ostatnio widziany: %1$s</string>
     <string name="rider_info_battery">Bateria %1$d%%</string>
     <string name="riders_here">Tutaj razem</string>
-    <string name="group_rider_paused">nie udostępnia teraz pozycji</string>
+    <string name="group_rider_paused">ma przerwę od grupy</string>
+    <string name="profile_saved">Zapisano</string>
+    <string name="group_icons_off">Zamiast ikony widać Twoje zdjęcie. Usuń je, aby wybrać ikonę.</string>
+    <string name="tour_turn_after">Przewodnik jest pokazywany poziomo. Gdy się skończy, trzymaj telefon, jak chcesz.</string>
+    <string name="group_paused_hint">Masz przerwę od tej grupy: inni Cię nie widzą, Ty nie widzisz ich, a SOS i alerty z grupy do Ciebie nie docierają. Włącz ponownie, by jechać z nimi.</string>
 </resources>

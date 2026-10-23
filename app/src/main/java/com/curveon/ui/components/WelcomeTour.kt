@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalConfiguration
 import com.curveon.AppLanguage
 import com.curveon.R
 import com.curveon.ui.theme.*
@@ -199,24 +200,36 @@ private val STEPS = listOf(
 @Composable
 fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    // Always shown lying down, so the parts it points at stay put (a phone held upright turns once);
-    // back to the rider's own choice afterwards.
+    // The tour itself is shown lying down, so the parts it points at stay put (a phone held upright turns once, when
+    // "Start" is pressed: the language, the welcome and Android's questions come the way the phone is held); back to
+    // the rider's own choice afterwards.
     val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
-    DisposableEffect(activity) {
+    var lying by rememberSaveable { mutableStateOf(false) }
+    DisposableEffect(activity, lying) {
+        val on = lying
         val before = activity?.requestedOrientation
-        activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        onDispose { if (before != null) activity.requestedOrientation = before }
+        if (on) activity?.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        onDispose { if (on && before != null) activity.requestedOrientation = before }
     }
-    // The parts on screen once the (maybe just turned) dashboard is laid out; then fixed, so the
-    // step count doesn't jump.
+    val landscapeNow = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    // Held upright when the tour opened: it says the phone can be turned back afterwards.
+    val startedUpright = rememberSaveable { !landscapeNow }
+    // The parts on screen once the dashboard is laid out; then fixed, so the step count doesn't jump (looked for
+    // again once the screen has turned for the tour).
     var found by remember { mutableStateOf<List<TourStep>?>(null) }
     // Picking a language restarts the screen: the tour carries on from the welcome, in that language.
     var languageChosen by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.withTimeoutOrNull(1500) { snapshotFlow { targets.bounds.size }.first { it >= 6 } }
+    fun look() {
         val askLanguage = firstStart && AppLanguage.canChoose && !languageChosen
         found = STEPS.filter { (!it.language || askLanguage) && (it.target == null || it.target in targets.bounds) }
     }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.withTimeoutOrNull(1500) { snapshotFlow { targets.bounds.size }.first { it >= 6 } }
+        look()
+    }
+    // Turning for the tour: the card waits until the dashboard is laid out lying down.
+    var turning by remember { mutableStateOf(false) }
+    LaunchedEffect(turning, landscapeNow) { if (turning && landscapeNow) { kotlinx.coroutines.delay(700); look(); turning = false } }
     val steps = found ?: return
     var index by rememberSaveable { mutableIntStateOf(0) }
     val step = steps[index.coerceIn(steps.indices)]
@@ -224,6 +237,7 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
     // Steps before the first numbered one: the language, and the welcome.
     val lead = steps.indexOfFirst { !it.welcome && !it.language }.coerceAtLeast(1)
     val next: () -> Unit = { if (last) onFinish() else index++ }
+    val start: () -> Unit = { if (!landscapeNow) turning = true; lying = true; next() }
     androidx.activity.compose.BackHandler { if (index > 0) index-- else onFinish() }
 
     val density = LocalDensity.current
@@ -285,7 +299,7 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
         Column(
             Modifier.offset { offset }.width(cardWidth).heightIn(max = maxHeight)
                 .onSizeChanged { cardSize = it }
-                .graphicsLayer { alpha = if (cardSize == IntSize.Zero) 0f else fade }
+                .graphicsLayer { alpha = if (cardSize == IntSize.Zero || turning) 0f else fade }
                 .shadow(28.dp, CardShape, ambientColor = ElectricCyan.copy(alpha = 0.4f), spotColor = Color.Black)
                 .clip(CardShape)
                 .background(Brush.verticalGradient(listOf(CockpitSurfaceVariant, CockpitSurface)))
@@ -313,6 +327,10 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
                     else -> StepContent(s, i - lead + 1, steps.size - lead, columns = if (cardWidth >= 560.dp) 2 else 1)
                 }
             }
+            // Turned on its side for the tour only.
+            if (startedUpright && lying && index == lead) Text(
+                stringResource(R.string.tour_turn_after), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp)
+            )
             Spacer(Modifier.height(18.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (step.language) {
@@ -320,7 +338,7 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
                 } else if (step.welcome) {
                     TourTextButton(stringResource(R.string.tour_not_now), TextMuted, onFinish)
                     Spacer(Modifier.weight(1f))
-                    TourPrimaryButton(stringResource(R.string.tour_start), next)
+                    TourPrimaryButton(stringResource(R.string.tour_start), start)
                 } else {
                     StepDots(steps.size - lead, index - lead + 1, Modifier.weight(1f))
                     if (!last) TourTextButton(stringResource(R.string.tour_skip), TextMuted, onFinish)

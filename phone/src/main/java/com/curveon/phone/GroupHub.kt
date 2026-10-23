@@ -59,6 +59,10 @@ object GroupHub {
     private const val NUDGE_KEEP_MS = 3 * 60_000L
     /** A nudge to a friend not on its way by then is reported as not sent (it may still go when the channel opens). */
     private const val NUDGE_SEND_WAIT_MS = 12_000L
+    /** A position that came before the friend's "I share" is shown with it only if no older than this. */
+    private const val FRIEND_EARLY_MAX_MS = 15 * 60_000L
+    /** The same friend or rider is nudged at most this often. */
+    private const val NUDGE_MIN_GAP_MS = 20_000L
     /** How often Curveon looks for where the friends who share with the rider are. */
     private const val FRIEND_WATCH_MINUTES = 2L
     private val exec = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
@@ -149,6 +153,7 @@ object GroupHub {
         groups.clear()
         positions.clear()
         friendPositions.clear()
+        earlyFriendPositions.clear()
         activeId = null
         publish()
     }
@@ -218,9 +223,14 @@ object GroupHub {
                 val was = store.sharing
                 store.sharing = m.on
                 sharer.reset()
-                // Stopped: the group is told, so the rider goes off their maps at once (not just fades as if out of coverage).
-                if (was && !m.on) lastFix?.let { f -> client?.sendPosition(Payload.Pos(f.lat, f.lon, 0f, 0f, 0f, battery(), paused = true)) }
+                // Paused: the group is told, so the rider goes off their maps at once (not just fades as if out of
+                // coverage); then the link to the group closes until the rider is back.
+                if (was && !m.on) {
+                    lastFix?.let { f -> client?.sendPosition(Payload.Pos(f.lat, f.lon, 0f, 0f, 0f, battery(), paused = true)) }
+                    client?.let { c -> exec.schedule({ if (store.sharing == false && client === c) { detach(); sendConnection(); membersMessage()?.let(::send) } }, 1_500, TimeUnit.MILLISECONDS) }
+                }
                 send(groupList())
+                if (m.on) updateConnection()
                 sendConnection()
             }
             is Message.GroupProfile -> {
@@ -338,7 +348,8 @@ object GroupHub {
         if (context == null) return
         updateFriendSweep()
         val state = activeId?.let { groups[it] }
-        val wanted = state != null && !removed && PhoneHub.tabletCount > 0
+        // Paused: away from the group altogether (they don't see the rider, the rider doesn't see them, no SOS).
+        val wanted = state != null && !removed && PhoneHub.tabletCount > 0 && store?.sharing != false
         if (!wanted) {
             if (client != null) detach()
             return
@@ -420,9 +431,16 @@ object GroupHub {
         exec.schedule({ closeFriendIfDone(id) }, deadline - System.currentTimeMillis() + 50, TimeUnit.MILLISECONDS)
     }
 
+    /** When each friend or rider was last nudged: a burst of taps (from any of the rider's screens) sends one. */
+    private val lastNudge = HashMap<String, Long>()
+
     /** The rider asks a friend (through their channel) or a rider in the active group for attention. */
     private fun nudge(m: Message.NudgeSend) {
         val riderId = m.riderId
+        val key = "${m.channelId}/$riderId"
+        val now = System.currentTimeMillis()
+        if (now - (lastNudge[key] ?: 0L) < NUDGE_MIN_GAP_MS) return
+        lastNudge[key] = now
         if (riderId != null) {
             val ok = m.channelId == activeId && client?.sendNudge(riderId) != null
             send(Message.NudgeStatus(m.channelId, riderId, if (ok) Message.NudgeState.SENT else Message.NudgeState.FAILED))
@@ -537,11 +555,14 @@ object GroupHub {
                 ))
             }
             // Only from a friend who has said they share: a position the relay still holds after they stopped is not shown.
-            is GroupEvent.Position -> if (state.kind == GroupKind.FRIEND && id in store?.friendsSharingWithMe.orEmpty()) {
+            // One that comes before their "I share" (the relay may hand the two over either way round) waits for it.
+            is GroupEvent.Position -> if (state.kind == GroupKind.FRIEND) {
                 val p = e.pos
                 val info = Message.GroupPositionInfo(id, p.lat, p.lon, p.heading, p.speed, e.tsMs, p.stopped, p.stoppedSince, p.battery)
-                friendPositions[id] = info
-                send(Message.GroupPositions(Message.GroupPositions.FRIENDS, listOf(info)))
+                if (id in store?.friendsSharingWithMe.orEmpty()) {
+                    friendPositions[id] = info
+                    send(Message.GroupPositions(Message.GroupPositions.FRIENDS, listOf(info)))
+                } else earlyFriendPositions[id] = info
             }
             else -> Unit
         }
@@ -623,6 +644,8 @@ object GroupHub {
      */
     private val friendSharer = PositionSharer(movingIntervalMs = 60_000, stoppedIntervalMs = 300_000, dataSaverIntervalMs = 60_000)
     private val friendPositions = LinkedHashMap<String, Message.GroupPositionInfo>()
+    /** A friend's position that came before they said they share, by friend. */
+    private val earlyFriendPositions = HashMap<String, Message.GroupPositionInfo>()
     private var watchJob: ScheduledFuture<*>? = null
 
     /** The friends who see the rider now: the switch is on and they are chosen. */
@@ -652,7 +675,13 @@ object GroupHub {
         val now = store.friendsSharingWithMe
         if (on == (id in now)) return
         store.friendsSharingWithMe = if (on) now + id else now - id
+        val early = earlyFriendPositions.remove(id)
         if (!on && friendPositions.remove(id) != null) send(friendPositionsMessage())
+        // Their position came first: shown now, if it is from this time round (not one left from before).
+        if (on && early != null && System.currentTimeMillis() - early.timeMs < FRIEND_EARLY_MAX_MS) {
+            friendPositions[id] = early
+            send(Message.GroupPositions(Message.GroupPositions.FRIENDS, listOf(early)))
+        }
         send(friendList())
         updateFriendSweep()
     }
@@ -663,6 +692,7 @@ object GroupHub {
         val store = store ?: return
         if (id in store.friendsSeeingMe) store.friendsSeeingMe = store.friendsSeeingMe - id
         if (id in store.friendsSharingWithMe) store.friendsSharingWithMe = store.friendsSharingWithMe - id
+        earlyFriendPositions.remove(id)
         if (friendPositions.remove(id) != null) send(friendPositionsMessage())
     }
 
@@ -999,8 +1029,8 @@ object GroupHub {
         val id = activeId ?: return null
         val status = when {
             removed -> Message.GroupStatus.REMOVED
-            !connected -> Message.GroupStatus.OFFLINE
             store?.sharing == false -> Message.GroupStatus.PAUSED
+            !connected -> Message.GroupStatus.OFFLINE
             else -> Message.GroupStatus.CONNECTED
         }
         return Message.GroupConnection(id, status, (client?.members()?.size ?: 0) + 1, otherDeviceActive = client?.sendingHere == false)

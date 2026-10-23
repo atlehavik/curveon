@@ -907,9 +907,9 @@
     <string name="group_unnamed">Ryhmä</string>
     <string name="group_status_connected">Yhdistetty</string>
     <string name="group_status_offline">Ei yhteyttä ryhmään</string>
-    <string name="group_status_paused">Sijaintiasi ei jaeta</string>
+    <string name="group_status_paused">Tauolla</string>
     <string name="group_status_removed">Sinut poistettiin tästä ryhmästä</string>
-    <string name="group_share_position">Jaa sijaintini</string>
+    <string name="group_share_position">Aja tämän ryhmän kanssa</string>
     <string name="group_riders">Ajajat</string>
     <string name="group_rider_you">%1$s (sinä)</string>
     <string name="group_stopped_for">pysähtynyt %1$d min</string>
@@ -918,7 +918,6 @@
     <string name="group_no_position">ei vielä sijaintia</string>
     <string name="group_profile">Nimesi ryhmässä</string>
     <string name="group_nickname">Lempinimi</string>
-    <string name="group_save">Tallenna</string>
     <string name="group_invite">Kutsu ajajia</string>
     <string name="group_scan">Skannaa QR-koodi</string>
     <string name="group_settings">Asetukset</string>
@@ -1000,13 +999,13 @@
     <string name="group_add_friends_sent">Kutsu lähetetty</string>
     <string name="group_new">Uusi ryhmä</string>
     <string name="group_card_idle">Ei käytössä</string>
-    <string name="group_card_paused">Ei jaeta · näet muut</string>
+    <string name="group_card_paused">Tauolla · ette näe toisianne</string>
     <plurals name="group_card_sharing">
         <item quantity="one">Sijaintisi jaetaan · %1$d ajaja</item>
         <item quantity="other">Sijaintisi jaetaan · %1$d ajajaa</item>
     </plurals>
     <string name="group_one_at_a_time">Sijaintisi menee yhdelle ryhmälle kerrallaan. Yhden kytkeminen päälle kytkee toisen pois.</string>
-    <string name="group_not_active">Jaa sijaintisi tämän ryhmän kanssa nähdäksesi, ketä siinä on ja missä he ovat.</string>
+    <string name="group_not_active">Kytke päälle ajaaksesi ryhmän kanssa ja nähdäksesi, keitä siinä on ja missä he ovat.</string>
     <string name="friends_share_title">Anna kavereiden nähdä, missä olen</string>
     <string name="friends_share_hint">Vain alta valitsemasi kaverit ja vain kun Curveon on käynnissä. He näkevät sinut noin kerran minuutissa.</string>
     <string name="friends_sees_me">Näkee aina, missä olen</string>
@@ -1110,5 +1109,9 @@
     <string name="rider_info_seen">Nähty viimeksi: %1$s</string>
     <string name="rider_info_battery">Akku %1$d %%</string>
     <string name="riders_here">Täällä yhdessä</string>
-    <string name="group_rider_paused">ei jaa sijaintiaan nyt</string>
+    <string name="group_rider_paused">pitää taukoa ryhmästä</string>
+    <string name="profile_saved">Tallennettu</string>
+    <string name="group_icons_off">Kuvasi näytetään kuvakkeen sijaan. Poista se, jos haluat valita kuvakkeen.</string>
+    <string name="tour_turn_after">Esittely näytetään vaakatasossa. Kun se on valmis, voit pitää puhelinta miten haluat.</string>
+    <string name="group_paused_hint">Olet tauolla ryhmästä: muut eivät näe sinua, sinä et näe heitä, eivätkä ryhmän SOS ja hälytykset tavoita sinua. Kytke takaisin päälle ajaaksesi heidän kanssaan.</string>
 </resources>

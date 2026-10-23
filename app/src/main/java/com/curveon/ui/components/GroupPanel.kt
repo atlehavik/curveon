@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -106,7 +107,7 @@ fun GroupTab(manager: GroupManager, modifier: Modifier = Modifier) {
         return
     }
 
-    // Turning a group on gives it the position (and turns the one before off); turning it off pauses, and the others are still seen.
+    // Turning a group on rides with it (and turns the one before off); turning it off pauses the rider in it: no one sees anyone.
     fun share(g: Message.GroupInfo, on: Boolean) {
         if (on && g.id != activeId) manager.select(g.id)
         manager.setSharing(on)
@@ -268,7 +269,8 @@ private fun GroupDetail(
             CockpitSwitch(active && sharing, { on -> if (on && !active) manager.select(group.id); manager.setSharing(on) }, Modifier.testTag("group_share"))
         }
 
-        if (active) {
+        if (active && !sharing && !removed) Text(stringResource(R.string.group_paused_hint), color = TextSecondary, fontSize = 14.sp)
+        else if (active) {
             FriendsSectionLabel(stringResource(R.string.group_riders))
             members.values.sortedBy { if (it.id == myId) 0 else 1 }.forEach { r ->
                 RiderRow(
@@ -302,7 +304,7 @@ private fun GroupDetail(
             if (showDeviceLink) QrBlock(deviceLink, R.string.group_other_device_hint, R.string.group_other_device)
         }
 
-        if (active && !removed) SosButton(onTrigger = { countdown = SOS_COUNTDOWN_S })
+        if (active && sharing && !removed) SosButton(onTrigger = { countdown = SOS_COUNTDOWN_S })
 
         TextButton(onClick = { confirmLeave = true }, modifier = Modifier.testTag("group_leave")) {
             Text(stringResource(R.string.group_leave), color = WarningRed, fontWeight = FontWeight.Bold)
@@ -391,14 +393,15 @@ private fun riderStatus(p: Message.GroupPositionInfo?): String {
 
 /**
  * Nickname, colour, icon and the rider's own picture. The picture is taken with the camera or chosen from the
- * pictures, cut in a round window, and shown as the others will see it before "Save" tells the phone, which tells the group.
+ * pictures, cut in a round window, and shown as the others will see it. Every change is saved by itself (the name once
+ * the typing stops) and told to the phone, which tells the group; "Saved" says it went.
  */
 @Composable
 internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: (String, Int, String?, String?) -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     // The rider's own picture (base64 JPEG): kept as it is unless a new one is cut or it is removed.
-    var photo by remember(me.photoBase64) { mutableStateOf(me.photoBase64) }
+    var photo by rememberSaveable { mutableStateOf(me.photoBase64) }
     val preview = remember(photo) { photo?.let { runCatching { val b = android.util.Base64.decode(it, android.util.Base64.DEFAULT); android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size) }.getOrNull() } }
     // The photo just taken or chosen, waiting to be cut.
     var toCut by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
@@ -419,9 +422,27 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
         else askCamera.launch(android.Manifest.permission.CAMERA)
     }
 
-    var nick by rememberSaveable(me.nickname) { mutableStateOf(me.nickname) }
-    var colour by rememberSaveable(me.colour) { mutableStateOf(me.colour) }
-    var icon by rememberSaveable(me.icon) { mutableStateOf(me.icon) }
+    // Taken from the profile once: what comes back after a save must not undo letters typed meanwhile.
+    var nick by rememberSaveable { mutableStateOf(me.nickname) }
+    var colour by rememberSaveable { mutableStateOf(me.colour) }
+    var icon by rememberSaveable { mutableStateOf(me.icon) }
+    var saved by remember { mutableStateOf(listOf<Any?>(me.nickname, me.colour, me.icon, me.photoBase64)) }
+    var savedCount by remember { mutableIntStateOf(0) }
+    fun saveNow() {
+        val name = nick.trim().ifEmpty { return }
+        val now = listOf<Any?>(name, colour, icon, photo)
+        if (now == saved) return
+        onSave(name, colour, icon, photo)
+        saved = now
+        savedCount++
+    }
+    LaunchedEffect(nick, colour, icon, photo) {
+        if (nick.trim() != saved[0]) delay(900) // the name: once the typing stops
+        saveNow()
+    }
+    DisposableEffect(Unit) { onDispose { saveNow() } } // closed while still typing
+    var showSaved by remember { mutableStateOf(false) }
+    LaunchedEffect(savedCount) { if (savedCount > 0) { showSaved = true; delay(2_500); showSaved = false } }
     if (!alwaysOpen) TextButton(onClick = { open = !open }) {
         Icon(Icons.Default.Edit, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
@@ -435,6 +456,11 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(nick.ifEmpty { me.nickname }, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Text(stringResource(R.string.group_photo_preview), color = TextSecondary, fontSize = 13.sp)
+                if (showSaved) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("profile_saved")) {
+                    Icon(Icons.Default.Check, null, tint = EcoGreen, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.profile_saved), color = EcoGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -448,24 +474,29 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.group_photo_gallery), color = ElectricCyan, fontWeight = FontWeight.Bold)
             }
-            if (photo != null) TextButton(onClick = { photo = null }) { Text(stringResource(R.string.group_photo_remove), color = TextSecondary) }
+            if (photo != null) OutlinedButton(onClick = { photo = null }, modifier = Modifier.testTag("group_remove_photo")) {
+                Icon(Icons.Default.Delete, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.group_photo_remove), color = TextSecondary, fontWeight = FontWeight.Bold)
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
             GroupColours.forEach { c ->
                 Box(Modifier.size(36.dp).clip(CircleShape).background(Color(c)).border(if (c == colour) 3.dp else 1.dp, if (c == colour) Color.White else CockpitBorder, CircleShape).clickable { colour = c })
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+        // The picture is shown instead of an icon: the icons are for when there is no picture.
+        val iconsOn = photo == null
+        if (!iconsOn) Text(stringResource(R.string.group_icons_off), color = TextMuted, fontSize = 13.sp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState()).graphicsLayer { alpha = if (iconsOn) 1f else 0.35f }) {
             GroupIcons.forEach { (id, vector) ->
+                val picked = iconsOn && id == icon
                 Box(
-                    Modifier.size(40.dp).clip(CircleShape).background(if (id == icon) Color(colour) else CockpitSurface)
-                        .border(1.dp, CockpitBorder, CircleShape).clickable { icon = if (icon == id) null else id },
+                    Modifier.size(40.dp).clip(CircleShape).background(if (picked) Color(colour) else CockpitSurface)
+                        .border(1.dp, CockpitBorder, CircleShape).clickable(enabled = iconsOn) { icon = if (icon == id) null else id },
                     contentAlignment = Alignment.Center
-                ) { Icon(vector, null, tint = if (id == icon) Color(0xFF0B0E14) else TextSecondary, modifier = Modifier.size(22.dp)) }
+                ) { Icon(vector, null, tint = if (picked) Color(0xFF0B0E14) else TextSecondary, modifier = Modifier.size(22.dp)) }
             }
-        }
-        Button(onClick = { onSave(nick.trim().ifEmpty { me.nickname }, colour, icon, photo); open = false }, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan)) {
-            Text(stringResource(R.string.group_save), color = Color(0xFF00363D), fontWeight = FontWeight.Bold)
         }
     }
     toCut?.let { bitmap ->

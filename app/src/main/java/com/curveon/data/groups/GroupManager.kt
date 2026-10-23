@@ -55,6 +55,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     private val _nudgeStatus = MutableStateFlow<Map<String, Message.NudgeState>>(emptyMap())
     val nudgeStatus: StateFlow<Map<String, Message.NudgeState>> = _nudgeStatus.asStateFlow()
 
+    /** Who was just nudged, by [nudgeKey]: not again until the pause is over. */
+    private val _nudgeWait = MutableStateFlow<Set<String>>(emptySet())
+    val nudgeWait: StateFlow<Set<String>> = _nudgeWait.asStateFlow()
+
     /** The switch for letting friends see where the rider is (which ones: [Message.FriendInfo.seesMe]). */
     private val _friendSharing = MutableStateFlow(false)
     val friendSharing: StateFlow<Boolean> = _friendSharing.asStateFlow()
@@ -157,7 +161,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 _friendInvite.value = null
                 _friendAdded.tryEmit(m)
             }
-            is Message.NudgeIn -> if (_nudges.value.none { it.nudgeId == m.nudgeId }) _nudges.value = _nudges.value + m
+            // Paused in the group: nothing from it reaches the rider (friends still do).
+            is Message.NudgeIn -> if (_nudges.value.none { it.nudgeId == m.nudgeId } && !(m.channelId == _activeId.value && !_sharing.value)) {
+                _nudges.value = _nudges.value + m
+            }
             is Message.NudgeGone -> _nudges.value = _nudges.value.filterNot { it.nudgeId == m.nudgeId }
             // "Seen" stays; a late "sent" (the channel opened after all) does not undo it.
             is Message.NudgeStatus -> {
@@ -170,6 +177,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 if (_activeId.value != m.activeId) clearLive()
                 _activeId.value = m.activeId
                 _sharing.value = m.sharing
+                // Paused: the others go off the map, and their SOS with them, until the rider is back.
+                if (!m.sharing) { _positions.value = emptyMap(); _sos.value = _sos.value.filterValues { it.mine } }
             }
             is Message.GroupConnection -> if (m.groupId == _activeId.value) _connection.value = m
             is Message.GroupMembers -> if (m.groupId == _activeId.value) {
@@ -185,8 +194,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
             is Message.GroupPositions -> if (m.groupId == Message.GroupPositions.FRIENDS) {
                 _friendPositions.value = if (m.positions.size == 1) _friendPositions.value + (m.positions[0].id to m.positions[0])
                 else m.positions.associateBy { it.id } // the whole list: one that stopped sharing is gone from it
-            } else if (m.groupId == _activeId.value) _positions.value = _positions.value + m.positions.associateBy { it.id }
-            is Message.GroupSos -> if (m.groupId == _activeId.value || !m.active) {
+            } else if (m.groupId == _activeId.value && _sharing.value) _positions.value = _positions.value + m.positions.associateBy { it.id }
+            is Message.GroupSos -> if ((m.groupId == _activeId.value && (_sharing.value || m.mine)) || !m.active) {
                 _sos.value = if (m.active) _sos.value + (m.from to m) else _sos.value - m.from
             }
             is Message.GroupRoute -> _routes.tryEmit(m)
@@ -238,16 +247,24 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun sendTripToFriends(tripId: String, name: String, doc: String, friendIds: List<String>) =
         send(Message.TripToFriends(tripId, name, doc, friendIds))
 
-    /** Ask a friend ([riderId] null, [channelId] the friend) or a rider in the active group for attention. */
+    /**
+     * Ask a friend ([riderId] null, [channelId] the friend) or a rider in the active group for attention. Once per
+     * [NUDGE_PAUSE_MS] for each: quick taps one after another don't send a string of alerts.
+     */
     fun nudge(channelId: String, riderId: String?) {
-        _nudgeStatus.value -= nudgeKey(channelId, riderId) // a new one: "sent" or "seen" again from here
+        val key = nudgeKey(channelId, riderId)
+        if (key in _nudgeWait.value) return
+        _nudgeWait.value += key
+        scope.launch { delay(NUDGE_PAUSE_MS); _nudgeWait.value -= key }
+        _nudgeStatus.value -= key // a new one: "sent" or "seen" again from here
         send(Message.NudgeSend(channelId, riderId))
     }
 
-    /** The rider has seen [n]: it goes, and the one who sent it is told. */
+    /** The rider has seen [n]: it goes, with any more from the same rider (one "OK" answers them all), and they are told. */
     fun answerNudge(n: Message.NudgeIn) {
-        _nudges.value = _nudges.value.filterNot { it.nudgeId == n.nudgeId }
-        send(Message.NudgeAnswer(n.channelId, n.nudgeId, n.fromRiderId))
+        val same = _nudges.value.filter { it.nudgeId == n.nudgeId || (it.channelId == n.channelId && it.fromRiderId == n.fromRiderId) }
+        _nudges.value = _nudges.value - same.toSet()
+        same.forEach { send(Message.NudgeAnswer(it.channelId, it.nudgeId, it.fromRiderId)) }
     }
 
     fun requestSelfLink() = send(Message.RequestSelfLink)
@@ -412,6 +429,9 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
         const val MIN_POSITION_GAP_MS = 2_000L
     }
 }
+
+/** How long after a nudge the same rider can be nudged again. */
+const val NUDGE_PAUSE_MS = 30_000L
 
 /** Where [GroupManager.nudgeStatus] keeps a nudge to a friend ([riderId] null) or to a rider in a group. */
 fun nudgeKey(channelId: String, riderId: String?) = if (riderId == null) channelId else "$channelId/$riderId"

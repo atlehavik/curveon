@@ -928,9 +928,9 @@
     <string name="group_unnamed">Groep</string>
     <string name="group_status_connected">Verbonden</string>
     <string name="group_status_offline">Geen contact met de groep</string>
-    <string name="group_status_paused">Je positie wordt niet gedeeld</string>
+    <string name="group_status_paused">Pauze</string>
     <string name="group_status_removed">Je bent uit deze groep verwijderd</string>
-    <string name="group_share_position">Mijn positie delen</string>
+    <string name="group_share_position">Met deze groep rijden</string>
     <string name="group_riders">Rijders</string>
     <string name="group_rider_you">%1$s (jij)</string>
     <string name="group_stopped_for">%1$d min gestopt</string>
@@ -939,7 +939,6 @@
     <string name="group_no_position">nog geen positie</string>
     <string name="group_profile">Je naam in de groep</string>
     <string name="group_nickname">Bijnaam</string>
-    <string name="group_save">Opslaan</string>
     <string name="group_invite">Rijders uitnodigen</string>
     <string name="group_scan">QR-code scannen</string>
     <string name="group_settings">Instellingen</string>
@@ -1021,13 +1020,13 @@
     <string name="group_add_friends_sent">Uitnodiging verstuurd</string>
     <string name="group_new">Nieuwe groep</string>
     <string name="group_card_idle">Niet in gebruik</string>
-    <string name="group_card_paused">Deelt niet · je ziet de anderen</string>
+    <string name="group_card_paused">Pauze · jullie zien elkaar niet</string>
     <plurals name="group_card_sharing">
         <item quantity="one">Deelt je positie · %1$d rijder</item>
         <item quantity="other">Deelt je positie · %1$d rijders</item>
     </plurals>
     <string name="group_one_at_a_time">Je positie gaat naar één groep tegelijk. Zet je er een aan, dan gaat de andere uit.</string>
-    <string name="group_not_active">Deel je positie met deze groep om te zien wie erin zit en waar ze zijn.</string>
+    <string name="group_not_active">Zet aan om met deze groep te rijden en te zien wie erbij is en waar.</string>
     <string name="friends_share_title">Vrienden laten zien waar ik ben</string>
     <string name="friends_share_hint">Alleen de vrienden die je hieronder kiest, en alleen zolang Curveon draait. Ze zien je ongeveer één keer per minuut.</string>
     <string name="friends_sees_me">Ziet altijd waar ik ben</string>
@@ -1131,5 +1130,9 @@
     <string name="rider_info_seen">Laatst gezien: %1$s</string>
     <string name="rider_info_battery">Batterij %1$d%%</string>
     <string name="riders_here">Hier samen</string>
-    <string name="group_rider_paused">deelt de locatie nu niet</string>
+    <string name="group_rider_paused">heeft pauze van de groep</string>
+    <string name="profile_saved">Opgeslagen</string>
+    <string name="group_icons_off">Je foto wordt getoond in plaats van een pictogram. Verwijder hem om een pictogram te kiezen.</string>
+    <string name="tour_turn_after">De rondleiding wordt liggend getoond. Daarna kun je je telefoon houden zoals je wilt.</string>
+    <string name="group_paused_hint">Je hebt pauze van deze groep: de anderen zien jou niet, jij ziet hen niet, en SOS en meldingen van de groep bereiken je niet. Zet hem weer aan om met ze te rijden.</string>
 </resources>

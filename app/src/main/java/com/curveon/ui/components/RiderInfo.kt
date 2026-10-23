@@ -160,9 +160,11 @@ private fun seenAgo(timeMs: Long): String {
 fun NudgeButton(manager: GroupManager, channelId: String, riderId: String?, nickname: String) {
     val status by manager.nudgeStatus.collectAsStateWithLifecycle()
     val state = status[nudgeKey(channelId, riderId)]
+    val wait by manager.nudgeWait.collectAsStateWithLifecycle()
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Button(
             onClick = { manager.nudge(channelId, riderId) },
+            enabled = nudgeKey(channelId, riderId) !in wait,
             colors = ButtonDefaults.buttonColors(containerColor = NeonAmber),
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("nudge_send")
         ) {
@@ -179,8 +181,9 @@ fun NudgeButton(manager: GroupManager, channelId: String, riderId: String?, nick
 fun NudgeIconButton(manager: GroupManager, channelId: String, riderId: String?) {
     val status by manager.nudgeStatus.collectAsStateWithLifecycle()
     val seen = status[nudgeKey(channelId, riderId)] == Message.NudgeState.SEEN
-    IconButton(onClick = { manager.nudge(channelId, riderId) }, modifier = Modifier.testTag("nudge_row")) {
-        Icon(Icons.Default.NotificationsActive, stringResource(R.string.nudge_button), tint = if (seen) EcoGreen else NeonAmber)
+    val waiting = nudgeKey(channelId, riderId) in manager.nudgeWait.collectAsStateWithLifecycle().value
+    IconButton(onClick = { manager.nudge(channelId, riderId) }, enabled = !waiting, modifier = Modifier.testTag("nudge_row")) {
+        Icon(Icons.Default.NotificationsActive, stringResource(R.string.nudge_button), tint = when { seen -> EcoGreen; waiting -> TextMuted; else -> NeonAmber })
     }
 }
 

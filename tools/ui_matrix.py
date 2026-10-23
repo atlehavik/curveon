@@ -187,7 +187,7 @@ def scenario_groupdetail(d):
     """One group opened from the list (demo phone data): the way back and the sharing switch, above the riders."""
     scenario_groups(d)
     d.tap(["Demo ride"])
-    return [["Your groups", "Gruppene dine"], ["Share my position", "Del posisjonen min"]]
+    return [["Your groups", "Gruppene dine"], ["Ride with this group", "Kjør med gruppa"]]
 
 
 def scenario_friends(d):
@@ -196,6 +196,14 @@ def scenario_friends(d):
     d.tap(["Friends", "Venner"])
     d.tap(["My friends", "Mine venner"])
     return [["Show my code", "Vis koden min"], ["Scan a QR code", "Skann QR-kode"]]
+
+
+def scenario_qrscan(d):
+    """Scanning a friend's QR code: the camera fills the screen, and Cancel must be wholly on it (camera hole, nav bar)."""
+    d.sh("pm", "grant", PKG, "android.permission.CAMERA")
+    scenario_friends(d)
+    d.tap(["Scan a QR code", "Skann QR-kode"], wait=4)
+    return [["~^(Cancel|Avbryt)$"], ["Scan a QR code", "Skann QR-kode"]]
 
 
 def scenario_nudge(d):
@@ -214,7 +222,8 @@ def scenario_nudge(d):
 
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
              "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
-             "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge}
+             "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge,
+             "qrscan": scenario_qrscan}
 
 
 def apply_variant(d, v, rotation):

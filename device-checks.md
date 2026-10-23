@@ -6,6 +6,19 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-23 — Pause i gruppa, autolagret profil, nudge-sperre (1.2.3)
+
+Pixel og X7 begge med 1.2.3 (Companion også 1.2.3 hvis X7 går via Companion).
+- [ ] Gruppetur: slå av «Kjør med gruppa» på Pixelen. Pixelen forsvinner fra kartet på X7 med en gang, Pixelen ser ikke
+      X7 lenger, gruppa sier «Pause» og forklarer, og SOS-knappen er borte. SOS fra X7 når ikke Pixelen. Slå på igjen:
+      begge ser hverandre innen et halvt minutt.
+- [ ] Trykk «Vil ha kontakt» mange ganger fort: X7 får ett varsel, bjellen er grå i et halvt minutt.
+- [ ] Venner → Meg: endre navn, farge, ikon. «Lagret» vises, og X7 ser det nye uten noen lagre-knapp. Med bilde er
+      ikonene dempet; «Fjern» bildet, så kan et ikon velges.
+- [ ] Skann QR-kode på Pixelen (kamerahull), stående og liggende: «Avbryt» er helt på skjermen.
+- [ ] En venn som slår på deling: dukker opp på kartet uten at noen må slå av og på igjen (kan ta noen minutter
+      hvis Venner ikke er åpen; åpne Venner for å få det med en gang).
+
 ## 2026-10-23 — Trykk på en venn på kartet, og «Vil ha kontakt»
 
 Pixel og X7 som venner (ExSeven), begge med ny app.

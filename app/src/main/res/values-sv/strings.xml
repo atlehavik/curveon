@@ -955,9 +955,9 @@
     <string name="group_unnamed">Grupp</string>
     <string name="group_status_connected">Ansluten</string>
     <string name="group_status_offline">Ingen kontakt med gruppen</string>
-    <string name="group_status_paused">Delar inte din position</string>
+    <string name="group_status_paused">Paus</string>
     <string name="group_status_removed">Du har tagits bort från den här gruppen</string>
-    <string name="group_share_position">Dela min position</string>
+    <string name="group_share_position">Kör med gruppen</string>
     <string name="group_riders">Förare</string>
     <string name="group_rider_you">%1$s (du)</string>
     <string name="group_stopped_for">stått still %1$d min</string>
@@ -966,7 +966,6 @@
     <string name="group_no_position">ingen position än</string>
     <string name="group_profile">Ditt namn i gruppen</string>
     <string name="group_nickname">Smeknamn</string>
-    <string name="group_save">Spara</string>
     <string name="group_invite">Bjud in förare</string>
     <string name="group_scan">Skanna QR-kod</string>
     <string name="group_settings">Inställningar</string>
@@ -1049,13 +1048,13 @@
     <string name="group_add_friends_sent">Inbjudan skickad</string>
     <string name="group_new">Ny grupp</string>
     <string name="group_card_idle">Används inte</string>
-    <string name="group_card_paused">Delar inte · du ser de andra</string>
+    <string name="group_card_paused">Paus · ni ser inte varandra</string>
     <plurals name="group_card_sharing">
         <item quantity="one">Delar din position · %1$d förare</item>
         <item quantity="other">Delar din position · %1$d förare</item>
     </plurals>
     <string name="group_one_at_a_time">Din position går till en grupp i taget. Slår du på en slås den andra av.</string>
-    <string name="group_not_active">Dela din position med den här gruppen för att se vilka som är med och var de är.</string>
+    <string name="group_not_active">Slå på för att köra med gruppen och se vilka som är med och var de är.</string>
     <string name="friends_share_title">Låt vänner se var jag är</string>
     <string name="friends_share_hint">Bara vännerna du väljer nedan, och bara medan Curveon är igång. De ser dig ungefär en gång i minuten.</string>
     <string name="friends_sees_me">Ser alltid var jag är</string>
@@ -1159,5 +1158,9 @@
     <string name="rider_info_seen">Senast sedd: %1$s</string>
     <string name="rider_info_battery">Batteri %1$d %%</string>
     <string name="riders_here">Här tillsammans</string>
-    <string name="group_rider_paused">delar inte sin position nu</string>
+    <string name="group_rider_paused">har paus från gruppen</string>
+    <string name="profile_saved">Sparat</string>
+    <string name="group_icons_off">Din bild visas i stället för en ikon. Ta bort den för att välja ikon.</string>
+    <string name="tour_turn_after">Rundturen visas liggande. När den är klar kan du hålla telefonen som du vill.</string>
+    <string name="group_paused_hint">Du har paus från gruppen: de andra ser inte dig, du ser inte dem, och SOS och larm från gruppen når dig inte. Slå på igen för att köra med dem.</string>
 </resources>

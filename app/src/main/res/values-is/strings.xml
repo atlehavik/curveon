@@ -954,9 +954,9 @@
     <string name="group_unnamed">Hópur</string>
     <string name="group_status_connected">Tengt</string>
     <string name="group_status_offline">Ekkert samband við hópinn</string>
-    <string name="group_status_paused">Deilir ekki staðsetningu</string>
+    <string name="group_status_paused">Í hléi</string>
     <string name="group_status_removed">Þú hefur verið tekin(n) úr þessum hópi</string>
-    <string name="group_share_position">Deila staðsetningu minni</string>
+    <string name="group_share_position">Hjóla með hópnum</string>
     <string name="group_riders">Ökumenn</string>
     <string name="group_rider_you">%1$s (þú)</string>
     <string name="group_stopped_for">stopp í %1$d mín</string>
@@ -965,7 +965,6 @@
     <string name="group_no_position">engin staðsetning enn</string>
     <string name="group_profile">Nafnið þitt í hópnum</string>
     <string name="group_nickname">Gælunafn</string>
-    <string name="group_save">Vista</string>
     <string name="group_invite">Bjóða ökumönnum</string>
     <string name="group_scan">Skanna QR-kóða</string>
     <string name="group_settings">Stillingar</string>
@@ -1048,13 +1047,13 @@
     <string name="group_add_friends_sent">Boð sent</string>
     <string name="group_new">Nýr hópur</string>
     <string name="group_card_idle">Ekki í notkun</string>
-    <string name="group_card_paused">Deilir ekki · þú sérð hina</string>
+    <string name="group_card_paused">Í hléi · þið sjáið ekki hvert annað</string>
     <plurals name="group_card_sharing">
         <item quantity="one">Deilir staðsetningu · %1$d ökumaður</item>
         <item quantity="other">Deilir staðsetningu · %1$d ökumenn</item>
     </plurals>
     <string name="group_one_at_a_time">Staðsetningin þín fer til eins hóps í einu. Ef kveikt er á einum slokknar á hinum.</string>
-    <string name="group_not_active">Deildu staðsetningu með þessum hópi til að sjá hverjir eru í honum og hvar þeir eru.</string>
+    <string name="group_not_active">Kveiktu til að hjóla með hópnum og sjá hver eru með og hvar þau eru.</string>
     <string name="friends_share_title">Leyfa vinum að sjá hvar ég er</string>
     <string name="friends_share_hint">Aðeins vinirnir sem þú velur hér fyrir neðan, og aðeins á meðan Curveon er í gangi. Þeir sjá þig um það bil einu sinni á mínútu.</string>
     <string name="friends_sees_me">Sér alltaf hvar ég er</string>
@@ -1158,5 +1157,9 @@
     <string name="rider_info_seen">Síðast séð: %1$s</string>
     <string name="rider_info_battery">Rafhlaða %1$d%%</string>
     <string name="riders_here">Hér saman</string>
-    <string name="group_rider_paused">deilir ekki staðsetningu núna</string>
+    <string name="group_rider_paused">í hléi frá hópnum</string>
+    <string name="profile_saved">Vistað</string>
+    <string name="group_icons_off">Myndin þín birtist í stað tákns. Fjarlægðu hana til að velja tákn.</string>
+    <string name="tour_turn_after">Kynningin birtist á hlið. Þegar henni er lokið geturðu haldið á símanum eins og þú vilt.</string>
+    <string name="group_paused_hint">Þú ert í hléi frá hópnum: hin sjá þig ekki, þú sérð þau ekki, og SOS og viðvaranir frá hópnum ná ekki til þín. Kveiktu aftur til að hjóla með þeim.</string>
 </resources>

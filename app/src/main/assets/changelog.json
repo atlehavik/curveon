@@ -1,5 +1,85 @@
 [
   {
+    "version": "1.2.3",
+    "en": [
+      "Pause a group ride: switch the group off and you get a real break. The others don't see you, you don't see them, and SOS and alerts from the group stay away until you switch it on again",
+      "Your profile saves itself: change your name, colour, icon or picture and \"Saved\" tells you it went. The first time you open Friends, you start on Me, so you can set up how the others see you",
+      "With a picture, the icons rest and say why; remove the picture with the clear button and you can pick an icon again",
+      "Get attention can't be tapped into a flood any more: one alert per friend every half minute, and they only see one at a time",
+      "On the first start the welcome tour waits to turn the screen until you press Start, so picking a language and answering Android's questions happen the way you hold your phone. Scanning a QR code keeps the Cancel button on screen on phones with a camera hole, and a friend who starts sharing shows up on your map more reliably"
+    ],
+    "nb": [
+      "Ta pause fra en gruppetur: slå av gruppa, så får du en ordentlig pause. De andre ser ikke deg, du ser ikke dem, og SOS og varsler fra gruppa holder seg unna til du slår den på igjen",
+      "Profilen lagrer seg selv: endre navn, farge, ikon eller bilde, så sier «Lagret» fra at det gikk. Første gang du åpner Venner, starter du på Meg, så du kan bestemme hvordan de andre ser deg",
+      "Med bilde hviler ikonene og sier hvorfor. Fjern bildet med den tydelige knappen, så kan du velge ikon igjen",
+      "«Vil ha kontakt» kan ikke lenger trykkes i ett sett: ett varsel per venn hvert halve minutt, og de ser bare ett om gangen",
+      "Ved første oppstart venter velkomstguiden med å snu skjermen til du trykker Start, så språkvalg og Androids spørsmål kommer slik du holder telefonen. Når du skanner en QR-kode, er Avbryt-knappen alltid på skjermen på telefoner med kamerahull, og en venn som begynner å dele, dukker opp på kartet ditt mer pålitelig"
+    ],
+    "sv": [
+      "Ta paus från en gruppkörning: slå av gruppen så får du en riktig paus. De andra ser inte dig, du ser inte dem, och SOS och larm från gruppen håller sig borta tills du slår på den igen",
+      "Profilen sparar sig själv: ändra namn, färg, ikon eller bild så säger \"Sparat\" att det gick. Första gången du öppnar Vänner börjar du på Jag, så att du kan bestämma hur de andra ser dig",
+      "Med en bild vilar ikonerna och säger varför. Ta bort bilden med den tydliga knappen så kan du välja ikon igen",
+      "Vill ha kontakt går inte längre att trycka i ett: ett larm per vän varje halvminut, och de ser bara ett i taget",
+      "Vid första starten väntar välkomstguiden med att vrida skärmen tills du trycker Starta, så språkval och Androids frågor kommer som du håller telefonen. När du skannar en QR-kod syns Avbryt-knappen alltid på telefoner med kamerahål, och en vän som börjar dela dyker upp på din karta mer pålitligt"
+    ],
+    "da": [
+      "Hold pause fra en gruppetur: slå gruppen fra, så får du en rigtig pause. De andre ser ikke dig, du ser ikke dem, og SOS og alarmer fra gruppen holder sig væk, til du slår den til igen",
+      "Profilen gemmer sig selv: skift navn, farve, ikon eller billede, så siger \"Gemt\", at det lykkedes. Første gang du åbner Venner, starter du på Mig, så du kan bestemme, hvordan de andre ser dig",
+      "Med et billede hviler ikonerne og siger hvorfor. Fjern billedet med den tydelige knap, så kan du vælge ikon igen",
+      "Vil have kontakt kan ikke længere trykkes i ét væk: én alarm per ven hvert halve minut, og de ser kun én ad gangen",
+      "Ved første start venter velkomstguiden med at dreje skærmen, til du trykker Start, så sprogvalg og Androids spørgsmål kommer, som du holder telefonen. Når du scanner en QR-kode, er Annuller-knappen altid på skærmen på telefoner med kamerahul, og en ven, der begynder at dele, dukker mere pålideligt op på dit kort"
+    ],
+    "fi": [
+      "Pidä tauko ryhmäajosta: kytke ryhmä pois, niin saat oikean tauon. Muut eivät näe sinua, sinä et näe heitä, eivätkä ryhmän SOS ja hälytykset häiritse ennen kuin kytket sen taas päälle",
+      "Profiili tallentuu itsestään: vaihda nimi, väri, kuvake tai kuva, niin \"Tallennettu\" kertoo sen onnistuneen. Kun avaat Ystävät ensimmäistä kertaa, aloitat Minä-sivulta, joten voit päättää, miltä näytät muille",
+      "Kun sinulla on kuva, kuvakkeet lepäävät ja kertovat miksi. Poista kuva selkeästä painikkeesta, niin voit taas valita kuvakkeen",
+      "Pyydä huomiota -painiketta ei voi enää naputella tulvaksi: yksi hälytys ystävää kohden puolessa minuutissa, ja he näkevät vain yhden kerrallaan",
+      "Ensimmäisellä käynnistyskerralla tervetulo-opas kääntää näytön vasta, kun painat Aloita, joten kielen valinta ja Androidin kysymykset tulevat niin kuin pidät puhelinta. QR-koodia skannatessa Peruuta-painike pysyy näytöllä puhelimissa, joissa on kamerareikä, ja jakamisen aloittava ystävä näkyy kartallasi luotettavammin"
+    ],
+    "is": [
+      "Taktu hlé frá hópferð: slökktu á hópnum og þú færð alvöru hlé. Hin sjá þig ekki, þú sérð þau ekki, og SOS og viðvaranir frá hópnum láta þig í friði þar til þú kveikir aftur",
+      "Prófíllinn vistar sig sjálfur: breyttu nafni, lit, tákni eða mynd og \"Vistað\" segir þér að það tókst. Í fyrsta sinn sem þú opnar Vini byrjarðu á Ég, svo þú getir ákveðið hvernig hin sjá þig",
+      "Með mynd hvíla táknin og segja af hverju. Fjarlægðu myndina með skýra hnappinum og þá geturðu valið tákn aftur",
+      "Ekki er lengur hægt að ýta á Vill ná sambandi í gríð og erg: ein viðvörun á hvern vin á hálfrar mínútu fresti, og þau sjá bara eina í einu",
+      "Við fyrstu ræsingu bíður kynningin með að snúa skjánum þar til þú ýtir á Byrja, svo tungumálaval og spurningar Android koma eins og þú heldur á símanum. Þegar þú skannar QR-kóða er Hætta við-hnappurinn alltaf á skjánum á símum með myndavélargati, og vinur sem byrjar að deila birtist áreiðanlegar á kortinu þínu"
+    ],
+    "de": [
+      "Pause von einer Gruppenausfahrt: Schalte die Gruppe aus und du hast wirklich Pause. Die anderen sehen dich nicht, du siehst sie nicht, und SOS und Alarme der Gruppe bleiben weg, bis du sie wieder einschaltest",
+      "Dein Profil speichert sich selbst: Ändere Name, Farbe, Symbol oder Bild, und \"Gespeichert\" sagt dir, dass es geklappt hat. Wenn du Freunde zum ersten Mal öffnest, startest du bei Ich, damit du festlegen kannst, wie die anderen dich sehen",
+      "Mit einem Bild ruhen die Symbole und sagen warum. Entferne das Bild mit dem deutlichen Knopf, dann kannst du wieder ein Symbol wählen",
+      "Kontakt suchen lässt sich nicht mehr im Sekundentakt drücken: ein Alarm pro Freund jede halbe Minute, und sie sehen immer nur einen",
+      "Beim ersten Start dreht die Willkommenstour den Bildschirm erst, wenn du Start drückst, sodass Sprachwahl und Androids Fragen so kommen, wie du das Handy hältst. Beim Scannen eines QR-Codes bleibt Abbrechen auf Handys mit Kameraloch auf dem Bildschirm, und ein Freund, der zu teilen beginnt, erscheint zuverlässiger auf deiner Karte"
+    ],
+    "es": [
+      "Haz una pausa en una salida en grupo: desactiva el grupo y tendrás un descanso de verdad. Los demás no te ven, tú no los ves, y el SOS y los avisos del grupo no te molestan hasta que lo vuelvas a activar",
+      "Tu perfil se guarda solo: cambia el nombre, el color, el icono o la foto y \"Guardado\" te dice que ha ido bien. La primera vez que abres Amigos empiezas en Yo, para que decidas cómo te ven los demás",
+      "Con una foto, los iconos descansan y te dicen por qué; quita la foto con el botón claro y podrás volver a elegir un icono",
+      "Llamar la atención ya no se puede pulsar en ráfaga: un aviso por amigo cada medio minuto, y solo ven uno a la vez",
+      "En el primer inicio, la bienvenida no gira la pantalla hasta que pulsas Empezar, así que el idioma y las preguntas de Android llegan como sujetas el móvil. Al escanear un código QR, el botón Cancelar queda siempre en pantalla en móviles con agujero de cámara, y un amigo que empieza a compartir aparece en tu mapa de forma más fiable"
+    ],
+    "fr": [
+      "Faire une pause pendant une balade en groupe : désactive le groupe et tu as une vraie pause. Les autres ne te voient pas, tu ne les vois pas, et les SOS et alertes du groupe te laissent tranquille jusqu'à ce que tu le réactives",
+      "Ton profil s'enregistre tout seul : change ton nom, ta couleur, ton icône ou ta photo et « Enregistré » te dit que c'est fait. La première fois que tu ouvres Amis, tu commences sur Moi, pour choisir comment les autres te voient",
+      "Avec une photo, les icônes se mettent en retrait et disent pourquoi ; retire la photo avec le bouton bien visible et tu peux de nouveau choisir une icône",
+      "Attirer l'attention ne peut plus être martelé : une alerte par ami toutes les trente secondes, et ils n'en voient qu'une à la fois",
+      "Au premier démarrage, la visite de bienvenue attend que tu appuies sur Commencer pour tourner l'écran : le choix de la langue et les questions d'Android arrivent dans le sens où tu tiens ton téléphone. En scannant un code QR, le bouton Annuler reste à l'écran sur les téléphones avec poinçon, et un ami qui commence à partager apparaît plus sûrement sur ta carte"
+    ],
+    "nl": [
+      "Pauze van een groepsrit: zet de groep uit en je hebt echt pauze. De anderen zien jou niet, jij ziet hen niet, en SOS en meldingen van de groep blijven weg tot je hem weer aanzet",
+      "Je profiel slaat zichzelf op: verander je naam, kleur, pictogram of foto en \"Opgeslagen\" laat weten dat het gelukt is. De eerste keer dat je Vrienden opent, begin je bij Ik, zodat je kunt kiezen hoe de anderen je zien",
+      "Met een foto rusten de pictogrammen en zeggen ze waarom; verwijder de foto met de duidelijke knop en je kunt weer een pictogram kiezen",
+      "Aandacht vragen kan niet meer in een salvo: één melding per vriend per halve minuut, en ze zien er maar één tegelijk",
+      "Bij de eerste start draait de welkomstrondleiding het scherm pas als je op Start drukt, zodat de taalkeuze en de vragen van Android komen zoals je je telefoon vasthoudt. Bij het scannen van een QR-code blijft Annuleren op het scherm op telefoons met een cameragat, en een vriend die begint te delen verschijnt betrouwbaarder op je kaart"
+    ],
+    "pl": [
+      "Przerwa od jazdy w grupie: wyłącz grupę, a masz prawdziwą przerwę. Inni Cię nie widzą, Ty nie widzisz ich, a SOS i alerty z grupy dają Ci spokój, dopóki znów jej nie włączysz",
+      "Profil zapisuje się sam: zmień imię, kolor, ikonę lub zdjęcie, a \"Zapisano\" potwierdzi, że się udało. Gdy pierwszy raz otworzysz Znajomych, zaczniesz od Ja, by ustawić, jak widzą Cię inni",
+      "Gdy masz zdjęcie, ikony odpoczywają i mówią dlaczego; usuń zdjęcie wyraźnym przyciskiem, a znów wybierzesz ikonę",
+      "Prośby o uwagę nie da się już wysyłać seriami: jeden alert na znajomego co pół minuty, a oni widzą tylko jeden naraz",
+      "Przy pierwszym uruchomieniu przewodnik obraca ekran dopiero po naciśnięciu Start, więc wybór języka i pytania Androida pojawiają się tak, jak trzymasz telefon. Podczas skanowania kodu QR przycisk Anuluj zostaje na ekranie w telefonach z otworem na aparat, a znajomy, który zaczyna udostępniać, pojawia się na Twojej mapie pewniej"
+    ]
+  },
+  {
     "version": "1.2.2",
     "en": [
       "Curveon has a new icon and a new package name (com.curveon.app, was com.curveon.tablet), because it is now the main app on both phone and tablet. Android treats it as a new app: install this version, then uninstall the old Curveon. Settings, downloaded maps and saved data do not carry over, and Curveon Companion must be updated too",
