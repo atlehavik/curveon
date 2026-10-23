@@ -461,6 +461,8 @@
     <string name="ride_resume_title">Edellinen ajo tallennettiin</string>
     <string name="ride_resume_continue">Jatka sitä ajoa</string>
     <string name="ride_resume_new">Aloita uusi ajo</string>
+    <string name="nav_resume_title">Jatketaanko navigointia?</string>
+    <string name="nav_resume_no">Ei kiitos</string>
     <string name="rides_empty">Ajot tallentuvat automaattisesti, kun pääset liikkeelle.</string>
     <string name="rides_ride_again">Aja uudelleen</string>
     <string name="rides_save_to_gpx">Tallenna GPX:ään</string>

@@ -66,13 +66,18 @@ class SyncDoc(val entries: Map<String, SyncEntry> = emptyMap()) {
     fun payload(state: GroupState): String {
       val o = JSONObject(state.toJson())
       o.remove("device")
+      o.remove("trust") // what this device has seen of the others; each device learns it for itself
+      o.remove("sosEnd")
       o.optJSONObject("peer")?.put("photo", JSONObject.NULL)
       return o.toString()
     }
 
-    /** The group a payload describes, on this device (with [deviceId] as its id), or null if it is not valid. */
-    fun restore(payload: String, deviceId: String): GroupState? = try {
-      GroupState.fromJson(JSONObject(payload).put("device", deviceId).toString())
+    /**
+     * The group a payload describes, on this device (with [deviceId] as its id, and what [existing], its copy here, had
+     * learnt of the other riders), or null if it is not valid.
+     */
+    fun restore(payload: String, deviceId: String, existing: GroupState? = null): GroupState? = try {
+      GroupState.fromJson(JSONObject(payload).put("device", deviceId).toString())?.also { s -> existing?.let(s::keepLearntFrom) }
     } catch (_: Exception) {
       null
     }

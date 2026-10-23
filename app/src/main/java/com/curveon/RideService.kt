@@ -86,6 +86,7 @@ class RideService : Service() {
 
     /** Close Curveon altogether: the screen, GPS, the phone link, OBD – so nothing drains the battery. */
     private fun quit() {
+        com.curveon.data.routing.ActiveTrip.forget(this)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
         MainActivity.current?.get()?.finishAndRemoveTask()

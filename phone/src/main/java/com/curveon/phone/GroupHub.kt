@@ -860,7 +860,7 @@ object GroupHub {
                     syncDoc = syncDoc.with(e)
                 } else {
                     val existing = groups[id]
-                    val state = e.payload?.let { SyncDoc.restore(it, existing?.deviceId ?: newDeviceId()) } ?: continue
+                    val state = e.payload?.let { SyncDoc.restore(it, existing?.deviceId ?: newDeviceId(), existing) } ?: continue
                     if (state.kind == GroupKind.SELF) continue
                     adopt(state, existing)
                     // Kept as this device would write it, so the two agree on the text and do not keep re-sending.

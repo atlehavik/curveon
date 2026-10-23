@@ -170,4 +170,26 @@ class ProtocolTest {
         MessageWriter(buf).write(Message.Ping)
         assertEquals(Message.Ping, MessageReader(ByteArrayInputStream(buf.toByteArray())).read())
     }
+
+    @Test
+    fun `a broken frame is skipped and the link stays up`() {
+        val buf = ByteArrayOutputStream()
+        for (raw in listOf("not json", """{"type":"hello"}""")) { // the second lacks "device"
+            val b = raw.toByteArray()
+            java.io.DataOutputStream(buf).apply { writeInt(b.size); write(b) }
+        }
+        MessageWriter(buf).write(Message.Ping)
+        assertEquals(Message.Ping, MessageReader(ByteArrayInputStream(buf.toByteArray())).read())
+    }
+
+    @Test
+    fun `a frame that says it is large but ends early is an end of stream, not a large allocation`() {
+        val buf = ByteArrayOutputStream()
+        java.io.DataOutputStream(buf).apply { writeInt(MessageReader.MAX_FRAME); write(ByteArray(10)) }
+        try {
+            MessageReader(ByteArrayInputStream(buf.toByteArray())).read()
+            org.junit.Assert.fail("expected the stream to end")
+        } catch (_: java.io.EOFException) {
+        }
+    }
 }

@@ -496,6 +496,8 @@
     <string name="ride_resume_title">Förra turen sparades</string>
     <string name="ride_resume_continue">Fortsätt den turen</string>
     <string name="ride_resume_new">Starta ny tur</string>
+    <string name="nav_resume_title">Fortsätta navigeringen?</string>
+    <string name="nav_resume_no">Nej tack</string>
     <string name="rides_empty">Turer spelas in automatiskt när du kommer i väg.</string>
     <string name="rides_ride_again">Kör igen</string>
     <string name="rides_save_to_gpx">Spara till GPX</string>

@@ -13,7 +13,13 @@
       "Switching to the 3D map now shows the two arrows for the angle of the view beside the 3D button for a few seconds, so you find them without knowing the trick; hold the 3D button to bring them back",
       "When you start riding again soon after a ride was saved, the question now says it is about your saved ride: Continue that ride or Start new ride",
       "Road colours now have two settings, Normal and High contrast, for both the day and the night map: on the night map Normal is a little softer than the bright white roads, and High contrast keeps them white",
-      "The marker setting now starts at 0, the setting that sits right for most, and you move it forward or back from there"
+      "The marker setting now starts at 0, the setting that sits right for most, and you move it forward or back from there",
+      "Group rides are safer: nobody in a group can pretend to be another rider any more, so removing someone can never be turned against a friend, and an old or cancelled SOS sent again is no longer shown as a new one, not even after a restart. Friends on an older Curveon still ride along as before",
+      "Updating Curveon never throws away your saved routes, GPX tracks and rides",
+      "If Android closes Curveon while you're navigating, the trip is still there: next time you open Curveon it asks whether to carry on, and the ride you were logging can be continued too",
+      "A hiccup in the link to your phone no longer cuts the connection, and navigation can't crash on a route without turns",
+      "On hairpin bends navigation keeps you on the bend you're riding: a GPS fix that strays towards the road back no longer jumps you far ahead or gives you the wrong turns",
+      "Updates are checked before they're installed: a download that came through damaged is fetched again, and only a genuine Curveon is offered to install"
     ],
     "nb": [
       "Ingen flere vendinger midt i veien: en tur en venn deler med deg, kobles du nå på i den retningen den går, så du blir aldri sendt til et punkt på veien bare for å snu der. Og har turen et stopp langs veien, kjører du videre i samme retning til et kryss eller en rundkjøring i stedet for å snu på veien",
@@ -27,7 +33,13 @@
       "Når du bytter til 3D-kartet, dukker de to pilene for vinkelen på kartet opp ved 3D-knappen i noen sekunder, så du finner dem uten å kjenne trikset. Hold inne 3D-knappen for å få dem fram igjen",
       "Når du kjører videre kort tid etter at en tur er lagret, sier spørsmålet nå at det gjelder den lagrede turen: Fortsett den turen eller Start ny tur",
       "Veifargene har nå to valg, Normal og Høykontrast, både på dag- og nattkartet: på nattkartet er Normal litt mykere enn de skarpe hvite veiene, og Høykontrast beholder dem hvite",
-      "Innstillingen for markøren starter nå på 0, som passer de fleste, og så flytter du den fram eller tilbake derfra"
+      "Innstillingen for markøren starter nå på 0, som passer de fleste, og så flytter du den fram eller tilbake derfra",
+      "Gruppeturer er tryggere: ingen i en gruppe kan lenger late som de er en annen rytter, så det å fjerne noen kan aldri snus mot en venn, og en gammel eller avlyst SOS som sendes på nytt vises ikke som ny, heller ikke etter en omstart. Venner med en eldre Curveon er med som før",
+      "En oppdatering av Curveon kaster aldri de lagrede rutene, GPX-sporene og turene dine",
+      "Lukker Android Curveon mens du navigerer, er turen der fortsatt: neste gang du åpner Curveon spør den om du vil fortsette, og turen du logget kan også fortsettes",
+      "Et hikk i koblingen til telefonen bryter ikke lenger forbindelsen, og navigeringen kan ikke krasje på en rute uten svinger",
+      "I hårnålssvinger holder navigeringen deg på svingen du kjører: en GPS-posisjon som bommer mot veien tilbake, sender deg ikke lenger langt fram eller gir deg feil svinger",
+      "Oppdateringer sjekkes før de installeres: en nedlasting som kom skadet fram hentes på nytt, og bare en ekte Curveon blir tilbudt installert"
     ],
     "sv": [
       "Inga fler vändningar mitt på vägen: en tur som en vän delar med dig ansluter du nu till i den riktning den går, så du skickas aldrig till en punkt på vägen bara för att vända där. Och har turen ett stopp längs vägen kör du vidare åt samma håll till en korsning eller rondell i stället för att vända på vägen",
@@ -41,7 +53,13 @@
       "När du byter till 3D-kartan visas de två pilarna för vyns vinkel vid 3D-knappen i några sekunder, så du hittar dem utan att känna till tricket. Håll 3D-knappen nedtryckt för att få fram dem igen",
       "När du kör vidare snart efter att en tur sparats säger frågan nu att den gäller den sparade turen: Fortsätt den turen eller Starta ny tur",
       "Vägfärgerna har nu två val, Normal och Hög kontrast, på både dag- och nattkartan: på nattkartan är Normal lite mjukare än de skarpa vita vägarna, och Hög kontrast behåller dem vita",
-      "Inställningen för markören börjar nu på 0, som passar de flesta, och du flyttar den framåt eller bakåt därifrån"
+      "Inställningen för markören börjar nu på 0, som passar de flesta, och du flyttar den framåt eller bakåt därifrån",
+      "Gruppturer är säkrare: ingen i en grupp kan längre låtsas vara en annan förare, så att ta bort någon kan aldrig vändas mot en vän, och ett gammalt eller avbrutet SOS som skickas igen visas inte som nytt, inte ens efter en omstart. Vänner med en äldre Curveon är med som förut",
+      "En uppdatering av Curveon slänger aldrig dina sparade rutter, GPX-spår och turer",
+      "Stänger Android Curveon medan du navigerar finns resan kvar: nästa gång du öppnar Curveon frågar den om du vill fortsätta, och turen du loggade kan också fortsätta",
+      "Ett hack i länken till telefonen bryter inte längre anslutningen, och navigeringen kan inte krascha på en rutt utan svängar",
+      "I hårnålskurvor håller navigeringen dig kvar på kurvan du kör: en GPS-position som slår fel mot vägen tillbaka skickar dig inte längre långt fram eller ger dig fel svängar",
+      "Uppdateringar kontrolleras innan de installeras: en nedladdning som kom fram skadad hämtas igen, och bara en äkta Curveon erbjuds för installation"
     ],
     "da": [
       "Ingen flere vendinger midt på vejen: en tur, en ven deler med dig, kobler du dig nu på i den retning, den kører, så du bliver aldrig sendt hen til et punkt på vejen bare for at vende der. Og har turen et stop langs vejen, kører du videre samme vej til et kryds eller en rundkørsel i stedet for at vende på vejen",
@@ -55,7 +73,13 @@
       "Når du skifter til 3D-kortet, vises de to pile til visningsvinklen ved 3D-knappen i et par sekunder, så du finder dem uden at kende tricket. Hold 3D-knappen nede for at få dem frem igen",
       "Når du kører videre kort efter, at en tur er gemt, siger spørgsmålet nu, at det handler om den gemte tur: Fortsæt den tur eller Start ny tur",
       "Vejfarverne har nu to valg, Normal og Høj kontrast, på både dag- og natkortet: på natkortet er Normal lidt blødere end de skarpe hvide veje, og Høj kontrast beholder dem hvide",
-      "Indstillingen for markøren starter nu på 0, som passer de fleste, og så flytter du den frem eller tilbage derfra"
+      "Indstillingen for markøren starter nu på 0, som passer de fleste, og så flytter du den frem eller tilbage derfra",
+      "Gruppeture er mere sikre: ingen i en gruppe kan længere lade som om, de er en anden rytter, så det at fjerne nogen kan aldrig vendes mod en ven, og en gammel eller aflyst SOS, der sendes igen, vises ikke som ny, heller ikke efter en genstart. Venner med en ældre Curveon er med som før",
+      "En opdatering af Curveon smider aldrig dine gemte ruter, GPX-spor og ture væk",
+      "Lukker Android Curveon, mens du navigerer, er turen der stadig: næste gang du åbner Curveon, spørger den, om du vil fortsætte, og turen du loggede kan også fortsættes",
+      "Et hak i forbindelsen til telefonen afbryder den ikke længere, og navigationen kan ikke gå ned på en rute uden sving",
+      "I hårnålesving holder navigationen dig på svinget, du kører: en GPS-position, der rammer ved siden af mod vejen tilbage, sender dig ikke længere langt frem eller giver dig forkerte sving",
+      "Opdateringer tjekkes, før de installeres: en download, der kom frem beskadiget, hentes igen, og kun en ægte Curveon bliver tilbudt installeret"
     ],
     "fi": [
       "Ei enää kääntymistä keskellä tietä: ystävän jakamaan reittiin liityt nyt sen kulkusuuntaan, joten sinua ei koskaan ohjata tien pisteeseen vain kääntymään siellä. Ja jos reitillä on pysähdys tien varrella, jatkat siitä samaan suuntaan risteykseen tai liikenneympyrään sen sijaan, että tekisit U-käännöksen tiellä",
@@ -69,7 +93,13 @@
       "Kun vaihdat 3D-karttaan, kaksi nuolta näkymän kulmalle näkyy 3D-painikkeen vieressä muutaman sekunnin ajan, joten löydät ne ilman temppua. Pidä 3D-painiketta pohjassa, jos haluat ne takaisin",
       "Kun jatkat ajoa pian tallennuksen jälkeen, kysymys kertoo nyt koskevansa tallennettua ajoa: Jatka sitä ajoa tai Aloita uusi ajo",
       "Teiden väreille on nyt kaksi vaihtoehtoa, Normaali ja Korkea kontrasti, sekä päivä- että yökartalla: yökartalla Normaali on hieman pehmeämpi kuin kirkkaan valkoiset tiet, ja Korkea kontrasti pitää ne valkoisina",
-      "Merkin asetus alkaa nyt nollasta, joka sopii useimmille, ja siirrät sitä eteen tai taakse siitä"
+      "Merkin asetus alkaa nyt nollasta, joka sopii useimmille, ja siirrät sitä eteen tai taakse siitä",
+      "Ryhmäajot ovat turvallisempia: kukaan ryhmässä ei voi enää esittää toista kuljettajaa, joten jonkun poistamista ei voi kääntää ystävää vastaan, eikä uudelleen lähetettyä vanhaa tai peruttua SOS:ää näytetä uutena, ei edes uudelleenkäynnistyksen jälkeen. Vanhemmalla Curveonilla ajavat ystävät ovat mukana kuten ennenkin",
+      "Curveonin päivitys ei koskaan hävitä tallennettuja reittejäsi, GPX-jälkiäsi ja ajojasi",
+      "Jos Android sulkee Curveonin kesken navigoinnin, matka on yhä tallessa: kun seuraavan kerran avaat Curveonin, se kysyy jatketaanko, ja tallentamaasi ajoa voi myös jatkaa",
+      "Katkos puhelinyhteydessä ei enää katkaise yhteyttä, eikä navigointi voi kaatua reitillä, jossa ei ole käännöksiä",
+      "Hiusneulamutkissa navigointi pitää sinut mutkassa, jota ajat: tielle takaisin päin harhautuva GPS-sijainti ei enää heitä sinua pitkälle eteenpäin eikä anna vääriä käännöksiä",
+      "Päivitykset tarkistetaan ennen asennusta: vioittuneena perille tullut lataus haetaan uudelleen, ja asennettavaksi tarjotaan vain aito Curveon"
     ],
     "is": [
       "Engar fleiri U-beygjur á miðjum vegi: ferð sem vinur deilir með þér tengist þú nú í þá átt sem hún liggur, svo þú ert aldrei sendur á punkt á veginum bara til að snúa þar við. Og ef ferðin hefur viðkomustað við veginn heldur þú áfram sömu leið að gatnamótum eða hringtorgi í stað þess að snúa við á veginum",
@@ -83,7 +113,13 @@
       "Þegar þú skiptir yfir í 3D-kortið birtast örvarnar tvær fyrir sjónarhornið við 3D-hnappinn í nokkrar sekúndur, svo þú finnur þær án þess að þekkja brelluna. Haltu 3D-hnappnum inni til að fá þær aftur",
       "Þegar þú heldur áfram skömmu eftir að ferð var vistuð segir spurningin nú að hún snúist um vistuðu ferðina: Halda þeirri ferð áfram eða Hefja nýja ferð",
       "Litir veganna hafa nú tvo valkosti, Venjulegt og Mikil birtuskil, bæði á dag- og næturkortinu: á næturkortinu er Venjulegt örlítið mýkra en skærhvítu vegirnir, og Mikil birtuskil halda þeim hvítum",
-      "Stillingin fyrir merkið byrjar nú á 0, sem hentar flestum, og þú færir það áfram eða aftur á bak þaðan"
+      "Stillingin fyrir merkið byrjar nú á 0, sem hentar flestum, og þú færir það áfram eða aftur á bak þaðan",
+      "Hópferðir eru öruggari: enginn í hópi getur lengur þóst vera annar ökumaður, svo það að fjarlægja einhvern er aldrei hægt að snúa gegn vini, og gamalt eða afturkallað SOS sem er sent aftur birtist ekki sem nýtt, ekki einu sinni eftir endurræsingu. Vinir með eldri Curveon eru með eins og áður",
+      "Uppfærsla á Curveon hendir aldrei vistuðu leiðunum, GPX-slóðunum og ferðunum þínum",
+      "Ef Android lokar Curveon meðan þú ert í leiðsögn er ferðin enn til staðar: næst þegar þú opnar Curveon spyr það hvort þú viljir halda áfram, og ferðina sem þú skráðir má líka halda áfram með",
+      "Hikst í tengingunni við símann slítur hana ekki lengur, og leiðsögnin getur ekki hrunið á leið án beygja",
+      "Í hárnálarbeygjum heldur leiðsögnin þér á beygjunni sem þú ekur: GPS-staðsetning sem villist að veginum til baka sendir þig ekki lengur langt fram eða gefur rangar beygjur",
+      "Uppfærslur eru athugaðar áður en þær eru settar upp: niðurhal sem kom skemmt er sótt aftur, og aðeins ósvikið Curveon er boðið til uppsetningar"
     ],
     "de": [
       "Kein Wenden mehr mitten auf der Straße: In eine Tour, die ein Freund mit dir teilt, steigst du jetzt in Fahrtrichtung ein, sodass du nie zu einem Punkt auf der Straße geschickt wirst, nur um dort zu wenden. Und hat die Tour einen Stopp an der Straße, fährst du in deiner Richtung weiter bis zu einer Kreuzung oder einem Kreisverkehr, statt auf der Straße zu wenden",
@@ -97,7 +133,13 @@
       "Beim Wechsel zur 3D-Karte erscheinen die zwei Pfeile für den Blickwinkel jetzt ein paar Sekunden neben der 3D-Taste, damit du sie ohne Trick findest. Halte die 3D-Taste gedrückt, um sie wieder zu zeigen",
       "Wenn du kurz nach einer gespeicherten Fahrt weiterfährst, sagt die Frage jetzt, dass es um die gespeicherte Fahrt geht: Diese Fahrt fortsetzen oder Neue Fahrt starten",
       "Die Straßenfarben haben jetzt zwei Einstellungen, Normal und Hoher Kontrast, für Tag- und Nachtkarte: Auf der Nachtkarte ist Normal etwas sanfter als die grellweißen Straßen, Hoher Kontrast lässt sie weiß",
-      "Die Einstellung für die Markierung beginnt jetzt bei 0, was für die meisten passt, und du verschiebst sie von dort nach vorn oder zurück"
+      "Die Einstellung für die Markierung beginnt jetzt bei 0, was für die meisten passt, und du verschiebst sie von dort nach vorn oder zurück",
+      "Gruppenfahrten sind sicherer: Niemand in einer Gruppe kann sich mehr als ein anderer Fahrer ausgeben, sodass das Entfernen von jemandem nie gegen einen Freund gewendet werden kann, und ein altes oder abgebrochenes SOS, das erneut gesendet wird, erscheint nicht als neues, auch nicht nach einem Neustart. Freunde mit einem älteren Curveon fahren wie bisher mit",
+      "Ein Update von Curveon wirft nie deine gespeicherten Routen, GPX-Tracks und Fahrten weg",
+      "Schließt Android Curveon, während du navigierst, ist die Tour noch da: Beim nächsten Öffnen fragt Curveon, ob du weiterfahren willst, und die aufgezeichnete Fahrt lässt sich ebenfalls fortsetzen",
+      "Ein Aussetzer in der Verbindung zum Handy trennt sie nicht mehr, und die Navigation kann bei einer Route ohne Abbiegungen nicht abstürzen",
+      "In Haarnadelkurven bleibt die Navigation bei der Kurve, die du fährst: Ein GPS-Punkt, der zur Straße zurück abweicht, springt nicht mehr weit nach vorn und gibt keine falschen Abbiegungen mehr",
+      "Updates werden vor der Installation geprüft: Ein beschädigt angekommener Download wird neu geladen, und nur ein echtes Curveon wird zur Installation angeboten"
     ],
     "es": [
       "Se acabó dar la vuelta en mitad de la carretera: a una ruta que te comparte un amigo ahora te unes en su sentido, así que nunca te manda a un punto de la carretera solo para dar la vuelta allí. Y si la ruta tiene una parada junto a la carretera, sigues en la misma dirección hasta un cruce o una rotonda en lugar de hacer un cambio de sentido en la carretera",
@@ -111,7 +153,13 @@
       "Al cambiar al mapa 3D, las dos flechas del ángulo de vista aparecen junto al botón 3D unos segundos, para que las encuentres sin saber el truco. Mantén pulsado el botón 3D para verlas de nuevo",
       "Cuando sigues rodando poco después de guardar una salida, la pregunta ahora dice que trata de la salida guardada: Continuar esa salida o Empezar salida nueva",
       "Los colores de las carreteras tienen ahora dos opciones, Normal y Alto contraste, en el mapa de día y el de noche: de noche, Normal es algo más suave que las carreteras blanco intenso, y Alto contraste las deja blancas",
-      "El ajuste del marcador empieza ahora en 0, que le va bien a la mayoría, y lo mueves hacia delante o atrás desde ahí"
+      "El ajuste del marcador empieza ahora en 0, que le va bien a la mayoría, y lo mueves hacia delante o atrás desde ahí",
+      "Las rutas en grupo son más seguras: nadie en un grupo puede hacerse pasar por otro motorista, así que quitar a alguien nunca se puede volver contra un amigo, y un SOS antiguo o cancelado que se envía de nuevo ya no se muestra como nuevo, ni siquiera tras reiniciar. Los amigos con un Curveon más antiguo siguen rodando como antes",
+      "Actualizar Curveon nunca borra tus rutas guardadas, tracks GPX y salidas",
+      "Si Android cierra Curveon mientras navegas, el viaje sigue ahí: la próxima vez que abras Curveon te pregunta si quieres continuar, y la salida que estabas registrando también se puede continuar",
+      "Un fallo en el enlace con tu móvil ya no corta la conexión, y la navegación no puede bloquearse en una ruta sin giros",
+      "En las curvas de herradura la navegación te mantiene en la curva por la que vas: un punto GPS que se desvía hacia la carretera de vuelta ya no te adelanta mucho ni te da giros equivocados",
+      "Las actualizaciones se comprueban antes de instalarse: una descarga que llegó dañada se vuelve a bajar, y solo se ofrece instalar un Curveon auténtico"
     ],
     "fr": [
       "Fini les demi-tours au milieu de la route : un trajet qu'un ami partage avec toi est désormais rejoint dans son sens, tu n'es donc jamais envoyé vers un point de la route juste pour y faire demi-tour. Et si le trajet a un arrêt au bord de la route, tu repars dans le même sens jusqu'à un carrefour ou un rond-point au lieu de faire demi-tour sur la route",
@@ -125,7 +173,13 @@
       "En passant à la carte 3D, les deux flèches de l'angle de vue apparaissent à côté du bouton 3D pendant quelques secondes, pour les trouver sans connaître l'astuce. Maintiens le bouton 3D pour les faire revenir",
       "Quand tu repars peu après l'enregistrement d'une balade, la question dit maintenant qu'elle concerne la balade enregistrée : Reprendre cette balade ou Nouvelle balade",
       "Les couleurs des routes ont maintenant deux réglages, Normal et Contraste élevé, pour la carte de jour et de nuit : de nuit, Normal est un peu plus doux que le blanc éclatant des routes, et Contraste élevé les garde blanches",
-      "Le réglage du repère commence maintenant à 0, qui convient à la plupart, et tu le déplaces vers l'avant ou l'arrière à partir de là"
+      "Le réglage du repère commence maintenant à 0, qui convient à la plupart, et tu le déplaces vers l'avant ou l'arrière à partir de là",
+      "Les sorties en groupe sont plus sûres : personne dans un groupe ne peut plus se faire passer pour un autre motard, donc retirer quelqu'un ne peut jamais se retourner contre un ami, et un ancien SOS ou un SOS annulé renvoyé n'apparaît plus comme nouveau, même après un redémarrage. Les amis avec un Curveon plus ancien roulent avec vous comme avant",
+      "Une mise à jour de Curveon ne supprime jamais tes itinéraires enregistrés, tes traces GPX et tes sorties",
+      "Si Android ferme Curveon pendant que tu navigues, le trajet est toujours là : à la prochaine ouverture, Curveon te demande si tu veux continuer, et la sortie que tu enregistrais peut aussi être poursuivie",
+      "Un raté dans la liaison avec ton téléphone ne coupe plus la connexion, et la navigation ne peut plus planter sur un itinéraire sans virage",
+      "Dans les épingles, la navigation te garde sur le virage que tu prends : un point GPS qui dérive vers la route du retour ne te fait plus sauter loin devant ni ne te donne de mauvais virages",
+      "Les mises à jour sont vérifiées avant l'installation : un téléchargement arrivé abîmé est récupéré à nouveau, et seul un vrai Curveon est proposé à l'installation"
     ],
     "nl": [
       "Nooit meer keren midden op de weg: bij een rit die een vriend met je deelt, sluit je nu aan in de rijrichting, dus je wordt nooit naar een punt op de weg gestuurd alleen om daar te keren. En heeft de rit een stop langs de weg, dan rijd je in dezelfde richting door naar een kruising of rotonde in plaats van op de weg te keren",
@@ -139,7 +193,13 @@
       "Als je naar de 3D-kaart schakelt, verschijnen de twee pijlen voor de kijkhoek een paar seconden naast de 3D-knop, zodat je ze vindt zonder de truc te kennen. Houd de 3D-knop ingedrukt om ze terug te halen",
       "Als je kort na een opgeslagen rit verder rijdt, zegt de vraag nu dat het om die opgeslagen rit gaat: Die rit voortzetten of Nieuwe rit starten",
       "De wegkleuren hebben nu twee instellingen, Normaal en Hoog contrast, voor de dag- en nachtkaart: op de nachtkaart is Normaal wat zachter dan de felwitte wegen, en Hoog contrast houdt ze wit",
-      "De instelling voor de marker begint nu op 0, wat voor de meesten klopt, en je schuift hem van daaruit vooruit of achteruit"
+      "De instelling voor de marker begint nu op 0, wat voor de meesten klopt, en je schuift hem van daaruit vooruit of achteruit",
+      "Groepsritten zijn veiliger: niemand in een groep kan zich nog voordoen als een andere rijder, dus iemand verwijderen kan nooit tegen een vriend gekeerd worden, en een oude of geannuleerde SOS die opnieuw wordt verstuurd, verschijnt niet meer als nieuw, ook niet na een herstart. Vrienden met een oudere Curveon rijden mee zoals voorheen",
+      "Een update van Curveon gooit nooit je opgeslagen routes, GPX-tracks en ritten weg",
+      "Sluit Android Curveon terwijl je navigeert, dan is de rit er nog: de volgende keer dat je Curveon opent, vraagt het of je verder wilt, en de rit die je vastlegde kan ook verder",
+      "Een hapering in de verbinding met je telefoon verbreekt die niet meer, en de navigatie kan niet meer vastlopen op een route zonder afslagen",
+      "In haarspeldbochten houdt de navigatie je op de bocht die je rijdt: een GPS-positie die afwijkt naar de weg terug laat je niet meer ver vooruit springen en geeft geen verkeerde afslagen meer",
+      "Updates worden gecontroleerd voordat ze worden geïnstalleerd: een download die beschadigd aankwam wordt opnieuw opgehaald, en alleen een echte Curveon wordt aangeboden"
     ],
     "pl": [
       "Koniec z zawracaniem na środku drogi: do trasy udostępnionej przez znajomego dołączasz teraz zgodnie z jej kierunkiem, więc nigdy nie zostaniesz wysłany do punktu na drodze tylko po to, by tam zawrócić. A jeśli trasa ma postój przy drodze, jedziesz dalej w tym samym kierunku do skrzyżowania lub ronda zamiast zawracać na drodze",
@@ -153,7 +213,13 @@
       "Po przełączeniu na mapę 3D dwie strzałki kąta widoku pojawiają się przy przycisku 3D na kilka sekund, więc znajdziesz je bez znajomości sztuczki. Przytrzymaj przycisk 3D, by je przywrócić",
       "Gdy ruszasz krótko po zapisaniu przejazdu, pytanie mówi teraz, że chodzi o zapisany przejazd: Kontynuuj ten przejazd lub Zacznij nowy przejazd",
       "Kolory dróg mają teraz dwa ustawienia, Normalny i Wysoki kontrast, na mapie dziennej i nocnej: w nocy Normalny jest nieco łagodniejszy niż jaskrawobiałe drogi, a Wysoki kontrast zostawia je białe",
-      "Ustawienie znacznika zaczyna się teraz od 0, co pasuje większości, i przesuwasz go stamtąd do przodu lub do tyłu"
+      "Ustawienie znacznika zaczyna się teraz od 0, co pasuje większości, i przesuwasz go stamtąd do przodu lub do tyłu",
+      "Jazdy w grupie są bezpieczniejsze: nikt w grupie nie może już udawać innego motocyklisty, więc usunięcia kogoś nie da się obrócić przeciwko przyjacielowi, a stare lub odwołane SOS wysłane ponownie nie pojawia się jako nowe, nawet po ponownym uruchomieniu. Znajomi ze starszym Curveon jeżdżą z tobą jak dawniej",
+      "Aktualizacja Curveon nigdy nie usuwa zapisanych tras, śladów GPX i przejazdów",
+      "Jeśli Android zamknie Curveon podczas nawigacji, trasa nadal tam jest: przy następnym otwarciu Curveon zapyta, czy chcesz kontynuować, a zapisywany przejazd także można kontynuować",
+      "Chwilowy problem z połączeniem z telefonem już go nie zrywa, a nawigacja nie może się zawiesić na trasie bez zakrętów",
+      "Na serpentynach nawigacja trzyma cię na zakręcie, którym jedziesz: pozycja GPS, która odskoczy w stronę drogi powrotnej, nie przenosi cię już daleko do przodu ani nie daje złych skrętów",
+      "Aktualizacje są sprawdzane przed instalacją: pobranie, które dotarło uszkodzone, jest pobierane ponownie, a do instalacji proponowany jest tylko prawdziwy Curveon"
     ]
   },
   {

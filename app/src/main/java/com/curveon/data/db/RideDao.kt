@@ -12,6 +12,9 @@ interface RideDao {
     @Query("SELECT * FROM rides ORDER BY startMs DESC")
     fun all(): Flow<List<Ride>>
 
+    @Query("SELECT * FROM rides ORDER BY endMs DESC LIMIT 1")
+    suspend fun latest(): Ride?
+
     @Query("SELECT * FROM rides WHERE id = :id")
     suspend fun get(id: Long): Ride?
 

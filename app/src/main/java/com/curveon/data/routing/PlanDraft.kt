@@ -31,7 +31,7 @@ class PlanDraft(context: Context) {
         parseGoal(json.getJSONObject("goal")) to json.optInt("selected")
     }.getOrNull()
 
-    private fun goalJson(goal: NavigationGoal): JSONObject = when (goal) {
+    internal fun goalJson(goal: NavigationGoal): JSONObject = when (goal) {
         is NavigationGoal.Destination -> JSONObject().put("type", "destination")
             .put("name", goal.name).put("destination", pointJson(goal.destination))
             .put("stops", JSONArray(goal.stops.map(::stopJson)))
@@ -54,7 +54,7 @@ class PlanDraft(context: Context) {
             .put("name", goal.name).put("points", SavedRoutes.encode(goal.points))
     }.put("options", optionsJson(goal.options))
 
-    private fun parseGoal(j: JSONObject): NavigationGoal {
+    internal fun parseGoal(j: JSONObject): NavigationGoal {
         val options = parseOptions(j.getJSONObject("options"))
         val start = j.optJSONObject("start")?.let(::parseStop)
         return when (j.getString("type")) {

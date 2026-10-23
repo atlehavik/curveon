@@ -59,6 +59,11 @@ tablet --Bluetooth--> companion --mobile data--> relay <-- companion <--Bluetoot
 - **Everything is end-to-end encrypted** with the group key (AES-256-GCM, fresh random nonce per
   message, `groupId` + `riderId` as associated data). The relay sees ciphertext, sizes and times only.
   GCM authenticity also stops anyone without the key from injecting fake positions.
+- **Riders sign what they send** (since 2026-10-23, after a code review showed a member could send a
+  `hello` in another rider's name and so get that rider's copy of the key at the next rekey). Each rider
+  signs with an Ed25519 key made from their agreement key; a new rider's id is made from it, so nobody else
+  can send in their name. Riders from before keep their id: their agreement key is fixed at first sight, but
+  other frames in their name are taken unsigned until every app signs. See docs/groups-protocol.md, "Who sent it".
 - **Removing a rider.** Everyone in a group shares one key, so a removed rider still holds it.
   Removing means giving everyone else a new key that he cannot read:
   - Each rider has a key pair per group (X25519); the public half travels in `hello`.

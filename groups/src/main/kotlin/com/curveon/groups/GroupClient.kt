@@ -54,6 +54,13 @@ const val NUDGE_KEEP_S = 15L * 60
 /** A friend request waits this long for a rider who looks in later (and the link in it is made to last as long). */
 const val FRIEND_REQUEST_KEEP_S = 3L * 24 * 3600
 private const val CLAIM_STALE_MS = 180_000L
+private val OWN_TYPES = setOf(FrameType.CLAIM, FrameType.TRIP, FrameType.NUDGE_SEEN, FrameType.HELLO)
+/** A position this old is no use on the map (it is never kept by the relay, so only someone sending it again makes one). */
+private const val POS_MAX_AGE_MS = 5 * 60_000L
+/** The relay keeps an SOS for 12 hours; one older than that was sent again by someone else. */
+private const val SOS_MAX_AGE_MS = 12 * 3600_000L + 10 * 60_000L
+/** At most this often is the rider's own `hello` sent again because someone else put one in its place at the relay. */
+private const val HELLO_REPAIR_MS = 60_000L
 
 /**
  * One group's connection to the relay: encrypts what the rider sends, opens and checks what arrives,
@@ -93,6 +100,7 @@ class GroupClient(
   private var lastClaimSent = 0L
   private var announcedActive = true
   private var pendingSos: Payload.Sos? = null
+  private var lastHelloRepair = 0L
 
   fun start() {
     synchronized(lock) {
@@ -307,7 +315,9 @@ class GroupClient(
   private fun send(p: Payload, keep: Keep? = null): Boolean {
     val seq = maxOf(lastSeq + 1, clock())
     lastSeq = seq
-    val frame = FrameCrypto.seal(state.keys, p.type, state.riderId, PayloadCodec.encode(seq, clock(), p, state.deviceId))
+    val body = PayloadCodec.encode(seq, clock(), p, state.deviceId)
+    val plain = FrameSig.sign(body, state.signing, state.groupId, state.riderId, state.epoch, p.type)
+    val frame = FrameCrypto.seal(state.keys, p.type, state.riderId, plain)
     return transport?.send(Wire.encode(frame, keep)) == true
   }
 
@@ -316,25 +326,10 @@ class GroupClient(
   private fun incoming(text: String) {
     if (Wire.typeOf(text) == "rekey") return rekeyed(text)
     val frame = Wire.decode(text) ?: return
-    if (frame.riderId.contentEquals(state.riderId)) {
-      // One's own frames come from the rider's other devices. Only who sends the position matters.
-      if (frame.type == FrameType.CLAIM) {
-        val signed = FrameCrypto.open(state.keys, frame)?.let { PayloadCodec.decode(FrameType.CLAIM, it) } ?: return
-        (signed.payload as? Payload.Claim)?.let { otherClaimed(it.deviceId, signed.tsMs) }
-      } else if (frame.type == FrameType.TRIP) {
-        // A change the rider made on their other device is a change like any other.
-        val signed = FrameCrypto.open(state.keys, frame)?.let { PayloadCodec.decode(FrameType.TRIP, it) } ?: return
-        if (!guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device)) return
-        (signed.payload as? Payload.Trip)?.let { onEvent(GroupEvent.TripReceived(B64.encode(frame.riderId), it, signed.tsMs, mine = true)) }
-      } else if (frame.type == FrameType.NUDGE_SEEN) {
-        // Seen on the rider's other device: it can go here too.
-        val signed = FrameCrypto.open(state.keys, frame)?.let { PayloadCodec.decode(FrameType.NUDGE_SEEN, it) } ?: return
-        (signed.payload as? Payload.NudgeSeen)?.let { onEvent(GroupEvent.NudgeSeen(B64.encode(frame.riderId), it, mine = true)) }
-      }
-      return
-    }
+    if (frame.riderId.contentEquals(state.riderId)) return ownFrame(frame)
     val plain = FrameCrypto.open(state.keys, frame) ?: return
     val signed = PayloadCodec.decode(frame.type, plain) ?: return
+    if (!authentic(frame, plain, signed.payload)) return
     if (!guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device)) return
     val from = B64.encode(frame.riderId)
     when (val p = signed.payload) {
@@ -343,14 +338,19 @@ class GroupClient(
         members[from] = m
         onEvent(GroupEvent.MemberUpdated(m))
       }
-      is Payload.Pos -> onEvent(GroupEvent.Position(from, p, signed.tsMs))
+      is Payload.Pos -> if (clock() - signed.tsMs < POS_MAX_AGE_MS) onEvent(GroupEvent.Position(from, p, signed.tsMs))
       is Payload.Route -> onEvent(GroupEvent.RouteReceived(from, p))
-      is Payload.Sos -> {
+      is Payload.Sos -> if (clock() - signed.tsMs < SOS_MAX_AGE_MS && signed.tsMs > state.sosEndedAt(from)) {
         send(Payload.SosAck(from, coming = false)) // every device says it got it, so the sender sees the delivery
         onEvent(GroupEvent.SosReceived(from, p, signed.tsMs))
       }
       is Payload.SosAck -> onEvent(GroupEvent.SosAnswered(from, p.sosRiderId, p.coming))
-      Payload.SosCancel -> onEvent(GroupEvent.SosCancelled(from))
+      Payload.SosCancel -> {
+        // Remembered, so the SOS it ends is not taken as a new one if someone sends it again (after a restart too).
+        state.sosEnded(from, signed.tsMs)
+        onStateChanged(state)
+        onEvent(GroupEvent.SosCancelled(from))
+      }
       Payload.Leave -> {
         members.remove(from)
         onEvent(GroupEvent.MemberLeft(from))
@@ -369,6 +369,61 @@ class GroupClient(
           ?.let { onEvent(GroupEvent.FriendRequestReceived(from, p.id, String(it), signed.tsMs)) }
       }
     }
+  }
+
+  /** One's own frames come from the rider's other devices. Only who sends the position matters, and trips and nudges seen. */
+  private fun ownFrame(frame: Frame) {
+    if (frame.type !in OWN_TYPES) return
+    val plain = FrameCrypto.open(state.keys, frame) ?: return
+    val signed = PayloadCodec.decode(frame.type, plain) ?: return
+    if (!authentic(frame, plain, signed.payload)) {
+      // Someone else put a hello in this rider's name at the relay: put the rider's own back, for those who connect later.
+      if (frame.type == FrameType.HELLO && clock() - lastHelloRepair > HELLO_REPAIR_MS) {
+        lastHelloRepair = clock()
+        profile?.let { send(it) }
+      }
+      return
+    }
+    when (val p = signed.payload) {
+      // Taken as no newer than now: a claim from the future would otherwise win for ever (or until it is three minutes old).
+      is Payload.Claim -> otherClaimed(p.deviceId, minOf(signed.tsMs, clock()))
+      // A change the rider made on their other device is a change like any other.
+      is Payload.Trip -> if (guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device)) {
+        onEvent(GroupEvent.TripReceived(B64.encode(frame.riderId), p, signed.tsMs, mine = true))
+      }
+      // Seen on the rider's other device: it can go here too.
+      is Payload.NudgeSeen -> onEvent(GroupEvent.NudgeSeen(B64.encode(frame.riderId), p, mine = true))
+      else -> Unit
+    }
+  }
+
+  /**
+   * Whether [frame] can be taken as from the rider it names. Everyone in the group holds the group key, so that alone
+   * proves nothing; the signature does (docs/groups-protocol.md, "Who sent it"). A rider whose id belongs to their signing
+   * key must sign everything. An older app signs nothing, so its frames are taken as before, but never a `hello` with
+   * another agreement key than the one first seen from that rider: a rekey seals the new group key to it.
+   */
+  private fun authentic(frame: Frame, plain: ByteArray, payload: Payload): Boolean {
+    val own = frame.riderId.contentEquals(state.riderId)
+    val id = B64.encode(frame.riderId)
+    val known = if (own) RiderTrust(state.agreement.publicKey, state.bound) else state.trustOf(id)
+    val sig = FrameSig.read(plain, state.groupId, frame.riderId, frame.epoch, frame.type)
+    if (sig != null && !sig.valid) return false
+    val bound = sig != null && Keys.riderIdOf(sig.key).contentEquals(frame.riderId)
+    if (known?.bound == true && !bound) return false
+    // Shown to be theirs only now: an agreement key heard before that, unsigned, may have been someone else's.
+    val trusted = if (bound && known?.bound != true) RiderTrust(null, true) else known
+    var learnt = trusted
+    if (payload is Payload.Hello) {
+      val ak = trusted?.agreementPublicKey
+      if (ak != null && !ak.contentEquals(payload.agreementPublicKey)) return false
+      if (ak == null) learnt = RiderTrust(payload.agreementPublicKey, bound)
+    }
+    if (!own && learnt !== known) {
+      state.learn(id, learnt!!)
+      onStateChanged(state)
+    }
+    return true
   }
 
   private fun rekeyed(text: String) {

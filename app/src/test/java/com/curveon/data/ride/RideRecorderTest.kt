@@ -125,4 +125,22 @@ class RideRecorderTest {
         ride(30, lat)
         assertNull(recorder.resumeOffer)
     }
+
+    @Test
+    fun `after a restart the ride stored last is offered to go on with, if it was a short while ago`() {
+        clock = 10 * 60 * 60_000L
+        val stored = Ride(id = 42, title = "Before", startMs = clock - 3_600_000, endMs = clock - 10 * 60_000, distanceMeters = 30_000.0)
+        recorder.remember(stored)
+        ride(15)
+        assertEquals(42L, recorder.resumeOffer?.id)
+    }
+
+    @Test
+    fun `a ride stored long ago is a ride of its own`() {
+        clock = 10 * 60 * 60_000L
+        recorder.remember(Ride(id = 42, startMs = 0, endMs = clock - RideRecorder.RESUME_WINDOW_MS - 60_000, distanceMeters = 30_000.0))
+        ride(15)
+        assertNotNull(recorder.current)
+        assertNull(recorder.resumeOffer)
+    }
 }

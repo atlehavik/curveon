@@ -498,6 +498,8 @@
     <string name="ride_resume_title">Your last ride was saved</string>
     <string name="ride_resume_continue">Continue that ride</string>
     <string name="ride_resume_new">Start new ride</string>
+    <string name="nav_resume_title">Continue navigating?</string>
+    <string name="nav_resume_no">No thanks</string>
     <string name="rides_empty">Rides are recorded automatically once you get going.</string>
     <string name="rides_ride_again">Ride again</string>
     <string name="rides_save_to_gpx">Save to GPX</string>

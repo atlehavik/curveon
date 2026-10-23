@@ -4,6 +4,7 @@ import com.google.crypto.tink.subtle.Ed25519Sign
 import com.google.crypto.tink.subtle.Ed25519Verify
 import com.google.crypto.tink.subtle.Hkdf
 import com.google.crypto.tink.subtle.X25519
+import java.security.MessageDigest
 import javax.crypto.Cipher
 
 class KeyPair(val publicKey: ByteArray, val privateKey: ByteArray)
@@ -17,6 +18,18 @@ object Keys {
   }
 
   fun agreementKeyPairFrom(privateKey: ByteArray) = KeyPair(X25519.publicFromPrivate(privateKey), privateKey)
+
+  /**
+   * The Ed25519 key a rider signs their frames with in [groupId] ([FrameSig]). Made from their agreement key, so every
+   * device of the rider (which share that key, see [DeviceIdentity]) has the same one without anything new to store.
+   */
+  fun riderSigningKeyPair(agreementPrivateKey: ByteArray, groupId: ByteArray): KeyPair =
+    Ed25519Sign.KeyPair.newKeyPairFromSeed(Hkdf.computeHkdf("HmacSha256", agreementPrivateKey, groupId, "curveon/1 rider-sign".toByteArray(), 32))
+      .let { KeyPair(it.publicKey, it.privateKey) }
+
+  /** A rider id only the holder of [signingPublicKey] can sign for: what riders who join now get ([GroupState.join]). */
+  fun riderIdOf(signingPublicKey: ByteArray): ByteArray =
+    MessageDigest.getInstance("SHA-256").digest("curveon/1 rider".toByteArray() + signingPublicKey).copyOf(16)
 }
 
 /** One rider's copy of the new group key, readable only with that rider's X25519 private key. */

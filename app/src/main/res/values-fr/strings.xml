@@ -358,7 +358,7 @@
     <string name="gpx_delete_group">Supprimer le groupe</string>
     <string name="gpx_move_to_group">Déplacer vers un groupe</string>
     <plurals name="gpx_delete_group_text">
-        <item quantity="one">Sa trace est supprimée aussi. Utilise Dégrouper pour la garder.</item>
+        <item quantity="one">%d trace est supprimée aussi. Utilise Dégrouper pour la garder.</item>
         <item quantity="many">Ses %d traces sont supprimées aussi. Utilise Dégrouper pour les garder.</item>
         <item quantity="other">Ses %d traces sont supprimées aussi. Utilise Dégrouper pour les garder.</item>
     </plurals>
@@ -471,7 +471,7 @@
     <string name="preview_remove_stop">Retirer l’étape</string>
     <string name="remove_point">Retirer le point</string>
     <plurals name="preview_includes_ferries">
-        <item quantity="one">Comprend un ferry.</item>
+        <item quantity="one">Comprend %d ferry.</item>
         <item quantity="many">Comprend %d ferries.</item>
         <item quantity="other">Comprend %d ferries.</item>
     </plurals>
@@ -484,7 +484,7 @@
     <string name="preview_gravel_after">le premier après %1$s</string>
     <string name="preview_gravel_amount">%1$s de gravier</string>
     <plurals name="preview_ferries">
-        <item quantity="one">ferry</item>
+        <item quantity="one">%d ferry</item>
         <item quantity="many">%d ferries</item>
         <item quantity="other">%d ferries</item>
     </plurals>
@@ -504,6 +504,8 @@
     <string name="ride_resume_title">Dernière balade enregistrée</string>
     <string name="ride_resume_continue">Reprendre cette balade</string>
     <string name="ride_resume_new">Nouvelle balade</string>
+    <string name="nav_resume_title">Reprendre la navigation ?</string>
+    <string name="nav_resume_no">Non merci</string>
     <string name="rides_empty">Les balades sont enregistrées automatiquement dès que tu roules.</string>
     <string name="rides_ride_again">Refaire</string>
     <string name="rides_save_to_gpx">Enregistrer en GPX</string>
@@ -534,7 +536,7 @@
         <item quantity="other">%d trajets</item>
     </plurals>
     <plurals name="planned_delete_group_text">
-        <item quantity="one">Le groupe et son trajet sont supprimés.</item>
+        <item quantity="one">Le groupe et %d trajet sont supprimés.</item>
         <item quantity="many">Le groupe et ses %d trajets sont supprimés.</item>
         <item quantity="other">Le groupe et ses %d trajets sont supprimés.</item>
     </plurals>

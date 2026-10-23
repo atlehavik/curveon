@@ -496,6 +496,8 @@
     <string name="ride_resume_title">Forrige tur blev gemt</string>
     <string name="ride_resume_continue">Fortsæt den tur</string>
     <string name="ride_resume_new">Start ny tur</string>
+    <string name="nav_resume_title">Fortsæt navigationen?</string>
+    <string name="nav_resume_no">Nej tak</string>
     <string name="rides_empty">Ture optages automatisk, så snart du kører.</string>
     <string name="rides_ride_again">Kør igen</string>
     <string name="rides_save_to_gpx">Gem i GPX</string>

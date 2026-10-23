@@ -15,6 +15,15 @@ Commands assume the device is connected over USB. With both connected, pick one 
 - [ ] Demo-SOS (DEV) eller en SOS fra kameraten: det skal pipe S-O-S (tre korte, tre lange, tre korte) på alarmvolumet til du svarer eller avbryter, og ikke spille telefonens alarmmelodi.
 - [ ] Bytt til 3D-kartet: to piler (opp/ned) dukker opp ved 3D-knappen i noen sekunder og forsvinner igjen; hold inne 3D-knappen for å få dem fram. Pil opp = mer fugleperspektiv.
 
+## 2026-10-23 — Fra kodegjennomgangen: signerte grupper, trygg oppdatering, fortsett navigering (1.2.4)
+
+- [ ] Pixelen (release, oppdateres fra GitHub): etter oppdateringen er alle lagrede ruter, GPX-spor og turer der som før.
+- [ ] Gruppetur med X7/Pixel og en kamerat på en **eldre** Curveon (1.2.3): begge ser hverandre på kartet, SOS og
+  «Jeg kommer» går fram begge veier, og admin kan fjerne en tredje rytter uten at noen av dere mister gruppa.
+- [ ] Naviger et stykke på Pixelen, sveip Curveon bort fra «Nylige» (eller la den ligge i bakgrunnen til Android
+  lukker den), åpne igjen: «Fortsette navigeringen?» med målet. «Fortsett» planlegger turen fra der du er,
+  «Nei takk» glemmer den. Lukk Curveon med «Lukk Curveon» i varselet: da spør den ikke.
+
 ## 2026-10-23 — Ingen vending midt i veien, markør på veien, SMS fra fullkart, blå deling, venneforespørsel i gruppe (1.2.4)
 
 - [ ] Venneforespørsel fra en gruppe, med to ekte enheter (X7 og Pixelen er samme rytter, så bruk en annen telefon, f.eks. kameratens,
@@ -89,7 +98,7 @@ kastet X7 ruter fra venner stille, fordi den var bygget før den funksjonen kom)
 Trenger to telefoner med Curveon som er venner (emulatoren har ingen venner).
 
 - [ ] **Pixel → en venn:** Planlegg en tur til et sted, Del → **Del med venner**, kryss av en venn, Send. Hos vennen (innen
-  ti minutter, eller med en gang hvis vennen åpner Venner): «X delte en rute», med «Den er din egen kopi …» og Kjør nå / Lagre / Ignorer.
+  ti minutter, eller med en gang hvis vennen åpner Venner): «X delte en rute», med «Den er din egen kopi …» og Kjør / Lagre i delt / Ignorer.
 - [ ] **Under kjøring:** ankomsttiden → Rute → Del → Del med venner gjør det samme for turen du kjører.
 - [ ] **X7 via Companion:** det samme fra nettbrettet (Companion på Pixel er oppdatert med dette; en eldre Companion gjør ingenting).
 - [ ] Ser vennen deg fortsatt på kartet etter at du har sendt den noen turer?
@@ -108,9 +117,9 @@ Trenger to telefoner med Curveon som er venner (emulatoren har ingen venner).
 
 ## 2026-10-22 — Rute-knappen i ankomstlinjen (1.2.2)
 
-- [ ] **Pixel:** Mens du navigerer til et sted: trykk på ankomsttiden (folder seg ut som før), så på den nye **Rute**-knappen. Med en
-  gruppetur på: **Del** sender ruten til gruppen, og neste gang står det «Delt». Uten gruppe: teksten sier at du må starte en
-  gruppetur, og Del åpner Gruppetur.
+- [ ] **Pixel:** Mens du navigerer til et sted: trykk på ankomsttiden (folder seg ut som før), så på den nye **Rute**-knappen, så **Del**.
+  Med en gruppetur på: «Del med gruppen» sender ruten til gruppen, og neste gang står det «Delt med gruppen». Uten gruppe:
+  «Start en gruppetur først» åpner Gruppetur. «Del med venner» står der i begge tilfeller.
 
 ## 2026-10-22 — Ni nye språk (1.2.2)
 
@@ -155,7 +164,7 @@ to ekte enheter er ikke prøvd. Det nye reléet (siste posisjon i minnet) er ute
   Kjør eller gå litt med Pixel-en med Curveon åpen. Innen et par minutter skal X7 vise vennen med «Deler posisjonen sin · nå/… min siden»
   og en markør på kartet, også uten noen gruppe.
 - [ ] **Slå av igjen** på Pixel: markøren og «Deler posisjonen sin» forsvinner fra X7 innen et par minutter.
-- [ ] **Grønn prikk** på Venner-knappen mens en gruppe eller en venn får posisjonen din, og ingen prikk når ingen gjør det.
+- [ ] **Blå prikk** på Venner-knappen også mens bare en venn (uten gruppe) får posisjonen din, og ingen prikk når ingen gjør det.
 - [ ] **Batteri:** en times kjøring med deling til én venn på. Batteribruken skal være omtrent som uten (én åpen forbindelse, en posisjon i minuttet).
 
 ## 2026-10-22 — Grupper og venner bruker alltid relay.curveon.no (1.2.2)
@@ -172,8 +181,8 @@ Serveren er oppe (`https://relay.curveon.no/health` svarer `ok`), og innstilling
 Telefonsiden er prøvd i emulatoren (knappene, «venter på nettbrettet», «Companion deler ikke», «Åpne Companion»);
 selve overføringen over Bluetooth og mottaket på nettbrettet kan ikke prøves der.
 
-- [ ] Pixel (Curveon + Companion, Start sharing) og X7 koblet: planlegg en tur på Pixel, trykk nettbrett-ikonet i
-      forhåndsvisningen. Pixel sier «Ligger nå på nettbrettet»; X7 viser «Tur fra telefonen» med Kjør / Senere, og
+- [ ] Pixel (Curveon + Companion, Start sharing) og X7 koblet: planlegg en tur på Pixel, trykk Del-ikonet i
+      forhåndsvisningen → «Send til nettbrettet». Pixel sier «Ligger nå på nettbrettet»; X7 viser «Tur fra telefonen» med Kjør / Senere, og
       turen ligger under GPX og turer → Planlagte. «Kjør» åpner den i forhåndsvisningen med samme linje.
 - [ ] Det samme fra en planlagt tur (⋮ → Send til nettbrettet), en kjørt tur (nettbrett-knappen ved Lagre) og et
       GPX-spor (⋮ → Send til nettbrettet).
@@ -190,7 +199,7 @@ selve overføringen over Bluetooth og mottaket på nettbrettet kan ikke prøves 
 
 - [ ] Pixel, portrett og landskap: Venner → Meg → velg eller ta et bilde. «Avbryt» og «Bruk dette bildet»
       er helt synlige nederst (feilen var at vinduet havnet under kamerahullet), og ingen stripe av kartet
-      skimtes. Se også at andre vinduer som spretter opp (Kartpunkt, «Forkast tur?») ikke er kuttet nederst.
+      skimtes. Se også at andre vinduer som spretter opp (Kartpunkt, «Forkaste turen?») ikke er kuttet nederst.
 - [ ] Etter et par sekunder dukker Vanlig / Klistremerke / Neon / Fart opp (første gang kan Play-tjenester
       bruke litt tid på å hente modellen; uten nett vises bare bildet). Prøv et bilde av deg med hjelm/uten,
       og se at utklippet følger hodet. Lagre og se at runden i profilen og på kartet ser bra ut.
@@ -216,7 +225,7 @@ selve overføringen over Bluetooth og mottaket på nettbrettet kan ikke prøves 
 
 - [ ] Plan a trip with a route point, tap it → Change place → Pick on map → tap: the bar offers
       Route point and Stop. Route point keeps it a white dot, Stop makes it a numbered stop. Same
-      for "Add stop" before a point. Pixel portrait and X7.
+      for "Add stop before" on a point. Pixel portrait and X7.
 
 - [ ] Pixel, portrait: Settings, tap the tabs from left to right up to Help: the open tab's name
       shows in full each time, also Help at the far right (in Norwegian too).
@@ -257,7 +266,7 @@ Companion og Curveon («Denne enheten») ber nå om lov til å sende SMS: godta 
 
 - [ ] Telefon → Favoritter/Kontakter/Nylige: trykk en person. Dialogen viser navnet, numrene (mobil valgt), Ring, SMS og Avbryt.
 - [ ] SMS: si en kort melding i hjelmen, se teksten på kortet «SMS til …», trykk Send. Kommer SMS-en fram, og ligger den i Meldinger-appen på Pixel som sendt?
-- [ ] «Si igjen» på SMS-kortet starter opptak på nytt, X avbryter uten å sende.
+- [ ] «Si det igjen» (runde pil-knappen) på SMS-kortet starter opptak på nytt, X avbryter uten å sende.
 - [ ] Ring fra dialogen ringer det valgte nummeret (prøv en kontakt med to numre).
 
 ## 2026-10-21 — Les opp meldinger
@@ -266,7 +275,7 @@ Companion og Curveon («Denne enheten») ber nå om lov til å sende SMS: godta 
 
 ## 2026-10-21 — SOS-knappen utløses ikke lenger av å skli
 
-- [ ] Group ride-fanen: legg tommelen på SOS-knappen og dra opp/ned (scroll) eller ut av knappen. Fremdriftsbaren skal nullstilles og **ingen** nedtelling starte. Holdes den i ro i tre sekunder skal nedtellingen på 10 starte som før.
+- [ ] Venner → Gruppetur: legg tommelen på SOS-knappen og dra opp/ned (scroll) eller ut av knappen. Fremdriftsbaren skal nullstilles og **ingen** nedtelling starte. Holdes den i ro i tre sekunder skal nedtellingen på 10 starte som før.
 
 ## 2026-10-20 — Friends and groups live in Curveon, the phone is the way to the internet (not released, in 1.2.2)
 
@@ -287,7 +296,7 @@ code and hands over what it scans. The tablet uses its own internet if it has so
 
 Only the logic is tested (unit tests); the question card hasn't been seen with real riding.
 
-- [ ] Ride a few km (Rides on, in Settings), stop for 5+ minutes: the ride is finished in the ride log (and its GPX copy made if auto-save is on), the red dot is gone.
+- [ ] Ride a few km ("Save new rides" on, in GPX & rides → Rides), stop for 5+ minutes: the ride is finished in the ride log (and its GPX copy made if auto-save is on), the red dot is gone.
 - [ ] Ride on within two hours: a card "Continue the ride?" with Continue / New ride appears at the top of the map after a few seconds of riding. Check it doesn't cover the arrival box, speed card or road card on the X7 and the Pixel, while navigating too.
 - [ ] Continue: the ride log shows one ride (no new one), the distance grows, and with auto-save the GPX group has one track for the whole ride, not two.
 - [ ] New ride (or ignore it for 30 s): the card goes away, and the earlier ride is left as it was.
@@ -300,7 +309,6 @@ Installed on the X7, but no gravel showed near the desk, so the new look hasn't 
 - [ ] Ride or pan to a gravel road (zoom 11 or closer) in Settings → Display → Road surfaces = Dashed: the road itself should look dashed, same colour and no thicker than the neighbouring roads, brown for rough ground. Check the gaps don't show a pale line over forest.
 - [ ] Same with Coloured: orange gravel, purple rough ground, as the route. Also on the night map.
 - [ ] With Dashed or Coloured on, place names (towns, villages) lie above the gravel dashes, the route and GPX tracks, as they do with Off. Dashes should look thinner than the main road and the thin country road, e.g. at Helland.
-- [ ] Day map is high contrast without the old switch; small roads stay dark grey.
 
 ## 2026-10-19 — Group rides (not released, no version bump yet)
 
@@ -313,23 +321,21 @@ Set up a test group without a second rider (the relay and the simulated riders l
 link (`curveon://join#...`) and keeps three riders circling the point. `adb -s <phone> reverse tcp:8787 tcp:8787`, then
 open the link on the phone: `adb -s <phone> shell "am start -a android.intent.action.VIEW -d '<link>'"`.
 
-- [ ] **Pixel + X7 together.** Install `:companion:installDebug` on the Pixel and keep the X7 on the build with groups. Everything about groups (start a group, name and picture, invite, data saver) is done in Curveon on the X7; the companion only shows the group's status, scans a QR code and opens invite links. On the X7: start a group. On the Pixel, scan its QR code (companion: Group ride → Scan a QR code) or open the link: the X7 should then show the group's riders, and the X7's position should show up for the others.
-- [ ] **After restarting Curveon** (force-stop, start) with a group active: the group button and the riders are back within about 10 s. Seen once on the X7 (as own phone) that they were *not* back after a restart although the group was stored (`shared_prefs/groups.xml` held it): if it happens again, pull `adb logcat -s GroupHub` and say when.
-- [ ] **SOS sent from the dialog:** the red "SOS sent" card sits at the top of the dialog (it was behind the dialog before this fix) with "Received by n of m" counting up, and "Cancel SOS" works.
-- [ ] **Overlap (CLAUDE.md):** the group button is in the main menu (rail) between Phone and Settings, so the map button column is as before. Check on the Pixel (portrait: six buttons along the bottom; landscape: six down the side with the map toggle still reachable) and the X7 landscape. The dialog opens in the panel area like the Phone one.
-- [ ] **Curveon alone on a phone (no companion installed):** a whole group ride must work: Group → Settings → relay address, start a group, invite with the QR or Share link, your name and picture, scan or open someone else's invite, SOS. Nothing may say you need the companion app.
-- [ ] **Your picture, from the camera:** Group → Your name in the group → Take a picture: the camera opens (the app asks for the camera permission first, as it holds it for scanning), then the picture comes back in a cutting window: drag and zoom with two fingers until your face is in the circle, Use this picture, and the big round preview shows exactly what the others will see. Save. Also try Choose from pictures and Remove. Seen on the X7: choosing a picture, cutting it (dragging) and the preview; not seen: the camera path and two-finger zoom.
-- [ ] **Companion: scanning a QR code** (Group ride → Scan a QR code): same as in Curveon; joining from the phone's camera is for a tablet whose camera is out of reach.
-- [ ] **Scanning a QR code in Curveon** (Group → Scan a QR code): the camera permission is asked only now. Hold the camera in front of an invite's QR (from the other device's Group → Invite riders) and then in front of the "My other device" one, at arm's length and closer: it should read both within a second or two and join. Seen so far: the camera opens without errors on the X7 (rear camera 0) and a QR drawn and read in unit tests, also turned and small; not seen: a code held in front of the real camera. Say if a dense code is hard to read and I will raise the picture size.
-- [ ] **Your own picture:** Group → Your name in the group → Choose a picture of you (the system photo picker, no permission asked). The marker on the map and the row in the group list show it round; the others see it after a few seconds. Try a portrait photo taken sideways (it must be turned right) and remove it again.
+- [ ] **After restarting Curveon** (force-stop, start) with a group active: the riders are back on the map (and the blue dot on the Friends button) within about 10 s. Seen once on the X7 (as own phone) that they were *not* back after a restart although the group was stored (`shared_prefs/groups.xml` held it): if it happens again, pull `adb logcat -s GroupHub` and say when.
+- [ ] **SOS sent from the dialog:** the red "SOS sent to the group" card sits at the top of the dialog (it was behind the dialog before this fix) with "Received by n of m" counting up, and "Cancel SOS" works.
+- [ ] **Overlap (CLAUDE.md):** the Friends button is in the main menu (rail) between Phone and Settings, so the map button column is as before. Check on the Pixel (portrait: six buttons along the bottom; landscape: six down the side with the map toggle still reachable) and the X7 landscape. The dialog opens in the panel area like the Phone one.
+- [ ] **Curveon alone on a phone (no companion installed):** a whole group ride must work: Friends → Group ride → Start a group, Invite riders (QR or Share link), your name and picture (Friends → Me), Scan a QR code or open someone else's invite, SOS. Nothing may say you need the companion app.
+- [ ] **Your picture, from the camera:** Friends → Me → Take a picture: the camera opens (the app asks for the camera permission first, as it holds it for scanning), then the picture comes back in a cutting window: drag and zoom with two fingers until your face is in the circle, Use this picture, and the big round preview shows exactly what the others will see. It saves by itself ("Saved"). Also try Choose from pictures and Remove. Seen on the X7: choosing a picture, cutting it (dragging) and the preview; not seen: the camera path and two-finger zoom.
+- [ ] **Scanning a QR code in Curveon** (Friends → Group ride → Scan a QR code): the camera permission is asked only now. Hold the camera in front of an invite's QR (from the other device's group → Invite riders), and with Friends → Me → Scan code from my other device in front of the other device's "Show code for my other device" QR, at arm's length and closer: it should read both within a second or two and join. Seen so far: the camera opens without errors on the X7 (rear camera 0) and a QR drawn and read in unit tests, also turned and small; not seen: a code held in front of the real camera. Say if a dense code is hard to read and I will raise the picture size.
+- [ ] **Your own picture:** Friends → Me → Choose from pictures (the system photo picker, no permission asked). The marker on the map and the row in the group list show it round; the others see it after a few seconds. Try a portrait photo taken sideways (it must be turned right) and remove it again.
 - [ ] **Only one device sends your position:** with Curveon on both the tablet and the phone in the same group (as one rider, see below), drive with one: the other shows "Your position is shared from your other device" with "Use this device"; pressing it on the other moves the sending there (and the first one then shows the note). A device left behind with the app open takes over by itself after three minutes if the other has gone quiet.
-- [ ] **One rider on two devices:** in a group, Group → "My other device" on the tablet shows a QR; open it with the phone camera (or `adb shell am start -a android.intent.action.VIEW -d '<link>'`) on the phone running Curveon: the others must see one rider, not two, and a position sent from either device reaches them. The code stops working after 15 minutes.
+- [ ] **One rider on two devices:** in a group, Friends → Me → Show code for my other device on the tablet; on the phone running Curveon, Friends → Me → Scan code from my other device (or `adb shell am start -a android.intent.action.VIEW -d '<link>'`): the others must see one rider, not two, and a position sent from either device reaches them. The code stops working after 15 minutes.
 - [ ] **SOS from someone else** is a small red dialog (not full screen): "Drive there" starts a route to them, "Ignore" closes it, and it says how many are on the way. The alarm stops when you do either.
 - [ ] **Tunnel / no coverage:** drive into a tunnel or switch the phone to flight mode: the group says "No contact with the group", the position is sent once when coverage is back, and an SOS made without coverage goes out when it returns.
 - [ ] **Battery:** one hour of riding with a group active, phone screen off: compare with the same ride without a group (the phone uses the radio every 5 s; data saver 15 s).
 - [ ] **Invite links with both apps on one phone:** `curveon://join` is handled by both Curveon and the companion, so Android asks which to use. Pick the companion when it is paired with a tablet, otherwise Curveon.
 - [ ] **Samsung/Xiaomi-type phones** (not the Pixel) may kill the companion in the background: if a group goes quiet on someone's phone, note the model.
-- [ ] **Not built yet, so do not look for it:** sharing a route to the group from the route screens, and a notification for SOS when Curveon is not open on the phone.
+- [ ] **Not built yet, so do not look for it:** a notification for SOS when Curveon is not open on the phone.
 
 ## 2026-10-19 — Route colour, pruned via points, time to the next stop (1.2.2)
 
@@ -337,14 +343,13 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
 - [ ] Roundabout in the turn card (demo ride past one): three arrows turning against the clock, the exit number clear of the arrowheads. In a left-hand country (e.g. Britain, if its map is on the device) they turn with the clock.
 - [ ] 3D map while riding: the arrow sits a bit lower than before without touching the cards at the bottom (also on the phone in portrait and landscape); the default tilt is steeper (55° instead of 50°; if you have set a tilt before, yours is kept).
 - [ ] Add several stops while riding (also by tapping in the map, and a fuel station), with the road style Fastest: every stop is on the route (the line goes to each one, also a short detour), the numbers follow the order you ride them, and "stop reached" comes only when you are at the stop. Say if any stop is still passed at a distance: pull `navtrace` and send the `E,…addStop` lines.
-- [ ] Convert a GPX track to a route (GPX list → make a route): the line is cyan, not green. Same when riding a track or a logged ride.
+- [ ] Convert a GPX track to a route (GPX list → cyan ride button → Convert to adjustable route): the line is cyan, not green. Same when riding a track or a logged ride.
 - [ ] After converting, wait a minute or two without touching anything, then open the route menu: fewer stops than before? Pull the log and look for the pruned count: `adb logcat -d -s Curveon | grep Pruned` ("N -> M via points"). Edit the trip (drag, add a stop) while it works: nothing should jump or be lost.
-- [ ] Arrival box (demo ride with a stop and a fuel suggestion): folded = arrival time, and orange km only when there is a stop on the way (nothing extra otherwise); folded out = km and time to the destination, a thin line, then each stop (name, then km and time in orange, same columns), a small red cross on each stop asks "Delete <stop>?" (not on a GPX track's stops), more stops below with lines between; tap the fuel chip: a dialog asks "Go to <station>?", Yes adds it as a stop. Check phone portrait and landscape, and the tablet, with the speed card wide (over 100 km/h).
+- [ ] Arrival box (demo ride with a stop and a fuel suggestion): folded = arrival time, and under it the arrival time at the next stop, smaller in orange, only when there is a stop on the way (nothing extra otherwise); folded out = km and time to the destination, a thin line, then each stop (name, then km and time in orange, same columns), a small red cross on each stop asks "Delete <stop>?" (not on a GPX track's stops), more stops below with lines between, then the fuel chip, Add stop and Route; tap the fuel chip: a dialog asks "Go to <station>?", Yes adds it as a stop. Check phone portrait and landscape, and the tablet, with the speed card wide (over 100 km/h).
 
 ## 2026-10-18 — Fuel stop on a demo ride, trip bar at speed, stale road number (1.2.2)
 
-- [ ] Demo ride on the Pixel (portrait), pass 100 km/h: the arrival box top left keeps its × visible; folded it shows only the arrival time and ×; fold it out with a fuel chip showing: line 2 distance + time left, then next stop, fuel and Add stop each on its own line, left-aligned, nothing overlapping (the road card moves down with it).
-- [ ] Tap the fuel chip: a numbered orange stop appears on the station, no "A" dot where you are; the route menu lists it (without a ×, a track's stops can't be taken out one by one). Say if the route to the station looks wrong.
+- [ ] Tap the fuel chip and answer Yes: a numbered orange stop appears on the station, no "A" dot where you are; the route menu lists it (without a ×, a track's stops can't be taken out one by one). Say if the route to the station looks wrong.
 - [ ] End the demo ride, ride/stand elsewhere (not near the E18): the E18 card is gone or shows the road you are on.
 
 ## 2026-10-18 — Add stop that doesn't redraw the route (1.2.2)
@@ -360,51 +365,40 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
 
 ## 2026-10-18 — Place names on top, thinner road edge (1.2.2)
 
-- [ ] Online map AND downloaded map, normal and high contrast, several zoom levels (10–16): no road, gravel dash or tarmac line runs over a place name. Online labels were under the overlay lines before.
-- [ ] High contrast, zoomed out: no road runs through a place name; the white halo hides what is under it.
-- [ ] Normal day map in sun: is the thin grey edge (#808080, 1 px) around white roads enough, or too weak now? Say which way to go.
+- [ ] Online map AND downloaded map, day and night map, several zoom levels (10–16), also zoomed out: no road, gravel dash or tarmac line runs over a place name. Online labels were under the overlay lines before.
 
 ## 2026-10-18 — Road names beside roads, high contrast while navigating, music player stays put (1.2.2)
 
 - [ ] Road names sit beside the road at zoom 15+, all from the same zoom; readable and not too far from the road (also on wide roads)?
-- [ ] High contrast: place names (white halo) readable when zoomed out a bit.
-- [ ] Day map, normal map setting: starting navigation turns on high contrast, stopping puts it back.
+- [ ] Day map: place names (dark text on a light halo) readable when zoomed out a bit.
 - [ ] Portrait, full-screen map, music icon, while navigating: tap the icon. The player opens on the same height, beside the turn card, not above it.
 - [ ] The road number in the turn card (38 dp) is readable at a glance.
 
 ## 2026-10-18 — Road card size, one-sided speed signs, wider roundabout ring (1.2.2)
 
-- [ ] Settings → Display → Road info size: Large and Extra large make the road number, priority and give way signs bigger. Check it doesn't touch the speed card or the trip bar (Pixel landscape, portrait).
-- [ ] High contrast, zoomed far out and in: small roads dark grey at every level, none white.
 - [ ] A speed sign stands on the right of the road only, where the limit changes.
-- [ ] Roundabout icon: the number sits clear of the arrows; is the size right?
 
 ## 2026-10-18 — Speed signs on the map, stop alert, roundabout icon, road info without a map (1.2.2)
 
-- [ ] Pixel/X7, navigating a route with speed limit changes (a road with NVDB limits): a speed sign stands on each side of the road where the limit changes (not where it stays), within ~1 km ahead; zoom 13+.
 - [ ] A trip with a stop on the way: reaching it (30 m) shows a "Reached <name>" banner for 8 s and plays the arrival sound (or says the name with spoken navigation); tap closes it. Check it doesn't fire again, and not for the destination.
-- [ ] Navigating: the arrival box shows time and km left folded, and h:mm left when tapped. A roundabout shows two big arrows with the exit number inside; readable?
 - [ ] Hold a finger on a road in a country whose map is not downloaded (e.g. abroad): the road card says to download the map for <country>.
-- [ ] High contrast: the dark grey (#707070) at several zoom levels; the same grey everywhere; main roads yellow with black edge.
 
 ## 2026-10-18 — Road card place, small roads on the day map, night arrow (1.2.2)
 
-- [ ] X7 in bright daylight: Settings → Display → High contrast on (map on Day or Auto in daytime). Dark grey roads with black edges and yellow main roads: easy enough to see? Say if the grey should be darker/lighter or the edge wider. Paths and tracks go mid-grey in this mode.
-- [ ] X7 in bright daylight (day map): the small white roads now have a dark edge; are they easy enough to see? Say if the edge should be darker or wider, or if the grey paths/tracks need the same.
+- [ ] X7 in bright daylight, day map (Settings → Display → Map: Day, or Auto in daytime): grey small roads (Settings → Display → Roads: Grey or Dark grey) and yellow main roads with a dark edge: easy enough to see? Say if the grey should be darker/lighter or the edge wider. Paths and tracks are a lighter grey.
 - [ ] Night map while navigating: the arrow has a white edge and a light halo; clear enough on the dark map?
-- [ ] Road card (road number / priority sign): under the speed card in portrait and in the dashboard; centred at the top only on the full-screen map in landscape. Check it doesn't meet the trip bar on the Pixel in landscape.
 
 ## 2026-10-18 — Calmer navigation cards, call card on the dashboard (1.2.2)
 
 - [ ] Pixel (Curveon on the phone itself): ring it and tap Answer on Curveon's call card. It must answer (if not: `adb logcat -s PhoneLink` and look for "Call action"). Never tried with a real call.
 - [ ] Answer a call with the dashboard showing (not full-screen map): a call card with Hang up and Speaker sits at the top of the card column, no green icon over the map. Full-screen map: the green icon is still there.
 - [ ] Full-screen map, music playing: a small cover icon bottom right; tap opens the player, tap its cover (or wait 10 s) folds it. Check the map buttons and the turn card don't collide, open and folded.
-- [ ] Navigating: the arrival box shows only the time; tap shows km and time left. The turn card is narrow, tap shows the words; a roundabout shows the exit number in its corner.
+- [ ] Navigating: the turn card is narrow, tap shows the words.
 - [ ] Settings → Display → Speed limit sign: Large and Extra large grow over the speed card's top and bottom without the card growing; nothing gets cut off at the screen edge (also with a speed camera or altitude line under it).
 
 ## 2026-10-18 — Faster map downloads, next country starts while the last one finishes (1.2.2)
 
-- [ ] Pixel: Settings → Data → add a mid-sized country (e.g. Denmark) on wifi: it should download clearly faster than before (the PC test went from 46 s to 14 s for 96 MB). Note the time and the speed on a phone hotspot too.
+- [ ] Pixel: Settings → Maps & data → add a mid-sized country (e.g. Denmark) on wifi: it should download clearly faster than before (the PC test went from 46 s to 14 s for 96 MB). Note the time and the speed on a phone hotspot too.
 - [ ] Pixel: queue two or three countries. When the first map is done its row shows its own bar for routing/search while the second map already downloads; both can be cancelled separately. Check the app doesn't run out of memory (`adb logcat -s AndroidRuntime`) and that the map of country 1 opens while country 2 downloads.
 - [ ] Pixel: cut the connection halfway (airplane mode on) while a country downloads: the error shows, partial files are cleaned, and the next try works.
 
@@ -420,7 +414,7 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
 - [ ] Pixel: plan an adventure: Tur 1 shows at once with its time and km, and a bold yellow "Første forslag. Leter etter en bedre tur …" under it while it keeps looking; the first trip should be near the asked time (before it could be far short). Better trips appear as Tur 2, 3 beside it.
 - [ ] Pixel: draw an adventure area: the time button says "Ingen grense" (grey) from the start. Plan it: trips come with their own times (a long area can give 8-10 h); pick a time on the button and it limits the trips as before; pick "Ingen grense" again to go back. Check how often a no-limit trip strays outside the drawn area (it did for 2 of 4 variants in the PC test).
 - [ ] Pixel: Juster ruten → Endre i kartet: the padlock is locked every time you enter, also after unlocking it on an earlier edit.
-- [ ] While riding, tap the map for a new stop: the Hjelpepunkt button in the "Stopp på veien, eller nytt mål?" bar is white with black text and stands out from the map.
+- [ ] While planning (not riding), tap the map for a new point: the bar "Stopp på veien, eller nytt mål?" has Hjelpepunkt (white with black text, stands out from the map), På veien and Nytt mål, and a ✕ to drop a mistaken tap. Check it fits the Pixel in portrait. (While riding, a tapped place is simply added as a stop.)
 
 ## 2026-10-17 — Fuel gauge setup: tank twice, engine off (1.2.2)
 
@@ -437,11 +431,11 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
 
 ## 2026-10-17 — Progress when making a GPX track adjustable from the ride sheet (1.2.2)
 
-- [ ] GPX and trips → GPX: ⋮ ... ride menu → Kjør GPX herfra, then tap the adjust (EditRoad) icon in the ride sheet header: the sheet shows "Konverterer …" in cyan above the options until the route appears.
+- [ ] GPX og turer → GPX: cyan ride button → Kjør GPX herfra, then tap the adjust (EditRoad) icon «Juster som en rute» in the ride sheet header: the sheet shows "Lager rute av <navn>…" in cyan above the options until the route appears.
 
 ## 2026-10-17 — Speed cameras only when zoomed in (1.2.2)
 
-- [ ] Settings → Display → Map layers: Speed cameras on. Zoomed out over a city (e.g. Bergen) no red dots; zoom in to where houses appear and they show.
+- [ ] Settings → Display → On the map: Speed cameras on. Zoomed out over a city (e.g. Bergen) no red dots; zoom in to where houses appear and they show.
 
 ## 2026-10-17 — Select buttons stay put in Trips and Planned (1.2.1)
 
@@ -450,11 +444,6 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
 
 ## 2026-10-17 — Gravel colours, slimmer dashes, DEMO tab, fuel gauge setup
 
-- [ ] Settings → Display → Road surfaces: pick Yellow, then Green. On the light map and on the dark map
-  the gravel dashes are yellow (and the soft roads orange-red) / green (soft roads amber), and the
-  little samples in Settings match what the map shows (they follow the map theme).
-- [ ] Plan or ride a route over gravel roads: the dashes on top of the blue route are slim, the blue
-  line is easy to follow between and around them; GPX tracks too.
 - [ ] Settings → Navigation → Demo ride on, start a navigation: a clear amber DEMO tag sits right under the rider arrow
   and follows it. Check it covers nothing (phone upright too). It goes when
   the demo ride is off or navigation stops.
@@ -483,19 +472,17 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
 - [ ] In the GPX list, tap the cyan ride button: a menu with "Kjør GPX herfra" (as before) and
   "Konverter til justerbar rute". Both show a progress message while they work; converting
   TET N-01 takes ~15 s. The route should now follow the track everywhere (no red stripes;
-  measured 0 % of the track off the route, was 50 %), with a few hundred white dots.
+  measured 0 % of the track off the route, was 50 %), with white route points along it (fewer after a minute or two, see the 2026-10-19 check).
 
 ## 2026-10-17 — Better GPX → route, route points, cancel a tap
 
 - [ ] Make TET N-01 Øyermoen–Blåhø into a route ("Juster som en rute"). It now adds extra points
   where the track takes a side road the router would skip (takes a bit longer to appear). Check
   the route follows the track's small roads, and that it doesn't need manual fixing.
-- [ ] While adjusting a route, tap a road with "+ Stopp": the bar now has Hjelpepunkt (white dot),
-  På veien and Nytt mål, and a ✕ to drop a mistaken tap. Check it fits the Pixel in portrait.
 
 ## 2026-10-17 — GPX track or ride as a route
 
-- [ ] Open a GPX track (GPX → track → follow/preview) and tap the new "Change it like a route"
+- [ ] Open a GPX track (GPX → cyan ride button → Ride GPX from here) and tap the "Change it like a route"
   button next to the reverse arrow. It should become an ordinary trip from the track's start to
   its end with stops along it ("Adjust route" in the sheet), keep to the track's roads and stay
   on the map while it recalculates. Drag the line, add a stop, then save it as a GPX track.
@@ -513,14 +500,6 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
   confirming, one ride remains with the combined distance and time, running from where the first
   began to where the last ended; open it on the map ("Ride again") and check the track is whole.
   GPX copies already saved by auto-save stay (as with deleting).
-
-## 2026-10-17 — Country roads in the palette colour
-
-- [ ] Settings → Display → Road surfaces: pick Orange, Yellow or Green. The small country roads
-  (the thin ones that string gravel together) should show as a solid line in the gravel colour
-  with a dark edge, not dashed, from zoom 11 (10 with Map detail "Detailed") until about zoom
-  15. In a housing estate the streets should stay plain white as before. With "Quiet" nothing
-      changes. Is the line too thick or too loud between the dashes? Say so and the widths change.
 
 ## 2026-10-17 — Map detail (gravel and small roads further out)
 
@@ -540,36 +519,33 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
   view's bounds (reaching the horizon) switched every kind off. If still nothing: `adb logcat -s
   Curveon:I | grep "Map places"` says how wide the map counts as, and which layers were on.
 - [ ] Long tunnel (a 2 km straight piece in the route, or 20+ km): the rider keeps moving along the
-  route with the "estimating" note the whole way, with no time limit; on coming out the real GPS
-  takes over, navigation is still running and the 3D view is still there. (The 17 Oct trip showed
-  the cause: the tracker got stuck at the end of a 2 km piece of the route and called it off
-  route; fixed, with a test.) If it still goes wrong, pull the navtrace
-  (`adb pull .../files/navtrace`): look for "route cleared" and rows with `est` = 1.
+  route as a pale arrow with the orange satellite the whole way, with no time limit; on coming out
+  the real GPS takes over, navigation is still running and the 3D view is still there. (The 17 Oct
+  trip showed the cause: the tracker got stuck at the end of a 2 km piece of the route and called
+  it off route; fixed, with a test.) If it still goes wrong, pull the navtrace
+  (`adb pull .../files/navtrace`): look for "route cleared" and `F` rows with `estimated` = 1.
 - [ ] A give way / stop ahead while navigating and while riding freely: its sign and the distance
   count down in the road card (with the road number and priority sign), and no longer under the
   speed. Check the card shows up on its own when the road has no number.
 - [ ] Hold the 3D/N button: the map goes to 3D and + / − appear beside it (6 s after the last press
   they go again). + looks more down on the map, − lower along the road; the angle is kept (also
   after restarting the app) until changed. Tapping the button still cycles N → heading → 3D.
-- [ ] Zoom in (11 or closer) on a gravel or dirt road with a navigation route or a GPX track on top
-  of it: the dashes now show through the line (dark edge, in the colours picked in Settings →
-  Display → Road surfaces). Check it reads on both themes, and that turning road surfaces off
-  removes them from over the lines too.
+- [ ] Zoom in (11 or closer) on a gravel or dirt road with a GPX track or a route preview on top of
+  it: the dashes show through the line, in the look picked in Settings → Display → Road surfaces
+  (Dashed / Coloured). While navigating, the route itself is orange/purple there instead, with no
+  dashes over it. Check it reads on both themes, and that Road surfaces Off removes them from over
+  the lines too.
 - [ ] Navigation sounds on, ride off the route so the "turn around or go on" dialog appears: a
   bell (two strikes) rings, clearly different from the soft off-route tones. Listen to it in the
   helmet through the intercom too: loud enough, not cut off at the start.
 - [ ] Adventure over the fjells east of Stord (start Bremnes, to Tveit, ring over Stord/Kvinnherad,
   6 h): the trip should now go over the mountain roads east of the fjord instead of circling
   once on the west side, and planning ("Finding roads…") should be quicker than before.
-- [ ] Adventure planning: a first trip should appear after a few seconds, with a small spinner and
-  "Looking for a better trip…" (pulsing) under the title while it keeps searching. Each better
-  trip found is added as a chip "Trip 2 · 5:50 h · 290 km" next to "Trip 1", and drawn grey on
-  the map. Tap the chips to switch back and forth (nothing is forgotten). Change the trip (drag
-  it, add a stop, shuffle) or close the sheet while it searches: the search stops. Check the chips
-  and the spinner don't overlap anything on the phone, portrait and landscape.
-- [ ] Draw an adventure area and ask for a long time: the trip may now be shorter than asked (with
-  a note "The trip takes … of the … you gave it") instead of filling the time with dead ends.
-  Check that planning takes no longer than before, and that the trip has fewer spurs.
+- [ ] Adventure planning, while "First suggestion. Looking for a better trip…" (small spinner,
+  pulsing) still shows: each better trip is a chip "Trip 2 · 5:50 h · 290 km" next to "Trip 1",
+  drawn grey on the map. Tap the chips to switch back and forth (nothing is forgotten). Change the
+  trip (drag it, add a stop, shuffle) or close the sheet while it searches: the search stops. Check
+  the chips and the spinner don't overlap anything on the phone, portrait and landscape.
 
 ## 2026-10-16 — Stop sharing ends the link at once, Bluetooth tip, give way off a priority road
 
@@ -583,8 +559,8 @@ open the link on the phone: `adb -s <phone> shell "am start -a android.intent.ac
 
 ## 2026-10-16 — Night rider marker orange, voice heads-up choice, offline voice tip
 
-- [ ] Night map: the rider arrow, its ring and the edge glow are orange; the cyan route stands out
-  from it. On a gravel (orange) route the arrow stays cyan. Day map unchanged.
+- [ ] Night map: the rider arrow and the edge glow (map moved away from you) are orange, also on a
+  gravel route; the cyan route stands out from it. Day map unchanged (cyan).
 - [ ] Settings → Navigation → Sound with Voice: "Forvarsel" switch. Off: only "Sving til høyre …" at
   the turn, no "Om 300 meter".
 - [ ] Without an offline voice for the language (e.g. switch Curveon to English if no English voice is
@@ -606,7 +582,7 @@ Update Curveon on both devices and the companion on the Pixel.
 - [ ] Demo ride with Voice: heads-up "Om … meter, sving … inn på <vei>, deretter …", at the turn
   "Sving til høyre", "Du er fremme". Words clear through the intercom? Too long, too early, too late?
 - [ ] Sounds: does the tick now come before you start turning (it is 2 s earlier)?
-- [ ] New launcher icon (cyan tyre) on both devices and on the companion.
+- [ ] Launcher icon (the motorcycle seen from the front) on both devices and on the companion.
 
 ## 2026-10-16 — Navigation sounds and wrong-turn sounds
 
@@ -617,8 +593,8 @@ Curveon must be updated on both devices, and the companion on the Pixel (older c
   linked, straight from the phone when Curveon runs on it alone).
 - [ ] Riding (or demo ride): two soft notes ~12 s before a turn and a tick ~3 s before it, in the ear
   of the turn. Too early, too late, too loud, too quiet? Music dips briefly rather than pausing.
-- [ ] Ride off the route: one low double sound, a light one when the new route is ready or you are
-  back on it, and a "question" sound when Curveon asks whether to turn back.
+- [ ] Ride off the route: one low double sound, and a light one when the new route is ready or you
+  are back on it.
 - [ ] Intercom: is the start of the sound cut off when nothing else is playing? (There is 0.3 s of
   silence first for the headset to wake up.)
 - [ ] During a phone call: no sounds.
@@ -641,24 +617,21 @@ Curveon must be updated on both devices, and the companion on the Pixel (older c
 - [ ] Point by point (or Pick on map while planning): a help bubble over the bar explains tapping,
   the padlock, the dotted-line button and undo/done. OK closes it until the next time;
   "Don't show again" for good.
-- [ ] The padlock starts closed (the line can't be dragged by accident) and remembers what you chose.
-  The bar now says "Tap to add a point; the line stays put" instead of "Route locked".
-- [ ] The flame (gravel heat map) button is gone until Settings → Display → Gravel heat map is set
-  to "While planning" or "Also on the map" (default Off).
+- [ ] The padlock starts closed (amber; the line can't be dragged by accident), and the bar says
+  "Tap to add a point; the line stays put". Opened, it says "Tap to add a point, drag to bend the route".
+- [ ] The flame (gravel heat map) button is gone until the switch Settings → Display → Gravel heat
+  map is on (default off).
 
 ## 2026-10-16 — Gravel colours and the gravel heat map
 
-- [ ] Settings → Display → Road surfaces: pick Orange / Yellow / Green; the dashes on the map
-  change colour (and get a bit wider). With "Only while planning" on they stay quiet until a
-  trip is being planned (preview open, picking places, drawing a roundtrip area).
-- [ ] The flame button (gravel heat map) sits top left on the map, on the Pixel in landscape too
+- [ ] With Settings → Display → Gravel heat map on, the flame button sits top left on the map, on the Pixel in landscape too
   (it used to overlap there). Zoom out to ~50–200 km across: warm where there is much gravel;
   it fades out as the dashes take over around zoom 11–12.
-- [ ] Settings → Display → Gravel heat map: "While planning" shows the button only while
-  planning; "Also on the map" shows it on the ordinary map too, but not while navigating or
-  riding (gone from 10 km/h, back once stopped).
+- [ ] Settings → Display → Gravel heat map on: the button shows while planning and on the ordinary
+  map, but not while navigating or riding (gone from 10 km/h, back once stopped). Off: no button.
 - [ ] Zooming in from ~zoom 10: as soon as the gravel dashes appear (zoom 11), the small tarmac
-  roads leading to them are drawn too (white with a grey edge), so gravel roads no longer seem
+  roads leading to them are drawn too (in the small-road colour from Settings → Display → Roads),
+  so gravel roads no longer seem
   to start nowhere. Try a spot like the KV 10122 one.
 - [ ] Access/private roads ("Adkomst- eller privatvei", e.g. by Jerstad towards Heimrehølen) that
   lead to a gravel road now show with it (until ~zoom 15.5, where the map draws them itself).
@@ -674,7 +647,7 @@ Curveon must be updated on both devices, and the companion on the Pixel (older c
 
 Riding without a route, Curveon looks ~150 m along the road you are on (a short route straight
 ahead, every 2 s from 10 km/h) and, if the next junction is one where you give way, shows its
-sign and the distance in the road card (top middle, by the road number and priority sign; shown
+sign and the distance in the road card (top left, by the road number and priority sign; shown
 even with Road info off). Standing still at the junction keeps it. The sign also stands on the map,
 on the right of the road ~14 m before the junction: the one just ahead when riding freely, and
 those on the next kilometre of the route when navigating. Checked in the emulator with GPS fixes
@@ -690,7 +663,7 @@ the junction.
 
 ## 2026-10-16 — Give way and stop signs while navigating
 
-Navigating in Norway, a junction where you give way (or must stop) shows its sign under the speed,
+Navigating in Norway, a junction where you give way (or must stop) shows its sign in the road card,
 with the distance, from 200 m before it until you are there. Two sources, both in the new
 norway.sqlite from NVDB: the signs themselves (202 Vikeplikt, 204 Stopp, ~67 000), those facing
 traffic on the road you ride and those for a side road you come out of; and turning onto a
@@ -750,7 +723,6 @@ still, in both. Installed on the X7 and the Pixel.
 
 - [ ] Riding, day and night: the ring is easy to see but doesn't hide the road under the arrow.
 - [ ] 3D: the halo lies flat on the road (an oval), centred on the arrow.
-- [ ] Through a tunnel: the halo grows while dead reckoning, and shrinks once GPS is back.
 - [ ] Poor GPS (deep valley, town): the halo is visibly bigger.
 
 ## 2026-10-15 — Curveon sleeps out of sight; the trip being planned is kept
@@ -779,7 +751,7 @@ force-stop: same stops, start and road style). Installed on the X7 and the Pixel
 ## 2026-10-15 — Settings: choices as drop-down buttons on the right
 
 - [ ] Settings → Display and Navigation, on the X7 and on the Pixel (upright and sideways): every
-  choice (language, km/h/mph, screen, map, road surfaces, rider arrow, off route, carry on…) is
+  choice (language, km/h/mph, screen, map, roads, map detail, road surfaces, off route, carry on…) is
   a button on the right, in line with the switches, with title and hint on the left.
 - [ ] Each button is as wide as its longest choice: picking another doesn't change its width, and
   no text is cut off (try Norsk and English).
@@ -791,13 +763,14 @@ force-stop: same stops, start and road style). Installed on the X7 and the Pixel
 
 ## 2026-10-14 — Updates from GitHub, and What's new
 
-- [ ] First start of the new build on the X7 and Pixel: "New in Curveon 1.1" opens once, and not
-  again on the next start.
-- [ ] Settings → Help → Look for updates: "This is the newest version" (1.1 isn't on GitHub yet).
-- [ ] Settings → Help → What's new lists 1.1 and 1.0.
-- [ ] When 1.2 is out (1.0 has no updater, so 1.1 → 1.2 is the first real update): on a device with
-  the GitHub 1.1 APK, the startup check shows a toast and a dot on Settings, Settings opens on
-  Help, Download and install works, and What's new shows 1.2 after the restart.
+- [ ] First start of a new version on the X7 and Pixel (e.g. 1.2.4): "New in Curveon 1.2.4" opens
+  once, and not again on the next start.
+- [ ] Settings → Help → Look for updates on a device with the newest GitHub version: "This is the
+  newest version".
+- [ ] Settings → Help → What's new lists every version, newest first.
+- [ ] When a newer version is on GitHub: on the Pixel (release build) the startup check shows the
+  toast "Curveon … is out: Settings → Help" and a dot on Settings, Settings opens on Help,
+  Download and install works, and What's new shows the new version after the restart.
 
 ## 2026-10-14 — Very curvy no longer takes the Hurtigruten
 
@@ -806,8 +779,9 @@ force-stop: same stops, start and road style). Installed on the X7 and the Pixel
 
 ## 2026-10-14 — Lock the route while editing on the map
 
-- [ ] Juster ruten → Endre i kartet: a lock button (open padlock) sits beside Undo. Press it: it
-  turns amber, the hint says "Ruta er låst: trykk for nytt punkt".
+- [ ] Juster ruten → Endre i kartet: the padlock beside Angre is closed (amber) when you come in,
+  the hint says "Trykk for nytt punkt; streken står fast". Press it: it opens, the hint says
+  "Trykk for nytt punkt, dra for å bøye ruta".
 - [ ] Locked: pan with a finger that starts on the route line or on a point: the map moves, the
   route doesn't bend or move. Taps still add a point; a tap on a point still opens its menu.
 - [ ] Two fingers (zoom) starting on the line still zoom. Unlock: dragging the line works as before.
@@ -828,7 +802,7 @@ force-stop: same stops, start and road style). Installed on the X7 and the Pixel
 
 - [ ] With no trip planned and not riding, hold a finger on a road: the dialog has a third button,
   "Punkt for punkt" (next to "Kjør hit" and "Lagre som favoritt").
-- [ ] Press it: the map goes full-screen with the point-by-point bar, and the trip from here to that
+- [ ] Press it → "Fra min posisjon": the map goes full-screen with the point-by-point bar, and the trip from here to that
   point is found. Tap further along: each tap rides the trip on to there; Undo takes the last back.
 - [ ] ✓ ends on the ordinary route preview with all the points as stops, where the route can be
   adjusted and started as usual.
@@ -845,7 +819,7 @@ you. Installed on the X7 and the Pixel:
 ## 2026-10-15 — Rider arrow: +1.5 s ahead of the GPS by default
 
 Testing on the road, +1.5 s put the arrow where the bike is (+1.75 was close; +0.25 left it behind at junctions).
-That is now the standard, and the setting stays (Settings → Navigation → "Rider arrow", no longer
+That is now the standard, and the setting stays (Settings → Navigation → "Marker", − / +, no longer
 "test"). A value already picked by hand is kept; only devices still on the old standard move.
 
 - [ ] At 40 and at 80 km/h, passing a junction: the arrow passes it with you.
@@ -857,7 +831,7 @@ Installed on the X7 and tried on the demo ride with a Vestland-only data file
 the priority road sign in a card of their own (top middle in landscape, under the speed in
 portrait); in the turn card "270 m [Fv5012]". Settings → Display → Road info hides and shows them.
 
-- [ ] Real ride: the number by the speed changes as you turn onto another road, and the priority
+- [ ] Real ride: the number in the road card (top left) changes as you turn onto another road, and the priority
   sign shows on forkjørsveg and goes away off it (within ~2 s).
 - [ ] An E-road and a riksveg show green signs (E39, Rv…), fylkesveg white, kommunal veg grey.
 - [ ] Abroad (or without the new data file): the number comes from the map instead, in the
@@ -892,7 +866,7 @@ standing still the app went from ~23 % of a core to ~5 %; riding, the main threa
 Installed on the X7 and the Pixel. Scrolling and the Planned page were checked on the X7 sized like the Pixel held sideways; the map pins and the save dialog were not seen.
 
 - [ ] Plan a trip: start = green A (only when planned from elsewhere), stops = orange 1, 2…, destination = red B. A planned trip ridden the other way: A at its new start, B at the end.
-- [ ] Bookmark a route: "Save route" shows Planned trips and GPX, both unticked; pick a group for each; save to either or both.
+- [ ] Bookmark a route: "Save route" shows Where to?, Planned trips and GPX track, all unticked; pick a group for Planned trips and GPX track; save to any of them.
 - [ ] Rides: open a ride: one "Save…" button (same dialog).
 - [ ] Planned: a thumbnail of the line and the km; tap for time, climb and curves; Ride / Ride the other way / Save to GPX.
 - [ ] Sideways on the Pixel: GPX, Rides and Planned scroll as one list (the switches and chips scroll away).
@@ -901,19 +875,17 @@ Installed on the X7 and the Pixel. Scrolling and the Planned page were checked o
 
 Installed on the X7 (landscape checked there, and upright via `wm size 1080x2400`); the Pixel was not reachable.
 
-- [ ] Pixel upright: open the route icon (GPX): one frame with three tabs (GPX, Rides, Planned); swipe sideways between them (the tab lights up). Same in Settings and Phone (also swipeable now).
-- [ ] Planned: your saved routes are here. ⋮ → Move to group → new group ("Trips for the weekend"); the group opens and closes; ⋮ on a group renames, ungroups or deletes it.
-- [ ] Planned: the arrow on a trip turns amber = ride the other way round; the cyan button then plans it reversed (as a line, without its stops).
-- [ ] Rides: open a ride: "Ride the other way" and "Copy to planned" (pick or create a group); the copy appears under Planned.
-- [ ] The orange destination pin stays while an adventure is drawn and worked out.
+- [ ] Pixel upright: open the route icon (GPX & rides): one frame with four tabs (GPX, Rides, Planned, Shared routes); swipe sideways between them (the tab lights up). Same in Settings and Phone (also swipeable now).
+- [ ] Planned: your saved routes are here. Tap a trip, ⋮ → Move to group → new group ("Trips for the weekend"); the group opens and closes; ⋮ on a group renames, ungroups or deletes it.
+- [ ] The red B destination pin stays while an adventure is drawn and worked out.
 
 ## 2026-10-13 — Adventure routing (new)
 
 Installed on the Pixel and the X7.
 
-- [ ] Search a destination, then in the route preview tap **Adventure** (next to "From here"). Set the
-  time and surface in the bar, draw the area to ride in with one finger. Expect an "Adventure to …"
-  route taking about the asked time, inside the area (wait ~10–40 s for long ones).
+- [ ] Search a destination, then in the route preview tap **Adventure** (next to "From my position"). The
+  time starts at "No limit"; set it and the surface in the bar, draw the area to ride in with one finger.
+  Expect an "Adventure to …" route inside the area, no longer than the time asked (wait ~10–40 s for long ones).
 - [ ] In the adventure preview: time chip (changes the time), **Draw again**, shuffle (another route),
   start chip (plan from elsewhere), surface chips, GO. Check `adb logcat -s CurveonPlan` for the
   candidates it tried.
@@ -936,7 +908,8 @@ Installed on the Pixel only.
 - [ ] Rides dialog: "Save new rides" off, ride a short stretch: it must not appear in the list, and
   nothing lands in the GPX group. The GPX auto-save row is greyed out.
 - [ ] Switch it off in the middle of a ride: that ride still finishes and is saved.
-- [ ] "This week" is open, "Last week" and the months are closed; headers show rides and km.
+- [ ] The newest group ("This week" when there are rides this week) is open, the older ones ("Last week", the
+  months) are closed; headers show rides and km.
 - [ ] Select all + delete also takes the rides in closed groups.
 
 ## 2026-10-13 — Ringing call big, answered call a small icon you can move
@@ -947,8 +920,9 @@ a real call.
 
 - [ ] Ring the Pixel: a big card with the caller's photo, name, red Decline and green Answer, over
   everything (full map, dashboard, route preview, an open screen, portrait).
-- [ ] Answer: the card becomes a green phone icon, on every view. Drag it anywhere; it stays put for
-  the next call. Tap it: name, Hang up and Speaker for a few seconds. The music card stays.
+- [ ] Answer on the full map: the card becomes a green phone icon. Drag it anywhere; it stays put for
+  the next call, also with Settings, GPX or Phone open. Tap it: name, Hang up and Speaker for a few
+  seconds. The music card stays. (On the dashboard an answered call is a card, see 2026-10-18.)
 - [ ] If the Answer button is still there after answering, the Pixel runs the old companion: install
   `./gradlew :companion:installDebug` on it.
 
@@ -958,35 +932,28 @@ Needs the new Curveon Companion on the Pixel (it now says whether a call has bee
 new Curveon on the X7. Both were installed; the X7 and the Pixel were never connected to each other
 while testing, so none of this has been seen with a real call.
 
-- [ ] Ring the Pixel with the X7 on the full map: a slim card (small picture, name, red Decline,
-  green Answer) in the bottom right, not the big photo. In the dashboard view the same slim card
-  sits on top of the right-hand column, with music or messages below it.
-- [ ] Answer: on the full map the card becomes a green phone icon. Drag it: it settles on the left edge
-  or just left of the map's buttons, and sits there for the next call. Tap it: name, Hang up and
-  Speaker open for a few seconds. It stays visible with Settings, GPX or Phone open.
 - [ ] Call placed from the X7's Phone screen: same icon once it connects.
 - [ ] Android below 12 on the phone (if any): an answered call may still show as ringing; say so.
 
 ## 2026-10-12 — Corners, panels over the map, swipe, new menu icons
 
-- [ ] X7 riding (not the demo ride): the trip bar sits top left, the speed top right, the next turn
-  bottom left, music bottom right (full map), and the map's buttons keep clear of all four. A
-  call on the full map takes the bottom right, left of the buttons.
+- [ ] X7 riding (not the demo ride): the arrival box sits top left, the speed top right, the next turn
+  bottom left, music bottom right (full map), and the map's buttons keep clear of all four.
 - [ ] Pixel sideways and upright (Curveon on the phone): the same, with nothing over the +/− and
   3D buttons; the map's (i) licence button sits halfway up the left edge and opens its text.
 - [ ] Rail: the open screen's button is blue; pressing it again closes the screen, pressing another
   one swaps it in; Back closes it; the keyboard in "Where to?" doesn't hide the field.
-- [ ] Upright (X7 or Pixel): Settings and GPX & rides swipe between their pages, and the tab row
-  follows. Sliders and horizontal lists inside the pages still scroll without changing page.
+- [ ] Upright (X7 or Pixel): in Settings and GPX & rides, sliders and horizontal lists inside the
+  pages scroll without changing page.
 - [ ] Welcome tour (Settings → Help): Where to?, Plan a trip and Roundtrip light up the motorcycle
   button and say what to press first.
 
 ## 2026-10-11 — New app icons (motorcycle on the curve)
 
-- [ ] Pixel: Curveon and Curveon Companion (the cyan phone with the new art on its screen) show
-  the new icon in the app drawer; the round mask keeps both mirrors. With Themed icons on
-  (wallpaper settings), both show a clean one-colour version.
-- [ ] X7: install Curveon there too (it wasn't reachable) and check the icon on its launcher.
+- [ ] Pixel: Curveon (the motorbike seen head-on) and Curveon Companion (the cyan phone with the same
+  art on its screen) show their icons in the app drawer; the round mask keeps both mirrors. With
+  Themed icons on (wallpaper settings), both show a clean one-colour version.
+- [ ] X7: check the icon on its launcher.
 
 ## 2026-10-11 — Day road colours on the night map
 
@@ -1001,15 +968,6 @@ while testing, so none of this has been seen with a real call.
   `norway.sqlite` (the country it is in); the limit sign then shows on roads, e.g. in the demo ride
   or "Hold a finger on a road".
 
-## 2026-10-11 — New layout of the cards over the map
-
-- [ ] While navigating, full map: the next-turn card sits bottom right beside the music player, both
-  the same height and not overlapping; the time-left bar is top, beside the speed and as high.
-- [ ] Dashboard: the same top bar (arrival, km · time, X); tap it and a second line folds out below
-  with next stop (tap: route menu), fuel and add stop. The turn card is bottom right of the map.
-- [ ] 3D / heading up: the arrow stays clear of the turn card (it sits a bit higher than before).
-- [ ] Phone (portrait and landscape): bar and speed fit side by side; player goes above the turn card.
-
 ## 2026-10-11 — No U-turn on E39 at Heiane (Stord)
 
 - [ ] Plan a trip to McDonald's Stord from the south-west (say from Føyno): the route should take the
@@ -1018,7 +976,7 @@ while testing, so none of this has been seen with a real call.
 
 ## 2026-10-11 — Welcome tour texts and drawings
 
-- [ ] Settings → Help → Start the tour (the Pixel needs the newest install first): the phone step
+- [ ] Settings → Help → Start the tour: the phone step
   says a tablet that can't call needs Curveon Companion on the phone; Settings says offline
   maps, phone link and more; the map step only mentions holding a place; after music and
   messages comes an engine-data drawing; "Change just one part" ends with a dashed line being
@@ -1038,7 +996,7 @@ while testing, so none of this has been seen with a real call.
 
 ## 2026-10-11 — Demo mode
 
-- [ ] Settings → Display → Demo ride: switch it on, plan a trip and press Go: the ride starts by
+- [ ] Settings → Navigation → Demo ride: switch it on, plan a trip and press Go: the ride starts by
   itself as a simulation, from the trip's own start point if you set one (not from where the
   tablet is). Switch it off: back to real GPS. Switched on during a trip: that trip is
   simulated from here.
@@ -1056,11 +1014,11 @@ while testing, so none of this has been seen with a real call.
   ring should sit neatly round each rail button, the map buttons, the speed and the cards, and
   every card should fit on screen (also the long "Planning a trip" one).
 - [ ] First start (clear the app's data to see it again): the tour opens with Language · Språk, and
-  carries on in the language you tap. Six small animations (tablet–phone–intercom, just a phone, plan, edit on the map, mark one part
-  with the three-dots button, draw a roundtrip) loop without text.
+  carries on in the language you tap. Eight small animations (music and messages, engine data, tablet–phone–intercom, just a
+  phone, plan, edit on the map, mark one part with the three-dots button, draw a roundtrip) loop without text.
 - [ ] Settings → Help → Start the tour: it starts again; the symbol list below reads well.
-- [ ] On the Pixel held upright: the tour turns the screen to landscape while it is open, and back
-  to upright when it closes.
+- [ ] On the Pixel held upright: the language and welcome come upright; "Show me around" turns the screen
+  to landscape (it says the phone can be turned back afterwards), and it goes back to upright when the tour closes.
 
 ## 2026-10-11 — Official speed limits; road info when holding a finger on a road
 
@@ -1088,16 +1046,7 @@ The loop's shape is found with gravel's full pull; the reach applies when it is 
 through its points (each stretch between two points keeps that close to the ordinary road), and
 can be changed on the sheet afterwards. Checked in the emulator.
 
-- [ ] Draw a gravel loop inland with "within 3 km": less gravel than "anywhere", but some?
-
-## 2026-10-11 — Brighter roads on the dark map
-
-Roads on the night map were barely lighter than the land (#333–#474 on #1f1f1f). They are now
-clear greys, brightest for the biggest roads (small #4b–#5f, main #6f, motorway #8a), tunnels a
-step darker, edges darker than the land; background, water and buildings unchanged. Checked in
-the emulator.
-
-- [ ] Riding at night: are the roads easy to tell from the land now, without glare? The blue route still the brightest?
+- [ ] Draw a gravel loop inland with "Detour up to 3 km": less gravel than "Detour up to double length", but some?
 
 ## 2026-10-11 — No motorways or E-roads
 
@@ -1138,7 +1087,7 @@ curvy gets 17 km gravel (33 → 43 km, 6 km off); within 3 km it stays on the or
 west coast few gravel roads are tagged in OpenStreetMap, so there it changes less. The previewed
 route is drawn orange where it is gravel and purple on tracks. Checked in the emulator; installed on the X7.
 
-- [ ] Gravel near home: does it find any? Does "within N km" behave?
+- [ ] Gravel near home: does it find any? Does "Detour up to N km" behave?
 - [ ] Are the orange/purple stretches readable on the X7 in sunlight?
 
 ## 2026-10-10 — Max length and surface when drawing a loop; draw again
@@ -1174,7 +1123,7 @@ twice went from 12% to 5% on average; drawn areas on Bømlo/Stord from ~30% to 7
 emulator.
 
 - [ ] Roundtrip from home: does it still ride stretches twice? Where (screenshot)?
-- [ ] How long a drawn loop takes on the X7 now.
+- [ ] How long a drawn loop takes on the X7 now (`adb logcat -s Curveon CurveonPlan` → "Routed Roundtrip in … s"; 1–15 s on the PC).
 
 ## 2026-10-10 — Route options say what they do
 
@@ -1194,7 +1143,7 @@ Favourites come first in Where to? (Home leads) for the destination, a stop or t
 one to delete it. Checked in the emulator; installed on the X7 and the Pixel.
 
 - [ ] Save Home on the X7, then Where to? → Home plans the way home.
-- [ ] A named favourite as a stop while riding (+ Stop → the favourite).
+- [ ] A named favourite as a stop while riding (tap the arrival box → Add stop → the favourite).
 - [ ] Hold a favourite in Where to? → delete.
 
 ## 2026-10-10 — Music pill no longer covers the trip bar; no crash turning the phone
@@ -1204,7 +1153,6 @@ km and time left) where both don't fit side by side (the phone, upright): it now
 it. Turning the phone while navigating crashed the app (the map read road names before it had
 drawn after the turn); it now waits. Checked in the emulator at Pixel size; installed on the X7 and the Pixel.
 
-- [ ] Phone upright, navigating, full map, music playing: the pill sits above the trip bar.
 - [ ] Turn the phone while navigating: no crash, the road name after the next turn still shows.
 - [ ] The blue route line is thicker when riding (about twice as wide zoomed in, as before zoomed out): easy to follow, not hiding the road names?
 
@@ -1222,7 +1170,6 @@ Update: a found loop now *is* such a trip straight away – the same sheet as "W
   Shuffle for another loop; changing the start plans a new loop from there.
   Checked in the emulator (Haugesund, Leirvik); installed on the X7 and the Pixel.
 - [ ] Draw an area with a finger on the X7: the stroke follows the finger, two fingers pan/zoom.
-- [ ] How long a drawn loop takes on the X7 (`adb logcat -s Curveon CurveonPlan` → "Routed Roundtrip in … s"; 1–15 s on the PC).
 - [ ] Draw round Bømlo/Stord from home: does the loop use the area and stay off dead ends?
 - [ ] A loop's sheet looks like a planned trip; drag a point on the map, the rest of the loop stays.
 - [ ] Shuffle on a loop (also after changing road style) gives another loop.
@@ -1265,12 +1212,6 @@ Engine: engine panel on/off, the OBD2 adapter (paired Bluetooth devices, or Demo
 panel bottom right, map up to the top. Checked in the emulator with Demo. Installed on both devices.
 
 - [x] Adapter connects on the Ténéré 700 (2020): RPM, coolant and battery come through.
-- [ ] Fuel: the T7 doesn't answer PID 012F. On the first connection after each app start the
-  tablet now notes what the ECU supports plus 20 s of raw bus traffic in
-  `files/navtrace/obd-*.txt` (the readings show up ~30 s later than usual that one time).
-  Connect once with a full tank and once with it low (ignition on, engine idling is fine),
-  then pull the navtrace folder as above, so we can look for the fuel gauge on the bus.
-- [ ] Riding with a turn banner: it sits top left and doesn't cover the speed (phone upright too).
 
 ## 2026-10-10 — Stops down a side street are ridden to, and one map editor
 
@@ -1290,18 +1231,10 @@ Two changes, installed on the X7 (the Pixel was offline: `./gradlew :app:install
 
 - [ ] X7: add a stop in a side street near the route: the blue line goes into the street to it.
 
-- [ ] Edit button on the route preview → drag the line → a detour; marking button → two pins.
+- [ ] Route preview → Adjust route → Edit on map → open the padlock → drag the line → a detour;
+  the dotted-line button (Mark the part to change) → two pins.
 
 - [ ] Tap a stop on the map → menu → Change place opens the search and comes back to the trip.
-
-## 2026-10-10 — Two fingers on the map zoom, never drag the route
-
-While editing or building a trip, a pinch whose first finger lands on the route line or a point no
-longer starts a detour: as soon as the second finger touches, the drag is dropped and the map
-zooms/turns. Checked in the emulator with a scripted two-finger pinch starting on the line (route
-unchanged, map zoomed). Installed on both devices.
-
-- [ ] Pixel/X7: pinch-zoom with one finger starting on the blue line: no dashed detour, no new point.
 
 ## 2026-10-10 — "+ Stop" on the map asks: on the way, or the new end?
 
@@ -1310,7 +1243,8 @@ stop on the way, or the new end?". On the way: that point and the next ones beco
 where they fit along the route; New end: the trip rides on to them (the old end stays a stop).
 Asked once per round of picking. Checked in the emulator. Installed on both devices.
 
-- [ ] X7: install, then "+ Stop" → Pick on map → tap a point beside the route → On the way.
+- [ ] X7: route preview → Adjust route → Add stop → Pick on map → tap a point beside the route: the bar
+  asks "A stop on the way, or the new end?" with Route point / On the way / New end → On the way.
 
 ## 2026-10-10 — Hold a point on the map to remove it
 
@@ -1320,7 +1254,7 @@ keeps moving earlier/later). Removing the destination makes the point before it 
 Dragging a point works as before. Checked in the emulator. Installed on both devices.
 
 - [ ] Pixel: a long press on a white dot gives a buzz and the menu; Remove reroutes without it.
-- [ ] A quick drag of a point still moves it (no menu popping up mid-drag).
+- [ ] With the padlock open, a quick drag of a point still moves it (no menu popping up mid-drag).
 
 ## 2026-10-10 — Save a route to Where to?, GPX, or both
 
@@ -1353,7 +1287,7 @@ line between them only changes that part. Done is a round tick on a phone. Check
 emulator (X7 landscape, Pixel size portrait). Installed on both devices.
 
 - [ ] Pixel portrait: editing shows the tick (Done) at the right of the bar.
-- [ ] Long trip (e.g. Bømlo → Oslo): mark a part at Haukeli, drag the line out to a side road;
+- [ ] Long trip (e.g. Bømlo → Oslo): mark a part at Haukeli, open the padlock, drag the line out to a side road;
   the route outside the marked part stays as it was, and Undo takes the marking away in one go.
 - [ ] Marking with a finger that drifts off the line still slides the orange part along the route.
 
@@ -1363,7 +1297,8 @@ When the route preview runs out of height (the Pixel in landscape with a gravel 
 between the title and the options scrolls; the options and GO always stay at the bottom. Checked in
 the emulator at Pixel size, landscape. Installed on both devices.
 
-- [ ] Pixel landscape: the trip with the gravel warning shows Tarmac/Ferries/Motorways and GO;
+- [ ] Pixel landscape: the trip with the gravel warning shows the chips (Tarmac only, Ferries OK,
+  Motorways OK) and GO;
   swipe the cards up to read the whole warning.
 
 ## 2026-10-10 — The clock sits by the speed
@@ -1410,7 +1345,8 @@ the phone's tabs get a row of their own, Roundtrip puts the compass above the op
 route preview gives GO a full-width row. Checked at Pixel 9a size in the emulator (search, route
 preview, place menu, save, navigation, every rail dialog); the X7 in landscape looks as before.
 
-- [ ] Pixel upright: go through Settings, GPX, Roundtrip, Phone and a route preview; anything cut off?
+- [ ] Pixel upright: go through Settings, GPX & rides, Phone, Friends, Where to? → Roundtrip and a
+  route preview; anything cut off?
 
 ## 2026-10-09 — Portrait
 
@@ -1468,7 +1404,6 @@ is purple. Hamar–Lillehammer in the tests: Gravel 19 km unpaved and no tracks,
 
 - [ ] Plan a trip with Offroad near home: the tracks it picks are ones the X7 bike can actually
   ride (if grade 4–5 tracks turn out too rough, say so and they'll cost more).
-- [ ] The purple route line is easy to see on both the day and the night map.
 
 ## 2026-10-09 — Warning when a tarmac route forces gravel
 
@@ -1499,10 +1434,10 @@ From zoom 11 in, roads the routing data knows as unpaved are dashed over the map
 compacted, brown = softer, rough or unknown ground. Read from the routing segments, so it works
 wherever routing data is installed. Tried in the emulator (forest roads east of Elverum).
 
-- [ ] On the X7, zoom to a forest-road area (or ride somewhere with gravel): the dashes appear
-  within about a second after the map stops moving, and panning stays smooth.
-- [ ] Spot-check a road you know is gravel and one you know is tarmac: right colour?
-- [ ] Dark map: the grey and brown still show.
+- [ ] On the X7, Settings → Display → Road surfaces = Dashed, zoom to a forest-road area (or ride
+  somewhere with gravel): the dashes appear within about a second after the map stops moving, and
+  panning stays smooth.
+- [ ] Spot-check a road you know is gravel and one you know is tarmac: only the gravel one is dashed?
 
 ## 2026-10-09 — Online map and online search
 
