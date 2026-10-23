@@ -162,7 +162,16 @@ private fun LinkedPhoneCard(manager: PhoneCompanionManager, onForget: () -> Unit
     val callLogAllowed by manager.callLogAllowed.collectAsStateWithLifecycle()
     val thisDevice by manager.thisDevice.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { manager.refreshThisDevice() }
+    // Asked again when an answer comes in and when the rider is back from Android's settings: nothing else tells this
+    // list that SMS or the microphone was just allowed (the contacts and call log flows may not change).
+    var permissionTick by remember { mutableIntStateOf(0) }
+    val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionTick++; manager.refreshThisDevice() }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event -> if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) permissionTick++ }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val connected = state == CompanionConnectionState.CONNECTED || state == CompanionConnectionState.DEMO
     val (label, color) = when (state) {
         CompanionConnectionState.CONNECTED -> stringResource(R.string.link_status_connected) to EcoGreen
@@ -211,7 +220,7 @@ private fun LinkedPhoneCard(manager: PhoneCompanionManager, onForget: () -> Unit
                 } else Text(stringResource(R.string.link_no_notification_access), color = NeonAmber, fontSize = 13.sp)
             }
         }
-        val voiceAllowed = !thisDevice || THIS_DEVICE_PERMISSIONS.all { context.checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED }
+        val voiceAllowed = !thisDevice || permissionTick >= 0 && THIS_DEVICE_PERMISSIONS.all { context.checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED }
         if (connected && (!contactsAllowed || !callLogAllowed || !voiceAllowed)) {
             if (thisDevice) MissingAccess(stringResource(R.string.link_this_no_contacts)) { permissions.launch(THIS_DEVICE_PERMISSIONS) }
             else Text(stringResource(R.string.link_no_contacts), color = NeonAmber, fontSize = 13.sp)

@@ -1612,13 +1612,13 @@ private fun Rail(
         }
     }
     val phone: @Composable () -> Unit = {
-        RailButton(Icons.Default.Phone, stringResource(R.string.phone), ElectricCyan, EcoGreen, filled = active == RailPanel.PHONE,
+        RailButton(Icons.Default.Phone, stringResource(R.string.phone), EcoGreen, EcoGreen, filled = active == RailPanel.PHONE,
             tag = "rail_phone", target = TourTarget.PHONE, onClick = { onPress(RailPanel.PHONE) })
     }
     // Friends riding together; a dot while someone has sent an SOS.
     val group: @Composable () -> Unit = {
         Box {
-            RailButton(Icons.Default.Diversity3, stringResource(R.string.friends_title), ElectricCyan, NeonAmber, filled = active == RailPanel.GROUP,
+            RailButton(Icons.Default.Diversity3, stringResource(R.string.friends_title), NeonAmber, NeonAmber, filled = active == RailPanel.GROUP,
                 tag = "rail_group", target = null, onClick = { onPress(RailPanel.GROUP) })
             if (groupAlert) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(WarningRed))
             else if (sharingPosition) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(10.dp).clip(CircleShape).background(SharingBlue).testTag("rail_sharing"))
@@ -1626,7 +1626,7 @@ private fun Rail(
     }
     val settings: @Composable () -> Unit = {
         Box {
-            RailButton(Icons.Default.Settings, stringResource(R.string.settings), ElectricCyan, TextPrimary, filled = active == RailPanel.SETTINGS, tag = "rail_settings", target = TourTarget.SETTINGS, onClick = { onPress(RailPanel.SETTINGS) })
+            RailButton(Icons.Default.Settings, stringResource(R.string.settings), TextPrimary, TextPrimary, filled = active == RailPanel.SETTINGS, tag = "rail_settings", target = TourTarget.SETTINGS, onClick = { onPress(RailPanel.SETTINGS) })
             if (updateWaiting) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(ElectricCyan))
         }
     }

@@ -148,6 +148,13 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   the desk) and the Pixel (over wifi) can always be installed on, after each change, without asking. The X7 when
   it is reached only over wifi (on the handlebars) is not: say what is waiting to be installed and end the
   message with the question whether to install; once the rider says yes, do it for that batch.
+- **The X7 runs the release build by default** (`assembleRelease`, signing env as for the Pixel), because
+  the rider wants to feel how fast it really responds. When a debug build is better (logging, DEV aids
+  like demo data, `run-as`, a crash to chase), put it on and say why; switch back to release when done.
+  While the X7 is on USB it can always be installed on, in either build, without asking. **Switching
+  between debug and release needs an uninstall first (different signing keys), which deletes the app's
+  data and the maps under `Android/data/com.curveon.app/files/`:** say so and get a yes before each
+  switch, and copy the maps back from `~/develop/Curveon-data` afterwards.
 - Committing and pushing are always allowed once a build has been installed on the devices (X7 or
   Pixel); no need to ask first.
 - The app was renamed from VibeNav on 2026-10-06: anything still saying vibenav is stale.
