@@ -101,7 +101,9 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
 - **Device checks.** Whenever the user should test or run something on the real X7 or Pixel
   (e.g. `adb logcat -s PhoneLink` after a call), add it to [device-checks.md](device-checks.md)
   (newest first, checkboxes) in the same change, as well as saying it in chat. Remove items once
-  the user reports back.
+  the user reports back. The rider ticks them on the phone on a private claude.ai page
+  (https://claude.ai/artifact/9iV3p3tvJyTcW2pUdbrTMW); `tools/device_checks_sync.py` syncs it both
+  ways (how: its docstring, and the memory note on the page).
 - Bluetooth, real calls, tunnel dead reckoning and gyro lean can't be verified in the emulator;
   say so rather than claiming they work.
 - **A redesign keeps what the rider could do.** Before removing or replacing a button, step, setting
