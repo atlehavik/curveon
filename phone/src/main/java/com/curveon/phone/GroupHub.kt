@@ -215,8 +215,11 @@ object GroupHub {
             }
             is Message.GroupSelect -> select(m.groupId?.takeIf { groups[it]?.kind == GroupKind.RIDE })
             is Message.GroupSharing -> {
+                val was = store.sharing
                 store.sharing = m.on
                 sharer.reset()
+                // Stopped: the group is told, so the rider goes off their maps at once (not just fades as if out of coverage).
+                if (was && !m.on) lastFix?.let { f -> client?.sendPosition(Payload.Pos(f.lat, f.lon, 0f, 0f, 0f, battery(), paused = true)) }
                 send(groupList())
                 sendConnection()
             }
@@ -869,8 +872,12 @@ object GroupHub {
 
     // ---- position ----
 
+    /** Where the rider was last, for the "paused" sent when sharing stops. */
+    private var lastFix: Fix? = null
+
     private fun position(m: Message.MyPosition) {
         val fix = Fix(m.lat, m.lon, m.speedMs, m.heading, m.accuracy)
+        lastFix = fix
         val c = client
         if (c != null && store?.sharing == true) sharer.offer(fix, battery())?.let(c::sendPosition)
         val friends = seeingMe()
@@ -903,7 +910,7 @@ object GroupHub {
             }
             is GroupEvent.Position -> {
                 val p = e.pos
-                val info = Message.GroupPositionInfo(e.riderId, p.lat, p.lon, p.heading, p.speed, e.tsMs, p.stopped, p.stoppedSince, p.battery)
+                val info = Message.GroupPositionInfo(e.riderId, p.lat, p.lon, p.heading, p.speed, e.tsMs, p.stopped, p.stoppedSince, p.battery, p.paused)
                 positions[e.riderId] = info
                 send(Message.GroupPositions(state.groupIdHex, listOf(info)))
             }

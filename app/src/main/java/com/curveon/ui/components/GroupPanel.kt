@@ -382,6 +382,7 @@ private fun RiderRow(r: GroupRider, me: Boolean, pos: Message.GroupPositionInfo?
 @Composable
 private fun riderStatus(p: Message.GroupPositionInfo?): String {
     p ?: return stringResource(R.string.group_no_position)
+    if (p.paused) return stringResource(R.string.group_rider_paused)
     val now = System.currentTimeMillis()
     if (p.stopped && p.stoppedSince != null) return stringResource(R.string.group_stopped_for, ((now - p.stoppedSince!!) / 60_000).coerceAtLeast(1).toInt())
     val min = ((now - p.timeMs) / 60_000).toInt()

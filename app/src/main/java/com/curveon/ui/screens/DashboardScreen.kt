@@ -764,7 +764,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     val groupRiders = remember(groupPositions, groupMembers, friendPositions, friendRiders, groupTick) {
         val now = System.currentTimeMillis()
-        val riders = groupPositions.values.map { p ->
+        // A rider who has stopped sharing is off the map (they said so), not just faded.
+        val riders = groupPositions.values.filterNot { it.paused }.map { p ->
             val m = groupMembers[p.id]
             com.curveon.ui.components.MapGroupRider(
                 p.id, GeoPoint(p.lat, p.lon), m?.nickname.orEmpty(), m?.colour ?: 0xFF00E5FF.toInt(), now - p.timeMs > 120_000, m?.photo

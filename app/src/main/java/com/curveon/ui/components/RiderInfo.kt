@@ -137,6 +137,7 @@ fun RiderPickerDialog(manager: GroupManager, mapIds: List<String>, useMph: Boole
 @Composable
 private fun movement(p: Message.GroupPositionInfo?, useMph: Boolean): String {
     p ?: return stringResource(R.string.group_no_position).replaceFirstChar { it.uppercase() }
+    if (p.paused) return stringResource(R.string.group_rider_paused).replaceFirstChar { it.uppercase() }
     val since = p.stoppedSince
     if (p.stopped && since != null) return stringResource(R.string.rider_info_stopped, ((System.currentTimeMillis() - since) / 60_000).coerceAtLeast(1).toInt())
     val kmh = p.speedMs * 3.6f

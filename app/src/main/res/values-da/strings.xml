@@ -1159,4 +1159,5 @@
     <string name="rider_info_seen">Sidst set: %1$s</string>
     <string name="rider_info_battery">Batteri %1$d %%</string>
     <string name="riders_here">Her sammen</string>
+    <string name="group_rider_paused">deler ikke sin position nu</string>
 </resources>

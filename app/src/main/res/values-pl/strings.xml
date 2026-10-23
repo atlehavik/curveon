@@ -1193,4 +1193,5 @@
     <string name="rider_info_seen">Ostatnio widziany: %1$s</string>
     <string name="rider_info_battery">Bateria %1$d%%</string>
     <string name="riders_here">Tutaj razem</string>
+    <string name="group_rider_paused">nie udostępnia teraz pozycji</string>
 </resources>

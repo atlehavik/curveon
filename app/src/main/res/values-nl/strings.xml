@@ -1131,4 +1131,5 @@
     <string name="rider_info_seen">Laatst gezien: %1$s</string>
     <string name="rider_info_battery">Batterij %1$d%%</string>
     <string name="riders_here">Hier samen</string>
+    <string name="group_rider_paused">deelt de locatie nu niet</string>
 </resources>

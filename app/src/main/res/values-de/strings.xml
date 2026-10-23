@@ -1158,4 +1158,5 @@
     <string name="rider_info_seen">Zuletzt gesehen: %1$s</string>
     <string name="rider_info_battery">Akku %1$d %%</string>
     <string name="riders_here">Hier zusammen</string>
+    <string name="group_rider_paused">teilt den Standort gerade nicht</string>
 </resources>

@@ -360,6 +360,22 @@ class RelayIntegrationTest {
     assertTrue("only the latest of each trip is handed over", kari.none { it is GroupEvent.TripReceived })
   }
 
+  @Test fun aRiderWhoStopsSharingIsPausedForEveryoneAlsoWhoJoinsLater() {
+    val (a, invite) = group()
+    a.client.start()
+    val kari = joined(invite, "Kari").also { it.client.start() }
+    kari.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Ola" } }
+    a.client.sendPosition(Payload.Pos(59.9, 10.7, 10f, 90f, 5f))
+    assertFalse(kari.await { (it as? GroupEvent.Position)?.pos }.paused)
+    // Ola turns sharing off: the last word is "paused".
+    a.client.sendPosition(Payload.Pos(59.9, 10.7, 0f, 0f, 0f, paused = true))
+    assertTrue(kari.await { (it as? GroupEvent.Position)?.pos }.paused)
+    // Someone who looks in later is handed that, not the position before.
+    val jens = joined(invite, "Jens").also { it.client.start() }
+    assertTrue(jens.await { (it as? GroupEvent.Position)?.pos }.paused)
+    assertTrue("only the latest position is kept", jens.none { (it as? GroupEvent.Position)?.pos?.paused == false })
+  }
+
   @Test fun aNudgeReachesOnlyTheRiderItIsForAndTheAnswerComesBack() {
     val (a, invite) = group()
     a.client.start()

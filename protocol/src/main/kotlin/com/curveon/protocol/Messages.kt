@@ -608,13 +608,15 @@ sealed interface Message {
         override fun toJson() = obj("group_positions").put("id", groupId).put("list", JSONArray(positions.map {
             JSONObject().put("id", it.id).put("lat", it.lat).put("lon", it.lon).put("heading", it.heading.toDouble())
                 .put("speed", it.speedMs.toDouble()).put("time", it.timeMs).put("stopped", it.stopped)
-                .put("since", it.stoppedSince ?: JSONObject.NULL).put("bat", it.battery ?: JSONObject.NULL)
+                .put("since", it.stoppedSince ?: JSONObject.NULL).put("bat", it.battery ?: JSONObject.NULL).put("paused", it.paused)
         }))
     }
 
     data class GroupPositionInfo(
         val id: String, val lat: Double, val lon: Double, val heading: Float, val speedMs: Float, val timeMs: Long,
-        val stopped: Boolean, val stoppedSince: Long?, val battery: Int?
+        val stopped: Boolean, val stoppedSince: Long?, val battery: Int?,
+        /** The rider has stopped sharing (paused): not on the map, though the group knows where they were. */
+        val paused: Boolean = false
     )
 
     /**
@@ -809,7 +811,8 @@ sealed interface Message {
                 GroupPositionInfo(
                     it.getString("id"), it.getDouble("lat"), it.getDouble("lon"), it.optDouble("heading", 0.0).toFloat(),
                     it.optDouble("speed", 0.0).toFloat(), it.optLong("time"), it.optBoolean("stopped"),
-                    if (it.isNull("since")) null else it.optLong("since"), if (it.isNull("bat")) null else it.optInt("bat")
+                    if (it.isNull("since")) null else it.optLong("since"), if (it.isNull("bat")) null else it.optInt("bat"),
+                    it.optBoolean("paused")
                 )
             })
             "group_sos" -> GroupSos(

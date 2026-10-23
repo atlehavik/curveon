@@ -1176,4 +1176,5 @@
     <string name="rider_info_seen">Vu pour la dernière fois : %1$s</string>
     <string name="rider_info_battery">Batterie %1$d %%</string>
     <string name="riders_here">Ici ensemble</string>
+    <string name="group_rider_paused">ne partage pas sa position</string>
 </resources>

@@ -1159,4 +1159,5 @@
     <string name="rider_info_seen">Senast sedd: %1$s</string>
     <string name="rider_info_battery">Batteri %1$d %%</string>
     <string name="riders_here">Här tillsammans</string>
+    <string name="group_rider_paused">delar inte sin position nu</string>
 </resources>

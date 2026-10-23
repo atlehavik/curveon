@@ -127,7 +127,8 @@ class ProtocolTest {
         )),
         Message.GroupPositions("0123", listOf(
             Message.GroupPositionInfo("r1", 59.9, 10.7, 180f, 22f, 5L, false, null, 80),
-            Message.GroupPositionInfo("r2", 60.0, 11.0, 0f, 0f, 6L, true, 3L, null)
+            Message.GroupPositionInfo("r2", 60.0, 11.0, 0f, 0f, 6L, true, 3L, null),
+            Message.GroupPositionInfo("r3", 60.1, 11.1, 0f, 0f, 7L, false, null, 40, paused = true)
         )),
         Message.GroupSos("0123", "r1", 68.1, 13.6, 7L, true, false, listOf(Message.SosAckInfo("r2", false), Message.SosAckInfo("r3", true)), 4),
         Message.GroupSos("0123", "r1", 68.1, 13.6, 7L, false, true, emptyList(), 4),
