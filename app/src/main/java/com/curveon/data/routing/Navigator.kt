@@ -289,6 +289,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     /** A trip that was being planned when Curveon was last ended, waiting for where the rider is. */
     private var pendingPreview: Pair<NavigationGoal, Int>? = null
+    /** A track to join where the rider is, as soon as there is a position ([resume]). */
+    private var pendingFollow: NavigationGoal.Track? = null
 
     /** Open the preview of a trip planned before Curveon was ended, as soon as it can be planned. */
     fun restorePreview(goal: NavigationGoal, selected: Int) {
@@ -872,8 +874,19 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     // ------------------------------------------------------------------ navigation
 
+    /**
+     * A trip that was being navigated when Android ended Curveon ([com.curveon.data.routing.ActiveTrip]): a track is joined
+     * where the rider is, anything else is planned again from here, to look at and start.
+     */
+    fun resume(goal: NavigationGoal) {
+        if (goal is NavigationGoal.Track) {
+            if (lastPosition == null) pendingFollow = goal else followTrackNow(goal.name, goal.points, goal.options)
+        } else restorePreview(goal, RoadStyle.entries.indexOf(goal.options.roadStyle).coerceAtLeast(0))
+    }
+
     fun stop() {
         pendingPreview = null
+        pendingFollow = null
         calcJob?.cancel()
         previewJob?.cancel()
         adventureJob?.cancel()
@@ -931,6 +944,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
         if (lastHeading == null && headingDeg != null) lastHeading = headingDeg
         pendingPreview?.let { (goal, selected) -> if (tracker == null) preview(goal, keepSelection = selected) }
+        pendingFollow?.let { goal -> pendingFollow = null; if (tracker == null) followTrackNow(goal.name, goal.points, goal.options) }
         val t = tracker ?: return
         val progress = t.update(position, accuracyMeters)
         var current = _state.value.copy(progress = progress)

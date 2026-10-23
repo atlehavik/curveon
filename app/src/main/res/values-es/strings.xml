@@ -504,6 +504,8 @@
     <string name="ride_resume_title">¿Continuar la salida?</string>
     <string name="ride_resume_continue">Continuar</string>
     <string name="ride_resume_new">Salida nueva</string>
+    <string name="nav_resume_title">¿Seguir navegando?</string>
+    <string name="nav_resume_no">No, gracias</string>
     <string name="rides_empty">Las salidas se graban solas en cuanto te pones en marcha.</string>
     <string name="rides_ride_again">Repetir</string>
     <string name="rides_save_to_gpx">Guardar en GPX</string>

@@ -162,6 +162,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
     val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
+    val navResumeOffer by viewModel.navResumeOffer.collectAsStateWithLifecycle()
     // Nothing pressed: it is a new ride, and the question goes away.
     LaunchedEffect(resumeOffer) { if (resumeOffer != null) { kotlinx.coroutines.delay(30_000); viewModel.startNewRide() } }
     val autoSaveRidesGroup by viewModel.autoSaveRidesGroup.collectAsStateWithLifecycle()
@@ -873,6 +874,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         )
         resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide,
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp)) }
+        // Waits while the ride's question is up (it goes by itself once riding on), and is not asked over a trip.
+        navResumeOffer?.takeIf { resumeOffer == null && preview == null && !isNavigating }?.let {
+            RideResumeCard(it.title, onResume = viewModel::resumeNavigation, onNew = viewModel::declineNavigationResume,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp),
+                heading = stringResource(R.string.nav_resume_title), newLabel = stringResource(R.string.nav_resume_no), tag = "nav_resume")
+        }
         reachedStop?.let { StopReachedBanner(it, onDismiss = { reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
         // Top left, beside the speed: clear of the preview sheet and the cards, however low the screen.
         LocationBanner(onAllowed = viewModel::startGps, modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp, start = 12.dp, end = 120.dp))

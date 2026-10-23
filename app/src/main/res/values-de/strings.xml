@@ -495,6 +495,8 @@
     <string name="ride_resume_title">Fahrt fortsetzen?</string>
     <string name="ride_resume_continue">Fortsetzen</string>
     <string name="ride_resume_new">Neue Fahrt</string>
+    <string name="nav_resume_title">Navigation fortsetzen?</string>
+    <string name="nav_resume_no">Nein danke</string>
     <string name="rides_empty">Fahrten werden automatisch aufgezeichnet, sobald du losfährst.</string>
     <string name="rides_ride_again">Nochmal fahren</string>
     <string name="rides_save_to_gpx">In GPX speichern</string>

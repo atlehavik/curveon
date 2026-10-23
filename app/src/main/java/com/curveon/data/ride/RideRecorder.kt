@@ -126,6 +126,17 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         return merged
     }
 
+    /**
+     * [ride], the newest one stored, when Curveon starts again: Android may have ended it on the way, which forgot the ride
+     * that had just finished. Riding again soon offers to go on with it, as if Curveon had never stopped.
+     */
+    fun remember(ride: Ride) {
+        if (current != null || lastFinished != null || ride.distanceMeters < MIN_RIDE_M) return
+        if (now() - ride.endMs > RESUME_WINDOW_MS) return
+        lastFinished = ride
+        finishedAt = ride.endMs
+    }
+
     /** The rider wants a new ride: the earlier one stays as it is. */
     fun declineResume() {
         resumeOffer = null

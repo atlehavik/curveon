@@ -793,6 +793,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** The trip being planned, kept on disk so it survives Android ending Curveon while it sleeps. */
     private val planDraft = com.curveon.data.routing.PlanDraft(application)
+    // Before init, which reads them (restoreTrip).
+    private val activeTrip = com.curveon.data.routing.ActiveTrip(application)
+
+    /** The trip that was being navigated when Android ended Curveon: the rider is asked whether to go on with it. */
+    private val _navResumeOffer = MutableStateFlow<com.curveon.data.routing.NavigationGoal?>(null)
+    val navResumeOffer: StateFlow<com.curveon.data.routing.NavigationGoal?> = _navResumeOffer.asStateFlow()
 
     /** Waits here while Curveon sleeps; loops call it so they don't run in the background. */
     private suspend fun untilAwake() { awake.first { it } }
@@ -1121,6 +1127,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         watchCurrentRoad()
         watchSleep()
         restorePlan()
+        restoreTrip()
         viewModelScope.launch { while (true) { delay(60_000); untilAwake(); updateMapDark() } }
         // A new version on GitHub: looked for soon after start, again every half hour until the
         // server has answered (often offline), then once a day. Developer builds are signed with
@@ -1283,6 +1290,37 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     // ---------------------------------------------------------------- the trip being planned
+
+    /**
+     * What Android's ending Curveon on the way would lose: the trip being navigated (kept on disk while it is, offered
+     * again at the next start) and the ride just logged (offered to go on with once riding again, as without a restart).
+     */
+    private fun restoreTrip() {
+        viewModelScope.launch {
+            _navResumeOffer.value = withContext(Dispatchers.IO) { activeTrip.load() }
+            withContext(Dispatchers.IO) { rideDao.latest() }?.let(rideRecorder::remember)
+            navigator.state.map { s -> s.goal.takeIf { s.isNavigating } }
+                .distinctUntilChanged().drop(1)
+                .collectLatest { goal ->
+                    if (goal != null) _navResumeOffer.value = null // riding something now, so nothing to go on with
+                    withContext(Dispatchers.IO) { activeTrip.save(goal) }
+                    while (goal != null) { delay(com.curveon.data.routing.ActiveTrip.TOUCH_EVERY_MS); withContext(Dispatchers.IO) { activeTrip.touch() } }
+                }
+        }
+    }
+
+    /** Goes on with the trip that was being navigated when Curveon was ended. */
+    fun resumeNavigation() {
+        val goal = _navResumeOffer.value ?: return
+        _navResumeOffer.value = null
+        navigator.resume(goal)
+    }
+
+    /** The rider does not want to go on with it: it is not offered again. */
+    fun declineNavigationResume() {
+        _navResumeOffer.value = null
+        viewModelScope.launch(Dispatchers.IO) { if (!navigator.state.value.isNavigating) activeTrip.save(null) }
+    }
 
     /** A trip being planned when Curveon was last ended comes back; the one on screen is kept on disk. */
     private fun restorePlan() {

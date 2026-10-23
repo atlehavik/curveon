@@ -6,6 +6,15 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-23 — Fra kodegjennomgangen: signerte grupper, trygg oppdatering, fortsett navigering (1.2.4)
+
+- [ ] Pixelen (release, oppdateres fra GitHub): etter oppdateringen er alle lagrede ruter, GPX-spor og turer der som før.
+- [ ] Gruppetur med X7/Pixel og en kamerat på en **eldre** Curveon (1.2.3): begge ser hverandre på kartet, SOS og
+  «Jeg kommer» går fram begge veier, og admin kan fjerne en tredje rytter uten at noen av dere mister gruppa.
+- [ ] Naviger et stykke på Pixelen, sveip Curveon bort fra «Nylige» (eller la den ligge i bakgrunnen til Android
+  lukker den), åpne igjen: «Fortsette navigeringen?» med målet. «Fortsett» planlegger turen fra der du er,
+  «Nei takk» glemmer den. Lukk Curveon med «Avslutt» i varselet: da spør den ikke.
+
 ## 2026-10-23 — Ingen vending midt i veien, markør på veien, SMS fra fullkart, blå deling, venneforespørsel i gruppe (1.2.4)
 
 - [ ] Venneforespørsel fra en gruppe, med to ekte enheter (X7 og Pixelen er samme rytter, så bruk en annen telefon, f.eks. kameratens,

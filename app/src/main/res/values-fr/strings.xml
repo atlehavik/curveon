@@ -504,6 +504,8 @@
     <string name="ride_resume_title">Continuer la balade ?</string>
     <string name="ride_resume_continue">Continuer</string>
     <string name="ride_resume_new">Nouvelle balade</string>
+    <string name="nav_resume_title">Reprendre la navigation ?</string>
+    <string name="nav_resume_no">Non merci</string>
     <string name="rides_empty">Les balades sont enregistrées automatiquement dès que tu roules.</string>
     <string name="rides_ride_again">Refaire</string>
     <string name="rides_save_to_gpx">Enregistrer en GPX</string>

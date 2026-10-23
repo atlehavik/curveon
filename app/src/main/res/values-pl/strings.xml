@@ -512,6 +512,8 @@
     <string name="ride_resume_title">Kontynuować przejazd?</string>
     <string name="ride_resume_continue">Kontynuuj</string>
     <string name="ride_resume_new">Nowy przejazd</string>
+    <string name="nav_resume_title">Kontynuować nawigację?</string>
+    <string name="nav_resume_no">Nie, dziękuję</string>
     <string name="rides_empty">Przejazdy nagrywają się same, gdy tylko ruszysz.</string>
     <string name="rides_ride_again">Jedź ponownie</string>
     <string name="rides_save_to_gpx">Zapisz w GPX</string>
