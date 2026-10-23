@@ -369,7 +369,8 @@ ever because the command was sent to the phone, which was not there. So:
   sends it a moment later (and every 10 minutes with the friend sweep), and applies what arrives. A friend's picture is not synced (heard again from the
   friend); the same friend met on both devices shows once. Edge cases left as they are: a group joined separately on both devices before linking ends
   with one of the two identities (the one that sorts higher); a group left on one device before linking can come back from the other.
-  "My other device" per ride group (the link with `me=`) is still there.
+  "My other device" per ride group (the link with `me=`) is gone from the group page since 1.2.3 (Me → My devices covers it); `GroupHub` still
+  answers `RequestDeviceLink` from older versions, and such a link still joins.
 
 
 ### Friends who always see you (built 2026-10-22)

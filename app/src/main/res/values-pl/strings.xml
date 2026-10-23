@@ -1026,8 +1026,6 @@
     <string name="group_photo_failed">Nie da się użyć tego zdjęcia.</string>
     <string name="group_other_device_active">Twoja pozycja jest udostępniana z innego urządzenia.</string>
     <string name="group_use_this_device">Użyj tego urządzenia</string>
-    <string name="group_other_device">Moje drugie urządzenie</string>
-    <string name="group_other_device_hint">Na drugim urządzeniu otwórz Jazda w grupie i naciśnij Zeskanuj kod QR, a potem zeskanuj ten kod: będziesz tam tym samym motocyklistą, nie nowym. Daje pełny dostęp jako ty, więc pokazuj go tylko sobie. Przestaje działać po 15 minutach.</string>
     <string name="group_invite_hint">Zeskanuj aparatem telefonu. Każdy z tym kodem może dołączyć, więc pokazuj go tylko tym, których chcesz w grupie. Aby wysłać link komuś, kogo tu nie ma, użyj Udostępnij link.</string>
     <string name="group_leave">Opuść grupę</string>
     <string name="group_leave_title">Opuścić: %1$s?</string>

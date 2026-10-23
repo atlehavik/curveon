@@ -993,8 +993,6 @@
     <string name="group_photo_failed">Ekki var hægt að nota þessa mynd.</string>
     <string name="group_other_device_active">Staðsetningu þinni er deilt úr hinu tækinu þínu.</string>
     <string name="group_use_this_device">Nota þetta tæki</string>
-    <string name="group_other_device">Hitt tækið mitt</string>
-    <string name="group_other_device_hint">Í hinu tækinu, opnaðu Hópferð og ýttu á Skanna QR-kóða, og skannaðu svo þennan: þá verður það sami ökumaður hér, ekki nýr. Hann veitir fullan aðgang sem þú, svo sýndu hann engum öðrum. Hann hættir að virka eftir 15 mínútur.</string>
     <string name="group_invite_hint">Skannaðu með myndavél síma. Hver sem er með þennan kóða getur gengið í hópinn, svo sýndu hann aðeins þeim sem þú vilt fá með. Til að senda hlekk til einhvers sem er ekki hér, notaðu Deila hlekk.</string>
     <string name="group_leave">Yfirgefa hóp</string>
     <string name="group_leave_title">Yfirgefa %1$s?</string>

@@ -946,8 +946,6 @@
     <string name="group_photo_failed">Kuvaa ei voitu käyttää.</string>
     <string name="group_other_device_active">Sijaintisi jaetaan toisesta laitteestasi.</string>
     <string name="group_use_this_device">Käytä tätä laitetta</string>
-    <string name="group_other_device">Toinen laitteeni</string>
-    <string name="group_other_device_hint">Avaa toisella laitteellasi Ryhmäajo, paina Skannaa QR-koodi ja skannaa tämä: siitä tulee sama ajaja täällä, ei uusi. Koodi antaa täyden pääsyn sinuna, joten näytä se vain itsellesi. Se lakkaa toimimasta 15 minuutin kuluttua.</string>
     <string name="group_invite_hint">Skannaa puhelimen kameralla. Kuka tahansa, jolla on tämä koodi, voi liittyä, joten näytä se vain ajajille, jotka haluat ryhmään. Lähetä linkki poissaolevalle valitsemalla Jaa linkki.</string>
     <string name="group_leave">Poistu ryhmästä</string>
     <string name="group_leave_title">Poistutaanko ryhmästä %1$s?</string>

@@ -994,8 +994,6 @@
     <string name="group_photo_failed">Det bildet kunne ikke brukes.</string>
     <string name="group_other_device_active">Posisjonen din deles fra den andre enheten din.</string>
     <string name="group_use_this_device">Bruk denne enheten</string>
-    <string name="group_other_device">Min andre enhet</string>
-    <string name="group_other_device_hint">Åpne Gruppetur på den andre enheten din, trykk Skann QR-kode og skann denne: da blir den samme rytter her, ikke en ny. Koden gir full tilgang som deg, så vis den bare til deg selv. Den slutter å virke etter 15 minutter.</string>
     <string name="group_invite_hint">Skann med telefonkameraet. Alle med denne koden kan bli med, så vis den bare til de du vil ha med. Skal noen som ikke er her bli med, bruk Del lenke.</string>
     <string name="group_leave">Forlat gruppa</string>
     <string name="group_leave_title">Forlate %1$s?</string>

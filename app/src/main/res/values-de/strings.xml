@@ -993,8 +993,6 @@
     <string name="group_photo_failed">Dieses Bild konnte nicht verwendet werden.</string>
     <string name="group_other_device_active">Deine Position wird von deinem anderen Gerät geteilt.</string>
     <string name="group_use_this_device">Dieses Gerät nutzen</string>
-    <string name="group_other_device">Mein anderes Gerät</string>
-    <string name="group_other_device_hint">Öffne auf deinem anderen Gerät Gruppenausfahrt, tippe auf QR-Code scannen und scanne diesen: Dort bist du dann derselbe Fahrer, kein neuer. Der Code gibt vollen Zugriff als du, zeig ihn also nur dir selbst. Er läuft nach 15 Minuten ab.</string>
     <string name="group_invite_hint">Mit der Kamera eines Handys scannen. Jeder mit diesem Code kann beitreten, zeig ihn also nur Fahrern, die du in der Gruppe willst. Um jemandem einen Link zu schicken, der nicht hier ist, nutze Link teilen.</string>
     <string name="group_leave">Gruppe verlassen</string>
     <string name="group_leave_title">%1$s verlassen?</string>

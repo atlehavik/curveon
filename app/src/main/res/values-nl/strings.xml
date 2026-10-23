@@ -967,8 +967,6 @@
     <string name="group_photo_failed">Die foto kon niet worden gebruikt.</string>
     <string name="group_other_device_active">Je positie wordt gedeeld vanaf je andere apparaat.</string>
     <string name="group_use_this_device">Dit apparaat gebruiken</string>
-    <string name="group_other_device">Mijn andere apparaat</string>
-    <string name="group_other_device_hint">Open op je andere apparaat Groepsrit en druk op QR-code scannen, en scan dan deze: daar word je dezelfde rijder, geen nieuwe. Hij geeft volledige toegang als jou, dus laat hem alleen aan jezelf zien. Hij werkt na 15 minuten niet meer.</string>
     <string name="group_invite_hint">Scan met de camera van een telefoon. Iedereen met deze code kan meedoen, dus laat hem alleen zien aan rijders die je in de groep wilt. Om een link te sturen naar iemand die hier niet is, gebruik je Link delen.</string>
     <string name="group_leave">Groep verlaten</string>
     <string name="group_leave_title">%1$s verlaten?</string>

@@ -1010,8 +1010,6 @@
     <string name="group_photo_failed">No se pudo usar esa foto.</string>
     <string name="group_other_device_active">Tu posición se comparte desde tu otro dispositivo.</string>
     <string name="group_use_this_device">Usar este dispositivo</string>
-    <string name="group_other_device">Mi otro dispositivo</string>
-    <string name="group_other_device_hint">En tu otro dispositivo, abre Salida en grupo, pulsa Escanear un código QR y escanea este: allí serás el mismo motorista, no uno nuevo. Da acceso completo como tú, así que muéstralo solo a ti mismo. Deja de funcionar a los 15 minutos.</string>
     <string name="group_invite_hint">Escanéalo con la cámara de un móvil. Cualquiera con este código puede unirse, así que enséñalo solo a quien quieras en el grupo. Para enviar un enlace a alguien que no está aquí, usa Compartir enlace.</string>
     <string name="group_leave">Salir del grupo</string>
     <string name="group_leave_title">¿Salir de %1$s?</string>

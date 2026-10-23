@@ -994,8 +994,6 @@
     <string name="group_photo_failed">Den bilden kunde inte användas.</string>
     <string name="group_other_device_active">Din position delas från din andra enhet.</string>
     <string name="group_use_this_device">Använd den här enheten</string>
-    <string name="group_other_device">Min andra enhet</string>
-    <string name="group_other_device_hint">På din andra enhet, öppna Gruppkörning och tryck på Skanna QR-kod, och skanna sedan den här: den blir samma förare här, inte en ny. Den ger full åtkomst som du, så visa den bara för dig själv. Den slutar fungera efter 15 minuter.</string>
     <string name="group_invite_hint">Skanna med en telefons kamera. Alla med den här koden kan gå med, så visa den bara för förare du vill ha i gruppen. För att skicka en länk till någon som inte är här, använd Dela länk.</string>
     <string name="group_leave">Lämna gruppen</string>
     <string name="group_leave_title">Lämna %1$s?</string>

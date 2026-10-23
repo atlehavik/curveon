@@ -189,10 +189,6 @@ private fun GroupDetail(
     val positions by manager.positions.collectAsStateWithLifecycle()
     val invite by manager.invite.collectAsStateWithLifecycle()
     val sos by manager.sos.collectAsStateWithLifecycle()
-    val deviceLink by manager.deviceLink.collectAsStateWithLifecycle()
-    var showDeviceLink by rememberSaveable { mutableStateOf(false) }
-    // The link for my other device carries my secrets: gone from memory as soon as it is not shown.
-    DisposableEffect(Unit) { onDispose { manager.forgetDeviceLink() } }
     // An invite asked for (or made with a new group) for this group only: the one on show belongs to it.
     LaunchedEffect(group.id) { if (showInvite) manager.requestInvite(group.id) }
     var confirmLeave by remember { mutableStateOf(false) }
@@ -284,7 +280,7 @@ private fun GroupDetail(
         if (!removed) {
             AddFriendsSection(manager, group.id)
             OutlinedButton(onClick = {
-                setShowInvite(!showInvite); showDeviceLink = false; manager.forgetDeviceLink()
+                setShowInvite(!showInvite)
                 if (!showInvite) manager.requestInvite(group.id)
             }, modifier = Modifier.testTag("group_invite")) {
                 Icon(Icons.Default.QrCode2, null, tint = ElectricCyan)
@@ -292,16 +288,6 @@ private fun GroupDetail(
                 Text(stringResource(R.string.group_invite), color = ElectricCyan, fontWeight = FontWeight.Bold)
             }
             if (showInvite) QrBlock(invite, R.string.group_invite_hint, R.string.group_invite, shareLink = true)
-            // The same person on another device (tablet and phone): one rider in the group, not two.
-            OutlinedButton(onClick = {
-                showDeviceLink = !showDeviceLink; setShowInvite(false); manager.forgetDeviceLink()
-                if (showDeviceLink) manager.requestDeviceLink(group.id)
-            }, modifier = Modifier.testTag("group_other_device")) {
-                Icon(Icons.Default.Devices, null, tint = ElectricCyan)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.group_other_device), color = ElectricCyan, fontWeight = FontWeight.Bold)
-            }
-            if (showDeviceLink) QrBlock(deviceLink, R.string.group_other_device_hint, R.string.group_other_device)
         }
 
         if (active && sharing && !removed) SosButton(onTrigger = { countdown = SOS_COUNTDOWN_S })

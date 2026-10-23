@@ -1010,8 +1010,6 @@
     <string name="group_photo_failed">Cette photo n’a pas pu être utilisée.</string>
     <string name="group_other_device_active">Ta position est partagée depuis ton autre appareil.</string>
     <string name="group_use_this_device">Utiliser cet appareil</string>
-    <string name="group_other_device">Mon autre appareil</string>
-    <string name="group_other_device_hint">Sur ton autre appareil, ouvre Balade en groupe et appuie sur Scanner un QR code, puis scanne celui-ci : il devient le même motard ici, pas un nouveau. Il donne un accès complet en ton nom, alors ne le montre qu’à toi. Il expire au bout de 15 minutes.</string>
     <string name="group_invite_hint">Scanne avec l’appareil photo d’un téléphone. Toute personne avec ce code peut rejoindre, alors montre-le seulement aux motards que tu veux dans le groupe. Pour envoyer un lien à quelqu’un qui n’est pas là, utilise Partager le lien.</string>
     <string name="group_leave">Quitter le groupe</string>
     <string name="group_leave_title">Quitter %1$s ?</string>
