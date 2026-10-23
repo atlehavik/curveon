@@ -203,7 +203,7 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
     // The tour itself is shown lying down, so the parts it points at stay put (a phone held upright turns once, when
     // "Start" is pressed: the language, the welcome and Android's questions come the way the phone is held); back to
     // the rider's own choice afterwards.
-    val activity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    val activity = androidx.activity.compose.LocalActivity.current
     var lying by rememberSaveable { mutableStateOf(false) }
     DisposableEffect(activity, lying) {
         val on = lying

@@ -44,6 +44,23 @@ class NavigationTrackerTest {
     }
 
     @Test
+    fun `a route without points or maneuvers does not crash`() {
+        val here = LatLon(60.0, 10.0)
+        val empty = NavigationTracker(Route(emptyList(), emptyList(), 0.0, 0.0, 0.0, 0, 0.0, 0)).update(here)
+        assertEquals(ManeuverType.ARRIVE, empty.nextManeuver.type)
+        assertTrue(empty.arrived)
+
+        val far = Geo.destination(here, 0.0, 500.0)
+        val one = RoutePoint(far.lat, far.lon, 0.0, 0.0, 0.0, null, null, unpaved = false, ferry = false)
+        val p = NavigationTracker(Route(listOf(one), emptyList(), 0.0, 0.0, 0.0, 0, 0.0, 0)).update(here)
+        assertEquals(500.0, p.distanceToNextManeuver, 1.0)
+        assertFalse(p.arrived)
+
+        val noManeuvers = lRoute().copy(maneuvers = emptyList())
+        assertEquals(ManeuverType.ARRIVE, NavigationTracker(noManeuvers).update(Geo.destination(here, 0.0, 300.0)).nextManeuver.type)
+    }
+
+    @Test
     fun `after the turn the next maneuver is arrival`() {
         val route = lRoute()
         val tracker = NavigationTracker(route)

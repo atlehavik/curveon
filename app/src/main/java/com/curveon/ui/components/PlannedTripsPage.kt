@@ -89,20 +89,20 @@ fun ColumnScope.PlannedTripsPage(
         val pickedNow = selection
         if (trips.isNotEmpty()) PageToolbar(pickedNow?.let { pluralStringResource(R.plurals.rides_selected, it.size, it.size) }) {
             val sel = pickedNow
-                if (sel != null) {
-                    val all = sel.size == trips.size
-                    PillButton(if (all) Icons.Default.RemoveDone else Icons.Default.DoneAll,
-                        stringResource(if (all) R.string.rides_select_none else R.string.rides_select_all), CockpitSurfaceVariant, TextPrimary) {
-                        selection = if (all) emptySet() else trips.map { it.id }.toSet()
-                    }
-                    if (sel.isNotEmpty()) RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 48.dp, WarningRed, TextPrimary) {
-                        confirmDelete = trips.filter { it.id in sel }
-                    }
+            if (sel != null) {
+                val all = sel.size == trips.size
+                PillButton(if (all) Icons.Default.RemoveDone else Icons.Default.DoneAll,
+                    stringResource(if (all) R.string.rides_select_none else R.string.rides_select_all), CockpitSurfaceVariant, TextPrimary) {
+                    selection = if (all) emptySet() else trips.map { it.id }.toSet()
                 }
-                RoundButton(
-                    Icons.Default.Checklist, stringResource(R.string.rides_select), 48.dp,
-                    if (sel != null) ElectricCyan else CockpitSurfaceVariant, if (sel != null) Color(0xFF00363D) else TextPrimary
-                ) { selection = if (sel == null) emptySet() else null }
+                if (sel.isNotEmpty()) RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 48.dp, WarningRed, TextPrimary) {
+                    confirmDelete = trips.filter { it.id in sel }
+                }
+            }
+            RoundButton(
+                Icons.Default.Checklist, stringResource(R.string.rides_select), 48.dp,
+                if (sel != null) ElectricCyan else CockpitSurfaceVariant, if (sel != null) Color(0xFF00363D) else TextPrimary
+            ) { selection = if (sel == null) emptySet() else null }
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(rows, key = { if (it is RouteGroup) "g${it.id}" else "t${(it as RouteItem).id}" }) { row ->

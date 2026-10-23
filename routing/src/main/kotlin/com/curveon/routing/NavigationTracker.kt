@@ -39,6 +39,7 @@ class NavigationTracker(
 
     fun update(position: LatLon, accuracyMeters: Double = 10.0): NavigationProgress {
         val pts = route.points
+        if (pts.size < 2) return atSinglePoint(position)
         val searchEnd = findSearchEnd(lastIndex)
         var bestIdx = lastIndex
         var bestT = 0.0
@@ -73,7 +74,7 @@ class NavigationTracker(
         if (!offRoute) { lastIndex = bestIdx; lastAlong = along }
 
         val next = route.maneuvers.firstOrNull { it.distanceFromStart > along + PASSED_MANEUVER_M && it.type != ManeuverType.DEPART }
-            ?: route.maneuvers.last()
+            ?: arrival
         val following = route.maneuvers.firstOrNull { it.distanceFromStart > next.distanceFromStart }
         val secondsAtPos = a.secondsFromStart + (b.secondsFromStart - a.secondsFromStart) * bestT
         val remaining = (route.distanceMeters - along).coerceAtLeast(0.0)
@@ -91,6 +92,21 @@ class NavigationTracker(
             speedLimitKmh = b.maxSpeedKmh,
             offRoute = offRoute,
             arrived = remaining < ARRIVED_M
+        )
+    }
+
+    /** The last maneuver, or an arrival at the end when the route came without any. */
+    private val arrival: Maneuver
+        get() = route.maneuvers.lastOrNull() ?: Maneuver(ManeuverType.ARRIVE, maxOf(route.points.lastIndex, 0), route.distanceMeters)
+
+    /** A route of one point (or none): nothing to follow, only how far away it is. Never a crash while riding. */
+    private fun atSinglePoint(position: LatLon): NavigationProgress {
+        val p = route.points.firstOrNull()?.let { LatLon(it.lat, it.lon) } ?: position
+        val d = Geo.distance(position, p)
+        return NavigationProgress(
+            snapped = p, routeBearingDeg = Geo.bearing(position.lat, position.lon, p.lat, p.lon), distanceAlongRoute = 0.0,
+            distanceFromRoute = d, nextManeuver = arrival, distanceToNextManeuver = d, followingManeuver = null,
+            remainingDistance = d, remainingSeconds = 0.0, speedLimitKmh = null, offRoute = false, arrived = d < ARRIVED_M
         )
     }
 

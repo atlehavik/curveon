@@ -464,7 +464,7 @@
     <string name="preview_remove_stop">Fjarlægja viðkomustað</string>
     <string name="remove_point">Fjarlægja punkt</string>
     <plurals name="preview_includes_ferries">
-        <item quantity="one">Með ferju.</item>
+        <item quantity="one">Með %d ferju.</item>
         <item quantity="other">Með %d ferjum.</item>
     </plurals>
     <string name="preview_ferry_loop">Enginn svo langur hringur í þá átt án ferju – prófaðu aðra átt eða vegalengd.</string>
@@ -476,7 +476,7 @@
     <string name="preview_gravel_after">sú fyrsta eftir %1$s</string>
     <string name="preview_gravel_amount">%1$s möl</string>
     <plurals name="preview_ferries">
-        <item quantity="one">ferja</item>
+        <item quantity="one">%d ferja</item>
         <item quantity="other">%d ferjur</item>
     </plurals>
     <string name="preview_curviness">Beygjur</string>
