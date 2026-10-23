@@ -10,7 +10,7 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 - [ ] Kjør uten rute (Pixel, gjerne der GPS-en driver litt): markøren ligger på veien og peker langs den,
   også gjennom svinger. I kryss og når du svinger av, slipper den veien og følger GPS-en. Står du stille,
-  blir den liggende på veien. Bare i Norge (veidata fra NVDB); utenlands er den som før.
+  blir den liggende på veien. Den følger veiene slik kartet tegner dem, også i utlandet og offline.
 - [ ] Fullkart → Telefon → en kontakt → SMS: dashbordet kommer fram med SMS-kortet, og etter Send eller
   Avbryt går det tilbake til fullkart. Gjelder også Svar på en melding.
 - [ ] Del posisjon i en gruppe: prikken på Venner-knappen er blå (ikke grønn). Prøv Pixel i sollys.

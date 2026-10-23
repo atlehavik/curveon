@@ -212,6 +212,8 @@ fun CurveonMapView(
     onRoadName: (Int, com.curveon.data.road.MapRoad?) -> Unit = { _, _ -> },
     /** Called now and then with the road under the rider as the tiles have it; null = don't read it. */
     onRoadHere: ((com.curveon.data.road.MapRoad?) -> Unit)? = null,
+    /** Called every second with where the rider is and the road lines the map draws round them; null = don't read them. */
+    onRoadsNear: ((com.curveon.routing.LatLon, List<List<com.curveon.routing.LatLon>>) -> Unit)? = null,
     gpxTracks: List<com.curveon.data.gpx.OverlayTrack> = emptyList(),
     gpxPois: List<com.curveon.data.gpx.GpxPoi> = emptyList(),
     /** Give way and stop signs that apply to the rider, stood beside the road before their junctions. */
@@ -1202,6 +1204,32 @@ fun CurveonMapView(
         }
     }
 
+    // The roads round the rider as the map draws them, to put the rider on the one they ride when there's no
+    // route: the same map in every country, offline or online.
+    val onRoadsNearState = rememberUpdatedState(onRoadsNear)
+    LaunchedEffect(map, style, canQuery, onRoadsNear != null) {
+        if (!canQuery || onRoadsNear == null) return@LaunchedEffect
+        val m = map ?: return@LaunchedEffect
+        val s = style ?: return@LaunchedEffect
+        val roadLayers = s.layers.map { it.id }.filter { it.startsWith("roads_") }.toTypedArray()
+        while (true) {
+            kotlinx.coroutines.delay(1_000)
+            lifecycleOwner.lifecycle.untilStarted()
+            val p = puck ?: continue
+            val here = locationState.value
+            // ~40 m round the rider, however far the map is zoomed out (then it's a few pixels and little is read).
+            val r = (ROADS_NEAR_M / m.projection.getMetersPerPixelAtLatitude(here.latitude)).toFloat().coerceIn(4f, 400f)
+            val lines = m.queryRenderedFeatures(RectF(p.x - r, p.y - r, p.x + r, p.y + r), *roadLayers).flatMap { f ->
+                when (val g = f.geometry()) {
+                    is LineString -> listOf(g.coordinates())
+                    is org.maplibre.geojson.MultiLineString -> g.coordinates()
+                    else -> emptyList()
+                }
+            }.map { pts -> pts.map { com.curveon.routing.LatLon(it.latitude(), it.longitude()) } }
+            onRoadsNearState.value?.invoke(com.curveon.routing.LatLon(here.latitude, here.longitude), lines)
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -1907,6 +1935,9 @@ private data class Puck(val x: Float, val y: Float, val rotation: Float, val til
 
 /** The smallest halo: a ring just outside the arrow (44 dp, its tip ~21 dp from the middle). */
 private const val HALO_MIN_DP = 27f
+
+/** How far round the rider the map's roads are read to put the rider on one (see onRoadsNear). */
+private const val ROADS_NEAR_M = 40.0
 
 /**
  * A see-through disc under the arrow, as big as the GPS's accuracy: a small ring round the arrow

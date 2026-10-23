@@ -835,6 +835,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             roadNameProbe = roadNameProbe,
             onRoadName = viewModel::onRoadName,
             onRoadHere = if (showRoadInfo) viewModel::onRoadHere else null,
+            onRoadsNear = if (isNavigating) null else viewModel::onRoadsNear,
             // Held on the map: go there or keep it as a favourite (riding or planning: also a stop or the start).
             onLongPress = { p, roadName, mapRoad, tracks ->
                 roadInfo = null
