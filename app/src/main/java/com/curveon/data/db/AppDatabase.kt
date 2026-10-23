@@ -12,7 +12,7 @@ import com.curveon.data.model.RouteItem
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [RouteItem::class, RouteGroup::class, GpxTrack::class, GpxGroup::class, Ride::class], version = 7, exportSchema = false)
+@Database(entities = [RouteItem::class, RouteGroup::class, GpxTrack::class, GpxGroup::class, Ride::class], version = 7, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun routeDao(): RouteDao
     abstract fun gpxDao(): GpxDao
@@ -96,6 +96,9 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Every step from each version riders may have; MigrationTest checks them against the schemas in app/schemas. */
+        internal val MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -106,8 +109,10 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "curveon_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(*MIGRATIONS)
+                    // Only a downgrade (an older build installed over a newer one) may start empty; an update never
+                    // throws away routes and rides: a missing step is a crash to fix, caught by MigrationTest first.
+                    .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
                     .build()
                 INSTANCE = instance
                 instance

@@ -123,3 +123,6 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
 }
+
+// Each database version's schema is kept in the repo, so a migration can be tested against what riders really have.
+ksp { arg("room.schemaLocation", "$projectDir/schemas") }
