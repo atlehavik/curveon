@@ -72,13 +72,35 @@ class BRouterEngine(
         if (visitEveryVia && waypoints.size > 2) {
             // Leg by leg: each stop is a leg's end, so it can't be cut out. (BRouter's allowSamewayback
             // would keep it too, but turns a plain A→B trip into there and back.)
-            return Routes.joinLegs(waypoints.zipWithNext().mapIndexed { i, (a, b) ->
-                route(listOf(a, b), options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg.takeIf { i == 0 }, noGo, tracksAsLastResort)
-            })
+            val legs = ArrayList<Route>(waypoints.size - 1)
+            for ((i, ab) in waypoints.zipWithNext().withIndex()) {
+                val (a, b) = ab
+                legs += if (i == 0) route(listOf(a, b), options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort)
+                    else leaveStop(a, b, legs.last(), options, viaCatchingRangeMeters, avoidedFerryCost, noGo, tracksAsLastResort)
+            }
+            return Routes.joinLegs(legs)
         }
         val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false, maxMillis = maxMillis)
         // Start and end on the rider's own road even where the map doesn't join it to the network.
         return OwnRoad { pts, look -> routeOnce(pts, options, null, avoidedFerryCost, null, emptyList(), tracksAsLastResort, look, maxMillis) }.join(waypoints, r)
+    }
+
+    /**
+     * The leg from [stop] on to [next], leaving the stop the way [arrived] came in. A leg on its own starts
+     * in any direction, so a stop by the road (a fuel station beside the main road, a via point) became
+     * "ride to the point and turn round on the road", even at 80 km/h. Turning round at the stop is kept
+     * only for a dead end, or when going on to a place to turn costs more than [STOP_TURN_SLACK_S].
+     */
+    private fun leaveStop(
+        stop: LatLon, next: LatLon, arrived: Route, options: RouteOptions, viaCatchingRangeMeters: Double?,
+        avoidedFerryCost: Int, noGo: List<NoGo>, tracksAsLastResort: Boolean
+    ): Route {
+        val plain = route(listOf(stop, next), options, viaCatchingRangeMeters, avoidedFerryCost, null, noGo, tracksAsLastResort)
+        if (arrived.distanceMeters < 40) return plain
+        val heading = Routes.pointAt(arrived, arrived.distanceMeters - 20).second
+        if (!OffRoutePlanner.turnsBack(plain, stop, heading) && !OffRoutePlanner.uTurnsAhead(plain)) return plain
+        val ahead = OffRoutePlanner(this).forwardOnly(stop, heading, listOf(next), options, noGo).second ?: return plain
+        return if (ahead.durationSeconds - plain.durationSeconds <= STOP_TURN_SLACK_S) ahead else plain
     }
 
     private fun routeOnce(
@@ -230,6 +252,9 @@ class BRouterEngine(
         private val GRAVEL_PULLS = listOf(100, 50, 20)
 
         private const val CACHE_KEY = "curveon_params"
+
+        /** Going on from a stop to a place to turn may cost this much more than turning round on the road there. */
+        const val STOP_TURN_SLACK_S = 600.0
 
         /** An avoided ferry is worth a ~1000 km detour. */
         const val AVOIDED_FERRY_COST = 1_000_000

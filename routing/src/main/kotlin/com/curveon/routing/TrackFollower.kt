@@ -1,5 +1,7 @@
 package com.curveon.routing
 
+import kotlin.math.abs
+
 /**
  * Turns a GPX track into a navigable route: ride from where you are to the track (joining it
  * where you are if you are already on it), then follow the track through dense via points so the
@@ -10,8 +12,10 @@ class TrackFollower(private val engine: BRouterEngine) {
     /**
      * [fromStart]: a track picked to ride (rather than one the rider is already riding) joins at its
      * first pass by the rider, so a loop from home is ridden whole even where it passes home again.
+     * Otherwise (a trip a friend shared) it is joined where the rider meets it, the way it goes; [headingDeg]
+     * is the way the rider is riding, if known.
      */
-    fun route(from: LatLon, track: List<LatLon>, options: RouteOptions, fromStart: Boolean = false): Route {
+    fun route(from: LatLon, track: List<LatLon>, options: RouteOptions, fromStart: Boolean = false, headingDeg: Double? = null): Route {
         require(track.size >= 2) { "Track has no points" }
         val joinIndex = (if (fromStart) firstIndexWithin(from, track, ON_TRACK_M) else
             nearestIndex(from, track).takeIf { Geo.distance(from, track[it]) < ON_TRACK_M }) ?: 0
@@ -19,9 +23,64 @@ class TrackFollower(private val engine: BRouterEngine) {
         // Tight snapping keeps us on the track's roads; the approach leg uses normal snapping
         // because the rider may start far from any road the track uses.
         val onTrack = engine.route(vias, options, viaCatchingRangeMeters = VIA_CATCHING_RANGE_M)
+        if (!fromStart) joinAlong(from, onTrack, options, headingDeg)?.let { return it }
         if (Geo.distance(from, vias.first()) < 50) return onTrack
         val approach = engine.route(listOf(from, vias.first()), options)
         return Routes.concat(approach, onTrack)
+    }
+
+    /**
+     * Onto [line] riding the way it goes. Joining at the nearest point on it sent a rider who met it from the
+     * wrong side to that point and round on the road there (Bømlo, 2026-10-23, in an 80 zone). So: the place
+     * nearest the rider and a few further along are tried, a way there that arrives against the line, turns
+     * round, or (with [headingDeg]) starts by going back is dropped, and the quickest to the end wins. Null when
+     * every way does one of those.
+     */
+    private fun joinAlong(from: LatLon, line: Route, options: RouteOptions, headingDeg: Double?): Route? {
+        val (along, off) = nearestAlong(from, line)
+        if (off < ON_LINE_M && (headingDeg == null || abs(Geo.angleDiff(headingDeg, Routes.pointAt(line, along).second)) < 90)) {
+            return Routes.slice(line, along)
+        }
+        val joins = (listOf(along) + OffRoutePlanner.JOIN_AHEAD_M.map { along + it }).filter { it < line.distanceMeters - 50 }
+        var noGo = emptyList<NoGo>()
+        val ways = joins.mapIndexedNotNull { i, at ->
+            runCatching {
+                val (target, bearing) = Routes.pointAt(line, at)
+                val leg = when {
+                    headingDeg == null -> engine.route(listOf(from, target), options, tracksAsLastResort = false)
+                    // The ways back found once (they are right behind the rider), then kept for the other joins.
+                    i == 0 -> OffRoutePlanner(engine).forwardOnly(from, headingDeg, listOf(target), options).also { noGo = it.first }.second
+                    else -> engine.route(listOf(from, target), options, startHeadingDeg = headingDeg, noGo = noGo, tracksAsLastResort = false)
+                } ?: return@runCatching null
+                if (OffRoutePlanner.uTurnsAhead(leg) || OffRoutePlanner.arrivesAgainst(leg, bearing) ||
+                    (headingDeg != null && OffRoutePlanner.turnsBack(leg, from, headingDeg))) return@runCatching null
+                val joined = if (line.distanceMeters - at > 30) Routes.joinLegs(listOf(leg, Routes.slice(line, at))) else leg
+                joined to leg.durationSeconds + line.durationSeconds - Routes.secondsAt(line, at)
+            }.getOrNull()
+        }
+        return ways.minByOrNull { it.second }?.first
+    }
+
+    /** How far along [line] the point nearest [p] is, and how far [p] is from it, in metres. */
+    private fun nearestAlong(p: LatLon, line: Route): Pair<Double, Double> {
+        val pts = line.points
+        val kx = Math.cos(Math.toRadians(p.lat)) * 111_320.0
+        val ky = 110_540.0
+        var best = Double.MAX_VALUE
+        var bestAlong = 0.0
+        for (i in 0 until pts.size - 1) {
+            val ax = (pts[i].lon - p.lon) * kx; val ay = (pts[i].lat - p.lat) * ky
+            val bx = (pts[i + 1].lon - p.lon) * kx; val by = (pts[i + 1].lat - p.lat) * ky
+            val dx = bx - ax; val dy = by - ay
+            val len = dx * dx + dy * dy
+            val t = if (len == 0.0) 0.0 else (-(ax * dx + ay * dy) / len).coerceIn(0.0, 1.0)
+            val d = Math.hypot(ax + t * dx, ay + t * dy)
+            if (d < best) {
+                best = d
+                bestAlong = pts[i].distanceFromStart + t * (pts[i + 1].distanceFromStart - pts[i].distanceFromStart)
+            }
+        }
+        return bestAlong to best
     }
 
     /**
@@ -103,6 +162,8 @@ class TrackFollower(private val engine: BRouterEngine) {
         const val VIA_SPACING_M = 1_000.0
         const val ON_TRACK_M = 300.0
         const val VIA_CATCHING_RANGE_M = 150.0
+        /** Nearer the line than this, the rider is on it. */
+        const val ON_LINE_M = 30.0
 
         fun nearestIndex(p: LatLon, track: List<LatLon>): Int =
             track.indices.minByOrNull { Geo.distance(p, track[it]) } ?: 0

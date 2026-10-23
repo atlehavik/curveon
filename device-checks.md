@@ -6,6 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-23 — Ingen vending midt i veien (1.2.4)
+
+- [ ] Del en tur med en venn mens dere står på hver deres side av et kryss (som ved Circle K Automat Bømlo).
+  Hos vennen skal ruten koble seg på turen i den retningen den går, uten å kjøre til et punkt på veien og snu der.
+- [ ] Plan en tur med et stopp ved en vei du skal tilbake langs: ruten kjører videre til et kryss eller en
+  rundkjøring og snur der, ikke på selve veien. (Et stopp i en blindvei, en innkjørsel eller på en
+  stasjonsplass snur fortsatt der.)
+
 ## 2026-10-23 — Pause i gruppa, autolagret profil, nudge-sperre (1.2.3)
 
 Pixel og X7 begge med 1.2.3 (Companion også 1.2.3 hvis X7 går via Companion).

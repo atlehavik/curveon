@@ -852,7 +852,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         is NavigationGoal.Destination -> if (goal.fixedLine != null) {
             // A saved line is ridden from its start; the line of a trip someone shared is joined where the rider meets it.
             if (goal.saved != null) TrackFollower(engine).route(from, goal.fixedLine, goal.options, fromStart = true)
-            else TrackFollower(engine).route(from, fromNearest(from, goal.fixedLine), goal.options)
+            else TrackFollower(engine).route(from, fromNearest(from, goal.fixedLine), goal.options, headingDeg = lastHeading.takeIf { from == lastPosition })
         } else engine.route(
             listOf(from) + goal.stops.map { it.point } + goal.destination,
             goal.options.copy(roadStyle = style ?: goal.options.roadStyle),
