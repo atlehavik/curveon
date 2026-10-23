@@ -74,9 +74,9 @@
     <string name="screen_lock_landscape">Landscape</string>
     <string name="screen_lock_portrait">Portrait</string>
     <string name="settings_roads">Roads</string>
-    <string name="settings_roads_hint">Day map: the colour of the small roads</string>
-    <string name="road_contrast_grey">Grey</string>
-    <string name="road_contrast_dark_grey">Dark grey</string>
+    <string name="settings_roads_hint">The colour of the small roads, day and night</string>
+    <string name="road_contrast_normal">Normal</string>
+    <string name="road_contrast_high">High contrast</string>
     <string name="settings_map_detail">Map detail</string>
     <string name="settings_map_detail_hint">More detail shows gravel and small roads one zoom step further out, but the map responds a little slower</string>
     <string name="map_detail_response">Fast</string>
@@ -128,7 +128,7 @@
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom in when slow, out on fast roads</string>
     <string name="settings_arrow">Marker</string>
-    <string name="settings_arrow_hint">Seconds ahead of the GPS, to make up for its delay: − moves the marker back, + forward (standard +1.5)</string>
+    <string name="settings_arrow_hint">Fine-tunes where the marker is drawn, to make up for the GPS delay: − moves it back, + forward. 0 is the usual setting</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Move the marker back</string>
     <string name="settings_arrow_ahead">Move the marker forward</string>
@@ -495,9 +495,9 @@
     <string name="rides">Rides</string>
     <string name="rides_recording">● Recording · %1$s</string>
     <string name="rides_this_ride">this ride</string>
-    <string name="ride_resume_title">Continue the ride?</string>
-    <string name="ride_resume_continue">Continue</string>
-    <string name="ride_resume_new">New ride</string>
+    <string name="ride_resume_title">Your last ride was saved</string>
+    <string name="ride_resume_continue">Continue that ride</string>
+    <string name="ride_resume_new">Start new ride</string>
     <string name="rides_empty">Rides are recorded automatically once you get going.</string>
     <string name="rides_ride_again">Ride again</string>
     <string name="rides_save_to_gpx">Save to GPX</string>

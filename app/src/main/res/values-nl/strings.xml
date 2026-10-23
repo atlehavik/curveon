@@ -68,9 +68,9 @@
     <string name="screen_lock_landscape">Liggend</string>
     <string name="screen_lock_portrait">Staand</string>
     <string name="settings_roads">Wegen</string>
-    <string name="settings_roads_hint">Dagkaart: de kleur van kleine wegen</string>
-    <string name="road_contrast_grey">Grijs</string>
-    <string name="road_contrast_dark_grey">Donkergrijs</string>
+    <string name="settings_roads_hint">De kleur van de kleine wegen, dag en nacht</string>
+    <string name="road_contrast_normal">Normaal</string>
+    <string name="road_contrast_high">Hoog contrast</string>
     <string name="settings_map_detail">Kaartdetail</string>
     <string name="settings_map_detail_hint">Meer detail toont gravel en kleine wegen één zoomstap verder uit, maar de kaart reageert iets trager</string>
     <string name="map_detail_response">Snel</string>
@@ -122,7 +122,7 @@
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Inzoomen als je langzaam rijdt, uit op snelle wegen</string>
     <string name="settings_arrow">Markering</string>
-    <string name="settings_arrow_hint">Seconden voor op de gps, om de vertraging op te vangen: − zet de markering terug, + vooruit (standaard +1,5)</string>
+    <string name="settings_arrow_hint">Stelt af waar de marker getekend wordt, om de gps-vertraging op te vangen: − zet hem terug, + naar voren. 0 is de normale instelling</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Markering terugzetten</string>
     <string name="settings_arrow_ahead">Markering vooruitzetten</string>
@@ -475,9 +475,9 @@
     <string name="rides">Ritten</string>
     <string name="rides_recording">● Opname · %1$s</string>
     <string name="rides_this_ride">deze rit</string>
-    <string name="ride_resume_title">Rit voortzetten?</string>
-    <string name="ride_resume_continue">Doorgaan</string>
-    <string name="ride_resume_new">Nieuwe rit</string>
+    <string name="ride_resume_title">Laatste rit opgeslagen</string>
+    <string name="ride_resume_continue">Die rit voortzetten</string>
+    <string name="ride_resume_new">Nieuwe rit starten</string>
     <string name="rides_empty">Ritten worden automatisch opgenomen zodra je gaat rijden.</string>
     <string name="rides_ride_again">Opnieuw rijden</string>
     <string name="rides_save_to_gpx">Opslaan in GPX</string>

@@ -6,10 +6,14 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
-## 2026-10-23 — SOS-lyd og tilt-piler i 3D (1.2.4)
+## 2026-10-23 — SOS-lyd, tilt-piler, turdialog, veikontrast, markør (1.2.4)
+
+- [ ] Markør: Settings → Navigation viser nå 0 s som utgangspunkt (lagret verdi uendret, 0 = dagens +1,5 s). Sjekk at − og + flytter markøren slik du venter.
+- [ ] Veikontrast (Settings → Display → Roads): Normal / Høykontrast. Dag: Normal = grå, Høykontrast = mørkegrå. Natt: Normal = litt mykere enn hvit, Høykontrast = hvit. Sjekk også grusstripene og at stedsnavn ligger over veiene.
+- [ ] Turdialogen etter å ha kjørt videre kort tid etter en lagret tur: skal si «Forrige tur ble lagret» med «Fortsett den turen» / «Start ny tur».
 
 - [ ] Demo-SOS (DEV) eller en SOS fra kameraten: det skal pipe S-O-S (tre korte, tre lange, tre korte) på alarmvolumet til du svarer eller avbryter, og ikke spille telefonens alarmmelodi.
-- [ ] I 3D-kartet skal to piler (opp/ned) stå ved siden av 3D-knappen hele tiden, uten å holde knappen inne. Pil opp = mer fugleperspektiv.
+- [ ] Bytt til 3D-kartet: to piler (opp/ned) dukker opp ved 3D-knappen i noen sekunder og forsvinner igjen; hold inne 3D-knappen for å få dem fram. Pil opp = mer fugleperspektiv.
 
 ## 2026-10-23 — Ingen vending midt i veien, markør på veien, SMS fra fullkart, blå deling, venneforespørsel i gruppe (1.2.4)
 
@@ -194,7 +198,7 @@ selve overføringen over Bluetooth og mottaket på nettbrettet kan ikke prøves 
 
 ## 2026-10-21 — Tilt helt ned mens kartet følger deg (1.2.2)
 
-- [ ] 3D mens kartet følger deg (gjerne under navigering/demotur): trykk pil ned ved 3D-knappen
+- [ ] 3D mens kartet følger deg (gjerne under navigering/demotur): bytt til 3D og trykk pil ned ved 3D-knappen
       til det ikke går lenger. Blikket skal gå like lavt ned mot veien som når du har dratt i kartet,
       og pilen din skal fortsatt sitte lavt på skjermen, uten å hoppe når du trykker.
 

@@ -79,7 +79,7 @@ class OfflineMaps(private val context: Context) {
         out = rest
         for (k in 0 until out.length()) {
             val layer = out.getJSONObject(k)
-            if (flavor == "light") highContrast(layer, road, path) else nightRoadWidths(layer)
+            if (flavor == "light") highContrast(layer, road, path) else nightRoads(layer, road, path)
             minorRoadsFromSurfaceZoom(layer)
         }
         style.put("layers", out)
@@ -180,14 +180,23 @@ class OfflineMaps(private val context: Context) {
 
     /**
      * The night map's small roads and paths are never thinner than the day map's (see [highContrast]): the
-     * hair-thin ones fade out, and a gravel dash that ends in nothing looks like it joins no road.
+     * hair-thin ones fade out, and a gravel dash that ends in nothing looks like it joins no road. Their
+     * colours are [road] and [path] (white and light grey in high contrast, a little softer in normal);
+     * tunnels keep their own.
      */
-    private fun nightRoadWidths(layer: JSONObject) {
+    private fun nightRoads(layer: JSONObject, road: String, path: String) {
         val paint = layer.optJSONObject("paint") ?: return
         when (layer.getString("id").substringBefore('~')) {
-            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor",
-            "roads_other", "roads_bridges_other", "online-roads_other" -> atLeast(paint, HC_MIN_WIDTH)
+            "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { atLeast(paint, HC_MIN_WIDTH); nightColour(paint, road) }
+            "roads_other", "roads_bridges_other", "online-roads_other" -> { atLeast(paint, HC_MIN_WIDTH); nightColour(paint, path) }
         }
+    }
+
+    /** The line colour [colour] (the online layers keep their tunnel colour: a "case" with the road colour last). */
+    private fun nightColour(paint: JSONObject, colour: String) {
+        if (colour == NIGHT_ROAD_HC) return // the style's own
+        val old = paint.opt("line-color")
+        if (old is JSONArray && old.optString(0) == "case") old.put(old.length() - 1, colour) else paint.put("line-color", colour)
     }
 
     /**
@@ -262,6 +271,11 @@ class OfflineMaps(private val context: Context) {
         /** High contrast: the greys that white roads and light paths become, and the main roads' black edge width (px). */
         const val HC_ROAD = "#707070"
         const val HC_PATH = "#a0a0a0"
+        /** The night map's small roads and paths: white and light grey (high contrast, as the style draws them), or softer. */
+        const val NIGHT_ROAD_HC = "#ffffff"
+        const val NIGHT_PATH_HC = "#d4d4d4"
+        const val NIGHT_ROAD = "#d0d0d0"
+        const val NIGHT_PATH = "#a6a6a6"
         private const val HC_EDGE = 1.5
         /** The main roads' edge: dark, but not black, so it isn't so harsh next to the grey roads. */
         private const val HC_EDGE_COLOR = "#404040"

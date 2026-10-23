@@ -53,7 +53,7 @@ data class SettingsState(
     val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
-    val roadContrast: RoadContrast = RoadContrast.DARK_GREY,
+    val roadContrast: RoadContrast = RoadContrast.HIGH,
     val mapDetail: MapDetail = MapDetail.RESPONSE,
     val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
@@ -660,7 +660,7 @@ private fun <T> Choice(options: List<T>, selected: T, label: @Composable (T) -> 
     }
 }
 
-/** − and + around the arrow's lead in seconds ("+0.25 s" ahead, "−1.50 s" behind). */
+/** − and + around the arrow's lead, counted from the usual setting ("+0.25 s" further ahead, "−0.50 s" behind it). */
 @Composable
 private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
     val m = com.curveon.data.location.RiderMotion
@@ -675,7 +675,8 @@ private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
         IconButton(onClick = { set(step - 1) }, enabled = leadS > m.MIN_LEAD_S) {
             Icon(Icons.Default.Remove, stringResource(R.string.settings_arrow_back), tint = TextPrimary)
         }
-        val v = step * m.LEAD_STEP_S
+        // Shown from the usual setting: 0 is the default lead, the rider adjusts + or − from there.
+        val v = (step - Math.round(m.DEFAULT_LEAD_S / m.LEAD_STEP_S).toInt()) * m.LEAD_STEP_S
         Text(
             stringResource(R.string.settings_arrow_seconds, (if (v > 0) "+" else if (v < 0) "−" else "") +
                 String.format(java.util.Locale.getDefault(), "%.2f", kotlin.math.abs(v))),
@@ -694,7 +695,7 @@ private fun ArrowLeadStepper(leadS: Double, onChange: (Double) -> Unit) {
 @Composable
 private fun SurfaceColours(mode: SurfaceMode, dark: Boolean) {
     Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        DashSample(mode.gravel(dark))
+        DashSample(mode.gravel(if (dark) com.curveon.data.map.OfflineMaps.NIGHT_ROAD_HC else com.curveon.data.map.OfflineMaps.HC_ROAD))
         Text(stringResource(R.string.surface_gravel), color = TextMuted, fontSize = 13.sp, modifier = Modifier.padding(start = 6.dp, end = 16.dp))
         DashSample(mode.soft(dark))
         Text(stringResource(R.string.surface_soft), color = TextMuted, fontSize = 13.sp, maxLines = 1, modifier = Modifier.padding(start = 6.dp))

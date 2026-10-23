@@ -10,7 +10,10 @@
       "Met someone in a group and want to keep in touch? Tap Add as friend by their name in the group (or on the map) and they get a question to accept, no code or link needed. Nobody else in the group can read it, and if they say no thanks you aren't told and they won't be asked again",
       "A new Curveon icon: the motorbike seen head-on, with a cyan tyre and bright headlights, on a dark background. It's on your home screen, on the phone's Companion and on the website",
       "An SOS from someone in your group now sounds like an SOS: a piercing S-O-S beep pattern that repeats until you answer, instead of your phone's calm alarm melody",
-      "In the 3D map the two arrows for the angle of the view now sit right beside the 3D button, so you no longer have to hold the button down to find them"
+      "Switching to the 3D map now shows the two arrows for the angle of the view beside the 3D button for a few seconds, so you find them without knowing the trick; hold the 3D button to bring them back",
+      "When you start riding again soon after a ride was saved, the question now says it is about your saved ride: Continue that ride or Start new ride",
+      "Road colours now have two settings, Normal and High contrast, for both the day and the night map: on the night map Normal is a little softer than the bright white roads, and High contrast keeps them white",
+      "The marker setting now starts at 0, the setting that sits right for most, and you move it forward or back from there"
     ],
     "nb": [
       "Ingen flere vendinger midt i veien: en tur en venn deler med deg, kobles du nå på i den retningen den går, så du blir aldri sendt til et punkt på veien bare for å snu der. Og har turen et stopp langs veien, kjører du videre i samme retning til et kryss eller en rundkjøring i stedet for å snu på veien",
@@ -21,7 +24,10 @@
       "Møtt noen i en gruppe og vil holde kontakten? Trykk Legg til som venn ved navnet deres i gruppa (eller på kartet), så får de et spørsmål om å godta, uten kode eller lenke. Ingen andre i gruppa kan lese det, og sier de nei takk, får du ikke vite det, og de blir ikke spurt igjen",
       "Nytt Curveon-ikon: motorsykkelen sett forfra, med blått dekk og skarpe frontlykter på mørk bakgrunn. Du ser det på startskjermen, i Companion på telefonen og på websiden",
       "En SOS fra noen i gruppa høres nå ut som en SOS: et gjennomtrengende SOS-pip som gjentas til du svarer, i stedet for telefonens rolige alarmmelodi",
-      "I 3D-kartet står de to pilene for vinkelen på kartet nå rett ved 3D-knappen, så du slipper å holde knappen inne for å finne dem"
+      "Når du bytter til 3D-kartet, dukker de to pilene for vinkelen på kartet opp ved 3D-knappen i noen sekunder, så du finner dem uten å kjenne trikset. Hold inne 3D-knappen for å få dem fram igjen",
+      "Når du kjører videre kort tid etter at en tur er lagret, sier spørsmålet nå at det gjelder den lagrede turen: Fortsett den turen eller Start ny tur",
+      "Veifargene har nå to valg, Normal og Høykontrast, både på dag- og nattkartet: på nattkartet er Normal litt mykere enn de skarpe hvite veiene, og Høykontrast beholder dem hvite",
+      "Innstillingen for markøren starter nå på 0, som passer de fleste, og så flytter du den fram eller tilbake derfra"
     ],
     "sv": [
       "Inga fler vändningar mitt på vägen: en tur som en vän delar med dig ansluter du nu till i den riktning den går, så du skickas aldrig till en punkt på vägen bara för att vända där. Och har turen ett stopp längs vägen kör du vidare åt samma håll till en korsning eller rondell i stället för att vända på vägen",
@@ -32,7 +38,10 @@
       "Träffat någon i en grupp och vill hålla kontakten? Tryck på Lägg till som vän vid deras namn i gruppen (eller på kartan) så får de en fråga att godkänna, utan kod eller länk. Ingen annan i gruppen kan läsa den, och säger de nej tack får du inte veta det och de blir inte tillfrågade igen",
       "En ny Curveon-ikon: motorcykeln framifrån, med cyanfärgat däck och starka strålkastare på mörk bakgrund",
       "En SOS från någon i gruppen låter nu som en SOS: ett genomträngande SOS-pip som upprepas tills du svarar, i stället för telefonens lugna alarmmelodi",
-      "I 3D-kartan sitter de två pilarna för vyns vinkel nu bredvid 3D-knappen, så du slipper hålla knappen nedtryckt för att hitta dem"
+      "När du byter till 3D-kartan visas de två pilarna för vyns vinkel vid 3D-knappen i några sekunder, så du hittar dem utan att känna till tricket. Håll 3D-knappen nedtryckt för att få fram dem igen",
+      "När du kör vidare snart efter att en tur sparats säger frågan nu att den gäller den sparade turen: Fortsätt den turen eller Starta ny tur",
+      "Vägfärgerna har nu två val, Normal och Hög kontrast, på både dag- och nattkartan: på nattkartan är Normal lite mjukare än de skarpa vita vägarna, och Hög kontrast behåller dem vita",
+      "Inställningen för markören börjar nu på 0, som passar de flesta, och du flyttar den framåt eller bakåt därifrån"
     ],
     "da": [
       "Ingen flere vendinger midt på vejen: en tur, en ven deler med dig, kobler du dig nu på i den retning, den kører, så du bliver aldrig sendt hen til et punkt på vejen bare for at vende der. Og har turen et stop langs vejen, kører du videre samme vej til et kryds eller en rundkørsel i stedet for at vende på vejen",
@@ -43,7 +52,10 @@
       "Mødt nogen i en gruppe og vil holde kontakten? Tryk på Tilføj som ven ved deres navn i gruppen (eller på kortet), så får de et spørgsmål om at acceptere, uden kode eller link. Ingen andre i gruppen kan læse det, og siger de nej tak, får du det ikke at vide, og de bliver ikke spurgt igen",
       "Et nyt Curveon-ikon: motorcyklen set forfra, med cyanblåt dæk og skarpe forlygter på mørk baggrund",
       "En SOS fra en i gruppen lyder nu som en SOS: et skarpt SOS-bip, der gentages, til du svarer, i stedet for telefonens rolige alarmmelodi",
-      "I 3D-kortet sidder de to pile til visningsvinklen nu lige ved 3D-knappen, så du ikke skal holde knappen nede for at finde dem"
+      "Når du skifter til 3D-kortet, vises de to pile til visningsvinklen ved 3D-knappen i et par sekunder, så du finder dem uden at kende tricket. Hold 3D-knappen nede for at få dem frem igen",
+      "Når du kører videre kort efter, at en tur er gemt, siger spørgsmålet nu, at det handler om den gemte tur: Fortsæt den tur eller Start ny tur",
+      "Vejfarverne har nu to valg, Normal og Høj kontrast, på både dag- og natkortet: på natkortet er Normal lidt blødere end de skarpe hvide veje, og Høj kontrast beholder dem hvide",
+      "Indstillingen for markøren starter nu på 0, som passer de fleste, og så flytter du den frem eller tilbage derfra"
     ],
     "fi": [
       "Ei enää kääntymistä keskellä tietä: ystävän jakamaan reittiin liityt nyt sen kulkusuuntaan, joten sinua ei koskaan ohjata tien pisteeseen vain kääntymään siellä. Ja jos reitillä on pysähdys tien varrella, jatkat siitä samaan suuntaan risteykseen tai liikenneympyrään sen sijaan, että tekisit U-käännöksen tiellä",
@@ -54,7 +66,10 @@
       "Tapasitko jonkun ryhmässä ja haluat pitää yhteyttä? Napauta Lisää ystäväksi heidän nimensä kohdalla ryhmässä (tai kartalla), niin he saavat kysymyksen hyväksyä, ilman koodia tai linkkiä. Kukaan muu ryhmässä ei voi lukea sitä, ja jos he sanovat ei kiitos, et saa tietää sitä eikä heiltä kysytä uudelleen",
       "Uusi Curveon-kuvake: moottoripyörä edestä katsottuna, turkoosi rengas ja kirkkaat ajovalot tummalla pohjalla",
       "Ryhmäläisen SOS kuulostaa nyt SOS:ltä: läpitunkeva SOS-piippaus toistuu, kunnes vastaat, puhelimen rauhallisen herätysmelodian sijaan",
-      "3D-kartassa kaksi nuolta näkymän kulmalle ovat nyt 3D-painikkeen vieressä, joten painiketta ei tarvitse enää pitää pohjassa"
+      "Kun vaihdat 3D-karttaan, kaksi nuolta näkymän kulmalle näkyy 3D-painikkeen vieressä muutaman sekunnin ajan, joten löydät ne ilman temppua. Pidä 3D-painiketta pohjassa, jos haluat ne takaisin",
+      "Kun jatkat ajoa pian tallennuksen jälkeen, kysymys kertoo nyt koskevansa tallennettua ajoa: Jatka sitä ajoa tai Aloita uusi ajo",
+      "Teiden väreille on nyt kaksi vaihtoehtoa, Normaali ja Korkea kontrasti, sekä päivä- että yökartalla: yökartalla Normaali on hieman pehmeämpi kuin kirkkaan valkoiset tiet, ja Korkea kontrasti pitää ne valkoisina",
+      "Merkin asetus alkaa nyt nollasta, joka sopii useimmille, ja siirrät sitä eteen tai taakse siitä"
     ],
     "is": [
       "Engar fleiri U-beygjur á miðjum vegi: ferð sem vinur deilir með þér tengist þú nú í þá átt sem hún liggur, svo þú ert aldrei sendur á punkt á veginum bara til að snúa þar við. Og ef ferðin hefur viðkomustað við veginn heldur þú áfram sömu leið að gatnamótum eða hringtorgi í stað þess að snúa við á veginum",
@@ -65,7 +80,10 @@
       "Hittir einhvern í hópi og vilt halda sambandi? Ýttu á Bæta við sem vini við nafnið þeirra í hópnum (eða á kortinu) og þeir fá spurningu um að samþykkja, án kóða eða hlekks. Enginn annar í hópnum getur lesið það, og segi þeir nei takk færðu ekki að vita það og þeir eru ekki spurðir aftur",
       "Nýtt Curveon-tákn: mótorhjólið séð að framan, með bláu dekki og björtum aðalljósum á dökkum bakgrunni",
       "SOS frá einhverjum í hópnum hljómar nú eins og SOS: skerandi SOS-píp sem endurtekur sig þar til þú svarar, í stað rólegrar vekjaralagsins í símanum",
-      "Í 3D-kortinu eru örvarnar tvær fyrir sjónarhornið nú við hlið 3D-hnappsins, svo þú þarft ekki lengur að halda hnappinum inni"
+      "Þegar þú skiptir yfir í 3D-kortið birtast örvarnar tvær fyrir sjónarhornið við 3D-hnappinn í nokkrar sekúndur, svo þú finnur þær án þess að þekkja brelluna. Haltu 3D-hnappnum inni til að fá þær aftur",
+      "Þegar þú heldur áfram skömmu eftir að ferð var vistuð segir spurningin nú að hún snúist um vistuðu ferðina: Halda þeirri ferð áfram eða Hefja nýja ferð",
+      "Litir veganna hafa nú tvo valkosti, Venjulegt og Mikil birtuskil, bæði á dag- og næturkortinu: á næturkortinu er Venjulegt örlítið mýkra en skærhvítu vegirnir, og Mikil birtuskil halda þeim hvítum",
+      "Stillingin fyrir merkið byrjar nú á 0, sem hentar flestum, og þú færir það áfram eða aftur á bak þaðan"
     ],
     "de": [
       "Kein Wenden mehr mitten auf der Straße: In eine Tour, die ein Freund mit dir teilt, steigst du jetzt in Fahrtrichtung ein, sodass du nie zu einem Punkt auf der Straße geschickt wirst, nur um dort zu wenden. Und hat die Tour einen Stopp an der Straße, fährst du in deiner Richtung weiter bis zu einer Kreuzung oder einem Kreisverkehr, statt auf der Straße zu wenden",
@@ -76,7 +94,10 @@
       "Jemanden in einer Gruppe getroffen und willst in Kontakt bleiben? Tippe in der Gruppe (oder auf der Karte) bei dem Namen auf Als Freund hinzufügen, dann bekommt die Person eine Frage zum Annehmen, ohne Code oder Link. Niemand sonst in der Gruppe kann sie lesen, und sagt die Person Nein danke, erfährst du es nicht und sie wird nicht noch einmal gefragt",
       "Ein neues Curveon-Symbol: das Motorrad von vorn, mit türkisem Reifen und hellen Scheinwerfern auf dunklem Grund",
       "Ein SOS aus deiner Gruppe klingt jetzt wie ein SOS: ein durchdringendes SOS-Piepen, das sich wiederholt, bis du antwortest, statt der ruhigen Wecker-Melodie des Handys",
-      "In der 3D-Karte sitzen die zwei Pfeile für den Blickwinkel jetzt direkt neben der 3D-Taste, du musst sie nicht mehr gedrückt halten"
+      "Beim Wechsel zur 3D-Karte erscheinen die zwei Pfeile für den Blickwinkel jetzt ein paar Sekunden neben der 3D-Taste, damit du sie ohne Trick findest. Halte die 3D-Taste gedrückt, um sie wieder zu zeigen",
+      "Wenn du kurz nach einer gespeicherten Fahrt weiterfährst, sagt die Frage jetzt, dass es um die gespeicherte Fahrt geht: Diese Fahrt fortsetzen oder Neue Fahrt starten",
+      "Die Straßenfarben haben jetzt zwei Einstellungen, Normal und Hoher Kontrast, für Tag- und Nachtkarte: Auf der Nachtkarte ist Normal etwas sanfter als die grellweißen Straßen, Hoher Kontrast lässt sie weiß",
+      "Die Einstellung für die Markierung beginnt jetzt bei 0, was für die meisten passt, und du verschiebst sie von dort nach vorn oder zurück"
     ],
     "es": [
       "Se acabó dar la vuelta en mitad de la carretera: a una ruta que te comparte un amigo ahora te unes en su sentido, así que nunca te manda a un punto de la carretera solo para dar la vuelta allí. Y si la ruta tiene una parada junto a la carretera, sigues en la misma dirección hasta un cruce o una rotonda en lugar de hacer un cambio de sentido en la carretera",
@@ -87,7 +108,10 @@
       "¿Conociste a alguien en un grupo y quieres seguir en contacto? Toca Añadir como amigo junto a su nombre en el grupo (o en el mapa) y le llega una pregunta para aceptar, sin código ni enlace. Nadie más del grupo puede leerla, y si dice no, gracias, no te enteras y no se le vuelve a preguntar",
       "Un nuevo icono de Curveon: la moto vista de frente, con neumático cian y faros brillantes sobre fondo oscuro",
       "Un SOS de alguien de tu grupo ahora suena a SOS: un pitido SOS penetrante que se repite hasta que respondes, en lugar de la tranquila melodía de alarma del móvil",
-      "En el mapa 3D las dos flechas del ángulo de vista están ahora junto al botón 3D, así que ya no hace falta mantenerlo pulsado"
+      "Al cambiar al mapa 3D, las dos flechas del ángulo de vista aparecen junto al botón 3D unos segundos, para que las encuentres sin saber el truco. Mantén pulsado el botón 3D para verlas de nuevo",
+      "Cuando sigues rodando poco después de guardar una salida, la pregunta ahora dice que trata de la salida guardada: Continuar esa salida o Empezar salida nueva",
+      "Los colores de las carreteras tienen ahora dos opciones, Normal y Alto contraste, en el mapa de día y el de noche: de noche, Normal es algo más suave que las carreteras blanco intenso, y Alto contraste las deja blancas",
+      "El ajuste del marcador empieza ahora en 0, que le va bien a la mayoría, y lo mueves hacia delante o atrás desde ahí"
     ],
     "fr": [
       "Fini les demi-tours au milieu de la route : un trajet qu'un ami partage avec toi est désormais rejoint dans son sens, tu n'es donc jamais envoyé vers un point de la route juste pour y faire demi-tour. Et si le trajet a un arrêt au bord de la route, tu repars dans le même sens jusqu'à un carrefour ou un rond-point au lieu de faire demi-tour sur la route",
@@ -98,7 +122,10 @@
       "Tu as rencontré quelqu'un dans un groupe et tu veux garder le contact ? Touche Ajouter comme ami à côté de son nom dans le groupe (ou sur la carte) et la personne reçoit une question pour accepter, sans code ni lien. Personne d'autre dans le groupe ne peut la lire, et si elle dit non merci, tu ne le sais pas et on ne lui redemandera pas",
       "Une nouvelle icône Curveon : la moto vue de face, avec un pneu cyan et des phares éclatants sur fond sombre",
       "Un SOS d'un membre du groupe sonne maintenant comme un SOS : un bip SOS strident qui se répète jusqu'à ta réponse, au lieu de la mélodie d'alarme tranquille du téléphone",
-      "Sur la carte 3D, les deux flèches pour l'angle de vue sont maintenant à côté du bouton 3D, plus besoin de le maintenir appuyé"
+      "En passant à la carte 3D, les deux flèches de l'angle de vue apparaissent à côté du bouton 3D pendant quelques secondes, pour les trouver sans connaître l'astuce. Maintiens le bouton 3D pour les faire revenir",
+      "Quand tu repars peu après l'enregistrement d'une balade, la question dit maintenant qu'elle concerne la balade enregistrée : Reprendre cette balade ou Nouvelle balade",
+      "Les couleurs des routes ont maintenant deux réglages, Normal et Contraste élevé, pour la carte de jour et de nuit : de nuit, Normal est un peu plus doux que le blanc éclatant des routes, et Contraste élevé les garde blanches",
+      "Le réglage du repère commence maintenant à 0, qui convient à la plupart, et tu le déplaces vers l'avant ou l'arrière à partir de là"
     ],
     "nl": [
       "Nooit meer keren midden op de weg: bij een rit die een vriend met je deelt, sluit je nu aan in de rijrichting, dus je wordt nooit naar een punt op de weg gestuurd alleen om daar te keren. En heeft de rit een stop langs de weg, dan rijd je in dezelfde richting door naar een kruising of rotonde in plaats van op de weg te keren",
@@ -109,7 +136,10 @@
       "Iemand in een groep ontmoet en wil je contact houden? Tik bij zijn of haar naam in de groep (of op de kaart) op Toevoegen als vriend en die persoon krijgt een vraag om te accepteren, zonder code of link. Niemand anders in de groep kan het lezen, en zegt die persoon nee, bedankt, dan hoor je dat niet en wordt er niet opnieuw gevraagd",
       "Een nieuw Curveon-icoon: de motor van voren, met cyaan band en felle koplampen op een donkere achtergrond",
       "Een SOS van iemand in je groep klinkt nu als een SOS: een doordringend SOS-gepiep dat zich herhaalt tot je antwoordt, in plaats van de rustige wekkermelodie van je telefoon",
-      "In de 3D-kaart staan de twee pijlen voor de kijkhoek nu naast de 3D-knop, je hoeft de knop niet meer ingedrukt te houden"
+      "Als je naar de 3D-kaart schakelt, verschijnen de twee pijlen voor de kijkhoek een paar seconden naast de 3D-knop, zodat je ze vindt zonder de truc te kennen. Houd de 3D-knop ingedrukt om ze terug te halen",
+      "Als je kort na een opgeslagen rit verder rijdt, zegt de vraag nu dat het om die opgeslagen rit gaat: Die rit voortzetten of Nieuwe rit starten",
+      "De wegkleuren hebben nu twee instellingen, Normaal en Hoog contrast, voor de dag- en nachtkaart: op de nachtkaart is Normaal wat zachter dan de felwitte wegen, en Hoog contrast houdt ze wit",
+      "De instelling voor de marker begint nu op 0, wat voor de meesten klopt, en je schuift hem van daaruit vooruit of achteruit"
     ],
     "pl": [
       "Koniec z zawracaniem na środku drogi: do trasy udostępnionej przez znajomego dołączasz teraz zgodnie z jej kierunkiem, więc nigdy nie zostaniesz wysłany do punktu na drodze tylko po to, by tam zawrócić. A jeśli trasa ma postój przy drodze, jedziesz dalej w tym samym kierunku do skrzyżowania lub ronda zamiast zawracać na drodze",
@@ -120,7 +150,10 @@
       "Poznałeś kogoś w grupie i chcesz zostać w kontakcie? Dotknij Dodaj do znajomych przy jego imieniu w grupie (lub na mapie), a ta osoba dostanie pytanie, czy się zgadza, bez kodu i linku. Nikt inny w grupie nie może tego przeczytać, a jeśli odmówi, nie dowiesz się o tym i nie zostanie zapytana ponownie",
       "Nowa ikona Curveon: motocykl widziany z przodu, z turkusową oponą i jasnymi reflektorami na ciemnym tle",
       "SOS od kogoś z grupy brzmi teraz jak SOS: przenikliwy sygnał SOS powtarzany, aż odpowiesz, zamiast spokojnej melodii budzika w telefonie",
-      "Na mapie 3D dwie strzałki kąta widoku są teraz obok przycisku 3D, więc nie trzeba już przytrzymywać przycisku"
+      "Po przełączeniu na mapę 3D dwie strzałki kąta widoku pojawiają się przy przycisku 3D na kilka sekund, więc znajdziesz je bez znajomości sztuczki. Przytrzymaj przycisk 3D, by je przywrócić",
+      "Gdy ruszasz krótko po zapisaniu przejazdu, pytanie mówi teraz, że chodzi o zapisany przejazd: Kontynuuj ten przejazd lub Zacznij nowy przejazd",
+      "Kolory dróg mają teraz dwa ustawienia, Normalny i Wysoki kontrast, na mapie dziennej i nocnej: w nocy Normalny jest nieco łagodniejszy niż jaskrawobiałe drogi, a Wysoki kontrast zostawia je białe",
+      "Ustawienie znacznika zaczyna się teraz od 0, co pasuje większości, i przesuwasz go stamtąd do przodu lub do tyłu"
     ]
   },
   {

@@ -73,9 +73,9 @@
     <string name="screen_lock_landscape">Paysage</string>
     <string name="screen_lock_portrait">Portrait</string>
     <string name="settings_roads">Routes</string>
-    <string name="settings_roads_hint">Carte de jour : la couleur des petites routes</string>
-    <string name="road_contrast_grey">Gris</string>
-    <string name="road_contrast_dark_grey">Gris foncé</string>
+    <string name="settings_roads_hint">La couleur des petites routes, de jour et de nuit</string>
+    <string name="road_contrast_normal">Normal</string>
+    <string name="road_contrast_high">Contraste élevé</string>
     <string name="settings_map_detail">Détails de la carte</string>
     <string name="settings_map_detail_hint">Plus de détails affiche le gravier et les petites routes un cran de zoom plus loin, mais la carte réagit un peu plus lentement</string>
     <string name="map_detail_response">Rapide</string>
@@ -127,7 +127,7 @@
     <string name="settings_auto_zoom">Zoom auto</string>
     <string name="settings_auto_zoom_hint">Zoome quand tu roules lentement, dézoome sur les routes rapides</string>
     <string name="settings_arrow">Repère</string>
-    <string name="settings_arrow_hint">Secondes d’avance sur le GPS, pour compenser son retard : − recule le repère, + l’avance (par défaut +1.5)</string>
+    <string name="settings_arrow_hint">Affine l’endroit où le repère est dessiné, pour compenser le retard du GPS : − le recule, + l’avance. 0 est le réglage habituel</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Reculer le repère</string>
     <string name="settings_arrow_ahead">Avancer le repère</string>
@@ -501,8 +501,8 @@
     <string name="rides">Balades</string>
     <string name="rides_recording">● Enregistrement · %1$s</string>
     <string name="rides_this_ride">cette balade</string>
-    <string name="ride_resume_title">Continuer la balade ?</string>
-    <string name="ride_resume_continue">Continuer</string>
+    <string name="ride_resume_title">Dernière balade enregistrée</string>
+    <string name="ride_resume_continue">Reprendre cette balade</string>
     <string name="ride_resume_new">Nouvelle balade</string>
     <string name="rides_empty">Les balades sont enregistrées automatiquement dès que tu roules.</string>
     <string name="rides_ride_again">Refaire</string>

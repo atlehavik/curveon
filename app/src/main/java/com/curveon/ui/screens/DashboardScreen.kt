@@ -815,7 +815,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             onHeatButtonShown = { heatButtonShown = it },
             buttonsBottomInset = buttonsBottomInset,
             dark = mapDark,
-            roadShade = roadContrast.road to roadContrast.path,
+            roadShade = if (mapDark) roadContrast.nightRoad to roadContrast.nightPath else roadContrast.road to roadContrast.path,
             previewRoutes = mapPreviewRoutes,
             markers = mapMarkers,
             groupRiders = groupRiders,

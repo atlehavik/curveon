@@ -73,9 +73,9 @@
     <string name="screen_lock_landscape">Liggende</string>
     <string name="screen_lock_portrait">Stående</string>
     <string name="settings_roads">Veje</string>
-    <string name="settings_roads_hint">Dagkort: farven på de små veje</string>
-    <string name="road_contrast_grey">Grå</string>
-    <string name="road_contrast_dark_grey">Mørkegrå</string>
+    <string name="settings_roads_hint">Farven på de små veje, dag og nat</string>
+    <string name="road_contrast_normal">Normal</string>
+    <string name="road_contrast_high">Høj kontrast</string>
     <string name="settings_map_detail">Kortdetaljer</string>
     <string name="settings_map_detail_hint">Flere detaljer viser grus og små veje et zoomtrin længere ude, men kortet reagerer lidt langsommere</string>
     <string name="map_detail_response">Hurtigt</string>
@@ -127,7 +127,7 @@
     <string name="settings_auto_zoom">Autozoom</string>
     <string name="settings_auto_zoom_hint">Zoom ind ved lav fart, ud på hurtige veje</string>
     <string name="settings_arrow">Markør</string>
-    <string name="settings_arrow_hint">Sekunder foran GPS\'en for at opveje dens forsinkelse: − flytter markøren tilbage, + frem (standard +1,5)</string>
+    <string name="settings_arrow_hint">Finjusterer hvor markøren tegnes, for at opveje GPS\'ens forsinkelse: − flytter den bagud, + fremad. 0 er normalindstillingen</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Flyt markøren tilbage</string>
     <string name="settings_arrow_ahead">Flyt markøren frem</string>
@@ -493,9 +493,9 @@
     <string name="rides">Ture</string>
     <string name="rides_recording">● Optager · %1$s</string>
     <string name="rides_this_ride">denne tur</string>
-    <string name="ride_resume_title">Fortsæt turen?</string>
-    <string name="ride_resume_continue">Fortsæt</string>
-    <string name="ride_resume_new">Ny tur</string>
+    <string name="ride_resume_title">Forrige tur blev gemt</string>
+    <string name="ride_resume_continue">Fortsæt den tur</string>
+    <string name="ride_resume_new">Start ny tur</string>
     <string name="rides_empty">Ture optages automatisk, så snart du kører.</string>
     <string name="rides_ride_again">Kør igen</string>
     <string name="rides_save_to_gpx">Gem i GPX</string>

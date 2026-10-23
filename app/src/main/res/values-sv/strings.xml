@@ -73,9 +73,9 @@
     <string name="screen_lock_landscape">Liggande</string>
     <string name="screen_lock_portrait">Stående</string>
     <string name="settings_roads">Vägar</string>
-    <string name="settings_roads_hint">Dagkarta: färgen på de små vägarna</string>
-    <string name="road_contrast_grey">Grå</string>
-    <string name="road_contrast_dark_grey">Mörkgrå</string>
+    <string name="settings_roads_hint">Färgen på de små vägarna, dag och natt</string>
+    <string name="road_contrast_normal">Normal</string>
+    <string name="road_contrast_high">Hög kontrast</string>
     <string name="settings_map_detail">Kartdetaljer</string>
     <string name="settings_map_detail_hint">Mer detaljer visar grus och små vägar ett zoomsteg längre ut, men kartan svarar lite långsammare</string>
     <string name="map_detail_response">Snabb</string>
@@ -127,7 +127,7 @@
     <string name="settings_auto_zoom">Autozoom</string>
     <string name="settings_auto_zoom_hint">Zooma in när det går långsamt, ut på snabba vägar</string>
     <string name="settings_arrow">Markör</string>
-    <string name="settings_arrow_hint">Sekunder före GPS:en, för att ta igen dess fördröjning: − flyttar markören bakåt, + framåt (standard +1,5)</string>
+    <string name="settings_arrow_hint">Finjusterar var markören ritas, för att ta igen GPS-fördröjningen: − flyttar den bakåt, + framåt. 0 är normalinställningen</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Flytta markören bakåt</string>
     <string name="settings_arrow_ahead">Flytta markören framåt</string>
@@ -493,9 +493,9 @@
     <string name="rides">Turer</string>
     <string name="rides_recording">● Spelar in · %1$s</string>
     <string name="rides_this_ride">den här turen</string>
-    <string name="ride_resume_title">Fortsätta turen?</string>
-    <string name="ride_resume_continue">Fortsätt</string>
-    <string name="ride_resume_new">Ny tur</string>
+    <string name="ride_resume_title">Förra turen sparades</string>
+    <string name="ride_resume_continue">Fortsätt den turen</string>
+    <string name="ride_resume_new">Starta ny tur</string>
     <string name="rides_empty">Turer spelas in automatiskt när du kommer i väg.</string>
     <string name="rides_ride_again">Kör igen</string>
     <string name="rides_save_to_gpx">Spara till GPX</string>

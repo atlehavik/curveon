@@ -85,10 +85,15 @@ enum class MapDetail(val label: Int, val surfaceZoom: Float) {
     RESPONSE(com.curveon.R.string.map_detail_response, 11f), DETAIL(com.curveon.R.string.map_detail_detail, 10f)
 }
 
-/** The day map's small roads and light paths (Settings → Display → Roads): grey, or dark grey as they always were. */
-enum class RoadContrast(val label: Int, val road: String, val path: String) {
-    GREY(com.curveon.R.string.road_contrast_grey, "#9a9a9a", "#c4c4c4"),
-    DARK_GREY(com.curveon.R.string.road_contrast_dark_grey, com.curveon.data.map.OfflineMaps.HC_ROAD, com.curveon.data.map.OfflineMaps.HC_PATH)
+/**
+ * The small roads and light paths (Settings → Display → Roads): normal, or high contrast. On the day map normal
+ * is grey and high contrast dark grey; on the night map normal is a little softer than the white of high contrast.
+ */
+enum class RoadContrast(val label: Int, val road: String, val path: String, val nightRoad: String, val nightPath: String) {
+    NORMAL(com.curveon.R.string.road_contrast_normal, "#9a9a9a", "#c4c4c4",
+        com.curveon.data.map.OfflineMaps.NIGHT_ROAD, com.curveon.data.map.OfflineMaps.NIGHT_PATH),
+    HIGH(com.curveon.R.string.road_contrast_high, com.curveon.data.map.OfflineMaps.HC_ROAD, com.curveon.data.map.OfflineMaps.HC_PATH,
+        com.curveon.data.map.OfflineMaps.NIGHT_ROAD_HC, com.curveon.data.map.OfflineMaps.NIGHT_PATH_HC)
 }
 
 /** How big the speed limit sign is on the map (Settings → Display); a big one sticks out over the speed card's height. */
@@ -1063,7 +1068,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun setSpeedSign(size: SpeedSignSize) { _speedSign.value = size; settings.edit().putString("speedSign", size.name).apply() }
 
     private val _roadContrast = MutableStateFlow(
-        settings.getString("roadContrast", null)?.let { n -> RoadContrast.entries.firstOrNull { it.name == n } } ?: RoadContrast.DARK_GREY
+        // GREY and DARK_GREY are what the day map's choice was called before it also applied at night.
+        settings.getString("roadContrast", null)?.let { n -> RoadContrast.entries.firstOrNull { it.name == n } ?: if (n == "GREY") RoadContrast.NORMAL else null }
+            ?: RoadContrast.HIGH
     )
     val roadContrast: StateFlow<RoadContrast> = _roadContrast.asStateFlow()
     fun setRoadContrast(c: RoadContrast) { _roadContrast.value = c; settings.edit().putString("roadContrast", c.name).apply() }

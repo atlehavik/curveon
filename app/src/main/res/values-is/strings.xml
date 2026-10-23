@@ -72,9 +72,9 @@
     <string name="screen_lock_landscape">Langsnið</string>
     <string name="screen_lock_portrait">Skammsnið</string>
     <string name="settings_roads">Vegir</string>
-    <string name="settings_roads_hint">Dagkort: litur minni vega</string>
-    <string name="road_contrast_grey">Grár</string>
-    <string name="road_contrast_dark_grey">Dökkgrár</string>
+    <string name="settings_roads_hint">Litur smáveganna, dag og nótt</string>
+    <string name="road_contrast_normal">Venjulegt</string>
+    <string name="road_contrast_high">Mikil birtuskil</string>
     <string name="settings_map_detail">Smáatriði korts</string>
     <string name="settings_map_detail_hint">Meiri smáatriði sýna malarvegi og litla vegi einu aðdráttarþrepi utar, en kortið svarar örlítið hægar</string>
     <string name="map_detail_response">Hratt</string>
@@ -126,7 +126,7 @@
     <string name="settings_auto_zoom">Sjálfvirkur aðdráttur</string>
     <string name="settings_auto_zoom_hint">Þysja inn á hægri ferð, út á hröðum vegum</string>
     <string name="settings_arrow">Merki</string>
-    <string name="settings_arrow_hint">Sekúndur á undan GPS, til að vega upp seinkun þess: − færir merkið aftur, + fram (staðlað +1,5)</string>
+    <string name="settings_arrow_hint">Fínstillir hvar merkið er teiknað til að vega upp seinkun GPS: − færir það aftur, + áfram. 0 er venjuleg stilling</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Færa merkið aftur</string>
     <string name="settings_arrow_ahead">Færa merkið fram</string>
@@ -492,9 +492,9 @@
     <string name="rides">Ferðir</string>
     <string name="rides_recording">● Tekur upp · %1$s</string>
     <string name="rides_this_ride">þessi ferð</string>
-    <string name="ride_resume_title">Halda ferðinni áfram?</string>
-    <string name="ride_resume_continue">Halda áfram</string>
-    <string name="ride_resume_new">Ný ferð</string>
+    <string name="ride_resume_title">Síðasta ferð var vistuð</string>
+    <string name="ride_resume_continue">Halda þeirri ferð áfram</string>
+    <string name="ride_resume_new">Hefja nýja ferð</string>
     <string name="rides_empty">Ferðir eru skráðar sjálfkrafa um leið og þú leggur af stað.</string>
     <string name="rides_ride_again">Aka aftur</string>
     <string name="rides_save_to_gpx">Vista í GPX</string>

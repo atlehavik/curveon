@@ -73,9 +73,9 @@
     <string name="screen_lock_landscape">Horizontal</string>
     <string name="screen_lock_portrait">Vertical</string>
     <string name="settings_roads">Carreteras</string>
-    <string name="settings_roads_hint">Mapa diurno: el color de las carreteras pequeñas</string>
-    <string name="road_contrast_grey">Gris</string>
-    <string name="road_contrast_dark_grey">Gris oscuro</string>
+    <string name="settings_roads_hint">El color de las carreteras pequeñas, de día y de noche</string>
+    <string name="road_contrast_normal">Normal</string>
+    <string name="road_contrast_high">Alto contraste</string>
     <string name="settings_map_detail">Detalle del mapa</string>
     <string name="settings_map_detail_hint">Más detalle muestra la tierra y las carreteras pequeñas un nivel de zoom más lejos, pero el mapa responde algo más lento</string>
     <string name="map_detail_response">Rápido</string>
@@ -127,7 +127,7 @@
     <string name="settings_auto_zoom">Zoom automático</string>
     <string name="settings_auto_zoom_hint">Acerca cuando vas despacio y aleja en vías rápidas</string>
     <string name="settings_arrow">Marcador</string>
-    <string name="settings_arrow_hint">Segundos por delante del GPS para compensar su retraso: − retrasa el marcador, + lo adelanta (por defecto +1,5)</string>
+    <string name="settings_arrow_hint">Ajusta dónde se dibuja el marcador para compensar el retraso del GPS: − lo retrasa, + lo adelanta. 0 es el ajuste normal</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Retrasar el marcador</string>
     <string name="settings_arrow_ahead">Adelantar el marcador</string>
@@ -501,9 +501,9 @@
     <string name="rides">Salidas</string>
     <string name="rides_recording">● Grabando · %1$s</string>
     <string name="rides_this_ride">esta salida</string>
-    <string name="ride_resume_title">¿Continuar la salida?</string>
-    <string name="ride_resume_continue">Continuar</string>
-    <string name="ride_resume_new">Salida nueva</string>
+    <string name="ride_resume_title">Salida anterior guardada</string>
+    <string name="ride_resume_continue">Continuar esa salida</string>
+    <string name="ride_resume_new">Empezar salida nueva</string>
     <string name="rides_empty">Las salidas se graban solas en cuanto te pones en marcha.</string>
     <string name="rides_ride_again">Repetir</string>
     <string name="rides_save_to_gpx">Guardar en GPX</string>

@@ -73,9 +73,9 @@
     <string name="screen_lock_landscape">Liggende</string>
     <string name="screen_lock_portrait">Stående</string>
     <string name="settings_roads">Veier</string>
-    <string name="settings_roads_hint">Dagkartet: fargen på de små veiene</string>
-    <string name="road_contrast_grey">Grå</string>
-    <string name="road_contrast_dark_grey">Mørkegrå</string>
+    <string name="settings_roads_hint">Fargen på de små veiene, dag og natt</string>
+    <string name="road_contrast_normal">Normal</string>
+    <string name="road_contrast_high">Høykontrast</string>
     <string name="settings_map_detail">Kartdetaljer</string>
     <string name="settings_map_detail_hint">Flere detaljer viser grus og småveier ett zoomtrinn lenger ut, men kartet responderer litt tregere</string>
     <string name="map_detail_response">Rask</string>
@@ -127,7 +127,7 @@
     <string name="settings_auto_zoom">Auto-zoom</string>
     <string name="settings_auto_zoom_hint">Zoom inn i lav fart, ut på raske veier</string>
     <string name="settings_arrow">Markør</string>
-    <string name="settings_arrow_hint">Sekunder foran GPS-en, for å ta igjen forsinkelsen: − flytter markøren bakover, + framover (standard +1,5)</string>
+    <string name="settings_arrow_hint">Finjusterer hvor markøren tegnes, for å ta igjen GPS-forsinkelsen: − flytter den bakover, + framover. 0 er vanlig innstilling</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Flytt markøren bakover</string>
     <string name="settings_arrow_ahead">Flytt markøren framover</string>
@@ -493,9 +493,9 @@
     <string name="rides">Turer</string>
     <string name="rides_recording">● Tar opp · %1$s</string>
     <string name="rides_this_ride">denne turen</string>
-    <string name="ride_resume_title">Fortsette turen?</string>
-    <string name="ride_resume_continue">Fortsett</string>
-    <string name="ride_resume_new">Ny tur</string>
+    <string name="ride_resume_title">Forrige tur ble lagret</string>
+    <string name="ride_resume_continue">Fortsett den turen</string>
+    <string name="ride_resume_new">Start ny tur</string>
     <string name="rides_empty">Turer tas opp automatisk når du kommer i gang.</string>
     <string name="rides_ride_again">Kjør igjen</string>
     <string name="rides_save_to_gpx">Lagre i GPX-spor</string>

@@ -72,9 +72,9 @@
     <string name="screen_lock_landscape">Quer</string>
     <string name="screen_lock_portrait">Hoch</string>
     <string name="settings_roads">Straßen</string>
-    <string name="settings_roads_hint">Tageskarte: Farbe der kleinen Straßen</string>
-    <string name="road_contrast_grey">Grau</string>
-    <string name="road_contrast_dark_grey">Dunkelgrau</string>
+    <string name="settings_roads_hint">Die Farbe der kleinen Straßen, Tag und Nacht</string>
+    <string name="road_contrast_normal">Normal</string>
+    <string name="road_contrast_high">Hoher Kontrast</string>
     <string name="settings_map_detail">Kartendetails</string>
     <string name="settings_map_detail_hint">Mehr Details zeigen Schotter und kleine Straßen eine Zoomstufe früher, aber die Karte reagiert etwas langsamer</string>
     <string name="map_detail_response">Schnell</string>
@@ -126,7 +126,7 @@
     <string name="settings_auto_zoom">Auto-Zoom</string>
     <string name="settings_auto_zoom_hint">Langsam reinzoomen, auf schnellen Straßen raus</string>
     <string name="settings_arrow">Markierung</string>
-    <string name="settings_arrow_hint">Sekunden vor dem GPS, um seine Verzögerung auszugleichen: − schiebt die Markierung zurück, + nach vorn (Standard +1,5)</string>
+    <string name="settings_arrow_hint">Feinabstimmung, wo die Markierung gezeichnet wird, um die GPS-Verzögerung auszugleichen: − schiebt sie zurück, + nach vorn. 0 ist die Standardeinstellung</string>
     <string name="settings_arrow_seconds">%1$s s</string>
     <string name="settings_arrow_back">Markierung zurückschieben</string>
     <string name="settings_arrow_ahead">Markierung nach vorn schieben</string>
@@ -492,9 +492,9 @@
     <string name="rides">Fahrten</string>
     <string name="rides_recording">● Aufnahme · %1$s</string>
     <string name="rides_this_ride">diese Fahrt</string>
-    <string name="ride_resume_title">Fahrt fortsetzen?</string>
-    <string name="ride_resume_continue">Fortsetzen</string>
-    <string name="ride_resume_new">Neue Fahrt</string>
+    <string name="ride_resume_title">Letzte Fahrt gespeichert</string>
+    <string name="ride_resume_continue">Diese Fahrt fortsetzen</string>
+    <string name="ride_resume_new">Neue Fahrt starten</string>
     <string name="rides_empty">Fahrten werden automatisch aufgezeichnet, sobald du losfährst.</string>
     <string name="rides_ride_again">Nochmal fahren</string>
     <string name="rides_save_to_gpx">In GPX speichern</string>

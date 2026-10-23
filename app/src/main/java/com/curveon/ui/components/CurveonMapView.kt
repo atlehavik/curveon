@@ -14,9 +14,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.Navigation
@@ -117,8 +117,8 @@ private const val HEAT = "curveon-gravel-heat"
 enum class SurfaceMode(val label: Int) {
     OFF(R.string.settings_surfaces_off), DASHED(R.string.surface_mode_dashed), COLOURED(R.string.surface_mode_coloured);
 
-    /** The dash colour for gravel on the day or night map. */
-    fun gravel(dark: Boolean, road: String = com.curveon.data.map.OfflineMaps.HC_ROAD) = when { this == COLOURED -> GRAVEL_COLOR; dark -> "#EBEBEB"; else -> road }
+    /** The dash colour for gravel: the colour of the small roads on the day or night map ([road]). */
+    fun gravel(road: String = com.curveon.data.map.OfflineMaps.HC_ROAD) = if (this == COLOURED) GRAVEL_COLOR else road
     /** The dash colour for soft ground (the route's track colour when coloured). */
     fun soft(dark: Boolean) = when { this == COLOURED -> TRACK_COLOR; dark -> "#A07850"; else -> "#7A5230" }
 }
@@ -148,6 +148,8 @@ private const val TILT_3D = 55.0
 private const val TILT_MIN = 20.0
 private const val TILT_MAX = 60.0 // MapLibre 13.6.1 refuses more (checked: 61 is rejected)
 private const val TILT_STEP = 5.0
+/** The tilt arrows show when 3D is chosen and hide again after this long without a press. */
+private const val TILT_CONTROLS_MS = 6_000L
 /** Rider position below the middle, as a share of the map's height, given as top padding (×2 lower). */
 private const val RIDER_LOW_3D = 0.6 // rider ~4/5 down the map
 private const val RIDER_LOW_2D = 0.36
@@ -302,6 +304,13 @@ fun CurveonMapView(
     if (orientationFor != navigating) { orientationFor = navigating; orientation = savedOrientation(navigating) }
     // The angle of the 3D view (remembered): changed with the +/- that come beside the 3D button when it is held down.
     var tilt3d by remember { mutableStateOf(prefs.getFloat("tilt3d", TILT_3D.toFloat()).toDouble().coerceIn(TILT_MIN, TILT_MAX)) }
+    var tiltControls by remember { mutableStateOf(false) }
+    var tiltPresses by remember { mutableIntStateOf(0) }
+    LaunchedEffect(tiltControls, tiltPresses) {
+        if (!tiltControls) return@LaunchedEffect
+        kotlinx.coroutines.delay(TILT_CONTROLS_MS)
+        tiltControls = false
+    }
     var following by remember { mutableStateOf(true) }
     /** Where the rider is on screen (px), to hint at them from the edge once they're out of view. */
     var riderScreen by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
@@ -1110,8 +1119,8 @@ fun CurveonMapView(
         // Dashed: the road itself, as wide as the map draws it; coloured: a little wider than the thin dashes, so it reads at a glance.
         val gravelWidth = if (coloured) roadWidth(1.2f) else dashedRoadWidth()
         val softWidth = gravelWidth
-        s.getLayer("$SURFACE-road")?.setProperties(lineColor(if (dark) "#EBEBEB" else roadShade.first))
-        s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark, roadShade.first)), lineWidth(gravelWidth))
+        s.getLayer("$SURFACE-road")?.setProperties(lineColor(roadShade.first))
+        s.getLayer("$SURFACE-gravel")?.setProperties(lineColor(surfaceMode.gravel(roadShade.first)), lineWidth(gravelWidth))
         s.getLayer("$SURFACE-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
         // Under the dashes: coloured ones on the day map get a dark line, a little wider (orange and purple alone on
         // the green map have no contrast; the night map has its own dark ground). Plain dashes get the ground's colour
@@ -1122,7 +1131,7 @@ fun CurveonMapView(
             lineWidth(if (coloured) roadWidth(1.2f, 0.8f) else dashedRoadGround()),
             visibility(if (coloured && !dark || surfaceMode == SurfaceMode.DASHED) Property.VISIBLE else Property.NONE))
         // The same over the route and GPX tracks, as wide as the dashes.
-        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(surfaceMode.gravel(dark, roadShade.first)), lineWidth(gravelWidth))
+        s.getLayer("$SURFACE-over-gravel")?.setProperties(lineColor(surfaceMode.gravel(roadShade.first)), lineWidth(gravelWidth))
         s.getLayer("$SURFACE-over-soft")?.setProperties(lineColor(surfaceMode.soft(dark)), lineWidth(softWidth))
     }
 
@@ -1259,9 +1268,12 @@ fun CurveonMapView(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.End
         ) {
-            // Tap: north up → heading up → 3D. In 3D two arrows sit beside it for the angle of the view.
+            // Tap: north up → heading up → 3D; arriving in 3D shows two arrows beside it for the angle of the view
+            // for a few seconds (held down shows them again).
             fun chooseOrientation(o: Orientation) {
                 orientation = o
+                tiltControls = o == Orientation.THREE_D
+                tiltPresses++
                 prefs.edit().putString(if (navigating) "orientationNav" else "orientationBrowse", orientation.name).apply()
                 // Not following: turn the map where it is; following picks it up by itself.
                 if (!following) map?.let { m ->
@@ -1276,10 +1288,11 @@ fun CurveonMapView(
             fun tiltBy(delta: Double) {
                 tilt3d = (tilt3d + delta).coerceIn(TILT_MIN, TILT_MAX)
                 prefs.edit().putFloat("tilt3d", tilt3d.toFloat()).apply()
+                tiltPresses++
                 if (!following) map?.let { m -> m.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder(m.cameraPosition).tilt(tilt3d).build()), 300) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (orientation == Orientation.THREE_D) {
+                if (tiltControls && orientation == Orientation.THREE_D) {
                     // Up lifts the view towards looking down on the map, down lowers it towards the road.
                     MapButton(onClick = { tiltBy(-TILT_STEP) }, tag = "map_tilt_up_btn") {
                         Icon(Icons.Default.KeyboardArrowUp, stringResource(R.string.map_tilt_up), tint = TextPrimary, modifier = Modifier.size(28.dp))
@@ -1290,6 +1303,11 @@ fun CurveonMapView(
                 }
                 MapButton(
                     onClick = { chooseOrientation(Orientation.entries[(orientation.ordinal + 1) % Orientation.entries.size]) },
+                    onLongClick = {
+                        if (orientation != Orientation.THREE_D) chooseOrientation(Orientation.THREE_D)
+                        tiltControls = true
+                        tiltPresses++
+                    },
                     tag = "map_orientation_btn"
                 ) {
                     when (orientation) {
@@ -1539,7 +1557,7 @@ private fun addSurfaceLayers(s: Style, dark: Boolean) {
             lineColor(SurfaceMode.DASHED.soft(dark)), lineWidth(roadWidth()), lineDasharray(arrayOf(2f, 1.5f))
         ).withFilter(soft),
         LineLayer("$SURFACE-gravel", SURFACE).withProperties(
-            lineColor(SurfaceMode.DASHED.gravel(dark)), lineWidth(roadWidth()), lineDasharray(arrayOf(1.8f, 1.7f))
+            lineColor(SurfaceMode.DASHED.gravel(if (dark) com.curveon.data.map.OfflineMaps.NIGHT_ROAD_HC else com.curveon.data.map.OfflineMaps.HC_ROAD)), lineWidth(roadWidth()), lineDasharray(arrayOf(1.8f, 1.7f))
         ).withFilter(gravel)
     )
     // Under the downloaded map's first label layer, so road names stay on top (the online map's
@@ -1581,7 +1599,7 @@ private fun addSurfaceOverLayers(s: Style, dark: Boolean) {
         lineColor(color), lineWidth(roadWidth()), lineDasharray(dash),
         lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
     ).withFilter(E.eq(E.get("kind"), E.literal(kind)))
-    listOf(over("soft", arrayOf(2f, 1.5f), SurfaceMode.DASHED.soft(dark)), over("gravel", arrayOf(1.8f, 1.7f), SurfaceMode.DASHED.gravel(dark))).forEach { l ->
+    listOf(over("soft", arrayOf(2f, 1.5f), SurfaceMode.DASHED.soft(dark)), over("gravel", arrayOf(1.8f, 1.7f), SurfaceMode.DASHED.gravel(if (dark) com.curveon.data.map.OfflineMaps.NIGHT_ROAD_HC else com.curveon.data.map.OfflineMaps.HC_ROAD))).forEach { l ->
         l.minZoom = SURFACE_ZOOM
         s.addLayer(l)
     }
