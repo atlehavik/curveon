@@ -9,6 +9,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 ## 2026-10-24 — Livligere SOS og nudge, melding over fullt kart, større profilbilde (1.2.4)
 
 - [ ] SOS fra kameraten (eller DEV-demo): det røde kortet skal pulsere og blinke i takt med sirenen, og det skal ikke komme noe utenfor skjermen på Pixelen.
+- [ ] Nytt ikon (V4, sirkel med brun ramme): Curveon på Pixelen og X7, og Companion på Pixelen, i app-skuffen og på hjemmeskjermen. Prøv også temaikon (Android 13+: Innstillinger → Bakgrunn og stil → Temaikoner): motorsykkelen skal vises i én farge, lysene som hull.
 - [ ] Hovedmenyen: GPX-knappen er fiolett og de to siste knappene (GPX og motorsykkelen) har ulik farge. Sjekk også at «GPX og turer»-dialogen ser fin ut.
 - [ ] Nudge fra en venn: ravgul puls og avatar som «ringer». Roligere enn SOS.
 - [ ] Ha fullt kart oppe og få en SMS: banner øverst i ca. 10 sekunder med navn og tekst, og knappene les opp / svar / lukk. Prøv også under navigering (ligger det over turkortet?) og med musikkspilleren på.
