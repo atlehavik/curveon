@@ -7,85 +7,258 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta property="og:image" content="icon-512.png">
 <meta name="description" content="Motorsykkelnavigasjon som elsker svingete veier, og som virker uten dekning. / Motorcycle navigation that loves curvy roads, and works without a signal.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Curveon">
+<meta property="og:description" content="Motorsykkelnavigasjon som elsker svingete veier, og som virker uten dekning. / Motorcycle navigation that loves curvy roads, and works without a signal.">
+<meta property="og:url" content="https://curveon.no/">
+<meta property="og:image" content="https://curveon.no/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0b0e14">
 <style>
-  :root { --bg:#0d1117; --card:#161b22; --text:#e6edf3; --muted:#9aa7b4; --cyan:#00e5ff; --amber:#ffb300; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.55; }
-  main { max-width:44rem; margin:0 auto; padding:3rem 16px 4rem; }
-  h1 { font-size:2.6rem; margin:0 0 .25rem; letter-spacing:-.02em; }
-  h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; color:var(--cyan); }
-  .lead { font-size:1.2rem; color:var(--muted); margin:.25rem 0 1.5rem; }
-  .buttons { display:flex; flex-wrap:wrap; gap:12px; margin:1.5rem 0 .5rem; }
-  .btn { display:inline-block; padding:.8rem 1.3rem; border-radius:999px; font-weight:700; text-decoration:none; }
-  .primary { background:var(--cyan); color:#00363d; }
-  .secondary { background:var(--card); color:var(--text); border:1px solid #30363d; }
-  .note { color:var(--muted); font-size:.9rem; }
-  ul { padding-left:1.2rem; } li { margin:.45rem 0; }
-  footer { margin-top:3rem; padding-top:1rem; border-top:1px solid #30363d; color:var(--muted); font-size:.9rem; }
+  :root {
+    --bg:#0b0e14; --surface:#131a22; --surface2:#1b2430; --border:#283545;
+    --text:#f1f5f9; --muted:#94a3b8; --cyan:#00e5ff; --cyan-ink:#00363d; --amber:#ff9100;
+    --radius:18px;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.6; -webkit-font-smoothing:antialiased; }
   a { color:var(--cyan); }
-  .lang { float:right; font-size:.9rem; }
-  [hidden] { display:none !important; }
+  img { max-width:100%; height:auto; }
+  .wrap { max-width:68rem; margin:0 auto; padding:0 20px; }
+
+  /* Language: both texts are in the page, the other one is hidden */
+  html[lang="nb"] [lang="en"], html[lang="en"] [lang="nb"] { display:none !important; }
+
+  /* Top bar */
+  header.top { position:sticky; top:0; z-index:10; background:rgba(11,14,20,.82); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+  header.top .wrap { display:flex; align-items:center; gap:14px; height:64px; }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.2rem; letter-spacing:-.01em; color:var(--text); text-decoration:none; }
+  .logo img { width:36px; height:36px; border-radius:50%; }
+  .spacer { flex:1; }
+  .langs { display:flex; border:1px solid var(--border); border-radius:999px; overflow:hidden; font-size:.85rem; }
+  .langs button { background:none; border:0; color:var(--muted); padding:.35rem .8rem; font:inherit; cursor:pointer; }
+  html[lang="nb"] .langs [data-set="nb"], html[lang="en"] .langs [data-set="en"] { background:var(--surface2); color:var(--text); font-weight:700; }
+
+  .btn { display:inline-flex; align-items:center; gap:.5rem; padding:.8rem 1.4rem; border-radius:999px; font-weight:700; text-decoration:none; border:1px solid transparent; }
+  .btn.primary { background:var(--cyan); color:var(--cyan-ink); }
+  .btn.primary:hover { filter:brightness(1.08); }
+  .btn.secondary { background:var(--surface); color:var(--text); border-color:var(--border); }
+  .btn.secondary:hover { background:var(--surface2); }
+  .btn.small { padding:.5rem 1.05rem; font-size:.92rem; }
+  .btn:focus-visible, .langs button:focus-visible, a:focus-visible { outline:3px solid var(--amber); outline-offset:2px; }
+
+  /* Hero */
+  .hero { position:relative; overflow:hidden; padding:4.5rem 0 3rem; background:
+    radial-gradient(60rem 28rem at 85% -10%, rgba(0,229,255,.16), transparent 60%),
+    radial-gradient(40rem 22rem at -10% 20%, rgba(255,145,0,.09), transparent 60%); }
+  .hero .wrap { display:grid; grid-template-columns:1.05fr 1.2fr; gap:2.5rem; align-items:center; }
+  .eyebrow { display:inline-block; font-size:.8rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--cyan); margin-bottom:.8rem; }
+  h1 { font-size:clamp(2.2rem,5.2vw,3.6rem); line-height:1.08; letter-spacing:-.03em; margin:0 0 1rem; }
+  h1 em { font-style:normal; color:var(--cyan); }
+  .lead { font-size:1.15rem; color:var(--muted); margin:0 0 1.6rem; max-width:34rem; }
+  .cta { display:flex; flex-wrap:wrap; gap:12px; }
+  .facts { display:flex; flex-wrap:wrap; gap:.4rem 1.2rem; margin:1.4rem 0 0; padding:0; list-style:none; color:var(--muted); font-size:.92rem; }
+  .facts li::before { content:"✓"; color:var(--cyan); font-weight:800; margin-right:.4rem; }
+  .shot { border-radius:var(--radius); border:1px solid var(--border); box-shadow:0 30px 70px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(0,229,255,.06); display:block; width:100%; }
+
+  /* Sections */
+  section { padding:3.5rem 0; }
+  h2 { font-size:clamp(1.6rem,3.4vw,2.2rem); letter-spacing:-.02em; margin:0 0 .5rem; }
+  .sub { color:var(--muted); margin:0 0 2rem; max-width:40rem; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.4rem; }
+  .card h3 { margin:.9rem 0 .35rem; font-size:1.1rem; }
+  .card p { margin:0; color:var(--muted); font-size:.96rem; }
+  .ico { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:rgba(0,229,255,.1); color:var(--cyan); }
+  .ico svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .ico.amber { background:rgba(255,145,0,.12); color:var(--amber); }
+
+  /* Screenshots */
+  .rows { display:grid; gap:3rem; }
+  .row { display:grid; grid-template-columns:1.25fr 1fr; gap:2rem; align-items:center; }
+  .row:nth-child(even) { grid-template-columns:1fr 1.25fr; }
+  .row:nth-child(even) .shot { order:2; }
+  .row h3 { font-size:1.4rem; margin:0 0 .5rem; letter-spacing:-.01em; }
+  .row p { color:var(--muted); margin:0; }
+
+  /* Download */
+  .download { background:linear-gradient(180deg, transparent, rgba(0,229,255,.06)); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .steps { counter-reset:s; display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:0 0 2rem; padding:0; list-style:none; }
+  .steps li { counter-increment:s; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.2rem 1.3rem; color:var(--muted); font-size:.96rem; }
+  .steps li::before { content:counter(s); display:inline-grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--cyan); color:var(--cyan-ink); font-weight:800; margin-bottom:.6rem; }
+  .steps strong { display:block; color:var(--text); margin-bottom:.15rem; }
+  .note { color:var(--muted); font-size:.9rem; margin-top:1rem; }
+
+  footer { padding:2rem 0 3rem; color:var(--muted); font-size:.9rem; }
+  footer .wrap { display:flex; flex-wrap:wrap; gap:.5rem 1.5rem; align-items:center; justify-content:space-between; }
+
+  @media (max-width: 860px) {
+    .hero { padding:2.5rem 0 2rem; }
+    .hero .wrap, .row, .row:nth-child(even) { grid-template-columns:1fr; }
+    .row:nth-child(even) .shot { order:0; }
+    .grid, .steps { grid-template-columns:1fr; }
+    .hero .wrap { gap:1.8rem; }
+    .btn.small.hide-narrow { display:none; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
 </style>
 </head>
 <body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#"><img src="icon-192.png" alt="" width="36" height="36">Curveon</a>
+    <div class="spacer"></div>
+    <div class="langs" role="group" aria-label="Språk / Language">
+      <button type="button" data-set="nb">Norsk</button><button type="button" data-set="en">English</button>
+    </div>
+    <a class="btn primary small hide-narrow" href="#last-ned"><span lang="nb">Last ned</span><span lang="en">Download</span></a>
+  </div>
+</header>
+
 <main>
-  <div class="lang"><a href="#" data-set="nb">Norsk</a> · <a href="#" data-set="en">English</a></div>
-
-  <section lang="nb" data-lang="nb">
-    <h1>Curveon</h1>
-    <p class="lead">Motorsykkelnavigasjon som elsker svingete veier, og som virker uten dekning.</p>
-    <p>Curveon gjør telefonen din, eller et Android-nettbrett på styret, til et instrumentbord for turen: kart, svingvis navigasjon, musikk, meldinger og samtaler på ett sted. Gratis, åpen kildekode og laget for motorsyklister.</p>
-    <div class="buttons">
-      <a class="btn primary" href="PLAY_LINK">Last ned fra Google Play</a>
-      <a class="btn secondary" href="https://github.com/atlehavik/curveon">Kildekode på GitHub</a>
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow"><span lang="nb">Navigasjon for motorsyklister</span><span lang="en">Navigation for riders</span></span>
+        <h1>
+          <span lang="nb">Finn de <em>svingete</em> veiene. Også uten dekning.</span>
+          <span lang="en">Find the <em>curvy</em> roads. Even without a signal.</span>
+        </h1>
+        <p class="lead">
+          <span lang="nb">Curveon gjør telefonen din, eller et Android-nettbrett på styret, til et instrumentbord for turen: kart, svingvis navigasjon, musikk, meldinger og samtaler på ett sted.</span>
+          <span lang="en">Curveon turns your phone, or an Android tablet on the handlebars, into a dashboard for the ride: maps, turn-by-turn navigation, your music, messages and calls, all in one place.</span>
+        </p>
+        <div class="cta">
+          <!-- TODO when published: <a class="btn primary" href="PLAY_LINK">Last ned fra Google Play / Get it on Google Play</a> -->
+          <a class="btn primary" href="https://github.com/atlehavik/curveon/releases/latest"><span lang="nb">Last ned siste versjon</span><span lang="en">Download the latest version</span></a>
+          <a class="btn secondary" href="https://github.com/atlehavik/curveon"><span lang="nb">Kildekode på GitHub</span><span lang="en">Source code on GitHub</span></a>
+        </div>
+        <ul class="facts">
+          <li><span lang="nb">Gratis</span><span lang="en">Free</span></li>
+          <li><span lang="nb">Åpen kildekode</span><span lang="en">Open source</span></li>
+          <li><span lang="nb">Ingen konto</span><span lang="en">No account</span></li>
+          <li><span lang="nb">Ingen reklame</span><span lang="en">No ads</span></li>
+        </ul>
+      </div>
+      <img class="shot" src="hero.png" width="1600" height="790" data-alt-nb="Curveon på et nettbrett og en telefon: kart med navigasjon, melding, musikk og turteller" data-alt-en="Curveon on a tablet and a phone: map with navigation, a message, music and a rev counter" alt="Curveon på et nettbrett og en telefon: kart med navigasjon, melding, musikk og turteller">
     </div>
-    <p class="note">Android 10 eller nyere · mobil eller nettbrett · norsk og engelsk</p>
+  </div>
 
-    <h2>Hvorfor Curveon?</h2>
-    <ul>
-      <li><strong>Finner de morsomme veiene.</strong> Velg Raskest, Svingete eller Veldig svingete, og se alle tre ved siden av hverandre før du kjører.</li>
-      <li><strong>Virker uten nett.</strong> Last ned landene du kjører i én gang. Kart, ruter og søk virker i fjellet, i tunneler og i utlandet.</li>
-      <li><strong>Alt på én skjerm.</strong> Musikk, meldinger og samtaler fra telefonen vises ved siden av kartet, med store knapper du treffer med hansker på.</li>
-      <li><strong>Kjør sammen.</strong> Legg til venner, start en gruppe og se hverandre på kartet. Del en rute, og alle får endringene med en gang. Alt er ende-til-ende-kryptert.</li>
-      <li><strong>Planlegg på din måte.</strong> Dra ruten dit du vil, tegn en rundtur med ett fingerstrøk, ta vare på turer til senere og kjør hvilket som helst GPX-spor.</li>
-    </ul>
-
-    <h2>Personvern</h2>
-    <p>Ingen kontoer, ingen reklame og ingen analyse. Les <a href="privacy.html">personvernerklæringen</a>.</p>
+  <section>
+    <div class="wrap">
+      <h2><span lang="nb">Laget for veien, ikke for kontoret</span><span lang="en">Made for the road, not the office</span></h2>
+      <p class="sub"><span lang="nb">Store knapper du treffer med hansker på, kart som virker uten nett og ingenting du må logge inn på.</span><span lang="en">Big buttons you can hit with gloves on, maps that work offline and nothing to sign in to.</span></p>
+      <div class="grid">
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 20c0-6 5-5 8-8s1-7 8-8"/><circle cx="4" cy="20" r="1.6"/><circle cx="20" cy="4" r="1.6"/></svg></div>
+          <h3><span lang="nb">Finner de morsomme veiene</span><span lang="en">Finds the fun roads</span></h3>
+          <p><span lang="nb">Velg Raskest, Svingete eller Veldig svingete, og se alle tre ved siden av hverandre før du kjører.</span><span lang="en">Choose Fastest, Curvy or Super curvy and see all three side by side before you go.</span></p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M7.5 7.5A8 8 0 0 0 4 12c0 3 2 5 4 6M16 16.5A8 8 0 0 0 20 12c0-4-3-7-8-7a8 8 0 0 0-2.5.4"/></svg></div>
+          <h3><span lang="nb">Virker uten nett</span><span lang="en">Works offline</span></h3>
+          <p><span lang="nb">Last ned landene du kjører i én gang. Kart, ruter og søk virker i fjellet, i tunneler og i utlandet.</span><span lang="en">Download the countries you ride in once. Maps, routes and search then work in the mountains, in tunnels and abroad.</span></p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <h3><span lang="nb">Alt på én skjerm</span><span lang="en">Everything on one screen</span></h3>
+          <p><span lang="nb">Musikk, meldinger og samtaler fra telefonen vises ved siden av kartet.</span><span lang="en">Music, messages and calls from your phone show up next to the map.</span></p>
+        </div>
+        <div class="card">
+          <div class="ico amber"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-3.5 3-6 6-6s6 2.5 6 6M15.5 14.2c3 0 5.5 2 5.5 5"/></svg></div>
+          <h3><span lang="nb">Kjør sammen</span><span lang="en">Ride together</span></h3>
+          <p><span lang="nb">Legg til venner, start en gruppe og se hverandre på kartet. Alt er ende-til-ende-kryptert.</span><span lang="en">Add friends, start a group and see each other on the map. Everything is end-to-end encrypted.</span></p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 17c2-8 6-8 8-4s6 4 8-4"/><path d="M4 21h16"/></svg></div>
+          <h3><span lang="nb">Planlegg på din måte</span><span lang="en">Plan your way</span></h3>
+          <p><span lang="nb">Dra ruten dit du vil, tegn en rundtur med ett fingerstrøk og kjør hvilket som helst GPX-spor.</span><span lang="en">Drag the route where you want it, draw a roundtrip with one finger and ride any GPX track.</span></p>
+        </div>
+        <div class="card">
+          <div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <h3><span lang="nb">Personvern først</span><span lang="en">Privacy first</span></h3>
+          <p><span lang="nb">Ingen kontoer, ingen reklame og ingen analyse. Posisjonen din deles bare med dem du velger.</span><span lang="en">No accounts, no advertising and no analytics. Your position is only shared with the people you choose.</span></p>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section lang="en" data-lang="en" hidden>
-    <h1>Curveon</h1>
-    <p class="lead">Motorcycle navigation that loves curvy roads, and works without a signal.</p>
-    <p>Curveon turns your phone, or an Android tablet on the handlebars, into a dashboard for the ride: maps, turn-by-turn navigation, your music, messages and calls, all in one place. Free, open source and made for riders.</p>
-    <div class="buttons">
-      <a class="btn primary" href="PLAY_LINK">Get it on Google Play</a>
-      <a class="btn secondary" href="https://github.com/atlehavik/curveon">Source code on GitHub</a>
+  <section>
+    <div class="wrap">
+      <h2><span lang="nb">Se hvordan det ser ut</span><span lang="en">See how it looks</span></h2>
+      <p class="sub"><span lang="nb">Fra turplanlegging til kjøring.</span><span lang="en">From planning the trip to riding it.</span></p>
+      <div class="rows">
+        <div class="row">
+          <img class="shot" loading="lazy" src="img/route-preview.png" width="1280" height="720" data-alt-nb="Ruteforhåndsvisning med Raskest, Svingete og Veldig svingete" data-alt-en="Route preview with Fastest, Curvy and Super curvy" alt="Ruteforhåndsvisning med Raskest, Svingete og Veldig svingete">
+          <div>
+            <h3><span lang="nb">Velg hvor svingete det skal være</span><span lang="en">Choose how curvy it should be</span></h3>
+            <p><span lang="nb">Tre forslag til samme tur, med lengde og tid. Du ser med en gang hva svingene koster deg.</span><span lang="en">Three suggestions for the same trip, with length and time, so you see at once what the curves cost you.</span></p>
+          </div>
+        </div>
+        <div class="row">
+          <img class="shot" loading="lazy" src="img/ride-dashboard.png" width="1280" height="720" data-alt-nb="Instrumentbordet under kjøring: svingkort, fartsgrense, turtall, melding og musikk" data-alt-en="The dashboard while riding: turn card, speed limit, revs, a message and music" alt="Instrumentbordet under kjøring: svingkort, fartsgrense, turtall, melding og musikk">
+          <div>
+            <h3><span lang="nb">Alt du trenger, ingenting du ikke trenger</span><span lang="en">Everything you need, nothing you don't</span></h3>
+            <p><span lang="nb">Neste sving, fartsgrense, turtall, melding og musikk på én skjerm, lett å lese i sollys.</span><span lang="en">Next turn, speed limit, revs, a message and music on one screen, easy to read in sunlight.</span></p>
+          </div>
+        </div>
+        <div class="row">
+          <img class="shot" loading="lazy" src="img/full-map-day.png" width="1280" height="720" data-alt-nb="Fullskjermskart i dagfarger under navigasjon" data-alt-en="Full-screen map in day colours while navigating" alt="Fullskjermskart i dagfarger under navigasjon">
+          <div>
+            <h3><span lang="nb">Dag og natt</span><span lang="en">Day and night</span></h3>
+            <p><span lang="nb">Fullskjermskart med dagfarger og nattfarger, 3D-visning og navn på veiene du kjører på.</span><span lang="en">A full-screen map in day or night colours, with a 3D view and the names of the roads you ride.</span></p>
+          </div>
+        </div>
+        <div class="row">
+          <img class="shot" loading="lazy" src="img/roundtrip.png" width="1280" height="720" data-alt-nb="En rundtur tegnet på kartet" data-alt-en="A roundtrip drawn on the map" alt="En rundtur tegnet på kartet">
+          <div>
+            <h3><span lang="nb">Tegn en rundtur</span><span lang="en">Draw a roundtrip</span></h3>
+            <p><span lang="nb">Pek ut et område og få en tur som går rundt og kommer hjem igjen, på veier du faktisk vil kjøre.</span><span lang="en">Point out an area and get a trip that loops and brings you home, on roads you actually want to ride.</span></p>
+          </div>
+        </div>
+      </div>
     </div>
-    <p class="note">Android 10 or newer · phone or tablet · English and Norwegian</p>
-
-    <h2>Why Curveon?</h2>
-    <ul>
-      <li><strong>Finds the fun roads.</strong> Choose Fastest, Curvy or Super curvy and see all three side by side before you go.</li>
-      <li><strong>Works offline.</strong> Download the countries you ride in once. Maps, routes and search then work in the mountains, in tunnels and abroad.</li>
-      <li><strong>Everything on one screen.</strong> Music, messages and calls from your phone show up next to the map, with big buttons you can hit with gloves on.</li>
-      <li><strong>Ride together.</strong> Add friends, start a group and see each other on the map. Share a route and everyone gets the changes at once. Everything is end-to-end encrypted.</li>
-      <li><strong>Plan your way.</strong> Drag the route where you want it, draw a roundtrip with one finger, keep trips for later, and ride any GPX track.</li>
-    </ul>
-
-    <h2>Privacy</h2>
-    <p>No accounts, no advertising and no analytics. Read the <a href="privacy.html">privacy policy</a>.</p>
   </section>
 
-  <footer>Curveon · <a href="privacy.html">Personvern / Privacy</a> · <a href="https://github.com/atlehavik/curveon">GitHub</a></footer>
+  <section class="download" id="last-ned">
+    <div class="wrap">
+      <h2><span lang="nb">Last ned Curveon</span><span lang="en">Get Curveon</span></h2>
+      <p class="sub"><span lang="nb">Curveon er gratis. Foreløpig installerer du den direkte fra GitHub; Google Play kommer.</span><span lang="en">Curveon is free. For now you install it straight from GitHub; Google Play is coming.</span></p>
+      <ol class="steps">
+        <li><strong><span lang="nb">Last ned</span><span lang="en">Download</span></strong><span lang="nb">Åpne nedlastingssiden og velg Curveon-filen (.apk) under «Assets».</span><span lang="en">Open the download page and pick the Curveon file (.apk) under “Assets”.</span></li>
+        <li><strong><span lang="nb">Tillat installasjon</span><span lang="en">Allow installing</span></strong><span lang="nb">Android spør om du vil tillate installasjon fra nettleseren din. Si ja.</span><span lang="en">Android asks whether to allow installing from your browser. Say yes.</span></li>
+        <li><strong><span lang="nb">Kjør</span><span lang="en">Ride</span></strong><span lang="nb">Åpne Curveon og last ned kartet for landet du kjører i, så virker det uten nett.</span><span lang="en">Open Curveon and download the map for the country you ride in, and it works offline.</span></li>
+      </ol>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/atlehavik/curveon/releases/latest"><span lang="nb">Last ned siste versjon (APK)</span><span lang="en">Download the latest version (APK)</span></a>
+        <a class="btn secondary" href="privacy.html"><span lang="nb">Personvernerklæring</span><span lang="en">Privacy policy</span></a>
+      </div>
+      <p class="note"><span lang="nb">Android 10 eller nyere · mobil eller nettbrett · norsk og engelsk. Curveon Companion (for nettbrett på styret, installert på telefonen) ligger på samme side.</span><span lang="en">Android 10 or newer · phone or tablet · English and Norwegian. Curveon Companion (for a tablet on the handlebars, installed on your phone) is on the same page.</span></p>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <div class="wrap">
+    <span>Curveon · <span lang="nb">laget for motorsyklister</span><span lang="en">made for riders</span></span>
+    <span><a href="privacy.html"><span lang="nb">Personvern</span><span lang="en">Privacy</span></a> · <a href="https://github.com/atlehavik/curveon">GitHub</a></span>
+  </div>
+</footer>
+
 <script>
-  // Both languages are in the page; show the reader's own (Norwegian by default), and let them switch.
-  function show(l) { document.querySelectorAll("[data-lang]").forEach(function (s) { s.hidden = s.dataset.lang !== l; }); document.documentElement.lang = l; }
-  document.querySelectorAll("[data-set]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); show(a.dataset.set); }); });
-  show((navigator.language || "nb").toLowerCase().indexOf("nb") === 0 || (navigator.language || "").toLowerCase().indexOf("no") === 0 ? "nb" : "en");
+  // Both languages are in the page; show the reader's own (Norwegian by default) and let them switch.
+  function show(l) {
+    document.documentElement.lang = l;
+    document.querySelectorAll("img[data-alt-" + l + "]").forEach(function (i) { i.alt = i.getAttribute("data-alt-" + l); });
+    try { localStorage.setItem("lang", l); } catch (e) {}
+  }
+  document.querySelectorAll("[data-set]").forEach(function (b) { b.addEventListener("click", function () { show(b.dataset.set); }); });
+  var saved = null; try { saved = localStorage.getItem("lang"); } catch (e) {}
+  var nav = (navigator.language || "nb").toLowerCase();
+  show(saved || (nav.indexOf("nb") === 0 || nav.indexOf("no") === 0 || nav.indexOf("nn") === 0 ? "nb" : "en"));
 </script>
 </body>
 </html>

@@ -137,6 +137,13 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   against `main` and every `worktree-*` / `origin/*` branch: if any has commits the device already
   runs, stop and ask. (2026-10-21 a build from a fresh branch off `main` wiped 34 commits of group
   rides, friends, mic search etc. off the Pixel.)
+- **Website (curveon.no):** the source is `website/`; it is deployed by hand-free script
+  `tools/deploy-website.sh` (FTPS, login in `~/.curveon-signing/website.env`; no `--apply` = dry run,
+  show the list and get a yes before `--apply`). The download button links to
+  `https://github.com/atlehavik/curveon/releases/latest`, which follows every GitHub release by
+  itself, so a new release needs no website change. After a release, check that
+  `gh release view --repo atlehavik/curveon` still lists both `Curveon-<v>.apk` and
+  `Curveon-Companion-<v>.apk`, and that the button on curveon.no still reaches them.
 - **Installing:** a device connected by USB (`adb devices` lists it with a `usb:` transport, e.g. the X7 at
   the desk) and the Pixel (over wifi) can always be installed on, after each change, without asking. The X7 when
   it is reached only over wifi (on the handlebars) is not: say what is waiting to be installed and end the
