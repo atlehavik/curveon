@@ -915,7 +915,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         _state.value = NavigationState(
             goal = goal,
             route = route,
-            progress = pos?.let { tracker!!.update(it) },
+            progress = pos?.let { tracker!!.update(it, headingDeg = lastHeading) },
             stopsAlong = stopsAlong(goal, route),
             approach = approachTo(route)
         )
@@ -946,7 +946,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         pendingPreview?.let { (goal, selected) -> if (tracker == null) preview(goal, keepSelection = selected) }
         pendingFollow?.let { goal -> pendingFollow = null; if (tracker == null) followTrackNow(goal.name, goal.points, goal.options) }
         val t = tracker ?: return
-        val progress = t.update(position, accuracyMeters)
+        val progress = t.update(position, accuracyMeters, lastHeading)
         var current = _state.value.copy(progress = progress)
         // Getting to where the route starts: done once on it; gone elsewhere, it's off route as usual.
         current.approach?.let { a ->
@@ -1156,7 +1156,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         tracker = newTracker(newRoute)
         _state.value = _state.value.copy(
             route = newRoute,
-            progress = tracker!!.update(position),
+            progress = tracker!!.update(position, headingDeg = lastHeading),
             status = RoutingStatus.Idle,
             wrongTurn = null,
             stopsAlong = stopsAlong(_state.value.goal ?: return, newRoute),

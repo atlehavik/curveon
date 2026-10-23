@@ -163,4 +163,74 @@ class NavigationTrackerTest {
             d += 23.0
         }
     }
+
+    /**
+     * A switchback: 600 m north, a hairpin, 600 m back south 30 m to the east, then on east. The two legs are closer
+     * than a GPS fix can stray (code review 2026-10-23).
+     */
+    private fun switchback(): Route {
+        val start = LatLon(60.0, 10.0)
+        val geometry = (0..60).map { Geo.destination(start, 0.0, it * 10.0) } +
+            Geo.destination(Geo.destination(start, 0.0, 610.0), 90.0, 15.0) +
+            (0..60).map { Geo.destination(Geo.destination(start, 90.0, 30.0), 0.0, 600.0 - it * 10.0) } +
+            (1..50).map { Geo.destination(Geo.destination(start, 90.0, 30.0), 90.0, it * 10.0) }
+        val pts = mutableListOf<RoutePoint>()
+        var d = 0.0
+        geometry.forEachIndexed { i, p ->
+            if (i > 0) d += Geo.distance(geometry[i - 1], p)
+            pts += RoutePoint(p.lat, p.lon, 0.0, d, d / 15.0, "tertiary", 60, unpaved = false, ferry = false)
+        }
+        val maneuvers = listOf(Maneuver(ManeuverType.DEPART, 0, 0.0), Maneuver(ManeuverType.U_TURN, 61, pts[61].distanceFromStart),
+            Maneuver(ManeuverType.LEFT, 122, pts[122].distanceFromStart), Maneuver(ManeuverType.ARRIVE, pts.lastIndex, d))
+        return Route(pts, maneuvers, d, d / 15.0, 0.0, 0, 0.0, 0)
+    }
+
+    @Test
+    fun `a fix that strays towards the other leg of a switchback does not jump along it`() {
+        val start = LatLon(60.0, 10.0)
+        val tracker = NavigationTracker(switchback())
+        for (y in 100..160 step 10) tracker.update(Geo.destination(start, 0.0, y.toDouble()))
+        // one fix 18 m off, towards the leg back (12 m from it)
+        val stray = tracker.update(Geo.destination(Geo.destination(start, 0.0, 170.0), 90.0, 18.0), 15.0)
+        assertEquals(170.0, stray.distanceAlongRoute, 15.0)
+        val next = tracker.update(Geo.destination(start, 0.0, 180.0))
+        assertEquals(180.0, next.distanceAlongRoute, 5.0)
+        assertFalse(next.offRoute)
+    }
+
+    @Test
+    fun `the switchback is still followed all the way round`() {
+        val start = LatLon(60.0, 10.0)
+        val tracker = NavigationTracker(switchback())
+        val east = Geo.destination(start, 90.0, 30.0)
+        val ridden = (0..60).map { Geo.destination(start, 0.0, it * 10.0) } + Geo.destination(Geo.destination(start, 0.0, 610.0), 90.0, 15.0) +
+            (0..60).map { Geo.destination(east, 0.0, 600.0 - it * 10.0) } + (1..50).map { Geo.destination(east, 90.0, it * 10.0) }
+        var last = 0.0
+        for (p in ridden) {
+            val pr = tracker.update(p)
+            assertFalse(pr.offRoute)
+            assertTrue("never backwards", pr.distanceAlongRoute >= last - 1)
+            last = pr.distanceAlongRoute
+        }
+        assertTrue(tracker.update(ridden.last()).arrived)
+    }
+
+    @Test
+    fun `after a long gap the rider is found far along the route`() {
+        val tracker = NavigationTracker(switchback())
+        val start = LatLon(60.0, 10.0)
+        tracker.update(Geo.destination(start, 0.0, 50.0))
+        // a tunnel without GPS: the next fix is on the last leg
+        val p = tracker.update(Geo.destination(Geo.destination(start, 90.0, 30.0), 90.0, 300.0))
+        assertEquals(1240.0 + 300.0, p.distanceAlongRoute, 30.0)
+    }
+
+    @Test
+    fun `a new route on a switchback starts on the leg the rider is going along`() {
+        val start = LatLon(60.0, 10.0)
+        // a reroute or a trip taken up again: no fix before this one, which is nearer the leg back
+        val fix = Geo.destination(Geo.destination(start, 0.0, 170.0), 90.0, 18.0)
+        assertEquals(170.0, NavigationTracker(switchback()).update(fix, headingDeg = 2.0).distanceAlongRoute, 15.0)
+        assertTrue("without a heading it can't tell", NavigationTracker(switchback()).update(fix).distanceAlongRoute > 600)
+    }
 }

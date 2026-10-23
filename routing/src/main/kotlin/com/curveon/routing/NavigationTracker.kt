@@ -25,7 +25,9 @@ data class NavigationProgress(
 /**
  * Follows a rider along a [Route]: snaps GPS fixes onto the polyline, tracks the next maneuver
  * and detects when the rider has left the route. Only searches a window ahead of the last
- * known position so loops and out-and-back sections don't make it jump.
+ * known position so loops and out-and-back sections don't make it jump, no further along than the
+ * rider can have come since, and away from road going the other way: on a switchback the leg back
+ * can be nearer to a stray fix than the leg being ridden.
  */
 class NavigationTracker(
     val route: Route,
@@ -35,23 +37,35 @@ class NavigationTracker(
 
     private var lastIndex = 0
     private var lastAlong = 0.0
+    /** Where the rider was when [lastAlong] was taken. */
+    private var lastOnRoute: LatLon? = null
     private var offRouteStreak = 0
 
-    fun update(position: LatLon, accuracyMeters: Double = 10.0): NavigationProgress {
+    /** [headingDeg]: which way the rider is going, null when not known (standing, or too few fixes yet). */
+    fun update(position: LatLon, accuracyMeters: Double = 10.0, headingDeg: Double? = null): NavigationProgress {
         val pts = route.points
         if (pts.size < 2) return atSinglePoint(position)
         val searchEnd = findSearchEnd(lastIndex)
+        val threshold = offRouteMeters + accuracyMeters.coerceAtMost(50.0)
         var bestIdx = lastIndex
         var bestT = 0.0
         var bestDist = Double.MAX_VALUE
-        for (i in lastIndex until searchEnd) {
-            val (t, d) = projectOnSegment(position, pts[i], pts[i + 1])
-            if (d < bestDist) {
-                bestDist = d
-                bestIdx = i
-                bestT = t
+        fun search(reach: Double) {
+            var bestScore = Double.MAX_VALUE
+            bestDist = Double.MAX_VALUE
+            for (i in lastIndex until searchEnd) {
+                if (i > lastIndex && pts[i].distanceFromStart > reach) break
+                val (t, d) = projectOnSegment(position, pts[i], pts[i + 1])
+                val score = d + if (headingDeg != null && against(headingDeg, pts[i], pts[i + 1])) AGAINST_PENALTY_M else 0.0
+                if (score < bestScore) { bestScore = score; bestDist = d; bestIdx = i; bestT = t }
             }
         }
+        // First no further along than the road can have been ridden since the last fix (a hairpin is about 1.6 times
+        // the straight line): the leg back from a switchback is out of reach. Nothing on the route there (after a
+        // tunnel, say), then the whole window.
+        val reach = lastOnRoute?.let { lastAlong + Geo.distance(it, position) * REACH_FACTOR + REACH_MARGIN_M }
+        search(reach ?: Double.MAX_VALUE)
+        if (reach != null && bestDist > threshold) search(Double.MAX_VALUE)
         // Lost the route window (e.g. after a long tunnel)? Search everything once.
         if (bestDist > REJOIN_SEARCH_M) {
             for (i in 0 until pts.lastIndex) {
@@ -68,10 +82,9 @@ class NavigationTracker(
         val (ba, bb) = if (bestIdx < pts.lastIndex) a to b else pts[maxOf(bestIdx - 1, 0)] to a
         val routeBearing = Geo.bearing(ba.lat, ba.lon, bb.lat, bb.lon)
 
-        val threshold = offRouteMeters + accuracyMeters.coerceAtMost(50.0)
         offRouteStreak = if (bestDist > threshold) offRouteStreak + 1 else 0
         val offRoute = offRouteStreak >= OFF_ROUTE_FIXES
-        if (!offRoute) { lastIndex = bestIdx; lastAlong = along }
+        if (!offRoute) { lastIndex = bestIdx; lastAlong = along; lastOnRoute = position }
 
         val next = route.maneuvers.firstOrNull { it.distanceFromStart > along + PASSED_MANEUVER_M && it.type != ManeuverType.DEPART }
             ?: arrival
@@ -122,6 +135,13 @@ class NavigationTracker(
         return minOf(maxOf(i, from + 2), pts.lastIndex)
     }
 
+    /** The piece of road from [a] to [b] goes the other way from [headingDeg] (a short piece says little, so never). */
+    private fun against(headingDeg: Double, a: RoutePoint, b: RoutePoint): Boolean {
+        if (b.distanceFromStart - a.distanceFromStart < 3.0) return false
+        val diff = Math.abs(((Geo.bearing(a.lat, a.lon, b.lat, b.lon) - headingDeg) % 360 + 540) % 360 - 180)
+        return diff > AGAINST_DEG
+    }
+
     /** Returns (fraction along segment 0..1, distance in metres) using a local flat projection. */
     private fun projectOnSegment(p: LatLon, a: RoutePoint, b: RoutePoint): Pair<Double, Double> {
         val kx = 111_320.0 * cos(Math.toRadians(p.lat))
@@ -144,5 +164,10 @@ class NavigationTracker(
         const val REJOIN_SEARCH_M = 500.0
         const val PASSED_MANEUVER_M = 15.0
         const val ARRIVED_M = 30.0
+        const val REACH_FACTOR = 3.0
+        const val REACH_MARGIN_M = 100.0
+        /** Road going more than this far from the rider's heading is going the other way. */
+        const val AGAINST_DEG = 120.0
+        const val AGAINST_PENALTY_M = 30.0
     }
 }
