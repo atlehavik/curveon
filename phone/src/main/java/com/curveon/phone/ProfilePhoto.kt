@@ -22,8 +22,12 @@ object ProfilePhoto {
     /**
      * The photo at [uri], turned the right way up and not larger than [maxSide] pixels (so a 12-megapixel photo is not
      * held whole), ready to be cut. Null if it cannot be read.
+     *
+     * With [mirrorFrontCamera], a photo taken with the front camera is turned left to right. The camera app shows the
+     * rider the mirror view while framing a selfie but saves the picture the other way round, and the rider then
+     * sees a face that is not the one they just looked at: a selfie must feel like the selfie they took.
      */
-    fun load(context: Context, uri: Uri, maxSide: Int = 1280): Bitmap? = runCatching {
+    fun load(context: Context, uri: Uri, maxSide: Int = 1280, mirrorFrontCamera: Boolean = false): Bitmap? = runCatching {
         val resolver = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
@@ -31,9 +35,19 @@ object ProfilePhoto {
         while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= maxSide) sample *= 2
         val decoded = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
             ?: return null
-        val rotation = resolver.openInputStream(uri)?.use { rotationOf(ExifInterface(it)) } ?: 0f
-        if (rotation == 0f) decoded else Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply { postRotate(rotation) }, true)
+        val exif = resolver.openInputStream(uri)?.use { ExifInterface(it) }
+        val rotation = exif?.let { rotationOf(it) } ?: 0f
+        val mirror = mirrorFrontCamera && exif != null && isFrontCamera(exif)
+        if (rotation == 0f && !mirror) decoded
+        else Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply {
+            postRotate(rotation)
+            if (mirror) postScale(-1f, 1f) // after the turn: left to right in the picture the rider sees
+        }, true)
     }.getOrNull()
+
+    /** The camera apps name the lens in the file ("... front camera 2.2mm f/2.2"). */
+    private fun isFrontCamera(exif: ExifInterface) =
+        exif.getAttribute("LensModel")?.contains("front", ignoreCase = true) == true
 
     private fun rotationOf(exif: ExifInterface) = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
         ExifInterface.ORIENTATION_ROTATE_90 -> 90f

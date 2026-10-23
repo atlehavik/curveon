@@ -8,7 +8,7 @@
 
 Curveon turns your phone, or an Android tablet on the handlebars, into a dashboard for the ride:
 maps, turn-by-turn navigation, your music, messages and calls, all in one place.
-Free, open source and made for riders.
+Open source and made for riders.
 
 <br>
 
@@ -177,7 +177,7 @@ Maps © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, v
 [BRouter](https://brouter.de). Places also from [Overture Maps](https://overturemaps.org), and in
 Norway from Kartverket and Statens vegvesen (speed limits).
 
-Curveon is free and open source under the [MIT License](LICENSE). Third-party components are
+Curveon is open source under the [MIT License](LICENSE). Third-party components are
 listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ---

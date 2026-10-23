@@ -88,6 +88,9 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   screen. Look over its contact sheets too. Not for every feature: run it whenever a change could
   plausibly look wrong on some kind of screen (layout, dialogs, rows of buttons, text that may not fit,
   anything sized to the screen), and add a scenario for a new screen or dialog when it is run.
+- **Never call Curveon "free" / "gratis"** (website, README, store text, changelog, app texts): the
+  rider plans some income from it on Google Play. "Open source", "no account", "no ads" are fine;
+  saying that a map source or a service the app uses costs nothing is not about Curveon's price.
 - **Every text in two languages.** The rider picks English or Norwegian in Settings → Display. Any
   text the rider can see goes in `res/values/strings.xml` (English) *and* `res/values-nb/strings.xml`
   (Norwegian Bokmål), never as a literal in Kotlin: `stringResource(R.string.x)` in Compose,

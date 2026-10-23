@@ -10,6 +10,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 - [ ] SOS fra kameraten (eller DEV-demo): det røde kortet skal pulsere og blinke i takt med sirenen, og det skal ikke komme noe utenfor skjermen på Pixelen.
 - [ ] Nytt ikon (V4, sirkel med brun ramme): Curveon på Pixelen og X7, og Companion på Pixelen, i app-skuffen og på hjemmeskjermen. Prøv også temaikon (Android 13+: Innstillinger → Bakgrunn og stil → Temaikoner): motorsykkelen skal vises i én farge, lysene som hull.
+- [ ] Profilbilde fra kamera (Venner → Meg → Ta et bilde) med frontkameraet: bildet i utklippet skal være slik du så deg selv i forhåndsvisningen (speilet), ikke snudd. Et bilde valgt fra galleriet skal være som det er. Prøv også bakkameraet: det skal ikke speiles.
 - [ ] Pixel, Curveon som «Denne enheten»: Innstillinger → Telefon viser «mangler tillatelse» (SMS/mikrofon). Trykk Tillat og godta i Android: advarselen skal forsvinne med en gang, uten å gå ut av innstillingene. Skru en tillatelse av og på i Android-innstillingene og kom tilbake: advarselen følger med.
 - [ ] Hovedmenyen: trykk på hver knapp (telefon, venner, innstillinger, GPX). Den åpne knappen skal fylles med sin egen farge (grønn, oransje, hvit, fiolett), og ikonet blir mørkt.
 - [ ] Hovedmenyen: GPX-knappen er fiolett og de to siste knappene (GPX og motorsykkelen) har ulik farge. Sjekk også at «GPX og turer»-dialogen ser fin ut.

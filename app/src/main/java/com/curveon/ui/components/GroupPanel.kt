@@ -407,13 +407,14 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
     val captureFile = remember { java.io.File(context.cacheDir, "photos/profile.jpg") }
     fun captureUri() = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.photos", captureFile.also { it.parentFile?.mkdirs() })
     fun toast(res: Int) = android.widget.Toast.makeText(context, context.getString(res), android.widget.Toast.LENGTH_LONG).show()
-    fun cutFrom(uri: android.net.Uri) {
-        val bitmap = com.curveon.phone.ProfilePhoto.load(context, uri)
+    // [fromCamera]: a selfie is turned the way the rider saw it while framing it; a picture chosen from the gallery is left as it is.
+    fun cutFrom(uri: android.net.Uri, fromCamera: Boolean = false) {
+        val bitmap = com.curveon.phone.ProfilePhoto.load(context, uri, mirrorFrontCamera = fromCamera)
         runCatching { captureFile.delete() } // a picture of the rider's face is not left in the cache
         if (bitmap != null) toCut = bitmap else toast(R.string.group_photo_failed)
     }
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) cutFrom(uri) }
-    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) cutFrom(captureUri()) }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) cutFrom(captureUri(), fromCamera = true) }
     // The app holds the camera permission for scanning, so Android wants it also to start the camera app.
     val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) camera.launch(captureUri()) else toast(R.string.group_photo_camera_denied) }
     fun takePhoto() {
