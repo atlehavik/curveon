@@ -4,7 +4,9 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
+import android.content.pm.PackageManager
 import com.curveon.BuildConfig
 import com.curveon.R
 import kotlinx.coroutines.Dispatchers
@@ -15,10 +17,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import java.io.File
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
-/** A version of Curveon published as a GitHub release. */
-data class AppRelease(val version: String, val notes: String, val apkUrl: String, val bytes: Long)
+/** A version of Curveon published as a GitHub release. [sha256] (hex) is what GitHub says the APK is, when it says. */
+data class AppRelease(val version: String, val notes: String, val apkUrl: String, val bytes: Long, val sha256: String? = null)
 
 sealed interface UpdateState {
     data object Idle : UpdateState
@@ -47,7 +50,7 @@ class AppUpdates(private val context: Context) {
             Request.Builder().url(LATEST_URL).header("Accept", "application/vnd.github+json").build()
         ).execute().use { r ->
             check(r.isSuccessful) { "GitHub: HTTP ${r.code}" }
-            JSONObject(r.body!!.string())
+            JSONObject(checkNotNull(r.body) { "GitHub: no answer" }.string())
         }
         val version = json.getString("tag_name").removePrefix("v")
         if (!isNewer(version, BuildConfig.VERSION_NAME)) return@withContext null
@@ -57,18 +60,25 @@ class AppUpdates(private val context: Context) {
         val apk = apks.firstOrNull { APK_NAME.matches(it.getString("name")) }
             ?: apks.firstOrNull { !it.getString("name").contains("Companion", ignoreCase = true) }
             ?: return@withContext null
-        AppRelease(version, plainText(json.optString("body")), apk.getString("browser_download_url"), apk.optLong("size"))
+        AppRelease(
+            version, plainText(json.optString("body")), apk.getString("browser_download_url"), apk.optLong("size"),
+            apk.optString("digest").removePrefix("sha256:").lowercase().takeIf { it.length == 64 }
+        )
     }
 
-    /** Downloads [release]'s APK into the cache; [onProgress] gets 0..1. */
+    /**
+     * Downloads [release]'s APK into the cache; [onProgress] gets 0..1. A copy whose bytes are not what GitHub says
+     * (cut short, damaged, or swapped on the way) is thrown away, so trying again downloads it afresh.
+     */
     suspend fun download(release: AppRelease, onProgress: (Float) -> Unit): File = withContext(Dispatchers.IO) {
         dir.mkdirs()
         val file = File(dir, "Curveon-${release.version}.apk")
-        if (file.length() > 0 && file.length() == release.bytes) return@withContext file
+        if (file.length() > 0 && file.length() == release.bytes && matches(file, release)) return@withContext file
+        file.delete()
         val part = File(dir, file.name + ".part")
         http.newCall(Request.Builder().url(release.apkUrl).build()).execute().use { r ->
             check(r.isSuccessful) { "GitHub: HTTP ${r.code}" }
-            val body = r.body!!
+            val body = checkNotNull(r.body) { "GitHub: no answer" }
             val total = body.contentLength().takeIf { it > 0 } ?: release.bytes
             body.byteStream().use { input ->
                 part.outputStream().use { out ->
@@ -84,12 +94,41 @@ class AppUpdates(private val context: Context) {
                 }
             }
         }
+        if (!matches(part, release)) { part.delete(); error("The download is not what GitHub says it is") }
         check(part.renameTo(file))
         file
     }
 
+    /** True when GitHub gave no checksum (older releases), so only Android's own check of the signature is left. */
+    private fun matches(apk: File, release: AppRelease): Boolean {
+        val want = release.sha256 ?: return true
+        val md = MessageDigest.getInstance("SHA-256")
+        apk.inputStream().use { input ->
+            val buf = ByteArray(64 * 1024)
+            while (true) { val n = input.read(buf); if (n < 0) break; md.update(buf, 0, n) }
+        }
+        return md.digest().joinToString("") { "%02x".format(it) } == want
+    }
+
+    /**
+     * False only when [apk] is readably signed with none of the keys this app is signed with. Android would refuse it
+     * too, but only after the rider confirmed. When either can't be read, Android's check is left to decide.
+     */
+    fun signedLikeThisApp(apk: File): Boolean {
+        val pm = context.packageManager
+        fun certs(info: PackageInfo?): Set<String>? = info?.signingInfo?.let { s ->
+            (if (s.hasMultipleSigners()) s.apkContentsSigners else s.signingCertificateHistory)
+                ?.map { c -> MessageDigest.getInstance("SHA-256").digest(c.toByteArray()).joinToString("") { "%02x".format(it) } }
+                ?.toSet()?.takeIf { it.isNotEmpty() }
+        }
+        val theirs = runCatching { certs(pm.getPackageArchiveInfo(apk.path, PackageManager.GET_SIGNING_CERTIFICATES)) }.getOrNull() ?: return true
+        val ours = runCatching { certs(pm.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)) }.getOrNull() ?: return true
+        return theirs.any { it in ours }
+    }
+
     /** Hands [apk] to Android's installer; the outcome comes back on [results]. */
     suspend fun install(apk: File) = withContext(Dispatchers.IO) {
+        if (!signedLikeThisApp(apk)) throw SignedDifferently()
         val installer = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
             .apply { setAppPackageName(context.packageName) }
@@ -130,6 +169,9 @@ class AppUpdates(private val context: Context) {
             }
         }
     }
+
+    /** The new version is signed with another key than this copy: Android would not install it over this one. */
+    class SignedDifferently : Exception("signed with another key")
 
     sealed interface InstallResult {
         data object Cancelled : InstallResult

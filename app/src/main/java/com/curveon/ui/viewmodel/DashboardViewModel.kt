@@ -439,7 +439,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 _appUpdate.value = UpdateState.Installing(release)
                 appUpdates.install(apk)
             }.onFailure {
-                _appUpdate.value = UpdateState.Failed(str(R.string.update_download_failed), release)
+                _appUpdate.value = UpdateState.Failed(str(
+                    if (it is AppUpdates.SignedDifferently) R.string.update_signed_differently else R.string.update_download_failed
+                ), release)
             }
         }
     }
