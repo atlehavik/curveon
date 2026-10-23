@@ -1112,4 +1112,10 @@
     <string name="group_icons_off">Kuvasi näytetään kuvakkeen sijaan. Poista se, jos haluat valita kuvakkeen.</string>
     <string name="tour_turn_after">Esittely näytetään vaakatasossa. Kun se on valmis, voit pitää puhelinta miten haluat.</string>
     <string name="group_paused_hint">Olet tauolla ryhmästä: muut eivät näe sinua, sinä et näe heitä, eivätkä ryhmän SOS ja hälytykset tavoita sinua. Kytke takaisin päälle ajaaksesi heidän kanssaan.</string>
+    <string name="phone_this_cannot_call">Tämä laite ei voi soittaa eikä lähettää tekstiviestejä</string>
+    <string name="phone_this_cannot_call_hint">Siinä ei ole SIM-korttia. Viestit ja musiikki tulevat yhä täällä olevista sovelluksista. Soittaaksesi ja lähettääksesi tekstiviestejä Curveonista asenna Curveon Companion puhelimeen ja valitse se kohdasta Asetukset → Puhelin.</string>
+    <string name="phone_this_not_allowed">Curveon ei saa lukea yhteystietoja ja puheluita</string>
+    <string name="phone_this_allow_hint">Salli yhteystiedot, puhelut, tekstiviestit ja mikrofoni, niin voit soittaa ja lähettää sanellun viestin täältä.</string>
+    <string name="phone_this_allow">Salli</string>
+    <string name="link_this_device_hint_no_calls">Viestit ja musiikki tämän laitteen sovelluksista. Se ei voi soittaa eikä lähettää tekstiviestejä (siinä ei ole SIM-korttia).</string>
 </resources>

@@ -76,7 +76,11 @@ data class PhonePanelState(
     val callLogAllowed: Boolean,
     val connected: Boolean,
     /** Shown when nothing has come from the phone yet, e.g. "Phone not connected". */
-    val offlineText: String
+    val offlineText: String,
+    /** Curveon is its own phone here (Settings → Phone → This device), so access is allowed here, not in the Companion. */
+    val thisDevice: Boolean = false,
+    /** This device can make calls and send SMS (false on a Wi-Fi tablet). */
+    val canCall: Boolean = true
 )
 
 /** Someone tapped in the phone panel: a contact, or the one number of a recent call. */
@@ -97,8 +101,19 @@ fun PhoneDialog(
     onSms: (number: String, name: String) -> Unit,
     onNeedPhoto: (String) -> Unit,
     onReconnect: () -> Unit,
+    /** Asks Android for contacts, calls, SMS and the microphone (This device). */
+    onAllow: () -> Unit,
     onClose: () -> Unit
 ) {
+    // A tablet that is its own phone can't call or text: say so, and how to, instead of lists that lead nowhere.
+    if (state.thisDevice && !state.canCall) {
+        CockpitDialog(title = stringResource(R.string.phone), icon = Icons.Default.Phone, accent = EcoGreen, onDismiss = onClose, tag = "phone_panel") {
+            Box(Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)).background(CockpitBackground)) {
+                Empty(Icons.Default.PhoneDisabled, stringResource(R.string.phone_this_cannot_call), stringResource(R.string.phone_this_cannot_call_hint))
+            }
+        }
+        return
+    }
     PagedCockpitDialog(
         title = stringResource(R.string.phone), icon = Icons.Default.Phone, accent = EcoGreen, onDismiss = onClose, tag = "phone_panel",
         pages = PhoneTab.entries, selected = tab, onSelect = onTab,
@@ -112,16 +127,16 @@ fun PhoneDialog(
             var picked by remember { mutableStateOf<Person?>(null) }
             val pick: (Person) -> Unit = { picked = it }
             when (which) {
-                PhoneTab.FAVORITES -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect) { all ->
+                PhoneTab.FAVORITES -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect, onAllow) { all ->
                     val favorites = all.filter { it.starred }
                     if (favorites.isEmpty()) Empty(Icons.Default.StarBorder, stringResource(R.string.phone_no_favorites), stringResource(R.string.phone_no_favorites_hint))
                     else Favorites(favorites, photo, pick)
                 }
-                PhoneTab.RECENTS -> ContactsGate(state, state.recents, state.callLogAllowed, stringResource(R.string.phone_no_share_calls), onReconnect) { calls ->
+                PhoneTab.RECENTS -> ContactsGate(state, state.recents, state.callLogAllowed, stringResource(R.string.phone_no_share_calls), onReconnect, onAllow) { calls ->
                     if (calls.isEmpty()) Empty(Icons.Default.History, stringResource(R.string.phone_no_recents), "")
                     else Recents(calls, photo, pick)
                 }
-                PhoneTab.CONTACTS -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect) { all ->
+                PhoneTab.CONTACTS -> ContactsGate(state, state.contacts, state.contactsAllowed, stringResource(R.string.phone_no_share_contacts), onReconnect, onAllow) { all ->
                     if (all.isEmpty()) Empty(Icons.Default.Contacts, stringResource(R.string.phone_no_contacts), "")
                     else ContactList(all, photo, pick)
                 }
@@ -148,9 +163,13 @@ private fun <T> ContactsGate(
     /** Shown when the phone doesn't share it, e.g. "The phone doesn't share contacts". */
     notShared: String,
     onReconnect: () -> Unit,
+    onAllow: () -> Unit,
     content: @Composable (List<T>) -> Unit
 ) {
     when {
+        // Curveon is the phone here: one button asks Android, rather than pointing at a Companion the rider doesn't have.
+        !allowed && state.thisDevice -> Empty(Icons.Default.Lock, stringResource(R.string.phone_this_not_allowed),
+            stringResource(R.string.phone_this_allow_hint), stringResource(R.string.phone_this_allow), onAllow)
         !allowed -> Empty(Icons.Default.Lock, notShared, stringResource(R.string.phone_allow_hint))
         data != null -> content(data)
         !state.connected -> Box(Modifier.fillMaxSize().clickable(onClick = onReconnect)) {
@@ -161,9 +180,9 @@ private fun <T> ContactsGate(
 }
 
 @Composable
-private fun Empty(icon: ImageVector, title: String, text: String) {
+private fun Empty(icon: ImageVector, title: String, text: String, action: String? = null, onAction: () -> Unit = {}) {
     Column(
-        Modifier.fillMaxSize().padding(32.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -173,6 +192,13 @@ private fun Empty(icon: ImageVector, title: String, text: String) {
         if (text.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             Text(text, color = TextSecondary, fontSize = 15.sp, textAlign = TextAlign.Center)
+        }
+        if (action != null) {
+            Spacer(Modifier.height(16.dp))
+            androidx.compose.material3.Button(onClick = onAction, modifier = Modifier.testTag("phone_allow"),
+                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = EcoGreen)) {
+                Text(action, color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

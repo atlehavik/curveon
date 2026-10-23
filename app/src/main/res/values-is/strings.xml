@@ -1160,4 +1160,10 @@
     <string name="group_icons_off">Myndin þín birtist í stað tákns. Fjarlægðu hana til að velja tákn.</string>
     <string name="tour_turn_after">Kynningin birtist á hlið. Þegar henni er lokið geturðu haldið á símanum eins og þú vilt.</string>
     <string name="group_paused_hint">Þú ert í hléi frá hópnum: hin sjá þig ekki, þú sérð þau ekki, og SOS og viðvaranir frá hópnum ná ekki til þín. Kveiktu aftur til að hjóla með þeim.</string>
+    <string name="phone_this_cannot_call">Þetta tæki getur ekki hringt eða sent SMS</string>
+    <string name="phone_this_cannot_call_hint">Það er ekkert SIM-kort í því. Skilaboð og tónlist koma áfram frá forritunum hér. Til að hringja og senda SMS úr Curveon: settu Curveon Companion upp á símanum og veldu hann í Stillingar → Sími.</string>
+    <string name="phone_this_not_allowed">Curveon má ekki lesa tengiliði og símtöl</string>
+    <string name="phone_this_allow_hint">Leyfðu tengiliði, símtöl, SMS og hljóðnemann, þá geturðu hringt og sent töluð SMS héðan.</string>
+    <string name="phone_this_allow">Leyfa</string>
+    <string name="link_this_device_hint_no_calls">Skilaboð og tónlist frá forritunum á þessu tæki. Það getur ekki hringt eða sent SMS (það er ekkert SIM-kort í því).</string>
 </resources>

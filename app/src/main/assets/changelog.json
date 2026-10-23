@@ -5,67 +5,78 @@
       "No more turning round in the middle of the road: a trip a friend shares with you is now joined the way it goes, so you're never sent to a point on the road just to turn round there. And when a trip has a stop by the road, you ride on from it the way you came, to a junction or roundabout, instead of making a U-turn on the road",
       "When you're riding without a route, your marker now sits on the road you ride instead of drifting beside it, and points along it",
       "Writing an SMS from the full map now brings up the dashboard so you can see what you say, and goes back to the full map once it's sent or cancelled",
-      "The dot on the Friends button that says you're sharing your position is now blue, like Android's own sign for location in use, so it isn't mixed up with green for messages"
+      "The dot on the Friends button that says you're sharing your position is now blue, like Android's own sign for location in use, so it isn't mixed up with green for messages",
+      "Curveon on your phone is ready for calls and SMS from the start: it uses the phone itself, so you never hear about the Companion app unless you have a tablet. The phone panel asks for access with one Allow button, and on a tablet without a SIM card it says plainly that it can't call or text, and what to do instead"
     ],
     "nb": [
       "Ingen flere vendinger midt i veien: en tur en venn deler med deg, kobles du nå på i den retningen den går, så du blir aldri sendt til et punkt på veien bare for å snu der. Og har turen et stopp langs veien, kjører du videre i samme retning til et kryss eller en rundkjøring i stedet for å snu på veien",
       "Når du kjører uten rute, ligger markøren nå på veien du kjører i stedet for å drive ved siden av, og den peker langs veien",
       "Skriver du en SMS fra fullkartet, kommer dashbordet fram så du ser hva du sier, og fullkartet kommer tilbake når den er sendt eller avbrutt",
-      "Prikken på Venner-knappen som viser at du deler posisjonen din, er nå blå, slik Android viser at posisjon er i bruk, så den ikke blandes med grønt for meldinger"
+      "Prikken på Venner-knappen som viser at du deler posisjonen din, er nå blå, slik Android viser at posisjon er i bruk, så den ikke blandes med grønt for meldinger",
+      "Curveon på telefonen er klar for samtaler og SMS fra start: den bruker telefonen selv, så du hører aldri om Companion-appen med mindre du har et nettbrett. Telefonpanelet ber om tilgang med én Tillat-knapp, og på et nettbrett uten SIM-kort sier det rett ut at det ikke kan ringe eller sende SMS, og hva du kan gjøre i stedet"
     ],
     "sv": [
       "Inga fler vändningar mitt på vägen: en tur som en vän delar med dig ansluter du nu till i den riktning den går, så du skickas aldrig till en punkt på vägen bara för att vända där. Och har turen ett stopp längs vägen kör du vidare åt samma håll till en korsning eller rondell i stället för att vända på vägen",
       "När du kör utan rutt ligger markören nu på vägen du kör i stället för att glida bredvid, och den pekar längs vägen",
       "Skriver du ett sms från helskärmskartan visas instrumentpanelen så att du ser vad du säger, och kartan kommer tillbaka när det är skickat eller avbrutet",
-      "Pricken på Vänner-knappen som visar att du delar din position är nu blå, som Androids eget tecken för plats i användning, så den inte blandas ihop med grönt för meddelanden"
+      "Pricken på Vänner-knappen som visar att du delar din position är nu blå, som Androids eget tecken för plats i användning, så den inte blandas ihop med grönt för meddelanden",
+      "Curveon på telefonen är redo för samtal och sms från start: den använder telefonen själv, så du hör aldrig om Companion-appen om du inte har en surfplatta. Telefonpanelen ber om åtkomst med en enda Tillåt-knapp, och på en surfplatta utan SIM-kort säger den rakt ut att den inte kan ringa eller sms:a, och vad du kan göra i stället"
     ],
     "da": [
       "Ingen flere vendinger midt på vejen: en tur, en ven deler med dig, kobler du dig nu på i den retning, den kører, så du bliver aldrig sendt hen til et punkt på vejen bare for at vende der. Og har turen et stop langs vejen, kører du videre samme vej til et kryds eller en rundkørsel i stedet for at vende på vejen",
       "Når du kører uden rute, ligger markøren nu på den vej, du kører, i stedet for at glide ved siden af, og den peger langs vejen",
       "Skriver du en sms fra fuldskærmskortet, kommer instrumentbrættet frem, så du kan se, hvad du siger, og kortet kommer tilbage, når den er sendt eller annulleret",
-      "Prikken på Venner-knappen, der viser, at du deler din position, er nu blå ligesom Androids eget tegn for placering i brug, så den ikke forveksles med grøn for beskeder"
+      "Prikken på Venner-knappen, der viser, at du deler din position, er nu blå ligesom Androids eget tegn for placering i brug, så den ikke forveksles med grøn for beskeder",
+      "Curveon på telefonen er klar til opkald og sms fra start: den bruger selve telefonen, så du hører aldrig om Companion-appen, medmindre du har en tablet. Telefonpanelet beder om adgang med én Tillad-knap, og på en tablet uden SIM-kort siger det klart, at den ikke kan ringe eller sende sms, og hvad du kan gøre i stedet"
     ],
     "fi": [
       "Ei enää kääntymistä keskellä tietä: ystävän jakamaan reittiin liityt nyt sen kulkusuuntaan, joten sinua ei koskaan ohjata tien pisteeseen vain kääntymään siellä. Ja jos reitillä on pysähdys tien varrella, jatkat siitä samaan suuntaan risteykseen tai liikenneympyrään sen sijaan, että tekisit U-käännöksen tiellä",
       "Kun ajat ilman reittiä, merkkisi on nyt tiellä, jota ajat, eikä ajelehdi sen vieressä, ja se osoittaa tien suuntaan",
       "Kun kirjoitat tekstiviestin koko näytön kartalta, kojelauta tulee esiin, jotta näet mitä sanot, ja kartta palaa, kun viesti on lähetetty tai peruttu",
-      "Ystävät-painikkeen piste, joka kertoo että jaat sijaintisi, on nyt sininen kuten Androidin oma merkki sijainnin käytöstä, joten se ei sekoitu viestien vihreään"
+      "Ystävät-painikkeen piste, joka kertoo että jaat sijaintisi, on nyt sininen kuten Androidin oma merkki sijainnin käytöstä, joten se ei sekoitu viestien vihreään",
+      "Puhelimesi Curveon on valmis puheluihin ja tekstiviesteihin heti alusta: se käyttää itse puhelinta, joten et kuule Companion-sovelluksesta, ellei sinulla ole tablettia. Puhelinpaneeli pyytää käyttöoikeutta yhdellä Salli-painikkeella, ja tabletissa ilman SIM-korttia se kertoo suoraan, ettei se voi soittaa eikä lähettää viestejä, ja mitä voit tehdä sen sijaan"
     ],
     "is": [
       "Engar fleiri U-beygjur á miðjum vegi: ferð sem vinur deilir með þér tengist þú nú í þá átt sem hún liggur, svo þú ert aldrei sendur á punkt á veginum bara til að snúa þar við. Og ef ferðin hefur viðkomustað við veginn heldur þú áfram sömu leið að gatnamótum eða hringtorgi í stað þess að snúa við á veginum",
       "Þegar þú ekur án leiðar situr merkið þitt nú á veginum sem þú ekur í stað þess að reka við hliðina á honum, og vísar eftir veginum",
       "Þegar þú skrifar SMS af kortinu á öllum skjánum birtist mælaborðið svo þú sjáir hvað þú segir, og kortið kemur aftur þegar það er sent eða hætt við",
-      "Punkturinn á Vinir-hnappnum sem sýnir að þú deilir staðsetningu er nú blár, eins og merki Android um að staðsetning sé í notkun, svo hann ruglist ekki við grænt fyrir skilaboð"
+      "Punkturinn á Vinir-hnappnum sem sýnir að þú deilir staðsetningu er nú blár, eins og merki Android um að staðsetning sé í notkun, svo hann ruglist ekki við grænt fyrir skilaboð",
+      "Curveon í símanum er tilbúið fyrir símtöl og SMS frá byrjun: það notar símann sjálfan, svo þú heyrir aldrei um Companion-appið nema þú sért með spjaldtölvu. Símaspjaldið biður um aðgang með einum Leyfa-hnappi, og á spjaldtölvu án SIM-korts segir það skýrt að hún geti ekki hringt eða sent SMS, og hvað þú getur gert í staðinn"
     ],
     "de": [
       "Kein Wenden mehr mitten auf der Straße: In eine Tour, die ein Freund mit dir teilt, steigst du jetzt in Fahrtrichtung ein, sodass du nie zu einem Punkt auf der Straße geschickt wirst, nur um dort zu wenden. Und hat die Tour einen Stopp an der Straße, fährst du in deiner Richtung weiter bis zu einer Kreuzung oder einem Kreisverkehr, statt auf der Straße zu wenden",
       "Fährst du ohne Route, sitzt dein Marker jetzt auf der Straße, auf der du fährst, statt daneben zu treiben, und zeigt entlang der Straße",
       "Schreibst du eine SMS aus der Vollbildkarte, erscheint das Dashboard, damit du siehst, was du sagst, und die Karte kommt zurück, sobald sie gesendet oder abgebrochen ist",
-      "Der Punkt auf der Freunde-Taste, der zeigt, dass du deinen Standort teilst, ist jetzt blau wie Androids eigenes Zeichen für genutzten Standort, damit er nicht mit Grün für Nachrichten verwechselt wird"
+      "Der Punkt auf der Freunde-Taste, der zeigt, dass du deinen Standort teilst, ist jetzt blau wie Androids eigenes Zeichen für genutzten Standort, damit er nicht mit Grün für Nachrichten verwechselt wird",
+      "Curveon auf dem Handy ist von Anfang an bereit für Anrufe und SMS: Es nutzt das Handy selbst, sodass du nie von der Companion-App hörst, außer du hast ein Tablet. Das Telefon-Fenster fragt mit einer einzigen Erlauben-Taste nach Zugriff, und auf einem Tablet ohne SIM-Karte sagt es klar, dass es nicht telefonieren oder SMS senden kann, und was du stattdessen tun kannst"
     ],
     "es": [
       "Se acabó dar la vuelta en mitad de la carretera: a una ruta que te comparte un amigo ahora te unes en su sentido, así que nunca te manda a un punto de la carretera solo para dar la vuelta allí. Y si la ruta tiene una parada junto a la carretera, sigues en la misma dirección hasta un cruce o una rotonda en lugar de hacer un cambio de sentido en la carretera",
       "Cuando vas sin ruta, tu marcador ahora va sobre la carretera por la que circulas en vez de desviarse a un lado, y apunta a lo largo de ella",
       "Si escribes un SMS desde el mapa a pantalla completa, aparece el panel para que veas lo que dices, y el mapa vuelve en cuanto se envía o se cancela",
-      "El punto del botón Amigos que indica que compartes tu ubicación ahora es azul, como la señal de Android de ubicación en uso, para no confundirlo con el verde de los mensajes"
+      "El punto del botón Amigos que indica que compartes tu ubicación ahora es azul, como la señal de Android de ubicación en uso, para no confundirlo con el verde de los mensajes",
+      "Curveon en tu teléfono está listo para llamadas y SMS desde el principio: usa el propio teléfono, así que nunca oirás hablar de la app Companion a menos que tengas una tableta. El panel del teléfono pide acceso con un solo botón Permitir, y en una tableta sin tarjeta SIM dice claramente que no puede llamar ni enviar SMS, y qué hacer en su lugar"
     ],
     "fr": [
       "Fini les demi-tours au milieu de la route : un trajet qu'un ami partage avec toi est désormais rejoint dans son sens, tu n'es donc jamais envoyé vers un point de la route juste pour y faire demi-tour. Et si le trajet a un arrêt au bord de la route, tu repars dans le même sens jusqu'à un carrefour ou un rond-point au lieu de faire demi-tour sur la route",
       "Quand tu roules sans itinéraire, ton marqueur reste maintenant sur la route que tu suis au lieu de dériver à côté, et il pointe le long de la route",
       "Quand tu écris un SMS depuis la carte plein écran, le tableau de bord s'affiche pour que tu voies ce que tu dis, et la carte revient dès qu'il est envoyé ou annulé",
-      "Le point sur le bouton Amis qui montre que tu partages ta position est maintenant bleu, comme le signe d'Android pour la localisation en cours, pour ne plus le confondre avec le vert des messages"
+      "Le point sur le bouton Amis qui montre que tu partages ta position est maintenant bleu, comme le signe d'Android pour la localisation en cours, pour ne plus le confondre avec le vert des messages",
+      "Curveon sur ton téléphone est prêt pour les appels et les SMS dès le départ : il utilise le téléphone lui-même, donc tu n'entends jamais parler de l'appli Companion sauf si tu as une tablette. Le panneau Téléphone demande l'accès avec un seul bouton Autoriser, et sur une tablette sans carte SIM il dit clairement qu'elle ne peut ni appeler ni envoyer de SMS, et quoi faire à la place"
     ],
     "nl": [
       "Nooit meer keren midden op de weg: bij een rit die een vriend met je deelt, sluit je nu aan in de rijrichting, dus je wordt nooit naar een punt op de weg gestuurd alleen om daar te keren. En heeft de rit een stop langs de weg, dan rijd je in dezelfde richting door naar een kruising of rotonde in plaats van op de weg te keren",
       "Rijd je zonder route, dan staat je markering nu op de weg waarop je rijdt in plaats van ernaast te zweven, en wijst hij langs de weg",
       "Schrijf je een sms vanaf de volledige kaart, dan verschijnt het dashboard zodat je ziet wat je zegt, en komt de kaart terug zodra hij verstuurd of geannuleerd is",
-      "De stip op de knop Vrienden die laat zien dat je je locatie deelt, is nu blauw, net als het eigen teken van Android voor locatie in gebruik, zodat hij niet verward wordt met groen voor berichten"
+      "De stip op de knop Vrienden die laat zien dat je je locatie deelt, is nu blauw, net als het eigen teken van Android voor locatie in gebruik, zodat hij niet verward wordt met groen voor berichten",
+      "Curveon op je telefoon is vanaf het begin klaar voor bellen en sms: het gebruikt de telefoon zelf, dus je hoort nooit over de Companion-app tenzij je een tablet hebt. Het telefoonpaneel vraagt toegang met één knop Toestaan, en op een tablet zonder simkaart zegt het duidelijk dat die niet kan bellen of sms'en, en wat je in plaats daarvan kunt doen"
     ],
     "pl": [
       "Koniec z zawracaniem na środku drogi: do trasy udostępnionej przez znajomego dołączasz teraz zgodnie z jej kierunkiem, więc nigdy nie zostaniesz wysłany do punktu na drodze tylko po to, by tam zawrócić. A jeśli trasa ma postój przy drodze, jedziesz dalej w tym samym kierunku do skrzyżowania lub ronda zamiast zawracać na drodze",
       "Gdy jedziesz bez trasy, twój znacznik leży teraz na drodze, którą jedziesz, zamiast dryfować obok, i wskazuje wzdłuż drogi",
       "Gdy piszesz SMS z mapy na pełnym ekranie, pojawia się panel, żebyś widział, co mówisz, a mapa wraca, gdy wiadomość zostanie wysłana lub anulowana",
-      "Kropka na przycisku Znajomi, która pokazuje, że udostępniasz swoją pozycję, jest teraz niebieska, jak znak Androida dla używanej lokalizacji, więc nie myli się z zielonym dla wiadomości"
+      "Kropka na przycisku Znajomi, która pokazuje, że udostępniasz swoją pozycję, jest teraz niebieska, jak znak Androida dla używanej lokalizacji, więc nie myli się z zielonym dla wiadomości",
+      "Curveon na telefonie jest gotowy do rozmów i SMS-ów od początku: używa samego telefonu, więc nigdy nie usłyszysz o aplikacji Companion, chyba że masz tablet. Panel telefonu prosi o dostęp jednym przyciskiem Zezwól, a na tablecie bez karty SIM mówi wprost, że nie może dzwonić ani wysyłać SMS-ów, i co zrobić zamiast tego"
     ]
   },
   {

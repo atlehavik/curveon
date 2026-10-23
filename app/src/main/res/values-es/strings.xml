@@ -1178,4 +1178,10 @@
     <string name="group_icons_off">Se muestra tu foto en lugar de un icono. Quítala para elegir un icono.</string>
     <string name="tour_turn_after">El recorrido se muestra en horizontal. Cuando termine, sujeta el móvil como quieras.</string>
     <string name="group_paused_hint">Estás en pausa en este grupo: los demás no te ven, tú no los ves y el SOS y los avisos del grupo no te llegan. Actívalo de nuevo para rodar con ellos.</string>
+    <string name="phone_this_cannot_call">Este dispositivo no puede llamar ni enviar SMS</string>
+    <string name="phone_this_cannot_call_hint">No tiene tarjeta SIM. Los mensajes y la música siguen llegando de las apps de aquí. Para llamar y enviar SMS desde Curveon, instala Curveon Companion en tu teléfono y elígelo en Ajustes → Teléfono.</string>
+    <string name="phone_this_not_allowed">Curveon no puede leer contactos ni llamadas</string>
+    <string name="phone_this_allow_hint">Permite contactos, llamadas, SMS y el micrófono para llamar y enviar SMS dictados desde aquí.</string>
+    <string name="phone_this_allow">Permitir</string>
+    <string name="link_this_device_hint_no_calls">Mensajes y música de las apps de este dispositivo. No puede llamar ni enviar SMS (no tiene tarjeta SIM).</string>
 </resources>

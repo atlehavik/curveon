@@ -1163,4 +1163,10 @@
     <string name="group_icons_off">Your picture is shown instead of an icon. Remove it to pick an icon.</string>
     <string name="tour_turn_after">The tour is shown on its side. Once it is done, hold your phone whichever way you like.</string>
     <string name="group_paused_hint">You have paused this group: the others don\'t see you, you don\'t see them, and SOS and alerts from the group don\'t reach you. Switch it on again to ride with them.</string>
+    <string name="phone_this_cannot_call">This device can\'t call or text</string>
+    <string name="phone_this_cannot_call_hint">It has no SIM card. Messages and music still come from the apps here. To call and send SMS from Curveon, install Curveon Companion on your phone and pick the phone in Settings → Phone.</string>
+    <string name="phone_this_not_allowed">Curveon may not read contacts and calls</string>
+    <string name="phone_this_allow_hint">Allow contacts, calls, SMS and the microphone, so you can call and send spoken SMS from here.</string>
+    <string name="phone_this_allow">Allow</string>
+    <string name="link_this_device_hint_no_calls">Messages and music from the apps on this device. It can\'t make calls or send SMS (it has no SIM card).</string>
 </resources>

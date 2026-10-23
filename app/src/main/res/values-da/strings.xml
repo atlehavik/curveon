@@ -1161,4 +1161,10 @@
     <string name="group_icons_off">Dit billede vises i stedet for et ikon. Fjern det for at vælge et ikon.</string>
     <string name="tour_turn_after">Rundvisningen vises liggende. Når den er færdig, kan du holde telefonen, som du vil.</string>
     <string name="group_paused_hint">Du holder pause fra gruppen: de andre ser ikke dig, du ser ikke dem, og SOS og alarmer fra gruppen når dig ikke. Slå til igen for at køre med dem.</string>
+    <string name="phone_this_cannot_call">Denne enhed kan ikke ringe eller sende sms</string>
+    <string name="phone_this_cannot_call_hint">Den har intet SIM-kort. Beskeder og musik kommer stadig fra apps her. For at ringe og sende sms fra Curveon: installer Curveon Companion på telefonen, og vælg den i Indstillinger → Telefon.</string>
+    <string name="phone_this_not_allowed">Curveon må ikke læse kontakter og opkald</string>
+    <string name="phone_this_allow_hint">Giv adgang til kontakter, opkald, sms og mikrofonen, så kan du ringe og sende indtalte sms herfra.</string>
+    <string name="phone_this_allow">Tillad</string>
+    <string name="link_this_device_hint_no_calls">Beskeder og musik fra apps på denne enhed. Den kan ikke ringe eller sende sms (den har intet SIM-kort).</string>
 </resources>

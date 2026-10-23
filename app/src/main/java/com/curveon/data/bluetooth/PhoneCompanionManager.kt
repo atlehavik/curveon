@@ -109,8 +109,33 @@ class PhoneCompanionManager(
         return caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
     }
 
+    /**
+     * Whether this device can make calls and send SMS itself right now: a phone with a SIM card. The X7 has a modem
+     * but no SIM, so the hardware alone says yes; a SIM ready in any slot is what counts (asked each time: one may be
+     * put in later).
+     */
+    val canCall: Boolean get() {
+        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) return false
+        val tm = context.getSystemService(android.telephony.TelephonyManager::class.java) ?: return false
+        @Suppress("DEPRECATION") val slots = if (Build.VERSION.SDK_INT >= 30) tm.activeModemCount else tm.phoneCount
+        return (0 until maxOf(slots, 1)).any { runCatching { tm.getSimState(it) }.getOrNull() == android.telephony.TelephonyManager.SIM_STATE_READY }
+    }
+
+    /**
+     * The first start on a phone that was never linked to a companion: it is its own phone from the start, so
+     * someone with just a phone never meets the Companion. Decided once; the rider can change it in Settings → Phone.
+     */
+    private fun firstStartOnAPhone(): Boolean {
+        if (prefs.getBoolean(KEY_SOURCE_DECIDED, false)) return false
+        val phone = canCall && !prefs.contains(KEY_ADDRESS) && !prefs.getBoolean(KEY_DEMO, false)
+        val edit = prefs.edit().putBoolean(KEY_SOURCE_DECIDED, true)
+        if (phone) edit.putBoolean(KEY_THIS_DEVICE, true)
+        edit.apply()
+        return phone
+    }
+
     /** This device is its own phone: no companion, no Bluetooth. */
-    private val _thisDevice = MutableStateFlow(prefs.getBoolean(KEY_THIS_DEVICE, false))
+    private val _thisDevice = MutableStateFlow(prefs.getBoolean(KEY_THIS_DEVICE, false) || firstStartOnAPhone())
     val thisDevice: StateFlow<Boolean> = _thisDevice.asStateFlow()
     private val isThisDevice get() = _thisDevice.value
 
@@ -908,6 +933,8 @@ class PhoneCompanionManager(
         private const val KEY_NAME = "name"
         private const val KEY_DEMO = "demo"
         private const val KEY_THIS_DEVICE = "this_device"
+        /** Set once the first start has decided between this device and a companion (see [firstStartOnAPhone]). */
+        private const val KEY_SOURCE_DECIDED = "source_decided"
         private const val KEY_FAVORITE_APPS = "favorite_media_apps"
         private const val KEY_INSTALLED_APPS = "installed_media_apps"
 

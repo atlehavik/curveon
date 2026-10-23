@@ -1133,4 +1133,10 @@
     <string name="group_icons_off">Je foto wordt getoond in plaats van een pictogram. Verwijder hem om een pictogram te kiezen.</string>
     <string name="tour_turn_after">De rondleiding wordt liggend getoond. Daarna kun je je telefoon houden zoals je wilt.</string>
     <string name="group_paused_hint">Je hebt pauze van deze groep: de anderen zien jou niet, jij ziet hen niet, en SOS en meldingen van de groep bereiken je niet. Zet hem weer aan om met ze te rijden.</string>
+    <string name="phone_this_cannot_call">Dit apparaat kan niet bellen of sms\'en</string>
+    <string name="phone_this_cannot_call_hint">Er zit geen simkaart in. Berichten en muziek komen nog steeds van de apps hier. Om vanuit Curveon te bellen en te sms\'en: installeer Curveon Companion op je telefoon en kies hem in Instellingen → Telefoon.</string>
+    <string name="phone_this_not_allowed">Curveon mag contacten en gesprekken niet lezen</string>
+    <string name="phone_this_allow_hint">Sta contacten, gesprekken, sms en de microfoon toe, dan kun je hiervandaan bellen en ingesproken sms\'jes sturen.</string>
+    <string name="phone_this_allow">Toestaan</string>
+    <string name="link_this_device_hint_no_calls">Berichten en muziek van de apps op dit apparaat. Het kan niet bellen of sms\'en (er zit geen simkaart in).</string>
 </resources>

@@ -98,7 +98,8 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
             }
         }
 
-        if (!demo && !thisDevice) PhoneRow(stringResource(R.string.link_this_device), stringResource(R.string.link_this_device_hint)) {
+        if (!demo && !thisDevice) PhoneRow(stringResource(R.string.link_this_device),
+            stringResource(if (manager.canCall) R.string.link_this_device_hint else R.string.link_this_device_hint_no_calls)) {
             manager.useThisDevice(); refresh++
         }
         val others = phones.filter { it.address != selected }
@@ -226,7 +227,7 @@ private fun LinkedPhoneCard(manager: PhoneCompanionManager, onForget: () -> Unit
 }
 
 /** What "This device" needs to read contacts and calls, dial, send spoken text messages, and hear spoken replies. */
-private val THIS_DEVICE_PERMISSIONS = arrayOf(
+internal val THIS_DEVICE_PERMISSIONS = arrayOf(
     Manifest.permission.READ_CONTACTS, Manifest.permission.READ_CALL_LOG, Manifest.permission.CALL_PHONE, Manifest.permission.SEND_SMS,
     Manifest.permission.RECORD_AUDIO
 )

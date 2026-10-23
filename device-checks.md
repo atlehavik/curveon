@@ -8,6 +8,12 @@ Commands assume the device is connected over USB. With both connected, pick one 
 
 ## 2026-10-23 — Ingen vending midt i veien, markør på veien, SMS fra fullkart, blå deling (1.2.4)
 
+- [ ] X7 («Denne enheten», uten SIM): Telefon-knappen viser «Denne enheten kan ikke ringe eller sende SMS» med
+  hvorfor og hva du kan gjøre. Meldinger og musikk virker som før.
+- [ ] Telefon med SIM som aldri er koblet til en Companion (kameratens: det holder å oppdatere til 1.2.4):
+  Innstillinger → Telefon står på «Denne enheten» uten at noe er valgt, telefonpanelet viser «Tillat», og
+  etterpå kommer kontaktene. Ingenting om Companion.
+
 - [ ] Kjør uten rute (Pixel, gjerne der GPS-en driver litt): markøren ligger på veien og peker langs den,
   også gjennom svinger. I kryss og når du svinger av, slipper den veien og følger GPS-en. Står du stille,
   blir den liggende på veien. Den følger veiene slik kartet tegner dem, også i utlandet og offline.

@@ -1004,6 +1004,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             val photos by phone.photos.collectAsStateWithLifecycle()
             val contactsAllowed by phone.contactsAllowed.collectAsStateWithLifecycle()
             val callLogAllowed by phone.callLogAllowed.collectAsStateWithLifecycle()
+            val allowHere = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { phone.refreshThisDevice() }
             PhoneDialog(
                 state = PhonePanelState(
                     contacts, recents, photos, contactsAllowed, callLogAllowed,
@@ -1012,7 +1013,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                         phoneName.isEmpty() -> stringResource(R.string.phone_none_linked)
                         phoneState == CompanionConnectionState.CONNECTING -> stringResource(R.string.phone_connecting_to, phoneName)
                         else -> stringResource(R.string.phone_not_connected_named, phoneName)
-                    }
+                    },
+                    thisDevice = thisDeviceIsPhone,
+                    canCall = phone.canCall
                 ),
                 tab = tab,
                 onTab = { phoneTab = it },
@@ -1027,6 +1030,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 },
                 onNeedPhoto = phone::requestPhoto,
                 onReconnect = phone::retryNow,
+                onAllow = { allowHere.launch(com.curveon.ui.components.THIS_DEVICE_PERMISSIONS) },
                 onClose = { phoneTab = null }
             )
         }
