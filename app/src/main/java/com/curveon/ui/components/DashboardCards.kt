@@ -777,7 +777,7 @@ private fun ListeningPulse(label: String) {
 }
 
 @Composable
-private fun Avatar(n: NotificationItem, size: Dp) {
+internal fun Avatar(n: NotificationItem, size: Dp) {
     Box(Modifier.size(size).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
         if (n.avatar != null) Image(n.avatar.asImageBitmap(), n.senderName, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
         else Text(n.initials, color = ElectricCyan, fontSize = (size.value * 0.36f).sp, fontWeight = FontWeight.Black)

@@ -7,7 +7,7 @@ sealed interface Avatar {
   /** One of the icons bundled with the app; every device draws the same artwork. */
   data class Icon(val id: String) : Avatar
 
-  /** A small square JPEG/WebP (about 96 px, at most ~8 KB). */
+  /** A small square JPEG/WebP (about 192 px, at most ~24 KB). */
   class Photo(val jpeg: ByteArray) : Avatar
 }
 

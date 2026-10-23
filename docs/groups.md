@@ -203,7 +203,7 @@ Other ideas, not chosen:
   less often (about every 30 s) and speeds up again when he moves, which saves battery.
 - `hello`: nickname, colour, public key and avatar (sent on join and on change, not with every
   position). The avatar is one of three alternatives for the same slot on the marker:
-  - **Photo:** a small square image (about 96 px, JPEG/WebP, at most ~8 KB) picked from the phone's
+  - **Photo:** a small square image (about 192 px, JPEG/WebP, at most ~24 KB) picked from the phone's
     gallery and cropped round. Receivers cache it per `riderId`.
   - **Emoji / icon:** chosen from a fixed, curated set bundled in the app (bike, helmet, mountain ...).
     Sent as a short id (a few bytes); every device draws the same artwork. No free emoji input.
@@ -295,7 +295,7 @@ tablet the other riders on the map, a group button, the group dialog (also Setti
 rider and SOS (hold 3 s, 10 s countdown, full-screen alert), in English and Norwegian. Tried on the X7 against a relay on the PC with
 simulated riders (`~/develop/curveon-relay/test/rider.ts`, an independent implementation of the protocol, which also reads what the Kotlin
 side sends). Added the same day: only one of a rider's devices sends their position (a `claim` frame, the other device shows "Use this device"; a left-behind device
-is taken over after three minutes), the rider's own picture (96 px, on the list and on the map marker), and QR scanning inside Curveon (CameraX + ZXing; the
+is taken over after three minutes), the rider's own picture (192 px, on the list and on the map marker), and QR scanning inside Curveon (CameraX + ZXing; the
 camera opens on the X7, a code held in front of it is not yet tried). The companion has no scanner.
 Still open: the real Pixel + X7 chain (see `device-checks.md`), QR scanning in the apps, sharing a route to the group from
 the route screens, an SOS notification when the app is not open, "Call him" in the SOS alert (there are no phone numbers in the protocol,

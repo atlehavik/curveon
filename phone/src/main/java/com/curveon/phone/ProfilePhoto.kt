@@ -16,8 +16,8 @@ import java.io.ByteArrayOutputStream
  */
 object ProfilePhoto {
     /** What every rider's picture is made as. */
-    const val SIZE = 96
-    private const val MAX_BYTES = 8_000
+    const val SIZE = 192
+    private const val MAX_BYTES = 24_000
 
     /**
      * The photo at [uri], turned the right way up and not larger than [maxSide] pixels (so a 12-megapixel photo is not
@@ -42,7 +42,7 @@ object ProfilePhoto {
         else -> 0f
     }
 
-    /** The cut square as base64 JPEG for [com.curveon.protocol.Message.GroupProfile]: [SIZE] pixels, at most about 8 KB. Null if it will not fit. */
+    /** The cut square as base64 JPEG for [com.curveon.protocol.Message.GroupProfile]: [SIZE] pixels, at most about 24 KB. Null if it will not fit. */
     fun encode(square: Bitmap): String? {
         val small = if (square.width == SIZE && square.height == SIZE) square else Bitmap.createScaledBitmap(square, SIZE, SIZE, true)
         for (quality in intArrayOf(85, 70, 55, 40, 30)) {

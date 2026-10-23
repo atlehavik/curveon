@@ -64,7 +64,7 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   after install, foreground services, background work, data collected) is weighed against Google
   Play's developer policies and technical requirements (e.g. 16 KB page-aligned native libraries),
   even though releases go out on GitHub today. Say when a choice breaks or risks a Play rule, and
-  note it in [google-play.md](google-play.md).
+  note it in [google-play.md](docs/google-play.md).
 - **Place names are always on top.** A new or changed map layer (lines, fills, heat, dashes, route,
   tracks) must never cover place names: they stay above every line layer (see `raisePlaceNames` in
   CurveonMapView.kt, and the order in `OfflineMaps.styleJson`). Check it with the layer switched on,

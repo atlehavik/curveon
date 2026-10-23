@@ -7,7 +7,7 @@ import java.util.UUID
 /**
  * Tablet <-> phone protocol. The phone runs an RFCOMM server ([SERVICE_UUID]); the tablet
  * connects to the paired phone. Each message is one JSON object, framed by [Framing].
- * Images travel as base64 JPEG inside the JSON; they are small (album art ~320 px, avatars ~96 px).
+ * Images travel as base64 JPEG inside the JSON; they are small (album art ~320 px, avatars ~96 px, riders' own pictures 192 px).
  */
 object Protocol {
     val SERVICE_UUID: UUID = UUID.fromString("6b3a1f6e-2c55-4e0b-9a4b-56a1f0b7c1d2")

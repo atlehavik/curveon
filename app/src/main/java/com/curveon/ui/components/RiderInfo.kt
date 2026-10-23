@@ -19,7 +19,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -72,7 +83,7 @@ fun RiderInfoDialog(manager: GroupManager, mapId: String, myLat: Double?, myLon:
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                RiderAvatar(rider, 56.dp)
+                RiderAvatar(rider, 80.dp)
                 Column(Modifier.weight(1f)) {
                     Text(rider.nickname, color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1)
                     key(tick) { Text(movement(pos, useMph), color = if (pos?.stopped == true) NeonAmber else EcoGreen, fontSize = 15.sp, fontWeight = FontWeight.Bold) }
@@ -264,15 +275,26 @@ fun NudgeAlert(manager: GroupManager) {
     val who = members[n.fromRiderId] ?: friendRiders[n.channelId] ?: GroupRider(n.fromRiderId, n.nickname, n.colour, null, sent, n.photoJpegBase64)
     val name = n.nickname.ifEmpty { who.nickname }
     NudgeSound(n.nudgeId)
+    // Calmer than the SOS: the amber breathes slowly and the picture rings like a phone, a short burst now and then.
+    val transition = rememberInfiniteTransition(label = "nudge")
+    val breath by transition.animateFloat(0f, 1f, infiniteRepeatable(
+        tween(900, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "nudgeBreath")
+    val ring by transition.animateFloat(0f, 1f, infiniteRepeatable(
+        keyframes {
+            durationMillis = 2000
+            0f at 0; 0.25f at 100; 0.75f at 200; 0.25f at 300; 0.75f at 400; 0.25f at 500; 0.5f at 600; 0.5f at 2000
+        }), label = "nudgeRing")
     Dialog(onDismissRequest = {}, properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {
         HideSystemBars()
         Column(
-            Modifier.widthIn(max = 420.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFF4A2E00)).padding(18.dp)
+            Modifier.widthIn(max = 420.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp))
+                .drawBehind { drawRect(lerp(Color(0xFF4A2E00), Color(0xFF7A4A00), breath)) }
+                .border(3.dp, NeonAmber.copy(alpha = 0.3f + 0.7f * breath), RoundedCornerShape(20.dp)).padding(18.dp)
                 .testTag("nudge_alert"),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                RiderAvatar(who, 56.dp)
+                Box(Modifier.graphicsLayer { rotationZ = (ring - 0.5f) * 40f; val s = 1f + 0.08f * breath; scaleX = s; scaleY = s }) { RiderAvatar(who, 56.dp) }
                 Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.nudge_alert_title, name), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
                     Text(stringResource(R.string.nudge_alert_text), color = Color(0xFFFFE0B2), fontSize = 15.sp)

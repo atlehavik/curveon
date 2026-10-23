@@ -56,6 +56,9 @@ import kotlinx.coroutines.launch
  * speed, then either the newest message (or a spoken reply in progress) plus a mini player, or
  * – when nothing needs attention – the music card with full-bleed cover art.
  */
+/** How long a message that arrives over the full-screen map stays up as a banner. */
+private const val MESSAGE_BANNER_MS = 10_000L
+
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier) {
     // The GPS fix (about once a second) changes these: they are read only where they are drawn (the map,
@@ -81,6 +84,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val albumArt by phone.albumArt.collectAsStateWithLifecycle()
     val notifications by phone.notifications.collectAsStateWithLifecycle()
     val voiceReply by phone.voiceReply.collectAsStateWithLifecycle()
+    // A message that arrives over the full-screen map: a banner for a few seconds (the message stays with the dashboard's).
+    val newestMessage = notifications.filterNot { it.isIncomingCall }.maxByOrNull { it.timestampMs }
+    var bannerHidden by remember { mutableStateOf<String?>(null) }
+    val bannerKey = newestMessage?.let { it.id + it.timestampMs }
+    val bannerFresh = newestMessage != null && System.currentTimeMillis() - newestMessage.timestampMs < MESSAGE_BANNER_MS
+    LaunchedEffect(bannerKey) { if (bannerKey != null) { delay(MESSAGE_BANNER_MS); bannerHidden = bannerKey } }
     val voiceSearch by phone.voiceSearch.collectAsStateWithLifecycle()
     val phoneState by phone.connectionState.collectAsStateWithLifecycle()
     val phoneName by phone.connectedDeviceName.collectAsStateWithLifecycle()
@@ -881,6 +890,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 heading = stringResource(R.string.nav_resume_title), newLabel = stringResource(R.string.nav_resume_no), tag = "nav_resume")
         }
         reachedStop?.let { StopReachedBanner(it, onDismiss = { reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isFullScreenMap && voiceReply == null && newestMessage != null && bannerFresh && bannerKey != bannerHidden && resumeOffer == null && reachedStop == null,
+            enter = androidx.compose.animation.slideInVertically { -it } + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.slideOutVertically { -it } + androidx.compose.animation.fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp)
+        ) {
+            newestMessage?.let { m ->
+                MapMessageBanner(m, onRead = { viewModel.readAloud(m.senderName, m.message); bannerHidden = bannerKey },
+                    onReply = { phone.startVoiceReply(m.id); bannerHidden = bannerKey }, onClose = { bannerHidden = bannerKey })
+            }
+        }
         // Top left, beside the speed: clear of the preview sheet and the cards, however low the screen.
         LocationBanner(onAllowed = viewModel::startGps, modifier = Modifier.align(Alignment.TopStart).padding(top = 12.dp, start = 12.dp, end = 120.dp))
         toast?.let {

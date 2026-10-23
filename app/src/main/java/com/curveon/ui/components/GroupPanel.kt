@@ -3,6 +3,14 @@
 package com.curveon.ui.components
 
 import android.content.Context
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.lerp
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -680,15 +688,20 @@ fun GroupSosOverlay(manager: GroupManager, myLat: Double?, myLon: Double?, navig
         // It may be nothing, and not everyone has to go: ignoring it is as easy as answering.
         val ignore = { dismissed = dismissed + s.timeMs }
         SosAlertSound()
+        // Beats like the siren: the red swells and fades, the edge flashes and the icon pounds, until the rider answers.
+        val beat by rememberInfiniteTransition(label = "sosBeat").animateFloat(0f, 1f, infiniteRepeatable(tween(450, easing = LinearEasing), RepeatMode.Reverse), label = "sosBeatValue")
         Dialog(onDismissRequest = ignore, properties = DialogProperties(dismissOnClickOutside = false)) {
             HideSystemBars()
             Column(
-                Modifier.widthIn(max = 380.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0xFFB71C1C))
+                Modifier.widthIn(max = 380.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp))
+                    .drawBehind { drawRect(lerp(Color(0xFF8E0000), Color(0xFFE53935), beat)) }
+                    .border(4.dp, Color.White.copy(alpha = 0.2f + 0.8f * beat), RoundedCornerShape(20.dp))
                     .padding(18.dp).testTag("sos_alert"),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.Sos, null, tint = Color.White, modifier = Modifier.size(40.dp))
+                    Icon(Icons.Default.Sos, null, tint = Color.White,
+                        modifier = Modifier.size(40.dp).graphicsLayer { scaleX = 1f + 0.3f * beat; scaleY = 1f + 0.3f * beat })
                     Column {
                         Text(stringResource(R.string.sos_alert_title, who), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
                         if (myLat != null && myLon != null) {
