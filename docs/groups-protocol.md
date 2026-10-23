@@ -10,7 +10,8 @@ X25519, Ed25519. All binary values are base64url without padding unless stated.
 |---|---|---|---|
 | `groupId` | 16 bytes random | group creator | routing only; in URLs as 32 lowercase hex characters |
 | `groupKey` | 32 bytes random | group creator | never leaves the riders |
-| `riderId` | 16 bytes random | each rider, per group | not per device, so groups cannot be linked |
+| `riderId` | 16 bytes | each rider, per group | not per device, so groups cannot be linked; since signing, the first 16 bytes of SHA-256(`"curveon/1 rider"` \|\| rider signing public key), before that random (see "Who sent it") |
+| rider signing key | Ed25519 | each rider, per group | seed = HKDF-SHA256(`ikm` = agreement private key, `salt = groupId`, info `"curveon/1 rider-sign"`), so all of a rider's devices have it |
 | admin key | Ed25519 | group creator | public half is in the invite; the private half stays on the admin's device |
 | agreement key | X25519 | each rider, per group | public half is sent in `hello` |
 | `epoch` | uint32, starts at 0 | rises by 1 at each rekey | |
@@ -170,10 +171,34 @@ apps working, and the relay must keep serving every older client. The rules:
    Kotlin clients against the real relay. A relay change is also tried with the clients of the release before
    (an older `:groups` against the new relay).
 
+## Who sent it
+Everyone in a group holds the group key, so a frame that opens proves only that a member sent it, not which. Since
+2026-10-23 every payload is signed with the sender's rider signing key: the JSON ends with `"sk":"<signing public key>",
+"sg":"<signature>"`, in that order and last, and `sg` signs `"curveon/1 frame-sig" || groupId || riderId || epoch_be32 ||
+type || 0x00 || the payload JSON without them` (that is, with `,"sk":…,"sg":…` cut off and `}` put back). Older apps
+ignore the two fields. A receiver:
+
+- drops a frame whose signature is there but wrong;
+- calls the rider **bound** once a frame from them is signed by a key whose SHA-256 gives their `riderId` (riders who
+  joined since signing), remembers it, and from then on drops every frame in their name that is not;
+- takes the agreement key from the first `hello` of each rider (the first bound one, for a bound rider) and keeps it:
+  a later `hello` with another key is dropped. A rekey seals the new group key to that key, so a member cannot have
+  another rider's copy sealed to themselves by sending a `hello` in their name;
+- keeps both, and the time of the last `sos_cancel` of each rider, with the group on the device (not in the sync
+  document, each device learns them itself), so a restart does not forget them;
+- sends its own `hello` again (at most once a minute) when one in its own name that is not its own comes back, so the
+  relay keeps the right one for those who connect later.
+
+Riders from before signing keep their random id and are never bound: until all apps sign, frames in their name other
+than `hello` are taken unsigned, as before. A device link from a new app to an app from before signing makes a bound
+rider that does not sign; update the other device first.
+
 ## Replay protection
 Every payload has `seq`, a number that rises per rider and epoch, and `ts`. A receiver accepts a frame
-only if `seq` is higher than the last accepted from that rider in that epoch (`ReplayGuard`), and may
-ignore a `pos` whose `ts` is far in the past. A frame of another epoch is not opened.
+only if `seq` is higher than the last accepted from that rider in that epoch (`ReplayGuard`). The guard lives in
+memory, so the clients also drop a `pos` older than 5 minutes, an `sos` older than the relay keeps one (12 hours) or
+not newer than that rider's last `sos_cancel`, and take a `claim` as no newer than the time it arrives. A frame of
+another epoch is not opened.
 
 ## Rekey (removing a rider, or a leaked invite)
 An admin makes a new `groupKey'`, sets `epoch' = epoch + 1` and sends one frame to everyone:
