@@ -22,7 +22,8 @@
       "Updates are checked before they're installed: a download that came through damaged is fetched again, and only a genuine Curveon is offered to install",
       "An SOS from someone in your group now really grabs you: the red alert pulses and flashes with the siren. A nudge gets its own calmer, amber pulse, and the picture rings like a phone",
       "A message that arrives while you're on the full map now shows up as a banner at the top for a few seconds, with the name and what it says, and buttons to hear it read aloud or answer it by voice",
-      "Rider pictures are sharper: a new picture is sent in twice the size, and when you tap someone on the map you see it bigger (pictures you've already set stay as they were until you pick them again)"
+      "Rider pictures are sharper: a new picture is sent in twice the size, and when you tap someone on the map you see it bigger (pictures you've already set stay as they were until you pick them again)",
+      "The GPX button in the main menu is now violet, so it no longer looks like the button next to it"
     ],
     "nb": [
       "Ingen flere vendinger midt i veien: en tur en venn deler med deg, kobles du nå på i den retningen den går, så du blir aldri sendt til et punkt på veien bare for å snu der. Og har turen et stopp langs veien, kjører du videre i samme retning til et kryss eller en rundkjøring i stedet for å snu på veien",
@@ -45,7 +46,8 @@
       "Oppdateringer sjekkes før de installeres: en nedlasting som kom skadet fram hentes på nytt, og bare en ekte Curveon blir tilbudt installert",
       "En SOS fra noen i gruppa fanger deg nå skikkelig: det røde varselet pulserer og blinker i takt med sirenen. En nudge får en roligere, ravgul puls, og bildet ringer som en telefon",
       "En melding som kommer mens du har fullt kart, vises nå som et banner øverst i noen sekunder, med navnet og hva den sier, og knapper for å få den lest opp eller svare med stemmen",
-      "Profilbildene er skarpere: et nytt bilde sendes i dobbel størrelse, og når du trykker på noen på kartet, ser du det større (bilder du allerede har satt, blir som de var til du velger dem på nytt)"
+      "Profilbildene er skarpere: et nytt bilde sendes i dobbel størrelse, og når du trykker på noen på kartet, ser du det større (bilder du allerede har satt, blir som de var til du velger dem på nytt)",
+      "GPX-knappen i hovedmenyen er nå fiolett, så den ikke ser lik ut som knappen ved siden av"
     ],
     "sv": [
       "Inga fler vändningar mitt på vägen: en tur som en vän delar med dig ansluter du nu till i den riktning den går, så du skickas aldrig till en punkt på vägen bara för att vända där. Och har turen ett stopp längs vägen kör du vidare åt samma håll till en korsning eller rondell i stället för att vända på vägen",
@@ -68,7 +70,8 @@
       "Uppdateringar kontrolleras innan de installeras: en nedladdning som kom fram skadad hämtas igen, och bara en äkta Curveon erbjuds för installation",
       "En SOS från någon i gruppen fångar dig nu på riktigt: det röda larmet pulserar och blinkar i takt med sirenen. En nudge får en lugnare, bärnstensgul puls, och bilden ringer som en telefon",
       "Ett meddelande som kommer medan du har helskärmskartan visas nu som en banderoll högst upp i några sekunder, med namnet och vad det säger, och knappar för att få det uppläst eller svara med rösten",
-      "Profilbilderna är skarpare: en ny bild skickas i dubbel storlek, och när du trycker på någon på kartan ser du den större (bilder du redan satt förblir som de var tills du väljer dem igen)"
+      "Profilbilderna är skarpare: en ny bild skickas i dubbel storlek, och när du trycker på någon på kartan ser du den större (bilder du redan satt förblir som de var tills du väljer dem igen)",
+      "GPX-knappen i huvudmenyn är nu violett, så den inte ser ut som knappen bredvid"
     ],
     "da": [
       "Ingen flere vendinger midt på vejen: en tur, en ven deler med dig, kobler du dig nu på i den retning, den kører, så du bliver aldrig sendt hen til et punkt på vejen bare for at vende der. Og har turen et stop langs vejen, kører du videre samme vej til et kryds eller en rundkørsel i stedet for at vende på vejen",
@@ -91,7 +94,8 @@
       "Opdateringer tjekkes, før de installeres: en download, der kom frem beskadiget, hentes igen, og kun en ægte Curveon bliver tilbudt installeret",
       "En SOS fra en i gruppen fanger dig nu rigtigt: den røde alarm pulserer og blinker i takt med sirenen. En nudge får en roligere, rav-gul puls, og billedet ringer som en telefon",
       "En besked, der kommer mens du har fuldskærmskortet, vises nu som et banner øverst i nogle sekunder, med navnet og hvad den siger, og knapper til at få den læst op eller svare med stemmen",
-      "Profilbillederne er skarpere: et nyt billede sendes i dobbelt størrelse, og når du trykker på nogen på kortet, ser du det større (billeder du allerede har sat, forbliver som de var, til du vælger dem igen)"
+      "Profilbillederne er skarpere: et nyt billede sendes i dobbelt størrelse, og når du trykker på nogen på kortet, ser du det større (billeder du allerede har sat, forbliver som de var, til du vælger dem igen)",
+      "GPX-knappen i hovedmenuen er nu violet, så den ikke ligner knappen ved siden af"
     ],
     "fi": [
       "Ei enää kääntymistä keskellä tietä: ystävän jakamaan reittiin liityt nyt sen kulkusuuntaan, joten sinua ei koskaan ohjata tien pisteeseen vain kääntymään siellä. Ja jos reitillä on pysähdys tien varrella, jatkat siitä samaan suuntaan risteykseen tai liikenneympyrään sen sijaan, että tekisit U-käännöksen tiellä",
@@ -114,7 +118,8 @@
       "Päivitykset tarkistetaan ennen asennusta: vioittuneena perille tullut lataus haetaan uudelleen, ja asennettavaksi tarjotaan vain aito Curveon",
       "Ryhmäläisen SOS herättää nyt todella huomion: punainen hälytys sykkii ja vilkkuu sireenin tahtiin. Muistutus saa rauhallisemman, meripihkan värisen sykkeen, ja kuva soi kuin puhelin",
       "Viesti, joka tulee koko näytön kartalla, näkyy nyt bannerina ylhäällä muutaman sekunnin ajan nimen ja sisällön kanssa, ja painikkeilla viestin kuunteluun tai vastaamiseen äänellä",
-      "Profiilikuvat ovat terävämpiä: uusi kuva lähetetään kaksinkertaisena, ja kun napautat jotakuta kartalla, näet sen isompana (jo asetetut kuvat pysyvät ennallaan, kunnes valitset ne uudelleen)"
+      "Profiilikuvat ovat terävämpiä: uusi kuva lähetetään kaksinkertaisena, ja kun napautat jotakuta kartalla, näet sen isompana (jo asetetut kuvat pysyvät ennallaan, kunnes valitset ne uudelleen)",
+      "GPX-painike päävalikossa on nyt violetti, jotta se ei näytä viereiseltä painikkeelta"
     ],
     "is": [
       "Engar fleiri U-beygjur á miðjum vegi: ferð sem vinur deilir með þér tengist þú nú í þá átt sem hún liggur, svo þú ert aldrei sendur á punkt á veginum bara til að snúa þar við. Og ef ferðin hefur viðkomustað við veginn heldur þú áfram sömu leið að gatnamótum eða hringtorgi í stað þess að snúa við á veginum",
@@ -137,7 +142,8 @@
       "Uppfærslur eru athugaðar áður en þær eru settar upp: niðurhal sem kom skemmt er sótt aftur, og aðeins ósvikið Curveon er boðið til uppsetningar",
       "SOS frá einhverjum í hópnum nær nú virkilega athygli þinni: rauða viðvörunin púlsar og blikkar í takt við sírenuna. Bank fær rólegri, rafgulan púls og myndin hringir eins og sími",
       "Skilaboð sem berast meðan þú ert á kortinu í fullri stærð birtast nú sem borði efst í nokkrar sekúndur, með nafni og efni, og hnöppum til að láta lesa þau upp eða svara með röddinni",
-      "Prófílmyndirnar eru skarpari: ný mynd er send í tvöfaldri stærð og þegar þú ýtir á einhvern á kortinu sérðu hana stærri (myndir sem þú hefur þegar sett haldast eins þar til þú velur þær aftur)"
+      "Prófílmyndirnar eru skarpari: ný mynd er send í tvöfaldri stærð og þegar þú ýtir á einhvern á kortinu sérðu hana stærri (myndir sem þú hefur þegar sett haldast eins þar til þú velur þær aftur)",
+      "GPX-hnappurinn í aðalvalmyndinni er nú fjólublár, svo hann líti ekki út eins og hnappurinn við hliðina"
     ],
     "de": [
       "Kein Wenden mehr mitten auf der Straße: In eine Tour, die ein Freund mit dir teilt, steigst du jetzt in Fahrtrichtung ein, sodass du nie zu einem Punkt auf der Straße geschickt wirst, nur um dort zu wenden. Und hat die Tour einen Stopp an der Straße, fährst du in deiner Richtung weiter bis zu einer Kreuzung oder einem Kreisverkehr, statt auf der Straße zu wenden",
@@ -160,7 +166,8 @@
       "Updates werden vor der Installation geprüft: Ein beschädigt angekommener Download wird neu geladen, und nur ein echtes Curveon wird zur Installation angeboten",
       "Ein SOS aus deiner Gruppe holt dich jetzt richtig ab: Der rote Alarm pulsiert und blinkt im Takt der Sirene. Ein Anstupsen bekommt einen ruhigeren, bernsteinfarbenen Puls, und das Bild klingelt wie ein Telefon",
       "Eine Nachricht, die ankommt, während du die Vollbildkarte offen hast, erscheint jetzt einige Sekunden als Banner oben, mit Name und Text und Tasten zum Vorlesen oder Antworten per Sprache",
-      "Profilbilder sind schärfer: Ein neues Bild wird in doppelter Größe gesendet, und wenn du jemanden auf der Karte antippst, siehst du es größer (bereits gesetzte Bilder bleiben, bis du sie neu auswählst)"
+      "Profilbilder sind schärfer: Ein neues Bild wird in doppelter Größe gesendet, und wenn du jemanden auf der Karte antippst, siehst du es größer (bereits gesetzte Bilder bleiben, bis du sie neu auswählst)",
+      "Die GPX-Taste im Hauptmenü ist jetzt violett und sieht nicht mehr aus wie die Taste daneben"
     ],
     "es": [
       "Se acabó dar la vuelta en mitad de la carretera: a una ruta que te comparte un amigo ahora te unes en su sentido, así que nunca te manda a un punto de la carretera solo para dar la vuelta allí. Y si la ruta tiene una parada junto a la carretera, sigues en la misma dirección hasta un cruce o una rotonda en lugar de hacer un cambio de sentido en la carretera",
@@ -183,7 +190,8 @@
       "Las actualizaciones se comprueban antes de instalarse: una descarga que llegó dañada se vuelve a bajar, y solo se ofrece instalar un Curveon auténtico",
       "Un SOS de alguien de tu grupo ahora te llama la atención de verdad: la alerta roja palpita y parpadea al ritmo de la sirena. Un toque de atención tiene su propio pulso ámbar, más tranquilo, y la foto suena como un teléfono",
       "Un mensaje que llega mientras tienes el mapa a pantalla completa aparece ahora como un banner arriba unos segundos, con el nombre y lo que dice, y botones para oírlo en voz alta o responder con la voz",
-      "Las fotos de perfil son más nítidas: una foto nueva se envía al doble de tamaño, y al tocar a alguien en el mapa la ves más grande (las fotos que ya tienes se quedan como estaban hasta que las elijas de nuevo)"
+      "Las fotos de perfil son más nítidas: una foto nueva se envía al doble de tamaño, y al tocar a alguien en el mapa la ves más grande (las fotos que ya tienes se quedan como estaban hasta que las elijas de nuevo)",
+      "El botón GPX del menú principal ahora es violeta, para que no se parezca al botón de al lado"
     ],
     "fr": [
       "Fini les demi-tours au milieu de la route : un trajet qu'un ami partage avec toi est désormais rejoint dans son sens, tu n'es donc jamais envoyé vers un point de la route juste pour y faire demi-tour. Et si le trajet a un arrêt au bord de la route, tu repars dans le même sens jusqu'à un carrefour ou un rond-point au lieu de faire demi-tour sur la route",
@@ -206,7 +214,8 @@
       "Les mises à jour sont vérifiées avant l'installation : un téléchargement arrivé abîmé est récupéré à nouveau, et seul un vrai Curveon est proposé à l'installation",
       "Un SOS d'un membre du groupe te saisit maintenant vraiment : l'alerte rouge pulse et clignote au rythme de la sirène. Un coup de coude a sa propre pulsation ambrée, plus calme, et la photo sonne comme un téléphone",
       "Un message qui arrive pendant que tu as la carte plein écran s'affiche maintenant en bannière en haut quelques secondes, avec le nom et le texte, et des boutons pour l'entendre ou répondre à la voix",
-      "Les photos de profil sont plus nettes : une nouvelle photo est envoyée en double taille, et quand tu touches quelqu'un sur la carte tu la vois plus grande (les photos déjà choisies restent comme avant jusqu'à ce que tu les rechoisisses)"
+      "Les photos de profil sont plus nettes : une nouvelle photo est envoyée en double taille, et quand tu touches quelqu'un sur la carte tu la vois plus grande (les photos déjà choisies restent comme avant jusqu'à ce que tu les rechoisisses)",
+      "Le bouton GPX du menu principal est maintenant violet, pour ne plus ressembler au bouton voisin"
     ],
     "nl": [
       "Nooit meer keren midden op de weg: bij een rit die een vriend met je deelt, sluit je nu aan in de rijrichting, dus je wordt nooit naar een punt op de weg gestuurd alleen om daar te keren. En heeft de rit een stop langs de weg, dan rijd je in dezelfde richting door naar een kruising of rotonde in plaats van op de weg te keren",
@@ -229,7 +238,8 @@
       "Updates worden gecontroleerd voordat ze worden geïnstalleerd: een download die beschadigd aankwam wordt opnieuw opgehaald, en alleen een echte Curveon wordt aangeboden",
       "Een SOS van iemand in je groep grijpt je nu echt: de rode melding pulseert en knippert op de maat van de sirene. Een por krijgt een rustigere, amberkleurige puls, en de foto rinkelt als een telefoon",
       "Een bericht dat binnenkomt terwijl je de volledige kaart open hebt, verschijnt nu een paar seconden als banner bovenaan, met de naam en wat erin staat, en knoppen om het voor te laten lezen of met je stem te antwoorden",
-      "Profielfoto's zijn scherper: een nieuwe foto wordt in dubbele grootte verstuurd en als je iemand op de kaart aantikt, zie je hem groter (foto's die je al hebt ingesteld blijven zoals ze waren tot je ze opnieuw kiest)"
+      "Profielfoto's zijn scherper: een nieuwe foto wordt in dubbele grootte verstuurd en als je iemand op de kaart aantikt, zie je hem groter (foto's die je al hebt ingesteld blijven zoals ze waren tot je ze opnieuw kiest)",
+      "De GPX-knop in het hoofdmenu is nu paars, zodat hij niet meer lijkt op de knop ernaast"
     ],
     "pl": [
       "Koniec z zawracaniem na środku drogi: do trasy udostępnionej przez znajomego dołączasz teraz zgodnie z jej kierunkiem, więc nigdy nie zostaniesz wysłany do punktu na drodze tylko po to, by tam zawrócić. A jeśli trasa ma postój przy drodze, jedziesz dalej w tym samym kierunku do skrzyżowania lub ronda zamiast zawracać na drodze",
@@ -252,7 +262,8 @@
       "Aktualizacje są sprawdzane przed instalacją: pobranie, które dotarło uszkodzone, jest pobierane ponownie, a do instalacji proponowany jest tylko prawdziwy Curveon",
       "SOS od kogoś z grupy naprawdę przyciąga teraz uwagę: czerwony alarm pulsuje i miga w rytm syreny. Szturchnięcie dostaje własny, spokojniejszy bursztynowy puls, a zdjęcie dzwoni jak telefon",
       "Wiadomość, która przychodzi, gdy masz mapę na pełnym ekranie, pojawia się teraz na kilka sekund jako baner u góry, z nazwą i treścią oraz przyciskami do odczytania na głos lub odpowiedzi głosem",
-      "Zdjęcia profilowe są ostrzejsze: nowe zdjęcie jest wysyłane w podwójnym rozmiarze, a po dotknięciu kogoś na mapie widzisz je większe (zdjęcia już ustawione zostają, jak były, dopóki nie wybierzesz ich ponownie)"
+      "Zdjęcia profilowe są ostrzejsze: nowe zdjęcie jest wysyłane w podwójnym rozmiarze, a po dotknięciu kogoś na mapie widzisz je większe (zdjęcia już ustawione zostają, jak były, dopóki nie wybierzesz ich ponownie)",
+      "Przycisk GPX w menu głównym jest teraz fioletowy, więc nie wygląda już jak sąsiedni przycisk"
     ]
   },
   {

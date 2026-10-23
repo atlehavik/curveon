@@ -1105,7 +1105,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         } }
 
         if (showGpx) PagedCockpitDialog(
-            title = stringResource(R.string.tracks_title), icon = Icons.Default.Route, accent = ElectricCyan, onDismiss = { showGpx = false }, tag = "gpx_manager",
+            title = stringResource(R.string.tracks_title), icon = Icons.Default.Route, accent = NeonViolet, onDismiss = { showGpx = false }, tag = "gpx_manager",
             pages = TracksTab.entries, selected = tracksTab, onSelect = { tracksTab = it },
             pageLabel = { stringResource(it.label) }, pageIcon = { it.icon }, pageBadge = { it == TracksTab.RIDES && recordingResting }, tabsWidth = 170.dp,
             actions = { if (tracksTab == TracksTab.GPX) GpxImportButton { importGpxLauncher.launch(arrayOf("*/*")) } }
@@ -1607,7 +1607,7 @@ private fun Rail(
     }
     val gpx: @Composable () -> Unit = {
         Box {
-            RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), ElectricCyan, ElectricCyan, filled = active == RailPanel.GPX, flashKey = if (RailPanel.GPX in flash.first) flash.second else 0, tag = "rail_gpx", target = TourTarget.GPX, onClick = { onPress(RailPanel.GPX) })
+            RailButton(Icons.Default.Route, stringResource(R.string.gpx_manager), NeonViolet, NeonViolet, filled = active == RailPanel.GPX, flashKey = if (RailPanel.GPX in flash.first) flash.second else 0, tag = "rail_gpx", target = TourTarget.GPX, onClick = { onPress(RailPanel.GPX) })
             if (recordingResting) RecordingDot(Modifier.align(Alignment.TopEnd).padding(6.dp).testTag("rail_gpx_recording"))
         }
     }

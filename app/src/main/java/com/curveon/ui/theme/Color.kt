@@ -15,6 +15,8 @@ val WarningRed = Color(0xFFFF3D00)
 val EcoGreen = Color(0xFF00E676)
 /** Sharing your position with friends: blue like Android's own sign that a sensor is in use (green is for messages). */
 val SharingBlue = Color(0xFF448AFF)
+/** The GPX button on the rail: violet, as cyan, white, orange, green (and red, the alarm) are taken by the other buttons. */
+val NeonViolet = Color(0xFFB388FF)
 val SpeedLimitWhite = Color(0xFFF0F4F8)
 val SpeedLimitBorder = Color(0xFFD50000)
 
