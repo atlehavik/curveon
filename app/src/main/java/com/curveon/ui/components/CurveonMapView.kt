@@ -74,6 +74,10 @@ private const val ROUTE = "curveon-route"
 private const val ALT = "curveon-alternatives"
 private const val MARKERS = "curveon-markers"
 private const val GROUP = "curveon-group"
+/** Riders closer than this on screen (about a marker's width) are shown as one marker. */
+private const val GROUP_CLUSTER_PX = 24
+/** The source's own max zoom: further in, the map only enlarges what was made here, so riders on the very same spot stay one marker. */
+private const val GROUP_CLUSTER_MAX_ZOOM = 18
 private const val PICK = "curveon-pick"
 private const val APPROACH = "curveon-approach"
 /** At most this often is a camera that keeps moving (following the rider) reported as settled. */
@@ -216,6 +220,8 @@ fun CurveonMapView(
     speedSigns: List<com.curveon.data.routing.SpeedChange> = emptyList(),
     trackHint: com.curveon.data.gpx.TrackHint? = null,
     onPoiClick: (com.curveon.data.gpx.GpxPoi) -> Unit = {},
+    /** A tap on another rider or a friend on the map: their [MapGroupRider.id], or several where they stand together. */
+    onGroupRiderClick: (List<String>) -> Unit = {},
     /** Where the map is looking once it settles: south, north, west, east, and the zoom. */
     /**
      * Where the map is looking: its bounds, and how wide the middle of the screen is ([widthKm]) with where the camera is
@@ -323,6 +329,7 @@ fun CurveonMapView(
     val onEditRouteState = rememberUpdatedState(onEditRoute)
     val previewRoutesState = rememberUpdatedState(previewRoutes)
     val onPoiClickState = rememberUpdatedState(onPoiClick)
+    val onGroupRiderClickState = rememberUpdatedState(onGroupRiderClick)
     val onViewportState = rememberUpdatedState(onViewport)
     val poisState = rememberUpdatedState(gpxPois)
     val poiBadges = rememberPoiBadges()
@@ -412,6 +419,17 @@ fun CurveonMapView(
                 // so a stray tap on the map never takes the dashboard away.
                 if (!canQuery) return@addOnMapClickListener false
                 val pt = m.projection.toScreenLocation(p)
+                // Another rider or a friend: what is known about them, and a way to get their attention. Riders standing
+                // together are one marker: all of them.
+                m.queryRenderedFeatures(
+                    RectF(pt.x - 28, pt.y - 28, pt.x + 28, pt.y + 28),
+                    "$GROUP-dots", "$GROUP-photos", "$GROUP-labels", "$GROUP-photo-labels", "$GROUP-clusters", "$GROUP-cluster-labels"
+                ).firstOrNull()?.let { f ->
+                    val ids = if (f.hasProperty("point_count")) runCatching {
+                        m.style?.getSourceAs<GeoJsonSource>(GROUP)?.getClusterLeaves(f, 50, 0)?.features()?.mapNotNull { it.getStringProperty("id") }
+                    }.getOrNull().orEmpty() else listOfNotNull(f.getStringProperty("id"))
+                    if (ids.isNotEmpty()) { onGroupRiderClickState.value(ids); return@addOnMapClickListener true }
+                }
                 val hit = m.queryRenderedFeatures(RectF(pt.x - 24, pt.y - 24, pt.x + 24, pt.y + 24), "$GPX_POIS-dots", "$GPX_POIS-icons").firstOrNull()
                 val poi = hit?.getNumberProperty("i")?.toInt()?.let { poisState.value.getOrNull(it) }
                 if (poi != null) onPoiClickState.value(poi)
@@ -790,6 +808,7 @@ fun CurveonMapView(
             FeatureCollection.fromFeatures(groupRiders.map { r ->
                 Feature.fromGeometry(Point.fromLngLat(r.point.longitude, r.point.latitude)).also {
                     if (r.avatar != null) it.addStringProperty("icon", "grp-${r.id}")
+                    it.addStringProperty("id", r.id)
                     it.addStringProperty("label", r.label)
                     it.addStringProperty("color", hex(r.color))
                     it.addNumberProperty("alpha", if (r.stale) 0.45f else 1f)
@@ -1692,9 +1711,25 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
         )
     )
     // The other riders of a group ride: a ring in their colour with the name under it, dimmed when not heard from for a while.
-    s.addSource(GeoJsonSource(GROUP))
-    val noPicture = org.maplibre.android.style.expressions.Expression.not(org.maplibre.android.style.expressions.Expression.has("icon"))
-    val hasPicture = org.maplibre.android.style.expressions.Expression.has("icon")
+    // Riders so close that their markers would lie on top of each other (standing together) are one marker: how many, and
+    // their names under it. Done by the map itself, so it costs nothing while the map moves.
+    s.addSource(GeoJsonSource(GROUP, org.maplibre.android.style.sources.GeoJsonOptions()
+        .withCluster(true).withClusterRadius(GROUP_CLUSTER_PX).withClusterMaxZoom(GROUP_CLUSTER_MAX_ZOOM)
+        // (name, how two are put together, the value of one rider)
+        .withClusterProperty("names",
+            org.maplibre.android.style.expressions.Expression.concat(org.maplibre.android.style.expressions.Expression.accumulated(),
+                org.maplibre.android.style.expressions.Expression.literal(", "), org.maplibre.android.style.expressions.Expression.get("names")),
+            org.maplibre.android.style.expressions.Expression.get("label"))
+        .withClusterProperty("alpha",
+            org.maplibre.android.style.expressions.Expression.max(org.maplibre.android.style.expressions.Expression.accumulated(),
+                org.maplibre.android.style.expressions.Expression.get("alpha")),
+            org.maplibre.android.style.expressions.Expression.get("alpha"))
+    ))
+    val single = org.maplibre.android.style.expressions.Expression.not(org.maplibre.android.style.expressions.Expression.has("point_count"))
+    val together = org.maplibre.android.style.expressions.Expression.has("point_count")
+    val noPicture = org.maplibre.android.style.expressions.Expression.all(single,
+        org.maplibre.android.style.expressions.Expression.not(org.maplibre.android.style.expressions.Expression.has("icon")))
+    val hasPicture = org.maplibre.android.style.expressions.Expression.all(single, org.maplibre.android.style.expressions.Expression.has("icon"))
     s.addLayer(
         CircleLayer("$GROUP-dots", GROUP).withProperties(
             circleRadius(10f),
@@ -1710,6 +1745,33 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
             iconOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
             iconAllowOverlap(true), iconIgnorePlacement(true)
         ).also { it.setFilter(hasPicture) }
+    )
+    // Riders together: a bigger ring with how many, the names under it.
+    s.addLayer(
+        CircleLayer("$GROUP-clusters", GROUP).withProperties(
+            circleRadius(15f), circleColor("#00E5FF"),
+            circleOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+            circleStrokeColor("#FFFFFF"), circleStrokeWidth(3f),
+            circleStrokeOpacity(org.maplibre.android.style.expressions.Expression.get("alpha"))
+        ).also { it.setFilter(together) }
+    )
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$GROUP-cluster-count", GROUP).withProperties(
+            textField(org.maplibre.android.style.expressions.Expression.toString(org.maplibre.android.style.expressions.Expression.get("point_count"))),
+            textFont(arrayOf("Noto Sans Medium")), textSize(15f), textColor("#0B0E14"),
+            textAllowOverlap(true), textIgnorePlacement(true)
+        ).also { it.setFilter(together) }
+    )
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$GROUP-cluster-labels", GROUP).withProperties(
+            textField(org.maplibre.android.style.expressions.Expression.get("names")),
+            textFont(arrayOf("Noto Sans Medium")), textSize(14f), textMaxWidth(12f),
+            textColor(if (dark) "#FFFFFF" else "#0B0E14"),
+            textHaloColor(if (dark) "#0B0E14" else "#FFFFFF"), textHaloWidth(2f),
+            textOpacity(org.maplibre.android.style.expressions.Expression.get("alpha")),
+            textAnchor(Property.TEXT_ANCHOR_TOP), textOffset(arrayOf(0f, 1.4f)),
+            textAllowOverlap(true), textIgnorePlacement(true)
+        ).also { it.setFilter(together) }
     )
     // The name sits under the dot, or further down under a picture, which is bigger.
     for ((id, filter, offset) in listOf(Triple("$GROUP-labels", noPicture, 1f), Triple("$GROUP-photo-labels", hasPicture, 2.6f))) {

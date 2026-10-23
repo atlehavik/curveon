@@ -360,6 +360,48 @@ class RelayIntegrationTest {
     assertTrue("only the latest of each trip is handed over", kari.none { it is GroupEvent.TripReceived })
   }
 
+  @Test fun aNudgeReachesOnlyTheRiderItIsForAndTheAnswerComesBack() {
+    val (a, invite) = group()
+    a.client.start()
+    val kari = joined(invite, "Kari").also { it.client.start() }
+    val jens = joined(invite, "Jens").also { it.client.start() }
+    a.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Jens" } }
+    kari.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Ola" } }
+
+    val id = a.client.sendNudge(kari.id)!!
+    val got = kari.await { (it as? GroupEvent.NudgeReceived)?.takeIf { e -> e.nudge.id == id } }
+    assertEquals(a.id, got.riderId)
+    assertTrue("a nudge for Kari is not shown to Jens", jens.none { it is GroupEvent.NudgeReceived })
+
+    assertTrue(kari.client.sendNudgeSeen(id, a.id))
+    val seen = a.await { (it as? GroupEvent.NudgeSeen)?.takeIf { e -> e.seen.id == id } }
+    assertEquals(kari.id, seen.riderId)
+    assertFalse(seen.mine)
+  }
+
+  @Test fun aNudgeReachesARiderWhoLooksInLater() {
+    val (a, invite) = group()
+    a.client.start()
+    a.await { it as? GroupEvent.Connected }
+    val kariState = GroupState.join(invite)
+    val id = a.client.sendNudge(B64.encode(kariState.riderId))!!
+    Thread.sleep(300)
+    val kari = Rider("Kari", kariState).also { it.client.start() }
+    assertEquals(id, kari.await { (it as? GroupEvent.NudgeReceived)?.nudge?.id })
+  }
+
+  @Test fun aNudgeSeenOnOneDeviceGoesFromTheOther() {
+    val (phone, tablet, kari) = twoDevices()
+    // Kari tries to reach Ola: both of Ola's devices hear it.
+    val id = kari.client.sendNudge(phone.id)!!
+    phone.await { (it as? GroupEvent.NudgeReceived)?.takeIf { e -> e.nudge.id == id } }
+    tablet.await { (it as? GroupEvent.NudgeReceived)?.takeIf { e -> e.nudge.id == id } }
+    // Ola answers on the phone: Kari is told, and the tablet learns it can drop it.
+    assertTrue(phone.client.sendNudgeSeen(id, kari.id))
+    assertFalse(kari.await { (it as? GroupEvent.NudgeSeen)?.takeIf { e -> e.seen.id == id } }.mine)
+    assertTrue(tablet.await { (it as? GroupEvent.NudgeSeen)?.takeIf { e -> e.seen.id == id } }.mine)
+  }
+
   @Test fun aTripChangedOnMyOtherDeviceReachesThisOneToo() {
     val (phone, tablet, _) = twoDevices()
     phone.client.sendTrip(Payload.Trip("t9", 1, "Min tur", """{"stops":[]}"""))

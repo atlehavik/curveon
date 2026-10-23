@@ -106,6 +106,8 @@ relay only and are never forwarded.
 | `sos_cancel` | forward; removes the stored `sos` | `seq`, `ts` |
 | `leave` | forward | `seq`, `ts` |
 | `claim` | forward; keep the latest per rider | `seq`, `ts`, `dev` (see below) |
+| `nudge` | forward; the sender asks for a slot, 15 min | `seq`, `ts`, `id`, `to` (riderId): "I am trying to reach you", for `to` only; shown once per `id`, not when older than 15 min |
+| `nudge_seen` | forward; the sender asks for a slot, 15 min | `seq`, `ts`, `id` (of the nudge), `to` (who sent it); the rider's other devices drop the nudge too |
 | `rekey` | forward; keep ~30 days | see below (not encrypted with `encKey`) |
 
 ## Keeping a frame

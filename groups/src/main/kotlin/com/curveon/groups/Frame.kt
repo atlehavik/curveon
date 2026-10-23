@@ -13,7 +13,7 @@ import javax.crypto.spec.SecretKeySpec
  */
 enum class FrameType(val wire: String) {
   POS("pos"), HELLO("hello"), ROUTE("route"), SOS("sos"), SOS_ACK("sos_ack"), SOS_CANCEL("sos_cancel"),
-  LEAVE("leave"), CLAIM("claim"), INVITE("invite"), TRIP("trip"), REKEY("rekey");
+  LEAVE("leave"), CLAIM("claim"), INVITE("invite"), TRIP("trip"), NUDGE("nudge"), NUDGE_SEEN("nudge_seen"), REKEY("rekey");
 
   companion object { fun of(wire: String) = entries.firstOrNull { it.wire == wire } }
 }

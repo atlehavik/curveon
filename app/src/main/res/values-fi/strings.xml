@@ -1097,4 +1097,17 @@
     <string name="devices_scan">Skannaa koodi toisesta laitteestani</string>
     <string name="devices_unlink">Poista linkitys</string>
     <string name="devices_code_hint">Skannaa tämä toisella laitteellasi 15 minuutin kuluessa. Se avaa kaverisi ja ryhmäsi, joten näytä se vain itsellesi.</string>
+    <string name="nudge_button">Haluan yhteyden</string>
+    <string name="nudge_sent">Lähetetty: %1$s näkee, että yrität tavoittaa</string>
+    <string name="nudge_seen">%1$s on nähnyt sen</string>
+    <string name="nudge_failed">Lähetys ei onnistunut. Tarkista yhteys.</string>
+    <string name="nudge_alert_title">%1$s yrittää tavoittaa sinut</string>
+    <string name="nudge_alert_text">Tarkista intercom tai puhelin.</string>
+    <string name="nudge_alert_ok">OK, näen sen</string>
+    <string name="rider_info_riding">Ajaa, %1$d km/h</string>
+    <string name="rider_info_riding_mph">Ajaa, %1$d mph</string>
+    <string name="rider_info_stopped">Pysähtyneenä %1$d min</string>
+    <string name="rider_info_seen">Nähty viimeksi: %1$s</string>
+    <string name="rider_info_battery">Akku %1$d %%</string>
+    <string name="riders_here">Täällä yhdessä</string>
 </resources>

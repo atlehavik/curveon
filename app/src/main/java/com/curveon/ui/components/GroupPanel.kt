@@ -271,7 +271,11 @@ private fun GroupDetail(
         if (active) {
             FriendsSectionLabel(stringResource(R.string.group_riders))
             members.values.sortedBy { if (it.id == myId) 0 else 1 }.forEach { r ->
-                RiderRow(r, r.id == myId, positions[r.id], onRemove = if (group.admin && r.id != myId) ({ confirmRemove = r }) else null)
+                RiderRow(
+                    r, r.id == myId, positions[r.id], onRemove = if (group.admin && r.id != myId) ({ confirmRemove = r }) else null,
+                    // Only the active group is connected: that is where a nudge can go.
+                    nudge = if (r.id != myId && activeId == group.id) manager to group.id else null
+                )
             }
         } else Text(stringResource(R.string.group_not_active), color = TextSecondary, fontSize = 14.sp)
 
@@ -357,7 +361,7 @@ fun RiderAvatar(r: GroupRider, size: androidx.compose.ui.unit.Dp) {
 }
 
 @Composable
-private fun RiderRow(r: GroupRider, me: Boolean, pos: Message.GroupPositionInfo?, onRemove: (() -> Unit)?) {
+private fun RiderRow(r: GroupRider, me: Boolean, pos: Message.GroupPositionInfo?, onRemove: (() -> Unit)?, nudge: Pair<GroupManager, String>? = null) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -367,7 +371,9 @@ private fun RiderRow(r: GroupRider, me: Boolean, pos: Message.GroupPositionInfo?
         Column(Modifier.weight(1f)) {
             Text(if (me) stringResource(R.string.group_rider_you, r.nickname) else r.nickname, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             if (!me) Text(riderStatus(pos), color = TextSecondary, fontSize = 13.sp)
+            nudge?.let { (manager, groupId) -> NudgeRowStatus(manager, groupId, r.id, r.nickname) }
         }
+        nudge?.let { (manager, groupId) -> NudgeIconButton(manager, groupId, r.id) }
         if (onRemove != null) IconButton(onClick = onRemove) { Icon(Icons.Default.PersonRemove, stringResource(R.string.group_remove), tint = TextSecondary) }
     }
 }

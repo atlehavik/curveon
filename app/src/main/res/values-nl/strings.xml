@@ -1118,4 +1118,17 @@
     <string name="devices_scan">Code scannen van mijn andere apparaat</string>
     <string name="devices_unlink">Ontkoppelen</string>
     <string name="devices_code_hint">Scan dit binnen 15 minuten op je andere apparaat. Het geeft toegang tot je vrienden en groepen, dus laat het alleen aan jezelf zien.</string>
+    <string name="nudge_button">Aandacht vragen</string>
+    <string name="nudge_sent">Verstuurd: %1$s ziet dat je contact zoekt</string>
+    <string name="nudge_seen">%1$s heeft het gezien</string>
+    <string name="nudge_failed">Niet verstuurd. Controleer de verbinding.</string>
+    <string name="nudge_alert_title">%1$s probeert je te bereiken</string>
+    <string name="nudge_alert_text">Kijk op je intercom of telefoon.</string>
+    <string name="nudge_alert_ok">OK, ik zie het</string>
+    <string name="rider_info_riding">Rijdt, %1$d km/u</string>
+    <string name="rider_info_riding_mph">Rijdt, %1$d mph</string>
+    <string name="rider_info_stopped">Staat al %1$d min stil</string>
+    <string name="rider_info_seen">Laatst gezien: %1$s</string>
+    <string name="rider_info_battery">Batterij %1$d%%</string>
+    <string name="riders_here">Hier samen</string>
 </resources>

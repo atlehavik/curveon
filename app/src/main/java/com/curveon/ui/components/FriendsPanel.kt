@@ -218,7 +218,9 @@ private fun FriendsTabContent(manager: GroupManager) {
                         if (f.sharesWithMe) Text(
                             stringResource(R.string.friends_shares_with_you, friendSeen(friendPositions[f.id])), color = EcoGreen, fontSize = 13.sp
                         )
+                        NudgeRowStatus(manager, f.id, null, f.nickname)
                     }
+                    NudgeIconButton(manager, f.id, null)
                     IconButton(onClick = { confirmRemove = f }) { Icon(Icons.Default.PersonRemove, stringResource(R.string.friends_remove), tint = TextSecondary) }
                 }
                 if (shareOn) Row(verticalAlignment = Alignment.CenterVertically) {

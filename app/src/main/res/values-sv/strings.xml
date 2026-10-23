@@ -1146,4 +1146,17 @@
     <string name="devices_scan">Skanna kod från min andra enhet</string>
     <string name="devices_unlink">Koppla isär</string>
     <string name="devices_code_hint">Skanna den här på din andra enhet inom 15 minuter. Den öppnar dina vänner och grupper, så visa den bara för dig själv.</string>
+    <string name="nudge_button">Vill ha kontakt</string>
+    <string name="nudge_sent">Skickat: %1$s ser att du försöker nå hen</string>
+    <string name="nudge_seen">%1$s har sett det</string>
+    <string name="nudge_failed">Kunde inte skicka. Kolla nätet.</string>
+    <string name="nudge_alert_title">%1$s försöker nå dig</string>
+    <string name="nudge_alert_text">Kolla intercomen eller telefonen.</string>
+    <string name="nudge_alert_ok">OK, jag ser det</string>
+    <string name="rider_info_riding">Kör, %1$d km/h</string>
+    <string name="rider_info_riding_mph">Kör, %1$d mph</string>
+    <string name="rider_info_stopped">Stannat i %1$d min</string>
+    <string name="rider_info_seen">Senast sedd: %1$s</string>
+    <string name="rider_info_battery">Batteri %1$d %%</string>
+    <string name="riders_here">Här tillsammans</string>
 </resources>

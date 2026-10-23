@@ -55,6 +55,10 @@ object GroupHub {
     private const val SHARE_KEY = "share"
     /** How long the channel to a friend who sees the rider stays open after a position. */
     private const val FRIEND_SHARE_KEEP_MS = 3 * 60_000L
+    /** After a nudge (sent or come in) the friend channel stays open this long, so the answer comes at once. */
+    private const val NUDGE_KEEP_MS = 3 * 60_000L
+    /** A nudge to a friend not on its way by then is reported as not sent (it may still go when the channel opens). */
+    private const val NUDGE_SEND_WAIT_MS = 12_000L
     /** How often Curveon looks for where the friends who share with the rider are. */
     private const val FRIEND_WATCH_MINUTES = 2L
     private val exec = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
@@ -167,7 +171,8 @@ object GroupHub {
         is Message.SosCancel, is Message.SosAnswer, is Message.GroupRemoveRider, is Message.RequestDeviceLink, is Message.GroupSettings,
         is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
         is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.TripToFriends, is Message.RequestGroupInvite,
-        is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing, is Message.RequestFriendLink -> true
+        is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing, is Message.RequestFriendLink,
+        is Message.NudgeSend, is Message.NudgeAnswer -> true
         else -> false
     }
 
@@ -289,6 +294,13 @@ object GroupHub {
                     if (id in seeingMe()) c.sendTrip(Payload.Trip(SHARE_TRIP, System.currentTimeMillis(), "", "1"))
                 }
             }
+            is Message.NudgeSend -> nudge(m)
+            is Message.NudgeAnswer -> {
+                store?.markOfferHandled(m.nudgeId)
+                val state = groups[m.channelId] ?: return
+                if (state.kind == GroupKind.RIDE) { if (m.channelId == activeId) client?.sendNudgeSeen(m.nudgeId, m.toRiderId) }
+                else touchFriend(m.channelId, NUDGE_KEEP_MS) { c -> c.sendNudgeSeen(m.nudgeId, m.toRiderId) }
+            }
             is Message.RequestGroupInvite -> {
                 val state = groups[m.groupId] ?: return error(Message.GroupErrorCode.NO_SUCH_GROUP)
                 val days = m.validDays ?: DEFAULT_INVITE_DAYS
@@ -405,6 +417,38 @@ object GroupHub {
         exec.schedule({ closeFriendIfDone(id) }, deadline - System.currentTimeMillis() + 50, TimeUnit.MILLISECONDS)
     }
 
+    /** The rider asks a friend (through their channel) or a rider in the active group for attention. */
+    private fun nudge(m: Message.NudgeSend) {
+        val riderId = m.riderId
+        if (riderId != null) {
+            val ok = m.channelId == activeId && client?.sendNudge(riderId) != null
+            send(Message.NudgeStatus(m.channelId, riderId, if (ok) Message.NudgeState.SENT else Message.NudgeState.FAILED))
+            return
+        }
+        val to = groups[m.channelId]?.takeIf { it.kind == GroupKind.FRIEND }?.peer?.riderId
+            ?: return send(Message.NudgeStatus(m.channelId, null, Message.NudgeState.FAILED))
+        var sent = false
+        touchFriend(m.channelId, NUDGE_KEEP_MS) { c ->
+            sent = c.sendNudge(to) != null
+            send(Message.NudgeStatus(m.channelId, null, if (sent) Message.NudgeState.SENT else Message.NudgeState.FAILED))
+        }
+        exec.schedule({ if (!sent) send(Message.NudgeStatus(m.channelId, null, Message.NudgeState.FAILED)) }, NUDGE_SEND_WAIT_MS, TimeUnit.MILLISECONDS)
+    }
+
+    /** Someone tries to reach the rider: shown once (an answered one the relay hands over again is not). */
+    private fun nudgeIn(channelId: String, from: String, nudge: Payload.Nudge, tsMs: Long, nickname: String?, colour: Int, photo: String?) {
+        if (store?.isOfferHandled(nudge.id) == true) return
+        send(Message.NudgeIn(channelId, nudge.id, from, nickname.orEmpty(), colour, photo, tsMs))
+    }
+
+    /** An answer to a nudge: the rider's own one was seen, or the rider answered one on their other device. */
+    private fun nudgeSeen(channelId: String, e: GroupEvent.NudgeSeen, friend: Boolean) {
+        if (e.mine) {
+            store?.markOfferHandled(e.seen.id)
+            send(Message.NudgeGone(e.seen.id))
+        } else send(Message.NudgeStatus(channelId, if (friend) null else e.riderId, Message.NudgeState.SEEN))
+    }
+
     private fun closeFriendIfDone(id: String) {
         if (System.currentTimeMillis() < (friendDeadlines[id] ?: 0L)) return // kept open longer since
         stopFriend(id)
@@ -474,6 +518,13 @@ object GroupHub {
                 }
             }
             is GroupEvent.InviteReceived -> offer(state, e.invite)
+            // A friend tries to reach the rider: the channel stays open a while, so the answer goes straight back.
+            is GroupEvent.NudgeReceived -> if (state.kind == GroupKind.FRIEND) {
+                val peer = state.peer
+                touchFriend(id, NUDGE_KEEP_MS)
+                nudgeIn(id, e.riderId, e.nudge, e.tsMs, peer?.nickname, peer?.colour ?: 0xFF00E5FF.toInt(), peer?.photoBase64)
+            }
+            is GroupEvent.NudgeSeen -> if (state.kind == GroupKind.FRIEND) nudgeSeen(id, e, friend = true)
             is GroupEvent.TripReceived -> when {
                 state.kind == GroupKind.SELF && e.trip.tripId == SYNC_TRIP -> onSyncReceived(e.trip.doc)
                 state.kind == GroupKind.FRIEND && e.trip.tripId == SHARE_TRIP && !e.mine -> friendSharesWithMe(id, e.trip.doc == "1")
@@ -864,6 +915,10 @@ object GroupHub {
                 e.trip.name, e.trip.doc, e.mine
             ))
             is GroupEvent.InviteReceived -> Unit // invites come through friend channels, not rides
+            is GroupEvent.NudgeReceived -> client?.members()?.firstOrNull { it.id == e.riderId }.let { m ->
+                nudgeIn(state.groupIdHex, e.riderId, e.nudge, e.tsMs, m?.nickname, m?.colour ?: 0xFF00E5FF.toInt(), photo(m?.avatar))
+            }
+            is GroupEvent.NudgeSeen -> nudgeSeen(state.groupIdHex, e, friend = false)
             is GroupEvent.RouteReceived ->
                 send(Message.GroupRoute(state.groupIdHex, e.riderId, e.route.name, Base64.getEncoder().encodeToString(e.route.data)))
             GroupEvent.KeyChanged -> {

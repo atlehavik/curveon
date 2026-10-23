@@ -138,6 +138,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     LaunchedEffect(roadNameShown) { if (roadNameShown) { kotlinx.coroutines.delay(6_000); roadNameShown = false } }
     val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
+    /**
+     * Riders or friends tapped on the map ([com.curveon.ui.components.MapGroupRider.id]): one shows what is known about
+     * them, several (standing together) are listed to pick from.
+     */
+    var shownRiders by remember { mutableStateOf<List<String>>(emptyList()) }
     val gpxMessage by viewModel.gpxMessage.collectAsStateWithLifecycle()
     val preview by viewModel.preview.collectAsStateWithLifecycle()
     val isNavigating by viewModel.isNavigating.collectAsStateWithLifecycle()
@@ -846,6 +851,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             gpxPois = overlayPois,
             trackHint = trackHint.takeIf { preview == null && !isNavigating },
             onPoiClick = { shownPoi = it },
+            onGroupRiderClick = { shownRiders = it },
             onViewport = viewModel::setViewport,
             autoZoom = mapAutoZoom,
             mapVersion = mapVersion,
@@ -1270,6 +1276,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val groupLayer: @Composable BoxScope.() -> Unit = {
         com.curveon.ui.components.GroupInviteOfferDialog(phone.groups)
         com.curveon.ui.components.FriendHighFive(phone.groups)
+        when (shownRiders.size) {
+            0 -> Unit
+            1 -> com.curveon.ui.components.RiderInfoDialog(
+                phone.groups, shownRiders[0], currentLocationState.value.latitude, currentLocationState.value.longitude, useMph,
+                onDismiss = { shownRiders = emptyList() }
+            )
+            else -> com.curveon.ui.components.RiderPickerDialog(
+                phone.groups, shownRiders, useMph, onPick = { shownRiders = listOf(it) }, onDismiss = { shownRiders = emptyList() }
+            )
+        }
+        com.curveon.ui.components.NudgeAlert(phone.groups)
         com.curveon.ui.components.GroupSosOverlay(
             phone.groups, currentLocationState.value.latitude, currentLocationState.value.longitude,
             navigateTo = { lat, lon, name -> viewModel.previewDestination(GeoPoint(lat, lon), name) }

@@ -6,6 +6,18 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-23 — Trykk på en venn på kartet, og «Vil ha kontakt»
+
+Pixel og X7 som venner (ExSeven), begge med ny app.
+- [ ] Trykk på ExSeven på kartet på Pixelen: kortet viser fart eller «Stoppet i …», sist sett, avstand og batteri.
+- [ ] «Vil ha kontakt» på kortet: Pixelen sier «Sendt», X7 får varsel med lyd og vibrasjon. «OK, jeg ser det» på
+      X7: Pixelen sier «ExSeven har sett det» (grønt), innen få sekunder.
+- [ ] Samme fra vennelisten (bjellen), også når X7 ikke deler posisjon: varselet kommer når X7 ser etter
+      (åpne Venner på X7 for å få det med en gang).
+- [ ] I en gruppetur: bjellen i medlemslisten virker likt.
+- [ ] Står Pixel og X7 på samme sted (f.eks. hjemme), blir ExSeven og en annen rytter én runding med «2» og navnene
+      under; trykk gir lista «Her sammen», og et navn der gir kortet. Én alene står som før.
+
 ## 2026-10-22 — Ny relay (tåler nye funksjoner)
 
 Relayen på relay.curveon.no er oppdatert, og både Pixelen og X7 har den nye appen (X7 fikk den 22:28; før det

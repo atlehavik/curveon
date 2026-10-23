@@ -1148,4 +1148,17 @@
     <string name="devices_scan">Scan code from my other device</string>
     <string name="devices_unlink">Unlink</string>
     <string name="devices_code_hint">Scan this on your other device within 15 minutes. It opens your friends and groups, so show it only to yourself.</string>
+    <string name="nudge_button">Get attention</string>
+    <string name="nudge_sent">Sent: %1$s will see you\'re trying to reach them</string>
+    <string name="nudge_seen">%1$s has seen it</string>
+    <string name="nudge_failed">Couldn\'t send it. Check the connection.</string>
+    <string name="nudge_alert_title">%1$s is trying to reach you</string>
+    <string name="nudge_alert_text">Check your intercom or phone.</string>
+    <string name="nudge_alert_ok">OK, I see it</string>
+    <string name="rider_info_riding">Riding, %1$d km/h</string>
+    <string name="rider_info_riding_mph">Riding, %1$d mph</string>
+    <string name="rider_info_stopped">Stopped for %1$d min</string>
+    <string name="rider_info_seen">Last seen: %1$s</string>
+    <string name="rider_info_battery">Battery %1$d%%</string>
+    <string name="riders_here">Here together</string>
 </resources>

@@ -1163,4 +1163,17 @@
     <string name="devices_scan">Scanner le code de mon autre appareil</string>
     <string name="devices_unlink">Dissocier</string>
     <string name="devices_code_hint">Scanne-le sur ton autre appareil dans les 15 minutes. Il ouvre tes amis et tes groupes, alors ne le montre qu’à toi.</string>
+    <string name="nudge_button">Attirer son attention</string>
+    <string name="nudge_sent">Envoyé : %1$s verra que tu veux lui parler</string>
+    <string name="nudge_seen">%1$s l\'a vu</string>
+    <string name="nudge_failed">Envoi impossible. Vérifie la connexion.</string>
+    <string name="nudge_alert_title">%1$s essaie de te joindre</string>
+    <string name="nudge_alert_text">Regarde ton intercom ou ton téléphone.</string>
+    <string name="nudge_alert_ok">OK, je vois</string>
+    <string name="rider_info_riding">Roule, %1$d km/h</string>
+    <string name="rider_info_riding_mph">Roule, %1$d mph</string>
+    <string name="rider_info_stopped">Arrêté depuis %1$d min</string>
+    <string name="rider_info_seen">Vu pour la dernière fois : %1$s</string>
+    <string name="rider_info_battery">Batterie %1$d %%</string>
+    <string name="riders_here">Ici ensemble</string>
 </resources>

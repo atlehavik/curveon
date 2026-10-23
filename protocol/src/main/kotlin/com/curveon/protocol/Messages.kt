@@ -423,6 +423,42 @@ sealed interface Message {
         override fun toJson() = obj("trip_to_friends").put("trip", tripId).put("name", name).put("doc", doc).put("friends", JSONArray(friendIds))
     }
 
+    // ---- trying to reach a rider ----
+
+    /**
+     * Ask a rider for attention (they may not hear the intercom): a friend ([channelId] is the friend channel, [riderId]
+     * null) or a rider in the active group ([channelId] the group, [riderId] the rider).
+     */
+    data class NudgeSend(val channelId: String, val riderId: String?) : Message {
+        override fun toJson() = obj("nudge_send").put("id", channelId).put("rider", riderId ?: JSONObject.NULL)
+    }
+
+    /** Someone tries to reach the rider: shown over everything until the rider answers it ([NudgeAnswer]). */
+    data class NudgeIn(
+        val channelId: String, val nudgeId: String, val fromRiderId: String, val nickname: String, val colour: Int,
+        val photoJpegBase64: String?, val timeMs: Long,
+    ) : Message {
+        override fun toJson() = obj("nudge_in").put("id", channelId).put("nudge", nudgeId).put("from", fromRiderId).put("nick", nickname)
+            .put("colour", colour).put("photo", photoJpegBase64 ?: JSONObject.NULL).put("ts", timeMs)
+    }
+
+    /** The rider has seen nudge [nudgeId]: [toRiderId] in [channelId], who sent it, is told. */
+    data class NudgeAnswer(val channelId: String, val nudgeId: String, val toRiderId: String) : Message {
+        override fun toJson() = obj("nudge_answer").put("id", channelId).put("nudge", nudgeId).put("to", toRiderId)
+    }
+
+    enum class NudgeState { SENT, FAILED, SEEN }
+
+    /** How the rider's own nudge to [riderId] in [channelId] went ([riderId] null for a friend, as in [NudgeSend]). */
+    data class NudgeStatus(val channelId: String, val riderId: String?, val state: NudgeState) : Message {
+        override fun toJson() = obj("nudge_status").put("id", channelId).put("rider", riderId ?: JSONObject.NULL).put("state", state.name)
+    }
+
+    /** Nudge [nudgeId] was answered on the rider's other device: no longer shown here. */
+    data class NudgeGone(val nudgeId: String) : Message {
+        override fun toJson() = obj("nudge_gone").put("nudge", nudgeId)
+    }
+
     // ---- friends and shared trips, phone -> tablet ----
 
     /**
@@ -733,6 +769,15 @@ sealed interface Message {
             "request_friend_link" -> RequestFriendLink
             "friend_link" -> FriendLink(o.getString("uri"))
             "friend_added" -> FriendAdded(o.getString("id"), o.optString("nick"))
+            "nudge_send" -> NudgeSend(o.getString("id"), o.nullableString("rider"))
+            "nudge_in" -> NudgeIn(
+                o.getString("id"), o.getString("nudge"), o.getString("from"), o.optString("nick"), o.optInt("colour"),
+                o.nullableString("photo"), o.optLong("ts")
+            )
+            "nudge_answer" -> NudgeAnswer(o.getString("id"), o.getString("nudge"), o.getString("to"))
+            "nudge_status" -> runCatching { NudgeState.valueOf(o.getString("state")) }.getOrNull()
+                ?.let { NudgeStatus(o.getString("id"), o.nullableString("rider"), it) }
+            "nudge_gone" -> NudgeGone(o.getString("nudge"))
             "friend_sharing" ->FriendSharing(o.optBoolean("on"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "friend_list" -> FriendList(o.optJSONArray("list").objects().map {
                 FriendInfo(

@@ -1145,4 +1145,17 @@
     <string name="devices_scan">Code von meinem anderen Gerät scannen</string>
     <string name="devices_unlink">Trennen</string>
     <string name="devices_code_hint">Scanne das innerhalb von 15 Minuten auf deinem anderen Gerät. Es öffnet deine Freunde und Gruppen, zeig es also nur dir selbst.</string>
+    <string name="nudge_button">Kontakt suchen</string>
+    <string name="nudge_sent">Gesendet: %1$s sieht, dass du Kontakt suchst</string>
+    <string name="nudge_seen">%1$s hat es gesehen</string>
+    <string name="nudge_failed">Nicht gesendet. Prüfe die Verbindung.</string>
+    <string name="nudge_alert_title">%1$s versucht, dich zu erreichen</string>
+    <string name="nudge_alert_text">Schau aufs Intercom oder Handy.</string>
+    <string name="nudge_alert_ok">OK, gesehen</string>
+    <string name="rider_info_riding">Fährt, %1$d km/h</string>
+    <string name="rider_info_riding_mph">Fährt, %1$d mph</string>
+    <string name="rider_info_stopped">Steht seit %1$d min</string>
+    <string name="rider_info_seen">Zuletzt gesehen: %1$s</string>
+    <string name="rider_info_battery">Akku %1$d %%</string>
+    <string name="riders_here">Hier zusammen</string>
 </resources>

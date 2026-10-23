@@ -32,11 +32,22 @@ sealed interface GroupEvent {
    * device was told by the group (see [Payload.Claim]) or the rider took over here.
    */
   data class DeviceActiveChanged(val thisDevice: Boolean) : GroupEvent
+
+  /** A rider tries to get this rider's attention ([Payload.Nudge] to this rider; not one a while old). */
+  data class NudgeReceived(val riderId: String, val nudge: Payload.Nudge, val tsMs: Long) : GroupEvent
+
+  /**
+   * A nudge was seen: [riderId] answered the rider's own nudge, or ([mine]) the rider answered one on their other
+   * device, so it can go here too.
+   */
+  data class NudgeSeen(val riderId: String, val seen: Payload.NudgeSeen, val mine: Boolean) : GroupEvent
 }
 
 private const val CLAIM_HEARTBEAT_MS = 60_000L
 /** How long the relay keeps a trip for those who look in later (its own limit may be shorter). */
 private const val TRIP_KEEP_S = 30L * 24 * 3600
+/** A nudge (and its answer) is worth having only for a while: kept that long for a rider who looks in later. */
+const val NUDGE_KEEP_S = 15L * 60
 private const val CLAIM_STALE_MS = 180_000L
 
 /**
@@ -164,6 +175,17 @@ class GroupClient(
     connected && send(trip, Keep(state.keys.slot("trip/${trip.tripId}/${state.deviceId}"), TRIP_KEEP_S))
   }
 
+  /** Asks [to] (riderId, base64url) for their attention. The nudge's id, or null if it could not go out now. */
+  fun sendNudge(to: String): String? = synchronized(lock) {
+    val id = B64.encode(GroupKeys.randomBytes(9))
+    id.takeIf { connected && send(Payload.Nudge(it, to), Keep(state.keys.slot("nudge/$to/${state.deviceId}"), NUDGE_KEEP_S)) }
+  }
+
+  /** Tells [to], who sent nudge [id], that the rider has seen it (and the rider's other devices, which can drop it too). */
+  fun sendNudgeSeen(id: String, to: String): Boolean = synchronized(lock) {
+    connected && send(Payload.NudgeSeen(id, to), Keep(state.keys.slot("nudge_seen/$to/${state.deviceId}"), NUDGE_KEEP_S))
+  }
+
   fun answerSos(sosRiderId: String, coming: Boolean) = synchronized(lock) { if (connected) send(Payload.SosAck(sosRiderId, coming)) }
 
   fun cancelSos() = synchronized(lock) {
@@ -286,6 +308,10 @@ class GroupClient(
         val signed = FrameCrypto.open(state.keys, frame)?.let { PayloadCodec.decode(FrameType.TRIP, it) } ?: return
         if (!guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device)) return
         (signed.payload as? Payload.Trip)?.let { onEvent(GroupEvent.TripReceived(B64.encode(frame.riderId), it, signed.tsMs, mine = true)) }
+      } else if (frame.type == FrameType.NUDGE_SEEN) {
+        // Seen on the rider's other device: it can go here too.
+        val signed = FrameCrypto.open(state.keys, frame)?.let { PayloadCodec.decode(FrameType.NUDGE_SEEN, it) } ?: return
+        (signed.payload as? Payload.NudgeSeen)?.let { onEvent(GroupEvent.NudgeSeen(B64.encode(frame.riderId), it, mine = true)) }
       }
       return
     }
@@ -314,6 +340,11 @@ class GroupClient(
       is Payload.Claim -> Unit // only meaningful between one rider's own devices
       is Payload.GroupInvite -> onEvent(GroupEvent.InviteReceived(from, p))
       is Payload.Trip -> onEvent(GroupEvent.TripReceived(from, p, signed.tsMs, mine = false))
+      // Only for this rider, and only while it is fresh (the relay hands it over for a while after).
+      is Payload.Nudge -> if (p.to == B64.encode(state.riderId) && clock() - signed.tsMs < NUDGE_KEEP_S * 1000) {
+        onEvent(GroupEvent.NudgeReceived(from, p, signed.tsMs))
+      }
+      is Payload.NudgeSeen -> if (p.to == B64.encode(state.riderId)) onEvent(GroupEvent.NudgeSeen(from, p, mine = false))
     }
   }
 

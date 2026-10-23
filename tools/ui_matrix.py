@@ -198,9 +198,23 @@ def scenario_friends(d):
     return [["Show my code", "Vis koden min"], ["Scan a QR code", "Skann QR-kode"]]
 
 
+def scenario_nudge(d):
+    """"Get attention" on a friend (demo phone data): the demo friend sees it and tries to reach the rider back, whose alert must fit."""
+    scenario_friends(d)
+    bell = ["Get attention", "Vil ha kontakt"]
+    for _ in range(3):  # the friends are below the fold on a low screen (landscape, large text)
+        if d.find(bell) is not None:
+            break
+        w, h = d.screen()
+        d.sh("input", "swipe", str(w * 2 // 3), str(h * 3 // 4), str(w * 2 // 3), str(h // 4), "400")
+        time.sleep(1.5)
+    d.tap(bell, wait=9)
+    return [["OK, I see it", "OK, jeg ser det"], ["~is trying to reach you$", "~prøver å få kontakt$"]]
+
+
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
              "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
-             "groupdetail": scenario_groupdetail, "friends": scenario_friends}
+             "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge}
 
 
 def apply_variant(d, v, rotation):

@@ -1146,4 +1146,17 @@
     <string name="devices_scan">Skann kode fra min andre enhet</string>
     <string name="devices_unlink">Koble fra</string>
     <string name="devices_code_hint">Skann denne på den andre enheten innen 15 minutter. Den gir tilgang til vennene og gruppene dine, så vis den bare til deg selv.</string>
+    <string name="nudge_button">Vil ha kontakt</string>
+    <string name="nudge_sent">Sendt: %1$s ser at du prøver å få kontakt</string>
+    <string name="nudge_seen">%1$s har sett det</string>
+    <string name="nudge_failed">Fikk ikke sendt. Sjekk nettet.</string>
+    <string name="nudge_alert_title">%1$s prøver å få kontakt</string>
+    <string name="nudge_alert_text">Sjekk intercomen eller telefonen.</string>
+    <string name="nudge_alert_ok">OK, jeg ser det</string>
+    <string name="rider_info_riding">Kjører, %1$d km/t</string>
+    <string name="rider_info_riding_mph">Kjører, %1$d mph</string>
+    <string name="rider_info_stopped">Stoppet i %1$d min</string>
+    <string name="rider_info_seen">Sist sett: %1$s</string>
+    <string name="rider_info_battery">Batteri %1$d %%</string>
+    <string name="riders_here">Her sammen</string>
 </resources>

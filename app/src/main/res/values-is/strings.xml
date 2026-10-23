@@ -1145,4 +1145,17 @@
     <string name="devices_scan">Skanna kóða úr hinu tækinu mínu</string>
     <string name="devices_unlink">Aftengja</string>
     <string name="devices_code_hint">Skannaðu þetta í hinu tækinu innan 15 mínútna. Hann opnar vini þína og hópa, svo sýndu hann engum öðrum.</string>
+    <string name="nudge_button">Ná sambandi</string>
+    <string name="nudge_sent">Sent: %1$s sér að þú reynir að ná sambandi</string>
+    <string name="nudge_seen">%1$s hefur séð það</string>
+    <string name="nudge_failed">Tókst ekki að senda. Athugaðu tenginguna.</string>
+    <string name="nudge_alert_title">%1$s reynir að ná í þig</string>
+    <string name="nudge_alert_text">Athugaðu kallkerfið eða símann.</string>
+    <string name="nudge_alert_ok">Í lagi, ég sé það</string>
+    <string name="rider_info_riding">Ekur, %1$d km/klst</string>
+    <string name="rider_info_riding_mph">Ekur, %1$d mph</string>
+    <string name="rider_info_stopped">Stopp í %1$d mín</string>
+    <string name="rider_info_seen">Síðast séð: %1$s</string>
+    <string name="rider_info_battery">Rafhlaða %1$d%%</string>
+    <string name="riders_here">Hér saman</string>
 </resources>

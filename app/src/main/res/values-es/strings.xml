@@ -1163,4 +1163,17 @@
     <string name="devices_scan">Escanear código de mi otro dispositivo</string>
     <string name="devices_unlink">Desvincular</string>
     <string name="devices_code_hint">Escanéalo en tu otro dispositivo en menos de 15 minutos. Da acceso a tus amigos y grupos, así que muéstralo solo a ti mismo.</string>
+    <string name="nudge_button">Pedir atención</string>
+    <string name="nudge_sent">Enviado: %1$s verá que intentas contactar</string>
+    <string name="nudge_seen">%1$s lo ha visto</string>
+    <string name="nudge_failed">No se pudo enviar. Revisa la conexión.</string>
+    <string name="nudge_alert_title">%1$s intenta contactar contigo</string>
+    <string name="nudge_alert_text">Mira el intercomunicador o el móvil.</string>
+    <string name="nudge_alert_ok">Vale, lo veo</string>
+    <string name="rider_info_riding">En marcha, %1$d km/h</string>
+    <string name="rider_info_riding_mph">En marcha, %1$d mph</string>
+    <string name="rider_info_stopped">Parado hace %1$d min</string>
+    <string name="rider_info_seen">Visto por última vez: %1$s</string>
+    <string name="rider_info_battery">Batería %1$d %%</string>
+    <string name="riders_here">Aquí juntos</string>
 </resources>

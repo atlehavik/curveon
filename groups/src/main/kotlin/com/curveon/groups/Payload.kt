@@ -73,6 +73,15 @@ sealed interface Payload {
    * send, so the group does not get two streams: the newest claim wins, and the other device keeps quiet.
    */
   data class Claim(val deviceId: String) : Payload { override val type get() = FrameType.CLAIM }
+
+  /**
+   * "I am trying to reach you": for the rider [to] (riderId, base64url) only, who may not hear the intercom. [id] is
+   * unique, so the same nudge (the relay keeps it a while for a rider who looks in later) is shown once.
+   */
+  data class Nudge(val id: String, val to: String) : Payload { override val type get() = FrameType.NUDGE }
+
+  /** The answer to [Nudge] [id]: the rider has seen it. [to] is the rider who sent the nudge. */
+  data class NudgeSeen(val id: String, val to: String) : Payload { override val type get() = FrameType.NUDGE_SEEN }
 }
 
 /** A payload with its sender's counter (see [ReplayGuard]), clock, and the device it came from (a rider's devices count separately). */
@@ -105,6 +114,8 @@ object PayloadCodec {
       is Payload.Claim -> o.put("dev", p.deviceId)
       is Payload.GroupInvite -> { o.put("oid", p.offerId).put("link", p.link); p.groupName?.let { o.put("gname", it) } }
       is Payload.Trip -> o.put("tid", p.tripId).put("rev", p.rev).put("name", p.name).put("doc", p.doc)
+      is Payload.Nudge -> o.put("id", p.id).put("to", p.to)
+      is Payload.NudgeSeen -> o.put("id", p.id).put("to", p.to)
       Payload.SosCancel, Payload.Leave -> Unit
     }
     return o.toString().toByteArray()
@@ -135,6 +146,8 @@ object PayloadCodec {
       FrameType.CLAIM -> Payload.Claim(o.getString("dev")) // sent with the device's own id, like everything else
       FrameType.INVITE -> Payload.GroupInvite(o.getString("oid"), o.getString("link"), if (o.has("gname")) o.getString("gname") else null)
       FrameType.TRIP -> Payload.Trip(o.getString("tid"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
+      FrameType.NUDGE -> Payload.Nudge(o.getString("id"), o.getString("to"))
+      FrameType.NUDGE_SEEN -> Payload.NudgeSeen(o.getString("id"), o.getString("to"))
       FrameType.REKEY -> return null // not encrypted with the group key
     }
     Signed(o.getLong("seq"), o.getLong("ts"), payload, o.optString("dev"))

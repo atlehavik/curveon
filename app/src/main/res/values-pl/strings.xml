@@ -1180,4 +1180,17 @@
     <string name="devices_scan">Zeskanuj kod z drugiego urządzenia</string>
     <string name="devices_unlink">Rozłącz</string>
     <string name="devices_code_hint">Zeskanuj to na drugim urządzeniu w ciągu 15 minut. Otwiera twoich znajomych i grupy, więc pokazuj go tylko sobie.</string>
+    <string name="nudge_button">Zwróć uwagę</string>
+    <string name="nudge_sent">Wysłano: %1$s zobaczy, że próbujesz się skontaktować</string>
+    <string name="nudge_seen">%1$s to zobaczył(a)</string>
+    <string name="nudge_failed">Nie udało się wysłać. Sprawdź połączenie.</string>
+    <string name="nudge_alert_title">%1$s próbuje się z tobą skontaktować</string>
+    <string name="nudge_alert_text">Sprawdź interkom lub telefon.</string>
+    <string name="nudge_alert_ok">OK, widzę</string>
+    <string name="rider_info_riding">Jedzie, %1$d km/h</string>
+    <string name="rider_info_riding_mph">Jedzie, %1$d mph</string>
+    <string name="rider_info_stopped">Stoi od %1$d min</string>
+    <string name="rider_info_seen">Ostatnio widziany: %1$s</string>
+    <string name="rider_info_battery">Bateria %1$d%%</string>
+    <string name="riders_here">Tutaj razem</string>
 </resources>
