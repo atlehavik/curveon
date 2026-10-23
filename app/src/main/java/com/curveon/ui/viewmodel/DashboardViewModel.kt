@@ -1368,7 +1368,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (!estimated) phoneCompanion.groups.onFix(fix)
         navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble(),
             tripTracker.headingDeg.toDouble().takeIf { tripTracker.speedKmh > 5 })
-        val onRoad = snapToRoute(fix)
+        prefetchRoads(fix)
+        val onRoad = snapToRoute(fix) ?: snapToRoad(fix)
         val nav = navigator.state.value
         nav.progress?.let { p ->
             NavTrace.match(onRoad != null, p.distanceFromRoute, p.routeBearingDeg, p.distanceAlongRoute, p.offRoute, tripTracker.headingDeg)
@@ -1428,6 +1429,38 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             p.distanceFromRoute < maxOf(SNAP_JOIN_M, acc) && (!moving || away < 30)
         }
         return if (drawnOnRoute) p.snapped to p.routeBearingDeg.toFloat() else null
+    }
+
+    /** The bearing of the road the rider is drawn on without a route (see [snapToRoad]); null = raw GPS. */
+    private var drawnOnRoad: Double? = null
+
+    /**
+     * Where to draw the rider when not navigating: on the road they ride (the road register's line), pointing
+     * along it, so GPS drift beside the road doesn't show. Riding on, the road is held a little further off
+     * and at a wider angle than it is taken; standing still, it is held the way it ran. A road across the
+     * rider (a junction) or none near (abroad, a private road, off road) shows the raw GPS.
+     */
+    private fun snapToRoad(fix: GpsFix): Pair<LatLon, Float>? {
+        if (navigator.state.value.progress != null) { drawnOnRoad = null; return null }
+        val acc = (fix.accuracyMeters ?: 10f).toDouble()
+        val held = drawnOnRoad
+        val heading = if (tripTracker.speedKmh >= ROAD_SNAP_MIN_KMH) tripTracker.headingDeg.toDouble() else held
+        val hit = heading?.let {
+            if (held != null) speedLimits.roadNear(fix.latitude, fix.longitude, it, maxOf(ROAD_SNAP_LEAVE_M, acc * 1.5), 45.0)
+            else speedLimits.roadNear(fix.latitude, fix.longitude, it, maxOf(ROAD_SNAP_JOIN_M, acc), 30.0)
+        }
+        drawnOnRoad = hit?.second
+        return hit?.let { it.first to it.second.toFloat() }
+    }
+
+    private var roadsLoadedAt: LatLon? = null
+
+    /** Reads the road lines round the rider for [snapToRoad] off the main thread, again every few hundred metres. */
+    private fun prefetchRoads(fix: GpsFix) {
+        val here = LatLon(fix.latitude, fix.longitude)
+        if (roadsLoadedAt?.let { com.curveon.routing.Geo.distance(it, here) < 300 } == true) return
+        roadsLoadedAt = here
+        viewModelScope.launch(Dispatchers.IO) { speedLimits.prefetch(here.lat, here.lon) }
     }
 
     /** Whether new rides are recorded into the ride log at all. A ride already under way finishes regardless. */
@@ -2381,6 +2414,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         private const val SNAP_LEAVE_M = 20.0
         private const val SNAP_LEAVE_TURNING_M = 7.0
         private const val SNAP_JOIN_M = 12.0
+        /** Without a route: how near a road must be to draw the rider on it, and how far off it is let go. */
+        private const val ROAD_SNAP_JOIN_M = 15.0
+        private const val ROAD_SNAP_LEAVE_M = 25.0
+        /** Slower than this the GPS heading is noise: a road is only held, not taken. */
+        private const val ROAD_SNAP_MIN_KMH = 8f
         /** The tunnel halo stops growing here: it says "roughly here", not "anywhere". */
         private const val DR_MAX_ACCURACY_M = 300.0
         /** The tunnel guess stays this far short of the end of the route (arrival is for a real fix to decide). */

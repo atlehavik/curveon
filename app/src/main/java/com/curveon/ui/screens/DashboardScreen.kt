@@ -391,6 +391,18 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             viewModel.setFullScreenMap(true)
         } else dashboardBefore?.let { if (it) viewModel.setFullScreenMap(false); dashboardBefore = null }
     }
+    // Writing an SMS or a reply from the full map: its card lives on the dashboard, so the dashboard comes
+    // while it is written, and the full map goes back once it is sent or cancelled.
+    val replying = voiceReply != null
+    var mapBeforeReply by remember { mutableStateOf(false) }
+    LaunchedEffect(replying) {
+        if (replying) {
+            if (isFullScreenMap && !mapMode) { mapBeforeReply = true; viewModel.setFullScreenMap(false) }
+        } else if (mapBeforeReply) {
+            mapBeforeReply = false
+            viewModel.setFullScreenMap(true)
+        }
+    }
     val planGoal = preview?.goal as? com.curveon.data.routing.NavigationGoal.Destination
     LaunchedEffect(planGoal == null) { if (planGoal == null) editStopMenu = null }
     /** Edit the planned trip on the map: the same as picking stops there. */
@@ -1577,7 +1589,7 @@ private fun Rail(
             RailButton(Icons.Default.Diversity3, stringResource(R.string.friends_title), ElectricCyan, NeonAmber, filled = active == RailPanel.GROUP,
                 tag = "rail_group", target = null, onClick = { onPress(RailPanel.GROUP) })
             if (groupAlert) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(WarningRed))
-            else if (sharingPosition) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(10.dp).clip(CircleShape).background(EcoGreen).testTag("rail_sharing"))
+            else if (sharingPosition) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(10.dp).clip(CircleShape).background(SharingBlue).testTag("rail_sharing"))
         }
     }
     val settings: @Composable () -> Unit = {

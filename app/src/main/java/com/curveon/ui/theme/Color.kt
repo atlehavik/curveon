@@ -13,6 +13,8 @@ val ElectricCyanDim = Color(0xFF0097A7)
 val NeonAmber = Color(0xFFFF9100)
 val WarningRed = Color(0xFFFF3D00)
 val EcoGreen = Color(0xFF00E676)
+/** Sharing your position with friends: blue like Android's own sign that a sensor is in use (green is for messages). */
+val SharingBlue = Color(0xFF448AFF)
 val SpeedLimitWhite = Color(0xFFF0F4F8)
 val SpeedLimitBorder = Color(0xFFD50000)
 

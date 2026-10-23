@@ -91,6 +91,49 @@ class SpeedLimits(private val context: Context) {
     }
 
     /**
+     * Where the rider is on the road, to draw them there when not navigating: the point nearest [lat], [lon]
+     * within [maxM] on a road that runs within [maxAngleDeg] of [headingDeg] (either way along it), and the
+     * road's bearing the way the rider goes. Only reads squares [prefetch] has loaded, so it is quick enough
+     * for every GPS fix; null when none is near (no file, a private road, abroad, or across the road).
+     */
+    fun roadNear(lat: Double, lon: Double, headingDeg: Double, maxM: Double, maxAngleDeg: Double): Pair<com.curveon.routing.LatLon, Double>? {
+        val cache = caches.getValue(CELLS)
+        val kx = cos(Math.toRadians(lat)) * 111_320.0
+        var best: Pair<com.curveon.routing.LatLon, Double>? = null
+        var bestD = maxM
+        val cy = floor(lat * 100).toInt()
+        val cx = floor(lon * 100).toInt()
+        for (dy in -1..1) for (dx in -1..1) for (r in cache.get(cellKey(cy + dy, cx + dx)).orEmpty()) {
+            for (i in 0 until r.lat.size - 1) {
+                val ax = (r.lon[i] - lon) * kx; val ay = (r.lat[i] - lat) * KY
+                val sx = (r.lon[i + 1] - r.lon[i]) * kx; val sy = (r.lat[i + 1] - r.lat[i]) * KY
+                val len2 = sx * sx + sy * sy
+                if (len2 < 1.0) continue
+                val t = (-(ax * sx + ay * sy) / len2).coerceIn(0.0, 1.0)
+                val d = hypot(ax + t * sx, ay + t * sy)
+                if (d >= bestD) continue
+                val bearing = (Math.toDegrees(kotlin.math.atan2(sx, sy)) + 360) % 360
+                val off = abs(((headingDeg - bearing) % 360 + 540) % 360 - 180) // 0 = the same way, 180 = the other way
+                if (minOf(off, 180 - off) > maxAngleDeg) continue
+                bestD = d
+                val along = if (off <= 90) bearing else (bearing + 180) % 360
+                best = com.curveon.routing.LatLon(r.lat[i] + t * (r.lat[i + 1] - r.lat[i]), r.lon[i] + t * (r.lon[i + 1] - r.lon[i])) to along
+            }
+        }
+        return best
+    }
+
+    /** Loads the squares round [lat], [lon] for [roadNear] (a database read: not on the main thread). */
+    fun prefetch(lat: Double, lon: Double) {
+        if (open().isEmpty()) return
+        val cy = floor(lat * 100).toInt()
+        val cx = floor(lon * 100).toInt()
+        for (dy in -1..1) for (dx in -1..1) runs(CELLS, cy + dy, cx + dx)
+    }
+
+    private fun cellKey(latCell: Int, lonCell: Int) = (latCell + 9000).toLong() * 100_000 + (lonCell + 18000)
+
+    /**
      * The give way and stop signs (Norway: from NVDB) on or right next to [points], e.g. a route's;
      * empty without a file that has them.
      */
@@ -156,7 +199,7 @@ class SpeedLimits(private val context: Context) {
     }
 
     private fun runs(table: String, latCell: Int, lonCell: Int): List<Run> {
-        val key = (latCell + 9000).toLong() * 100_000 + (lonCell + 18000)
+        val key = cellKey(latCell, lonCell)
         val cache = caches.getValue(table)
         cache.get(key)?.let { return it }
         val out = ArrayList<Run>()
