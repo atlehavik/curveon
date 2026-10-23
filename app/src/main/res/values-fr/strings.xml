@@ -1184,4 +1184,10 @@
     <string name="phone_this_allow_hint">Autorise les contacts, les appels, les SMS et le micro pour appeler et envoyer des SMS dictés d\'ici.</string>
     <string name="phone_this_allow">Autoriser</string>
     <string name="link_this_device_hint_no_calls">Messages et musique des applis de cet appareil. Il ne peut ni appeler ni envoyer de SMS (il n\'a pas de carte SIM).</string>
+    <string name="friend_request_button">Ajouter comme ami</string>
+    <string name="friend_request_sent">Demande envoyée à %1$s</string>
+    <string name="friend_request_failed">La demande n\'a pas pu être envoyée. Vérifie que le groupe est connecté et réessaie.</string>
+    <string name="friend_request_offer_title">%1$s veut être ton ami</string>
+    <string name="friend_request_offer_group">Vous vous êtes rencontrés dans %1$s</string>
+    <string name="friend_request_decline">Non merci</string>
 </resources>

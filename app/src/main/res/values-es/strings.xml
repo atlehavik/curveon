@@ -1184,4 +1184,10 @@
     <string name="phone_this_allow_hint">Permite contactos, llamadas, SMS y el micrófono para llamar y enviar SMS dictados desde aquí.</string>
     <string name="phone_this_allow">Permitir</string>
     <string name="link_this_device_hint_no_calls">Mensajes y música de las apps de este dispositivo. No puede llamar ni enviar SMS (no tiene tarjeta SIM).</string>
+    <string name="friend_request_button">Añadir como amigo</string>
+    <string name="friend_request_sent">Solicitud enviada a %1$s</string>
+    <string name="friend_request_failed">No se pudo enviar la solicitud. Comprueba que el grupo está conectado e inténtalo de nuevo.</string>
+    <string name="friend_request_offer_title">%1$s quiere ser tu amigo</string>
+    <string name="friend_request_offer_group">Os conocisteis en %1$s</string>
+    <string name="friend_request_decline">No, gracias</string>
 </resources>

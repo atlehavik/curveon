@@ -1166,4 +1166,10 @@
     <string name="phone_this_allow_hint">Erlaube Kontakte, Anrufe, SMS und das Mikrofon, dann kannst du von hier anrufen und gesprochene SMS senden.</string>
     <string name="phone_this_allow">Erlauben</string>
     <string name="link_this_device_hint_no_calls">Nachrichten und Musik von den Apps auf diesem Gerät. Es kann nicht telefonieren oder SMS senden (es hat keine SIM-Karte).</string>
+    <string name="friend_request_button">Als Freund hinzufügen</string>
+    <string name="friend_request_sent">Anfrage an %1$s gesendet</string>
+    <string name="friend_request_failed">Die Anfrage konnte nicht gesendet werden. Prüfe, ob die Gruppe verbunden ist, und versuche es erneut.</string>
+    <string name="friend_request_offer_title">%1$s möchte dein Freund sein</string>
+    <string name="friend_request_offer_group">Ihr habt euch in %1$s getroffen</string>
+    <string name="friend_request_decline">Nein danke</string>
 </resources>

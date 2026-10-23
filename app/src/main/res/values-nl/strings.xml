@@ -1139,4 +1139,10 @@
     <string name="phone_this_allow_hint">Sta contacten, gesprekken, sms en de microfoon toe, dan kun je hiervandaan bellen en ingesproken sms\'jes sturen.</string>
     <string name="phone_this_allow">Toestaan</string>
     <string name="link_this_device_hint_no_calls">Berichten en muziek van de apps op dit apparaat. Het kan niet bellen of sms\'en (er zit geen simkaart in).</string>
+    <string name="friend_request_button">Toevoegen als vriend</string>
+    <string name="friend_request_sent">Verzoek verstuurd naar %1$s</string>
+    <string name="friend_request_failed">Het verzoek kon niet worden verstuurd. Controleer of de groep verbonden is en probeer het opnieuw.</string>
+    <string name="friend_request_offer_title">%1$s wil je vriend zijn</string>
+    <string name="friend_request_offer_group">Jullie ontmoetten elkaar in %1$s</string>
+    <string name="friend_request_decline">Nee, bedankt</string>
 </resources>

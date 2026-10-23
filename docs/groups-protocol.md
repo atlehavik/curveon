@@ -108,6 +108,7 @@ relay only and are never forwarded.
 | `claim` | forward; keep the latest per rider | `seq`, `ts`, `dev` (see below) |
 | `nudge` | forward; the sender asks for a slot, 15 min | `seq`, `ts`, `id`, `to` (riderId): "I am trying to reach you", for `to` only; shown once per `id`, not when older than 15 min |
 | `nudge_seen` | forward; the sender asks for a slot, 15 min | `seq`, `ts`, `id` (of the nudge), `to` (who sent it); the rider's other devices drop the nudge too |
+| `friend_req` | forward; the sender asks for a slot, 3 days | `seq`, `ts`, `id`, `to` (riderId), `eph`, `n`, `c`: a link to a new private friend channel, sealed to the X25519 key of `to` (from `hello`) with `eph` (ephemeral public key), `n` (nonce), `c` (ciphertext), for `to` only. See "Sealed box" |
 | `rekey` | forward; keep ~30 days | see below (not encrypted with `encKey`) |
 
 ## Keeping a frame
@@ -190,6 +191,15 @@ An admin makes a new `groupKey'`, sets `epoch' = epoch + 1` and sends one frame 
 - The removed rider gets no copy. The relay switches to `proof'` when it has checked the signature.
 - Limits (also in groups.md): the removed rider has seen what was shared before, and a rider who is
   offline during the change picks the rekey up on return.
+
+## Sealed box
+A secret for one rider in a group where all riders share the group key (a friend channel's invite link, in `friend_req`). The
+sender makes an ephemeral X25519 key pair `(eph, ephPriv)`, computes `secret = X25519(ephPriv, recipientAgreementPublic)` (the
+recipient's key from their `hello`), and derives `wrapKey` = HKDF-SHA256(`ikm = secret`, `salt = groupId`, info `"curveon/1 sealed"`,
+32 bytes). The plaintext is encrypted with AES-256-GCM, a fresh 12-byte nonce `n`, and associated data
+`"curveon/1 sealed" || groupId || senderRiderId || recipientRiderId`, so it cannot be moved to another group, sender or recipient.
+The recipient computes the same secret with their own private key and `eph`. A box that does not open is ignored, and so is a
+`friend_req` older than its 3 days. The link inside is a normal friend invite (`t=f`) made to last as long.
 
 ## Test vectors
 Not written yet. Add them (fixed keys, nonce, expected ciphertext and proof) before anyone else writes

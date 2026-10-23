@@ -395,3 +395,21 @@ Outside any group, a rider can let chosen friends always see where they are (My 
   the invite stays in the fragment, which never reaches the server.
 - **A new friendship** (the friend channel's peer heard for the first time, on both sides) sends `FriendAdded`: the code on show is
   dropped (the next friend gets a new one) and `FriendHighFive` shows over everything, also when it happens days later.
+
+### Friend request from a group (built 2026-10-23)
+Strangers can be in one ride group, and a rider can ask any of them to be a friend without a code or a link.
+- **Sender:** "Add as friend" on a rider in the active group (the rider list, and the sheet of a rider tapped on the map). It makes a
+  new friend channel like a link sent to one friend (`pendingLinks`, kept as long as the request lives, 3 days), seals its invite link to
+  that rider's X25519 key from `hello` (`SealedBox`) and sends it as a `friend_req` frame, kept per rider in a slot so the latest
+  request waits for a rider who is not here now. The sheet then says "Request sent to Kari". Nothing is told when they decline.
+- **Why sealed:** every rider in the group holds the group key, so a plain frame would let anyone take the private channel.
+  The sealed box opens only with the target's private key, and is tied to who sends to whom and to the group.
+- **Receiver:** the same offer card as a ride invitation (`GroupInviteOffer`, now with `friendRequest`): "Per wants to be your friend, you
+  met in Demo ride", with "Add as friend" or "No thanks". Adding joins the friend channel as a scanned code does, and the high five
+  shows on both sides. **"No thanks" is remembered per rider and group** (`fr:<group>:<rider>`): no more requests from them,
+  and they are not told.
+- **Who is a friend already:** a rider's id differs in every group (groups must not be linkable), so a friend is recognised by the
+  profile, name, colour and picture, which is the same on every channel (`GroupManager.isFriend`). A match hides the button. Two different
+  people with the same name, colour and picture would hide it for each other: rare, and a code or link still works.
+- **Only the active group** is connected, so that is where a request can go, as with "Get attention".
+- No change to the relay (an unknown frame type is forwarded, `RelayIntegrationTest` runs it against the real relay).

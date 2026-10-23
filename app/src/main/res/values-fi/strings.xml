@@ -1118,4 +1118,10 @@
     <string name="phone_this_allow_hint">Salli yhteystiedot, puhelut, tekstiviestit ja mikrofoni, niin voit soittaa ja lähettää sanellun viestin täältä.</string>
     <string name="phone_this_allow">Salli</string>
     <string name="link_this_device_hint_no_calls">Viestit ja musiikki tämän laitteen sovelluksista. Se ei voi soittaa eikä lähettää tekstiviestejä (siinä ei ole SIM-korttia).</string>
+    <string name="friend_request_button">Lisää ystäväksi</string>
+    <string name="friend_request_sent">Pyyntö lähetetty: %1$s</string>
+    <string name="friend_request_failed">Pyyntöä ei voitu lähettää. Tarkista, että ryhmä on yhdistetty, ja yritä uudelleen.</string>
+    <string name="friend_request_offer_title">%1$s haluaa ystäväksesi</string>
+    <string name="friend_request_offer_group">Tapasitte ryhmässä %1$s</string>
+    <string name="friend_request_decline">Ei kiitos</string>
 </resources>

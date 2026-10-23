@@ -220,10 +220,24 @@ def scenario_nudge(d):
     return [["OK, I see it", "OK, jeg ser det"], ["~is trying to reach you$", "~prøver å få kontakt$"]]
 
 
+def scenario_friendrequest(d):
+    """"Add as friend" on a rider in the group (demo phone data): the button, and "Request sent to ..." under the name, must fit."""
+    scenario_groupdetail(d)
+    add = ["Add as friend", "Legg til som venn"]
+    for _ in range(3):  # the riders are below the fold on a low screen (landscape, large text)
+        if d.find(add) is not None:
+            break
+        w, h = d.screen()
+        d.sh("input", "swipe", str(w * 2 // 3), str(h * 3 // 4), str(w * 2 // 3), str(h // 4), "400")
+        time.sleep(1.5)
+    d.tap(add, wait=2)
+    return [["~^(Request sent|Forespørsel sendt)"], ["Get attention", "Vil ha kontakt"]]
+
+
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
              "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
              "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge,
-             "qrscan": scenario_qrscan}
+             "qrscan": scenario_qrscan, "friendrequest": scenario_friendrequest}
 
 
 def apply_variant(d, v, rotation):

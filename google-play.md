@@ -181,5 +181,11 @@ nevn det under «Data delt»/«samlet» hvis Google krever det for ML Kit.
   tillatelse, fordi Curveon fra GitHub og Companion kan være signert med ulike nøkler. En annen app kan derfor legge
   en tur i køen til nettbrettet. Det er ingen sikkerhetsrisiko for data, fordi nettbrettet alltid spør før turen kjøres,
   men en `signature`-tillatelse bør inn når begge appene signeres likt (Play App Signing).
+- **Venneforespørsel fra en gruppe (2026-10-23):** fremmede i samme gruppe kan be hverandre om å bli venner
+  (`groups.md`, «Friend request from a group»). Det er en måte for brukere å kontakte hverandre på, så Plays regler for
+  brukergenerert innhold og trakassering er relevante. Mottakeren kan alltid si «Nei takk», og det huskes per rytter og
+  gruppe, så den som ble avvist ikke kan spamme med nye forespørsler, og ingen får vite at de ble avvist. Avsenderen
+  sender ingen tekst eller bilde utover profilen (kallenavn, farge, bilde) alle i gruppen allerede ser. Adressen til
+  vennekanalen er forseglet til mottakeren, så andre i gruppen kan ikke lese den. Ingen nye tillatelser, og ingenting nytt i Data safety.
 - **Helningsvinkel fjernet (2026-10-22):** gyro og akselerometer brukes ikke lenger (`LeanSensor` er slettet).
 - Lisens og tredjepartsnotiser finnes (MIT, `THIRD_PARTY_LICENSES.md`). Sjekk at OSM/Overture-kreditering vises i appen.

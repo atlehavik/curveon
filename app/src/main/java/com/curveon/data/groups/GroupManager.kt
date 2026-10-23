@@ -55,6 +55,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     private val _nudgeStatus = MutableStateFlow<Map<String, Message.NudgeState>>(emptyMap())
     val nudgeStatus: StateFlow<Map<String, Message.NudgeState>> = _nudgeStatus.asStateFlow()
 
+    /** How the rider's friend requests to riders in the active group went, by rider id (not said when one is declined). */
+    private val _friendRequestStatus = MutableStateFlow<Map<String, Message.NudgeState>>(emptyMap())
+    val friendRequestStatus: StateFlow<Map<String, Message.NudgeState>> = _friendRequestStatus.asStateFlow()
+
     /** Who was just nudged, by [nudgeKey]: not again until the pause is over. */
     private val _nudgeWait = MutableStateFlow<Set<String>>(emptySet())
     val nudgeWait: StateFlow<Set<String>> = _nudgeWait.asStateFlow()
@@ -168,6 +172,7 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 val key = nudgeKey(m.channelId, m.riderId)
                 if (!(_nudgeStatus.value[key] == Message.NudgeState.SEEN && m.state != Message.NudgeState.SEEN)) _nudgeStatus.value += key to m.state
             }
+            is Message.FriendRequestStatus -> _friendRequestStatus.value += m.riderId to m.state
             is Message.GroupInviteOffer -> if (_offers.value.none { it.offerId == m.offerId }) _offers.value = _offers.value + m
             is Message.GroupList -> {
                 _groups.value = m.groups
@@ -217,6 +222,7 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
         _positions.value = emptyMap()
         _sos.value = emptyMap()
         _invite.value = null
+        _friendRequestStatus.value = emptyMap()
     }
 
     // ---- the rider's commands ----
@@ -253,6 +259,23 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
         scope.launch { delay(NUDGE_PAUSE_MS); _nudgeWait.value -= key }
         _nudgeStatus.value -= key // a new one: "sent" or "seen" again from here
         send(Message.NudgeSend(channelId, riderId))
+    }
+
+    /**
+     * Ask [riderId] in the active group to be a friend. They get an offer to add or ignore; nothing is said if they decline.
+     * Groups give each rider an id of their own, so the app cannot tell a friend from a stranger by it: see [isFriend].
+     */
+    fun sendFriendRequest(riderId: String) {
+        _friendRequestStatus.value -= riderId
+        send(Message.FriendRequestSend(riderId))
+    }
+
+    /**
+     * Whether [r], a rider in a group, is already a friend. A rider's id differs in every group (so groups cannot be linked),
+     * but the profile, name, colour and picture, is the same everywhere, so a friend with the same profile is taken to be them.
+     */
+    fun isFriend(r: GroupRider): Boolean = _friendRiders.value.values.any { f ->
+        f.nickname.trim().equals(r.nickname.trim(), ignoreCase = true) && f.colour == r.colour && f.icon == r.icon && f.photoBase64 == r.photoBase64
     }
 
     /** The rider has seen [n]: it goes, with any more from the same rider (one "OK" answers them all), and they are told. */
@@ -390,6 +413,8 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 val who = _members.value[from]?.let { it.nickname to it.colour } ?: _friends.value.firstOrNull { it.id == m.channelId }?.let { it.nickname to it.colour }
                 delay(4_000); onMessage(Message.NudgeIn(m.channelId, "demo-${System.currentTimeMillis()}", from, who?.first.orEmpty(), who?.second ?: 0, null, System.currentTimeMillis()))
             }
+            // A request to someone in the group: sent, and a moment later they accept (the high five).
+            is Message.FriendRequestSend -> scope.launch { onMessage(Message.FriendRequestStatus(m.riderId, Message.NudgeState.SENT)) }
             is Message.GroupSharing -> onMessage(Message.GroupList(_groups.value, _activeId.value, m.on))
             // A code or link on show, and a few seconds later Siri takes it: the high five.
             Message.RequestFriendInvite, Message.RequestFriendLink -> scope.launch {

@@ -1201,4 +1201,10 @@
     <string name="phone_this_allow_hint">Zezwól na kontakty, połączenia, SMS-y i mikrofon, aby dzwonić i wysyłać dyktowane SMS-y stąd.</string>
     <string name="phone_this_allow">Zezwól</string>
     <string name="link_this_device_hint_no_calls">Wiadomości i muzyka z aplikacji na tym urządzeniu. Nie może dzwonić ani wysyłać SMS-ów (nie ma karty SIM).</string>
+    <string name="friend_request_button">Dodaj do znajomych</string>
+    <string name="friend_request_sent">Zaproszenie wysłane do %1$s</string>
+    <string name="friend_request_failed">Nie udało się wysłać zaproszenia. Sprawdź, czy grupa jest połączona, i spróbuj ponownie.</string>
+    <string name="friend_request_offer_title">%1$s chce być twoim znajomym</string>
+    <string name="friend_request_offer_group">Poznaliście się w %1$s</string>
+    <string name="friend_request_decline">Nie, dziękuję</string>
 </resources>

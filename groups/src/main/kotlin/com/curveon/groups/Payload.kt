@@ -82,6 +82,12 @@ sealed interface Payload {
 
   /** The answer to [Nudge] [id]: the rider has seen it. [to] is the rider who sent the nudge. */
   data class NudgeSeen(val id: String, val to: String) : Payload { override val type get() = FrameType.NUDGE_SEEN }
+
+  /**
+   * "Be my friend": for the rider [to] (riderId, base64url) only. [box] holds the link to a new private friend channel,
+   * sealed to [to]'s key so the others in the group, who hold the same group key, cannot read it. [id] is unique.
+   */
+  class FriendRequest(val id: String, val to: String, val box: SealedBox) : Payload { override val type get() = FrameType.FRIEND_REQ }
 }
 
 /** A payload with its sender's counter (see [ReplayGuard]), clock, and the device it came from (a rider's devices count separately). */
@@ -116,6 +122,8 @@ object PayloadCodec {
       is Payload.Trip -> o.put("tid", p.tripId).put("rev", p.rev).put("name", p.name).put("doc", p.doc)
       is Payload.Nudge -> o.put("id", p.id).put("to", p.to)
       is Payload.NudgeSeen -> o.put("id", p.id).put("to", p.to)
+      is Payload.FriendRequest -> o.put("id", p.id).put("to", p.to).put("eph", B64.encode(p.box.ephemeralPublic))
+        .put("n", B64.encode(p.box.nonce)).put("c", B64.encode(p.box.ciphertext))
       Payload.SosCancel, Payload.Leave -> Unit
     }
     return o.toString().toByteArray()
@@ -148,6 +156,10 @@ object PayloadCodec {
       FrameType.TRIP -> Payload.Trip(o.getString("tid"), o.getLong("rev"), o.optString("name"), o.getString("doc"))
       FrameType.NUDGE -> Payload.Nudge(o.getString("id"), o.getString("to"))
       FrameType.NUDGE_SEEN -> Payload.NudgeSeen(o.getString("id"), o.getString("to"))
+      FrameType.FRIEND_REQ -> Payload.FriendRequest(
+        o.getString("id"), o.getString("to"),
+        SealedBox(B64.decode(o.getString("eph")), B64.decode(o.getString("n")), B64.decode(o.getString("c"))),
+      )
       FrameType.REKEY -> return null // not encrypted with the group key
     }
     Signed(o.getLong("seq"), o.getLong("ts"), payload, o.optString("dev"))

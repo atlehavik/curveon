@@ -406,6 +406,42 @@ class RelayIntegrationTest {
     assertEquals(id, kari.await { (it as? GroupEvent.NudgeReceived)?.nudge?.id })
   }
 
+  @Test fun aFriendRequestIsReadByTheRiderItIsForAndNoOneElse() {
+    val (a, invite) = group()
+    a.client.start()
+    val kari = joined(invite, "Kari").also { it.client.start() }
+    val jens = joined(invite, "Jens").also { it.client.start() }
+    a.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Jens" } }
+    kari.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Ola" } }
+    val link = "curveon://join#v=1&friend-channel-for-kari"
+
+    val id = a.client.sendFriendRequest(kari.id, link)!!
+    val got = kari.await { (it as? GroupEvent.FriendRequestReceived)?.takeIf { e -> e.id == id } }
+    assertEquals(a.id, got.riderId)
+    assertEquals(link, got.link)
+    // Jens holds the same group key and is sent the same frame, but cannot open what is sealed for Kari.
+    assertTrue("a request for Kari is not shown to Jens", jens.none { it is GroupEvent.FriendRequestReceived })
+    assertTrue(a.none(waitMs = 100) { it is GroupEvent.FriendRequestReceived })
+  }
+
+  @Test fun aFriendRequestReachesARiderWhoLooksInLaterAndNotOneNotInTheGroupYet() {
+    val (a, invite) = group()
+    a.client.start()
+    a.await { it as? GroupEvent.Connected }
+    val kariState = GroupState.join(invite)
+    val kari = Rider("Kari", kariState).also { it.client.start() }
+    a.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Kari" } }
+    // Kari goes away before the request is made, and is not there when it is sent.
+    kari.client.shutdown()
+    val link = "curveon://join#v=1&friend-channel-for-later"
+    val id = a.client.sendFriendRequest(kari.id, link)!!
+    Thread.sleep(300)
+    val back = Rider("Kari", kariState).also { it.client.start() }
+    assertEquals(link, back.await { (it as? GroupEvent.FriendRequestReceived)?.takeIf { e -> e.id == id } }.link)
+    // A rider who has not said hello has no key to seal to: nothing is sent.
+    assertEquals(null, a.client.sendFriendRequest(B64.encode(GroupKeys.newRiderId()), link))
+  }
+
   @Test fun aNudgeSeenOnOneDeviceGoesFromTheOther() {
     val (phone, tablet, kari) = twoDevices()
     // Kari tries to reach Ola: both of Ola's devices hear it.

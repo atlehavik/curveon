@@ -52,6 +52,7 @@ fun RiderInfoDialog(manager: GroupManager, mapId: String, myLat: Double?, myLon:
     val members by manager.members.collectAsStateWithLifecycle()
     val positions by manager.positions.collectAsStateWithLifecycle()
     val activeId by manager.activeId.collectAsStateWithLifecycle()
+    val myId by manager.myId.collectAsStateWithLifecycle()
     val friend = mapId.startsWith(FRIEND_PREFIX)
     val id = mapId.removePrefix(FRIEND_PREFIX)
     val rider: GroupRider? = if (friend) friendRiders[id] else members[id]
@@ -89,7 +90,52 @@ fun RiderInfoDialog(manager: GroupManager, mapId: String, myLat: Double?, myLon:
                 pos?.battery?.let { Text(stringResource(R.string.rider_info_battery, it), color = TextSecondary, fontSize = 15.sp) }
             }
             if (channelId != null) NudgeButton(manager, channelId, if (friend) null else id, rider.nickname)
+            // Someone in the group who is not a friend yet: ask them, without a code or a link.
+            if (!friend && id != myId && !manager.isFriend(rider)) FriendRequestButton(manager, id, rider.nickname)
         }
+    }
+}
+
+/** "Add as friend" for a rider in the active group, and after it is sent "Request sent to Kari" (not told if they decline). */
+@Composable
+fun FriendRequestButton(manager: GroupManager, riderId: String, nickname: String) {
+    val status by manager.friendRequestStatus.collectAsStateWithLifecycle()
+    val state = status[riderId]
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (state == Message.NudgeState.SENT) {
+            Text(stringResource(R.string.friend_request_sent, nickname), color = TextSecondary, fontSize = 15.sp, modifier = Modifier.testTag("friend_request_sent"))
+        } else {
+            OutlinedButton(
+                onClick = { manager.sendFriendRequest(riderId) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("friend_request_send")
+            ) {
+                Icon(Icons.Default.PersonAdd, null, tint = ElectricCyan)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.friend_request_button), color = ElectricCyan, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            }
+            if (state == Message.NudgeState.FAILED) Text(stringResource(R.string.friend_request_failed), color = WarningRed, fontSize = 13.sp)
+        }
+    }
+}
+
+/** The small "Add as friend" for a row in the list of riders; "Request sent" shows under the name ([FriendRequestRowStatus]). */
+@Composable
+fun FriendRequestIconButton(manager: GroupManager, riderId: String) {
+    val status by manager.friendRequestStatus.collectAsStateWithLifecycle()
+    val sent = status[riderId] == Message.NudgeState.SENT
+    IconButton(onClick = { manager.sendFriendRequest(riderId) }, enabled = !sent, modifier = Modifier.testTag("friend_request_row")) {
+        Icon(if (sent) Icons.Default.Check else Icons.Default.PersonAdd, stringResource(R.string.friend_request_button), tint = if (sent) EcoGreen else ElectricCyan)
+    }
+}
+
+/** How the rider's friend request to [riderId] went, for under their name in a list (nothing before one is sent). */
+@Composable
+fun FriendRequestRowStatus(manager: GroupManager, riderId: String, nickname: String) {
+    val status by manager.friendRequestStatus.collectAsStateWithLifecycle()
+    when (status[riderId]) {
+        Message.NudgeState.SENT -> Text(stringResource(R.string.friend_request_sent, nickname), color = TextSecondary, fontSize = 13.sp)
+        Message.NudgeState.FAILED -> Text(stringResource(R.string.friend_request_failed), color = WarningRed, fontSize = 13.sp)
+        else -> Unit
     }
 }
 

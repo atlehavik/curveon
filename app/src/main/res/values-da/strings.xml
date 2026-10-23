@@ -1167,4 +1167,10 @@
     <string name="phone_this_allow_hint">Giv adgang til kontakter, opkald, sms og mikrofonen, så kan du ringe og sende indtalte sms herfra.</string>
     <string name="phone_this_allow">Tillad</string>
     <string name="link_this_device_hint_no_calls">Beskeder og musik fra apps på denne enhed. Den kan ikke ringe eller sende sms (den har intet SIM-kort).</string>
+    <string name="friend_request_button">Tilføj som ven</string>
+    <string name="friend_request_sent">Forespørgsel sendt til %1$s</string>
+    <string name="friend_request_failed">Forespørgslen kunne ikke sendes. Tjek, at gruppen er forbundet, og prøv igen.</string>
+    <string name="friend_request_offer_title">%1$s vil være din ven</string>
+    <string name="friend_request_offer_group">I mødtes i %1$s</string>
+    <string name="friend_request_decline">Nej tak</string>
 </resources>

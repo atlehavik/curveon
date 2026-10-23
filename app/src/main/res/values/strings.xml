@@ -1169,4 +1169,10 @@
     <string name="phone_this_allow_hint">Allow contacts, calls, SMS and the microphone, so you can call and send spoken SMS from here.</string>
     <string name="phone_this_allow">Allow</string>
     <string name="link_this_device_hint_no_calls">Messages and music from the apps on this device. It can\'t make calls or send SMS (it has no SIM card).</string>
+    <string name="friend_request_button">Add as friend</string>
+    <string name="friend_request_sent">Request sent to %1$s</string>
+    <string name="friend_request_failed">Couldn\'t send the request. Check that the group is connected and try again.</string>
+    <string name="friend_request_offer_title">%1$s wants to be your friend</string>
+    <string name="friend_request_offer_group">You met in %1$s</string>
+    <string name="friend_request_decline">No thanks</string>
 </resources>

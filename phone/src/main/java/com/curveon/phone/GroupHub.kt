@@ -8,6 +8,7 @@ import android.net.Network
 import android.os.BatteryManager
 import android.util.Log
 import com.curveon.groups.Avatar
+import com.curveon.groups.FRIEND_REQUEST_KEEP_S
 import com.curveon.groups.Fix
 import com.curveon.groups.GroupClient
 import com.curveon.groups.GroupEvent
@@ -177,7 +178,7 @@ object GroupHub {
         is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
         is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.TripToFriends, is Message.RequestGroupInvite,
         is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing, is Message.RequestFriendLink,
-        is Message.NudgeSend, is Message.NudgeAnswer -> true
+        is Message.NudgeSend, is Message.NudgeAnswer, is Message.FriendRequestSend -> true
         else -> false
     }
 
@@ -297,7 +298,10 @@ object GroupHub {
                 val offer = offers.remove(m.offerId) ?: return
                 store.markOfferHandled(m.offerId)
                 if (m.accept) handleNow(Message.GroupJoin(offer.link))
+                // Said no to a friend request: no more from that rider in that group (nothing tells them).
+                else offer.request?.let { store.markOfferHandled(it.blockKey) }
             }
+            is Message.FriendRequestSend -> friendRequest(m.riderId)
             is Message.TripShare -> client?.sendTrip(Payload.Trip(m.tripId, m.rev, m.name, m.doc))
             is Message.TripToFriends -> m.friendIds.forEach { id ->
                 touchFriend(id, 8_000) { c ->
@@ -391,7 +395,10 @@ object GroupHub {
 
     // ---- friends: a private channel with each, opened briefly (a socket per friend all day would cost the battery) ----
 
-    private class Offer(val friendId: String, val link: String, val groupName: String?)
+    private class Offer(val friendId: String, val link: String, val groupName: String?, val request: FriendRequest? = null)
+
+    /** Who asks to be the rider's friend, from the group they met in; [blockKey] is remembered when the rider says no. */
+    private class FriendRequest(val nickname: String, val colour: Int, val photo: String?, val blockKey: String)
 
     private val offers = LinkedHashMap<String, Offer>()
     private val friendClients = HashMap<String, GroupClient>()
@@ -631,8 +638,45 @@ object GroupHub {
     }
 
     private fun offerMessage(id: String, o: Offer): Message.GroupInviteOffer {
+        o.request?.let { return Message.GroupInviteOffer(id, it.nickname, o.groupName, it.photo, it.colour, friendRequest = true) }
         val peer = groups[o.friendId]?.peer
         return Message.GroupInviteOffer(id, peer?.nickname ?: "?", o.groupName, peer?.photoBase64, peer?.colour ?: 0)
+    }
+
+    /**
+     * The rider asks someone in the active group to be a friend: a new private channel for the two (like a link sent to one
+     * friend), its address sealed to that rider's key and sent through the group. Nothing is said when they decline.
+     */
+    private fun friendRequest(riderId: String) {
+        val store = store ?: return
+        val c = client
+        val ride = activeId?.let { groups[it] }?.takeIf { it.kind == GroupKind.RIDE }
+        if (ride == null || c == null) return send(Message.FriendRequestStatus(riderId, Message.NudgeState.FAILED))
+        val until = System.currentTimeMillis() / 1000 + FRIEND_REQUEST_KEEP_S
+        val state = GroupState.create(RELAY_HOST, null, GroupKind.FRIEND).also { groups[it.groupIdHex] = it; store.save(it) }
+        if (c.sendFriendRequest(riderId, state.invite(until).toUri()) == null) {
+            groups.remove(state.groupIdHex)
+            store.delete(state.groupIdHex)
+            return send(Message.FriendRequestStatus(riderId, Message.NudgeState.FAILED))
+        }
+        // Kept for as long as the request lives, like a link sent through a chat; opened now so the relay holds this rider's hello.
+        store.pendingLinks = store.pendingLinks + (state.groupIdHex to until)
+        touchFriend(state.groupIdHex, 20_000)
+        send(Message.FriendRequestStatus(riderId, Message.NudgeState.SENT))
+    }
+
+    /** Someone in the active group asks to be the rider's friend: an offer to add or ignore, shown once and not again from a rider said no to. */
+    private fun friendRequestIn(state: GroupState, e: GroupEvent.FriendRequestReceived) {
+        val store = store ?: return
+        val blockKey = "fr:${state.groupIdHex}:${e.riderId}"
+        if (store.isOfferHandled(e.id) || e.id in offers || store.isOfferHandled(blockKey)) return
+        val parsed = Invite.parse(e.link)
+        if (parsed == null || parsed.kind != GroupKind.FRIEND || parsed.isExpired(System.currentTimeMillis() / 1000)) { store.markOfferHandled(e.id); return }
+        if (parsed.groupId.joinToString("") { "%02x".format(it) } in groups) { store.markOfferHandled(e.id); return } // already their friend
+        val from = client?.members()?.firstOrNull { it.id == e.riderId }
+        val o = Offer("", e.link, state.name, FriendRequest(from?.nickname ?: "?", from?.colour ?: 0xFF00E5FF.toInt(), photo(from?.avatar), blockKey))
+        offers[e.id] = o
+        send(offerMessage(e.id, o))
     }
 
     // ---- friends who always see where the rider is, and friends the rider sees ----
@@ -952,6 +996,7 @@ object GroupHub {
                 e.trip.name, e.trip.doc, e.mine
             ))
             is GroupEvent.InviteReceived -> Unit // invites come through friend channels, not rides
+            is GroupEvent.FriendRequestReceived -> friendRequestIn(state, e)
             is GroupEvent.NudgeReceived -> client?.members()?.firstOrNull { it.id == e.riderId }.let { m ->
                 nudgeIn(state.groupIdHex, e.riderId, e.nudge, e.tsMs, m?.nickname, m?.colour ?: 0xFF00E5FF.toInt(), photo(m?.avatar))
             }

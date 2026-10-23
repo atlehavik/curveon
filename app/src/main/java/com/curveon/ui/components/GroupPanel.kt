@@ -272,7 +272,9 @@ private fun GroupDetail(
                 RiderRow(
                     r, r.id == myId, positions[r.id], onRemove = if (group.admin && r.id != myId) ({ confirmRemove = r }) else null,
                     // Only the active group is connected: that is where a nudge can go.
-                    nudge = if (r.id != myId && activeId == group.id) manager to group.id else null
+                    nudge = if (r.id != myId && activeId == group.id) manager to group.id else null,
+                    // Someone who is not a friend yet can be asked from here (the manager knows who is a friend).
+                    befriend = manager.takeIf { r.id != myId && activeId == group.id && !it.isFriend(r) }
                 )
             }
         } else Text(stringResource(R.string.group_not_active), color = TextSecondary, fontSize = 14.sp)
@@ -349,20 +351,25 @@ fun RiderAvatar(r: GroupRider, size: androidx.compose.ui.unit.Dp) {
 }
 
 @Composable
-private fun RiderRow(r: GroupRider, me: Boolean, pos: Message.GroupPositionInfo?, onRemove: (() -> Unit)?, nudge: Pair<GroupManager, String>? = null) {
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RiderAvatar(r, 40.dp)
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(if (me) stringResource(R.string.group_rider_you, r.nickname) else r.nickname, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-            if (!me) Text(riderStatus(pos), color = TextSecondary, fontSize = 13.sp)
-            nudge?.let { (manager, groupId) -> NudgeRowStatus(manager, groupId, r.id, r.nickname) }
+private fun RiderRow(
+    r: GroupRider, me: Boolean, pos: Message.GroupPositionInfo?, onRemove: (() -> Unit)?, nudge: Pair<GroupManager, String>? = null,
+    befriend: GroupManager? = null
+) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RiderAvatar(r, 40.dp)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(if (me) stringResource(R.string.group_rider_you, r.nickname) else r.nickname, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                if (!me) Text(riderStatus(pos), color = TextSecondary, fontSize = 13.sp)
+                nudge?.let { (manager, groupId) -> NudgeRowStatus(manager, groupId, r.id, r.nickname) }
+            }
+            befriend?.let { FriendRequestIconButton(it, r.id) }
+            nudge?.let { (manager, groupId) -> NudgeIconButton(manager, groupId, r.id) }
+            if (onRemove != null) IconButton(onClick = onRemove) { Icon(Icons.Default.PersonRemove, stringResource(R.string.group_remove), tint = TextSecondary) }
         }
-        nudge?.let { (manager, groupId) -> NudgeIconButton(manager, groupId, r.id) }
-        if (onRemove != null) IconButton(onClick = onRemove) { Icon(Icons.Default.PersonRemove, stringResource(R.string.group_remove), tint = TextSecondary) }
+        // On a line of its own, the full width of the row: beside the name it is a narrow column that breaks words at large text.
+        befriend?.let { FriendRequestRowStatus(it, r.id, r.nickname) }
     }
 }
 

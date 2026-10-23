@@ -1167,4 +1167,10 @@
     <string name="phone_this_allow_hint">Tillåt kontakter, samtal, sms och mikrofonen, så kan du ringa och skicka talade sms härifrån.</string>
     <string name="phone_this_allow">Tillåt</string>
     <string name="link_this_device_hint_no_calls">Meddelanden och musik från apparna på den här enheten. Den kan inte ringa eller skicka sms (den har inget SIM-kort).</string>
+    <string name="friend_request_button">Lägg till som vän</string>
+    <string name="friend_request_sent">Förfrågan skickad till %1$s</string>
+    <string name="friend_request_failed">Det gick inte att skicka förfrågan. Kontrollera att gruppen är ansluten och försök igen.</string>
+    <string name="friend_request_offer_title">%1$s vill bli din vän</string>
+    <string name="friend_request_offer_group">Ni möttes i %1$s</string>
+    <string name="friend_request_decline">Nej tack</string>
 </resources>

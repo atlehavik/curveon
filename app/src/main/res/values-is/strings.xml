@@ -1166,4 +1166,10 @@
     <string name="phone_this_allow_hint">Leyfðu tengiliði, símtöl, SMS og hljóðnemann, þá geturðu hringt og sent töluð SMS héðan.</string>
     <string name="phone_this_allow">Leyfa</string>
     <string name="link_this_device_hint_no_calls">Skilaboð og tónlist frá forritunum á þessu tæki. Það getur ekki hringt eða sent SMS (það er ekkert SIM-kort í því).</string>
+    <string name="friend_request_button">Bæta við sem vini</string>
+    <string name="friend_request_sent">Beiðni send til %1$s</string>
+    <string name="friend_request_failed">Ekki tókst að senda beiðnina. Athugaðu að hópurinn sé tengdur og reyndu aftur.</string>
+    <string name="friend_request_offer_title">%1$s vill vera vinur þinn</string>
+    <string name="friend_request_offer_group">Þið hittust í %1$s</string>
+    <string name="friend_request_decline">Nei takk</string>
 </resources>

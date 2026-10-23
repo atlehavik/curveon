@@ -41,6 +41,9 @@ sealed interface GroupEvent {
    * device, so it can go here too.
    */
   data class NudgeSeen(val riderId: String, val seen: Payload.NudgeSeen, val mine: Boolean) : GroupEvent
+
+  /** A rider asks to be this rider's friend: [link] is the private friend channel they made for the two of them. */
+  data class FriendRequestReceived(val riderId: String, val id: String, val link: String, val tsMs: Long) : GroupEvent
 }
 
 private const val CLAIM_HEARTBEAT_MS = 60_000L
@@ -48,6 +51,8 @@ private const val CLAIM_HEARTBEAT_MS = 60_000L
 private const val TRIP_KEEP_S = 30L * 24 * 3600
 /** A nudge (and its answer) is worth having only for a while: kept that long for a rider who looks in later. */
 const val NUDGE_KEEP_S = 15L * 60
+/** A friend request waits this long for a rider who looks in later (and the link in it is made to last as long). */
+const val FRIEND_REQUEST_KEEP_S = 3L * 24 * 3600
 private const val CLAIM_STALE_MS = 180_000L
 
 /**
@@ -184,6 +189,19 @@ class GroupClient(
   /** Tells [to], who sent nudge [id], that the rider has seen it (and the rider's other devices, which can drop it too). */
   fun sendNudgeSeen(id: String, to: String): Boolean = synchronized(lock) {
     connected && send(Payload.NudgeSeen(id, to), Keep(state.keys.slot("nudge_seen/$to/${state.deviceId}"), NUDGE_KEEP_S))
+  }
+
+  /**
+   * Asks [to] (riderId, base64url) to be a friend: [link] to a new private friend channel, readable by [to] only. The
+   * request's id, or null if it could not go out now (not connected, or the rider has not said hello yet). The relay keeps
+   * the latest request per rider for [FRIEND_REQUEST_KEEP_S], for a rider who is not here now.
+   */
+  fun sendFriendRequest(to: String, link: String): String? = synchronized(lock) {
+    if (!connected) return null
+    val member = members[to] ?: return null
+    val id = B64.encode(GroupKeys.randomBytes(9))
+    val box = SealedBox.seal(link.toByteArray(), member.agreementPublicKey, state.groupId, state.riderId + member.riderId)
+    id.takeIf { send(Payload.FriendRequest(it, to, box), Keep(state.keys.slot("friend_req/$to/${state.deviceId}"), FRIEND_REQUEST_KEEP_S)) }
   }
 
   fun answerSos(sosRiderId: String, coming: Boolean) = synchronized(lock) { if (connected) send(Payload.SosAck(sosRiderId, coming)) }
@@ -345,6 +363,11 @@ class GroupClient(
         onEvent(GroupEvent.NudgeReceived(from, p, signed.tsMs))
       }
       is Payload.NudgeSeen -> if (p.to == B64.encode(state.riderId)) onEvent(GroupEvent.NudgeSeen(from, p, mine = false))
+      // Only for this rider, and only if it opens with this rider's key (the others hold the group key but not that).
+      is Payload.FriendRequest -> if (p.to == B64.encode(state.riderId) && clock() - signed.tsMs < FRIEND_REQUEST_KEEP_S * 1000) {
+        p.box.open(state.agreement.privateKey, state.groupId, frame.riderId + state.riderId)
+          ?.let { onEvent(GroupEvent.FriendRequestReceived(from, p.id, String(it), signed.tsMs)) }
+      }
     }
   }
 

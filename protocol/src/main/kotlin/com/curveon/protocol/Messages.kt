@@ -459,6 +459,16 @@ sealed interface Message {
         override fun toJson() = obj("nudge_gone").put("nudge", nudgeId)
     }
 
+    /** Ask the rider [riderId] in the active group to be a friend (a private channel for the two; they answer with an offer). */
+    data class FriendRequestSend(val riderId: String) : Message {
+        override fun toJson() = obj("friend_request_send").put("rider", riderId)
+    }
+
+    /** How the rider's friend request to [riderId] went: [NudgeState.SENT] or [NudgeState.FAILED] (it is not said if it is declined). */
+    data class FriendRequestStatus(val riderId: String, val state: NudgeState) : Message {
+        override fun toJson() = obj("friend_request_status").put("rider", riderId).put("state", state.name)
+    }
+
     // ---- friends and shared trips, phone -> tablet ----
 
     /**
@@ -494,12 +504,17 @@ sealed interface Message {
         override fun toJson() = obj("friend_added").put("id", channelId).put("nick", nickname)
     }
 
-    /** A friend asks the rider to join a ride group: shown once, with "join" or "ignore" ([GroupInviteAnswer]). */
+    /**
+     * A friend asks the rider to join a ride group, or ([friendRequest]) someone in a group asks to be their friend ([groupName]
+     * is then the group they met in): shown once, with "join"/"add" or "ignore" ([GroupInviteAnswer]).
+     */
     data class GroupInviteOffer(
-        val offerId: String, val fromNickname: String, val groupName: String?, val fromPhotoJpegBase64: String?, val fromColour: Int
+        val offerId: String, val fromNickname: String, val groupName: String?, val fromPhotoJpegBase64: String?, val fromColour: Int,
+        val friendRequest: Boolean = false
     ) : Message {
         override fun toJson() = obj("group_invite_offer").put("offer", offerId).put("from", fromNickname)
             .put("group", groupName ?: JSONObject.NULL).put("photo", fromPhotoJpegBase64 ?: JSONObject.NULL).put("colour", fromColour)
+            .put("friendRequest", friendRequest)
     }
 
     /** A trip shared with the active group, new or changed, by [from] ([mine]: by the rider's own other device). */
@@ -780,6 +795,9 @@ sealed interface Message {
             "nudge_status" -> runCatching { NudgeState.valueOf(o.getString("state")) }.getOrNull()
                 ?.let { NudgeStatus(o.getString("id"), o.nullableString("rider"), it) }
             "nudge_gone" -> NudgeGone(o.getString("nudge"))
+            "friend_request_send" -> FriendRequestSend(o.getString("rider"))
+            "friend_request_status" -> runCatching { NudgeState.valueOf(o.getString("state")) }.getOrNull()
+                ?.let { FriendRequestStatus(o.getString("rider"), it) }
             "friend_sharing" ->FriendSharing(o.optBoolean("on"), o.optJSONArray("friends")?.let { a -> (0 until a.length()).map { a.getString(it) } }.orEmpty())
             "friend_list" -> FriendList(o.optJSONArray("list").objects().map {
                 FriendInfo(
@@ -788,7 +806,10 @@ sealed interface Message {
                 )
             }, o.optBoolean("sharing"))
             "friend_invite" -> FriendInvite(o.getString("id"), o.getString("uri"))
-            "group_invite_offer" -> GroupInviteOffer(o.getString("offer"), o.optString("from"), o.nullableString("group"), o.nullableString("photo"), o.optInt("colour"))
+            "group_invite_offer" -> GroupInviteOffer(
+                o.getString("offer"), o.optString("from"), o.nullableString("group"), o.nullableString("photo"), o.optInt("colour"),
+                o.optBoolean("friendRequest")
+            )
             "group_trip" -> GroupTrip(
                 o.getString("id"), o.getString("trip"), o.getLong("rev"), o.getString("from"), o.nullableString("nick"),
                 o.optString("name"), o.getString("doc"), o.optBoolean("mine")

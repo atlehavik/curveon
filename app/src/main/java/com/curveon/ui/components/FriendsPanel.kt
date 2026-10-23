@@ -274,18 +274,23 @@ fun GroupInviteOfferDialog(manager: GroupManager) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FriendAvatar(Message.FriendInfo(o.offerId, o.fromNickname, o.fromColour, null, o.fromPhotoJpegBase64), 48.dp)
-                Text(
-                    if (o.groupName != null) stringResource(R.string.offer_title, o.fromNickname, o.groupName!!) else stringResource(R.string.offer_title_unnamed, o.fromNickname),
-                    color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold
-                )
+                Column(Modifier.weight(1f)) {
+                    if (o.friendRequest) {
+                        Text(stringResource(R.string.friend_request_offer_title, o.fromNickname), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        o.groupName?.let { Text(stringResource(R.string.friend_request_offer_group, it), color = TextSecondary, fontSize = 14.sp) }
+                    } else Text(
+                        if (o.groupName != null) stringResource(R.string.offer_title, o.fromNickname, o.groupName!!) else stringResource(R.string.offer_title_unnamed, o.fromNickname),
+                        color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold
+                    )
+                }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button(
                     onClick = { manager.answerOffer(o.offerId, true) },
                     colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan), modifier = Modifier.weight(1f).height(52.dp).testTag("offer_join")
-                ) { Text(stringResource(R.string.offer_join), color = Color(0xFF00363D), fontWeight = FontWeight.Black) }
+                ) { Text(stringResource(if (o.friendRequest) R.string.friend_request_button else R.string.offer_join), color = Color(0xFF00363D), fontWeight = FontWeight.Black) }
                 TextButton(onClick = { manager.answerOffer(o.offerId, false) }, modifier = Modifier.height(52.dp).testTag("offer_ignore")) {
-                    Text(stringResource(R.string.offer_ignore), color = TextSecondary, fontWeight = FontWeight.Bold)
+                    Text(stringResource(if (o.friendRequest) R.string.friend_request_decline else R.string.offer_ignore), color = TextSecondary, fontWeight = FontWeight.Bold)
                 }
             }
         }

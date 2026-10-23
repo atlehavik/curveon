@@ -6,7 +6,13 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
-## 2026-10-23 — Ingen vending midt i veien, markør på veien, SMS fra fullkart, blå deling (1.2.4)
+## 2026-10-23 — Ingen vending midt i veien, markør på veien, SMS fra fullkart, blå deling, venneforespørsel i gruppe (1.2.4)
+
+- [ ] Venneforespørsel fra en gruppe, med to ekte enheter (X7 og Pixelen er samme rytter, så bruk en annen telefon, f.eks. kameratens,
+  i samme gruppe): på X7, Venner → Gruppetur → gruppa → «Legg til som venn» ved kameraten (ikonet med + til høyre, eller trykk
+  rytteren på kartet). Hos kameraten kommer kortet «<navn> vil være din venn». «Legg til som venn» gir high five på begge, og kameraten står
+  i vennelista. Prøv også «Nei takk»: X7 får ingen beskjed, og en ny forespørsel fra samme rytter i samme gruppe vises ikke.
+  Knappen skal ikke vises ved en som allerede er venn.
 
 - [ ] X7 («Denne enheten», uten SIM): Telefon-knappen viser «Denne enheten kan ikke ringe eller sende SMS» med
   hvorfor og hva du kan gjøre. Meldinger og musikk virker som før.
