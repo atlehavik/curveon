@@ -3,8 +3,6 @@
 package com.curveon.ui.components
 
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.RingtoneManager
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -742,23 +740,17 @@ private fun MySosCard(sos: Message.GroupSos, manager: GroupManager, modifier: Mo
     }
 }
 
-/** Alarm sound and vibration for as long as the alert is up. */
+/** The SOS siren and vibration for as long as the alert is up. */
 @Composable
 private fun SosAlertSound() {
     val context = LocalContext.current
     DisposableEffect(Unit) {
-        val tone = runCatching {
-            RingtoneManager.getRingtone(context, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))?.apply {
-                audioAttributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
-                if (Build.VERSION.SDK_INT >= 28) isLooping = true
-                play()
-            }
-        }.getOrNull()
+        val siren = SosSiren().also { it.start() }
         val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= 31) context.getSystemService(VibratorManager::class.java)?.defaultVibrator
         else @Suppress("DEPRECATION") context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
         runCatching { vibrator?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 600, 400), 0)) }
         onDispose {
-            runCatching { tone?.stop() }
+            siren.stop()
             runCatching { vibrator?.cancel() }
         }
     }

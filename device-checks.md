@@ -6,6 +6,11 @@ tested in the emulator. Newest first; tick them off or delete them when done.
 Commands assume the device is connected over USB. With both connected, pick one with
 `-s <serial>` (see `adb devices`). `adb` lives in `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-23 — SOS-lyd og tilt-piler i 3D (1.2.4)
+
+- [ ] Demo-SOS (DEV) eller en SOS fra kameraten: det skal pipe S-O-S (tre korte, tre lange, tre korte) på alarmvolumet til du svarer eller avbryter, og ikke spille telefonens alarmmelodi.
+- [ ] I 3D-kartet skal to piler (opp/ned) stå ved siden av 3D-knappen hele tiden, uten å holde knappen inne. Pil opp = mer fugleperspektiv.
+
 ## 2026-10-23 — Ingen vending midt i veien, markør på veien, SMS fra fullkart, blå deling, venneforespørsel i gruppe (1.2.4)
 
 - [ ] Venneforespørsel fra en gruppe, med to ekte enheter (X7 og Pixelen er samme rytter, så bruk en annen telefon, f.eks. kameratens,
@@ -189,7 +194,7 @@ selve overføringen over Bluetooth og mottaket på nettbrettet kan ikke prøves 
 
 ## 2026-10-21 — Tilt helt ned mens kartet følger deg (1.2.2)
 
-- [ ] 3D mens kartet følger deg (gjerne under navigering/demotur): hold inne 3D-knappen og trykk «−»
+- [ ] 3D mens kartet følger deg (gjerne under navigering/demotur): trykk pil ned ved 3D-knappen
       til det ikke går lenger. Blikket skal gå like lavt ned mot veien som når du har dratt i kartet,
       og pilen din skal fortsatt sitte lavt på skjermen, uten å hoppe når du trykker.
 
