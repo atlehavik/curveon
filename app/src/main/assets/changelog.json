@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.2.6",
+    "en": [
+      "Taking a profile picture now opens Curveon's own camera, on the selfie lens, and the picture comes out exactly as you saw it in the mirror view, whatever your phone's camera app is set to"
+    ],
+    "nb": [
+      "Når du tar profilbilde, åpner Curveon nå sitt eget kamera på selfie-linsen, og bildet blir akkurat slik du så det i speilbildet, uansett hva kameraappen på telefonen er innstilt på"
+    ],
+    "sv": [
+      "När du tar en profilbild öppnas nu Curveons egen kamera på selfielinsen, och bilden blir precis som du såg den i spegelbilden, oavsett hur telefonens kameraapp är inställd"
+    ],
+    "da": [
+      "Når du tager et profilbillede, åbner Curveon nu sit eget kamera på selfie-linsen, og billedet bliver præcis, som du så det i spejlbilledet, uanset hvad kameraappen på telefonen er indstillet til"
+    ],
+    "fi": [
+      "Kun otat profiilikuvan, Curveon avaa nyt oman kameransa selfie-linssillä, ja kuva tulee täsmälleen sellaisena kuin näit sen peilikuvassa, vaikka puhelimen kamerasovelluksen asetukset olisivat mitkä"
+    ],
+    "is": [
+      "Þegar þú tekur prófílmynd opnast nú eigin myndavél Curveon á selfie-linsunni og myndin verður nákvæmlega eins og þú sást hana í speglinum, sama hvernig myndavélaappið í símanum er stillt"
+    ],
+    "de": [
+      "Für das Profilbild öffnet Curveon jetzt seine eigene Kamera mit der Selfie-Linse, und das Bild wird genau so, wie du es im Spiegelbild gesehen hast, egal wie die Kamera-App deines Telefons eingestellt ist"
+    ],
+    "es": [
+      "Al hacer la foto de perfil, Curveon abre ahora su propia cámara con el objetivo de selfie, y la foto sale exactamente como la viste en la vista de espejo, sea cual sea el ajuste de la app de cámara del teléfono"
+    ],
+    "fr": [
+      "Pour la photo de profil, Curveon ouvre maintenant sa propre caméra sur l'objectif selfie, et la photo est exactement celle que tu as vue dans le miroir, quel que soit le réglage de l'appli photo du téléphone"
+    ],
+    "nl": [
+      "Voor je profielfoto opent Curveon nu zijn eigen camera met de selfielens, en de foto wordt precies zoals je hem in de spiegelweergave zag, wat de camera-app van je telefoon ook heeft ingesteld"
+    ],
+    "pl": [
+      "Przy zdjęciu profilowym Curveon otwiera teraz własny aparat z obiektywem do selfie, a zdjęcie wychodzi dokładnie takie, jakie widziałeś w lustrzanym podglądzie, niezależnie od ustawień aplikacji aparatu w telefonie"
+    ]
+  },
+  {
     "version": "1.2.5",
     "en": [
       "The road sign in the corner only shows the road you are riding on. Stop for coffee and it goes away after a couple of minutes, back again once you ride on, and a big road close by no longer shows up with the wrong kind of sign"

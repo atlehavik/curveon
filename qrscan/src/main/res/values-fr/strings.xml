@@ -4,4 +4,8 @@
     <string name="qr_scan_denied">La caméra est nécessaire pour scanner. Autorise-la dans les réglages Android, ou ouvre plutôt le lien d’invitation.</string>
     <string name="qr_scan_wrong">Ce n’est pas une invitation Curveon.</string>
     <string name="qr_scan_cancel">Annuler</string>
+    <string name="selfie_take">Prendre la photo</string>
+    <string name="selfie_switch">Changer de caméra</string>
+    <string name="selfie_denied">La caméra est nécessaire pour prendre la photo. Autorise-la dans les réglages d\'Android ou choisis plutôt une image de la galerie.</string>
+    <string name="selfie_failed">La photo n\'a pas pu être prise. Réessaie.</string>
 </resources>

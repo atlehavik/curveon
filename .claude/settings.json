@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.curveon-nightly/bin/ui_matrix_queue.py morning 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

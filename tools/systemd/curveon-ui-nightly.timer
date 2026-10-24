@@ -1,0 +1,11 @@
+# 03:30 every night. No catching up: if the PC was off or asleep then, the queue waits for the next night
+# instead of starting the emulator in the middle of the day.
+[Unit]
+Description=Curveon nightly screen matrix at 03:30
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=false
+
+[Install]
+WantedBy=timers.target

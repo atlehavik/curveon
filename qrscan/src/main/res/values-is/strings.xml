@@ -5,4 +5,8 @@
     <string name="qr_scan_denied">Myndavélin þarf til að skanna. Leyfðu hana í stillingum Android, eða opnaðu boðshlekkinn í staðinn.</string>
     <string name="qr_scan_wrong">Þetta er ekki Curveon-boð.</string>
     <string name="qr_scan_cancel">Hætta við</string>
+    <string name="selfie_take">Taka myndina</string>
+    <string name="selfie_switch">Skipta um myndavél</string>
+    <string name="selfie_denied">Myndavélin þarf til að taka myndina. Leyfðu hana í stillingum Android eða veldu mynd úr myndasafninu.</string>
+    <string name="selfie_failed">Ekki tókst að taka myndina. Reyndu aftur.</string>
 </resources>

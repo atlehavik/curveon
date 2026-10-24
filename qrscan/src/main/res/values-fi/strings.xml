@@ -4,4 +4,8 @@
     <string name="qr_scan_denied">Skannaus tarvitsee kameran. Salli se Androidin asetuksissa tai avaa kutsulinkki.</string>
     <string name="qr_scan_wrong">Tämä ei ole Curveon-kutsu.</string>
     <string name="qr_scan_cancel">Peruuta</string>
+    <string name="selfie_take">Ota kuva</string>
+    <string name="selfie_switch">Vaihda kameraa</string>
+    <string name="selfie_denied">Kamera tarvitaan kuvan ottamiseen. Salli se Androidin asetuksissa tai valitse kuva galleriasta.</string>
+    <string name="selfie_failed">Kuvaa ei voitu ottaa. Yritä uudelleen.</string>
 </resources>
