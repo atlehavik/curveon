@@ -114,8 +114,17 @@ class Planner(
     const val VIA_SPACING_M = 15_000.0
 
     /** "datafile E10_N50.rd5 not found": a place outside the routing data the server has. */
-    private fun refusal(e: RoutingException, otherwise: String) =
-      PlanRefused(422, if (e.message.orEmpty().startsWith("datafile")) "outside" else otherwise)
+    private fun refusal(e: RoutingException, otherwise: String): PlanRefused {
+      val m = e.message.orEmpty()
+      // Only what BRouter said, never where: to see why riders get no road, without keeping their trips.
+      System.err.println("planner: no route: ${m.take(160)}")
+      return PlanRefused(422, when {
+        m.startsWith("datafile") -> "outside"
+        // Out of time (a very long, very curvy trip): not the same as no road at all.
+        m.contains("timeout", ignoreCase = true) || m.contains("killed", ignoreCase = true) -> "too_slow"
+        else -> otherwise
+      })
+    }
 
     fun area(a: JSONArray): List<LatLon> {
       if (a.length() < 3 || a.length() > MAX_AREA_POINTS) throw PlanRefused(400, "bad_request")
