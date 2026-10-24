@@ -49,10 +49,10 @@ fun WebPlanDialog(
         text = {
             // Scrolls on a low screen (landscape, large text): the buttons stay below in the dialog.
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(if (connected) R.string.web_plan_connected else R.string.web_plan_intro), color = TextSecondary, fontSize = 15.sp)
-                if (connected) Text(status(state), color = if (state.offline) NeonAmber else TextPrimary, fontSize = 15.sp)
-                if (!camera) Text(stringResource(R.string.web_plan_no_camera), color = NeonAmber, fontSize = 14.sp)
+                // Connected: what happened and what can be done first; the explanation under it is what scrolls away
+                // on a low screen (landscape, large text).
                 if (connected) {
+                    status(state).takeIf { it.isNotEmpty() }?.let { Text(it, color = if (state.offline) NeonAmber else TextPrimary, fontSize = 15.sp) }
                     if (camera) TextButton(onClick = { scanning = true }, modifier = Modifier.testTag("web_plan_scan_another")) {
                         Text(stringResource(R.string.web_plan_scan_another))
                     }
@@ -60,6 +60,8 @@ fun WebPlanDialog(
                         Text(stringResource(R.string.web_plan_forget), color = WarningRed)
                     }
                 }
+                if (!camera) Text(stringResource(R.string.web_plan_no_camera), color = NeonAmber, fontSize = 14.sp)
+                Text(stringResource(if (connected) R.string.web_plan_connected else R.string.web_plan_intro), color = TextSecondary, fontSize = 15.sp)
             }
         },
         confirmButton = {
