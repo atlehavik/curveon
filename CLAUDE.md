@@ -69,25 +69,34 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   tracks) must never cover place names: they stay above every line layer (see `raisePlaceNames` in
   CurveonMapView.kt, and the order in `OfflineMaps.styleJson`). Check it with the layer switched on,
   not only off, at a zoom where names show.
-- **New visual elements: test for overlap.** Before a new visual element goes in, try it in the
-  phone-size emulator (Pixel, see Build and run) in both portrait and landscape, while navigating and
-  not navigating, and with the music player on and off. Overlap with other elements is the main
-  thing to look for every time; check the X7 layout too.
+- **New visual elements: test for overlap.** Before a new visual element goes in, look at it on the
+  Pixel in both portrait and landscape, while navigating and not navigating, and with the music player
+  on and off. Overlap with other elements is the main thing to look for every time; check the X7
+  layout too (the X7 itself when it is on USB). Other kinds of screens: the nightly matrix (below).
 - **Nothing off screen on the Pixel (recurring bug, ~14 times).** The Pixel 9a has a camera hole and
   runs API 37; the X7 AVD has neither, so it hides this. Any new or changed screen, dialog or sheet is
-  checked on `Curveon_Phone` (API 36) with the hole cutout switched on
-  (`adb shell cmd overlay enable-exclusive --category com.android.internal.display.cutout.emulation.hole`),
-  in portrait *and* landscape, before it is called done: every button fully on screen, and for a
-  dialog window `adb shell dumpsys window windows` shows its `Requested` size inside its `frame`. Every
-  `Dialog` calls `HideSystemBars()` (CockpitDialog.kt), which lets the window cover the camera hole;
-  without it Android puts the window below the hole at full height and cuts off its bottom.
-  The Pixel and X7 are not enough on their own: run **`python3 -I tools/ui_matrix.py -s <Curveon_Phone>`**,
-  which dresses the emulator up as eight common screens (360-411 dp phones, 720p budget phone, 21:9,
-  large text, foldable inner screen, 10" tablet, X7; camera holes, notches, 3-button and gesture
-  navigation) in portrait and landscape, and checks automatically that the named buttons are wholly on
-  screen. Look over its contact sheets too. Not for every feature: run it whenever a change could
-  plausibly look wrong on some kind of screen (layout, dialogs, rows of buttons, text that may not fit,
-  anything sized to the screen), and add a scenario for a new screen or dialog when it is run.
+  checked on the Pixel, in portrait *and* landscape, before it is called done: every button fully on
+  screen, and for a dialog window `adb shell dumpsys window windows` shows its `Requested` size inside
+  its `frame`. Every `Dialog` calls `HideSystemBars()` (CockpitDialog.kt), which lets the window cover
+  the camera hole; without it Android puts the window below the hole at full height and cuts off its
+  bottom. (On `Curveon_Phone` the hole is
+  `adb shell cmd overlay enable-exclusive --category com.android.internal.display.cutout.emulation.hole`.)
+- **Screen matrix at night, never during the day.** `tools/ui_matrix.py` dresses the `Curveon_Phone`
+  emulator up as eight common screens (360-411 dp phones, 720p budget phone, 21:9, large text,
+  foldable inner screen, 10" tablet, X7; camera holes, notches, 3-button and gesture navigation) in
+  portrait and landscape and checks that the named buttons are wholly on screen. A run takes long, so a
+  session never runs it: when a change could plausibly look wrong on some kind of screen (layout,
+  dialogs, rows of buttons, text that may not fit, anything sized to the screen), queue it in the same
+  change with `python3 -I tools/ui_matrix_queue.py add --scenarios <names> "<what changed, what to look for>"`
+  (`--new "<how to get there; what must fit>"` for a screen with no scenario yet), and say in chat that
+  it is queued. At 03:30 `tools/ui_matrix_nightly.sh` (systemd user timer) runs the queue per branch on
+  the emulator in the worktree `.claude/worktrees/nightly-ui`, fixes what it finds on `nightly/<branch>`
+  (never the rider's branch, never the X7 or Pixel), and publishes the report with pictures on the
+  private page https://claude.ai/artifact/5985b69pxJdmJ1yK1opdfb. A session starts with last night's
+  summary (SessionStart hook): pass it on, and merge `nightly/<branch>` into the branch only after the
+  rider says yes. Queue, results and logs are in `~/.curveon-nightly`. After changing any
+  `tools/ui_matrix*` file run `tools/ui_matrix_nightly.sh install`; `~/.curveon-nightly/bin/ui_matrix_nightly.sh check`
+  tests the setup.
 - **Never call Curveon "free" / "gratis"** (website, README, store text, changelog, app texts): the
   rider plans some income from it on Google Play. "Open source", "no account", "no ads" are fine;
   saying that a map source or a service the app uses costs nothing is not about Curveon's price.
@@ -134,12 +143,12 @@ commands are in [README.md](README.md); goals in [dashboard.md](dashboard.md).
   `versionName` raised in `app/build.gradle.kts`) and put the point there; later changes go in the
   same entry until it is released. Never edit an already released entry, not even a typo, unless the
   rider asks.
-- **NEVER build a device from the wrong branch.** Do not create new worktrees or branches on your own
-  (not from `main`, not "to isolate" a fix): work in the branch the session starts in, and ask which
-  branch is current if it looks wrong. Before every install, check `git log --oneline HEAD..<branch>`
-  against `main` and every `worktree-*` / `origin/*` branch: if any has commits the device already
-  runs, stop and ask. (2026-10-21 a build from a fresh branch off `main` wiped 34 commits of group
-  rides, friends, mic search etc. off the Pixel.)
+- **NEVER build a device from the wrong branch.** Worktrees and branches are fine where normal git
+  work calls for them (a session's own worktree, the nightly run's `nightly/*`); ask which branch is
+  current if it looks wrong. What must never happen is a device losing what it runs: before every
+  install, check `git log --oneline HEAD..<branch>` against `main` and every `worktree-*` / `origin/*`
+  branch: if any has commits the device already runs, stop and ask. (2026-10-21 a build from a fresh
+  branch off `main` wiped 34 commits of group rides, friends, mic search etc. off the Pixel.)
 - **Website (curveon.no):** the source is `website/`; it is deployed by hand-free script
   `tools/deploy-website.sh` (FTPS, login in `~/.curveon-signing/website.env`; no `--apply` = dry run,
   show the list and get a yes before `--apply`). The download button links to

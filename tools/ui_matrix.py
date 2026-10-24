@@ -4,12 +4,13 @@ Screen matrix: runs Curveon's screens on one emulator dressed up as the common k
 (sizes, densities, camera holes and notches, navigation bars, large text), in portrait and landscape, and
 checks that nothing the rider must reach ends up off screen.
 
-    python3 -I tools/ui_matrix.py -s emulator-5556 [--variants pixel9a,small360] [--scenarios crop] [--out DIR]
+    python3 -I tools/ui_matrix.py -s emulator-5556 [--variants pixel9a,small360] [--scenarios crop] [--out DIR] [--json FILE]
 
 Use the Curveon_Phone AVD (API 36) with a debug build installed, "This device" picked as the phone
 (Settings -> Phone) and at least one picture in the gallery (for the profile picture). Per variant and
 orientation it writes a screenshot, and per scenario a contact sheet (`sheet_<scenario>.png`) to look over;
-it prints every problem it finds and exits 1 if there were any. The emulator is put back as it was at the end.
+it prints every problem it finds and exits 1 if there were any. With --json it also writes every screen's
+result (scenario, variant/orientation, problems, screenshot) to FILE, for the nightly run (ui_matrix_nightly.sh). The emulator is put back as it was at the end.
 
 Checks, on every screen:
 - a dialog window is never larger than the area Android gives it (the Pixel bug of 2026-10-22: a dialog
@@ -18,6 +19,7 @@ Checks, on every screen:
 - nothing clickable sticks out past the screen.
 """
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -323,12 +325,13 @@ def main():
     ap.add_argument("--scenarios", default=",".join(SCENARIOS))
     ap.add_argument("--rotations", default="0,1", help="0 = portrait, 1 = landscape")
     ap.add_argument("--out", default="ui-matrix-out")
+    ap.add_argument("--json", help="also write the results here")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     d = Device(a.serial)
     wanted = [v for v in VARIANTS if v[0] in a.variants.split(",")]
     shots = {s: [] for s in a.scenarios.split(",")}
-    failures = []
+    failures, results = [], []
     try:
         for v in wanted:
             for rot in [int(r) for r in a.rotations.split(",")]:
@@ -343,6 +346,7 @@ def main():
                     path = os.path.join(a.out, f"{s}_{tag}.png")
                     d.screenshot(path)
                     shots[s].append((f"{tag}{'  !' if problems else ''}", path))
+                    results.append({"scenario": s, "tag": tag, "problems": problems, "shot": os.path.abspath(path)})
                     for p in problems:
                         failures.append(f"{s} / {tag}: {p}")
                     print(f"{s:10} {tag:18} {'OK' if not problems else 'PROBLEM'}", flush=True)
@@ -359,6 +363,10 @@ def main():
     for s, paths in shots.items():
         if paths:
             sheet(paths, os.path.join(a.out, f"sheet_{s}.png"))
+    if a.json:
+        sheets = {s: os.path.abspath(os.path.join(a.out, f"sheet_{s}.png")) for s, p in shots.items() if p}
+        with open(a.json, "w") as f:
+            json.dump({"results": results, "sheets": sheets}, f, indent=1)
     print(f"\n{len(failures)} problem(s). Screenshots and contact sheets in {a.out}/")
     sys.exit(1 if failures else 0)
 

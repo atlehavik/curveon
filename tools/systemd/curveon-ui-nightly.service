@@ -1,0 +1,9 @@
+# The nightly screen matrix (tools/ui_matrix_nightly.sh); installed by `tools/ui_matrix_nightly.sh install`.
+[Unit]
+Description=Curveon nightly screen matrix
+
+[Service]
+Type=oneshot
+ExecStart=%h/.curveon-nightly/bin/ui_matrix_nightly.sh run
+TimeoutStartSec=6h
+Nice=5
