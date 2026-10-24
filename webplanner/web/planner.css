@@ -23,7 +23,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 #map { position: fixed; inset: 0; }
 
 #panel {
-  position: fixed; top: 16px; left: 16px; max-height: calc(100vh - 32px); width: 380px; max-width: calc(100vw - 32px);
+  position: fixed; top: 16px; left: 16px; max-height: calc(100vh - 32px); width: 430px; max-width: calc(100vw - 32px);
   background: var(--panel); border-radius: 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden;
 }
 #panel header { display: flex; align-items: center; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
@@ -76,8 +76,7 @@ button.small:hover { border-color: var(--amber); background: color-mix(in srgb, 
 #clear { color: var(--muted); }
 #save-draft { color: var(--amber-ink); font-weight: 600; border-color: color-mix(in srgb, var(--amber) 55%, transparent); }
 #adv, #loop, #compare, #fuel-gap { align-self: flex-start; }
-#fuel-gap.warn { color: var(--red); margin-top: -6px; }
-#compare { margin-top: -6px; }
+#fuel-gap.warn { color: var(--red); }
 #adv-box, #compare-box { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 11px; border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); background: color-mix(in srgb, var(--amber) 8%, transparent); }
 #adv-box .hint { color: var(--text); }
 #adv-box .hint.error { color: var(--red); }
@@ -96,13 +95,14 @@ button.small:hover { border-color: var(--amber); background: color-mix(in srgb, 
 #profile { margin: -4px 0 0; display: flex; flex-direction: column; gap: 2px; }
 #profile canvas { width: 100%; height: 80px; display: block; cursor: crosshair; touch-action: none; border-radius: 6px; background: color-mix(in srgb, var(--text) 3%, transparent); }
 #profile figcaption { font-size: 12px; color: var(--muted); min-height: 1.3em; }
-#share-row { display: flex; gap: 8px; margin-top: -4px; flex-wrap: wrap; }
+#share-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
 #options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #options label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
 /* A list with a sign for each choice (road style, surface, ferries, motorways). */
 button.isel { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 28px 6px 8px; text-align: left; font-size: 14px; color: var(--text); background: var(--bg) no-repeat right 9px center / 10px; position: relative; min-height: 40px; }
-button.isel::after { content: ""; position: absolute; right: 11px; top: 50%; width: 6px; height: 6px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-70%) rotate(45deg); }
+button.isel::after { content: ""; position: absolute; right: 12px; top: 50%; width: 7px; height: 7px; border-right: 2px solid var(--text); border-bottom: 2px solid var(--text); transform: translateY(-70%) rotate(45deg); opacity: 0.7; }
+button.isel:hover { border-color: var(--amber); }
 button.isel span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 button.isel svg, .isel-list svg { flex: none; color: var(--text); }
 button.isel:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
@@ -115,11 +115,15 @@ button.isel:focus-visible { outline: 2px solid var(--amber); outline-offset: -1p
 #summary span small { color: var(--muted); font-weight: 400; margin-left: 3px; }
 #status { margin: 0; min-height: 1.4em; color: var(--muted); font-size: 14px; }
 #status.error { color: var(--red); }
-#send-row { display: flex; gap: 8px; }
-#send-row input { flex: 1; }
-#send-row button { flex: none; }
-#send-as-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); margin-top: -4px; }
-#send-as-row select { width: auto; flex: 1; padding: 6px 8px; }
+#status:empty { display: none; }
+/* The panel in sections: the trip, roads, the route, save and send; each with a small heading. */
+section.block { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+section.block > h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 -2px; }
+section.block > * { flex-shrink: 0; }
+#send-row { display: flex; flex-direction: column; gap: 8px; }
+label.field { display: grid; grid-template-columns: 80px 1fr; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+label.field select, label.field input { padding: 7px 9px; }
+button.wide { width: 100%; padding: 11px 12px; font-size: 16px; }
 
 #session-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 #session-row.unpaired { flex-direction: column; align-items: stretch; padding: 12px; border-radius: 11px; background: color-mix(in srgb, var(--amber) 13%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); }
@@ -130,8 +134,12 @@ button.isel:focus-visible { outline: 2px solid var(--amber); outline-offset: -1p
 button.link.danger { color: var(--red); }
 
 /* The planner at work: a chip at the top of the map, and a bar in the adventure's box. */
+/* While an area is drawn: what to do, on the map, with a way out. */
+#draw { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 16px; border-radius: 22px; background: var(--panel); color: var(--text); box-shadow: var(--shadow); font-size: 14px; max-width: min(560px, calc(100vw - 32px)); border: 2px solid var(--amber); }
+#draw .pen { font-size: 18px; color: var(--amber-ink); }
+@media (min-width: 641px) { #draw { left: calc(50% + 231px); max-width: calc(100vw - 520px); } }
 #busy { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 22px; background: var(--panel); color: var(--text); box-shadow: var(--shadow); font-weight: 600; font-size: 14px; white-space: nowrap; }
-@media (min-width: 641px) { #busy { left: calc(50% + 206px); } }
+@media (min-width: 641px) { #busy { left: calc(50% + 231px); } }
 .spinner { width: 16px; height: 16px; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--amber) 30%, transparent); border-top-color: var(--amber); animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .busy-bar { height: 4px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--amber) 20%, transparent); position: relative; }
@@ -165,7 +173,7 @@ dialog h2 { margin: 0 0 12px; font-size: 19px; }
 dialog form { display: flex; justify-content: flex-end; margin-top: 12px; }
 dialog form.buttons { flex-wrap: wrap; gap: 8px; }
 #edit-row { flex-wrap: wrap; row-gap: 4px; }
-#save-draft { margin-left: auto; }
+
 
 .pin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45); display: grid; place-items: center; color: #fff; font: 700 12px system-ui, sans-serif; background: var(--amber); cursor: grab; }
 .pin.start { background: var(--green); }

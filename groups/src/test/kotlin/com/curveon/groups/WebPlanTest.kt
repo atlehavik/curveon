@@ -142,6 +142,27 @@ class WebPlanTest {
     assertEquals("h7", d.getString("k")); assertEquals(0, d.getInt("x"))
   }
 
+  @Test fun `live answers an empty channel too, so a page just paired sees the device`() {
+    val l = link()
+    var listener: TransportListener? = null
+    val sent = java.util.concurrent.CopyOnWriteArrayList<String>()
+    val factory = TransportFactory { _, li ->
+      listener = li
+      object : Transport {
+        override fun send(text: String): Boolean { sent.add(text); return true }
+        override fun close(code: Int) {}
+      }
+    }
+    val batches = java.util.concurrent.CopyOnWriteArrayList<WebPlanInbound>()
+    val live = WebPlanInbox(factory).live(l, quietMs = 100, onInbound = { batches.add(it); listOf("index") })
+    listener!!.onOpen()
+    Thread.sleep(400)
+    assertEquals(1, batches.size)
+    assertTrue(batches[0].trips.isEmpty() && batches[0].deletes.isEmpty())
+    assertEquals(listOf("index"), sent.toList())
+    live.close()
+  }
+
   @Test fun `live hands over the replay in one go, then each trip as it comes`() {
     val l = link()
     val rider = GroupKeys.newRiderId()

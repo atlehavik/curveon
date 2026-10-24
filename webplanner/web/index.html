@@ -12,13 +12,14 @@
 <body>
   <div id="map" aria-label="Map"></div>
   <div id="busy" role="status" hidden><span class="spinner"></span><span id="busy-text"></span></div>
+  <div id="draw" role="status" hidden><span class="pen">✎</span><span id="draw-text"></span><button id="draw-cancel" class="small" type="button" data-t="draw_cancel"></button></div>
 
   <aside id="panel">
     <header>
       <h1><img src="icon.png" alt="" width="28" height="28"> <span data-t="title"></span></h1>
       <button id="theme" class="ghost" type="button"></button>
-      <button id="lang" class="ghost" type="button" aria-label="Language"></button>
-      <button id="fold" class="ghost" type="button" aria-expanded="true"></button>
+      <button id="lang" class="ghost" type="button" aria-label="Language" data-tip="tip_lang"></button>
+      <button id="fold" class="ghost" type="button" aria-expanded="true" data-tip="tip_fold"></button>
     </header>
 
     <div id="body">
@@ -29,94 +30,107 @@
         </div>
         <span id="session" hidden></span>
         <span class="pair-buttons">
-          <button id="pair" class="link" type="button"></button>
-          <button id="unpair" class="link danger" type="button" hidden></button>
+          <button id="pair" class="link" type="button" data-tip="tip_pair"></button>
+          <button id="unpair" class="link danger" type="button" data-tip="tip_unpair" hidden></button>
         </span>
       </div>
 
-      <div class="search">
-        <input id="q" type="search" autocomplete="off" data-tp="search_hint">
-        <ul id="hits" role="listbox"></ul>
-      </div>
-
-      <p id="hint" class="hint" data-t="hint_empty"></p>
-      <ol id="stops"></ol>
-      <div id="edit-row">
-        <button id="undo" class="small" type="button" data-t="undo" hidden></button>
-        <button id="clear" class="small" type="button" data-t="clear_all" hidden></button>
-        <button id="save-draft" class="small" type="button" hidden></button>
-      </div>
-      <button id="adv" class="link" type="button" hidden>✦ <span data-t="adv_open"></span></button>
-      <button id="loop" class="link" type="button" hidden>↻ <span data-t="loop_open"></span></button>
-      <section id="adv-box" hidden>
-        <b id="adv-head"></b>
-        <p id="adv-hint" class="hint"></p>
-        <div id="adv-busy" class="busy-bar" hidden></div>
-        <label><span id="adv-time-label"></span> <select id="adv-time"></select></label>
-        <div class="buttons">
-          <button id="adv-again" class="primary" type="button" data-t="adv_again" hidden></button>
-          <button id="adv-redraw" type="button" data-t="adv_redraw" hidden></button>
-          <button id="adv-close" class="ghost" type="button" data-t="adv_close"></button>
+      <section class="block" id="trip-block">
+        <h2 data-t="sec_trip"></h2>
+        <div class="search">
+          <input id="q" type="search" autocomplete="off" data-tp="search_hint" data-tip="tip_search">
+          <ul id="hits" role="listbox"></ul>
         </div>
+        <p id="hint" class="hint" data-t="hint_empty"></p>
+        <ol id="stops"></ol>
+        <div id="edit-row">
+          <button id="undo" class="small" type="button" data-t="undo" data-tip="tip_undo" hidden></button>
+          <button id="clear" class="small" type="button" data-t="clear_all" data-tip="tip_clear" hidden></button>
+        </div>
+        <button id="adv" class="link" type="button" data-tip="tip_adv" hidden>✦ <span data-t="adv_open"></span></button>
+        <button id="loop" class="link" type="button" data-tip="tip_loop" hidden>↻ <span data-t="loop_open"></span></button>
+        <section id="adv-box" hidden>
+          <b id="adv-head"></b>
+          <p id="adv-hint" class="hint"></p>
+          <div id="adv-busy" class="busy-bar" hidden></div>
+          <label><span id="adv-time-label"></span> <select id="adv-time"></select></label>
+          <div class="buttons">
+            <button id="adv-again" class="primary" type="button" data-t="adv_again" data-tip="tip_adv_again" hidden></button>
+            <button id="adv-redraw" type="button" data-t="adv_redraw" data-tip="tip_adv_redraw" hidden></button>
+            <button id="adv-close" class="ghost" type="button" data-t="adv_close" data-tip="tip_adv_close"></button>
+          </div>
+        </section>
       </section>
 
-      <div id="options">
-        <label><span data-t="opt_style"></span>
-          <select id="style">
-            <option value="FASTEST" data-t="style_fastest"></option>
-            <option value="CURVY" data-t="style_curvy"></option>
-            <option value="VERY_CURVY" data-t="style_super_curvy"></option>
-          </select></label>
-        <label><span data-t="opt_surface"></span>
-          <select id="surface">
-            <option value="PAVED" data-t="surface_tarmac_only"></option>
-            <option value="MIXED" data-t="surface_mixed"></option>
-            <option value="GRAVEL" data-t="surface_gravel"></option>
-            <option value="OFFROAD" data-t="surface_offroad"></option>
-          </select></label>
-        <label><span data-t="opt_ferries"></span>
-          <select id="ferries">
-            <option value="ok" data-t="ferries_ok"></option>
-            <option value="no" data-t="no_ferries"></option>
-          </select></label>
-        <label><span data-t="opt_motorways"></span>
-          <select id="motorways">
-            <option value="ok" data-t="motorways_ok"></option>
-            <option value="no" data-t="no_motorways"></option>
-            <option value="noe" data-t="no_motorways_e_roads"></option>
-          </select></label>
-      </div>
-
-      <div id="summary" hidden></div>
-      <figure id="profile" hidden>
-        <canvas id="profile-canvas" height="80" role="img"></canvas>
-        <figcaption id="profile-at"></figcaption>
-      </figure>
-      <button id="fuel-gap" class="link warn" type="button" hidden></button>
-      <button id="compare" class="link" type="button" data-t="compare" hidden></button>
-      <section id="compare-box" hidden>
-        <b data-t="compare_title"></b>
-        <ul id="compare-list"></ul>
-        <div class="buttons"><button id="compare-close" class="ghost" type="button" data-t="compare_close"></button></div>
+      <section class="block" id="options-block">
+        <h2 data-t="sec_options"></h2>
+        <div id="options">
+          <label><span data-t="opt_style"></span>
+            <select id="style">
+              <option value="FASTEST" data-t="style_fastest"></option>
+              <option value="CURVY" data-t="style_curvy"></option>
+              <option value="VERY_CURVY" data-t="style_super_curvy"></option>
+            </select></label>
+          <label><span data-t="opt_surface"></span>
+            <select id="surface">
+              <option value="PAVED" data-t="surface_tarmac_only"></option>
+              <option value="MIXED" data-t="surface_mixed"></option>
+              <option value="GRAVEL" data-t="surface_gravel"></option>
+              <option value="OFFROAD" data-t="surface_offroad"></option>
+            </select></label>
+          <label><span data-t="opt_ferries"></span>
+            <select id="ferries">
+              <option value="ok" data-t="ferries_ok"></option>
+              <option value="no" data-t="no_ferries"></option>
+            </select></label>
+          <label><span data-t="opt_motorways"></span>
+            <select id="motorways">
+              <option value="ok" data-t="motorways_ok"></option>
+              <option value="no" data-t="no_motorways"></option>
+              <option value="noe" data-t="no_motorways_e_roads"></option>
+            </select></label>
+        </div>
+        <button id="compare" class="link" type="button" data-t="compare" data-tip="tip_compare" hidden></button>
+        <section id="compare-box" hidden>
+          <b data-t="compare_title"></b>
+          <ul id="compare-list"></ul>
+          <div class="buttons"><button id="compare-close" class="ghost" type="button" data-t="compare_close"></button></div>
+        </section>
       </section>
+
+      <section class="block" id="route-block" hidden>
+        <h2 data-t="sec_route"></h2>
+        <div id="summary" hidden></div>
+        <figure id="profile" hidden>
+          <canvas id="profile-canvas" height="80" role="img" data-tip="tip_profile"></canvas>
+          <figcaption id="profile-at"></figcaption>
+        </figure>
+        <button id="fuel-gap" class="link warn" type="button" hidden></button>
+      </section>
+
       <p id="status" role="status"></p>
 
-      <div id="send-row" hidden>
-        <input id="name" type="text" maxlength="80" data-tp="name_hint">
-        <button id="send" class="primary" type="button" data-t="send"></button>
-      </div>
-      <label id="send-as-row" hidden><span data-t="send_as"></span>
-        <select id="send-as">
-          <option value="trip" data-t="as_trip"></option>
-          <option value="track" data-t="as_track"></option>
-          <option value="both" data-t="as_both"></option>
-          <option value="days" data-t="as_days" hidden></option>
-        </select></label>
-      <button id="send-new" class="link" type="button" data-t="send_new" hidden></button>
-      <div id="share-row" hidden>
-        <button id="save-gpx" class="small" type="button" data-t="save_gpx"></button>
-        <button id="share" class="small" type="button" data-t="share"></button>
-      </div>
+      <section class="block" id="save-block" hidden>
+        <h2 data-t="sec_save"></h2>
+        <div id="send-row" hidden>
+          <label class="field"><span data-t="name_label"></span>
+            <input id="name" type="text" maxlength="80" data-tp="name_hint" data-tip="tip_name"></label>
+          <label class="field" id="send-as-row" hidden><span data-t="send_as"></span>
+            <select id="send-as">
+              <option value="trip" data-t="as_trip"></option>
+              <option value="track" data-t="as_track"></option>
+              <option value="both" data-t="as_both"></option>
+              <option value="days" data-t="as_days" hidden></option>
+            </select></label>
+          <button id="send" class="primary wide" type="button" data-t="send" data-tip="tip_send"></button>
+          <button id="send-new" class="link" type="button" data-t="send_new" data-tip="tip_send_new" hidden></button>
+        </div>
+        <div id="share-row" hidden>
+          <button id="save-draft" class="small" type="button" data-tip="tip_save_draft" hidden></button>
+          <button id="save-gpx" class="small" type="button" data-t="save_gpx" data-tip="tip_save_gpx"></button>
+          <button id="share" class="small" type="button" data-t="share" data-tip="tip_share"></button>
+        </div>
+      </section>
 
       <section id="drafts" hidden>
         <h2 data-t="drafts_title"></h2>
@@ -131,8 +145,8 @@
       <div id="devices" hidden></div>
 
       <footer>
-        <button id="new" class="ghost" type="button" data-t="new_trip"></button>
-        <button id="open-gpx" class="ghost" type="button" data-t="open_gpx"></button>
+        <button id="new" class="ghost" type="button" data-t="new_trip" data-tip="tip_new"></button>
+        <button id="open-gpx" class="ghost" type="button" data-t="open_gpx" data-tip="tip_open_gpx"></button>
         <input id="gpx-file" type="file" accept=".gpx,.xml,application/gpx+xml" hidden>
       </footer>
     </div>

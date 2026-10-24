@@ -3,14 +3,15 @@
 // updates it, deletes one, and sends a trip drawn before connecting. On the way: legs kept by the page, the height
 // profile, nights and days, comparing road styles, places on the map, a link and a GPX file of the trip, and a roundtrip.
 // Screenshots go to OUT.
-//   PLAYWRIGHT_DIR=<folder with node_modules/playwright> node tools/webplanner_test.mjs http://localhost:18788/plan/ localhost:18787 OUT
+//   [BROWSER=chromium] PLAYWRIGHT_DIR=<folder with node_modules/playwright> node tools/webplanner_test.mjs http://localhost:18788/plan/ localhost:18787 OUT
 import { createRequire } from "node:module";
 import fs from "node:fs/promises";
 import { b64, channel, parseLink, random } from "../webplanner/web/webplan.js";
 
-const { firefox } = createRequire((process.env.PLAYWRIGHT_DIR || process.cwd()) + "/")("playwright");
+// BROWSER=chromium for Chrome and Edge's engine (a click on the route behaved differently there); Firefox by default.
+const browserType = createRequire((process.env.PLAYWRIGHT_DIR || process.cwd()) + "/")("playwright")[process.env.BROWSER || "firefox"];
 const [base, relay, out = "."] = process.argv.slice(2);
-const browser = await firefox.launch();
+const browser = await browserType.launch();
 let failed = false;
 const check = (ok, what) => { console.log(`${ok ? "ok  " : "FAIL"} ${what}`); if (!ok) failed = true; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -21,10 +22,14 @@ async function device(link, name) {
   const me = random(16);
   const ws = new WebSocket(ch.url);
   const got = { plans: [], deletes: [] };
+  // As Curveon: it shows its trips in answer to what it finds in the channel; the page must have said something.
+  let heard;
+  const hearing = new Promise((r) => { heard = r; });
   ws.onmessage = async (ev) => {
     const m = await ch.open(ev.data);
     if (m?.type === "plan") got.plans.push(m.body);
     if (m?.type === "plan_del") got.deletes.push(m.body.ref);
+    if (m) heard();
   };
   // A relay that turns the connection down (e.g. too many new groups from one address) fails the test, not hangs it.
   await new Promise((r, j) => { ws.onopen = r; ws.onerror = () => j(new Error("the relay refused the device")); setTimeout(() => j(new Error("the relay did not answer")), 10000); });
@@ -32,8 +37,10 @@ async function device(link, name) {
   const send = async (type, body, slot) => ws.send(await ch.seal(type, me, { seq: ++seq, ts: Date.now(), ...body }, slot));
   return {
     me: b64(me), got, close: () => ws.close(),
-    /** Its planned trips, as the app publishes them: each one, then the list. */
+    /** Its planned trips, as the app publishes them: each one, then the list (once the page said anything). */
     async show(trips) {
+      const said = await Promise.race([hearing.then(() => true), sleep(5000).then(() => false)]);
+      check(said, `the page speaks first on the channel, so a device answers (${name})`);
       for (const t of trips) await send("plan_have", { trip: t }, "h" + t.id);
       await send("plan_index", { dev: name, ids: trips.map((t) => t.id) }, "index");
     },
@@ -98,6 +105,9 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   if (name === "desktop") await page.screenshot({ path: `${out}/${name}-0-options.png` });
   await page.keyboard.press("Escape");
   check(!(await page.$(".isel-list")), `${name}: Escape closes the list`);
+  // Everything says what it does when the pointer rests on it.
+  const untitled = await page.$$eval("#panel button:not([hidden]), #panel input, #panel select", (els) => els.filter((e) => e.offsetParent && !e.title && !e.closest("#stops, .trips, #compare-list")).map((e) => e.id || e.textContent));
+  check(untitled.length === 0, `${name}: every button and field has a tooltip (${untitled.join(", ")})`);
   // Coloured as in the app: blue, with gravel and tracks known for each leg.
   check((await page.evaluate(() => window.curveonMap.getPaintProperty("route", "line-color"))) === "#0091ea" &&
     (await page.evaluate(() => !!window.curveonMap.getSource("cv-surface"))), `${name}: the route is blue, with a layer for gravel and tracks`);
@@ -170,7 +180,8 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
 
     // Adventure: draw round the trip with the mouse button held down; it comes back as via points along fun roads.
     await page.click("#adv");
-    check(await page.isVisible("#adv-box") && (await page.textContent("#adv-hint")).length > 20, "desktop: Adventure asks for an area to be drawn");
+    check(await page.isVisible("#adv-box") && (await page.textContent("#adv-hint")).length > 20 && await page.isVisible("#draw") && await fitsInside("#draw-cancel"),
+      "desktop: Adventure asks for an area to be drawn, on the map too, with Cancel");
     const box = await page.evaluate(() => {
       const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates;
       const b = l.reduce((bb, c) => bb.extend(c), new maplibregl.LngLatBounds(l[0], l[0]));
@@ -372,8 +383,9 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
 
   // Delete from the device.
   await page.locator(".device").first().locator("ul.trips li", { hasText: "Helgetur" }).locator("button").click();
-  for (let i = 0; i < 50 && !dev.got.deletes.length; i++) await sleep(100);
-  check(dev.got.deletes[0]?.id === 11 && dev.got.deletes[0].r === dev.me, `${name}: delete reached the device`);
+  for (let i = 0; i < 50 && !dev.got.deletes.some((d) => d.id === 11); i++) await sleep(100);
+  const gone = dev.got.deletes.find((d) => d.id === 11);
+  check(gone?.r === dev.me, `${name}: delete reached the device`);
   check(!(await page.locator(".device").first().locator("ul.trips li", { hasText: "Helgetur" }).count()), `${name}: the deleted trip left the list`);
   await page.screenshot({ path: `${out}/${name}-4-after.png` });
 
@@ -397,6 +409,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
 
   if (name === "desktop") {
     // Each day as a trip: a via point of the GPX trip made a stop and a night, then sent a day at a time.
+    await page.waitForFunction(() => !window.curveonMap.isMoving(), null, { timeout: 10000 });
     await page.locator(".pin.via").nth(1).click();
     await pick("Make it a stop");
     await page.locator(".pin.stop").click();

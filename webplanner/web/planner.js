@@ -21,7 +21,7 @@ const TEXTS = {
     err_busy: "The planner is busy. Try again in a moment.", err_no_route: "No road found between these places. Move a point onto a road.",
     err_too_long: "That is too long for one trip (over 1500 km). Split it into days.", err_slow_down: "That was a lot of routes at once. Wait a few minutes.",
     err_outside: "Routes can be worked out in Europe so far. Move the points there.",
-    adv_open: "Adventure: fun roads on the way", adv_title: "Adventure",
+    adv_open: "Adventure: draw an area, get fun roads on the way", adv_title: "Adventure",
     adv_draw: "Hold the mouse button down and draw round the area you want to ride in on the way there.",
     adv_draw_touch: "Draw round the area you want to ride in on the way there, with your finger.",
     adv_stops: "The stops on the way give way to the adventure's roads (Undo brings them back).",
@@ -87,6 +87,25 @@ const TEXTS = {
     layer_food: "Food and coffee", layer_ferries: "Ferries", layer_motorcycle: "Motorcycle shops and workshops",
     save_gpx: "Save as GPX", share: "Copy link", link_copied: "Link copied. Whoever opens it sees this trip and can change it.",
     opened_link: "Opened from a link. Change it, save it as a draft, or send it to Curveon.",
+    sec_trip: "Trip", sec_options: "Roads", sec_route: "Route", sec_save: "Save and send", name_label: "Name",
+    draw_cancel: "Cancel",
+    tip_search: "Search for a place, an address or a business; or click the map",
+    tip_undo: "Undo the last change (Ctrl+Z)", tip_clear: "Take every point off the map and start the trip again",
+    tip_save_draft: "Keep what is on the map in this browser, to go on with later (Drafts, below)",
+    tip_adv: "Draw an area on the map: Curveon finds the most fun roads through it on the way to the destination, within the time you give",
+    tip_loop: "Draw an area on the map: Curveon finds a loop through it from the start and back, as long as you allow",
+    tip_adv_again: "Another suggestion in the same area", tip_adv_redraw: "Draw the area again", tip_adv_close: "Stop, and keep the trip as it is now",
+    tip_style: "What kind of roads the route looks for", tip_surface: "Whether the route may take gravel and tracks",
+    tip_ferries: "Whether the route may take ferries", tip_motorways: "Whether the route may take motorways and E-roads",
+    tip_compare: "Work out the route as Fastest, Curvy and Super curvy, see them side by side, and pick one",
+    tip_profile: "Heights along the route: point at it to see where on the map",
+    tip_name: "The trip's name in Curveon", tip_send: "Send the trip to Curveon on your connected phone or tablet",
+    tip_send_new: "Keep the trip on the device as it was, and save this as a new trip",
+    tip_save_gpx: "Download the trip as a GPX file, for other apps and GPS units",
+    tip_share: "Copy a link to this trip: open it on another computer or send it to a friend",
+    tip_new: "Start a new, empty trip", tip_open_gpx: "Open a GPX file from this computer (or drop it on the map)",
+    tip_pair: "Show the code to scan in Curveon (Planned → From the web)", tip_unpair: "Make this browser forget your phone and tablet",
+    tip_lang: "Norsk / English", tip_fold: "Fold the panel away, or out again",
     disconnect: "Disconnect",
     confirm_disconnect: (d) => `Disconnect ${d}? This browser forgets the connection, so nobody using it can see or change the trips there. To connect again, scan the code again.`,
     disconnected: "Disconnected. This browser can no longer reach your phone or tablet. To remove it there too: Planned → From the web → Disconnect.",
@@ -107,7 +126,7 @@ const TEXTS = {
     err_busy: "Planleggeren har mye å gjøre. Prøv igjen om litt.", err_no_route: "Fant ingen vei mellom disse stedene. Flytt et punkt inn på en vei.",
     err_too_long: "Det er for langt for én tur (over 1500 km). Del den opp i dager.", err_slow_down: "Det ble mange ruter på kort tid. Vent noen minutter.",
     err_outside: "Ruter kan foreløpig bare regnes ut i Europa. Flytt punktene dit.",
-    adv_open: "Eventyr: morsomme veier på veien dit", adv_title: "Eventyr",
+    adv_open: "Eventyr: tegn et område, få morsomme veier dit", adv_title: "Eventyr",
     adv_draw: "Hold museknappen nede og tegn rundt området du vil kjøre i på veien dit.",
     adv_draw_touch: "Tegn rundt området du vil kjøre i på veien dit, med fingeren.",
     adv_stops: "Stoppene underveis viker for eventyrets veier (Angre henter dem tilbake).",
@@ -173,6 +192,25 @@ const TEXTS = {
     layer_food: "Mat og kaffe", layer_ferries: "Ferjer", layer_motorcycle: "MC-butikker og verksteder",
     save_gpx: "Lagre som GPX", share: "Kopier lenke", link_copied: "Lenken er kopiert. Den som åpner den, ser turen og kan endre den.",
     opened_link: "Åpnet fra en lenke. Endre den, lagre den som utkast, eller send den til Curveon.",
+    sec_trip: "Turen", sec_options: "Veivalg", sec_route: "Ruten", sec_save: "Lagre og send", name_label: "Navn",
+    draw_cancel: "Avbryt",
+    tip_search: "Søk etter et sted, en adresse eller en bedrift, eller klikk i kartet",
+    tip_undo: "Angre siste endring (Ctrl+Z)", tip_clear: "Fjern alle punktene fra kartet og begynn turen på nytt",
+    tip_save_draft: "Ta vare på det som er på kartet i denne nettleseren, for å jobbe videre senere (Utkast, lenger ned)",
+    tip_adv: "Tegn et område i kartet: Curveon finner de morsomste veiene gjennom det på veien til målet, innenfor tiden du gir",
+    tip_loop: "Tegn et område i kartet: Curveon finner en runde gjennom det fra start og tilbake, så lang du tillater",
+    tip_adv_again: "Et nytt forslag i samme område", tip_adv_redraw: "Tegn området på nytt", tip_adv_close: "Stopp, og behold turen som den er nå",
+    tip_style: "Hva slags veier ruten skal finne", tip_surface: "Om ruten kan gå på grus og traktorvei",
+    tip_ferries: "Om ruten kan ta ferje", tip_motorways: "Om ruten kan gå på motorvei og E-vei",
+    tip_compare: "Regn ut ruten som Raskest, Svingete og Supersvingete, se dem side om side, og velg én",
+    tip_profile: "Høyden langs ruten: pek i den for å se hvor på kartet",
+    tip_name: "Navnet på turen i Curveon", tip_send: "Send turen til Curveon på telefonen eller nettbrettet du har koblet til",
+    tip_send_new: "Behold turen på enheten som den var, og lagre dette som en ny tur",
+    tip_save_gpx: "Last ned turen som GPX-fil, til andre apper og GPS-er",
+    tip_share: "Kopier en lenke til turen: åpne den på en annen PC eller send den til en venn",
+    tip_new: "Begynn på en ny, tom tur", tip_open_gpx: "Åpne en GPX-fil fra denne PC-en (eller slipp den på kartet)",
+    tip_pair: "Vis koden du skanner i Curveon (Planlagte → Fra nettet)", tip_unpair: "Få denne nettleseren til å glemme telefonen og nettbrettet ditt",
+    tip_lang: "Norsk / English", tip_fold: "Fell panelet sammen, eller ut igjen",
     disconnect: "Koble fra",
     confirm_disconnect: (d) => `Koble fra ${d}? Denne nettleseren glemmer koblingen, så ingen som bruker den kan se eller endre turene der. Skann koden på nytt for å koble til igjen.`,
     disconnected: "Koblet fra. Denne nettleseren kommer ikke lenger til telefonen eller nettbrettet ditt. For å fjerne koblingen der også: Planlagte → Fra nettet → Koble fra.",
@@ -202,6 +240,7 @@ function applyTexts() {
   document.title = t("title");
   document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
   document.querySelectorAll("[data-tp]").forEach((e) => { e.placeholder = t(e.dataset.tp); });
+  document.querySelectorAll("[data-tip]").forEach((e) => { e.title = t(e.dataset.tip); });
   $("lang").textContent = t("lang");
   $("send-as").title = t("send_as_explain");
   $("theme").textContent = theme === "dark" ? "☀" : "☾";
@@ -381,7 +420,7 @@ function fitTo(coords) {
   if (!coords.length) return;
   const b = coords.reduce((bb, [la, lo]) => bb.extend([lo, la]), new maplibregl.LngLatBounds([coords[0][1], coords[0][0]], [coords[0][1], coords[0][0]]));
   const narrow = innerWidth <= 640;
-  map.fitBounds(b, { padding: narrow ? { top: 40, bottom: innerHeight * 0.55, left: 30, right: 30 } : { top: 60, bottom: 60, left: 420, right: 60 }, maxZoom: 12 });
+  map.fitBounds(b, { padding: narrow ? { top: 40, bottom: innerHeight * 0.55, left: 30, right: 30 } : { top: 60, bottom: 60, left: 470, right: 60 }, maxZoom: 12 });
 }
 
 // ---------- Markers ----------
@@ -812,11 +851,13 @@ map.getCanvasContainer().addEventListener("auxclick", (e) => { if (e.button === 
 
 // ---------- Clicking and dragging on the map ----------
 let draggingLine = false;
+/** A click on the line already asked what to do (on letting go): the click event that may follow is not another. */
+let skipClickUntil = 0;
 // The map hears clicks on the points and the menu before they do: those are theirs.
 const onPinOrMenu = (e) => !!e.originalEvent.target.closest?.(".maplibregl-marker, .maplibregl-popup");
 // A click asks what the place should be; a click beside an open menu only closes it.
 map.on("click", (e) => {
-  if (draggingLine || onPinOrMenu(e)) return;
+  if (draggingLine || onPinOrMenu(e) || Date.now() < skipClickUntil) return;
   if (menu) { closeMenu(); return; }
   // A place on the map's layers (a fuel station, a viewpoint): the same menu, at the place and with its name.
   const poi = map.queryRenderedFeatures(e.point, { layers: ["cv-pois"] })[0];
@@ -908,27 +949,37 @@ map.on("touchstart", "route-hit", (e) => { if (e.points.length === 1) startLineD
 function startLineDrag(e) {
   // Only the left button drags the line (the right one asks about the road there).
   if (!result || adv?.drawing || onPinOrMenu(e) || e.originalEvent.button > 0) return;
-  if (viewOnly) lineToTrip();
-  if (points.length < 2) return;
+  if (!viewOnly && points.length < 2) return;
   e.preventDefault();
   closeMenu();
   draggingLine = true;
-  const leg = legAt(e.lngLat);
-  const from = e.point;
-  let moved = false;
-  const ghost = new maplibregl.Marker({ element: el("div", "pin via") }).setLngLat(e.lngLat).addTo(map);
+  const from = e.point, at = e.lngLat;
+  let moved = false, ghost = null, leg = 0;
+  // A via point follows the pointer only once it moves: a click on the line shows nothing until it is let go.
   const move = (ev) => {
-    moved ||= Math.hypot(ev.point.x - from.x, ev.point.y - from.y) > 4;
+    if (!moved && Math.hypot(ev.point.x - from.x, ev.point.y - from.y) <= 4) return;
+    if (!moved) {
+      moved = true;
+      if (viewOnly) lineToTrip();
+      leg = legAt(at);
+      ghost = new maplibregl.Marker({ element: el("div", "pin via") }).setLngLat(ev.lngLat).addTo(map);
+    }
     ghost.setLngLat(ev.lngLat);
     drawDrag(points[leg], ev.lngLat, points[leg + 1]);
   };
   const up = () => {
     map.off("mousemove", move); map.off("touchmove", move);
+    if (!moved) {
+      // A click on the line: a via point or a stop there? Asked here, not by the click that follows, which some
+      // browsers (Chrome, Edge) never send after a press on the line.
+      draggingLine = false;
+      skipClickUntil = Date.now() + 400;
+      placeMenu(at, true);
+      return;
+    }
     const ll = ghost.getLngLat();
     ghost.remove();
     drawDrag();
-    // Only a click on the line, not a drag: the click that follows asks what the place should be.
-    if (!moved) { draggingLine = false; return; }
     points.splice(leg + 1, 0, { name: "", lat: ll.lat, lon: ll.lng, via: true });
     changed();
     setTimeout(() => { draggingLine = false; }, 50);
@@ -1154,11 +1205,16 @@ function startDrawing() {
   map.dragPan.disable();
   map.getCanvas().style.cursor = "crosshair";
   drawArea();
+  // On the map itself, where the rider looks next: what to do now, and a way out.
+  $("draw-text").textContent = t(adv.loop ? (touchy ? "loop_draw_touch" : "loop_draw") : touchy ? "adv_draw_touch" : "adv_draw");
+  $("draw").hidden = false;
+  requestAnimationFrame(() => $("adv-box").scrollIntoView({ block: "nearest", behavior: "smooth" }));
   drawAdventure(adv.loop ? t(touchy ? "loop_draw_touch" : "loop_draw")
     : t(touchy ? "adv_draw_touch" : "adv_draw") + (points.length > 2 ? " " + t("adv_stops") : ""));
 }
 
 function stopDrawing() {
+  $("draw").hidden = true;
   map.dragPan.enable();
   map.getCanvas().style.cursor = "";
   if (adv) adv.drawing = false;
@@ -1295,6 +1351,8 @@ $("loop").addEventListener("click", () => openAdventure(true));
 $("adv-again").addEventListener("click", () => { adv.variant++; findAdventure(); });
 $("adv-redraw").addEventListener("click", startDrawing);
 $("adv-close").addEventListener("click", closeAdventure);
+$("draw-cancel").addEventListener("click", closeAdventure);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && adv?.drawing) closeAdventure(); });
 $("adv-time").addEventListener("change", () => {
   store.set(adv?.loop ? "loopKm" : "advMinutes", $("adv-time").value);
   if (adv?.area) findAdventure();
@@ -1307,17 +1365,18 @@ function routeOptions() {
 function drawSummary() {
   const s = $("summary");
   $("send-row").hidden = !result || viewOnly;
+  $("route-block").hidden = !result;
   $("send-new").hidden = !result || viewOnly || !editing?.ref;
   $("send-as-row").hidden = !result || viewOnly || !!editing?.ref;
   // A trip with nights can go a day at a time.
   const daysOk = hasNights() && !!result;
   $("send-as").querySelector('[value="days"]').hidden = !daysOk;
   if (!daysOk && $("send-as").value === "days") $("send-as").value = "trip";
-  $("share-row").hidden = !result;
-  $("share").hidden = viewOnly || points.length < 2;
+  $("share").hidden = !result || viewOnly || points.length < 2;
   drawFuelGap();
   drawProfile();
   $("compare").hidden = !result || viewOnly || points.length < 2 || compareOpen || !!adv;
+  drawSaveBlock();
   if (!result) { s.hidden = true; return; }
   const h = Math.floor(result.s / 3600), m = Math.round((result.s % 3600) / 60);
   const part = (v, unit) => { const e = el("span", "", v); e.append(el("small", "", unit)); return e; };
@@ -1376,7 +1435,15 @@ function iconSelect(sel) {
     const o = sel.selectedOptions[0];
     btn.innerHTML = iconSvg(icons[sel.value] || "");
     btn.append(el("span", "", o?.textContent || ""));
-    btn.title = o?.textContent || "";
+    btn.title = `${t("tip_" + sel.id)}: ${o?.textContent || ""}`;
+  }
+  /** Below the button, or above it when the screen ends first; as wide as the button at least. */
+  function place() {
+    if (!list) return;
+    const r = btn.getBoundingClientRect();
+    list.style.minWidth = r.width + "px";
+    list.style.left = Math.max(8, Math.min(r.left, innerWidth - list.offsetWidth - 8)) + "px";
+    list.style.top = (r.bottom + list.offsetHeight + 8 < innerHeight ? r.bottom + 4 : Math.max(8, r.top - list.offsetHeight - 4)) + "px";
   }
   function open() {
     if (list) return close();
@@ -1393,11 +1460,7 @@ function iconSelect(sel) {
       list.append(li);
     });
     document.body.append(list);
-    // Below the button, or above it when the screen ends first; as wide as the button at least.
-    const r = btn.getBoundingClientRect();
-    list.style.minWidth = r.width + "px";
-    list.style.left = Math.min(r.left, innerWidth - list.offsetWidth - 8) + "px";
-    list.style.top = (r.bottom + list.offsetHeight + 8 < innerHeight ? r.bottom + 4 : Math.max(8, r.top - list.offsetHeight - 4)) + "px";
+    place();
     btn.ariaExpanded = "true";
     mark();
     document.addEventListener("pointerdown", outside, true);
@@ -1410,8 +1473,9 @@ function iconSelect(sel) {
     else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); at = Math.max(0, Math.min(sel.options.length - 1, at + (e.key === "ArrowDown" ? 1 : -1))); mark(); }
     else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(sel.options[at].value); }
   };
-  addEventListener("resize", close);
-  $("body").addEventListener("scroll", close);
+  // The panel scrolled (also just after opening, when the button was scrolled into view): the list goes with it.
+  addEventListener("resize", place);
+  $("body").addEventListener("scroll", place);
   show();
   return show;
 }
@@ -1436,6 +1500,13 @@ function showOptions() {
   if (typeof iconSelects !== "undefined") drawSelects();
 }
 ["style", "surface", "ferries", "motorways"].forEach((id) => $(id).addEventListener("change", () => { readOptions(); drawDrafts(); }));
+
+/** "Save and send" shows when there is something to save or send. */
+function drawSaveBlock() {
+  $("save-block").hidden = !result && $("save-draft").hidden;
+  $("share-row").hidden = !result && $("save-draft").hidden;
+  $("save-gpx").hidden = !result;
+}
 
 // ---------- Height profile ----------
 // The heights along the route under the numbers: the pointer on it shows the place on the map, and how high it is.
@@ -1823,7 +1894,13 @@ async function connect() {
   if (!link || socket) return;
   const c = await ensureLink();
   const ws = (socket = new WebSocket(c.url));
-  ws.onopen = () => { backoff = 1000; };
+  ws.onopen = async () => {
+    backoff = 1000;
+    // A word in the channel for the devices: Curveon answers what it finds there with its trips, and a channel just made
+    // (a new code, after Disconnect) is otherwise empty, the device connected but silent until a newer app answers that
+    // too. It is a delete of nothing (this page's own trip 0): no device acts on it.
+    try { ws.send(await c.del(rider, nextSeq(), { r: b64(rider), id: 0 })); } catch { /* closed meanwhile */ }
+  };
   ws.onmessage = async (ev) => {
     const m = await c.open(ev.data);
     if (!m) return;
@@ -2057,6 +2134,7 @@ function drawDrafts() {
   }));
   // The save button shows while there is something on the map not saved yet.
   $("save-draft").hidden = !unsaved();
+  drawSaveBlock();
   $("save-draft").textContent = t(currentDraft ? "save_draft_again" : "save_draft");
 }
 $("save-draft").addEventListener("click", saveDraft);

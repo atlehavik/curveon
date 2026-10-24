@@ -301,9 +301,11 @@ class WebPlanInbox(private val transports: TransportFactory, private val scheme:
     lateinit var transport: Transport
     val timer = java.util.Timer("webplan-live", true)
 
-    fun flush() {
+    // [replay]: the end of the replay, answered even when the channel was empty (a code just scanned): the page then
+    // sees this device and its trips at once, instead of a device that says it is connected and stays silent.
+    fun flush(replay: Boolean = false) {
       val inbound = synchronized(lock) {
-        if (trips.isEmpty() && deletes.isEmpty()) return
+        if (!replay && trips.isEmpty() && deletes.isEmpty()) return
         WebPlanInbound(trips.values.toList(), deletes.toList()).also { trips.clear(); deletes.clear() }
       }
       onInbound(inbound).forEach { transport.send(it) }
@@ -313,14 +315,14 @@ class WebPlanInbox(private val transports: TransportFactory, private val scheme:
     transport = transports.open(link.relayUrl(scheme), object : TransportListener {
       override fun onOpen() {
         // An empty channel replays nothing: the first batch is then simply empty.
-        synchronized(lock) { quietTask = timer.schedule(quietMs) { synchronized(lock) { replayed = true }; flush() } }
+        synchronized(lock) { quietTask = timer.schedule(quietMs) { synchronized(lock) { replayed = true }; flush(replay = true) } }
       }
       override fun onMessage(text: String) {
         val now = synchronized(lock) {
           if (!WebPlan.collect(link, text, trips, deletes)) return
           if (!replayed) {
             quietTask?.cancel()
-            quietTask = timer.schedule(quietMs) { synchronized(lock) { replayed = true }; flush() }
+            quietTask = timer.schedule(quietMs) { synchronized(lock) { replayed = true }; flush(replay = true) }
           }
           replayed
         }

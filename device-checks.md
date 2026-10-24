@@ -12,6 +12,8 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 - [ ] PC: start en rundtur og hold midtre museknapp nede mens du drar: kartet flyttes, uten at det tegnes. Etter tegningen står «Rundtur: Regner ut … 5 s» øverst på kartet, og området pulserer til turen er klar.
 - [ ] PC: velg Underlag Grus eller Offroad: ruten er blå, grus oransje og traktorveier lilla, som i appen. Rullegardinene Veier, Underlag, Ferjer og Motorvei har et ikon for hvert valg.
 - [ ] PC: åpne en rundtur eller kjørt tur fra Pixelen (den som bare kan vises), og klikk på linjen: «Hjelpepunkt her» gjør den til en tur du kan endre og sende som ny.
+- [ ] PC i Chrome eller Edge: klikk (uten å dra) et sted på en rute: menyen «Hjelpepunkt her / Stopp her» kommer, og punktet legges inn der.
+- [ ] PC: panelet er delt i Turen, Veivalg, Ruten og Lagre og send. Hold musa over knapper og menyer: alle forklarer seg. «Eventyr»: en beskjed med Avbryt kommer øverst på kartet om at du skal tegne.
 
 ## 2026-10-24 — Nettplanleggeren: dager, høyder, steder, rundtur
 
