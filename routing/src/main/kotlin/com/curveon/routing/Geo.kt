@@ -47,4 +47,30 @@ object Geo {
         if (d < -180) d += 360
         return d
     }
+
+    /** How far [p] is from the segment [a]–[b], in metres (flat, which is close enough over a few hundred metres). */
+    fun segmentDistance(p: LatLon, a: LatLon, b: LatLon): Double {
+        val kx = Math.cos(Math.toRadians(p.lat)) * 111_320.0
+        val ky = 110_540.0
+        val ax = (a.lon - p.lon) * kx; val ay = (a.lat - p.lat) * ky
+        val bx = (b.lon - p.lon) * kx; val by = (b.lat - p.lat) * ky
+        val dx = bx - ax; val dy = by - ay
+        val len = dx * dx + dy * dy
+        val t = if (len == 0.0) 0.0 else (-(ax * dx + ay * dy) / len).coerceIn(0.0, 1.0)
+        return Math.hypot(ax + t * dx, ay + t * dy)
+    }
+
+    /** [pts] with the points left out that are within [tolerance] metres of a straight line between their neighbours kept. */
+    fun simplify(pts: List<LatLon>, tolerance: Double): List<LatLon> {
+        if (pts.size < 3) return pts
+        val keep = BooleanArray(pts.size).also { it[0] = true; it[pts.lastIndex] = true }
+        val todo = ArrayDeque<Pair<Int, Int>>().apply { add(0 to pts.lastIndex) }
+        while (todo.isNotEmpty()) {
+            val (a, b) = todo.removeLast()
+            var worst = -1; var far = tolerance
+            for (i in a + 1 until b) { val d = segmentDistance(pts[i], pts[a], pts[b]); if (d > far) { far = d; worst = i } }
+            if (worst > 0) { keep[worst] = true; todo.add(a to worst); todo.add(worst to b) }
+        }
+        return pts.filterIndexed { i, _ -> keep[i] }
+    }
 }

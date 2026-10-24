@@ -32,4 +32,5 @@ include(":phone")
 include(":pmtiles")
 include(":groups")
 include(":qrscan")
+include(":webplanner")
 
