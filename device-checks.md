@@ -9,6 +9,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 ## 2026-10-24 — Planlegg på nett, økt med telefonen (1.2.4)
 
 - [ ] PC: åpne https://relay.curveon.no/plan/ (eller curveon.no/plan når nettsiden er lagt ut). Kartet skal vise Norge med stedsnavn. Søk «Geiranger», klikk et startpunkt i kartet, og se at ruten tegnes med km, tid og svinger. Dra i den oransje linjen til en annen vei: et «Gjennom her»-punkt kommer inn.
+- [ ] PC: zoom ut og flytt til Sverige eller Tyskland: kartet fortsetter utenfor Norge. Planlegg Berlin–München: ruten tegnes. ☾-knappen øverst gir mørkt kart (☀ tilbake), og valget huskes neste gang. curveon.no har «Planlegg på nett» øverst, og curveon.no/plan går til planleggeren.
 - [ ] PC: trykk «Koble til Curveon». Pixel: GPX og turer → Planlagte → Fra nettet → Skann koden. QR-koden på PC-en skal lukke seg selv, det skal stå «Koblet til Pixel 9a», og turene under Planlagte på Pixelen skal vises i gruppene sine. Det du tegnet før du skannet, ligger fortsatt på kartet.
 - [ ] PC: «Send til Curveon» for turen du tegnet: den dukker opp under Planlagte på Pixelen (med en gang hvis Planlagte står åpen, ellers når du åpner den).
 - [ ] PC: klikk en av Pixelens turer: den åpnes med sin linje. Bytt til Supersvingete (eller dra linjen) og trykk «Oppdater på Pixel 9a»: turen på Pixelen endres (samme tur, samme gruppe, ikke en kopi). Prøv også «Lagre som ny tur».
