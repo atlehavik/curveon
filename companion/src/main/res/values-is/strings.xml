@@ -36,4 +36,25 @@
     <string name="group_error_already_member">Þú ert þegar í þessum hópi.</string>
     <string name="group_error_other">Eitthvað fór úrskeiðis með hópinn.</string>
     <string name="group_error_not_linked">Opnaðu fyrst Curveon í spjaldtölvunni eða þessum síma: vinir þínir og hópar búa þar.</string>
+    <string name="intro">Deilir tónlist, skilaboðum og símtölum úr þessum síma með Curveon-spjaldtölvunni yfir Bluetooth. Paraðu fyrst símann og spjaldtölvuna í Bluetooth-stillingum Android.</string>
+    <string name="status_title">Staða</string>
+    <string name="status_service">Þjónusta</string>
+    <string name="status_running">Í gangi</string>
+    <string name="status_stopped">Stöðvuð</string>
+    <string name="status_tablet">Spjaldtölva</string>
+    <string name="status_not_connected">Ekki tengd</string>
+    <string name="status_mirrored">Skilaboð á spjaldtölvunni</string>
+    <string name="status_now_playing">Í spilun</string>
+    <string name="status_waiting">Bíður eftir spjaldtölvunni…</string>
+    <string name="status_bluetooth_off">Slökkt á Bluetooth</string>
+    <string name="setup_title">Uppsetning</string>
+    <string name="setup_notification_access">Tilkynningaaðgangur (skilaboð, tónlist)</string>
+    <string name="setup_permissions">Bluetooth, hljóðnemi, tengiliðir, símtöl</string>
+    <string name="setup_grant">Leyfa</string>
+    <string name="sharing_start">Byrja að deila með spjaldtölvunni</string>
+    <string name="sharing_stop">Hætta að deila</string>
+    <string name="notification_channel">Tenging við spjaldtölvu</string>
+    <string name="notification_text">Deilir tónlist, skilaboðum og símtölum með spjaldtölvunni</string>
+    <string name="duration_min">%1$d mín</string>
+    <string name="duration_h_min">%1$d klst. %2$d mín</string>
 </resources>

@@ -26,7 +26,8 @@
       "Rider pictures are sharper: a new picture is sent in twice the size, and when you tap someone on the map you see it bigger (pictures you've already set stay as they were until you pick them again)",
       "The GPX button in the main menu is now violet, so it no longer looks like the button next to it",
       "The buttons in the main menu now all behave the same: the open one lights up in its own colour, green for the phone, orange for friends and violet for GPX",
-      "A selfie for your profile now looks like the one you framed: it is no longer flipped after you take it. And when you allow SMS or the microphone in the phone settings, the notice goes away at once"
+      "A selfie for your profile now looks like the one you framed: it is no longer flipped after you take it. And when you allow SMS or the microphone in the phone settings, the notice goes away at once",
+      "We went through every text in the app, in English and Norwegian, so buttons, hints and help say plainly what they do and match how Curveon works today. In a group ride the others are now called participants in Norwegian, and the companion app speaks your language too"
     ],
     "nb": [
       "Funnet en feil eller fått en idé? Under Innstillinger → Hjelp kan du nå si fra rett fra appen, med tittel, noen ord og gjerne bilder. Du trenger ingen GitHub-konto: det blir en sak på GitHub som alle kan lese, og under Mine tilbakemeldinger ser du om den er tatt tak i, hvor mange svar den har fått, og kan åpne den for å følge med. Lista rydder seg selv: en sak som slettes forsvinner, og en som lukkes blir stående i to uker så du ser hvordan det endte",
@@ -53,7 +54,8 @@
       "Profilbildene er skarpere: et nytt bilde sendes i dobbel størrelse, og når du trykker på noen på kartet, ser du det større (bilder du allerede har satt, blir som de var til du velger dem på nytt)",
       "GPX-knappen i hovedmenyen er nå fiolett, så den ikke ser lik ut som knappen ved siden av",
       "Knappene i hovedmenyen oppfører seg nå likt: den som er åpen lyser i sin egen farge, grønn for telefon, oransje for venner og fiolett for GPX",
-      "En selfie til profilen ser nå ut som den du rammet inn: den snus ikke lenger etter at du har tatt den. Og når du gir tillatelse til SMS eller mikrofon i telefoninnstillingene, forsvinner advarselen med en gang"
+      "En selfie til profilen ser nå ut som den du rammet inn: den snus ikke lenger etter at du har tatt den. Og når du gir tillatelse til SMS eller mikrofon i telefoninnstillingene, forsvinner advarselen med en gang",
+      "Vi har gått gjennom alle tekstene i appen, på norsk og engelsk, så knapper, hint og hjelp sier rett ut hva de gjør og stemmer med hvordan Curveon virker i dag. På en gruppetur heter de andre nå deltakere, og Companion-appen snakker også norsk"
     ],
     "sv": [
       "Inga fler vändningar mitt på vägen: en tur som en vän delar med dig ansluter du nu till i den riktning den går, så du skickas aldrig till en punkt på vägen bara för att vända där. Och har turen ett stopp längs vägen kör du vidare åt samma håll till en korsning eller rondell i stället för att vända på vägen",
@@ -79,7 +81,8 @@
       "Profilbilderna är skarpare: en ny bild skickas i dubbel storlek, och när du trycker på någon på kartan ser du den större (bilder du redan satt förblir som de var tills du väljer dem igen)",
       "GPX-knappen i huvudmenyn är nu violett, så den inte ser ut som knappen bredvid",
       "Knapparna i huvudmenyn beter sig nu likadant: den som är öppen lyser i sin egen färg, grönt för telefon, orange för vänner och violett för GPX",
-      "En selfie till profilen ser nu ut som den du ramade in: den vänds inte längre efter att du tagit den. Och när du tillåter SMS eller mikrofon i telefoninställningarna försvinner varningen direkt"
+      "En selfie till profilen ser nu ut som den du ramade in: den vänds inte längre efter att du tagit den. Och när du tillåter SMS eller mikrofon i telefoninställningarna försvinner varningen direkt",
+      "Vi har gått igenom alla texter i appen, så knappar, tips och hjälp säger rakt ut vad de gör och stämmer med hur Curveon fungerar i dag. Companion-appen talar nu också ditt språk"
     ],
     "da": [
       "Ingen flere vendinger midt på vejen: en tur, en ven deler med dig, kobler du dig nu på i den retning, den kører, så du bliver aldrig sendt hen til et punkt på vejen bare for at vende der. Og har turen et stop langs vejen, kører du videre samme vej til et kryds eller en rundkørsel i stedet for at vende på vejen",
@@ -105,7 +108,8 @@
       "Profilbillederne er skarpere: et nyt billede sendes i dobbelt størrelse, og når du trykker på nogen på kortet, ser du det større (billeder du allerede har sat, forbliver som de var, til du vælger dem igen)",
       "GPX-knappen i hovedmenuen er nu violet, så den ikke ligner knappen ved siden af",
       "Knapperne i hovedmenuen opfører sig nu ens: den, der er åben, lyser i sin egen farve, grøn for telefon, orange for venner og violet for GPX",
-      "En selfie til profilen ser nu ud som den, du indrammede: den vendes ikke længere, når du har taget den. Og når du giver tilladelse til SMS eller mikrofon i telefonindstillingerne, forsvinder advarslen med det samme"
+      "En selfie til profilen ser nu ud som den, du indrammede: den vendes ikke længere, når du har taget den. Og når du giver tilladelse til SMS eller mikrofon i telefonindstillingerne, forsvinder advarslen med det samme",
+      "Vi har gennemgået alle tekster i appen, så knapper, tips og hjælp siger klart, hvad de gør, og passer til, hvordan Curveon virker i dag. Companion-appen taler nu også dit sprog"
     ],
     "fi": [
       "Ei enää kääntymistä keskellä tietä: ystävän jakamaan reittiin liityt nyt sen kulkusuuntaan, joten sinua ei koskaan ohjata tien pisteeseen vain kääntymään siellä. Ja jos reitillä on pysähdys tien varrella, jatkat siitä samaan suuntaan risteykseen tai liikenneympyrään sen sijaan, että tekisit U-käännöksen tiellä",
@@ -131,7 +135,8 @@
       "Profiilikuvat ovat terävämpiä: uusi kuva lähetetään kaksinkertaisena, ja kun napautat jotakuta kartalla, näet sen isompana (jo asetetut kuvat pysyvät ennallaan, kunnes valitset ne uudelleen)",
       "GPX-painike päävalikossa on nyt violetti, jotta se ei näytä viereiseltä painikkeelta",
       "Päävalikon painikkeet toimivat nyt samoin: avoin painike hehkuu omalla värillään, puhelin vihreänä, ystävät oranssina ja GPX violettina",
-      "Profiilin selfie näyttää nyt samalta kuin rajasit sen: sitä ei enää käännetä oton jälkeen. Ja kun sallit tekstiviestit tai mikrofonin puhelimen asetuksissa, huomautus katoaa heti"
+      "Profiilin selfie näyttää nyt samalta kuin rajasit sen: sitä ei enää käännetä oton jälkeen. Ja kun sallit tekstiviestit tai mikrofonin puhelimen asetuksissa, huomautus katoaa heti",
+      "Kävimme läpi kaikki sovelluksen tekstit, joten painikkeet, vihjeet ja ohjeet kertovat suoraan, mitä ne tekevät, ja vastaavat sitä, miten Curveon nyt toimii. Myös Companion-sovellus puhuu nyt kieltäsi"
     ],
     "is": [
       "Engar fleiri U-beygjur á miðjum vegi: ferð sem vinur deilir með þér tengist þú nú í þá átt sem hún liggur, svo þú ert aldrei sendur á punkt á veginum bara til að snúa þar við. Og ef ferðin hefur viðkomustað við veginn heldur þú áfram sömu leið að gatnamótum eða hringtorgi í stað þess að snúa við á veginum",
@@ -157,7 +162,8 @@
       "Prófílmyndirnar eru skarpari: ný mynd er send í tvöfaldri stærð og þegar þú ýtir á einhvern á kortinu sérðu hana stærri (myndir sem þú hefur þegar sett haldast eins þar til þú velur þær aftur)",
       "GPX-hnappurinn í aðalvalmyndinni er nú fjólublár, svo hann líti ekki út eins og hnappurinn við hliðina",
       "Hnapparnir í aðalvalmyndinni haga sér nú eins: sá sem er opinn lýsir í sínum eigin lit, grænn fyrir síma, appelsínugulur fyrir vini og fjólublár fyrir GPX",
-      "Sjálfsmynd fyrir prófílinn lítur nú út eins og þú rammaðir hana inn: henni er ekki lengur snúið eftir að þú tekur hana. Og þegar þú leyfir SMS eða hljóðnema í símastillingunum hverfur ábendingin strax"
+      "Sjálfsmynd fyrir prófílinn lítur nú út eins og þú rammaðir hana inn: henni er ekki lengur snúið eftir að þú tekur hana. Og þegar þú leyfir SMS eða hljóðnema í símastillingunum hverfur ábendingin strax",
+      "Við fórum yfir alla texta í appinu, svo hnappar, ábendingar og hjálp segja skýrt hvað þau gera og passa við hvernig Curveon virkar í dag. Companion-appið talar nú líka þitt tungumál"
     ],
     "de": [
       "Kein Wenden mehr mitten auf der Straße: In eine Tour, die ein Freund mit dir teilt, steigst du jetzt in Fahrtrichtung ein, sodass du nie zu einem Punkt auf der Straße geschickt wirst, nur um dort zu wenden. Und hat die Tour einen Stopp an der Straße, fährst du in deiner Richtung weiter bis zu einer Kreuzung oder einem Kreisverkehr, statt auf der Straße zu wenden",
@@ -183,7 +189,8 @@
       "Profilbilder sind schärfer: Ein neues Bild wird in doppelter Größe gesendet, und wenn du jemanden auf der Karte antippst, siehst du es größer (bereits gesetzte Bilder bleiben, bis du sie neu auswählst)",
       "Die GPX-Taste im Hauptmenü ist jetzt violett und sieht nicht mehr aus wie die Taste daneben",
       "Die Tasten im Hauptmenü verhalten sich jetzt alle gleich: Die geöffnete leuchtet in ihrer eigenen Farbe, grün für Telefon, orange für Freunde und violett für GPX",
-      "Ein Selfie für dein Profil sieht jetzt so aus, wie du es aufgenommen hast: Es wird nach dem Foto nicht mehr gespiegelt. Und wenn du SMS oder das Mikrofon in den Telefoneinstellungen erlaubst, verschwindet der Hinweis sofort"
+      "Ein Selfie für dein Profil sieht jetzt so aus, wie du es aufgenommen hast: Es wird nach dem Foto nicht mehr gespiegelt. Und wenn du SMS oder das Mikrofon in den Telefoneinstellungen erlaubst, verschwindet der Hinweis sofort",
+      "Wir haben alle Texte der App durchgesehen: Schaltflächen, Hinweise und Hilfe sagen jetzt klar, was sie tun, und passen dazu, wie Curveon heute funktioniert. Auch die Companion-App spricht jetzt deine Sprache"
     ],
     "es": [
       "Se acabó dar la vuelta en mitad de la carretera: a una ruta que te comparte un amigo ahora te unes en su sentido, así que nunca te manda a un punto de la carretera solo para dar la vuelta allí. Y si la ruta tiene una parada junto a la carretera, sigues en la misma dirección hasta un cruce o una rotonda en lugar de hacer un cambio de sentido en la carretera",
@@ -209,7 +216,8 @@
       "Las fotos de perfil son más nítidas: una foto nueva se envía al doble de tamaño, y al tocar a alguien en el mapa la ves más grande (las fotos que ya tienes se quedan como estaban hasta que las elijas de nuevo)",
       "El botón GPX del menú principal ahora es violeta, para que no se parezca al botón de al lado",
       "Los botones del menú principal ahora se comportan igual: el que está abierto se ilumina con su propio color, verde para el teléfono, naranja para amigos y violeta para GPX",
-      "Un selfie para tu perfil ahora se ve como lo encuadraste: ya no se voltea después de hacerlo. Y cuando permites SMS o el micrófono en los ajustes del teléfono, el aviso desaparece al instante"
+      "Un selfie para tu perfil ahora se ve como lo encuadraste: ya no se voltea después de hacerlo. Y cuando permites SMS o el micrófono en los ajustes del teléfono, el aviso desaparece al instante",
+      "Hemos revisado todos los textos de la app: botones, consejos y ayuda dicen claramente qué hacen y coinciden con cómo funciona Curveon hoy. La app Companion ahora también habla tu idioma"
     ],
     "fr": [
       "Fini les demi-tours au milieu de la route : un trajet qu'un ami partage avec toi est désormais rejoint dans son sens, tu n'es donc jamais envoyé vers un point de la route juste pour y faire demi-tour. Et si le trajet a un arrêt au bord de la route, tu repars dans le même sens jusqu'à un carrefour ou un rond-point au lieu de faire demi-tour sur la route",
@@ -235,7 +243,8 @@
       "Les photos de profil sont plus nettes : une nouvelle photo est envoyée en double taille, et quand tu touches quelqu'un sur la carte tu la vois plus grande (les photos déjà choisies restent comme avant jusqu'à ce que tu les rechoisisses)",
       "Le bouton GPX du menu principal est maintenant violet, pour ne plus ressembler au bouton voisin",
       "Les boutons du menu principal se comportent maintenant tous pareil : celui qui est ouvert s'allume de sa propre couleur, vert pour le téléphone, orange pour les amis et violet pour GPX",
-      "Un selfie pour ton profil ressemble maintenant à celui que tu as cadré : il n'est plus retourné après la prise. Et quand tu autorises les SMS ou le micro dans les réglages du téléphone, l'avis disparaît aussitôt"
+      "Un selfie pour ton profil ressemble maintenant à celui que tu as cadré : il n'est plus retourné après la prise. Et quand tu autorises les SMS ou le micro dans les réglages du téléphone, l'avis disparaît aussitôt",
+      "Nous avons relu tous les textes de l'appli : boutons, conseils et aide disent clairement ce qu'ils font et correspondent au fonctionnement actuel de Curveon. L'appli Companion parle aussi votre langue maintenant"
     ],
     "nl": [
       "Nooit meer keren midden op de weg: bij een rit die een vriend met je deelt, sluit je nu aan in de rijrichting, dus je wordt nooit naar een punt op de weg gestuurd alleen om daar te keren. En heeft de rit een stop langs de weg, dan rijd je in dezelfde richting door naar een kruising of rotonde in plaats van op de weg te keren",
@@ -261,7 +270,8 @@
       "Profielfoto's zijn scherper: een nieuwe foto wordt in dubbele grootte verstuurd en als je iemand op de kaart aantikt, zie je hem groter (foto's die je al hebt ingesteld blijven zoals ze waren tot je ze opnieuw kiest)",
       "De GPX-knop in het hoofdmenu is nu paars, zodat hij niet meer lijkt op de knop ernaast",
       "De knoppen in het hoofdmenu doen nu allemaal hetzelfde: de geopende licht op in zijn eigen kleur, groen voor telefoon, oranje voor vrienden en paars voor GPX",
-      "Een selfie voor je profiel ziet er nu uit zoals je hem in beeld bracht: hij wordt na het nemen niet meer omgedraaid. En als je sms of de microfoon toestaat in de telefooninstellingen, verdwijnt de melding meteen"
+      "Een selfie voor je profiel ziet er nu uit zoals je hem in beeld bracht: hij wordt na het nemen niet meer omgedraaid. En als je sms of de microfoon toestaat in de telefooninstellingen, verdwijnt de melding meteen",
+      "We hebben alle teksten in de app nagelopen: knoppen, tips en hulp zeggen duidelijk wat ze doen en kloppen met hoe Curveon nu werkt. De Companion-app spreekt nu ook jouw taal"
     ],
     "pl": [
       "Koniec z zawracaniem na środku drogi: do trasy udostępnionej przez znajomego dołączasz teraz zgodnie z jej kierunkiem, więc nigdy nie zostaniesz wysłany do punktu na drodze tylko po to, by tam zawrócić. A jeśli trasa ma postój przy drodze, jedziesz dalej w tym samym kierunku do skrzyżowania lub ronda zamiast zawracać na drodze",
@@ -287,7 +297,8 @@
       "Zdjęcia profilowe są ostrzejsze: nowe zdjęcie jest wysyłane w podwójnym rozmiarze, a po dotknięciu kogoś na mapie widzisz je większe (zdjęcia już ustawione zostają, jak były, dopóki nie wybierzesz ich ponownie)",
       "Przycisk GPX w menu głównym jest teraz fioletowy, więc nie wygląda już jak sąsiedni przycisk",
       "Przyciski w menu głównym zachowują się teraz tak samo: otwarty świeci własnym kolorem, zielonym dla telefonu, pomarańczowym dla znajomych i fioletowym dla GPX",
-      "Selfie do profilu wygląda teraz tak, jak je kadrowałeś: po zrobieniu nie jest już odwracane. A gdy zezwolisz na SMS-y lub mikrofon w ustawieniach telefonu, ostrzeżenie znika od razu"
+      "Selfie do profilu wygląda teraz tak, jak je kadrowałeś: po zrobieniu nie jest już odwracane. A gdy zezwolisz na SMS-y lub mikrofon w ustawieniach telefonu, ostrzeżenie znika od razu",
+      "Przejrzeliśmy wszystkie teksty w aplikacji: przyciski, podpowiedzi i pomoc mówią jasno, co robią, i zgadzają się z tym, jak Curveon działa dziś. Aplikacja Companion mówi teraz także w Twoim języku"
     ]
   },
   {

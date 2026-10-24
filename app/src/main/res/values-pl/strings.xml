@@ -19,15 +19,11 @@
     <string name="delete">Usuń</string>
     <string name="save">Zapisz</string>
     <string name="close">Zamknij</string>
-    <string name="start">Start</string>
-    <string name="stop">Stop</string>
     <string name="download">Pobierz</string>
-    <string name="retry">Ponów</string>
 
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Zapisano w „Dokąd?”</string>
     <string name="toast_saved_to_gpx">Zapisano w GPX</string>
-    <string name="toast_saved_to_both">Zapisano w planowanych trasach i GPX</string>
     <string name="toast_calling">Dzwonię: %1$s…</string>
     <string name="toast_phone_not_connected">Telefon niepołączony</string>
     <string name="toast_connect_phone_to_call">Połącz telefon, żeby zadzwonić</string>
@@ -50,12 +46,9 @@
     <string name="motorways_ok">Autostrady OK</string>
     <string name="no_motorways_e_roads">Bez autostrad i tras E</string>
     <string name="no_motorways">Bez autostrad</string>
-    <string name="surface_tarmac">Asfalt</string>
     <string name="surface_mixed">Mieszana</string>
     <string name="surface_gravel">Szuter</string>
     <string name="surface_offroad">Offroad</string>
-    <string name="ferries">Promy</string>
-    <string name="motorways">Autostrady</string>
 
     <!-- Settings -->
     <string name="settings_display">Wyświetlanie</string>
@@ -67,7 +60,7 @@
     <string name="settings_speed_hint">Prędkość i ograniczenia; wysokość w stopach przy mph</string>
     <string name="settings_map">Mapa</string>
     <string name="settings_map_hint">Auto włącza mapę nocną po zachodzie słońca</string>
-    <string name="settings_screen_lock">Ekran</string>
+    <string name="settings_screen_lock">Obrót ekranu</string>
     <string name="settings_screen_lock_hint">Zablokowany nie obraca się na wybojach</string>
     <string name="screen_lock_auto">Obraca się</string>
     <string name="screen_lock_landscape">Poziomo</string>
@@ -83,8 +76,6 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dzień</string>
     <string name="map_theme_night">Noc</string>
-    <string name="settings_obd">Dane OBD2</string>
-    <string name="settings_obd_hint">Karta danych silnika, gdy adapter jest podłączony</string>
     <string name="settings_altitude">Wysokość</string>
     <string name="settings_clock">Zegar</string>
     <string name="settings_clock_hint">Godzina obok prędkości</string>
@@ -174,6 +165,7 @@
     <string name="map_checking_newest">Szukam najnowszej mapy…</string>
     <string name="map_no_connection">Brak połączenia. Połącz się z hotspotem telefonu lub Wi-Fi.</string>
     <string name="map_download_failed">Nie udało się pobrać mapy: %1$s</string>
+    <string name="search_download_failed">Nie udało się pobrać danych wyszukiwania: %1$s</string>
     <string name="import_failed">Import nieudany: %1$s</string>
     <string name="importing_percent">Importowanie… %.0f%%</string>
     <string name="download_complete">Pobieranie zakończone</string>
@@ -193,7 +185,6 @@
     <string name="gpx_exported">Wyeksportowano: %1$s</string>
     <string name="gpx_export_failed">Eksport nieudany: %1$s</string>
     <string name="routing_downloading">Pobieranie danych tras %1$s (%2$d/%3$d)…</string>
-    <string name="routing_download_failed">Pobieranie nieudane: %1$s. Połącz się z hotspotem telefonu i spróbuj ponownie.</string>
     <string name="routing_installed">Zainstalowano dane tras (kafelki: %1$d, %2$.0f MB)</string>
     <string name="routing_none">Brak danych tras. Przychodzą z każdym pobranym krajem, a online przy planowaniu pobierana jest tylko potrzebna część (albo skopiuj pliki .rd5 do %1$s)</string>
     <string name="offline_map_none">Brak mapy offline. Skopiuj plik .pmtiles do %1$s lub go zaimportuj.</string>
@@ -240,8 +231,6 @@
     <string name="give_way">Ustąp pierwszeństwa</string>
     <string name="stop_sign">Stop</string>
     <string name="gps_lost">Brak sygnału GPS</string>
-    <string name="rpm_and">%1$d obr/min · %2$s</string>
-    <string name="trip_summary">Trasa %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Poprzedni</string>
     <string name="media_play_pause">Odtwórz/pauza</string>
     <string name="media_next">Następny</string>
@@ -261,7 +250,7 @@
     <string name="reply_to">Odpowiedz: %1$s</string>
     <string name="sms">SMS</string>
     <string name="sms_to">SMS do: %1$s</string>
-    <string name="search_by_voice">Powiedz, dokąd</string>
+    <string name="search_by_voice">Szukaj głosem</string>
     <string name="speak_now">Mów teraz…</string>
     <string name="something_went_wrong">Coś poszło nie tak</string>
     <string name="sent">Wysłano</string>
@@ -274,8 +263,6 @@
 
     <!-- Map -->
     <string name="map_heading_up">Kierunek jazdy u góry – dotknij dla 3D</string>
-    <string name="map_north_up">Północ u góry – dotknij dla kierunku jazdy</string>
-    <string name="map_3d">3D – dotknij dla północy u góry</string>
     <string name="map_fit_trip">Pokaż całą trasę</string>
     <string name="map_gravel_heat">Gdzie jest szuter</string>
     <string name="map_gravel_heat_counting">Liczę szuter w okolicy (jednorazowo)…</string>
@@ -427,9 +414,7 @@
         <item quantity="many">%d numerów</item>
         <item quantity="other">%d numeru</item>
     </plurals>
-    <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
-    <string name="selected">Wybrane</string>
     <string name="fuel_go_to">Jechać do: %1$s?</string>
     <string name="fuel_go_to_body">%1$s dalej na trasie. Zostanie dodane jako przystanek.</string>
     <string name="yes">Tak</string>
@@ -488,7 +473,7 @@
     <string name="preview_km_gravel">%.0f km szutru</string>
     <string name="preview_forced_gravel">Ta trasa prowadzi po szutrze: %1$s, %2$s. Nie ma tam asfaltu bez dużego objazdu.</string>
     <string name="preview_gravel_from_start">od samego startu</string>
-    <string name="preview_gravel_after">pierwszy po %1$s</string>
+    <string name="preview_gravel_after">zaczyna się po %1$s</string>
     <string name="preview_gravel_amount">szuter: %1$s</string>
     <plurals name="preview_ferries">
         <item quantity="one">prom</item>
@@ -513,6 +498,7 @@
     <string name="ride_resume_continue">Kontynuuj ten przejazd</string>
     <string name="ride_resume_new">Zacznij nowy przejazd</string>
     <string name="nav_resume_title">Kontynuować nawigację?</string>
+    <string name="nav_resume_yes">Kontynuuj</string>
     <string name="nav_resume_no">Nie, dziękuję</string>
     <string name="rides_empty">Przejazdy nagrywają się same, gdy tylko ruszysz.</string>
     <string name="rides_ride_again">Jedź ponownie</string>
@@ -538,7 +524,7 @@
     <string name="toast_saved_to_planned">Zapisano w planowanych trasach</string>
     <string name="toast_saved">Zapisano</string>
     <string name="save_route_to_where_to">Dokąd?</string>
-    <string name="planned_empty">Brak planowanych tras. Zapisz trasę z planera przyciskiem zakładki albo skopiuj przejazd ze strony Przejazdy.</string>
+    <string name="planned_empty">Brak planowanych tras. Zapisz trasę z planera przyciskiem zakładki albo zapisz jeden ze swoich przejazdów.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d trasa</item>
         <item quantity="few">%d trasy</item>
@@ -552,11 +538,7 @@
         <item quantity="other">Grupa i jej %d trasy zostaną usunięte.</item>
     </plurals>
     <string name="planned_rename">Zmień nazwę trasy</string>
-    <string name="planned_reversed">Jazda w drugą stronę</string>
     <string name="rides_ride_reversed">Jedź w drugą stronę</string>
-    <string name="rides_copy_to_planned">Kopiuj do planowanych</string>
-    <string name="rides_copy_to_group">Kopiuj do planowanych tras</string>
-    <string name="toast_copied_to_planned">Skopiowano do planowanych tras</string>
     <string name="rides_select">Wybierz przejazdy</string>
     <string name="rides_stop">Stop</string>
     <string name="rides_merge">Połącz</string>
@@ -594,23 +576,17 @@
     <string name="stat_climb">m w górę</string>
 
     <!-- Phone link -->
-    <string name="link_connected">Połączono z: %1$s</string>
     <string name="link_disconnected">%1$s nie odpowiada. Otwórz Curveon Companion na telefonie i dotknij Zacznij udostępniać. Jeśli dalej nie działa, wyłącz i włącz Bluetooth na tym tablecie i na telefonie.</string>
     <string name="link_unreachable">Bluetooth urządzenia %1$s w ogóle nie odpowiada. Jeśli Curveon Companion udostępnia, wyłącz i włącz Bluetooth na tym tablecie (lub telefonie).</string>
     <string name="link_pick">Wybierz telefon poniżej. Najpierw musi być sparowany w ustawieniach Bluetooth Androida.</string>
     <string name="link_no_permission">Curveon potrzebuje uprawnienia do Bluetooth.</string>
-    <string name="link_demo">Pokazuję przykładową muzykę i wiadomości.</string>
     <string name="link_allow_bluetooth">Zezwól na Bluetooth</string>
     <string name="link_demo_data">Dane demo</string>
     <string name="link_demo_data_hint">Przykładowa muzyka i wiadomości, by wypróbować kokpit bez telefonu</string>
 
     <!-- OBD2 -->
-    <string name="obd_title">TELEMETRIA OBD2</string>
-    <string name="obd_online">ONLINE</string>
-    <string name="obd_standby">CZUWANIE</string>
     <string name="obd_coolant">Płyn chłodz.</string>
     <string name="obd_battery">Akumulator</string>
-    <string name="obd_altitude">Wysokość</string>
     <string name="obd_rpm">Obroty</string>
     <string name="obd_choose_adapter">Wybierz adapter OBD2 w Ustawienia → Silnik</string>
     <string name="obd_bluetooth_off">Bluetooth jest wyłączony (lub brak zgody)</string>
@@ -630,7 +606,7 @@
     <string name="fuel_setup_title">Wskaźnik paliwa</string>
     <string name="fuel_setup_intro">Motocykle podają poziom paliwa na różne sposoby, więc Curveon nie zawsze sam go znajdzie. Tankuj jak zwykle, tylko dotknij przycisku przed i po: dystrybutor pokazuje, ile litrów weszło, a Curveon ustala, która wartość z motocykla podąża za paliwem. Zrób to przy dwóch tankowaniach, a wskaźnik pokaże litry. To, co zarejestrujesz, zostaje zapisane, więc wpasowuje się w zwykłą jazdę.</string>
     <string name="fuel_step_ready">Przygotuj motocykl</string>
-    <string name="fuel_step_ready_body">Postaw go poziomo i prosto, za każdym razem tak samo (zawsze na bocznej stopce albo zawsze na centralnej), włącz zapłon (silnik wyłączony) i nie odłączaj adaptera OBD2. Silnik ma być wyłączony: pracujący silnik trzęsie pływakiem i wiele wartości się zmienia, co utrudnia znalezienie paliwa (i nie jest bezpieczne przy dystrybutorze). Dotknij kółka, gdy wszystko gotowe.</string>
+    <string name="fuel_step_ready_body">Postaw go na równym podłożu, za każdym razem tak samo (zawsze na bocznej stopce albo zawsze na centralnej), włącz zapłon (silnik wyłączony) i nie odłączaj adaptera OBD2. Silnik ma być wyłączony: pracujący silnik trzęsie pływakiem i wiele wartości się zmienia, co utrudnia znalezienie paliwa (i nie jest bezpieczne przy dystrybutorze). Dotknij kółka, gdy wszystko gotowe.</string>
     <string name="fuel_step_tank">Pojemność zbiornika</string>
     <string name="fuel_step_tank_body">Ile litrów mieści pełny zbiornik? Znajdziesz to w instrukcji obsługi.</string>
     <string name="fuel_litres">Litry</string>
@@ -731,7 +707,6 @@
     <string name="loop_name_from">Pętla z %1$s, %2$d km</string>
     <string name="loop_name">Pętla, %1$d km</string>
     <string name="adjust_route">Dostosuj trasę</string>
-    <string name="stop_short">Przystanek</string>
     <string name="start_here">Start tutaj</string>
     <string name="from_here">Z mojej pozycji</string>
     <string name="from_place">Start: %1$s</string>
@@ -770,7 +745,6 @@
     <string name="move_later">Później</string>
     <string name="save_route_title">Zapisz trasę</string>
     <string name="save_route_name">Nazwa</string>
-    <string name="save_route_to_routes">Dokąd? (zapisane trasy)</string>
     <string name="save_route_to_gpx">Ślad GPX</string>
     <string name="preview_arrive">Przyjazd %1$s</string>
     <string name="preview_after_dark">po zmroku</string>
@@ -782,7 +756,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Poza trasą</string>
     <string name="wrong_turn_trip">Jazda dalej to %1$d min więcej niż zawrócenie.</string>
-    <string name="wrong_turn_no_ahead">Nie ma powrotu bez zawracania.</string>
+    <string name="wrong_turn_no_ahead">Nie da się wrócić na trasę bez zawracania.</string>
     <string name="wrong_turn_back">Zawróć</string>
     <string name="wrong_turn_new_route">Nowa trasa stąd</string>
     <string name="wrong_turn_rejoin_ahead">Wróć na trasę dalej</string>
@@ -886,7 +860,7 @@
     <string name="tour_map_title">Mapa</string>
     <string name="tour_map_body">Przeciągaj i szczypaj jak zwykle. Jedna rzecz kryje się pod palcem:</string>
     <string name="tour_buttons_title">Przyciski mapy</string>
-    <string name="tour_buttons_body">Górny obraca mapę i pokazuje, jak jest teraz ustawiona; dotknij go, by przejść do następnego trybu:</string>
+    <string name="tour_buttons_body">Górny obraca mapę i pokazuje, jak jest teraz ustawiona; dotknij, by przełączyć:</string>
     <string name="tour_speed_title">Prędkość i ograniczenie</string>
     <string name="tour_speed_body">Twoja prędkość, ograniczenie prędkości i zegar. Prędkość robi się czerwona powyżej limitu, a linia pod spodem ostrzega przed fotoradarami. Przytrzymaj palec na dowolnej drodze, by zobaczyć jej limit.</string>
     <string name="tour_cards_title">Muzyka i wiadomości</string>
@@ -930,7 +904,7 @@
     <string name="help_end_trip">Zakończ trasę</string>
     <string name="help_fuel">Następna stacja na trasie, bursztynowa przy długiej przerwie; dotknij, by się tam zatrzymać</string>
     <string name="help_camera">Fotoradar przed tobą</string>
-    <string name="help_give_way">Skrzyżowanie przed tobą, gdzie ustępujesz pierwszeństwa lub stajesz: przy prędkości podczas nawigacji, przy numerze drogi w innym razie, i jako znak na mapie</string>
+    <string name="help_give_way">Skrzyżowanie przed tobą, gdzie musisz ustąpić pierwszeństwa lub się zatrzymać: przy prędkości podczas nawigacji, w innym razie przy numerze drogi, i jako znak na mapie</string>
     <string name="help_hold_map">Przytrzymaj palec na miejscu: jedź tam, dodaj przystanek, zapisz w ulubionych i zobacz, co wiadomo o drodze</string>
     <string name="help_hold_line">Przytrzymaj linię trasy podczas planowania, by zmienić trasę na mapie</string>
     <string name="help_draw">Narysuj palcem obszar, by dostać pętlę przez niego (Dokąd? → Pętla)</string>
@@ -943,7 +917,7 @@
     <string name="tour_loop_title">Zrób pętlę</string>
     <string name="tour_loop_body">Pętlę zaczynasz w menu, nie na mapie: naciśnij przycisk z motocyklem (Dokąd?), a potem Pętla. Teraz narysuj jednym palcem obszar, w którym chcesz jeździć, a Curveon zbuduje przez niego pętlę bez jeżdżenia dwa razy tą samą drogą. Wybierz, jak długa może być, oraz asfalt lub szuter. Inna pętla daje nową propozycję.</string>
     <string name="tour_mark_title">Zmień tylko jeden fragment</string>
-    <string name="tour_mark_body">Najpierw zaplanuj długą trasę (przycisk z motocyklem → wybierz miejsce). Potem naciśnij trzy kropki na pasku na dole i przeciągnij palcem wzdłuż fragmentu, który chcesz zmienić. Następnie wyciągnij fragment linią przerywaną, tak jak przy edycji na mapie. Tylko ten fragment zostanie zaplanowany od nowa; reszta trasy zostaje bez zmian. Naciśnij przycisk ponownie, by wrócić do przeciągania punktów.</string>
+    <string name="tour_mark_body">Najpierw zaplanuj trasę i otwórz Edytuj na mapie (przytrzymaj palec na linii trasy). Naciśnij przycisk z linią przerywaną na pasku na dole i przeciągnij palcem wzdłuż fragmentu, który chcesz zmienić. Potem przeciągnij ten fragment tam, gdzie chcesz, tak jak przy edycji na mapie. Tylko ten fragment zostanie zaplanowany od nowa; reszta trasy zostaje bez zmian.</string>
     <string name="help_group_edit">Edycja na mapie</string>
     <string name="help_mark">Zaznacz fragment trasy do zmiany: przeciągnij wzdłuż niego, reszta zostaje</string>
     <string name="help_undo">Cofnij ostatnią zmianę</string>
@@ -979,8 +953,43 @@
     <string name="whats_new_title">Nowości w Curveon %1$s</string>
     <string name="github_title">Curveon na GitHub</string>
     <string name="github_hint">Pobieranie, kod źródłowy i zgłaszanie problemów</string>
+    <string name="feedback_title">Znalazłeś błąd albo masz pomysł?</string>
+    <string name="feedback_hint">Napisz tutaj, możesz dodać zdjęcia. Powstanie z tego publiczne zgłoszenie na GitHubie, które możesz śledzić</string>
+    <string name="feedback_bug">Zgłoś błąd</string>
+    <string name="feedback_idea">Zaproponuj coś</string>
+    <string name="feedback_bug_heading">Zgłoszenie błędu</string>
+    <string name="feedback_idea_heading">Pomysł</string>
+    <string name="feedback_title_field">Tytuł</string>
+    <string name="feedback_bug_title_hint">Krótko: co poszło nie tak?</string>
+    <string name="feedback_idea_title_hint">Krótko: jaki masz pomysł?</string>
+    <string name="feedback_text_field">Opis</string>
+    <string name="feedback_bug_body">Co się stało i czego się spodziewałeś? Co robiłeś tuż przedtem?</string>
+    <string name="feedback_idea_body">Co chciałbyś, żeby Curveon robił, i kiedy pomogłoby ci to na motocyklu?</string>
+    <string name="feedback_add_images">Dodaj zdjęcia</string>
+    <string name="feedback_images_count">%1$d z %2$d zdjęć</string>
+    <string name="feedback_remove_image">Usuń zdjęcie</string>
+    <string name="feedback_include_crash">Dołącz ostatni raport o awarii</string>
+    <string name="feedback_public">Wszystko, co wyślesz, może przeczytać każdy na GitHubie. Pomiń numery telefonów, adresy i inne prywatne dane.</string>
+    <string name="feedback_send">Wyślij</string>
+    <string name="feedback_sending">Wysyłanie…</string>
+    <string name="feedback_sent">Dzięki! To zgłoszenie #%1$d na GitHubie. Znajdziesz je tutaj w sekcji Twoje zgłoszenia.</string>
+    <string name="feedback_follow">Obserwuj na GitHubie</string>
+    <string name="feedback_failed">Nie udało się wysłać. Sprawdź połączenie z internetem i spróbuj ponownie.</string>
+    <string name="feedback_too_many">Za dużo zgłoszeń stąd w tej chwili. Spróbuj ponownie za godzinę.</string>
+    <string name="feedback_open_github">Napisz to na GitHubie</string>
+    <string name="feedback_crash_note">Ostatni raport o awarii (usuń go, jeśli wolisz go nie udostępniać):</string>
+    <string name="feedback_yours">Twoje zgłoszenia</string>
+    <string name="feedback_forget">Usuń z listy</string>
+    <string name="feedback_status_open">Otwarte</string>
+    <string name="feedback_status_done">Gotowe</string>
+    <string name="feedback_status_closed">Zamknięte</string>
+    <plurals name="feedback_replies">
+        <item quantity="one">%d odpowiedź</item>
+        <item quantity="few">%d odpowiedzi</item>
+        <item quantity="many">%d odpowiedzi</item>
+        <item quantity="other">%d odpowiedzi</item>
+    </plurals>
     <!-- Group ride -->
-    <string name="group_title">Jazda w grupie</string>
     <string name="group_start_hint">Jeźdźcie razem: widzicie się na mapie i dzielicie trasy. Wszystko jest szyfrowane end-to-end, więc czyta to tylko twoja grupa.</string>
     <string name="group_name_hint">Nazwa grupy (opcjonalnie)</string>
     <string name="group_start">Utwórz grupę</string>
@@ -1069,7 +1078,7 @@
     <string name="friends_none">Brak znajomych.</string>
     <string name="friends_remove">Usuń</string>
     <string name="friends_remove_title">Usunąć ze znajomych: %1$s?</string>
-    <string name="friends_remove_text">Nie będziecie mogli zapraszać się na jazdy, dopóki któreś z was nie pokaże nowego kodu.</string>
+    <string name="friends_remove_text">Nie będziecie mogli zapraszać się na jazdy w grupie, dopóki któreś z was nie pokaże nowego kodu.</string>
     <string name="friends_send_link">Wyślij link</string>
     <string name="friends_link_failed">Nie udało się utworzyć linku. Sprawdź internet i spróbuj ponownie.</string>
     <string name="friends_high_five_title">Piątka!</string>
@@ -1106,7 +1115,7 @@
     <string name="shared_trip_stops">Przystanki: %1$d</string>
     <string name="shared_trip_offer_title">%1$s udostępnia trasę</string>
     <string name="shared_trip_offer_hint">Każdy w grupie może ją zmieniać, a zmiany trafiają do wszystkich.</string>
-    <string name="shared_trip_save">Zapisz we wspólnych</string>
+    <string name="shared_trip_save">Zapisz na później</string>
     <string name="shared_trip_ignore">Ignoruj</string>
     <string name="sos_no_position_title">Nie wysłano SOS</string>
     <string name="sos_no_position_text">Curveon jeszcze nie wie, gdzie jesteś (brak pozycji GPS), więc nie można przekazać grupie, dokąd jechać. Jeśli potrzebujesz pomocy teraz, dzwoń pod 112, a SOS spróbuj ponownie, gdy GPS cię znajdzie.</string>

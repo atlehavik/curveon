@@ -15,6 +15,9 @@ phone, with an optional companion app on the phone when a tablet is used.
 | `phone` | What a phone shares (messages, calls, music, contacts, spoken replies), read on the device itself; used by `companion`, and by `app` when it is its own phone |
 | `routing` | Offline routing on BRouter: motorcycle profile, roundtrips, GPX following, route tracking |
 | `protocol` | Tablet ⇄ phone messages (length-prefixed JSON over RFCOMM) |
+| `groups` | Group rides and friends: end-to-end encrypted frames through the relay (wire format in [groups-protocol.md](groups-protocol.md)) |
+| `qrscan` | QR scanner for invites (CameraX + ZXing), used by `app` and `companion` |
+| `pmtiles` | Cuts a country out of the Protomaps world build with HTTP range requests (plain JVM) |
 | `tools/map`, `tools/search` | Scripts that build the offline map and search index |
 
 ## Features in detail
@@ -80,12 +83,19 @@ phone, with an optional companion app on the phone when a tablet is used.
   and move by a similar amount in every refuelling); in Demo, give the pump 75 / 50 / 87.5 / 25 % of the tank. Above the music on the tablet; beside it, bottom right, on a phone held upright.
 - **Spoken replies**: Reply → the phone listens through the headset → the tablet shows what was
   heard → Send.
+- **Navigation sounds and voice** (Settings → Navigation → Sound): soft tones before and at each turn
+  (left or right ear by direction), a sound when off the route, or spoken turns with Android's own
+  text-to-speech; played through the phone when a companion is linked. Notes in [audio.md](audio.md).
+- **Group rides and friends**: friends scan each other's code; a group sees its riders on the map,
+  shares routes and trips (anyone can change a shared trip), and has SOS. End-to-end encrypted through
+  a relay (`relay.curveon.no` by default, another under Advanced); a tablet without internet uses the
+  phone's connection over Bluetooth. Design in [groups.md](../groups.md).
 - **Welcome tour** on the first start (language first; animated how-tos: how tablet, phone and intercom fit together, Curveon on just a phone, planning, editing a trip on the map, drawing a roundtrip): the screen dims and a lit ring walks over the buttons and
   gestures with a card for each; again any time from Settings → Help, which also lists every symbol.
 - **Demo ride** (Settings) drives the active route without GPS; **demo phone data** (Phone link)
   shows the dashboard without a phone.
 
-Not done: voice guidance (deliberately not planned). The OBD2 link is untested with a real adapter.
+Not done: the OBD2 link is untested with a real adapter.
 
 ## Build
 
@@ -95,6 +105,7 @@ Requirements: JDK 17+ (21 recommended) and the Android SDK (`local.properties` �
 ./gradlew :app:installDebug          # tablet app on the connected device/emulator
 ./gradlew :app:installRide           # same app, not debuggable: routing ~40% faster (for the bike)
 ./gradlew :companion:installDebug    # phone app (with the phone connected)
+./gradlew :app:bundlePlay            # Google Play bundle: release, without the self-update
 ./gradlew test                       # unit tests; :routing:test also routes over real Norway data
 ./gradlew :routing:test --tests '*RoutingBenchmarkTest*' -Dcurveon.bench=true   # routing timings
 ```
@@ -123,7 +134,8 @@ downloads the APK and hands it to Android's installer. For a release it can find
    The notes are shown in the app before installing.
 
 Only builds signed with the release key can update this way; debug and ride builds look only when
-asked, and Android refuses the release APK over them.
+asked, and Android refuses the release APK over them. The Play build (`play` build type) has no
+update check and no permission to install packages: Play does the updating there.
 
 ## Offline data (by hand)
 
@@ -144,7 +156,7 @@ split of big countries should change.
 
 1. Pair phone and tablet in Android's Bluetooth settings.
 2. Install the companion app, open it, grant **Notification access** and **Bluetooth,
-   microphone, contacts**, tap **Start sharing with tablet**.
+   microphone, contacts, calls**, tap **Start sharing with tablet**.
 3. On the tablet: Settings → Phone → pick the phone. Another paired phone can be picked there any
    time (pair it in Android's Bluetooth settings first).
 

@@ -19,15 +19,11 @@
     <string name="delete">Supprimer</string>
     <string name="save">Enregistrer</string>
     <string name="close">Fermer</string>
-    <string name="start">Démarrer</string>
-    <string name="stop">Arrêter</string>
     <string name="download">Télécharger</string>
-    <string name="retry">Réessayer</string>
 
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Enregistré dans Où aller ?</string>
     <string name="toast_saved_to_gpx">Enregistré dans GPX</string>
-    <string name="toast_saved_to_both">Enregistré dans les trajets prévus et GPX</string>
     <string name="toast_calling">Appel de %1$s…</string>
     <string name="toast_phone_not_connected">Téléphone non connecté</string>
     <string name="toast_connect_phone_to_call">Connecte le téléphone pour appeler</string>
@@ -50,12 +46,9 @@
     <string name="motorways_ok">Autoroutes OK</string>
     <string name="no_motorways_e_roads">Sans autoroutes ni routes E</string>
     <string name="no_motorways">Sans autoroutes</string>
-    <string name="surface_tarmac">Bitume</string>
     <string name="surface_mixed">Mixte</string>
     <string name="surface_gravel">Gravier</string>
     <string name="surface_offroad">Tout-terrain</string>
-    <string name="ferries">Ferries</string>
-    <string name="motorways">Autoroutes</string>
 
     <!-- Settings -->
     <string name="settings_display">Affichage</string>
@@ -67,7 +60,7 @@
     <string name="settings_speed_hint">Vitesse et limitations ; altitude en pieds avec les mph</string>
     <string name="settings_map">Carte</string>
     <string name="settings_map_hint">Auto passe à la carte de nuit après le coucher du soleil</string>
-    <string name="settings_screen_lock">Écran</string>
+    <string name="settings_screen_lock">Rotation de l’écran</string>
     <string name="settings_screen_lock_hint">Verrouillé, il ne tourne pas avec les secousses</string>
     <string name="screen_lock_auto">Pivote</string>
     <string name="screen_lock_landscape">Paysage</string>
@@ -83,8 +76,6 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Jour</string>
     <string name="map_theme_night">Nuit</string>
-    <string name="settings_obd">Données OBD2</string>
-    <string name="settings_obd_hint">Carte des données moteur quand un adaptateur est connecté</string>
     <string name="settings_altitude">Altitude</string>
     <string name="settings_clock">Horloge</string>
     <string name="settings_clock_hint">L’heure à côté de la vitesse</string>
@@ -174,6 +165,7 @@
     <string name="map_checking_newest">Recherche de la carte la plus récente…</string>
     <string name="map_no_connection">Pas de connexion. Connecte-toi au partage de connexion du téléphone ou au Wi-Fi.</string>
     <string name="map_download_failed">Échec du téléchargement de la carte : %1$s</string>
+    <string name="search_download_failed">Impossible de télécharger les données de recherche : %1$s</string>
     <string name="import_failed">Échec de l’import : %1$s</string>
     <string name="importing_percent">Import… %.0f%%</string>
     <string name="download_complete">Téléchargement terminé</string>
@@ -191,7 +183,6 @@
     <string name="gpx_exported">%1$s exporté</string>
     <string name="gpx_export_failed">Échec de l’export : %1$s</string>
     <string name="routing_downloading">Téléchargement des données de guidage %1$s (%2$d/%3$d)…</string>
-    <string name="routing_download_failed">Échec du téléchargement : %1$s. Connecte-toi au partage de connexion du téléphone et réessaie.</string>
     <string name="routing_installed">Données de guidage installées (%1$d tuiles, %2$.0f Mo)</string>
     <string name="routing_none">Pas encore de données de guidage. Elles viennent avec chaque pays que tu télécharges, et en ligne seule la partie utile au trajet est récupérée quand tu le prépares (ou copie des fichiers .rd5 dans %1$s)</string>
     <string name="offline_map_none">Aucune carte hors ligne installée. Copie un fichier .pmtiles dans %1$s ou importes-en un.</string>
@@ -238,8 +229,6 @@
     <string name="give_way">Cédez le passage</string>
     <string name="stop_sign">Stop</string>
     <string name="gps_lost">Pas de signal GPS</string>
-    <string name="rpm_and">%1$d tr/min · %2$s</string>
-    <string name="trip_summary">Trajet %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Précédent</string>
     <string name="media_play_pause">Lecture/pause</string>
     <string name="media_next">Suivant</string>
@@ -259,7 +248,7 @@
     <string name="reply_to">Répondre à %1$s</string>
     <string name="sms">SMS</string>
     <string name="sms_to">SMS à %1$s</string>
-    <string name="search_by_voice">Dis le lieu</string>
+    <string name="search_by_voice">Recherche vocale</string>
     <string name="speak_now">Parle maintenant…</string>
     <string name="something_went_wrong">Un problème est survenu</string>
     <string name="sent">Envoyé</string>
@@ -272,8 +261,6 @@
 
     <!-- Map -->
     <string name="map_heading_up">Cap en haut – touche pour la 3D</string>
-    <string name="map_north_up">Nord en haut – touche pour cap en haut</string>
-    <string name="map_3d">3D – touche pour nord en haut</string>
     <string name="map_fit_trip">Voir tout le trajet</string>
     <string name="map_gravel_heat">Où est le gravier</string>
     <string name="map_gravel_heat_counting">Comptage du gravier ici (une seule fois)…</string>
@@ -421,9 +408,7 @@
         <item quantity="many">%d numéros</item>
         <item quantity="other">%d numéros</item>
     </plurals>
-    <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
-    <string name="selected">Sélectionné</string>
     <string name="fuel_go_to">Aller à %1$s ?</string>
     <string name="fuel_go_to_body">%1$s plus loin sur l’itinéraire. Il devient une étape.</string>
     <string name="yes">Oui</string>
@@ -481,7 +466,7 @@
     <string name="preview_km_gravel">%.0f km de gravier</string>
     <string name="preview_forced_gravel">Cet itinéraire t’oblige à passer sur du gravier : %1$s, %2$s. Il n’y a pas de route goudronnée par là sans gros détour.</string>
     <string name="preview_gravel_from_start">dès le départ</string>
-    <string name="preview_gravel_after">le premier après %1$s</string>
+    <string name="preview_gravel_after">commence après %1$s</string>
     <string name="preview_gravel_amount">%1$s de gravier</string>
     <plurals name="preview_ferries">
         <item quantity="one">%d ferry</item>
@@ -505,6 +490,7 @@
     <string name="ride_resume_continue">Reprendre cette balade</string>
     <string name="ride_resume_new">Nouvelle balade</string>
     <string name="nav_resume_title">Reprendre la navigation ?</string>
+    <string name="nav_resume_yes">Continuer</string>
     <string name="nav_resume_no">Non merci</string>
     <string name="rides_empty">Les balades sont enregistrées automatiquement dès que tu roules.</string>
     <string name="rides_ride_again">Refaire</string>
@@ -529,7 +515,7 @@
     <string name="toast_saved_to_planned">Enregistré dans les trajets prévus</string>
     <string name="toast_saved">Enregistré</string>
     <string name="save_route_to_where_to">Où aller ?</string>
-    <string name="planned_empty">Pas encore de trajets prévus. Enregistre un itinéraire depuis le planificateur avec le bouton signet, ou copie une balade depuis la page Balades.</string>
+    <string name="planned_empty">Pas encore de trajets prévus. Enregistre un itinéraire depuis le planificateur avec le bouton signet, ou enregistre une de tes balades.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d trajet</item>
         <item quantity="many">%d trajets</item>
@@ -541,11 +527,7 @@
         <item quantity="other">Le groupe et ses %d trajets sont supprimés.</item>
     </plurals>
     <string name="planned_rename">Renommer le trajet</string>
-    <string name="planned_reversed">Fait dans l’autre sens</string>
     <string name="rides_ride_reversed">Faire dans l’autre sens</string>
-    <string name="rides_copy_to_planned">Copier dans les prévus</string>
-    <string name="rides_copy_to_group">Copier dans les trajets prévus</string>
-    <string name="toast_copied_to_planned">Copié dans les trajets prévus</string>
     <string name="rides_select">Sélectionner des balades</string>
     <string name="rides_stop">Arrêter</string>
     <string name="rides_merge">Fusionner</string>
@@ -581,23 +563,17 @@
     <string name="stat_climb">m de D+</string>
 
     <!-- Phone link -->
-    <string name="link_connected">Connecté à %1$s</string>
     <string name="link_disconnected">%1$s ne répond pas. Ouvre Curveon Companion sur le téléphone et touche Démarrer le partage. Si ça échoue encore, éteins puis rallume le Bluetooth sur cette tablette et sur le téléphone.</string>
     <string name="link_unreachable">Le Bluetooth de %1$s ne répond pas du tout. Si Curveon Companion partage, éteins puis rallume le Bluetooth sur cette tablette (ou le téléphone).</string>
     <string name="link_pick">Choisis ton téléphone ci-dessous. Il doit d’abord être appairé dans les réglages Bluetooth d’Android.</string>
     <string name="link_no_permission">Curveon a besoin de l’autorisation d’utiliser le Bluetooth.</string>
-    <string name="link_demo">Musique et messages de démo affichés.</string>
     <string name="link_allow_bluetooth">Autoriser le Bluetooth</string>
     <string name="link_demo_data">Données de démo</string>
     <string name="link_demo_data_hint">Musique et messages d’exemple, pour essayer le tableau de bord sans téléphone</string>
 
     <!-- OBD2 -->
-    <string name="obd_title">TÉLÉMÉTRIE OBD2</string>
-    <string name="obd_online">EN LIGNE</string>
-    <string name="obd_standby">EN VEILLE</string>
     <string name="obd_coolant">Liquide de refroidissement</string>
     <string name="obd_battery">Batterie</string>
-    <string name="obd_altitude">Altitude</string>
     <string name="obd_rpm">tr/min</string>
     <string name="obd_choose_adapter">Choisis l’adaptateur OBD2 dans Réglages → Moteur</string>
     <string name="obd_bluetooth_off">Le Bluetooth est désactivé (ou non autorisé)</string>
@@ -617,7 +593,7 @@
     <string name="fuel_setup_title">Jauge d’essence</string>
     <string name="fuel_setup_intro">Les motos indiquent le niveau d’essence de différentes façons, donc Curveon ne le trouve pas toujours seul. Fais le plein comme d’habitude, mais touche un bouton avant et après : la pompe indique combien de litres sont entrés, et Curveon trouve quelle valeur de la moto suit l’essence. Fais-le sur deux pleins et la jauge affiche des litres. Ce que tu enregistres est gardé, donc ça s’intègre à tes sorties habituelles.</string>
     <string name="fuel_step_ready">Prépare la moto</string>
-    <string name="fuel_step_ready_body">Gare-la bien à plat, de la même façon à chaque fois (toujours sur la béquille latérale, ou toujours sur la centrale), mets le contact (moteur coupé) et laisse l’adaptateur OBD2 branché. Garde le moteur coupé : un moteur qui tourne fait bouger le flotteur et beaucoup de valeurs, ce qui rend l’essence plus dure à trouver (et ce n’est pas prudent à la pompe). Touche le cercle quand c’est prêt.</string>
+    <string name="fuel_step_ready_body">Gare-la sur un sol plat, de la même façon à chaque fois (toujours sur la béquille latérale, ou toujours sur la centrale), mets le contact (moteur coupé) et laisse l’adaptateur OBD2 branché. Garde le moteur coupé : un moteur qui tourne fait bouger le flotteur et beaucoup de valeurs, ce qui rend l’essence plus dure à trouver (et ce n’est pas prudent à la pompe). Touche le cercle quand c’est prêt.</string>
     <string name="fuel_step_tank">Capacité du réservoir</string>
     <string name="fuel_step_tank_body">Combien de litres contient le réservoir plein ? C’est dans le manuel du propriétaire.</string>
     <string name="fuel_litres">Litres</string>
@@ -716,7 +692,6 @@
     <string name="loop_name_from">Boucle depuis %1$s, %2$d km</string>
     <string name="loop_name">Boucle, %1$d km</string>
     <string name="adjust_route">Ajuster l’itinéraire</string>
-    <string name="stop_short">Étape</string>
     <string name="start_here">Partir d’ici</string>
     <string name="from_here">Depuis ma position</string>
     <string name="from_place">Depuis %1$s</string>
@@ -755,7 +730,6 @@
     <string name="move_later">Plus tard</string>
     <string name="save_route_title">Enregistrer l’itinéraire</string>
     <string name="save_route_name">Nom</string>
-    <string name="save_route_to_routes">Où aller ? (itinéraires enregistrés)</string>
     <string name="save_route_to_gpx">Trace GPX</string>
     <string name="preview_arrive">Arrivée %1$s</string>
     <string name="preview_after_dark">après la nuit tombée</string>
@@ -767,7 +741,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Hors itinéraire</string>
     <string name="wrong_turn_trip">Continuer prend %1$d min de plus que faire demi-tour.</string>
-    <string name="wrong_turn_no_ahead">Pas de retour possible sans faire demi-tour.</string>
+    <string name="wrong_turn_no_ahead">Pas de retour à l’itinéraire sans faire demi-tour.</string>
     <string name="wrong_turn_back">Faire demi-tour</string>
     <string name="wrong_turn_new_route">Nouvel itinéraire d’ici</string>
     <string name="wrong_turn_rejoin_ahead">Rejoindre plus loin</string>
@@ -870,7 +844,7 @@
     <string name="tour_map_title">La carte</string>
     <string name="tour_map_body">Fais glisser et pince comme d’habitude. Une chose se cache sous le doigt :</string>
     <string name="tour_buttons_title">Boutons de la carte</string>
-    <string name="tour_buttons_body">Celui du haut oriente la carte et montre son orientation actuelle ; touche-le pour la suivante :</string>
+    <string name="tour_buttons_body">Celui du haut oriente la carte et montre son orientation actuelle ; touche-le pour changer :</string>
     <string name="tour_speed_title">Vitesse et limitation</string>
     <string name="tour_speed_body">Ta vitesse, la limitation et l’heure. La vitesse passe au rouge au-dessus de la limite, et une ligne en dessous prévient des radars à venir. Garde le doigt sur une route pour voir sa limitation.</string>
     <string name="tour_cards_title">Musique et messages</string>
@@ -914,7 +888,7 @@
     <string name="help_end_trip">Terminer le trajet</string>
     <string name="help_fuel">Prochaine station sur l’itinéraire, orange quand l’écart est long ; touche pour t’y arrêter</string>
     <string name="help_camera">Radar devant</string>
-    <string name="help_give_way">Carrefour devant où tu cèdes le passage ou t’arrêtes : près de la vitesse en navigation, près du numéro de route sinon, et en panneau sur la carte</string>
+    <string name="help_give_way">Carrefour devant où tu dois céder le passage ou t’arrêter : près de la vitesse en navigation, près du numéro de route sinon, et en panneau sur la carte</string>
     <string name="help_hold_map">Garde le doigt sur un lieu : y aller, ajouter une étape, l’ajouter aux favoris, et voir ce qu’on sait de la route</string>
     <string name="help_hold_line">Garde le doigt sur la ligne de l’itinéraire en préparation pour le modifier sur la carte</string>
     <string name="help_draw">Dessine une zone du doigt pour une boucle à travers elle (Où aller ? → Boucle)</string>
@@ -927,7 +901,7 @@
     <string name="tour_loop_title">Faire une boucle</string>
     <string name="tour_loop_body">Une boucle commence dans le menu, pas sur la carte : appuie sur le bouton moto (Où aller ?), puis Boucle. Dessine du doigt la zone où tu veux rouler, et Curveon crée une boucle à travers elle sans repasser deux fois par la même route. Choisis sa longueur, et bitume ou gravier. Autre boucle donne une nouvelle suggestion.</string>
     <string name="tour_mark_title">Changer une seule partie</string>
-    <string name="tour_mark_body">Prépare d’abord un long trajet (bouton moto → choisis un lieu). Puis appuie sur les trois points dans la barre du bas, et fais glisser le doigt le long de la partie à changer. Tire ensuite cette partie avec une ligne pointillée, comme pour modifier sur la carte. Seule cette partie est recalculée ; le reste de l’itinéraire ne change pas. Appuie à nouveau sur le bouton pour revenir au déplacement des points.</string>
+    <string name="tour_mark_body">Prépare d’abord un trajet et ouvre Modifier sur la carte (garde le doigt sur la ligne de l’itinéraire). Appuie sur le bouton en pointillés dans la barre du bas, et fais glisser le doigt le long de la partie à changer. Fais ensuite glisser cette partie là où tu la veux, comme pour modifier sur la carte. Seule cette partie est recalculée ; le reste de l’itinéraire ne change pas.</string>
     <string name="help_group_edit">Modifier sur la carte</string>
     <string name="help_mark">Marquer la partie de l’itinéraire à changer : glisse le long, le reste ne bouge pas</string>
     <string name="help_undo">Annuler le dernier changement</string>
@@ -963,8 +937,42 @@
     <string name="whats_new_title">Nouveau dans Curveon %1$s</string>
     <string name="github_title">Curveon sur GitHub</string>
     <string name="github_hint">Téléchargements, code source et signalement de problèmes</string>
+    <string name="feedback_title">Un bug ou une idée ?</string>
+    <string name="feedback_hint">Raconte-le ici, avec des photos si tu veux. Ça devient un ticket public sur GitHub que tu peux suivre</string>
+    <string name="feedback_bug">Signaler un bug</string>
+    <string name="feedback_idea">Proposer quelque chose</string>
+    <string name="feedback_bug_heading">Rapport de bug</string>
+    <string name="feedback_idea_heading">Idée</string>
+    <string name="feedback_title_field">Titre</string>
+    <string name="feedback_bug_title_hint">En bref : qu’est-ce qui n’a pas marché ?</string>
+    <string name="feedback_idea_title_hint">En bref : quelle est ton idée ?</string>
+    <string name="feedback_text_field">Description</string>
+    <string name="feedback_bug_body">Que s’est-il passé, et à quoi t’attendais-tu ? Qu’as-tu fait juste avant ?</string>
+    <string name="feedback_idea_body">Qu’aimerais-tu que Curveon fasse, et quand est-ce que ça t’aiderait à moto ?</string>
+    <string name="feedback_add_images">Ajouter des photos</string>
+    <string name="feedback_images_count">%1$d photos sur %2$d</string>
+    <string name="feedback_remove_image">Retirer la photo</string>
+    <string name="feedback_include_crash">Joindre le dernier rapport de plantage</string>
+    <string name="feedback_public">Tout ce que tu envoies peut être lu par n’importe qui sur GitHub. N’y mets pas de numéros de téléphone, d’adresses ou d’autres infos privées.</string>
+    <string name="feedback_send">Envoyer</string>
+    <string name="feedback_sending">Envoi…</string>
+    <string name="feedback_sent">Merci ! C’est le ticket #%1$d sur GitHub. Tu le retrouves ici sous Tes signalements.</string>
+    <string name="feedback_follow">Suivre sur GitHub</string>
+    <string name="feedback_failed">Envoi impossible. Vérifie la connexion internet et réessaie.</string>
+    <string name="feedback_too_many">Trop de signalements d’ici en ce moment. Réessaie dans une heure.</string>
+    <string name="feedback_open_github">L’écrire plutôt sur GitHub</string>
+    <string name="feedback_crash_note">Le dernier rapport de plantage (supprime-le si tu préfères ne pas le partager) :</string>
+    <string name="feedback_yours">Tes signalements</string>
+    <string name="feedback_forget">Retirer de la liste</string>
+    <string name="feedback_status_open">Ouvert</string>
+    <string name="feedback_status_done">Fait</string>
+    <string name="feedback_status_closed">Fermé</string>
+    <plurals name="feedback_replies">
+        <item quantity="one">%d réponse</item>
+        <item quantity="many">%d réponses</item>
+        <item quantity="other">%d réponses</item>
+    </plurals>
     <!-- Group ride -->
-    <string name="group_title">Balade en groupe</string>
     <string name="group_start_hint">Roulez ensemble : voyez-vous sur la carte et partagez des itinéraires. Tout est chiffré de bout en bout, seul ton groupe peut le lire.</string>
     <string name="group_name_hint">Nom du groupe (facultatif)</string>
     <string name="group_start">Créer un groupe</string>
@@ -1053,7 +1061,7 @@
     <string name="friends_none">Pas encore d’amis.</string>
     <string name="friends_remove">Retirer</string>
     <string name="friends_remove_title">Retirer %1$s de tes amis ?</string>
-    <string name="friends_remove_text">Vous ne pourrez plus vous inviter à des balades, jusqu’à ce que l’un de vous montre un nouveau code.</string>
+    <string name="friends_remove_text">Vous ne pourrez plus vous inviter à des balades en groupe, jusqu’à ce que l’un de vous montre un nouveau code.</string>
     <string name="friends_send_link">Envoyer un lien</string>
     <string name="friends_link_failed">Le lien n’a pas pu être créé. Vérifie Internet et réessaie.</string>
     <string name="friends_high_five_title">Tope là !</string>
@@ -1089,7 +1097,7 @@
     <string name="shared_trip_stops">%1$d étapes</string>
     <string name="shared_trip_offer_title">%1$s a partagé un itinéraire</string>
     <string name="shared_trip_offer_hint">Tout le monde dans le groupe peut le modifier, et les changements suivent chacun.</string>
-    <string name="shared_trip_save">Enregistrer dans les partagés</string>
+    <string name="shared_trip_save">Garder pour plus tard</string>
     <string name="shared_trip_ignore">Ignorer</string>
     <string name="sos_no_position_title">SOS non envoyé</string>
     <string name="sos_no_position_text">Curveon ne sait pas encore où tu es (pas de position GPS), donc le groupe ne peut pas savoir où venir. Appelle le 112 si tu as besoin d’aide maintenant, et réessaie le SOS une fois que le GPS t’a trouvé.</string>

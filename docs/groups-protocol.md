@@ -25,13 +25,15 @@ Derived with HKDF-SHA256 (`ikm = groupKey`, `salt = groupId`, 32 bytes out):
 ## Invite
 Everything is in the URI fragment, so a web server never sees it:
 
-    https://<relay>/join#v=1&g=<groupId>&k=<groupKey>&a=<adminPub>&r=<relay>[&n=<name>][&x=<expiry>][&e=<epoch>][&me=<identity>]
+    https://<relay>/join#v=1&g=<groupId>&k=<groupKey>&a=<adminPub>&r=<relay>[&n=<name>][&x=<expiry>][&e=<epoch>][&me=<identity>][&t=<kind>]
     curveon://join#v=1&...            (same fragment)
 
 `v` version (a client rejects other versions), `g`, `k`, `a` as above, `r` relay host (so a moved or
 self-run relay still works), `n` optional group name (URL-encoded), `x` optional expiry in epoch seconds
 (enforced by the app only: a soft limit), `e` the key epoch `k` belongs to (0 when left out; a group that has
-had a rider removed is past 0, so an invite made after that must say so).
+had a rider removed is past 0, so an invite made after that must say so), `t` what the group is for: left out for
+a ride group, `f` for a friend channel (two people who scanned each other; it carries their profiles and `invite`
+frames), `s` for a channel between one rider's own devices (they keep friends, groups and profile in step over it).
 
 ### The same rider on two devices
 One person with a tablet and a phone should be one rider, not two. A device that is already in the group makes a
@@ -75,7 +77,7 @@ the `relay` frame, any frame type and keeping in slots. The relay ignores query 
   new proof. A client that connects with the proof from just before the last rekey (it was offline)
   receives the stored `rekey` and is closed with code **4002**; it then reconnects with the new proof.
   Two rekeys while offline cannot be caught up: that rider needs a new invite.
-- A rekey drops everything stored (profiles, routes, SOS belong to the old key); riders send `hello` again.
+- A rekey drops everything stored (profiles, routes, SOS etc. belong to the old key); riders send `hello` again.
 
 ## Frame (what the relay sees)
 JSON, one WebSocket text message:

@@ -36,4 +36,25 @@
     <string name="group_error_already_member">Du är redan med i den gruppen.</string>
     <string name="group_error_other">Något gick fel med gruppen.</string>
     <string name="group_error_not_linked">Öppna Curveon på surfplattan eller den här telefonen först: dina vänner och grupper finns där.</string>
+    <string name="intro">Delar musik, meddelanden och samtal från den här telefonen med Curveon-surfplattan via Bluetooth. Parkoppla först telefonen och surfplattan i Androids Bluetooth-inställningar.</string>
+    <string name="status_title">Status</string>
+    <string name="status_service">Tjänst</string>
+    <string name="status_running">Körs</string>
+    <string name="status_stopped">Stoppad</string>
+    <string name="status_tablet">Surfplatta</string>
+    <string name="status_not_connected">Inte ansluten</string>
+    <string name="status_mirrored">Meddelanden på surfplattan</string>
+    <string name="status_now_playing">Spelas nu</string>
+    <string name="status_waiting">Väntar på surfplattan…</string>
+    <string name="status_bluetooth_off">Bluetooth är av</string>
+    <string name="setup_title">Inställning</string>
+    <string name="setup_notification_access">Aviseringsåtkomst (meddelanden, musik)</string>
+    <string name="setup_permissions">Bluetooth, mikrofon, kontakter, samtal</string>
+    <string name="setup_grant">Tillåt</string>
+    <string name="sharing_start">Börja dela med surfplattan</string>
+    <string name="sharing_stop">Sluta dela</string>
+    <string name="notification_channel">Länk till surfplattan</string>
+    <string name="notification_text">Delar musik, meddelanden och samtal med surfplattan</string>
+    <string name="duration_min">%1$d min</string>
+    <string name="duration_h_min">%1$d tim %2$d min</string>
 </resources>

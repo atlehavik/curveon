@@ -50,8 +50,10 @@ and the choices update in place.
 ### On the road
 
 A big turn card with road numbers, your speed next to the speed limit, the road you are on, and
-warnings for speed cameras. In Norway, a give way or stop sign shows before each junction where you give way, also without a route, and stands on the map where it is. Your music, the latest message (reply by voice through your headset)
-and, if you like, engine data such as revs sit beside the map.
+warnings for speed cameras. In Norway, a give way or stop sign shows before each junction where
+you must give way, also without a route, and stands on the map where it is. Your music, the latest
+message (reply by voice through your headset) and, if you like, engine data such as revs sit beside
+the map.
 
 <img src="docs/screenshots/ride-dashboard.png" alt="Riding with the dashboard: turn card, speed limit, revs, a message and music">
 
@@ -112,9 +114,11 @@ there and along it.
 - **Places on the map:** keep fuel, viewpoints, mountain passes, camping, cafés, ferries or
   motorcycle workshops visible all the time.
 - **Updates itself:** Curveon tells you when a new version is out and installs it for you.
+- **Sounds or a voice for turns** (Settings → Navigation → Sound): soft tones before each turn, or
+  spoken directions in your language, through your helmet. Your music just dips for a moment.
+- **Ride together:** add friends, start a group and see each other on the map. Share a trip and
+  everyone gets the changes at once. Everything is end-to-end encrypted.
 - **Welcome tour** the first time you start, and a list of every symbol under Settings → Help.
-
-No voice guidance, on purpose: the screen tells you what's next, and your music keeps playing.
 
 ---
 
@@ -161,8 +165,8 @@ Bluetooth, and lets you reply by voice through your headset.
 4. **Ride.** Tap the motorcycle button and search for where you are going.
 
 **Using a tablet with the companion app:** pair the phone and the tablet in Android's Bluetooth
-settings. Open Curveon Companion on the phone, allow what it asks for (notifications, Bluetooth,
-microphone, contacts) and tap *Start sharing with tablet*. Then, on the tablet: Settings → Phone →
+settings. Open Curveon Companion on the phone, allow what it asks for (notification access, Bluetooth,
+microphone, contacts, calls) and tap *Start sharing with tablet*. Then, on the tablet: Settings → Phone →
 pick your phone.
 
 **Engine data (optional):** plug an ELM327 OBD2 Bluetooth adapter into the bike to see revs,

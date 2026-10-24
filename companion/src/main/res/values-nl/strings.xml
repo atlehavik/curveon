@@ -36,4 +36,25 @@
     <string name="group_error_already_member">Je zit al in die groep.</string>
     <string name="group_error_other">Er ging iets mis met de groep.</string>
     <string name="group_error_not_linked">Open eerst Curveon op je tablet of op deze telefoon: daar staan je vrienden en groepen.</string>
+    <string name="intro">Deelt muziek, berichten en gesprekken van deze telefoon met de Curveon-tablet via Bluetooth. Koppel eerst de telefoon en de tablet in de Bluetooth-instellingen van Android.</string>
+    <string name="status_title">Status</string>
+    <string name="status_service">Dienst</string>
+    <string name="status_running">Actief</string>
+    <string name="status_stopped">Gestopt</string>
+    <string name="status_tablet">Tablet</string>
+    <string name="status_not_connected">Niet verbonden</string>
+    <string name="status_mirrored">Berichten op de tablet</string>
+    <string name="status_now_playing">Speelt nu</string>
+    <string name="status_waiting">Wachten op de tablet…</string>
+    <string name="status_bluetooth_off">Bluetooth staat uit</string>
+    <string name="setup_title">Instellen</string>
+    <string name="setup_notification_access">Toegang tot meldingen (berichten, muziek)</string>
+    <string name="setup_permissions">Bluetooth, microfoon, contacten, gesprekken</string>
+    <string name="setup_grant">Toestaan</string>
+    <string name="sharing_start">Delen met tablet starten</string>
+    <string name="sharing_stop">Delen stoppen</string>
+    <string name="notification_channel">Tabletverbinding</string>
+    <string name="notification_text">Deelt muziek, berichten en gesprekken met je tablet</string>
+    <string name="duration_min">%1$d min</string>
+    <string name="duration_h_min">%1$d u %2$d min</string>
 </resources>

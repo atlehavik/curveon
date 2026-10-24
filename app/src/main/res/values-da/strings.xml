@@ -19,15 +19,11 @@
     <string name="delete">Slet</string>
     <string name="save">Gem</string>
     <string name="close">Luk</string>
-    <string name="start">Start</string>
-    <string name="stop">Stop</string>
     <string name="download">Download</string>
-    <string name="retry">Prøv igen</string>
 
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Gemt i Hvor skal du hen?</string>
     <string name="toast_saved_to_gpx">Gemt i GPX</string>
-    <string name="toast_saved_to_both">Gemt i planlagte ture og GPX</string>
     <string name="toast_calling">Ringer til %1$s…</string>
     <string name="toast_phone_not_connected">Telefonen er ikke forbundet</string>
     <string name="toast_connect_phone_to_call">Forbind telefonen for at ringe</string>
@@ -50,12 +46,9 @@
     <string name="motorways_ok">Motorveje OK</string>
     <string name="no_motorways_e_roads">Ingen motorveje eller E-veje</string>
     <string name="no_motorways">Ingen motorveje</string>
-    <string name="surface_tarmac">Asfalt</string>
     <string name="surface_mixed">Blandet</string>
     <string name="surface_gravel">Grus</string>
     <string name="surface_offroad">Offroad</string>
-    <string name="ferries">Færger</string>
-    <string name="motorways">Motorveje</string>
 
     <!-- Settings -->
     <string name="settings_display">Skærm</string>
@@ -67,7 +60,7 @@
     <string name="settings_speed_hint">Hastighed og fartgrænser; højde i fod med mph</string>
     <string name="settings_map">Kort</string>
     <string name="settings_map_hint">Auto skifter til natkortet efter solnedgang</string>
-    <string name="settings_screen_lock">Skærm</string>
+    <string name="settings_screen_lock">Skærmrotation</string>
     <string name="settings_screen_lock_hint">Låst drejer den ikke ved bump</string>
     <string name="screen_lock_auto">Drejer</string>
     <string name="screen_lock_landscape">Liggende</string>
@@ -83,8 +76,6 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Nat</string>
-    <string name="settings_obd">OBD2-data</string>
-    <string name="settings_obd_hint">Motordatakort, når en adapter er forbundet</string>
     <string name="settings_altitude">Højde</string>
     <string name="settings_clock">Ur</string>
     <string name="settings_clock_hint">Klokken ved siden af hastigheden</string>
@@ -174,6 +165,7 @@
     <string name="map_checking_newest">Søger efter det nyeste kort…</string>
     <string name="map_no_connection">Ingen forbindelse. Forbind til telefonens hotspot eller Wi-Fi.</string>
     <string name="map_download_failed">Download af kort mislykkedes: %1$s</string>
+    <string name="search_download_failed">Søgedata kunne ikke downloades: %1$s</string>
     <string name="import_failed">Import mislykkedes: %1$s</string>
     <string name="importing_percent">Importerer… %.0f%%</string>
     <string name="download_complete">Download fuldført</string>
@@ -189,7 +181,6 @@
     <string name="gpx_exported">Eksporterede %1$s</string>
     <string name="gpx_export_failed">Eksport mislykkedes: %1$s</string>
     <string name="routing_downloading">Downloader rutedata %1$s (%2$d/%3$d)…</string>
-    <string name="routing_download_failed">Download mislykkedes: %1$s. Forbind til telefonens hotspot, og prøv igen.</string>
     <string name="routing_installed">Rutedata installeret (%1$d felter, %2$.0f MB)</string>
     <string name="routing_none">Ingen rutedata endnu. De følger med hvert land, du downloader, og online hentes kun den del, en tur skal bruge, når du planlægger den (eller kopiér .rd5-filer til %1$s)</string>
     <string name="offline_map_none">Intet offlinekort installeret. Kopiér en .pmtiles-fil til %1$s, eller importér en.</string>
@@ -236,8 +227,6 @@
     <string name="give_way">Vigepligt</string>
     <string name="stop_sign">Stop</string>
     <string name="gps_lost">Intet GPS-signal</string>
-    <string name="rpm_and">%1$d o/min · %2$s</string>
-    <string name="trip_summary">Tur %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Forrige</string>
     <string name="media_play_pause">Afspil/pause</string>
     <string name="media_next">Næste</string>
@@ -257,7 +246,7 @@
     <string name="reply_to">Svar %1$s</string>
     <string name="sms">SMS</string>
     <string name="sms_to">SMS til %1$s</string>
-    <string name="search_by_voice">Sig stedet</string>
+    <string name="search_by_voice">Søg med stemmen</string>
     <string name="speak_now">Tal nu…</string>
     <string name="something_went_wrong">Noget gik galt</string>
     <string name="sent">Sendt</string>
@@ -270,8 +259,6 @@
 
     <!-- Map -->
     <string name="map_heading_up">Kørselsretning op – tryk for 3D</string>
-    <string name="map_north_up">Nord op – tryk for kørselsretning op</string>
-    <string name="map_3d">3D – tryk for nord op</string>
     <string name="map_fit_trip">Vis hele turen</string>
     <string name="map_gravel_heat">Hvor gruset er</string>
     <string name="map_gravel_heat_counting">Tæller grus her (én gang)…</string>
@@ -415,9 +402,7 @@
         <item quantity="one">%d nummer</item>
         <item quantity="other">%d numre</item>
     </plurals>
-    <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
-    <string name="selected">Valgt</string>
     <string name="fuel_go_to">Kør til %1$s?</string>
     <string name="fuel_go_to_body">%1$s længere fremme på ruten. Den bliver et stop.</string>
     <string name="yes">Ja</string>
@@ -474,7 +459,7 @@
     <string name="preview_km_gravel">%.0f km grus</string>
     <string name="preview_forced_gravel">Denne rute tvinger dig ud på grus: %1$s, %2$s. Der er ingen asfaltvej der uden en stor omvej.</string>
     <string name="preview_gravel_from_start">lige fra starten</string>
-    <string name="preview_gravel_after">det første efter %1$s</string>
+    <string name="preview_gravel_after">begynder efter %1$s</string>
     <string name="preview_gravel_amount">%1$s grus</string>
     <plurals name="preview_ferries">
         <item quantity="one">færge</item>
@@ -497,6 +482,7 @@
     <string name="ride_resume_continue">Fortsæt den tur</string>
     <string name="ride_resume_new">Start ny tur</string>
     <string name="nav_resume_title">Fortsæt navigationen?</string>
+    <string name="nav_resume_yes">Fortsæt</string>
     <string name="nav_resume_no">Nej tak</string>
     <string name="rides_empty">Ture optages automatisk, så snart du kører.</string>
     <string name="rides_ride_again">Kør igen</string>
@@ -520,7 +506,7 @@
     <string name="toast_saved_to_planned">Gemt i planlagte ture</string>
     <string name="toast_saved">Gemt</string>
     <string name="save_route_to_where_to">Hvor skal du hen?</string>
-    <string name="planned_empty">Ingen planlagte ture endnu. Gem en rute fra planlæggeren med bogmærkeknappen, eller kopiér en tur fra siden Ture.</string>
+    <string name="planned_empty">Ingen planlagte ture endnu. Gem en rute fra planlæggeren med bogmærkeknappen, eller gem en af dine ture.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d tur</item>
         <item quantity="other">%d ture</item>
@@ -530,11 +516,7 @@
         <item quantity="other">Gruppen og dens %d ture slettes.</item>
     </plurals>
     <string name="planned_rename">Omdøb tur</string>
-    <string name="planned_reversed">Kørt modsat vej</string>
     <string name="rides_ride_reversed">Kør modsat vej</string>
-    <string name="rides_copy_to_planned">Kopiér til planlagt</string>
-    <string name="rides_copy_to_group">Kopiér til planlagte ture</string>
-    <string name="toast_copied_to_planned">Kopieret til planlagte ture</string>
     <string name="rides_select">Vælg ture</string>
     <string name="rides_stop">Stop</string>
     <string name="rides_merge">Flet</string>
@@ -568,23 +550,17 @@
     <string name="stat_climb">m stigning</string>
 
     <!-- Phone link -->
-    <string name="link_connected">Forbundet til %1$s</string>
     <string name="link_disconnected">%1$s svarer ikke. Åbn Curveon Companion på telefonen, og tryk på Start deling. Hvis det bliver ved med at fejle, så slå Bluetooth fra og til på denne tablet og telefonen.</string>
     <string name="link_unreachable">Bluetooth på %1$s svarer slet ikke. Hvis Curveon Companion deler, så slå Bluetooth fra og til på denne tablet (eller telefonen).</string>
     <string name="link_pick">Vælg din telefon nedenfor. Den skal først være parret i Androids Bluetooth-indstillinger.</string>
     <string name="link_no_permission">Curveon skal have tilladelse til at bruge Bluetooth.</string>
-    <string name="link_demo">Viser demomusik og -beskeder.</string>
     <string name="link_allow_bluetooth">Tillad Bluetooth</string>
     <string name="link_demo_data">Demodata</string>
     <string name="link_demo_data_hint">Eksempelmusik og -beskeder, så du kan prøve dashboardet uden telefon</string>
 
     <!-- OBD2 -->
-    <string name="obd_title">OBD2-TELEMETRI</string>
-    <string name="obd_online">ONLINE</string>
-    <string name="obd_standby">STANDBY</string>
     <string name="obd_coolant">Kølevæske</string>
     <string name="obd_battery">Batteri</string>
-    <string name="obd_altitude">Højde</string>
     <string name="obd_rpm">O/MIN</string>
     <string name="obd_choose_adapter">Vælg OBD2-adapteren under Indstillinger → Motor</string>
     <string name="obd_bluetooth_off">Bluetooth er slået fra (eller ikke tilladt)</string>
@@ -604,7 +580,7 @@
     <string name="fuel_setup_title">Benzinmåler</string>
     <string name="fuel_setup_intro">Motorcykler melder benzinniveauet på forskellige måder, så Curveon kan ikke altid selv finde det. Tank, som du plejer, men tryk på en knap før og efter: standeren fortæller, hvor mange liter der kom i, og Curveon finder ud af, hvilken værdi fra motorcyklen der følger benzinen. Gør det ved to tankninger, så viser måleren liter. Det, du registrerer, gemmes, så det passer ind i din normale kørsel.</string>
     <string name="fuel_step_ready">Gør motorcyklen klar</string>
-    <string name="fuel_step_ready_body">Parkér den vandret og oprejst, på samme måde hver gang (altid på sidestøtten eller altid på midterstøtten), slå tændingen til (motoren slukket), og lad OBD2-adapteren sidde i. Hold motoren slukket: en kørende motor ryster benzinflyderen og får mange værdier til at bevæge sig, hvilket gør benzinen sværere at finde (og det er ikke sikkert ved standeren). Tryk på cirklen, når den er klar.</string>
+    <string name="fuel_step_ready_body">Parkér den på plant underlag, på samme måde hver gang (altid på sidestøtten eller altid på midterstøtten), slå tændingen til (motoren slukket), og lad OBD2-adapteren sidde i. Hold motoren slukket: en kørende motor ryster benzinflyderen og får mange værdier til at bevæge sig, hvilket gør benzinen sværere at finde (og det er ikke sikkert ved standeren). Tryk på cirklen, når den er klar.</string>
     <string name="fuel_step_tank">Tankstørrelse</string>
     <string name="fuel_step_tank_body">Hvor mange liter rummer tanken, når den er fuld? Det står i instruktionsbogen.</string>
     <string name="fuel_litres">Liter</string>
@@ -701,7 +677,6 @@
     <string name="loop_name_from">Rundtur fra %1$s, %2$d km</string>
     <string name="loop_name">Rundtur, %1$d km</string>
     <string name="adjust_route">Justér rute</string>
-    <string name="stop_short">Stop</string>
     <string name="start_here">Start her</string>
     <string name="from_here">Fra min position</string>
     <string name="from_place">Fra %1$s</string>
@@ -740,7 +715,6 @@
     <string name="move_later">Senere</string>
     <string name="save_route_title">Gem rute</string>
     <string name="save_route_name">Navn</string>
-    <string name="save_route_to_routes">Hvor skal du hen? (gemte ruter)</string>
     <string name="save_route_to_gpx">GPX-spor</string>
     <string name="preview_arrive">Ankomst %1$s</string>
     <string name="preview_after_dark">efter mørkets frembrud</string>
@@ -752,7 +726,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Uden for ruten</string>
     <string name="wrong_turn_trip">At fortsætte koster %1$d min mere end at vende om.</string>
-    <string name="wrong_turn_no_ahead">Ingen vej tilbage uden at vende om.</string>
+    <string name="wrong_turn_no_ahead">Ingen vej tilbage til ruten uden at vende om.</string>
     <string name="wrong_turn_back">Vend om</string>
     <string name="wrong_turn_new_route">Ny rute herfra</string>
     <string name="wrong_turn_rejoin_ahead">Kom tilbage på ruten længere fremme</string>
@@ -854,7 +828,7 @@
     <string name="tour_map_title">Kortet</string>
     <string name="tour_map_body">Træk og knib som normalt. Én ting gemmer sig under en finger:</string>
     <string name="tour_buttons_title">Kortknapper</string>
-    <string name="tour_buttons_body">Den øverste drejer kortet og viser, hvordan det er drejet nu; tryk for den næste visning:</string>
+    <string name="tour_buttons_body">Den øverste drejer kortet og viser, hvilken vej det vender nu; tryk for at skifte:</string>
     <string name="tour_speed_title">Fart og grænse</string>
     <string name="tour_speed_body">Din fart, fartgrænsen og uret. Farten bliver rød over grænsen, og en linje nedenunder advarer om fartkameraer forude. Hold en finger på en vej for at se dens fartgrænse.</string>
     <string name="tour_cards_title">Musik og beskeder</string>
@@ -898,7 +872,7 @@
     <string name="help_end_trip">Afslut turen</string>
     <string name="help_fuel">Næste tankstation på ruten, gul når der er langt; tryk for at stoppe der</string>
     <string name="help_camera">Fartkamera forude</string>
-    <string name="help_give_way">Kryds forude, hvor du har vigepligt eller skal stoppe: ved hastigheden under navigation, ellers ved vejnummeret, og som skilt på kortet</string>
+    <string name="help_give_way">Kryds forude, hvor du har vigepligt eller stoppligt: vises ved hastigheden under navigation, ellers ved vejnummeret, og som skilt på kortet</string>
     <string name="help_hold_map">Hold en finger på et sted: kør dertil, tilføj et stop, gem en favorit, og se hvad man ved om vejen</string>
     <string name="help_hold_line">Hold på rutelinjen under planlægning for at ændre ruten på kortet</string>
     <string name="help_draw">Tegn et område med en finger for en rundtur igennem det (Hvor skal du hen? → Rundtur)</string>
@@ -911,7 +885,7 @@
     <string name="tour_loop_title">Lav en rundtur</string>
     <string name="tour_loop_body">En rundtur starter i menuen, ikke på kortet: tryk på motorcykelknappen (Hvor skal du hen?) og så Rundtur. Tegn nu området, du vil køre i, med én finger, så bygger Curveon en rundtur igennem det uden at køre samme vej to gange. Vælg, hvor lang den må være, og asfalt eller grus. En anden rundtur giver et nyt forslag.</string>
     <string name="tour_mark_title">Ændr kun én del</string>
-    <string name="tour_mark_body">Planlæg først en lang tur (motorcykelknappen → vælg et sted). Tryk så på de tre prikker i bjælken nederst, og træk en finger langs den del, du vil ændre. Træk derefter delen ud med en stiplet linje, ligesom når du redigerer på kortet. Kun den del planlægges igen; resten af ruten forbliver, som den er. Tryk på knappen igen for at gå tilbage til at trække i punkter.</string>
+    <string name="tour_mark_body">Planlæg først en tur, og åbn Redigér på kortet (hold en finger på rutelinjen). Tryk på knappen med den stiplede linje i bjælken nederst, og træk en finger langs den del, du vil ændre. Træk så den del derhen, hvor du vil have den, ligesom når du redigerer på kortet. Kun den del planlægges igen; resten af ruten forbliver, som den er.</string>
     <string name="help_group_edit">Redigering på kortet</string>
     <string name="help_mark">Markér den del af ruten, der skal ændres: træk langs den, resten bliver</string>
     <string name="help_undo">Fortryd den seneste ændring</string>
@@ -947,8 +921,41 @@
     <string name="whats_new_title">Nyt i Curveon %1$s</string>
     <string name="github_title">Curveon på GitHub</string>
     <string name="github_hint">Downloads, kildekode og hvor du melder fejl</string>
+    <string name="feedback_title">Fundet en fejl, eller har du en idé?</string>
+    <string name="feedback_hint">Fortæl os det her, gerne med billeder. Det bliver en offentlig sag på GitHub, som du kan følge</string>
+    <string name="feedback_bug">Meld en fejl</string>
+    <string name="feedback_idea">Foreslå noget</string>
+    <string name="feedback_bug_heading">Fejlrapport</string>
+    <string name="feedback_idea_heading">Idé</string>
+    <string name="feedback_title_field">Titel</string>
+    <string name="feedback_bug_title_hint">Kort: hvad gik galt?</string>
+    <string name="feedback_idea_title_hint">Kort: hvad er din idé?</string>
+    <string name="feedback_text_field">Beskrivelse</string>
+    <string name="feedback_bug_body">Hvad skete der, og hvad forventede du? Hvad gjorde du lige før?</string>
+    <string name="feedback_idea_body">Hvad vil du gerne have, at Curveon gør, og hvornår ville det hjælpe dig på motorcyklen?</string>
+    <string name="feedback_add_images">Tilføj billeder</string>
+    <string name="feedback_images_count">%1$d af %2$d billeder</string>
+    <string name="feedback_remove_image">Fjern billede</string>
+    <string name="feedback_include_crash">Medtag den seneste nedbrudsrapport</string>
+    <string name="feedback_public">Alt, hvad du sender, kan læses af alle på GitHub. Udelad telefonnumre, adresser og andet privat.</string>
+    <string name="feedback_send">Send</string>
+    <string name="feedback_sending">Sender…</string>
+    <string name="feedback_sent">Tak! Det er sag #%1$d på GitHub. Du finder den under Dine rapporter her.</string>
+    <string name="feedback_follow">Følg på GitHub</string>
+    <string name="feedback_failed">Kunne ikke sende. Tjek internetforbindelsen, og prøv igen.</string>
+    <string name="feedback_too_many">For mange rapporter herfra lige nu. Prøv igen om en time.</string>
+    <string name="feedback_open_github">Skriv det på GitHub i stedet</string>
+    <string name="feedback_crash_note">Den seneste nedbrudsrapport (slet den, hvis du ikke vil dele den):</string>
+    <string name="feedback_yours">Dine rapporter</string>
+    <string name="feedback_forget">Fjern fra listen</string>
+    <string name="feedback_status_open">Åben</string>
+    <string name="feedback_status_done">Færdig</string>
+    <string name="feedback_status_closed">Lukket</string>
+    <plurals name="feedback_replies">
+        <item quantity="one">%d svar</item>
+        <item quantity="other">%d svar</item>
+    </plurals>
     <!-- Group ride -->
-    <string name="group_title">Gruppetur</string>
     <string name="group_start_hint">Kør sammen: se hinanden på kortet, og del ruter. Alt er end-to-end-krypteret, så kun din gruppe kan læse det.</string>
     <string name="group_name_hint">Gruppenavn (valgfrit)</string>
     <string name="group_start">Start en gruppe</string>
@@ -1037,7 +1044,7 @@
     <string name="friends_none">Ingen venner endnu.</string>
     <string name="friends_remove">Fjern</string>
     <string name="friends_remove_title">Fjern %1$s som ven?</string>
-    <string name="friends_remove_text">I kan ikke længere invitere hinanden til ture, før en af jer viser en ny kode.</string>
+    <string name="friends_remove_text">I kan ikke længere invitere hinanden til gruppeture, før en af jer viser en ny kode.</string>
     <string name="friends_send_link">Send et link</string>
     <string name="friends_link_failed">Linket kunne ikke laves. Tjek internettet, og prøv igen.</string>
     <string name="friends_high_five_title">High five!</string>
@@ -1072,7 +1079,7 @@
     <string name="shared_trip_stops">%1$d stop</string>
     <string name="shared_trip_offer_title">%1$s delte en rute</string>
     <string name="shared_trip_offer_hint">Alle i gruppen kan ændre den, og ændringerne følger med til alle.</string>
-    <string name="shared_trip_save">Gem i delte</string>
+    <string name="shared_trip_save">Gem til senere</string>
     <string name="shared_trip_ignore">Ignorer</string>
     <string name="sos_no_position_title">SOS ikke sendt</string>
     <string name="sos_no_position_text">Curveon ved endnu ikke, hvor du er (ingen GPS-position), så gruppen kan ikke få at vide, hvor de skal komme hen. Ring 112, hvis du har brug for hjælp nu, og prøv SOS igen, når GPS\'en har fundet dig.</string>
@@ -1085,17 +1092,17 @@
     <string name="location_allow">Tillad</string>
     <string name="location_turn_on">Slå til</string>
     <string name="media_this_no_notification_access">Adgang til notifikationer er slået fra, så ingen musik eller beskeder. Tryk for at slå den til for Curveon.</string>
-    <string name="phone_err_call_not_allowed">Telefonen lader ikke Curveon Companion ringe: åbn den på telefonen, og tryk på Giv adgang.</string>
+    <string name="phone_err_call_not_allowed">Telefonen lader ikke Curveon Companion ringe: åbn den på telefonen, og tryk på Tillad.</string>
     <string name="phone_err_call_not_allowed_here">Curveon må ikke ringe: tillad Telefon under Indstillinger → Telefon.</string>
     <string name="phone_err_call_failed">Telefonen kunne ikke ringe op. Prøv igen, eller ring fra telefonen.</string>
-    <string name="phone_err_sms_not_allowed">Telefonen lader ikke Curveon Companion sende SMS: åbn den på telefonen, og tryk på Giv adgang.</string>
+    <string name="phone_err_sms_not_allowed">Telefonen lader ikke Curveon Companion sende SMS: åbn den på telefonen, og tryk på Tillad.</string>
     <string name="phone_err_sms_not_allowed_here">Curveon må ikke sende SMS: tillad det under Indstillinger → Telefon.</string>
     <string name="phone_err_sms_failed">Telefonen kunne ikke sende SMS\'en. Prøv igen om lidt.</string>
     <string name="phone_err_sms_unavailable">Der kan ikke sendes SMS fra denne telefon lige nu.</string>
     <string name="phone_err_voice_unavailable">Stemmesvar er ikke tilgængelige på telefonen: åbn Curveon Companion, og giv den adgang til mikrofonen.</string>
     <string name="phone_err_no_recognizer">Telefonen har ingen talegenkendelse. Installer eller slå Googles stemmeindtastning til på telefonen.</string>
     <string name="phone_err_not_caught">Det fangede jeg ikke. Prøv igen, lidt tættere på mikrofonen.</string>
-    <string name="phone_err_mic_not_allowed">Telefonen lader ikke Curveon Companion bruge mikrofonen: åbn den på telefonen, og tryk på Giv adgang.</string>
+    <string name="phone_err_mic_not_allowed">Telefonen lader ikke Curveon Companion bruge mikrofonen: åbn den på telefonen, og tryk på Tillad.</string>
     <string name="phone_err_mic_not_allowed_here">Curveon må ikke bruge mikrofonen: tillad det under Indstillinger → Telefon.</string>
     <string name="phone_err_needs_connection">Talegenkendelse kræver forbindelse på telefonen eller offline tale downloadet i telefonens indstillinger.</string>
     <string name="phone_err_recognizer">Talegenkendelse på telefonen mislykkedes. Prøv igen.</string>
@@ -1165,7 +1172,7 @@
     <string name="group_paused_hint">Du holder pause fra gruppen: de andre ser ikke dig, du ser ikke dem, og SOS og alarmer fra gruppen når dig ikke. Slå til igen for at køre med dem.</string>
     <string name="phone_this_cannot_call">Denne enhed kan ikke ringe eller sende sms</string>
     <string name="phone_this_cannot_call_hint">Den har intet SIM-kort. Beskeder og musik kommer stadig fra apps her. For at ringe og sende sms fra Curveon: installer Curveon Companion på telefonen, og vælg den i Indstillinger → Telefon.</string>
-    <string name="phone_this_not_allowed">Curveon må ikke læse kontakter og opkald</string>
+    <string name="phone_this_not_allowed">Curveon kan ikke læse kontakter og opkald</string>
     <string name="phone_this_allow_hint">Giv adgang til kontakter, opkald, sms og mikrofonen, så kan du ringe og sende indtalte sms herfra.</string>
     <string name="phone_this_allow">Tillad</string>
     <string name="link_this_device_hint_no_calls">Beskeder og musik fra apps på denne enhed. Den kan ikke ringe eller sende sms (den har intet SIM-kort).</string>

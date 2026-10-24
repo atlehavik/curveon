@@ -20,15 +20,11 @@
     <string name="delete">Delete</string>
     <string name="save">Save</string>
     <string name="close">Close</string>
-    <string name="start">Start</string>
-    <string name="stop">Stop</string>
     <string name="download">Download</string>
-    <string name="retry">Retry</string>
 
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Saved to Where to?</string>
     <string name="toast_saved_to_gpx">Saved to GPX</string>
-    <string name="toast_saved_to_both">Saved to planned trips and GPX</string>
     <string name="toast_calling">Calling %1$s…</string>
     <string name="toast_phone_not_connected">Phone not connected</string>
     <string name="toast_connect_phone_to_call">Connect the phone to call</string>
@@ -51,12 +47,9 @@
     <string name="motorways_ok">Motorways OK</string>
     <string name="no_motorways_e_roads">No motorways or E-roads</string>
     <string name="no_motorways">No motorways</string>
-    <string name="surface_tarmac">Tarmac</string>
     <string name="surface_mixed">Mixed</string>
     <string name="surface_gravel">Gravel</string>
     <string name="surface_offroad">Offroad</string>
-    <string name="ferries">Ferries</string>
-    <string name="motorways">Motorways</string>
 
     <!-- Settings -->
     <string name="settings_display">Display</string>
@@ -67,8 +60,8 @@
     <string name="settings_speed">Speed</string>
     <string name="settings_speed_hint">Speed and speed limits; height in feet with mph</string>
     <string name="settings_map">Map</string>
-    <string name="settings_map_hint">Auto turns to the night map after sunset</string>
-    <string name="settings_screen_lock">Screen</string>
+    <string name="settings_map_hint">Auto switches to the night map after sunset</string>
+    <string name="settings_screen_lock">Screen rotation</string>
     <string name="settings_screen_lock_hint">Locked, it doesn\'t turn with bumps</string>
     <string name="screen_lock_auto">Turns</string>
     <string name="screen_lock_landscape">Landscape</string>
@@ -84,8 +77,6 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Day</string>
     <string name="map_theme_night">Night</string>
-    <string name="settings_obd">OBD2 data</string>
-    <string name="settings_obd_hint">Engine data card when an adapter is connected</string>
     <string name="settings_altitude">Altitude</string>
     <string name="settings_clock">Clock</string>
     <string name="settings_clock_hint">The time next to the speed</string>
@@ -175,6 +166,7 @@
     <string name="map_checking_newest">Checking for the newest map…</string>
     <string name="map_no_connection">No connection. Connect to the phone\'s hotspot or Wi-Fi.</string>
     <string name="map_download_failed">Map download failed: %1$s</string>
+    <string name="search_download_failed">Search data could not be downloaded: %1$s</string>
     <string name="import_failed">Import failed: %1$s</string>
     <string name="importing_percent">Importing… %.0f%%</string>
     <string name="download_complete">Download complete</string>
@@ -190,9 +182,8 @@
     <string name="gpx_exported">Exported %1$s</string>
     <string name="gpx_export_failed">Export failed: %1$s</string>
     <string name="routing_downloading">Downloading routing data %1$s (%2$d/%3$d)…</string>
-    <string name="routing_download_failed">Download failed: %1$s. Connect to the phone\'s hotspot and retry.</string>
     <string name="routing_installed">Routing data installed (%1$d tiles, %2$.0f MB)</string>
-    <string name="routing_none">No routing data yet. It comes with each country you download, and online just the part a trip needs is fetched when you plan it (or copy .rd5 files to %1$s)</string>
+    <string name="routing_none">No routing data yet. It comes with each country you download; online, only the part a trip needs is fetched when you plan it (or copy .rd5 files to %1$s).</string>
     <string name="offline_map_none">No offline map installed. Copy a .pmtiles file to %1$s or import one.</string>
     <string name="offline_map_line">%1$s – %2$.0f MB</string>
     <string name="offline_map_restart">(restart the app after changing maps)</string>
@@ -238,8 +229,6 @@
     <string name="stop_sign">Stop</string>
     <string name="give_way_in" translatable="false">%1$d m</string>
     <string name="gps_lost">No GPS signal</string>
-    <string name="rpm_and">%1$d rpm · %2$s</string>
-    <string name="trip_summary">Trip %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Previous</string>
     <string name="media_play_pause">Play/pause</string>
     <string name="media_next">Next</string>
@@ -259,7 +248,7 @@
     <string name="reply_to">Reply to %1$s</string>
     <string name="sms">SMS</string>
     <string name="sms_to">SMS to %1$s</string>
-    <string name="search_by_voice">Say the place</string>
+    <string name="search_by_voice">Search by voice</string>
     <string name="speak_now">Speak now…</string>
     <string name="something_went_wrong">Something went wrong</string>
     <string name="sent">Sent</string>
@@ -272,8 +261,6 @@
 
     <!-- Map -->
     <string name="map_heading_up">Heading up – tap for 3D</string>
-    <string name="map_north_up">North up – tap for heading up</string>
-    <string name="map_3d">3D – tap for north up</string>
     <string name="map_fit_trip">Show the whole trip</string>
     <string name="map_gravel_heat">Where the gravel is</string>
     <string name="map_gravel_heat_counting">Counting gravel here (once)…</string>
@@ -394,20 +381,20 @@
     <string name="gpx_hidden">Hidden</string>
     <string name="gpx_partly_shown">Partly shown</string>
     <string name="gpx_as_recorded">As recorded</string>
-    <string name="gpx_inverted">Inverted</string>
+    <string name="gpx_inverted">Reversed</string>
     <string name="gpx_mixed_directions">Mixed directions</string>
     <string name="gpx_no_group">No group</string>
     <string name="gpx_new_group">New group</string>
 
     <!-- Phone -->
-    <string name="phone_favorites">Favorites</string>
+    <string name="phone_favorites">Favourites</string>
     <string name="phone_recents">Recents</string>
     <string name="phone_contacts">Contacts</string>
     <string name="phone_keypad">Keypad</string>
     <string name="phone_no_share_contacts">The phone doesn\'t share contacts</string>
     <string name="phone_no_share_calls">The phone doesn\'t share the call log</string>
     <string name="phone_allow_hint">Open Curveon Companion on the phone and allow contacts and calls.</string>
-    <string name="phone_no_favorites">No favorites yet</string>
+    <string name="phone_no_favorites">No favourites yet</string>
     <string name="phone_no_favorites_hint">Star contacts on your phone and they show up here.</string>
     <string name="phone_no_recents">No recent calls</string>
     <string name="phone_no_contacts">No contacts with a phone number</string>
@@ -417,9 +404,7 @@
         <item quantity="one">%d number</item>
         <item quantity="other">%d numbers</item>
     </plurals>
-    <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
-    <string name="selected">Selected</string>
     <string name="fuel_go_to">Go to %1$s?</string>
     <string name="fuel_go_to_body">%1$s ahead on the route. It becomes a stop.</string>
     <string name="yes">Yes</string>
@@ -434,7 +419,7 @@
     <string name="point_by_point_from_me_hint">The trip starts where you are now</string>
 
     <!-- Roundtrip and route preview -->
-    <string name="nav_no_area_roundtrip">Could not find a roundtrip in that area. Try drawing it bigger, or round more roads.</string>
+    <string name="nav_no_area_roundtrip">Could not find a roundtrip in that area. Try drawing it bigger, or around more roads.</string>
     <string name="loop_max_any">Whole area</string>
     <string name="loop_max_km">Max %1$d km</string>
     <string name="loop_redraw">Draw again</string>
@@ -446,7 +431,7 @@
     <string name="adventure_no_limit">No limit</string>
     <string name="adventure_time_hm">%1$d:%2$02d h</string>
     <string name="preview_adventure_title">Adventure to %1$s</string>
-    <string name="nav_no_adventure">Could not find an adventure in that area. Try drawing it bigger, or taking more time.</string>
+    <string name="nav_no_adventure">Could not find an adventure in that area. Try drawing it bigger, or allowing more time.</string>
     <string name="nav_adventure_too_short">The quickest way takes %1$d min. Ask for more time to get an adventure.</string>
     <string name="adventure_time_explain">The longest the trip may take, or no limit to let the area decide. It can be shorter when the area has no good roads for more.</string>
     <string name="map_tilt_up">Tilt the map up, towards a bird\'s-eye view</string>
@@ -476,7 +461,7 @@
     <string name="preview_km_gravel">%.0f km gravel</string>
     <string name="preview_forced_gravel">This route forces you onto gravel: %1$s, %2$s. There is no tarmac road there without a big detour.</string>
     <string name="preview_gravel_from_start">right from the start</string>
-    <string name="preview_gravel_after">the first after %1$s</string>
+    <string name="preview_gravel_after">starting after %1$s</string>
     <string name="preview_gravel_amount">%1$s gravel</string>
     <plurals name="preview_ferries">
         <item quantity="one">ferry</item>
@@ -499,6 +484,7 @@
     <string name="ride_resume_continue">Continue that ride</string>
     <string name="ride_resume_new">Start new ride</string>
     <string name="nav_resume_title">Continue navigating?</string>
+    <string name="nav_resume_yes">Continue</string>
     <string name="nav_resume_no">No thanks</string>
     <string name="rides_empty">Rides are recorded automatically once you get going.</string>
     <string name="rides_ride_again">Ride again</string>
@@ -522,7 +508,7 @@
     <string name="toast_saved_to_planned">Saved to planned trips</string>
     <string name="toast_saved">Saved</string>
     <string name="save_route_to_where_to">Where to?</string>
-    <string name="planned_empty">No planned trips yet. Save a route from the planner with the bookmark button, or copy a ride from the Rides page.</string>
+    <string name="planned_empty">No planned trips yet. Save a route from the planner with the bookmark button, or save one of your rides.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d trip</item>
         <item quantity="other">%d trips</item>
@@ -532,11 +518,7 @@
         <item quantity="other">The group and its %d trips are deleted.</item>
     </plurals>
     <string name="planned_rename">Rename trip</string>
-    <string name="planned_reversed">Ridden the other way</string>
     <string name="rides_ride_reversed">Ride the other way</string>
-    <string name="rides_copy_to_planned">Copy to planned</string>
-    <string name="rides_copy_to_group">Copy to planned trips</string>
-    <string name="toast_copied_to_planned">Copied to planned trips</string>
     <string name="rides_select">Select rides</string>
     <string name="rides_stop">Stop</string>
     <string name="rides_merge">Merge</string>
@@ -570,23 +552,17 @@
     <string name="stat_climb">m climb</string>
 
     <!-- Phone link -->
-    <string name="link_connected">Connected to %1$s</string>
     <string name="link_disconnected">%1$s is not answering. Open Curveon Companion on the phone and tap Start sharing. If it keeps failing, turn Bluetooth off and on on this tablet and the phone.</string>
     <string name="link_unreachable">%1$s\'s Bluetooth doesn\'t answer at all. If Curveon Companion is sharing, turn Bluetooth off and on on this tablet (or the phone).</string>
     <string name="link_pick">Pick your phone below. It must be paired in Android\'s Bluetooth settings first.</string>
     <string name="link_no_permission">Curveon needs permission to use Bluetooth.</string>
-    <string name="link_demo">Showing demo music and messages.</string>
     <string name="link_allow_bluetooth">Allow Bluetooth</string>
     <string name="link_demo_data">Demo data</string>
     <string name="link_demo_data_hint">Sample music and messages, for trying the dashboard without a phone</string>
 
     <!-- OBD2 -->
-    <string name="obd_title">OBD2 TELEMETRY</string>
-    <string name="obd_online">ONLINE</string>
-    <string name="obd_standby">STANDBY</string>
     <string name="obd_coolant">Coolant</string>
     <string name="obd_battery">Battery</string>
-    <string name="obd_altitude">Altitude</string>
     <string name="obd_rpm">RPM</string>
     <string name="obd_choose_adapter">Choose the OBD2 adapter in Settings → Engine</string>
     <string name="obd_bluetooth_off">Bluetooth is off (or not allowed)</string>
@@ -606,7 +582,7 @@
     <string name="fuel_setup_title">Fuel gauge</string>
     <string name="fuel_setup_intro">Bikes report the fuel level in different ways, so Curveon can\'t always find it by itself. Fill up as you normally do, but tap a button before and after: the pump tells how many litres went in, and Curveon works out which value from the bike follows the fuel. Do it at two refuellings and the gauge shows litres. What you register is kept, so it fits into your normal riding.</string>
     <string name="fuel_step_ready">Get the bike ready</string>
-    <string name="fuel_step_ready_body">Park it level and upright, the same way every time (always on the side stand, or always on the centre stand), switch the ignition on (engine off) and keep the OBD2 adapter plugged in. Keep the engine off: a running engine shakes the fuel float and makes many values move, which makes the fuel harder to find (and is not safe at the pump). Tap the circle when it is ready.</string>
+    <string name="fuel_step_ready_body">Park it on level ground, the same way every time (always on the side stand, or always on the centre stand), switch the ignition on (engine off) and keep the OBD2 adapter plugged in. Keep the engine off: a running engine shakes the fuel float and makes many values move, which makes the fuel harder to find (and is not safe at the pump). Tap the circle when it is ready.</string>
     <string name="fuel_step_tank">Tank size</string>
     <string name="fuel_step_tank_body">How many litres does the tank hold when it is full? The owner\'s manual says.</string>
     <string name="fuel_litres">Litres</string>
@@ -703,7 +679,6 @@
     <string name="loop_name_from">Loop from %1$s, %2$d km</string>
     <string name="loop_name">Loop, %1$d km</string>
     <string name="adjust_route">Adjust route</string>
-    <string name="stop_short">Stop</string>
     <string name="start_here">Start here</string>
     <string name="from_here">From my position</string>
     <string name="from_place">From %1$s</string>
@@ -730,7 +705,7 @@
     <string name="pbp_help_title">Planning on the map</string>
     <string name="pbp_help_tap">Tap the map to add a point; the route goes through it.</string>
     <string name="pbp_help_lock">The padlock decides what dragging does: closed moves the map, open bends the line where you drag.</string>
-    <string name="pbp_help_mark">The dotted line button: drag along a part of the route to change just that part.</string>
+    <string name="pbp_help_mark">The dotted-line button: drag along a part of the route to change just that part.</string>
     <string name="pbp_help_done">Undo takes back the last change; the tick finishes.</string>
     <string name="pbp_help_never">Don\'t show again</string>
     <string name="ok">OK</string>
@@ -742,7 +717,6 @@
     <string name="move_later">Later</string>
     <string name="save_route_title">Save route</string>
     <string name="save_route_name">Name</string>
-    <string name="save_route_to_routes">Where to? (saved routes)</string>
     <string name="save_route_to_gpx">GPX track</string>
     <string name="preview_arrive">Arrive %1$s</string>
     <string name="preview_after_dark">after dark</string>
@@ -754,7 +728,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Off route</string>
     <string name="wrong_turn_trip">Carrying on costs %1$d min more than turning back.</string>
-    <string name="wrong_turn_no_ahead">No way back without turning round.</string>
+    <string name="wrong_turn_no_ahead">No way back to the route without turning round.</string>
     <string name="wrong_turn_back">Turn back</string>
     <string name="wrong_turn_new_route">New route from here</string>
     <string name="wrong_turn_rejoin_ahead">Rejoin further ahead</string>
@@ -826,9 +800,9 @@
     <string name="link_allow">Allow</string>
     <string name="link_stop_this_device">Stop</string>
     <string name="link_music_apps">Music apps</string>
-    <string name="link_music_apps_hint">Star your favorites: they are always in the music card, and swiping to one starts it on the phone if it isn\'t running.</string>
+    <string name="link_music_apps_hint">Star your favourites: they are always in the music card, and swiping to one starts it on the phone if it isn\'t running.</string>
     <string name="link_music_apps_none">Connect the phone to find its music apps.</string>
-    <string name="link_favorite">Favorite</string>
+    <string name="link_favorite">Favourite</string>
     <string name="link_app_playing">Playing</string>
     <string name="link_app_running">Running</string>
     <string name="media_starting">Starting…</string>
@@ -856,7 +830,7 @@
     <string name="tour_map_title">The map</string>
     <string name="tour_map_body">Drag and pinch as usual. One thing hides under a finger:</string>
     <string name="tour_buttons_title">Map buttons</string>
-    <string name="tour_buttons_body">The top one turns the map and shows how it is turned now; tap it for the next way:</string>
+    <string name="tour_buttons_body">The top one turns the map and shows which way it faces now; tap it to switch:</string>
     <string name="tour_speed_title">Speed and limit</string>
     <string name="tour_speed_body">Your speed, the speed limit and the clock. The speed turns red above the limit, and a line underneath warns of speed cameras ahead. Hold a finger on any road to see its limit.</string>
     <string name="tour_cards_title">Music and messages</string>
@@ -900,7 +874,7 @@
     <string name="help_end_trip">End the trip</string>
     <string name="help_fuel">Next fuel on the route, amber when the gap is long; tap to stop there</string>
     <string name="help_camera">Speed camera ahead</string>
-    <string name="help_give_way">Junction ahead where you give way or stop: by the speed when navigating, by the road number otherwise, and as a sign on the map</string>
+    <string name="help_give_way">Junction ahead where you must give way or stop: shown next to the speed while navigating, next to the road number otherwise, and as a sign on the map</string>
     <string name="help_hold_map">Hold a finger on a place: go there, add a stop, save a favourite, and see what is known about the road</string>
     <string name="help_hold_line">Hold the route line while planning to change the route on the map</string>
     <string name="help_draw">Draw an area with a finger for a roundtrip through it (Where to? → Roundtrip)</string>
@@ -913,7 +887,7 @@
     <string name="tour_loop_title">Make a roundtrip</string>
     <string name="tour_loop_body">A roundtrip starts in the menu, not on the map: press the motorcycle button (Where to?), then Roundtrip. Now draw the area you want to ride in with one finger, and Curveon builds a loop through it without riding the same road twice. Choose how long it may be, and tarmac or gravel. Another loop gives a new suggestion.</string>
     <string name="tour_mark_title">Change just one part</string>
-    <string name="tour_mark_body">First plan a long trip (motorcycle button → pick a place). Then press the three dots in the bar at the bottom, and drag a finger along the part you want to change. Then pull the part out with a dashed line, just as when editing on the map. Only that part is planned again; the rest of the route stays as it is. Press the button again to go back to dragging points.</string>
+    <string name="tour_mark_body">First plan a trip and open Edit on map (hold a finger on the route line). Press the dotted-line button in the bar at the bottom and drag a finger along the part you want to change. Then drag that part where you want it, just as when editing on the map. Only that part is planned again; the rest of the route stays as it is.</string>
     <string name="help_group_edit">Editing on the map</string>
     <string name="help_mark">Mark the part of the route to change: drag along it, the rest stays</string>
     <string name="help_undo">Undo the last change</string>
@@ -968,10 +942,10 @@
     <string name="feedback_public">Everything you send can be read by anyone on GitHub. Leave out phone numbers, addresses and other private things.</string>
     <string name="feedback_send">Send</string>
     <string name="feedback_sending">Sending…</string>
-    <string name="feedback_sent">Thanks! It is issue #%1$d on GitHub. You find it under Your reports here.</string>
+    <string name="feedback_sent">Thanks! It is issue #%1$d on GitHub. You\'ll find it under Your reports here.</string>
     <string name="feedback_follow">Follow on GitHub</string>
     <string name="feedback_failed">Couldn\'t send it. Check the internet connection and try again.</string>
-    <string name="feedback_too_many">Many reports from here just now. Try again in an hour.</string>
+    <string name="feedback_too_many">Too many reports from here just now. Try again in an hour.</string>
     <string name="feedback_open_github">Write it on GitHub instead</string>
     <string name="feedback_crash_note">The latest crash report (delete it if you\'d rather not share it):</string>
     <string name="feedback_yours">Your reports</string>
@@ -984,7 +958,6 @@
         <item quantity="other">%d replies</item>
     </plurals>
     <!-- Group ride -->
-    <string name="group_title">Group ride</string>
     <string name="group_start_hint">Ride together: see each other on the map and share routes. Everything is end-to-end encrypted, so only your group can read it.</string>
     <string name="group_name_hint">Group name (optional)</string>
     <string name="group_start">Start a group</string>
@@ -1015,7 +988,7 @@
     <string name="group_photo_gallery">Choose from pictures</string>
     <string name="group_photo_use">Use this picture</string>
     <string name="group_photo_preview">This is how the others see you</string>
-    <string name="group_photo_crop_title">Cut your picture</string>
+    <string name="group_photo_crop_title">Crop your picture</string>
     <string name="group_photo_crop_hint">Drag and zoom so your face is inside the circle.</string>
     <string name="group_photo_finding">Finding you in the picture…</string>
     <string name="group_photo_making">Making the effect…</string>
@@ -1053,7 +1026,7 @@
     <string name="sos_on_the_way">%1$d on the way</string>
     <string name="sos_no_delivery">Nobody has got it yet. No coverage? Call someone yourself.</string>
     <string name="sos_cancel">Cancel SOS</string>
-    <string name="sos_drive_there">Drive there</string>
+    <string name="sos_drive_there">Ride there</string>
     <string name="sos_ignore">Ignore</string>
     <string name="sos_nobody_yet">No one on the way yet</string>
     <string name="sos_alert_title">%1$s needs help</string>
@@ -1073,7 +1046,7 @@
     <string name="friends_none">No friends yet.</string>
     <string name="friends_remove">Remove</string>
     <string name="friends_remove_title">Remove %1$s as a friend?</string>
-    <string name="friends_remove_text">You can no longer invite each other to rides, until one of you shows a new code.</string>
+    <string name="friends_remove_text">You can no longer invite each other to group rides, until one of you shows a new code.</string>
     <string name="friends_send_link">Send a link</string>
     <string name="friends_link_failed">The link could not be made. Check the internet and try again.</string>
     <string name="friends_high_five_title">High five!</string>
@@ -1108,7 +1081,7 @@
     <string name="shared_trip_stops">%1$d stops</string>
     <string name="shared_trip_offer_title">%1$s shared a route</string>
     <string name="shared_trip_offer_hint">Anyone in the group can change it, and the changes follow everyone.</string>
-    <string name="shared_trip_save">Save in shared</string>
+    <string name="shared_trip_save">Save for later</string>
     <string name="shared_trip_ignore">Ignore</string>
     <string name="sos_no_position_title">SOS not sent</string>
     <string name="sos_no_position_text">Curveon doesn\'t know where you are yet (no GPS position), so the group can\'t be told where to come. Call 112 if you need help now, and try SOS again once the GPS has found you.</string>
@@ -1201,7 +1174,7 @@
     <string name="group_paused_hint">You have paused this group: the others don\'t see you, you don\'t see them, and SOS and alerts from the group don\'t reach you. Switch it on again to ride with them.</string>
     <string name="phone_this_cannot_call">This device can\'t call or text</string>
     <string name="phone_this_cannot_call_hint">It has no SIM card. Messages and music still come from the apps here. To call and send SMS from Curveon, install Curveon Companion on your phone and pick the phone in Settings → Phone.</string>
-    <string name="phone_this_not_allowed">Curveon may not read contacts and calls</string>
+    <string name="phone_this_not_allowed">Curveon can\'t read contacts and calls</string>
     <string name="phone_this_allow_hint">Allow contacts, calls, SMS and the microphone, so you can call and send spoken SMS from here.</string>
     <string name="phone_this_allow">Allow</string>
     <string name="link_this_device_hint_no_calls">Messages and music from the apps on this device. It can\'t make calls or send SMS (it has no SIM card).</string>

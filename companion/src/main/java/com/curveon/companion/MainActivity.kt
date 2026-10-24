@@ -91,26 +91,23 @@ class MainActivity : ComponentActivity() {
             Modifier.fillMaxSize().background(Bg).safeDrawingPadding().padding(20.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text("Curveon Companion", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black)
-            Text(
-                "Shares music, messages and calls from this phone with the Curveon tablet over Bluetooth. " +
-                    "Pair the phone and tablet in Android's Bluetooth settings first.",
-                color = Muted, fontSize = 14.sp
-            )
+            Text(stringResource(R.string.app_name), color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black)
+            Text(stringResource(R.string.intro), color = Muted, fontSize = 14.sp)
 
-            Card("Status") {
-                Line("Service", if (status.serviceRunning) "Running" else "Stopped", status.serviceRunning)
-                Line("Tablet", status.tabletName ?: "Not connected", status.tabletName != null)
-                Line("Mirrored messages", status.mirroredNotifications.toString(), true)
-                Line("Now playing", status.mediaTitle ?: "–", status.mediaTitle != null)
+            Card(stringResource(R.string.status_title)) {
+                Line(stringResource(R.string.status_service),
+                    stringResource(if (status.serviceRunning) R.string.status_running else R.string.status_stopped), status.serviceRunning)
+                Line(stringResource(R.string.status_tablet), status.tabletName ?: stringResource(R.string.status_not_connected), status.tabletName != null)
+                Line(stringResource(R.string.status_mirrored), status.mirroredNotifications.toString(), true)
+                Line(stringResource(R.string.status_now_playing), status.mediaTitle ?: "–", status.mediaTitle != null)
                 if (status.lastEvent.isNotEmpty()) Text(status.lastEvent, color = Muted, fontSize = 12.sp)
             }
 
-            Card("Setup") {
-                Step("Notification access (messages, music)", notificationAccess) {
+            Card(stringResource(R.string.setup_title)) {
+                Step(stringResource(R.string.setup_notification_access), notificationAccess) {
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                 }
-                Step("Bluetooth, microphone, contacts, calls", runtimeGranted.values.all { it }) {
+                Step(stringResource(R.string.setup_permissions), runtimeGranted.values.all { it }) {
                     permissions.launch(RUNTIME_PERMISSIONS.toTypedArray())
                 }
             }
@@ -139,7 +136,7 @@ class MainActivity : ComponentActivity() {
                 enabled = status.serviceRunning || has(Manifest.permission.BLUETOOTH_CONNECT),
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
-                Text(if (status.serviceRunning) "Stop sharing" else "Start sharing with tablet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(if (status.serviceRunning) R.string.sharing_stop else R.string.sharing_start), fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
             // Greyed out: say why, so it doesn't look broken.
             if (!status.serviceRunning && !has(Manifest.permission.BLUETOOTH_CONNECT))
@@ -284,7 +281,8 @@ class MainActivity : ComponentActivity() {
 
     private fun duration(ms: Long): String {
         val min = (ms / 60_000).coerceAtLeast(0)
-        return if (min < 60) "$min min" else "${min / 60} h ${min % 60} min"
+        return if (min < 60) getString(R.string.duration_min, min.toInt())
+        else getString(R.string.duration_h_min, (min / 60).toInt(), (min % 60).toInt())
     }
 
     @Composable
@@ -310,7 +308,7 @@ class MainActivity : ComponentActivity() {
     private fun Step(label: String, done: Boolean, onClick: () -> Unit) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text((if (done) "✓  " else "•  ") + label, color = if (done) Green else Color.White, modifier = Modifier.weight(1f))
-            if (!done) OutlinedButton(onClick = onClick) { Text("Grant") }
+            if (!done) OutlinedButton(onClick = onClick) { Text(stringResource(R.string.setup_grant)) }
         }
     }
 

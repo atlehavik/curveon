@@ -36,4 +36,25 @@
     <string name="group_error_already_member">Ya estás en ese grupo.</string>
     <string name="group_error_other">Algo ha fallado con el grupo.</string>
     <string name="group_error_not_linked">Abre primero Curveon en tu tablet o en este móvil: ahí están tus amigos y grupos.</string>
+    <string name="intro">Comparte música, mensajes y llamadas de este móvil con la tablet de Curveon por Bluetooth. Primero empareja el móvil y la tablet en los ajustes de Bluetooth de Android.</string>
+    <string name="status_title">Estado</string>
+    <string name="status_service">Servicio</string>
+    <string name="status_running">En marcha</string>
+    <string name="status_stopped">Detenido</string>
+    <string name="status_tablet">Tablet</string>
+    <string name="status_not_connected">No conectada</string>
+    <string name="status_mirrored">Mensajes en la tablet</string>
+    <string name="status_now_playing">Reproduciendo</string>
+    <string name="status_waiting">Esperando a la tablet…</string>
+    <string name="status_bluetooth_off">Bluetooth desactivado</string>
+    <string name="setup_title">Configuración</string>
+    <string name="setup_notification_access">Acceso a notificaciones (mensajes, música)</string>
+    <string name="setup_permissions">Bluetooth, micrófono, contactos, llamadas</string>
+    <string name="setup_grant">Permitir</string>
+    <string name="sharing_start">Compartir con la tablet</string>
+    <string name="sharing_stop">Dejar de compartir</string>
+    <string name="notification_channel">Conexión con la tablet</string>
+    <string name="notification_text">Compartiendo música, mensajes y llamadas con tu tablet</string>
+    <string name="duration_min">%1$d min</string>
+    <string name="duration_h_min">%1$d h %2$d min</string>
 </resources>

@@ -887,7 +887,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         navResumeOffer?.takeIf { resumeOffer == null && preview == null && !isNavigating }?.let {
             RideResumeCard(it.title, onResume = viewModel::resumeNavigation, onNew = viewModel::declineNavigationResume,
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp),
-                heading = stringResource(R.string.nav_resume_title), newLabel = stringResource(R.string.nav_resume_no), tag = "nav_resume")
+                heading = stringResource(R.string.nav_resume_title), resumeLabel = stringResource(R.string.nav_resume_yes), newLabel = stringResource(R.string.nav_resume_no), tag = "nav_resume")
         }
         reachedStop?.let { StopReachedBanner(it, onDismiss = { reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
         androidx.compose.animation.AnimatedVisibility(

@@ -17,14 +17,10 @@
     <string name="delete">Verwijderen</string>
     <string name="save">Opslaan</string>
     <string name="close">Sluiten</string>
-    <string name="start">Start</string>
-    <string name="stop">Stop</string>
     <string name="download">Downloaden</string>
-    <string name="retry">Opnieuw</string>
 
     <string name="toast_saved_to_where_to">Opgeslagen in Waarheen?</string>
     <string name="toast_saved_to_gpx">Opgeslagen in GPX</string>
-    <string name="toast_saved_to_both">Opgeslagen in geplande ritten en GPX</string>
     <string name="toast_calling">%1$s bellen…</string>
     <string name="toast_phone_not_connected">Telefoon niet verbonden</string>
     <string name="toast_connect_phone_to_call">Verbind de telefoon om te bellen</string>
@@ -46,12 +42,9 @@
     <string name="motorways_ok">Snelwegen oké</string>
     <string name="no_motorways_e_roads">Geen snelwegen of E-wegen</string>
     <string name="no_motorways">Geen snelwegen</string>
-    <string name="surface_tarmac">Asfalt</string>
     <string name="surface_mixed">Gemengd</string>
     <string name="surface_gravel">Gravel</string>
     <string name="surface_offroad">Offroad</string>
-    <string name="ferries">Veerboten</string>
-    <string name="motorways">Snelwegen</string>
 
     <string name="settings_display">Weergave</string>
     <string name="settings_navigation">Navigatie</string>
@@ -62,7 +55,7 @@
     <string name="settings_speed_hint">Snelheid en limieten; hoogte in voet bij mph</string>
     <string name="settings_map">Kaart</string>
     <string name="settings_map_hint">Auto schakelt na zonsondergang naar de nachtkaart</string>
-    <string name="settings_screen_lock">Scherm</string>
+    <string name="settings_screen_lock">Schermrotatie</string>
     <string name="settings_screen_lock_hint">Vergrendeld draait het niet mee bij hobbels</string>
     <string name="screen_lock_auto">Draait</string>
     <string name="screen_lock_landscape">Liggend</string>
@@ -78,8 +71,6 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Nacht</string>
-    <string name="settings_obd">OBD2-data</string>
-    <string name="settings_obd_hint">Motordatakaart als er een adapter verbonden is</string>
     <string name="settings_altitude">Hoogte</string>
     <string name="settings_clock">Klok</string>
     <string name="settings_clock_hint">De tijd naast de snelheid</string>
@@ -168,6 +159,7 @@
     <string name="map_checking_newest">Zoeken naar de nieuwste kaart…</string>
     <string name="map_no_connection">Geen verbinding. Verbind met de hotspot van je telefoon of met wifi.</string>
     <string name="map_download_failed">Kaart downloaden mislukt: %1$s</string>
+    <string name="search_download_failed">Zoekgegevens konden niet worden gedownload: %1$s</string>
     <string name="import_failed">Importeren mislukt: %1$s</string>
     <string name="importing_percent">Importeren… %.0f%%</string>
     <string name="download_complete">Download voltooid</string>
@@ -183,7 +175,6 @@
     <string name="gpx_exported">%1$s geëxporteerd</string>
     <string name="gpx_export_failed">Exporteren mislukt: %1$s</string>
     <string name="routing_downloading">Routedata %1$s downloaden (%2$d/%3$d)…</string>
-    <string name="routing_download_failed">Downloaden mislukt: %1$s. Verbind met de hotspot van je telefoon en probeer opnieuw.</string>
     <string name="routing_installed">Routedata geïnstalleerd (%1$d tegels, %2$.0f MB)</string>
     <string name="routing_none">Nog geen routedata. Die komt mee met elk land dat je downloadt, en online wordt alleen het stuk opgehaald dat een rit nodig heeft als je hem plant (of kopieer .rd5-bestanden naar %1$s)</string>
     <string name="offline_map_none">Geen offline kaart geïnstalleerd. Kopieer een .pmtiles-bestand naar %1$s of importeer er een.</string>
@@ -227,8 +218,6 @@
     <string name="give_way">Voorrang verlenen</string>
     <string name="stop_sign">Stop</string>
     <string name="gps_lost">Geen gps-signaal</string>
-    <string name="rpm_and">%1$d tpm · %2$s</string>
-    <string name="trip_summary">Rit %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Vorige</string>
     <string name="media_play_pause">Afspelen/pauzeren</string>
     <string name="media_next">Volgende</string>
@@ -248,7 +237,7 @@
     <string name="reply_to">Antwoord aan %1$s</string>
     <string name="sms">Sms</string>
     <string name="sms_to">Sms aan %1$s</string>
-    <string name="search_by_voice">Zeg de plaats</string>
+    <string name="search_by_voice">Zoeken met stem</string>
     <string name="speak_now">Spreek nu…</string>
     <string name="something_went_wrong">Er ging iets mis</string>
     <string name="sent">Verzonden</string>
@@ -260,8 +249,6 @@
     <string name="ago_hours">%1$d u</string>
 
     <string name="map_heading_up">Rijrichting boven – tik voor 3D</string>
-    <string name="map_north_up">Noorden boven – tik voor rijrichting boven</string>
-    <string name="map_3d">3D – tik voor noorden boven</string>
     <string name="map_fit_trip">Hele rit tonen</string>
     <string name="map_gravel_heat">Waar het gravel ligt</string>
     <string name="map_gravel_heat_counting">Gravel hier tellen (eenmalig)…</string>
@@ -400,9 +387,7 @@
         <item quantity="one">%d nummer</item>
         <item quantity="other">%d nummers</item>
     </plurals>
-    <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
-    <string name="selected">Geselecteerd</string>
     <string name="fuel_go_to">Naar %1$s?</string>
     <string name="fuel_go_to_body">%1$s verderop langs de route. Het wordt een stop.</string>
     <string name="yes">Ja</string>
@@ -458,7 +443,7 @@
     <string name="preview_km_gravel">%.0f km gravel</string>
     <string name="preview_forced_gravel">Deze route dwingt je over gravel: %1$s, %2$s. Er is daar geen asfaltweg zonder grote omweg.</string>
     <string name="preview_gravel_from_start">meteen vanaf de start</string>
-    <string name="preview_gravel_after">het eerste na %1$s</string>
+    <string name="preview_gravel_after">begint na %1$s</string>
     <string name="preview_gravel_amount">%1$s gravel</string>
     <plurals name="preview_ferries">
         <item quantity="one">veerboot</item>
@@ -479,6 +464,7 @@
     <string name="ride_resume_continue">Die rit voortzetten</string>
     <string name="ride_resume_new">Nieuwe rit starten</string>
     <string name="nav_resume_title">Navigatie hervatten?</string>
+    <string name="nav_resume_yes">Doorgaan</string>
     <string name="nav_resume_no">Nee, bedankt</string>
     <string name="rides_empty">Ritten worden automatisch opgenomen zodra je gaat rijden.</string>
     <string name="rides_ride_again">Opnieuw rijden</string>
@@ -502,7 +488,7 @@
     <string name="toast_saved_to_planned">Opgeslagen in geplande ritten</string>
     <string name="toast_saved">Opgeslagen</string>
     <string name="save_route_to_where_to">Waarheen?</string>
-    <string name="planned_empty">Nog geen geplande ritten. Sla een route op in de planner met de bladwijzerknop, of kopieer een rit van de pagina Ritten.</string>
+    <string name="planned_empty">Nog geen geplande ritten. Sla een route op in de planner met de bladwijzerknop, of sla een van je ritten op.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d rit</item>
         <item quantity="other">%d ritten</item>
@@ -512,11 +498,7 @@
         <item quantity="other">De groep en de %d ritten erin worden verwijderd.</item>
     </plurals>
     <string name="planned_rename">Rit hernoemen</string>
-    <string name="planned_reversed">Andersom gereden</string>
     <string name="rides_ride_reversed">Andersom rijden</string>
-    <string name="rides_copy_to_planned">Kopiëren naar gepland</string>
-    <string name="rides_copy_to_group">Kopiëren naar geplande ritten</string>
-    <string name="toast_copied_to_planned">Gekopieerd naar geplande ritten</string>
     <string name="rides_select">Ritten selecteren</string>
     <string name="rides_stop">Stop</string>
     <string name="rides_merge">Samenvoegen</string>
@@ -549,22 +531,16 @@
     <string name="stat_max_speed">max km/h</string>
     <string name="stat_climb">m klim</string>
 
-    <string name="link_connected">Verbonden met %1$s</string>
     <string name="link_disconnected">%1$s antwoordt niet. Open Curveon Companion op de telefoon en tik op Delen starten. Blijft het misgaan, zet dan Bluetooth uit en weer aan op deze tablet en de telefoon.</string>
     <string name="link_unreachable">De Bluetooth van %1$s antwoordt helemaal niet. Als Curveon Companion deelt, zet dan Bluetooth uit en weer aan op deze tablet (of de telefoon).</string>
     <string name="link_pick">Kies hieronder je telefoon. Hij moet eerst gekoppeld zijn in de Bluetooth-instellingen van Android.</string>
     <string name="link_no_permission">Curveon heeft toestemming nodig om Bluetooth te gebruiken.</string>
-    <string name="link_demo">Demomuziek en -berichten worden getoond.</string>
     <string name="link_allow_bluetooth">Bluetooth toestaan</string>
     <string name="link_demo_data">Demodata</string>
     <string name="link_demo_data_hint">Voorbeeldmuziek en -berichten, om het dashboard zonder telefoon te proberen</string>
 
-    <string name="obd_title">OBD2-TELEMETRIE</string>
-    <string name="obd_online">ONLINE</string>
-    <string name="obd_standby">STAND-BY</string>
     <string name="obd_coolant">Koelvloeistof</string>
     <string name="obd_battery">Accu</string>
-    <string name="obd_altitude">Hoogte</string>
     <string name="obd_rpm">TPM</string>
     <string name="obd_choose_adapter">Kies de OBD2-adapter in Instellingen → Motor</string>
     <string name="obd_bluetooth_off">Bluetooth staat uit (of is niet toegestaan)</string>
@@ -584,7 +560,7 @@
     <string name="fuel_setup_title">Brandstofmeter</string>
     <string name="fuel_setup_intro">Motoren melden het brandstofniveau op verschillende manieren, dus Curveon kan het niet altijd zelf vinden. Tank zoals altijd, maar tik ervoor en erna op een knop: de pomp zegt hoeveel liter erin ging, en Curveon zoekt uit welke waarde van de motor de brandstof volgt. Doe dit bij twee tankbeurten en de meter toont liters. Wat je registreert blijft bewaard, dus het past gewoon in je normale ritten.</string>
     <string name="fuel_step_ready">Motor klaarzetten</string>
-    <string name="fuel_step_ready_body">Zet hem waterpas en rechtop neer, elke keer op dezelfde manier (altijd op de zijstandaard of altijd op de middenbok), zet het contact aan (motor uit) en laat de OBD2-adapter ingeplugd. Houd de motor uit: een draaiende motor laat de vlotter schudden en veel waarden bewegen, waardoor de brandstof moeilijker te vinden is (en het is niet veilig bij de pomp). Tik op de cirkel als hij klaar is.</string>
+    <string name="fuel_step_ready_body">Zet hem op vlakke grond neer, elke keer op dezelfde manier (altijd op de zijstandaard of altijd op de middenbok), zet het contact aan (motor uit) en laat de OBD2-adapter ingeplugd. Houd de motor uit: een draaiende motor laat de vlotter schudden en veel waarden bewegen, waardoor de brandstof moeilijker te vinden is (en het is niet veilig bij de pomp). Tik op de cirkel als hij klaar is.</string>
     <string name="fuel_step_tank">Tankinhoud</string>
     <string name="fuel_step_tank_body">Hoeveel liter past er in een volle tank? Dat staat in het instructieboekje.</string>
     <string name="fuel_litres">Liter</string>
@@ -678,7 +654,6 @@
     <string name="loop_name_from">Rondje vanaf %1$s, %2$d km</string>
     <string name="loop_name">Rondje, %1$d km</string>
     <string name="adjust_route">Route aanpassen</string>
-    <string name="stop_short">Stop</string>
     <string name="start_here">Hier starten</string>
     <string name="from_here">Vanaf mijn positie</string>
     <string name="from_place">Vanaf %1$s</string>
@@ -717,7 +692,6 @@
     <string name="move_later">Later</string>
     <string name="save_route_title">Route opslaan</string>
     <string name="save_route_name">Naam</string>
-    <string name="save_route_to_routes">Waarheen? (opgeslagen routes)</string>
     <string name="save_route_to_gpx">GPX-track</string>
     <string name="preview_arrive">Aankomst %1$s</string>
     <string name="preview_after_dark">na donker</string>
@@ -728,7 +702,7 @@
     <string name="nav_end">Navigatie beëindigen</string>
     <string name="wrong_turn_title">Van de route af</string>
     <string name="wrong_turn_trip">Doorrijden kost %1$d min meer dan omkeren.</string>
-    <string name="wrong_turn_no_ahead">Geen weg terug zonder om te keren.</string>
+    <string name="wrong_turn_no_ahead">Geen weg terug naar de route zonder om te keren.</string>
     <string name="wrong_turn_back">Omkeren</string>
     <string name="wrong_turn_new_route">Nieuwe route vanaf hier</string>
     <string name="wrong_turn_rejoin_ahead">Verderop weer aansluiten</string>
@@ -828,7 +802,7 @@
     <string name="tour_map_title">De kaart</string>
     <string name="tour_map_body">Slepen en knijpen zoals altijd. Eén ding zit onder een vinger verstopt:</string>
     <string name="tour_buttons_title">Kaartknoppen</string>
-    <string name="tour_buttons_body">De bovenste draait de kaart en laat zien hoe hij nu staat; tik voor de volgende stand:</string>
+    <string name="tour_buttons_body">De bovenste draait de kaart en laat zien hoe hij nu staat; tik om te wisselen:</string>
     <string name="tour_speed_title">Snelheid en limiet</string>
     <string name="tour_speed_body">Je snelheid, de maximumsnelheid en de klok. De snelheid wordt rood boven de limiet, en een regel eronder waarschuwt voor flitsers verderop. Houd een vinger op een weg om de limiet te zien.</string>
     <string name="tour_cards_title">Muziek en berichten</string>
@@ -872,7 +846,7 @@
     <string name="help_end_trip">Rit beëindigen</string>
     <string name="help_fuel">Volgende tankstation op de route, oranje als het ver is; tik om er te stoppen</string>
     <string name="help_camera">Flitser verderop</string>
-    <string name="help_give_way">Kruising verderop waar je voorrang verleent of stopt: bij de snelheid tijdens navigatie, anders bij het wegnummer, en als bord op de kaart</string>
+    <string name="help_give_way">Kruising verderop waar je voorrang moet verlenen of moet stoppen: bij de snelheid tijdens navigatie, anders bij het wegnummer, en als bord op de kaart</string>
     <string name="help_hold_map">Houd een vinger op een plek: ga erheen, voeg een stop toe, sla een favoriet op, en zie wat er over de weg bekend is</string>
     <string name="help_hold_line">Houd de routelijn vast tijdens het plannen om de route op de kaart te veranderen</string>
     <string name="help_draw">Teken met een vinger een gebied voor een rondrit erdoorheen (Waarheen? → Rondrit)</string>
@@ -885,7 +859,7 @@
     <string name="tour_loop_title">Een rondrit maken</string>
     <string name="tour_loop_body">Een rondrit begint in het menu, niet op de kaart: druk op de motorknop (Waarheen?) en dan op Rondrit. Teken nu met één vinger het gebied waar je wilt rijden, en Curveon bouwt er een rondje doorheen zonder twee keer dezelfde weg te rijden. Kies hoe lang hij mag zijn, en asfalt of gravel. Ander rondje geeft een nieuw voorstel.</string>
     <string name="tour_mark_title">Maar één deel veranderen</string>
-    <string name="tour_mark_body">Plan eerst een lange rit (motorknop → kies een plaats). Druk dan op de drie puntjes in de balk onderaan, en sleep met een vinger langs het deel dat je wilt veranderen. Trek het deel dan naar buiten met een stippellijn, net als bij bewerken op de kaart. Alleen dat deel wordt opnieuw gepland; de rest van de route blijft zoals hij is. Druk nog eens op de knop om terug te gaan naar punten slepen.</string>
+    <string name="tour_mark_body">Plan eerst een rit en open Bewerken op kaart (houd een vinger op de routelijn). Druk op de knop met de stippellijn in de balk onderaan, en sleep met een vinger langs het deel dat je wilt veranderen. Sleep dat deel dan naar waar je het wilt hebben, net als bij bewerken op de kaart. Alleen dat deel wordt opnieuw gepland; de rest van de route blijft zoals hij is.</string>
     <string name="help_group_edit">Bewerken op de kaart</string>
     <string name="help_mark">Markeer het deel van de route dat moet veranderen: sleep erlangs, de rest blijft</string>
     <string name="help_undo">Laatste wijziging ongedaan maken</string>
@@ -921,7 +895,40 @@
     <string name="whats_new_title">Nieuw in Curveon %1$s</string>
     <string name="github_title">Curveon op GitHub</string>
     <string name="github_hint">Downloads, broncode en waar je problemen meldt</string>
-    <string name="group_title">Groepsrit</string>
+    <string name="feedback_title">Een fout gevonden of een idee?</string>
+    <string name="feedback_hint">Vertel het ons hier, eventueel met foto\'s. Het wordt een openbaar issue op GitHub dat je kunt volgen</string>
+    <string name="feedback_bug">Fout melden</string>
+    <string name="feedback_idea">Iets voorstellen</string>
+    <string name="feedback_bug_heading">Foutmelding</string>
+    <string name="feedback_idea_heading">Idee</string>
+    <string name="feedback_title_field">Titel</string>
+    <string name="feedback_bug_title_hint">Kort: wat ging er mis?</string>
+    <string name="feedback_idea_title_hint">Kort: wat is je idee?</string>
+    <string name="feedback_text_field">Beschrijving</string>
+    <string name="feedback_bug_body">Wat gebeurde er, en wat verwachtte je? Wat deed je vlak daarvoor?</string>
+    <string name="feedback_idea_body">Wat zou je willen dat Curveon doet, en wanneer zou het je helpen op de motor?</string>
+    <string name="feedback_add_images">Foto\'s toevoegen</string>
+    <string name="feedback_images_count">%1$d van %2$d foto\'s</string>
+    <string name="feedback_remove_image">Foto verwijderen</string>
+    <string name="feedback_include_crash">Laatste crashrapport meesturen</string>
+    <string name="feedback_public">Alles wat je stuurt is voor iedereen op GitHub te lezen. Laat telefoonnummers, adressen en andere privézaken weg.</string>
+    <string name="feedback_send">Versturen</string>
+    <string name="feedback_sending">Versturen…</string>
+    <string name="feedback_sent">Bedankt! Het is issue #%1$d op GitHub. Je vindt het hier onder Jouw meldingen.</string>
+    <string name="feedback_follow">Volgen op GitHub</string>
+    <string name="feedback_failed">Versturen mislukt. Controleer de internetverbinding en probeer het opnieuw.</string>
+    <string name="feedback_too_many">Te veel meldingen vanaf hier op dit moment. Probeer het over een uur opnieuw.</string>
+    <string name="feedback_open_github">Schrijf het liever op GitHub</string>
+    <string name="feedback_crash_note">Het laatste crashrapport (verwijder het als je het liever niet deelt):</string>
+    <string name="feedback_yours">Jouw meldingen</string>
+    <string name="feedback_forget">Uit de lijst verwijderen</string>
+    <string name="feedback_status_open">Open</string>
+    <string name="feedback_status_done">Klaar</string>
+    <string name="feedback_status_closed">Gesloten</string>
+    <plurals name="feedback_replies">
+        <item quantity="one">%d reactie</item>
+        <item quantity="other">%d reacties</item>
+    </plurals>
     <string name="group_start_hint">Samen rijden: zie elkaar op de kaart en deel routes. Alles is end-to-end versleuteld, dus alleen je groep kan het lezen.</string>
     <string name="group_name_hint">Groepsnaam (optioneel)</string>
     <string name="group_start">Groep starten</string>
@@ -1009,7 +1016,7 @@
     <string name="friends_none">Nog geen vrienden.</string>
     <string name="friends_remove">Verwijderen</string>
     <string name="friends_remove_title">%1$s als vriend verwijderen?</string>
-    <string name="friends_remove_text">Jullie kunnen elkaar niet meer uitnodigen voor ritten, tot een van jullie een nieuwe code toont.</string>
+    <string name="friends_remove_text">Jullie kunnen elkaar niet meer uitnodigen voor groepsritten, tot een van jullie een nieuwe code toont.</string>
     <string name="friends_send_link">Link sturen</string>
     <string name="friends_link_failed">De link kon niet worden gemaakt. Controleer je internet en probeer opnieuw.</string>
     <string name="friends_high_five_title">High five!</string>
@@ -1044,7 +1051,7 @@
     <string name="shared_trip_stops">%1$d stops</string>
     <string name="shared_trip_offer_title">%1$s heeft een route gedeeld</string>
     <string name="shared_trip_offer_hint">Iedereen in de groep kan hem aanpassen, en de wijzigingen gaan naar iedereen.</string>
-    <string name="shared_trip_save">Opslaan in gedeeld</string>
+    <string name="shared_trip_save">Bewaren voor later</string>
     <string name="shared_trip_ignore">Negeren</string>
     <string name="sos_no_position_title">SOS niet verstuurd</string>
     <string name="sos_no_position_text">Curveon weet nog niet waar je bent (geen gps-positie), dus de groep kan niet horen waar ze heen moeten. Bel 112 als je nu hulp nodig hebt, en probeer SOS opnieuw zodra de gps je gevonden heeft.</string>
@@ -1137,7 +1144,7 @@
     <string name="group_paused_hint">Je hebt pauze van deze groep: de anderen zien jou niet, jij ziet hen niet, en SOS en meldingen van de groep bereiken je niet. Zet hem weer aan om met ze te rijden.</string>
     <string name="phone_this_cannot_call">Dit apparaat kan niet bellen of sms\'en</string>
     <string name="phone_this_cannot_call_hint">Er zit geen simkaart in. Berichten en muziek komen nog steeds van de apps hier. Om vanuit Curveon te bellen en te sms\'en: installeer Curveon Companion op je telefoon en kies hem in Instellingen → Telefoon.</string>
-    <string name="phone_this_not_allowed">Curveon mag contacten en gesprekken niet lezen</string>
+    <string name="phone_this_not_allowed">Curveon kan contacten en gesprekken niet lezen</string>
     <string name="phone_this_allow_hint">Sta contacten, gesprekken, sms en de microfoon toe, dan kun je hiervandaan bellen en ingesproken sms\'jes sturen.</string>
     <string name="phone_this_allow">Toestaan</string>
     <string name="link_this_device_hint_no_calls">Berichten en muziek van de apps op dit apparaat. Het kan niet bellen of sms\'en (er zit geen simkaart in).</string>

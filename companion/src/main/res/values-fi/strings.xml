@@ -36,4 +36,25 @@
     <string name="group_error_already_member">Olet jo siinä ryhmässä.</string>
     <string name="group_error_other">Ryhmän kanssa meni jotain vikaan.</string>
     <string name="group_error_not_linked">Avaa ensin Curveon tabletilla tai tällä puhelimella: kaverisi ja ryhmäsi ovat siellä.</string>
+    <string name="intro">Jakaa musiikin, viestit ja puhelut tästä puhelimesta Curveon-tabletille Bluetoothin kautta. Muodosta ensin pariliitos puhelimen ja tabletin välille Androidin Bluetooth-asetuksissa.</string>
+    <string name="status_title">Tila</string>
+    <string name="status_service">Palvelu</string>
+    <string name="status_running">Käynnissä</string>
+    <string name="status_stopped">Pysäytetty</string>
+    <string name="status_tablet">Tabletti</string>
+    <string name="status_not_connected">Ei yhdistetty</string>
+    <string name="status_mirrored">Viestit tabletilla</string>
+    <string name="status_now_playing">Nyt soi</string>
+    <string name="status_waiting">Odotetaan tablettia…</string>
+    <string name="status_bluetooth_off">Bluetooth on pois päältä</string>
+    <string name="setup_title">Asetukset</string>
+    <string name="setup_notification_access">Ilmoitusten käyttöoikeus (viestit, musiikki)</string>
+    <string name="setup_permissions">Bluetooth, mikrofoni, yhteystiedot, puhelut</string>
+    <string name="setup_grant">Salli</string>
+    <string name="sharing_start">Aloita jakaminen tabletille</string>
+    <string name="sharing_stop">Lopeta jakaminen</string>
+    <string name="notification_channel">Tablettiyhteys</string>
+    <string name="notification_text">Jaetaan musiikkia, viestejä ja puheluita tabletille</string>
+    <string name="duration_min">%1$d min</string>
+    <string name="duration_h_min">%1$d h %2$d min</string>
 </resources>

@@ -18,15 +18,11 @@
     <string name="delete">Löschen</string>
     <string name="save">Speichern</string>
     <string name="close">Schließen</string>
-    <string name="start">Start</string>
-    <string name="stop">Stopp</string>
     <string name="download">Herunterladen</string>
-    <string name="retry">Erneut versuchen</string>
 
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">In Wohin? gespeichert</string>
     <string name="toast_saved_to_gpx">In GPX gespeichert</string>
-    <string name="toast_saved_to_both">In geplanten Touren und GPX gespeichert</string>
     <string name="toast_calling">%1$s wird angerufen…</string>
     <string name="toast_phone_not_connected">Handy nicht verbunden</string>
     <string name="toast_connect_phone_to_call">Verbinde das Handy, um anzurufen</string>
@@ -49,12 +45,9 @@
     <string name="motorways_ok">Autobahnen OK</string>
     <string name="no_motorways_e_roads">Keine Autobahnen oder Europastraßen</string>
     <string name="no_motorways">Keine Autobahnen</string>
-    <string name="surface_tarmac">Asphalt</string>
     <string name="surface_mixed">Gemischt</string>
     <string name="surface_gravel">Schotter</string>
     <string name="surface_offroad">Offroad</string>
-    <string name="ferries">Fähren</string>
-    <string name="motorways">Autobahnen</string>
 
     <!-- Settings -->
     <string name="settings_display">Anzeige</string>
@@ -66,7 +59,7 @@
     <string name="settings_speed_hint">Tempo und Tempolimits; Höhe in Fuß bei mph</string>
     <string name="settings_map">Karte</string>
     <string name="settings_map_hint">Auto wechselt nach Sonnenuntergang zur Nachtkarte</string>
-    <string name="settings_screen_lock">Bildschirm</string>
+    <string name="settings_screen_lock">Bildschirmdrehung</string>
     <string name="settings_screen_lock_hint">Gesperrt dreht er sich bei Schlaglöchern nicht</string>
     <string name="screen_lock_auto">Dreht</string>
     <string name="screen_lock_landscape">Quer</string>
@@ -82,8 +75,6 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Tag</string>
     <string name="map_theme_night">Nacht</string>
-    <string name="settings_obd">OBD2-Daten</string>
-    <string name="settings_obd_hint">Motordaten-Karte, wenn ein Adapter verbunden ist</string>
     <string name="settings_altitude">Höhe</string>
     <string name="settings_clock">Uhr</string>
     <string name="settings_clock_hint">Die Uhrzeit neben dem Tempo</string>
@@ -173,6 +164,7 @@
     <string name="map_checking_newest">Suche nach der neuesten Karte…</string>
     <string name="map_no_connection">Keine Verbindung. Verbinde dich mit dem Hotspot des Handys oder mit WLAN.</string>
     <string name="map_download_failed">Karten-Download fehlgeschlagen: %1$s</string>
+    <string name="search_download_failed">Suchdaten konnten nicht heruntergeladen werden: %1$s</string>
     <string name="import_failed">Import fehlgeschlagen: %1$s</string>
     <string name="importing_percent">Importiere… %.0f%%</string>
     <string name="download_complete">Download abgeschlossen</string>
@@ -188,7 +180,6 @@
     <string name="gpx_exported">%1$s exportiert</string>
     <string name="gpx_export_failed">Export fehlgeschlagen: %1$s</string>
     <string name="routing_downloading">Lade Routing-Daten %1$s (%2$d/%3$d)…</string>
-    <string name="routing_download_failed">Download fehlgeschlagen: %1$s. Verbinde dich mit dem Hotspot des Handys und versuch es erneut.</string>
     <string name="routing_installed">Routing-Daten installiert (%1$d Kacheln, %2$.0f MB)</string>
     <string name="routing_none">Noch keine Routing-Daten. Sie kommen mit jedem heruntergeladenen Land, und online wird beim Planen nur der Teil geholt, den die Tour braucht (oder kopiere .rd5-Dateien nach %1$s)</string>
     <string name="offline_map_none">Keine Offline-Karte installiert. Kopiere eine .pmtiles-Datei nach %1$s oder importiere eine.</string>
@@ -235,8 +226,6 @@
     <string name="give_way">Vorfahrt achten</string>
     <string name="stop_sign">Stopp</string>
     <string name="gps_lost">Kein GPS-Signal</string>
-    <string name="rpm_and">%1$d U/min · %2$s</string>
-    <string name="trip_summary">Tour %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Zurück</string>
     <string name="media_play_pause">Play/Pause</string>
     <string name="media_next">Weiter</string>
@@ -256,7 +245,7 @@
     <string name="reply_to">Antwort an %1$s</string>
     <string name="sms">SMS</string>
     <string name="sms_to">SMS an %1$s</string>
-    <string name="search_by_voice">Ort sagen</string>
+    <string name="search_by_voice">Per Sprache suchen</string>
     <string name="speak_now">Sprich jetzt…</string>
     <string name="something_went_wrong">Etwas ist schiefgelaufen</string>
     <string name="sent">Gesendet</string>
@@ -269,8 +258,6 @@
 
     <!-- Map -->
     <string name="map_heading_up">Fahrtrichtung oben – tippen für 3D</string>
-    <string name="map_north_up">Norden oben – tippen für Fahrtrichtung</string>
-    <string name="map_3d">3D – tippen für Norden oben</string>
     <string name="map_fit_trip">Ganze Tour zeigen</string>
     <string name="map_gravel_heat">Wo der Schotter ist</string>
     <string name="map_gravel_heat_counting">Zähle Schotter hier (einmalig)…</string>
@@ -414,9 +401,7 @@
         <item quantity="one">%d Nummer</item>
         <item quantity="other">%d Nummern</item>
     </plurals>
-    <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
-    <string name="selected">Ausgewählt</string>
     <string name="fuel_go_to">Zu %1$s fahren?</string>
     <string name="fuel_go_to_body">%1$s voraus auf der Route. Wird ein Zwischenstopp.</string>
     <string name="yes">Ja</string>
@@ -473,7 +458,7 @@
     <string name="preview_km_gravel">%.0f km Schotter</string>
     <string name="preview_forced_gravel">Diese Route führt zwingend über Schotter: %1$s, %2$s. Ohne großen Umweg gibt es dort keine Asphaltstraße.</string>
     <string name="preview_gravel_from_start">gleich ab dem Start</string>
-    <string name="preview_gravel_after">das erste nach %1$s</string>
+    <string name="preview_gravel_after">beginnt nach %1$s</string>
     <string name="preview_gravel_amount">%1$s Schotter</string>
     <plurals name="preview_ferries">
         <item quantity="one">Fähre</item>
@@ -496,6 +481,7 @@
     <string name="ride_resume_continue">Diese Fahrt fortsetzen</string>
     <string name="ride_resume_new">Neue Fahrt starten</string>
     <string name="nav_resume_title">Navigation fortsetzen?</string>
+    <string name="nav_resume_yes">Fortsetzen</string>
     <string name="nav_resume_no">Nein danke</string>
     <string name="rides_empty">Fahrten werden automatisch aufgezeichnet, sobald du losfährst.</string>
     <string name="rides_ride_again">Nochmal fahren</string>
@@ -519,7 +505,7 @@
     <string name="toast_saved_to_planned">In geplanten Touren gespeichert</string>
     <string name="toast_saved">Gespeichert</string>
     <string name="save_route_to_where_to">Wohin?</string>
-    <string name="planned_empty">Noch keine geplanten Touren. Speichere eine Route im Planer mit dem Lesezeichen-Button oder kopiere eine Fahrt aus der Fahrten-Seite.</string>
+    <string name="planned_empty">Noch keine geplanten Touren. Speichere eine Route im Planer mit dem Lesezeichen-Button oder speichere eine deiner Fahrten.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d Tour</item>
         <item quantity="other">%d Touren</item>
@@ -529,11 +515,7 @@
         <item quantity="other">Die Gruppe und ihre %d Touren werden gelöscht.</item>
     </plurals>
     <string name="planned_rename">Tour umbenennen</string>
-    <string name="planned_reversed">Andersherum gefahren</string>
     <string name="rides_ride_reversed">Andersherum fahren</string>
-    <string name="rides_copy_to_planned">Zu Geplant kopieren</string>
-    <string name="rides_copy_to_group">Zu geplanten Touren kopieren</string>
-    <string name="toast_copied_to_planned">Zu geplanten Touren kopiert</string>
     <string name="rides_select">Fahrten auswählen</string>
     <string name="rides_stop">Fertig</string>
     <string name="rides_merge">Zusammenfügen</string>
@@ -567,23 +549,17 @@
     <string name="stat_climb">Hm bergauf</string>
 
     <!-- Phone link -->
-    <string name="link_connected">Verbunden mit %1$s</string>
     <string name="link_disconnected">%1$s antwortet nicht. Öffne Curveon Companion auf dem Handy und tippe auf Start sharing. Klappt es weiter nicht, schalte Bluetooth auf diesem Tablet und dem Handy aus und wieder ein.</string>
     <string name="link_unreachable">Das Bluetooth von %1$s antwortet gar nicht. Wenn Curveon Companion teilt, schalte Bluetooth auf diesem Tablet (oder dem Handy) aus und wieder ein.</string>
     <string name="link_pick">Wähle unten dein Handy. Es muss vorher in den Bluetooth-Einstellungen von Android gekoppelt sein.</string>
     <string name="link_no_permission">Curveon braucht die Berechtigung, Bluetooth zu nutzen.</string>
-    <string name="link_demo">Zeigt Demo-Musik und -Nachrichten.</string>
     <string name="link_allow_bluetooth">Bluetooth erlauben</string>
     <string name="link_demo_data">Demodaten</string>
     <string name="link_demo_data_hint">Beispielmusik und -nachrichten, um das Cockpit ohne Handy auszuprobieren</string>
 
     <!-- OBD2 -->
-    <string name="obd_title">OBD2-DATEN</string>
-    <string name="obd_online">VERBUNDEN</string>
-    <string name="obd_standby">BEREIT</string>
     <string name="obd_coolant">Kühlmittel</string>
     <string name="obd_battery">Batterie</string>
-    <string name="obd_altitude">Höhe</string>
     <string name="obd_rpm">U/min</string>
     <string name="obd_choose_adapter">Wähle den OBD2-Adapter unter Einstellungen → Motor</string>
     <string name="obd_bluetooth_off">Bluetooth ist aus (oder nicht erlaubt)</string>
@@ -603,7 +579,7 @@
     <string name="fuel_setup_title">Tankanzeige</string>
     <string name="fuel_setup_intro">Motorräder melden den Tankstand auf verschiedene Weise, deshalb findet Curveon ihn nicht immer allein. Tank wie immer, aber tippe vorher und nachher auf einen Button: Die Zapfsäule sagt, wie viele Liter reingingen, und Curveon findet heraus, welcher Wert vom Motorrad dem Sprit folgt. Mach das bei zwei Tankstopps, dann zeigt die Anzeige Liter. Was du einträgst, bleibt gespeichert, so passt es in deine normalen Fahrten.</string>
     <string name="fuel_step_ready">Motorrad vorbereiten</string>
-    <string name="fuel_step_ready_body">Stell es eben und aufrecht ab, jedes Mal gleich (immer auf dem Seitenständer oder immer auf dem Hauptständer), schalte die Zündung ein (Motor aus) und lass den OBD2-Adapter eingesteckt. Lass den Motor aus: Ein laufender Motor schüttelt den Tankgeber und lässt viele Werte schwanken, dann ist der Sprit schwerer zu finden (und an der Zapfsäule ist es nicht sicher). Tippe auf den Kreis, wenn es bereit ist.</string>
+    <string name="fuel_step_ready_body">Stell es auf ebenem Boden ab, jedes Mal gleich (immer auf dem Seitenständer oder immer auf dem Hauptständer), schalte die Zündung ein (Motor aus) und lass den OBD2-Adapter eingesteckt. Lass den Motor aus: Ein laufender Motor schüttelt den Tankgeber und lässt viele Werte schwanken, dann ist der Sprit schwerer zu finden (und an der Zapfsäule ist es nicht sicher). Tippe auf den Kreis, wenn es bereit ist.</string>
     <string name="fuel_step_tank">Tankgröße</string>
     <string name="fuel_step_tank_body">Wie viele Liter fasst der volle Tank? Das steht in der Betriebsanleitung.</string>
     <string name="fuel_litres">Liter</string>
@@ -700,7 +676,6 @@
     <string name="loop_name_from">Runde ab %1$s, %2$d km</string>
     <string name="loop_name">Runde, %1$d km</string>
     <string name="adjust_route">Route anpassen</string>
-    <string name="stop_short">Stopp</string>
     <string name="start_here">Hier starten</string>
     <string name="from_here">Von meiner Position</string>
     <string name="from_place">Ab %1$s</string>
@@ -739,7 +714,6 @@
     <string name="move_later">Später</string>
     <string name="save_route_title">Route speichern</string>
     <string name="save_route_name">Name</string>
-    <string name="save_route_to_routes">Wohin? (gespeicherte Routen)</string>
     <string name="save_route_to_gpx">GPX-Track</string>
     <string name="preview_arrive">Ankunft %1$s</string>
     <string name="preview_after_dark">nach Einbruch der Dunkelheit</string>
@@ -751,7 +725,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Abseits der Route</string>
     <string name="wrong_turn_trip">Weiterfahren kostet %1$d min mehr als umkehren.</string>
-    <string name="wrong_turn_no_ahead">Kein Weg zurück ohne umzudrehen.</string>
+    <string name="wrong_turn_no_ahead">Kein Weg zurück zur Route, ohne umzudrehen.</string>
     <string name="wrong_turn_back">Umkehren</string>
     <string name="wrong_turn_new_route">Neue Route ab hier</string>
     <string name="wrong_turn_rejoin_ahead">Weiter vorn einfädeln</string>
@@ -853,7 +827,7 @@
     <string name="tour_map_title">Die Karte</string>
     <string name="tour_map_body">Ziehen und zoomen wie gewohnt. Eine Sache steckt unter dem Finger:</string>
     <string name="tour_buttons_title">Karten-Buttons</string>
-    <string name="tour_buttons_body">Der oberste dreht die Karte und zeigt, wie sie gerade ausgerichtet ist; tippe für die nächste Ansicht:</string>
+    <string name="tour_buttons_body">Der oberste dreht die Karte und zeigt, wie sie gerade ausgerichtet ist; tippe zum Wechseln:</string>
     <string name="tour_speed_title">Tempo und Limit</string>
     <string name="tour_speed_body">Dein Tempo, das Tempolimit und die Uhr. Das Tempo wird über dem Limit rot, und eine Zeile darunter warnt vor Blitzern voraus. Halte einen Finger auf eine Straße, um ihr Limit zu sehen.</string>
     <string name="tour_cards_title">Musik und Nachrichten</string>
@@ -897,7 +871,7 @@
     <string name="help_end_trip">Tour beenden</string>
     <string name="help_fuel">Nächste Tankstelle auf der Route, gelb bei großer Lücke; tippen, um dort zu halten</string>
     <string name="help_camera">Blitzer voraus</string>
-    <string name="help_give_way">Kreuzung voraus mit Vorfahrt achten oder Stopp: beim Tempo während der Navigation, sonst bei der Straßennummer, und als Schild auf der Karte</string>
+    <string name="help_give_way">Kreuzung voraus, an der du Vorfahrt gewähren oder halten musst: neben dem Tempo beim Navigieren, sonst neben der Straßennummer, und als Schild auf der Karte</string>
     <string name="help_hold_map">Finger auf einen Ort halten: hinfahren, Stopp hinzufügen, Favorit speichern und sehen, was über die Straße bekannt ist</string>
     <string name="help_hold_line">Beim Planen die Routenlinie halten, um die Route auf der Karte zu ändern</string>
     <string name="help_draw">Ein Gebiet mit dem Finger zeichnen für eine Rundtour hindurch (Wohin? → Rundtour)</string>
@@ -910,7 +884,7 @@
     <string name="tour_loop_title">Rundtour erstellen</string>
     <string name="tour_loop_body">Eine Rundtour beginnt im Menü, nicht auf der Karte: Drück den Motorrad-Button (Wohin?), dann Rundtour. Zeichne jetzt mit einem Finger das Gebiet, in dem du fahren willst, und Curveon baut eine Runde hindurch, ohne eine Straße doppelt zu fahren. Wähle, wie lang sie sein darf, und Asphalt oder Schotter. Andere Runde liefert einen neuen Vorschlag.</string>
     <string name="tour_mark_title">Nur einen Teil ändern</string>
-    <string name="tour_mark_body">Plane zuerst eine lange Tour (Motorrad-Button → Ort wählen). Drück dann die drei Punkte in der Leiste unten und zieh einen Finger am Teil entlang, den du ändern willst. Dann ziehst du den Teil mit einer gestrichelten Linie heraus, genau wie beim Bearbeiten auf der Karte. Nur dieser Teil wird neu geplant; der Rest der Route bleibt, wie er ist. Drück den Button nochmal, um wieder Punkte zu ziehen.</string>
+    <string name="tour_mark_body">Plane zuerst eine Tour und öffne Auf Karte bearbeiten (halte einen Finger auf die Routenlinie). Drück den Button mit der gepunkteten Linie in der Leiste unten und zieh einen Finger am Teil entlang, den du ändern willst. Dann ziehst du diesen Teil dorthin, wo du ihn haben willst, genau wie beim Bearbeiten auf der Karte. Nur dieser Teil wird neu geplant; der Rest der Route bleibt, wie er ist.</string>
     <string name="help_group_edit">Auf der Karte bearbeiten</string>
     <string name="help_mark">Teil der Route zum Ändern markieren: daran entlangziehen, der Rest bleibt</string>
     <string name="help_undo">Letzte Änderung rückgängig machen</string>
@@ -946,8 +920,41 @@
     <string name="whats_new_title">Neu in Curveon %1$s</string>
     <string name="github_title">Curveon auf GitHub</string>
     <string name="github_hint">Downloads, Quellcode und wo du Probleme meldest</string>
+    <string name="feedback_title">Fehler gefunden oder eine Idee?</string>
+    <string name="feedback_hint">Erzähl es uns hier, gern mit Bildern. Daraus wird ein öffentliches Issue auf GitHub, dem du folgen kannst</string>
+    <string name="feedback_bug">Fehler melden</string>
+    <string name="feedback_idea">Etwas vorschlagen</string>
+    <string name="feedback_bug_heading">Fehlerbericht</string>
+    <string name="feedback_idea_heading">Idee</string>
+    <string name="feedback_title_field">Titel</string>
+    <string name="feedback_bug_title_hint">Kurz: Was ist schiefgelaufen?</string>
+    <string name="feedback_idea_title_hint">Kurz: Was ist deine Idee?</string>
+    <string name="feedback_text_field">Beschreibung</string>
+    <string name="feedback_bug_body">Was ist passiert, und was hast du erwartet? Was hast du direkt davor gemacht?</string>
+    <string name="feedback_idea_body">Was soll Curveon tun, und wann würde es dir auf dem Motorrad helfen?</string>
+    <string name="feedback_add_images">Bilder hinzufügen</string>
+    <string name="feedback_images_count">%1$d von %2$d Bildern</string>
+    <string name="feedback_remove_image">Bild entfernen</string>
+    <string name="feedback_include_crash">Letzten Absturzbericht anhängen</string>
+    <string name="feedback_public">Alles, was du sendest, kann jeder auf GitHub lesen. Lass Telefonnummern, Adressen und andere private Dinge weg.</string>
+    <string name="feedback_send">Senden</string>
+    <string name="feedback_sending">Wird gesendet…</string>
+    <string name="feedback_sent">Danke! Es ist Issue #%1$d auf GitHub. Du findest es hier unter Deine Berichte.</string>
+    <string name="feedback_follow">Auf GitHub verfolgen</string>
+    <string name="feedback_failed">Senden fehlgeschlagen. Prüf die Internetverbindung und versuch es erneut.</string>
+    <string name="feedback_too_many">Gerade zu viele Berichte von hier. Versuch es in einer Stunde erneut.</string>
+    <string name="feedback_open_github">Stattdessen auf GitHub schreiben</string>
+    <string name="feedback_crash_note">Der letzte Absturzbericht (lösch ihn, wenn du ihn nicht teilen willst):</string>
+    <string name="feedback_yours">Deine Berichte</string>
+    <string name="feedback_forget">Aus der Liste entfernen</string>
+    <string name="feedback_status_open">Offen</string>
+    <string name="feedback_status_done">Erledigt</string>
+    <string name="feedback_status_closed">Geschlossen</string>
+    <plurals name="feedback_replies">
+        <item quantity="one">%d Antwort</item>
+        <item quantity="other">%d Antworten</item>
+    </plurals>
     <!-- Group ride -->
-    <string name="group_title">Gruppenausfahrt</string>
     <string name="group_start_hint">Gemeinsam fahren: Seht euch gegenseitig auf der Karte und teilt Routen. Alles ist Ende-zu-Ende-verschlüsselt, nur deine Gruppe kann es lesen.</string>
     <string name="group_name_hint">Gruppenname (optional)</string>
     <string name="group_start">Gruppe starten</string>
@@ -1036,7 +1043,7 @@
     <string name="friends_none">Noch keine Freunde.</string>
     <string name="friends_remove">Entfernen</string>
     <string name="friends_remove_title">%1$s als Freund entfernen?</string>
-    <string name="friends_remove_text">Ihr könnt euch nicht mehr zu Fahrten einladen, bis einer von euch einen neuen Code zeigt.</string>
+    <string name="friends_remove_text">Ihr könnt euch nicht mehr zu Gruppenausfahrten einladen, bis einer von euch einen neuen Code zeigt.</string>
     <string name="friends_send_link">Link senden</string>
     <string name="friends_link_failed">Der Link konnte nicht erstellt werden. Prüfe das Internet und versuch es nochmal.</string>
     <string name="friends_high_five_title">High Five!</string>
@@ -1071,7 +1078,7 @@
     <string name="shared_trip_stops">%1$d Stopps</string>
     <string name="shared_trip_offer_title">%1$s hat eine Route geteilt</string>
     <string name="shared_trip_offer_hint">Jeder in der Gruppe kann sie ändern, und die Änderungen erreichen alle.</string>
-    <string name="shared_trip_save">In Geteilt speichern</string>
+    <string name="shared_trip_save">Für später speichern</string>
     <string name="shared_trip_ignore">Ignorieren</string>
     <string name="sos_no_position_title">SOS nicht gesendet</string>
     <string name="sos_no_position_text">Curveon weiß noch nicht, wo du bist (keine GPS-Position), also kann die Gruppe nicht erfahren, wohin. Ruf die 112, wenn du jetzt Hilfe brauchst, und versuch SOS nochmal, sobald das GPS dich gefunden hat.</string>
@@ -1084,17 +1091,17 @@
     <string name="location_allow">Erlauben</string>
     <string name="location_turn_on">Einschalten</string>
     <string name="media_this_no_notification_access">Benachrichtigungszugriff ist aus, also keine Musik oder Nachrichten. Tippe, um ihn für Curveon einzuschalten.</string>
-    <string name="phone_err_call_not_allowed">Das Handy lässt Curveon Companion nicht anrufen: Öffne es auf dem Handy und tippe auf Grant.</string>
+    <string name="phone_err_call_not_allowed">Das Handy lässt Curveon Companion nicht anrufen: Öffne es auf dem Handy und tippe auf Erlauben.</string>
     <string name="phone_err_call_not_allowed_here">Curveon darf nicht anrufen: Erlaube Telefon unter Einstellungen → Handy.</string>
     <string name="phone_err_call_failed">Das Handy konnte nicht anrufen. Versuch es nochmal oder ruf vom Handy an.</string>
-    <string name="phone_err_sms_not_allowed">Das Handy lässt Curveon Companion keine SMS senden: Öffne es auf dem Handy und tippe auf Grant.</string>
+    <string name="phone_err_sms_not_allowed">Das Handy lässt Curveon Companion keine SMS senden: Öffne es auf dem Handy und tippe auf Erlauben.</string>
     <string name="phone_err_sms_not_allowed_here">Curveon darf keine SMS senden: Erlaube es unter Einstellungen → Handy.</string>
     <string name="phone_err_sms_failed">Das Handy konnte die SMS nicht senden. Versuch es gleich nochmal.</string>
     <string name="phone_err_sms_unavailable">Von diesem Handy lassen sich gerade keine SMS senden.</string>
     <string name="phone_err_voice_unavailable">Sprachantworten sind auf dem Handy nicht verfügbar: Öffne Curveon Companion und gib ihm das Mikrofon.</string>
     <string name="phone_err_no_recognizer">Das Handy hat keine Spracherkennung. Installiere oder aktiviere die Google-Spracheingabe auf dem Handy.</string>
     <string name="phone_err_not_caught">Nicht verstanden. Versuch es nochmal, etwas näher am Mikrofon.</string>
-    <string name="phone_err_mic_not_allowed">Das Handy lässt Curveon Companion das Mikrofon nicht nutzen: Öffne es auf dem Handy und tippe auf Grant.</string>
+    <string name="phone_err_mic_not_allowed">Das Handy lässt Curveon Companion das Mikrofon nicht nutzen: Öffne es auf dem Handy und tippe auf Erlauben.</string>
     <string name="phone_err_mic_not_allowed_here">Curveon darf das Mikrofon nicht nutzen: Erlaube es unter Einstellungen → Handy.</string>
     <string name="phone_err_needs_connection">Die Spracherkennung braucht auf dem Handy eine Verbindung oder offline geladene Sprachdaten in den Handy-Einstellungen.</string>
     <string name="phone_err_recognizer">Spracherkennung auf dem Handy fehlgeschlagen. Versuch es nochmal.</string>
@@ -1164,7 +1171,7 @@
     <string name="group_paused_hint">Du machst Pause von der Gruppe: Die anderen sehen dich nicht, du siehst sie nicht, und SOS und Alarme der Gruppe erreichen dich nicht. Schalte wieder ein, um mit ihnen zu fahren.</string>
     <string name="phone_this_cannot_call">Dieses Gerät kann nicht telefonieren oder SMS senden</string>
     <string name="phone_this_cannot_call_hint">Es hat keine SIM-Karte. Nachrichten und Musik kommen weiter von den Apps hier. Um aus Curveon anzurufen und SMS zu senden: Installiere Curveon Companion auf deinem Handy und wähle es unter Einstellungen → Telefon.</string>
-    <string name="phone_this_not_allowed">Curveon darf Kontakte und Anrufe nicht lesen</string>
+    <string name="phone_this_not_allowed">Curveon kann Kontakte und Anrufe nicht lesen</string>
     <string name="phone_this_allow_hint">Erlaube Kontakte, Anrufe, SMS und das Mikrofon, dann kannst du von hier anrufen und gesprochene SMS senden.</string>
     <string name="phone_this_allow">Erlauben</string>
     <string name="link_this_device_hint_no_calls">Nachrichten und Musik von den Apps auf diesem Gerät. Es kann nicht telefonieren oder SMS senden (es hat keine SIM-Karte).</string>

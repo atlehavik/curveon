@@ -227,13 +227,14 @@ fun StopReachedBanner(name: String, onDismiss: () -> Unit, modifier: Modifier = 
 
 /**
  * Riding again soon after a ride finished: go on logging that ride, or start a new one (the
- * dashboard picks the new one itself after a while if nothing is pressed). With [heading] and [newLabel]
+ * dashboard picks the new one itself after a while if nothing is pressed). With [heading], [resumeLabel] and [newLabel]
  * it asks the same of a trip that was being navigated when Android ended Curveon.
  */
 @Composable
 fun RideResumeCard(
     title: String, onResume: () -> Unit, onNew: () -> Unit, modifier: Modifier = Modifier,
-    heading: String = stringResource(R.string.ride_resume_title), newLabel: String = stringResource(R.string.ride_resume_new),
+    heading: String = stringResource(R.string.ride_resume_title), resumeLabel: String = stringResource(R.string.ride_resume_continue),
+    newLabel: String = stringResource(R.string.ride_resume_new),
     tag: String = "ride_resume",
 ) {
     val shape = RoundedCornerShape(20.dp)
@@ -247,7 +248,7 @@ fun RideResumeCard(
         if (title.isNotEmpty()) Text(title, color = TextSecondary, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(onClick = onResume, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan, contentColor = Color.Black),
-                modifier = Modifier.height(52.dp)) { Text(stringResource(R.string.ride_resume_continue), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
+                modifier = Modifier.height(52.dp)) { Text(resumeLabel, fontSize = 17.sp, fontWeight = FontWeight.Bold) }
             OutlinedButton(onClick = onNew, modifier = Modifier.height(52.dp)) {
                 Text(newLabel, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             }

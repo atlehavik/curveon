@@ -18,15 +18,11 @@
     <string name="delete">Eyða</string>
     <string name="save">Vista</string>
     <string name="close">Loka</string>
-    <string name="start">Byrja</string>
-    <string name="stop">Stöðva</string>
     <string name="download">Sækja</string>
-    <string name="retry">Reyna aftur</string>
 
     <!-- Dashboard toasts -->
     <string name="toast_saved_to_where_to">Vistað í Hvert?</string>
     <string name="toast_saved_to_gpx">Vistað í GPX</string>
-    <string name="toast_saved_to_both">Vistað í fyrirhugaðar ferðir og GPX</string>
     <string name="toast_calling">Hringi í %1$s…</string>
     <string name="toast_phone_not_connected">Sími ekki tengdur</string>
     <string name="toast_connect_phone_to_call">Tengdu símann til að hringja</string>
@@ -49,12 +45,9 @@
     <string name="motorways_ok">Hraðbrautir í lagi</string>
     <string name="no_motorways_e_roads">Engar hraðbrautir eða E-vegir</string>
     <string name="no_motorways">Engar hraðbrautir</string>
-    <string name="surface_tarmac">Malbik</string>
     <string name="surface_mixed">Blandað</string>
     <string name="surface_gravel">Möl</string>
     <string name="surface_offroad">Utanvega</string>
-    <string name="ferries">Ferjur</string>
-    <string name="motorways">Hraðbrautir</string>
 
     <!-- Settings -->
     <string name="settings_display">Skjár</string>
@@ -66,7 +59,7 @@
     <string name="settings_speed_hint">Hraði og hámarkshraði; hæð í fetum með mph</string>
     <string name="settings_map">Kort</string>
     <string name="settings_map_hint">Sjálfvirkt skiptir yfir í næturkort eftir sólsetur</string>
-    <string name="settings_screen_lock">Skjár</string>
+    <string name="settings_screen_lock">Skjásnúningur</string>
     <string name="settings_screen_lock_hint">Læstur snýst hann ekki við hnjask</string>
     <string name="screen_lock_auto">Snýst</string>
     <string name="screen_lock_landscape">Langsnið</string>
@@ -82,8 +75,6 @@
     <string name="map_theme_auto">Sjálfvirkt</string>
     <string name="map_theme_day">Dagur</string>
     <string name="map_theme_night">Nótt</string>
-    <string name="settings_obd">OBD2-gögn</string>
-    <string name="settings_obd_hint">Vélarspjald þegar millistykki er tengt</string>
     <string name="settings_altitude">Hæð</string>
     <string name="settings_clock">Klukka</string>
     <string name="settings_clock_hint">Tíminn við hliðina á hraðanum</string>
@@ -173,6 +164,7 @@
     <string name="map_checking_newest">Leita að nýjasta kortinu…</string>
     <string name="map_no_connection">Engin tenging. Tengstu heitum reit símans eða Wi-Fi.</string>
     <string name="map_download_failed">Ekki tókst að sækja kort: %1$s</string>
+    <string name="search_download_failed">Ekki tókst að sækja leitargögn: %1$s</string>
     <string name="import_failed">Innflutningur mistókst: %1$s</string>
     <string name="importing_percent">Flyt inn… %.0f%%</string>
     <string name="download_complete">Niðurhali lokið</string>
@@ -188,7 +180,6 @@
     <string name="gpx_exported">%1$s flutt út</string>
     <string name="gpx_export_failed">Útflutningur mistókst: %1$s</string>
     <string name="routing_downloading">Sæki leiðargögn %1$s (%2$d/%3$d)…</string>
-    <string name="routing_download_failed">Niðurhal mistókst: %1$s. Tengstu heitum reit símans og reyndu aftur.</string>
     <string name="routing_installed">Leiðargögn sett upp (%1$d reitir, %2$.0f MB)</string>
     <string name="routing_none">Engin leiðargögn enn. Þau fylgja hverju landi sem þú sækir, og á netinu er bara sá hluti sem ferðin þarf sóttur þegar þú skipuleggur hana (eða afritaðu .rd5-skrár í %1$s)</string>
     <string name="offline_map_none">Ekkert kort án nets uppsett. Afritaðu .pmtiles-skrá í %1$s eða fluttu eina inn.</string>
@@ -235,8 +226,6 @@
     <string name="give_way">Biðskylda</string>
     <string name="stop_sign">Stöðvunarskylda</string>
     <string name="gps_lost">Ekkert GPS-merki</string>
-    <string name="rpm_and">%1$d sn./mín · %2$s</string>
-    <string name="trip_summary">Ferð %1$.1f km · %2$d:%3$02d</string>
     <string name="media_previous">Fyrra</string>
     <string name="media_play_pause">Spila/hlé</string>
     <string name="media_next">Næsta</string>
@@ -256,7 +245,7 @@
     <string name="reply_to">Svara %1$s</string>
     <string name="sms">SMS</string>
     <string name="sms_to">SMS til %1$s</string>
-    <string name="search_by_voice">Segðu staðinn</string>
+    <string name="search_by_voice">Leita með rödd</string>
     <string name="speak_now">Talaðu núna…</string>
     <string name="something_went_wrong">Eitthvað fór úrskeiðis</string>
     <string name="sent">Sent</string>
@@ -269,8 +258,6 @@
 
     <!-- Map -->
     <string name="map_heading_up">Akstursstefna upp – ýttu fyrir 3D</string>
-    <string name="map_north_up">Norður upp – ýttu fyrir stefnu upp</string>
-    <string name="map_3d">3D – ýttu fyrir norður upp</string>
     <string name="map_fit_trip">Sýna alla ferðina</string>
     <string name="map_gravel_heat">Hvar mölin er</string>
     <string name="map_gravel_heat_counting">Tel möl hér (einu sinni)…</string>
@@ -414,9 +401,7 @@
         <item quantity="one">%d númer</item>
         <item quantity="other">%d númer</item>
     </plurals>
-    <string name="distance_km_int">%1$d km</string>
     <string name="distance_m_int">%1$d m</string>
-    <string name="selected">Valið</string>
     <string name="fuel_go_to">Fara á %1$s?</string>
     <string name="fuel_go_to_body">%1$s fram undan á leiðinni. Verður viðkomustaður.</string>
     <string name="yes">Já</string>
@@ -473,7 +458,7 @@
     <string name="preview_km_gravel">%.0f km möl</string>
     <string name="preview_forced_gravel">Þessi leið neyðir þig á möl: %1$s, %2$s. Enginn malbikaður vegur er þar án stórs króks.</string>
     <string name="preview_gravel_from_start">strax frá byrjun</string>
-    <string name="preview_gravel_after">sú fyrsta eftir %1$s</string>
+    <string name="preview_gravel_after">byrjar eftir %1$s</string>
     <string name="preview_gravel_amount">%1$s möl</string>
     <plurals name="preview_ferries">
         <item quantity="one">%d ferja</item>
@@ -496,6 +481,7 @@
     <string name="ride_resume_continue">Halda þeirri ferð áfram</string>
     <string name="ride_resume_new">Hefja nýja ferð</string>
     <string name="nav_resume_title">Halda leiðsögn áfram?</string>
+    <string name="nav_resume_yes">Halda áfram</string>
     <string name="nav_resume_no">Nei takk</string>
     <string name="rides_empty">Ferðir eru skráðar sjálfkrafa um leið og þú leggur af stað.</string>
     <string name="rides_ride_again">Aka aftur</string>
@@ -519,7 +505,7 @@
     <string name="toast_saved_to_planned">Vistað í fyrirhugaðar ferðir</string>
     <string name="toast_saved">Vistað</string>
     <string name="save_route_to_where_to">Hvert?</string>
-    <string name="planned_empty">Engar fyrirhugaðar ferðir enn. Vistaðu leið úr skipuleggjaranum með bókamerkjahnappnum, eða afritaðu ferð af síðunni Ferðir.</string>
+    <string name="planned_empty">Engar fyrirhugaðar ferðir enn. Vistaðu leið úr skipuleggjaranum með bókamerkjahnappnum, eða vistaðu eina af ferðunum þínum.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d ferð</item>
         <item quantity="other">%d ferðir</item>
@@ -529,11 +515,7 @@
         <item quantity="other">Hópnum og %d ferðum hans er eytt.</item>
     </plurals>
     <string name="planned_rename">Endurnefna ferð</string>
-    <string name="planned_reversed">Ekið öfugt</string>
     <string name="rides_ride_reversed">Aka öfugt</string>
-    <string name="rides_copy_to_planned">Afrita í fyrirhugað</string>
-    <string name="rides_copy_to_group">Afrita í fyrirhugaðar ferðir</string>
-    <string name="toast_copied_to_planned">Afritað í fyrirhugaðar ferðir</string>
     <string name="rides_select">Velja ferðir</string>
     <string name="rides_stop">Stöðva</string>
     <string name="rides_merge">Sameina</string>
@@ -567,23 +549,17 @@
     <string name="stat_climb">m hækkun</string>
 
     <!-- Phone link -->
-    <string name="link_connected">Tengt við %1$s</string>
     <string name="link_disconnected">%1$s svarar ekki. Opnaðu Curveon Companion í símanum og ýttu á Byrja að deila. Ef það bregst áfram, slökktu og kveiktu á Bluetooth á spjaldtölvunni og símanum.</string>
     <string name="link_unreachable">Bluetooth í %1$s svarar alls ekki. Ef Curveon Companion er að deila, slökktu og kveiktu á Bluetooth á þessari spjaldtölvu (eða símanum).</string>
     <string name="link_pick">Veldu símann hér fyrir neðan. Hann þarf fyrst að vera paraður í Bluetooth-stillingum Android.</string>
     <string name="link_no_permission">Curveon þarf leyfi til að nota Bluetooth.</string>
-    <string name="link_demo">Sýni prufutónlist og -skilaboð.</string>
     <string name="link_allow_bluetooth">Leyfa Bluetooth</string>
     <string name="link_demo_data">Prufugögn</string>
     <string name="link_demo_data_hint">Sýnishorn af tónlist og skilaboðum, til að prófa mælaborðið án síma</string>
 
     <!-- OBD2 -->
-    <string name="obd_title">OBD2-FJARMÆLING</string>
-    <string name="obd_online">TENGT</string>
-    <string name="obd_standby">BIÐSTAÐA</string>
     <string name="obd_coolant">Kælivökvi</string>
     <string name="obd_battery">Rafgeymir</string>
-    <string name="obd_altitude">Hæð</string>
     <string name="obd_rpm">SN./MÍN</string>
     <string name="obd_choose_adapter">Veldu OBD2-millistykkið í Stillingar → Vél</string>
     <string name="obd_bluetooth_off">Slökkt á Bluetooth (eða ekki leyft)</string>
@@ -603,7 +579,7 @@
     <string name="fuel_setup_title">Eldsneytismælir</string>
     <string name="fuel_setup_intro">Hjól gefa eldsneytisstöðuna upp á ólíkan hátt, svo Curveon finnur hana ekki alltaf sjálft. Fylltu á eins og venjulega, en ýttu á hnapp fyrir og eftir: dælan segir hve margir lítrar fóru inn, og Curveon finnur hvaða gildi frá hjólinu fylgir eldsneytinu. Gerðu þetta við tvær áfyllingar og mælirinn sýnir lítra. Það sem þú skráir er geymt, svo þetta fellur inn í venjulegan akstur.</string>
     <string name="fuel_step_ready">Gerðu hjólið klárt</string>
-    <string name="fuel_step_ready_body">Leggðu því lárétt og uppréttu, eins í hvert skipti (alltaf á hliðarstandi, eða alltaf á miðstandi), kveiktu á svissinum (vél í hvíld) og hafðu OBD2-millistykkið tengt. Hafðu vélina slökkta: gangandi vél hristir flotholtið og fær mörg gildi til að hreyfast, sem gerir erfiðara að finna eldsneytið (og er ekki öruggt við dæluna). Ýttu á hringinn þegar allt er klárt.</string>
+    <string name="fuel_step_ready_body">Leggðu því á sléttu undirlagi, eins í hvert skipti (alltaf á hliðarstandi, eða alltaf á miðstandi), kveiktu á svissinum (vél í hvíld) og hafðu OBD2-millistykkið tengt. Hafðu vélina slökkta: gangandi vél hristir flotholtið og fær mörg gildi til að hreyfast, sem gerir erfiðara að finna eldsneytið (og er ekki öruggt við dæluna). Ýttu á hringinn þegar allt er klárt.</string>
     <string name="fuel_step_tank">Tankstærð</string>
     <string name="fuel_step_tank_body">Hve marga lítra tekur tankurinn fullur? Það stendur í handbókinni.</string>
     <string name="fuel_litres">Lítrar</string>
@@ -700,7 +676,6 @@
     <string name="loop_name_from">Hringur frá %1$s, %2$d km</string>
     <string name="loop_name">Hringur, %1$d km</string>
     <string name="adjust_route">Laga leið</string>
-    <string name="stop_short">Stans</string>
     <string name="start_here">Byrja hér</string>
     <string name="from_here">Frá staðsetningu minni</string>
     <string name="from_place">Frá %1$s</string>
@@ -739,7 +714,6 @@
     <string name="move_later">Seinna</string>
     <string name="save_route_title">Vista leið</string>
     <string name="save_route_name">Nafn</string>
-    <string name="save_route_to_routes">Hvert? (vistaðar leiðir)</string>
     <string name="save_route_to_gpx">GPX-slóð</string>
     <string name="preview_arrive">Komið %1$s</string>
     <string name="preview_after_dark">eftir myrkur</string>
@@ -751,7 +725,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Utan leiðar</string>
     <string name="wrong_turn_trip">Að halda áfram tekur %1$d mín lengur en að snúa við.</string>
-    <string name="wrong_turn_no_ahead">Engin leið til baka án þess að snúa við.</string>
+    <string name="wrong_turn_no_ahead">Ekki hægt að komast aftur á leiðina án þess að snúa við.</string>
     <string name="wrong_turn_back">Snúa við</string>
     <string name="wrong_turn_new_route">Ný leið héðan</string>
     <string name="wrong_turn_rejoin_ahead">Koma inn á leiðina síðar</string>
@@ -853,7 +827,7 @@
     <string name="tour_map_title">Kortið</string>
     <string name="tour_map_body">Dragðu og klíptu eins og venjulega. Eitt leynist undir fingri:</string>
     <string name="tour_buttons_title">Kortahnappar</string>
-    <string name="tour_buttons_body">Sá efsti snýr kortinu og sýnir hvernig því er snúið núna; ýttu fyrir næstu stefnu:</string>
+    <string name="tour_buttons_body">Sá efsti snýr kortinu og sýnir hvert það snýr núna; ýttu til að skipta:</string>
     <string name="tour_speed_title">Hraði og hámark</string>
     <string name="tour_speed_body">Hraðinn þinn, hámarkshraðinn og klukkan. Hraðinn verður rauður yfir hámarkinu, og lína undir varar við hraðamyndavélum fram undan. Haltu fingri á hvaða vegi sem er til að sjá hámarkshraðann.</string>
     <string name="tour_cards_title">Tónlist og skilaboð</string>
@@ -897,7 +871,7 @@
     <string name="help_end_trip">Ljúka ferðinni</string>
     <string name="help_fuel">Næsta eldsneyti á leiðinni, gult þegar langt er á milli; ýttu til að stoppa þar</string>
     <string name="help_camera">Hraðamyndavél fram undan</string>
-    <string name="help_give_way">Gatnamót fram undan með biðskyldu eða stöðvunarskyldu: við hraðann í leiðsögn, annars við vegnúmerið, og sem merki á kortinu</string>
+    <string name="help_give_way">Gatnamót fram undan með biðskyldu eða stöðvunarskyldu: sýnt við hraðann í leiðsögn, annars við vegnúmerið, og sem merki á kortinu</string>
     <string name="help_hold_map">Haltu fingri á stað: fara þangað, bæta við viðkomustað, vista uppáhald og sjá hvað er vitað um veginn</string>
     <string name="help_hold_line">Haltu á leiðarlínunni við skipulagningu til að breyta leiðinni á kortinu</string>
     <string name="help_draw">Teiknaðu svæði með fingri fyrir hringferð um það (Hvert? → Hringferð)</string>
@@ -910,7 +884,7 @@
     <string name="tour_loop_title">Búðu til hringferð</string>
     <string name="tour_loop_body">Hringferð byrjar í valmyndinni, ekki á kortinu: ýttu á mótorhjólahnappinn (Hvert?), svo Hringferð. Teiknaðu nú svæðið sem þú vilt aka um með einum fingri, og Curveon býr til hring um það án þess að aka sama veginn tvisvar. Veldu hversu langur hann má vera, og malbik eða möl. Annar hringur gefur nýja tillögu.</string>
     <string name="tour_mark_title">Breyttu bara einum hluta</string>
-    <string name="tour_mark_body">Skipuleggðu fyrst langa ferð (mótorhjólahnappur → veldu stað). Ýttu svo á punktana þrjá í stikunni neðst, og dragðu fingur eftir hlutanum sem þú vilt breyta. Dragðu svo hlutann út með strikalínu, eins og þegar breytt er á kortinu. Aðeins sá hluti er skipulagður aftur; restin af leiðinni helst óbreytt. Ýttu aftur á hnappinn til að fara aftur í að draga punkta.</string>
+    <string name="tour_mark_body">Skipuleggðu fyrst ferð og opnaðu Breyta á korti (haltu fingri á leiðarlínunni). Ýttu á hnappinn með punktalínunni í stikunni neðst, og dragðu fingur eftir hlutanum sem þú vilt breyta. Dragðu svo þann hluta þangað sem þú vilt, eins og þegar breytt er á kortinu. Aðeins sá hluti er skipulagður aftur; restin af leiðinni helst óbreytt.</string>
     <string name="help_group_edit">Breytt á kortinu</string>
     <string name="help_mark">Merktu hluta leiðarinnar sem á að breyta: dragðu eftir honum, restin helst</string>
     <string name="help_undo">Afturkalla síðustu breytingu</string>
@@ -946,8 +920,41 @@
     <string name="whats_new_title">Nýtt í Curveon %1$s</string>
     <string name="github_title">Curveon á GitHub</string>
     <string name="github_hint">Niðurhal, frumkóði og hvar á að tilkynna vandamál</string>
+    <string name="feedback_title">Fannstu villu eða ertu með hugmynd?</string>
+    <string name="feedback_hint">Segðu okkur frá hér, með myndum ef þú vilt. Það verður opinbert mál á GitHub sem þú getur fylgst með</string>
+    <string name="feedback_bug">Tilkynna villu</string>
+    <string name="feedback_idea">Stinga upp á einhverju</string>
+    <string name="feedback_bug_heading">Villutilkynning</string>
+    <string name="feedback_idea_heading">Hugmynd</string>
+    <string name="feedback_title_field">Titill</string>
+    <string name="feedback_bug_title_hint">Stutt: hvað fór úrskeiðis?</string>
+    <string name="feedback_idea_title_hint">Stutt: hver er hugmyndin?</string>
+    <string name="feedback_text_field">Lýsing</string>
+    <string name="feedback_bug_body">Hvað gerðist, og við hverju bjóstu? Hvað gerðirðu rétt áður?</string>
+    <string name="feedback_idea_body">Hvað viltu að Curveon geri, og hvenær myndi það hjálpa þér á hjólinu?</string>
+    <string name="feedback_add_images">Bæta við myndum</string>
+    <string name="feedback_images_count">%1$d af %2$d myndum</string>
+    <string name="feedback_remove_image">Fjarlægja mynd</string>
+    <string name="feedback_include_crash">Láta nýjustu hrunskýrsluna fylgja</string>
+    <string name="feedback_public">Allir á GitHub geta lesið allt sem þú sendir. Slepptu símanúmerum, heimilisföngum og öðru persónulegu.</string>
+    <string name="feedback_send">Senda</string>
+    <string name="feedback_sending">Sendir…</string>
+    <string name="feedback_sent">Takk! Þetta er mál #%1$d á GitHub. Þú finnur það hér undir Þínar tilkynningar.</string>
+    <string name="feedback_follow">Fylgjast með á GitHub</string>
+    <string name="feedback_failed">Tókst ekki að senda. Athugaðu nettenginguna og reyndu aftur.</string>
+    <string name="feedback_too_many">Of margar tilkynningar héðan í bili. Reyndu aftur eftir klukkutíma.</string>
+    <string name="feedback_open_github">Skrifa það frekar á GitHub</string>
+    <string name="feedback_crash_note">Nýjasta hrunskýrslan (eyddu henni ef þú vilt ekki deila henni):</string>
+    <string name="feedback_yours">Þínar tilkynningar</string>
+    <string name="feedback_forget">Fjarlægja af listanum</string>
+    <string name="feedback_status_open">Opið</string>
+    <string name="feedback_status_done">Lokið</string>
+    <string name="feedback_status_closed">Lokað</string>
+    <plurals name="feedback_replies">
+        <item quantity="one">%d svar</item>
+        <item quantity="other">%d svör</item>
+    </plurals>
     <!-- Group ride -->
-    <string name="group_title">Hópferð</string>
     <string name="group_start_hint">Akið saman: sjáið hvert annað á kortinu og deilið leiðum. Allt er dulkóðað enda á milli, svo aðeins hópurinn þinn getur lesið það.</string>
     <string name="group_name_hint">Nafn hóps (valfrjálst)</string>
     <string name="group_start">Stofna hóp</string>
@@ -978,7 +985,7 @@
     <string name="group_photo_gallery">Velja úr myndum</string>
     <string name="group_photo_use">Nota þessa mynd</string>
     <string name="group_photo_preview">Svona sjá hinir þig</string>
-    <string name="group_photo_crop_title">Skerðu myndina</string>
+    <string name="group_photo_crop_title">Skerðu myndina til</string>
     <string name="group_photo_crop_hint">Dragðu og þysjaðu svo andlitið sé innan hringsins.</string>
     <string name="group_photo_finding">Finn þig á myndinni…</string>
     <string name="group_photo_making">Bý til áhrifin…</string>
@@ -1036,7 +1043,7 @@
     <string name="friends_none">Engir vinir enn.</string>
     <string name="friends_remove">Fjarlægja</string>
     <string name="friends_remove_title">Fjarlægja %1$s sem vin?</string>
-    <string name="friends_remove_text">Þið getið ekki lengur boðið hvort öðru í ferðir, fyrr en annað ykkar sýnir nýjan kóða.</string>
+    <string name="friends_remove_text">Þið getið ekki lengur boðið hvort öðru í hópferðir, fyrr en annað ykkar sýnir nýjan kóða.</string>
     <string name="friends_send_link">Senda hlekk</string>
     <string name="friends_link_failed">Ekki tókst að búa til hlekkinn. Athugaðu netið og reyndu aftur.</string>
     <string name="friends_high_five_title">Fimma!</string>
@@ -1071,7 +1078,7 @@
     <string name="shared_trip_stops">%1$d viðkomustaðir</string>
     <string name="shared_trip_offer_title">%1$s deildi leið</string>
     <string name="shared_trip_offer_hint">Allir í hópnum geta breytt henni, og breytingarnar fylgja öllum.</string>
-    <string name="shared_trip_save">Vista í deildum</string>
+    <string name="shared_trip_save">Vista til síðar</string>
     <string name="shared_trip_ignore">Hunsa</string>
     <string name="sos_no_position_title">SOS ekki sent</string>
     <string name="sos_no_position_text">Curveon veit ekki enn hvar þú ert (engin GPS-staðsetning), svo ekki er hægt að segja hópnum hvert á að koma. Hringdu í 112 ef þú þarft hjálp núna, og reyndu SOS aftur þegar GPS hefur fundið þig.</string>
@@ -1164,7 +1171,7 @@
     <string name="group_paused_hint">Þú ert í hléi frá hópnum: hin sjá þig ekki, þú sérð þau ekki, og SOS og viðvaranir frá hópnum ná ekki til þín. Kveiktu aftur til að hjóla með þeim.</string>
     <string name="phone_this_cannot_call">Þetta tæki getur ekki hringt eða sent SMS</string>
     <string name="phone_this_cannot_call_hint">Það er ekkert SIM-kort í því. Skilaboð og tónlist koma áfram frá forritunum hér. Til að hringja og senda SMS úr Curveon: settu Curveon Companion upp á símanum og veldu hann í Stillingar → Sími.</string>
-    <string name="phone_this_not_allowed">Curveon má ekki lesa tengiliði og símtöl</string>
+    <string name="phone_this_not_allowed">Curveon getur ekki lesið tengiliði og símtöl</string>
     <string name="phone_this_allow_hint">Leyfðu tengiliði, símtöl, SMS og hljóðnemann, þá geturðu hringt og sent töluð SMS héðan.</string>
     <string name="phone_this_allow">Leyfa</string>
     <string name="link_this_device_hint_no_calls">Skilaboð og tónlist frá forritunum á þessu tæki. Það getur ekki hringt eða sent SMS (það er ekkert SIM-kort í því).</string>

@@ -55,7 +55,7 @@ class CompanionService : Service() {
             PhoneHub.phoneBook = PhoneBook(this)
             PhoneHub.cues = CuePlayer(this)
             PhoneHub.speaker = Speaker(this) { lang, availability -> PhoneHub.broadcast(Message.SpeechVoice(lang, availability)) }
-            PhoneHub.update { it.copy(serviceRunning = true, lastEvent = "Waiting for the tablet…") }
+            PhoneHub.update { it.copy(serviceRunning = true, lastEvent = getString(R.string.status_waiting)) }
             thread(name = "curveon-bt-server", isDaemon = true) { acceptLoop() }
             registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         }
@@ -111,7 +111,7 @@ class CompanionService : Service() {
         while (running) {
             try {
                 if (adapter == null || !adapter.isEnabled) {
-                    PhoneHub.update { it.copy(lastEvent = "Bluetooth is off") }
+                    PhoneHub.update { it.copy(lastEvent = getString(R.string.status_bluetooth_off)) }
                     Thread.sleep(5_000)
                     continue
                 }
@@ -170,11 +170,11 @@ class CompanionService : Service() {
 
     private fun startForegroundCompat() {
         val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Tablet link", NotificationManager.IMPORTANCE_LOW))
+        nm.createNotificationChannel(NotificationChannel(CHANNEL, getString(R.string.notification_channel), NotificationManager.IMPORTANCE_LOW))
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val notification = Notification.Builder(this, CHANNEL)
-            .setContentTitle("Curveon Companion")
-            .setContentText("Sharing music, messages and calls with your tablet")
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.notification_text))
             .setSmallIcon(R.drawable.ic_companion)
             .setContentIntent(open)
             .setOngoing(true)

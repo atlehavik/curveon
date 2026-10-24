@@ -230,7 +230,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 updateMapStatus()
             } catch (e: Throwable) {
                 placeSearch.indexes.cleanupPartial(offer.areaId)
-                _searchOffer.value = offer.copy(progress = e.message ?: "", failed = true)
+                _searchOffer.value = offer.copy(progress = str(R.string.search_download_failed, e.message ?: ""), failed = true)
             }
         }
     }

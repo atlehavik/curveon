@@ -58,7 +58,7 @@ talesyntese), `en_GB-alba`, `en_US-lessac/ryan/amy/libritts_r`, `en_GB-jenny_dio
 
 - `sv_SE-alma-medium` (CC BY 4.0) kan være et alternativ, men modellkortet sier ikke om den er
   trent fra bunnen. Må sjekkes.
-- **Dansk:** Språkbanken har et danskt datasett med CC0 (oai-nb-no-sbr-21), så vi kan trene en ren
+- **Dansk:** Språkbanken har et dansk datasett med CC0 (oai-nb-no-sbr-21), så vi kan trene en ren
   stemme selv senere. Fram til da brukes telefonens innebygde tale (Android `TextToSpeech`).
 - Kilde: [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices). Hver stemmes
   `MODEL_CARD` sjekket 2026-10-16.

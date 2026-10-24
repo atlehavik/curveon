@@ -36,4 +36,25 @@
     <string name="group_error_already_member">Du er allerede med i den gruppe.</string>
     <string name="group_error_other">Noget gik galt med gruppen.</string>
     <string name="group_error_not_linked">Åbn Curveon på din tablet eller denne telefon først: dine venner og grupper bor der.</string>
+    <string name="intro">Deler musik, beskeder og opkald fra denne telefon med Curveon-tabletten via Bluetooth. Par telefonen og tabletten i Androids Bluetooth-indstillinger først.</string>
+    <string name="status_title">Status</string>
+    <string name="status_service">Tjeneste</string>
+    <string name="status_running">Kører</string>
+    <string name="status_stopped">Stoppet</string>
+    <string name="status_tablet">Tablet</string>
+    <string name="status_not_connected">Ikke forbundet</string>
+    <string name="status_mirrored">Beskeder på tabletten</string>
+    <string name="status_now_playing">Afspilles nu</string>
+    <string name="status_waiting">Venter på tabletten…</string>
+    <string name="status_bluetooth_off">Bluetooth er slået fra</string>
+    <string name="setup_title">Opsætning</string>
+    <string name="setup_notification_access">Adgang til notifikationer (beskeder, musik)</string>
+    <string name="setup_permissions">Bluetooth, mikrofon, kontakter, opkald</string>
+    <string name="setup_grant">Tillad</string>
+    <string name="sharing_start">Start deling med tabletten</string>
+    <string name="sharing_stop">Stop deling</string>
+    <string name="notification_channel">Forbindelse til tabletten</string>
+    <string name="notification_text">Deler musik, beskeder og opkald med tabletten</string>
+    <string name="duration_min">%1$d min</string>
+    <string name="duration_h_min">%1$d t %2$d min</string>
 </resources>

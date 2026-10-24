@@ -6,6 +6,12 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-24 — Tekstgjennomgang (1.2.4)
+
+- [ ] X7: Avslutt Curveon midt i en navigering (sveip den bort) og start den igjen: kortet «Fortsette navigeringen?» skal ha knappene «Fortsett» og «Nei takk» (før sto det «Fortsett den turen»).
+- [ ] Companion på Pixelen, med telefonen på norsk: oppsett, status og varselet skal være på norsk («Tillat», «Start deling med nettbrettet», «Venter på nettbrettet…»), og på engelsk når telefonen er på engelsk.
+- [ ] Gruppetur: panelet sier «Deltakere» og «Inviter deltakere», og kortet på kartet «%d deltakere».
+
 ## 2026-10-24 — Feilmeldinger og forslag fra appen (1.2.4)
 
 - [ ] Pixel og X7: Innstillinger → Hjelp → «Meld fra om feil». Skriv tittel og tekst, legg ved et par skjermbilder (bildevelgeren skal åpne seg uten å spørre om tillatelse), og trykk Send. Det skal komme «Takk! Det er sak #…», og saken skal ligge på github.com/atlehavik/curveon/issues med bildene synlige og merket `bug`. (Krever at reléet har GitHub-nøkkelen.)
