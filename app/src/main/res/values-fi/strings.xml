@@ -1068,6 +1068,12 @@
     <string name="share_trip">Jaa</string>
     <string name="later">Myöhemmin</string>
     <string name="send_to_tablet">Lähetä tabletille</string>
+    <string name="share_with_group">Jaa ryhmälle</string>
+    <string name="toast_shared_group">Jaettu: %1$s</string>
+    <string name="share_needs_group">Aloita ryhmäajo tai liity sellaiseen ensin: %1$s → %2$s.</string>
+    <string name="add_to_planned">Lisää suunniteltuihin</string>
+    <string name="toast_added_to_planned">Suunnitelluissa, ja verkkosuunnittelijassa kun se on yhdistetty</string>
+    <string name="share_nothing">Ei jaettavaa: tässä ei ole viivaa.</string>
     <string name="send_to_tablet_sent">Nyt tabletilla, kohdassa Suunnitellut.</string>
     <string name="send_to_tablet_waiting">Tabletti ei ole vielä yhdistetty. Matka siirtyy heti, kun se yhdistää tähän puhelimeen.</string>
     <string name="send_to_tablet_too_long">Matka on liian pitkä lähetettäväksi tabletille. Jaa se lyhyempiin matkoihin.</string>

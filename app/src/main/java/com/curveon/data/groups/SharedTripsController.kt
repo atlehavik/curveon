@@ -226,6 +226,24 @@ class SharedTripsController(
         return true
     }
 
+    /** The group ride on now, by name; null when there is none to share in. */
+    fun activeGroupName(): String? = manager.activeId.value?.let { id -> manager.groups.value.firstOrNull { it.id == id }?.name ?: "" }
+
+    /**
+     * Share any kept trip with the active group: a planned one with its stops ([shareSaved]); a track, a ride or a GPX
+     * (no stops) as its line to where it ends, which everyone rides just as it is. False with no group or no line.
+     */
+    fun shareItem(item: RouteItem): Boolean {
+        val groupId = manager.activeId.value ?: return false
+        if (shareSaved(item)) return true
+        val line = SavedRoutes.decode(item.polylineJson)
+        if (line.size < 2) return false
+        val end = line.last()
+        val options = runCatching { JSONObject(item.waypointsJson) }.getOrNull()?.optJSONObject("options")?.toString() ?: "{}"
+        share(TripDoc(item.title, TripStop(item.title, end.lat, end.lon), emptyList(), options, item.polylineJson), groupId)
+        return true
+    }
+
     private fun share(doc: TripDoc, groupId: String): String? {
         val id = UUID.randomUUID().toString()
         val groupName = manager.groups.value.firstOrNull { it.id == groupId }?.name

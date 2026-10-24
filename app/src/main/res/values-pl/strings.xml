@@ -1153,6 +1153,12 @@
     <string name="share_trip">Udostępnij</string>
     <string name="later">Później</string>
     <string name="send_to_tablet">Wyślij na tablet</string>
+    <string name="share_with_group">Udostępnij grupie</string>
+    <string name="toast_shared_group">Udostępniono: %1$s</string>
+    <string name="share_needs_group">Najpierw zacznij przejazd grupowy lub dołącz do niego: %1$s → %2$s.</string>
+    <string name="add_to_planned">Dodaj do zaplanowanych</string>
+    <string name="toast_added_to_planned">W zaplanowanych, i w planerze internetowym, gdy jest połączony</string>
+    <string name="share_nothing">Nie ma czego udostępnić: brak linii.</string>
     <string name="send_to_tablet_sent">Już na tablecie, w Planowane.</string>
     <string name="send_to_tablet_waiting">Tablet nie jest jeszcze połączony. Trasa trafi na niego, gdy tylko połączy się z tym telefonem.</string>
     <string name="send_to_tablet_too_long">Ta trasa jest za długa, by wysłać ją na tablet. Podziel ją na krótsze trasy.</string>

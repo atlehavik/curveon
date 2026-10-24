@@ -6,6 +6,14 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-24 — Nettplanleggeren på kryss og tvers (1.2.6)
+
+- [ ] Pixel og X7 begge koblet til relay.curveon.no/plan: åpne en tur som ligger på begge, endre den, og trykk «Oppdater på X7 og Pixel 9a». Begge får turen endret, ingen av dem får en ekstra kopi.
+- [ ] Pixel: send en tur fra nettsiden, gå til GPX og turer, og sveip mellom fanene. Beskjeden «ny tur fra nettet» kommer én gang, ikke igjen for hver fane.
+- [ ] PC: «Åpne GPX» (eller dra en .gpx inn på kartet), send som «Et GPX-spor». Pixel: sporet ligger under Planlagte og kjøres langs linja. Prøv også «Begge»: da kommer både sporet og en tur med hjelpepunkter.
+- [ ] Pixel i en gruppetur: Kjørte → åpne en tur → «Del med gruppa», GPX → et spors meny → «Del med gruppa», og Planlagte → en turs meny → «Del med gruppa». X7 i samme gruppe får dem under Delte og kan kjøre dem. Uten gruppe sier appen hvor du starter en.
+- [ ] Pixel: GPX → et spors meny → «Legg i Planlagte»: sporet kommer under Planlagte og på nettsiden.
+
 ## 2026-10-24 — Veiskiltet bare på veien (1.2.5)
 
 - [ ] Pixel/X7 på kafé eller parkering (fri kjøring): veiskiltet øverst til venstre forsvinner etter ca. 2 minutter stille, og kommer tilbake når du kjører igjen. Står du for rødt lys eller i kø, blir det stående.

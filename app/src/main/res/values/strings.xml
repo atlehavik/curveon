@@ -1119,6 +1119,12 @@
     <string name="share_trip">Share</string>
     <string name="later">Later</string>
     <string name="send_to_tablet">Send to tablet</string>
+    <string name="share_with_group">Share with the group</string>
+    <string name="toast_shared_group">Shared with %1$s</string>
+    <string name="share_needs_group">Start or join a group ride first, under %1$s → %2$s.</string>
+    <string name="add_to_planned">Add to Planned</string>
+    <string name="toast_added_to_planned">In Planned, and on the web planner when it is connected</string>
+    <string name="share_nothing">Nothing to share: this one has no line.</string>
     <string name="send_to_tablet_sent">On the tablet now, under Planned.</string>
     <string name="send_to_tablet_waiting">The tablet isn\'t connected yet. The trip goes over as soon as it connects to this phone.</string>
     <string name="send_to_tablet_too_long">This trip is too long to send to the tablet. Split it into shorter trips.</string>

@@ -1150,7 +1150,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                             onRenameGroup = { g, name -> viewModel.renameGroup(g, name) },
                             onDeleteGroup = { g, keep -> viewModel.deleteGroup(g, keep) },
                             onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) },
-                            onSendToTablet = if (companionInstalled) { t -> sendToTablet(viewModel.gpxForTablet(t)) } else null
+                            onSendToTablet = if (companionInstalled) { t -> sendToTablet(viewModel.gpxForTablet(t)) } else null,
+                            onShareWithGroup = { t -> toast = viewModel.shareWithGroup(viewModel.gpxForTablet(t)) },
+                            onToPlanned = { t ->
+                                toast = context.getString(if (viewModel.gpxToPlanned(t)) R.string.toast_added_to_planned else R.string.share_nothing)
+                            }
                         )
                     },
                     onTogglePoiCategory = viewModel::togglePoiCategory,
@@ -1178,6 +1182,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onStopRecording = viewModel::stopRide,
                     onMerge = viewModel::mergeRides,
                     onSendToTablet = if (companionInstalled) { r -> sendToTablet(viewModel.rideForTablet(r)) } else null,
+                    onShareWithGroup = { r -> toast = viewModel.shareWithGroup(viewModel.rideForTablet(r)) },
                     autoSaveGroup = autoSaveRidesGroup,
                     onAutoSave = { id, name -> viewModel.setAutoSaveRides(id, name) },
                     onDelete = { viewModel.deleteRides(it) },
@@ -1199,6 +1204,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onRenameGroup = viewModel::renamePlannedGroup,
                     onDeleteGroup = viewModel::deletePlannedGroup,
                     onSendToTablet = if (companionInstalled) sendToTablet else null,
+                    onShareWithGroup = { t -> toast = viewModel.shareWithGroup(t) },
                     onFromWeb = { showWebPlan = true }
                 )
                 if (showWebPlan) com.curveon.ui.components.WebPlanDialog(

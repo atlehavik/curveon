@@ -1116,6 +1116,12 @@
     <string name="share_trip">Teilen</string>
     <string name="later">Später</string>
     <string name="send_to_tablet">An Tablet senden</string>
+    <string name="share_with_group">Mit der Gruppe teilen</string>
+    <string name="toast_shared_group">Geteilt mit %1$s</string>
+    <string name="share_needs_group">Starte zuerst eine Gruppenfahrt oder tritt einer bei, unter %1$s → %2$s.</string>
+    <string name="add_to_planned">Zu Geplant</string>
+    <string name="toast_added_to_planned">In Geplant, und im Web-Planer, wenn er verbunden ist</string>
+    <string name="share_nothing">Nichts zu teilen: hier gibt es keine Linie.</string>
     <string name="send_to_tablet_sent">Jetzt auf dem Tablet, unter Geplant.</string>
     <string name="send_to_tablet_waiting">Das Tablet ist noch nicht verbunden. Die Tour geht rüber, sobald es sich mit diesem Handy verbindet.</string>
     <string name="send_to_tablet_too_long">Diese Tour ist zu lang für das Tablet. Teile sie in kürzere Touren auf.</string>

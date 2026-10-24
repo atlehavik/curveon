@@ -1117,6 +1117,12 @@
     <string name="share_trip">Del</string>
     <string name="later">Senere</string>
     <string name="send_to_tablet">Send til tablet</string>
+    <string name="share_with_group">Del med gruppen</string>
+    <string name="toast_shared_group">Delt med %1$s</string>
+    <string name="share_needs_group">Start eller deltag i en gruppetur først, under %1$s → %2$s.</string>
+    <string name="add_to_planned">Læg i Planlagte</string>
+    <string name="toast_added_to_planned">Lagt i Planlagte, og i webplanlæggeren når den er forbundet</string>
+    <string name="share_nothing">Intet at dele: denne har ingen linje.</string>
     <string name="send_to_tablet_sent">Nu på tabletten under Planlagt.</string>
     <string name="send_to_tablet_waiting">Tabletten er ikke forbundet endnu. Turen sendes, så snart den forbinder til denne telefon.</string>
     <string name="send_to_tablet_too_long">Denne tur er for lang til at sende til tabletten. Del den op i kortere ture.</string>

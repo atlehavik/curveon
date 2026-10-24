@@ -71,6 +71,8 @@ fun RideLogDialog(
     onMerge: (Collection<Long>) -> Unit = {},
     /** Send the ride to the tablet through Curveon Companion (null: no companion on this phone). */
     onSendToTablet: ((Ride) -> Unit)? = null,
+    /** Share the ride's line with the group ride on now. */
+    onShareWithGroup: ((Ride) -> Unit)? = null,
     onDismiss: () -> Unit,
     /** Page menu when shown inside the GPX & rides dialog. */
     sideBar: (@Composable () -> Unit)? = null,
@@ -238,6 +240,9 @@ fun RideLogDialog(
                                 Box(Modifier.testTag("send_to_tablet")) {
                                     RoundButton(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet), 56.dp, CockpitSurface, TextPrimary) { send(r) }
                                 }
+                            }
+                            onShareWithGroup?.let { share ->
+                                RoundButton(Icons.Default.Groups, stringResource(R.string.share_with_group), 56.dp, CockpitSurface, TextPrimary) { share(r) }
                             }
                             RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 56.dp, CockpitSurface, TextMuted) { onDelete(listOf(r.id)) }
                         }

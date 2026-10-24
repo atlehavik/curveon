@@ -1827,6 +1827,20 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun deleteRides(ids: Collection<Long>) = viewModelScope.launch { rideDao.delete(ids.toList()) }
 
+    /** Shares [item] (a planned trip, a ride, a GPX track) with the group ride on now; what to tell the rider. */
+    fun shareWithGroup(item: RouteItem?): String {
+        val group = sharedTrips.activeGroupName() ?: return str(R.string.share_needs_group, str(R.string.friends_title), str(R.string.friends_tab_group))
+        if (item == null || !sharedTrips.shareItem(item)) return str(R.string.share_nothing)
+        return str(R.string.toast_shared_group, group)
+    }
+
+    /** A GPX track among the planned trips (and so on the web planner too), ridden as it is; false when it has no line. */
+    fun gpxToPlanned(track: GpxTrack): Boolean {
+        val item = gpxForTablet(track) ?: return false
+        viewModelScope.launch { repository.saveRoute(item.copy(inPlanned = true)) }
+        return true
+    }
+
     /** Keeps a ride as a track in the GPX collection, in [groupId] or a new group called [newGroup]. */
     fun saveRideToGpx(ride: Ride, groupId: Long?, newGroup: String?) = viewModelScope.launch {
         storeRideAsGpx(ride, newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId)

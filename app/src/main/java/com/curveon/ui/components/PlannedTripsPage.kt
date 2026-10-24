@@ -63,6 +63,8 @@ fun ColumnScope.PlannedTripsPage(
     onDeleteGroup: (RouteGroup, Boolean) -> Unit,
     /** Send the trip to the tablet through Curveon Companion (null: no companion on this phone). */
     onSendToTablet: ((RouteItem) -> Unit)? = null,
+    /** Share the trip with the group ride on now. */
+    onShareWithGroup: ((RouteItem) -> Unit)? = null,
     /** Trips planned on the web planner: how to connect it, and fetching (null: not offered). */
     onFromWeb: (() -> Unit)? = null
 ) {
@@ -186,7 +188,8 @@ fun ColumnScope.PlannedTripsPage(
                             RowMenu(listOfNotNull(
                                 MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = t },
                                 MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t },
-                                onSendToTablet?.let { send -> MenuItem(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet)) { send(t) } }
+                                onSendToTablet?.let { send -> MenuItem(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet)) { send(t) } },
+                                onShareWithGroup?.let { share -> MenuItem(Icons.Default.Groups, stringResource(R.string.share_with_group)) { share(t) } }
                             ))
                             // Taken out of the planned trips at once, as a ride is from the log.
                             RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 56.dp, CockpitSurface, TextMuted) { onDelete(listOf(t)) }

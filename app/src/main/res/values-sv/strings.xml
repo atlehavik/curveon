@@ -1117,6 +1117,12 @@
     <string name="share_trip">Dela</string>
     <string name="later">Senare</string>
     <string name="send_to_tablet">Skicka till surfplattan</string>
+    <string name="share_with_group">Dela med gruppen</string>
+    <string name="toast_shared_group">Delad med %1$s</string>
+    <string name="share_needs_group">Starta eller gå med i en grupptur först, under %1$s → %2$s.</string>
+    <string name="add_to_planned">Lägg i Planerade</string>
+    <string name="toast_added_to_planned">I Planerade, och i webbplaneraren när den är ansluten</string>
+    <string name="share_nothing">Inget att dela: den här har ingen linje.</string>
     <string name="send_to_tablet_sent">Finns nu på surfplattan, under Planerade.</string>
     <string name="send_to_tablet_waiting">Surfplattan är inte ansluten än. Turen skickas så fort den ansluter till den här telefonen.</string>
     <string name="send_to_tablet_too_long">Den här turen är för lång för att skicka till surfplattan. Dela upp den i kortare turer.</string>

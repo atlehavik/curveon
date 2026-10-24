@@ -1117,6 +1117,12 @@
     <string name="share_trip">Del</string>
     <string name="later">Senere</string>
     <string name="send_to_tablet">Send til nettbrettet</string>
+    <string name="share_with_group">Del med gruppa</string>
+    <string name="toast_shared_group">Delt med %1$s</string>
+    <string name="share_needs_group">Start eller bli med på en gruppetur først, under %1$s → %2$s.</string>
+    <string name="add_to_planned">Legg i Planlagte</string>
+    <string name="toast_added_to_planned">Lagt i Planlagte, og på nettplanleggeren når den er koblet til</string>
+    <string name="share_nothing">Ingenting å dele: denne har ingen linje.</string>
     <string name="send_to_tablet_sent">Ligger nå på nettbrettet, under Planlagte.</string>
     <string name="send_to_tablet_waiting">Nettbrettet er ikke koblet til ennå. Turen går over så snart det kobler seg til telefonen.</string>
     <string name="send_to_tablet_too_long">Turen er for lang til å sendes til nettbrettet. Del den opp i kortere turer.</string>

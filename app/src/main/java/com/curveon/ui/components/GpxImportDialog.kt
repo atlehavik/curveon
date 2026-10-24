@@ -183,6 +183,8 @@ fun GpxManagerDialog(
                                 MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = t },
                                 MenuItem(Icons.Default.IosShare, stringResource(R.string.gpx_export)) { export(null, t) },
                                 actions.onSendToTablet?.let { send -> MenuItem(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet)) { send(t) } },
+                                actions.onShareWithGroup?.let { share -> MenuItem(Icons.Default.Groups, stringResource(R.string.share_with_group)) { share(t) } },
+                                actions.onToPlanned?.let { add -> MenuItem(Icons.Default.EventNote, stringResource(R.string.add_to_planned)) { add(t) } },
                                 MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t },
                                 MenuItem(Icons.Default.DeleteOutline, stringResource(R.string.delete)) { confirmDelete = t }
                             )
@@ -253,7 +255,11 @@ class GpxActions(
     /** A group (track null) or one track, to the picked file. */
     val onExport: (GpxGroup?, GpxTrack?, android.net.Uri) -> Unit,
     /** Send the track to the tablet through Curveon Companion (null: no companion on this phone). */
-    val onSendToTablet: ((GpxTrack) -> Unit)? = null
+    val onSendToTablet: ((GpxTrack) -> Unit)? = null,
+    /** Share the track with the group ride on now. */
+    val onShareWithGroup: ((GpxTrack) -> Unit)? = null,
+    /** Keep the track among the planned trips too (and so on the web planner). */
+    val onToPlanned: ((GpxTrack) -> Unit)? = null
 )
 
 internal class MenuItem(val icon: ImageVector, val label: String, val onClick: () -> Unit)

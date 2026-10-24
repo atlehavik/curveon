@@ -4,57 +4,79 @@
     "en": [
       "Taking a profile picture now opens Curveon's own camera, on the selfie lens, and the picture comes out exactly as you saw it in the mirror view, whatever your phone's camera app is set to",
       "Change a trip on the web planner that is on both your phone and your tablet, and it is now updated on both. Before, one of them could get it as an extra trip beside the old one",
-      "The note about trips from the web shows once when they arrive, and no longer pops up again every time you swipe between the tabs in GPX & rides"
+      "The note about trips from the web shows once when they arrive, and no longer pops up again every time you swipe between the tabs in GPX & rides",
+      "Share more with your group ride: a ride you have ridden, a GPX track or any planned trip now has Share with the group, not only the trip on the map",
+      "Open a GPX file on the web planner and send it to Curveon as a track that is ridden just as it is, as a trip you can change, or both. And a GPX track in the app can go to Planned, so it shows on the web planner too"
     ],
     "nb": [
       "Når du tar profilbilde, åpner Curveon nå sitt eget kamera på selfie-linsen, og bildet blir akkurat slik du så det i speilbildet, uansett hva kameraappen på telefonen er innstilt på",
       "Endrer du en tur i nettplanleggeren som ligger både på telefonen og nettbrettet, oppdateres den nå på begge. Før kunne den ene få den som en ekstra tur ved siden av den gamle",
-      "Beskjeden om turer fra nettet vises én gang når de kommer, og dukker ikke lenger opp igjen hver gang du sveiper mellom fanene i GPX og turer"
+      "Beskjeden om turer fra nettet vises én gang når de kommer, og dukker ikke lenger opp igjen hver gang du sveiper mellom fanene i GPX og turer",
+      "Del mer med gruppa: en tur du har kjørt, et GPX-spor eller en hvilken som helst planlagt tur har nå «Del med gruppa», ikke bare turen på kartet",
+      "Åpne en GPX-fil i nettplanleggeren og send den til Curveon som et spor som kjøres akkurat slik det er, som en tur du kan endre, eller begge deler. Og et GPX-spor i appen kan legges i Planlagte, så det vises i nettplanleggeren også"
     ],
     "sv": [
       "När du tar en profilbild öppnas nu Curveons egen kamera på selfielinsen, och bilden blir precis som du såg den i spegelbilden, oavsett hur telefonens kameraapp är inställd",
       "Ändrar du en tur i webbplaneraren som finns både på telefonen och surfplattan uppdateras den nu på båda. Förut kunde den ena få den som en extra tur bredvid den gamla",
-      "Meddelandet om turer från webben visas en gång när de kommer, och dyker inte längre upp igen varje gång du sveper mellan flikarna i GPX och turer"
+      "Meddelandet om turer från webben visas en gång när de kommer, och dyker inte längre upp igen varje gång du sveper mellan flikarna i GPX och turer",
+      "Dela mer med gruppen: en tur du har kört, ett GPX-spår eller vilken planerad tur som helst har nu Dela med gruppen, inte bara turen på kartan",
+      "Öppna en GPX-fil i webbplaneraren och skicka den till Curveon som ett spår som körs precis som det är, som en tur du kan ändra, eller båda. Och ett GPX-spår i appen kan läggas i Planerade, så att det syns i webbplaneraren också"
     ],
     "da": [
       "Når du tager et profilbillede, åbner Curveon nu sit eget kamera på selfie-linsen, og billedet bliver præcis, som du så det i spejlbilledet, uanset hvad kameraappen på telefonen er indstillet til",
       "Ændrer du en tur i webplanlæggeren, som ligger både på telefonen og tabletten, bliver den nu opdateret på begge. Før kunne den ene få den som en ekstra tur ved siden af den gamle",
-      "Beskeden om ture fra nettet vises én gang, når de kommer, og dukker ikke længere op igen, hver gang du swiper mellem fanerne i GPX og ture"
+      "Beskeden om ture fra nettet vises én gang, når de kommer, og dukker ikke længere op igen, hver gang du swiper mellem fanerne i GPX og ture",
+      "Del mere med gruppen: en tur, du har kørt, et GPX-spor eller en hvilken som helst planlagt tur har nu Del med gruppen, ikke kun turen på kortet",
+      "Åbn en GPX-fil i webplanlæggeren og send den til Curveon som et spor, der køres præcis som det er, som en tur du kan ændre, eller begge dele. Og et GPX-spor i appen kan lægges i Planlagte, så det også vises i webplanlæggeren"
     ],
     "fi": [
       "Kun otat profiilikuvan, Curveon avaa nyt oman kameransa selfie-linssillä, ja kuva tulee täsmälleen sellaisena kuin näit sen peilikuvassa, vaikka puhelimen kamerasovelluksen asetukset olisivat mitkä",
       "Kun muutat verkkosuunnittelijassa reittiä, joka on sekä puhelimessa että tabletissa, se päivittyy nyt molempiin. Ennen toinen saattoi saada sen ylimääräisenä reittinä vanhan viereen",
-      "Ilmoitus verkosta tulleista reiteistä näkyy kerran, kun ne saapuvat, eikä enää ponnahda esiin aina, kun pyyhkäiset välilehdeltä toiselle GPX ja ajot -näkymässä"
+      "Ilmoitus verkosta tulleista reiteistä näkyy kerran, kun ne saapuvat, eikä enää ponnahda esiin aina, kun pyyhkäiset välilehdeltä toiselle GPX ja ajot -näkymässä",
+      "Jaa ryhmälle enemmän: ajetulla reitillä, GPX-jäljellä ja millä tahansa suunnitellulla reitillä on nyt Jaa ryhmälle, ei vain kartalla olevalla reitillä",
+      "Avaa GPX-tiedosto verkkosuunnittelijassa ja lähetä se Curveoniin jälkenä, joka ajetaan juuri sellaisena kuin se on, reittinä jota voit muuttaa, tai molempina. Ja sovelluksen GPX-jäljen voi lisätä suunniteltuihin, jolloin se näkyy myös verkkosuunnittelijassa"
     ],
     "is": [
       "Þegar þú tekur prófílmynd opnast nú eigin myndavél Curveon á selfie-linsunni og myndin verður nákvæmlega eins og þú sást hana í speglinum, sama hvernig myndavélaappið í símanum er stillt",
       "Breytirðu ferð í vefskipuleggjandanum sem er bæði í símanum og spjaldtölvunni uppfærist hún nú á báðum. Áður gat annað tækið fengið hana sem auka ferð við hlið þeirrar gömlu",
-      "Skilaboðin um ferðir af vefnum birtast einu sinni þegar þær koma og skjóta ekki lengur upp kollinum í hvert sinn sem þú strýkur á milli flipa í GPX og ferðum"
+      "Skilaboðin um ferðir af vefnum birtast einu sinni þegar þær koma og skjóta ekki lengur upp kollinum í hvert sinn sem þú strýkur á milli flipa í GPX og ferðum",
+      "Deildu meiru með hópnum: ferð sem þú hefur ekið, GPX-slóð eða hvaða skipulögð ferð sem er hefur nú Deila með hópnum, ekki bara ferðin á kortinu",
+      "Opnaðu GPX-skrá í vefskipuleggjandanum og sendu hana í Curveon sem slóð sem er ekin nákvæmlega eins og hún er, sem ferð sem þú getur breytt, eða hvort tveggja. Og GPX-slóð í appinu má setja í Skipulagt, svo hún sjáist líka í vefskipuleggjandanum"
     ],
     "de": [
       "Für das Profilbild öffnet Curveon jetzt seine eigene Kamera mit der Selfie-Linse, und das Bild wird genau so, wie du es im Spiegelbild gesehen hast, egal wie die Kamera-App deines Telefons eingestellt ist",
       "Änderst du im Web-Planer eine Tour, die auf Handy und Tablet liegt, wird sie jetzt auf beiden aktualisiert. Vorher konnte eines davon sie als zusätzliche Tour neben der alten bekommen",
-      "Der Hinweis auf Touren aus dem Web erscheint einmal, wenn sie ankommen, und taucht nicht mehr bei jedem Wischen zwischen den Reitern in GPX & Fahrten wieder auf"
+      "Der Hinweis auf Touren aus dem Web erscheint einmal, wenn sie ankommen, und taucht nicht mehr bei jedem Wischen zwischen den Reitern in GPX & Fahrten wieder auf",
+      "Teile mehr mit deiner Gruppe: Eine gefahrene Tour, ein GPX-Track oder jede geplante Tour hat jetzt Mit der Gruppe teilen, nicht nur die Tour auf der Karte",
+      "Öffne im Web-Planer eine GPX-Datei und schick sie an Curveon als Track, der genau so gefahren wird, als Tour, die du ändern kannst, oder beides. Und ein GPX-Track in der App kann zu Geplant, damit er auch im Web-Planer erscheint"
     ],
     "es": [
       "Al hacer la foto de perfil, Curveon abre ahora su propia cámara con el objetivo de selfie, y la foto sale exactamente como la viste en la vista de espejo, sea cual sea el ajuste de la app de cámara del teléfono",
       "Si cambias en el planificador web una ruta que tienes en el móvil y en la tableta, ahora se actualiza en los dos. Antes uno de ellos podía recibirla como una ruta más junto a la antigua",
-      "El aviso de rutas desde la web aparece una vez cuando llegan, y ya no vuelve a salir cada vez que deslizas entre las pestañas de GPX y rutas"
+      "El aviso de rutas desde la web aparece una vez cuando llegan, y ya no vuelve a salir cada vez que deslizas entre las pestañas de GPX y rutas",
+      "Comparte más con tu grupo: una ruta que ya hiciste, un track GPX o cualquier ruta planificada tiene ahora Compartir con el grupo, no solo la ruta del mapa",
+      "Abre un archivo GPX en el planificador web y envíalo a Curveon como un track que se recorre tal cual, como una ruta que puedes cambiar, o las dos cosas. Y un track GPX de la app puede ir a Planificadas, para que también salga en el planificador web"
     ],
     "fr": [
       "Pour la photo de profil, Curveon ouvre maintenant sa propre caméra sur l'objectif selfie, et la photo est exactement celle que tu as vue dans le miroir, quel que soit le réglage de l'appli photo du téléphone",
       "Si tu modifies dans le planificateur web un trajet qui est sur ton téléphone et ta tablette, il est maintenant mis à jour sur les deux. Avant, l’un d’eux pouvait le recevoir comme un trajet en plus à côté de l’ancien",
-      "Le message sur les trajets venus du web s’affiche une fois à leur arrivée, et ne réapparaît plus à chaque fois que tu glisses d’un onglet à l’autre dans GPX et sorties"
+      "Le message sur les trajets venus du web s’affiche une fois à leur arrivée, et ne réapparaît plus à chaque fois que tu glisses d’un onglet à l’autre dans GPX et sorties",
+      "Partage davantage avec ton groupe : une sortie déjà faite, une trace GPX ou n’importe quel trajet prévu a maintenant Partager avec le groupe, pas seulement le trajet sur la carte",
+      "Ouvre un fichier GPX dans le planificateur web et envoie-le à Curveon comme une trace suivie telle quelle, comme un trajet que tu peux modifier, ou les deux. Et une trace GPX de l’app peut aller dans Prévus, pour apparaître aussi dans le planificateur web"
     ],
     "nl": [
       "Voor je profielfoto opent Curveon nu zijn eigen camera met de selfielens, en de foto wordt precies zoals je hem in de spiegelweergave zag, wat de camera-app van je telefoon ook heeft ingesteld",
       "Pas je in de webplanner een rit aan die op je telefoon en je tablet staat, dan wordt hij nu op allebei bijgewerkt. Eerder kon een van de twee hem als extra rit naast de oude krijgen",
-      "De melding over ritten van het web verschijnt één keer als ze binnenkomen, en komt niet meer terug telkens als je tussen de tabbladen in GPX & ritten veegt"
+      "De melding over ritten van het web verschijnt één keer als ze binnenkomen, en komt niet meer terug telkens als je tussen de tabbladen in GPX & ritten veegt",
+      "Deel meer met je groep: een gereden rit, een GPX-track of elke geplande rit heeft nu Delen met de groep, niet alleen de rit op de kaart",
+      "Open een GPX-bestand in de webplanner en stuur het naar Curveon als een track die precies zo gereden wordt, als een rit die je kunt aanpassen, of allebei. En een GPX-track in de app kan naar Gepland, zodat hij ook in de webplanner staat"
     ],
     "pl": [
       "Przy zdjęciu profilowym Curveon otwiera teraz własny aparat z obiektywem do selfie, a zdjęcie wychodzi dokładnie takie, jakie widziałeś w lustrzanym podglądzie, niezależnie od ustawień aplikacji aparatu w telefonie",
       "Gdy zmienisz w planerze internetowym trasę, która jest i na telefonie, i na tablecie, zaktualizuje się teraz na obu. Wcześniej jedno z nich mogło dostać ją jako dodatkową trasę obok starej",
-      "Komunikat o trasach z sieci pojawia się raz, gdy przyjdą, i nie wyskakuje już przy każdym przesunięciu między kartami w GPX i przejazdach"
+      "Komunikat o trasach z sieci pojawia się raz, gdy przyjdą, i nie wyskakuje już przy każdym przesunięciu między kartami w GPX i przejazdach",
+      "Udostępniaj grupie więcej: przejechana trasa, ślad GPX czy dowolna zaplanowana trasa mają teraz Udostępnij grupie, nie tylko trasa na mapie",
+      "Otwórz plik GPX w planerze internetowym i wyślij go do Curveon jako ślad jechany dokładnie tak, jak jest, jako trasę, którą możesz zmienić, albo jedno i drugie. A ślad GPX w aplikacji można dodać do zaplanowanych, żeby pokazał się też w planerze internetowym"
     ]
   },
   {

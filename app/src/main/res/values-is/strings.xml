@@ -1116,6 +1116,12 @@
     <string name="share_trip">Deila</string>
     <string name="later">Seinna</string>
     <string name="send_to_tablet">Senda í spjaldtölvu</string>
+    <string name="share_with_group">Deila með hópnum</string>
+    <string name="toast_shared_group">Deilt með %1$s</string>
+    <string name="share_needs_group">Byrjaðu eða taktu þátt í hópferð fyrst, undir %1$s → %2$s.</string>
+    <string name="add_to_planned">Setja í Skipulagt</string>
+    <string name="toast_added_to_planned">Í Skipulagt, og í vefskipuleggjandanum þegar hann er tengdur</string>
+    <string name="share_nothing">Ekkert að deila: þessi hefur enga línu.</string>
     <string name="send_to_tablet_sent">Komið í spjaldtölvuna, undir Fyrirhugað.</string>
     <string name="send_to_tablet_waiting">Spjaldtölvan er ekki tengd enn. Ferðin fer yfir um leið og hún tengist þessum síma.</string>
     <string name="send_to_tablet_too_long">Þessi ferð er of löng til að senda í spjaldtölvuna. Skiptu henni í styttri ferðir.</string>

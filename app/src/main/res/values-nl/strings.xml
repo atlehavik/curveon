@@ -1089,6 +1089,12 @@
     <string name="share_trip">Delen</string>
     <string name="later">Later</string>
     <string name="send_to_tablet">Naar tablet sturen</string>
+    <string name="share_with_group">Delen met de groep</string>
+    <string name="toast_shared_group">Gedeeld met %1$s</string>
+    <string name="share_needs_group">Start eerst een groepsrit of doe mee met een, onder %1$s → %2$s.</string>
+    <string name="add_to_planned">Naar Gepland</string>
+    <string name="toast_added_to_planned">In Gepland, en in de webplanner als die verbonden is</string>
+    <string name="share_nothing">Niets te delen: dit heeft geen lijn.</string>
     <string name="send_to_tablet_sent">Staat nu op de tablet, onder Gepland.</string>
     <string name="send_to_tablet_waiting">De tablet is nog niet verbonden. De rit gaat over zodra hij met deze telefoon verbindt.</string>
     <string name="send_to_tablet_too_long">Deze rit is te lang om naar de tablet te sturen. Splits hem in kortere ritten.</string>

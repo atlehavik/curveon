@@ -1135,6 +1135,12 @@
     <string name="share_trip">Compartir</string>
     <string name="later">Más tarde</string>
     <string name="send_to_tablet">Enviar a la tablet</string>
+    <string name="share_with_group">Compartir con el grupo</string>
+    <string name="toast_shared_group">Compartida con %1$s</string>
+    <string name="share_needs_group">Primero empieza o únete a una salida en grupo, en %1$s → %2$s.</string>
+    <string name="add_to_planned">Añadir a Planificadas</string>
+    <string name="toast_added_to_planned">En Planificadas, y en el planificador web cuando esté conectado</string>
+    <string name="share_nothing">Nada que compartir: no tiene línea.</string>
     <string name="send_to_tablet_sent">Ya está en la tablet, en Planificados.</string>
     <string name="send_to_tablet_waiting">La tablet aún no está conectada. El viaje se pasa en cuanto se conecte a este móvil.</string>
     <string name="send_to_tablet_too_long">Este viaje es demasiado largo para enviarlo a la tablet. Divídelo en viajes más cortos.</string>
