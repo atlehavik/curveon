@@ -931,7 +931,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             OngoingCallCard(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) })
         }
         val messages = notifications.filterNot { it.isIncomingCall }
-        val attention = voiceReply != null || messages.isNotEmpty()
+        // A call, like a message, gets the room: the player shrinks to one row.
+        val attention = voiceReply != null || messages.isNotEmpty() || ringing != null
         when {
             voiceReply != null -> VoiceReplyCard(
                 reply = voiceReply!!,

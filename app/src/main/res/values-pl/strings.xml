@@ -1083,6 +1083,8 @@
     <string name="friends_link_failed">Nie udało się utworzyć linku. Sprawdź internet i spróbuj ponownie.</string>
     <string name="friends_high_five_title">Piątka!</string>
     <string name="friends_high_five_text">Ty i %1$s jesteście teraz znajomymi</string>
+    <string name="friend_removed_you">%1$s usunął(-ęła) Cię ze znajomych</string>
+    <string name="group_removed_you">Usunięto Cię z grupy %1$s</string>
     <string name="group_add_friends">Dodaj znajomych do grupy</string>
     <string name="group_add_friends_none">Nie masz jeszcze znajomych do dodania. Dodaj ich w Moi znajomi.</string>
     <string name="group_add_friends_send">Wyślij zaproszenie</string>

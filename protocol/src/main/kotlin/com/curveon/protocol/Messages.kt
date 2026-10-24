@@ -505,6 +505,14 @@ sealed interface Message {
     }
 
     /**
+     * A friend removed the rider as a friend ([friend]), or the group's admin removed the rider from a ride group: the friend
+     * or group is already gone from the list, this is only the one-line "why".
+     */
+    data class ContactEnded(val name: String, val friend: Boolean) : Message {
+        override fun toJson() = obj("contact_ended").put("name", name).put("friend", friend)
+    }
+
+    /**
      * A friend asks the rider to join a ride group, or ([friendRequest]) someone in a group asks to be their friend ([groupName]
      * is then the group they met in): shown once, with "join"/"add" or "ignore" ([GroupInviteAnswer]).
      */
@@ -786,6 +794,7 @@ sealed interface Message {
             "request_friend_link" -> RequestFriendLink
             "friend_link" -> FriendLink(o.getString("uri"))
             "friend_added" -> FriendAdded(o.getString("id"), o.optString("nick"))
+            "contact_ended" -> ContactEnded(o.optString("name"), o.optBoolean("friend"))
             "nudge_send" -> NudgeSend(o.getString("id"), o.nullableString("rider"))
             "nudge_in" -> NudgeIn(
                 o.getString("id"), o.getString("nudge"), o.getString("from"), o.optString("nick"), o.optInt("colour"),

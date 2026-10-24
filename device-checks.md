@@ -31,6 +31,18 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 - [ ] Pixel i en gruppetur: Kjørte → åpne en tur → «Del med gruppa», GPX → et spors meny → «Del med gruppa», og Planlagte → en turs meny → «Del med gruppa». X7 i samme gruppe får dem under Delte og kan kjøre dem. Uten gruppe sier appen hvor du starter en.
 - [ ] Pixel: GPX → et spors meny → «Legg i Planlagte»: sporet kommer under Planlagte og på nettsiden.
 
+## 2026-10-24 — Fartsskilt, veikort og samtale (1.2.6)
+
+- [ ] X7: Innstillinger → Visning → størst fartsgrenseskilt. Skiltet skal stikke ut over fartskortet (ikke klippes) når du kjører eller har demofart med grense.
+- [ ] Trykk på veikortet øverst til venstre: veiskiltene blir store og veinavnet står ved siden av, eller under hvis det ikke er plass. Etter ca. 6 sek eller trykk utenfor går det tilbake. Sjekk også på Pixel, stående og liggende.
+- [ ] Ring opp telefonen mens du snakker (svar): på X7-dashbordet skal samtalekortet få plassen og musikkspilleren krympe til én rad.
+
+## 2026-10-24 — Fjernet venn og utkastet fra gruppe (1.2.6)
+
+- [ ] To telefoner som er venner: slett vennen på den ene. Den andre skal få en melding «… fjernet deg som venn», og vennen skal være borte fra listen. Prøv også med den andre telefonen uten nett når du sletter, og slå på nett igjen etterpå (da kan beskjeden komme litt senere).
+- [ ] Gruppeeier sparker ut et medlem: på medlemmets telefon skal gruppa forsvinne av seg selv, med meldingen «Du ble fjernet fra …». Ingen manuell «forlat».
+- [ ] Koble to enheter (Mine enheter): har den ene «Rider» uten bilde og den andre et navn med bilde, skal navnet med bilde vinne på begge. Venner fra begge enheter skal ligge på begge.
+
 ## 2026-10-24 — Veiskiltet bare på veien (1.2.5)
 
 - [ ] Pixel/X7 på kafé eller parkering (fri kjøring): veiskiltet øverst til venstre forsvinner etter ca. 2 minutter stille, og kommer tilbake når du kjører igjen. Står du for rødt lys eller i kø, blir det stående.

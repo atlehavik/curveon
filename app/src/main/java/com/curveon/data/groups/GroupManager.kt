@@ -47,6 +47,10 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     private val _friendAdded = MutableSharedFlow<Message.FriendAdded>(extraBufferCapacity = 4)
     val friendAdded: SharedFlow<Message.FriendAdded> = _friendAdded
 
+    /** A friend or a group that has just gone from the list because the other side removed this rider: one line says why. */
+    private val _contactEnded = MutableSharedFlow<Message.ContactEnded>(extraBufferCapacity = 4)
+    val contactEnded: SharedFlow<Message.ContactEnded> = _contactEnded
+
     /** Riders trying to reach this rider, oldest first, until answered ([answerNudge]). */
     private val _nudges = MutableStateFlow<List<Message.NudgeIn>>(emptyList())
     val nudges: StateFlow<List<Message.NudgeIn>> = _nudges.asStateFlow()
@@ -162,6 +166,7 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 _friendInvite.value = null
                 _friendAdded.tryEmit(m)
             }
+            is Message.ContactEnded -> _contactEnded.tryEmit(m)
             // Paused in the group: nothing from it reaches the rider (friends still do).
             is Message.NudgeIn -> if (_nudges.value.none { it.nudgeId == m.nudgeId } && !(m.channelId == _activeId.value && !_sharing.value)) {
                 _nudges.value = _nudges.value + m

@@ -1048,6 +1048,8 @@
     <string name="friends_link_failed">Ekki tókst að búa til hlekkinn. Athugaðu netið og reyndu aftur.</string>
     <string name="friends_high_five_title">Fimma!</string>
     <string name="friends_high_five_text">Þú og %1$s eruð nú vinir</string>
+    <string name="friend_removed_you">%1$s fjarlægði þig sem vin</string>
+    <string name="group_removed_you">Þú varst fjarlægð(ur) úr %1$s</string>
     <string name="group_add_friends">Bæta vinum í hópinn</string>
     <string name="group_add_friends_none">Þú átt enga vini til að bæta við enn. Bættu við undir Vinir mínir.</string>
     <string name="group_add_friends_send">Senda boð</string>

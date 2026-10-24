@@ -308,6 +308,11 @@ fun FriendHighFive(manager: GroupManager) {
     var shown by remember { mutableStateOf<Message.FriendAdded?>(null) }
     val context = LocalContext.current
     LaunchedEffect(Unit) { manager.friendAdded.collect { shown = it } }
+    LaunchedEffect(Unit) {
+        manager.contactEnded.collect { m ->
+            android.widget.Toast.makeText(context, context.getString(if (m.friend) R.string.friend_removed_you else R.string.group_removed_you, m.name), android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
     val added = shown ?: return
     val friend = friends.firstOrNull { it.id == added.channelId } ?: Message.FriendInfo(added.channelId, added.nickname, 0xFF00E5FF.toInt(), null, null)
     val close = { shown = null }

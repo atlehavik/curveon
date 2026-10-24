@@ -121,7 +121,7 @@ fun MapSpeedCluster(
     // A tap shows the clock and batteries for a few seconds, even those switched off in Settings.
     var peek by remember { mutableStateOf(false) }
     LaunchedEffect(peek) { if (peek) { delay(5_000); peek = false } }
-    Box(modifier.clickable(interactionSource = null, indication = null) { peek = !peek }.animateContentSize().testTag("full_map_speed_cluster")) {
+    Box(modifier.clickable(interactionSource = null, indication = null) { peek = !peek }.testTag("full_map_speed_cluster")) {
         Box(Modifier.matchParentSize().background(CockpitSurface.copy(alpha = 0.92f), RoundedCornerShape(16.dp)).border(1.dp, border, RoundedCornerShape(16.dp)))
         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.End) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -355,22 +355,25 @@ fun CurrentRoadCard(
     /** The road's name next to the signs (for a moment after a tap on the card). */
     showName: Boolean = false
 ) {
-    Row(
+    // While the name shows, the road's signs grow, and the name wraps under them when it doesn't fit beside.
+    val sign = if (showName && road.name != null) scale * 1.6f else scale
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+    FlowRow(
         modifier
             .clip(RoundedCornerShape(16.dp))
             .background(CockpitSurface.copy(alpha = 0.92f))
             .border(1.dp, CockpitBorder, RoundedCornerShape(16.dp))
             .padding(horizontal = 12.dp * scale, vertical = 8.dp * scale)
             .testTag("current_road"),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp * scale)
+        horizontalArrangement = Arrangement.spacedBy(8.dp * scale),
+        verticalArrangement = Arrangement.spacedBy(4.dp * scale)
     ) {
-        road.ref?.let { RoadShield(it, 26.dp * scale) }
-        if (road.priority) PriorityRoadSign(30.dp * scale)
+        road.ref?.let { RoadShield(it, 26.dp * sign, Modifier.align(Alignment.CenterVertically)) }
+        if (road.priority) PriorityRoadSign(30.dp * sign, Modifier.align(Alignment.CenterVertically))
         if (showName && road.name != null) Text(road.name, color = TextPrimary, fontSize = (16 * scale).sp, fontWeight = FontWeight.Bold,
-            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false).testTag("current_road_name"))
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.align(Alignment.CenterVertically).testTag("current_road_name"))
         giveWay?.let { g ->
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("free_give_way")) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.CenterVertically).testTag("free_give_way")) {
                 if (g.stop) StopSign(30.dp * scale) else GiveWaySign(30.dp * scale)
                 if (g.distanceMeters >= 10) {
                     Spacer(Modifier.width(6.dp * scale))

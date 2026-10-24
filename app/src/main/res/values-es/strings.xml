@@ -1066,6 +1066,8 @@
     <string name="friends_link_failed">No se pudo crear el enlace. Comprueba la conexión a internet y vuelve a intentarlo.</string>
     <string name="friends_high_five_title">¡Choca esos cinco!</string>
     <string name="friends_high_five_text">%1$s y tú ya sois amigos</string>
+    <string name="friend_removed_you">%1$s te ha quitado de sus amigos</string>
+    <string name="group_removed_you">Te han sacado de %1$s</string>
     <string name="group_add_friends">Añadir amigos al grupo</string>
     <string name="group_add_friends_none">Aún no tienes amigos que añadir. Añádelos en Mis amigos.</string>
     <string name="group_add_friends_send">Enviar invitación</string>

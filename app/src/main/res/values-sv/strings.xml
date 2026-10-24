@@ -1049,6 +1049,8 @@
     <string name="friends_link_failed">Länken kunde inte skapas. Kontrollera internet och försök igen.</string>
     <string name="friends_high_five_title">High five!</string>
     <string name="friends_high_five_text">Du och %1$s är vänner nu</string>
+    <string name="friend_removed_you">%1$s tog bort dig som vän</string>
+    <string name="group_removed_you">Du togs bort från %1$s</string>
     <string name="group_add_friends">Lägg till vänner i gruppen</string>
     <string name="group_add_friends_none">Du har inga vänner att lägga till än. Lägg till några under Mina vänner.</string>
     <string name="group_add_friends_send">Skicka inbjudan</string>

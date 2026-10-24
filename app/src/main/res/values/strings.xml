@@ -1051,6 +1051,8 @@
     <string name="friends_link_failed">The link could not be made. Check the internet and try again.</string>
     <string name="friends_high_five_title">High five!</string>
     <string name="friends_high_five_text">You and %1$s are friends now</string>
+    <string name="friend_removed_you">%1$s removed you as a friend</string>
+    <string name="group_removed_you">You were removed from %1$s</string>
     <string name="group_add_friends">Add friends to the group</string>
     <string name="group_add_friends_none">You have no friends to add yet. Add some under My friends.</string>
     <string name="group_add_friends_send">Send invitation</string>

@@ -1000,6 +1000,8 @@
     <string name="friends_link_failed">Linkkiä ei voitu tehdä. Tarkista internetyhteys ja yritä uudelleen.</string>
     <string name="friends_high_five_title">Yläfemma!</string>
     <string name="friends_high_five_text">Sinä ja %1$s olette nyt kavereita</string>
+    <string name="friend_removed_you">%1$s poisti sinut kavereistaan</string>
+    <string name="group_removed_you">Sinut poistettiin ryhmästä %1$s</string>
     <string name="group_add_friends">Lisää kavereita ryhmään</string>
     <string name="group_add_friends_none">Sinulla ei vielä ole kavereita lisättäväksi. Lisää niitä kohdassa Kaverini.</string>
     <string name="group_add_friends_send">Lähetä kutsu</string>

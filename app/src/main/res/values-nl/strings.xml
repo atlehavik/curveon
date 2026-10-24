@@ -1021,6 +1021,8 @@
     <string name="friends_link_failed">De link kon niet worden gemaakt. Controleer je internet en probeer opnieuw.</string>
     <string name="friends_high_five_title">High five!</string>
     <string name="friends_high_five_text">Jij en %1$s zijn nu vrienden</string>
+    <string name="friend_removed_you">%1$s heeft je als vriend verwijderd</string>
+    <string name="group_removed_you">Je bent verwijderd uit %1$s</string>
     <string name="group_add_friends">Vrienden aan de groep toevoegen</string>
     <string name="group_add_friends_none">Je hebt nog geen vrienden om toe te voegen. Voeg ze toe onder Mijn vrienden.</string>
     <string name="group_add_friends_send">Uitnodiging sturen</string>
