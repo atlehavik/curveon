@@ -69,6 +69,64 @@ class PlannerTest {
     p.plan(body) // free again
   }
 
+  private val adventureBody = JSONObject("""{"points":[[59.79,5.14],[60.069,6.5459]],"area":[[59.6,5.1],[59.6,6.6],[60.2,6.6],[60.2,5.1]],"minutes":240,"variant":2,"options":{"style":"CURVY"}}""")
+
+  /** A straight line 100 km long, a point every km. */
+  private fun long() = Route(
+    (0..100).map { RoutePoint(59.0 + it * 0.009, 5.0, 0.0, it * 1000.0, it * 40.0, null, null, false, it in 10..20) }, emptyList(), 100_000.0, 4000.0, 5.0, 40, 0.0, 1,
+  )
+
+  @Test fun `an adventure is asked as the page asks it, and comes with points that keep it on its roads`() {
+    var got: AdventureAsk? = null
+    val r = Planner({ p, _ -> straight(p) }, { a -> got = a; long() }).adventure(adventureBody)
+    assertEquals(240, got!!.minutes); assertEquals(2, got!!.variant); assertEquals(4, got!!.area.size)
+    assertEquals(LatLon(60.069, 6.5459), got!!.destination)
+    val vias = r.getJSONArray("vias")
+    assertEquals(6, vias.length())
+    // None on the ferry (km 10 to 20).
+    for (i in 0 until vias.length()) assertFalse(vias.getJSONArray(i).getDouble(0) in 59.0 + 10 * 0.009..59.0 + 20 * 0.009)
+    assertEquals(100_000, r.getInt("m"))
+  }
+
+  @Test fun `an adventure without a time, or with too little`() {
+    var got: AdventureAsk? = null
+    Planner({ p, _ -> straight(p) }, { a -> got = a; long() }).adventure(JSONObject(adventureBody.toString()).put("minutes", JSONObject.NULL))
+    assertEquals(null, got!!.minutes)
+    val short = try {
+      Planner({ p, _ -> straight(p) }, { throw com.curveon.routing.NoAdventureException("quick", directMinutes = 95) }).adventure(adventureBody); null
+    } catch (e: PlanRefused) { e }
+    assertEquals("adventure_too_short", short?.code); assertEquals(95, short?.minutes)
+    assertEquals("no_adventure", refused { Planner({ p, _ -> straight(p) }, { throw com.curveon.routing.NoAdventureException("none") }).adventure(adventureBody) })
+    assertEquals("bad_request", refused { Planner({ p, _ -> straight(p) }).adventure(JSONObject(adventureBody.toString()).put("area", org.json.JSONArray("[[59,5],[60,6]]"))) })
+  }
+
+  @Test fun `an adventure takes every place, a route waits for it`() {
+    val release = CountDownLatch(1)
+    val p = Planner({ pts, _ -> straight(pts) }, { release.await(); long() }, parallel = 2, queue = 4, waitSeconds = 1)
+    val pool = Executors.newFixedThreadPool(1)
+    pool.submit { p.adventure(adventureBody) }
+    Thread.sleep(200)
+    assertEquals("busy", refused { p.plan(body) })
+    release.countDown()
+    pool.shutdown()
+    assertTrue(pool.awaitTermination(5, TimeUnit.SECONDS))
+    p.plan(body)
+  }
+
+  @Test fun `real adventure, Bomlo to Odda through Sunnhordland`() {
+    val segments = File(System.getProperty("curveon.segments") ?: "")
+    assumeTrue(File(segments, "E5_N55.rd5").exists())
+    val profiles = ProfileInstaller.install(Files.createTempDirectory("p").toFile())
+    val engine = BRouterEngine(segments, profiles, timeoutMillis = 45_000, memoryClassMb = 128)
+    val t0 = System.nanoTime()
+    val r = Planner(engine, com.curveon.routing.SurfaceReader(segments, File(profiles, "lookups.dat"))).adventure(adventureBody)
+    val km = r.getInt("m") / 1000.0
+    println("adventure: %.0f km, %d min, %.1f s".format(km, r.getInt("s") / 60, (System.nanoTime() - t0) / 1e9))
+    assertTrue("$km km", km in 120.0..450.0)
+    assertTrue("${r.getInt("s") / 60} min", r.getInt("s") <= 240 * 60 * 1.15)
+    assertTrue(r.getJSONArray("vias").length() >= 4)
+  }
+
   @Test fun `an address gets so many routes per window`() {
     var now = 0L
     val l = RateLimiter(perWindow = 2, windowMillis = 1000) { now }

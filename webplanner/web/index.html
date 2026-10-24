@@ -41,6 +41,17 @@
         <button id="undo" class="link" type="button" data-t="undo" hidden></button>
         <button id="clear" class="link" type="button" data-t="clear_all" hidden></button>
       </div>
+      <button id="adv" class="link" type="button" hidden>✦ <span data-t="adv_open"></span></button>
+      <section id="adv-box" hidden>
+        <b>✦ <span data-t="adv_title"></span></b>
+        <p id="adv-hint" class="hint"></p>
+        <label><span data-t="adv_time"></span> <select id="adv-time"></select></label>
+        <div class="buttons">
+          <button id="adv-again" class="primary" type="button" data-t="adv_again" hidden></button>
+          <button id="adv-redraw" type="button" data-t="adv_redraw" hidden></button>
+          <button id="adv-close" class="ghost" type="button" data-t="adv_close"></button>
+        </div>
+      </section>
 
       <div id="options">
         <label><span data-t="opt_style"></span>

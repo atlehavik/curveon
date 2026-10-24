@@ -2,6 +2,7 @@ package com.curveon.webplanner
 
 import com.curveon.routing.BRouterEngine
 import com.curveon.routing.ProfileInstaller
+import com.curveon.routing.SurfaceReader
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.json.JSONObject
@@ -12,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 /**
- * Serves `/api/route` (and, for trying it on a PC, the page itself from WEB_DIR). On the VPS Caddy is in front: it
+ * Serves `/api/route` and `/api/adventure` (and, for trying it on a PC, the page itself from WEB_DIR). On the VPS Caddy is in front: it
  * serves the page and the map from disk and hands only `/plan/api/…` to this. Nothing about riders is logged or kept.
  *
  * Environment: SEGMENTS (BRouter .rd5 files), PORT (8788), HOST (127.0.0.1), TRUST_PROXY=1 behind Caddy, WEB_DIR,
@@ -24,8 +25,11 @@ fun main() {
   require(segments.isDirectory) { "no segments in $segments" }
   val profiles = ProfileInstaller.install(Files.createTempDirectory("curveon-profiles").toFile())
   // 128 MB of decoded map data per search: two at once stay well inside the service's memory limit.
-  val planner = Planner(BRouterEngine(segments, profiles, timeoutMillis = 45_000, memoryClassMb = 128))
+  // The roads, read from the segments, put an adventure's anchors on them (as in the app).
+  val planner = Planner(BRouterEngine(segments, profiles, timeoutMillis = 45_000, memoryClassMb = 128), SurfaceReader(segments, File(profiles, "lookups.dat")))
   val limiter = RateLimiter(perWindow = 120, windowMillis = 10 * 60_000)
+  // An adventure is dozens of routes: fewer of them.
+  val adventures = RateLimiter(perWindow = 12, windowMillis = 10 * 60_000)
   val trustProxy = env["TRUST_PROXY"] == "1"
   val web = env["WEB_DIR"]?.let(::File)
   val map = env["MAP_DIR"]?.let(::File)
@@ -37,19 +41,20 @@ fun main() {
       val path = ex.requestURI.path.removePrefix("/plan")
       when {
         path == "/api/health" -> send(ex, 200, "text/plain", "ok\n".toByteArray())
-        path == "/api/route" && ex.requestMethod == "POST" -> {
+        (path == "/api/route" || path == "/api/adventure") && ex.requestMethod == "POST" -> {
           val ip = if (trustProxy) ex.requestHeaders.getFirst("X-Forwarded-For")?.split(',')?.last()?.trim() else null
-          if (!limiter.allow(ip ?: ex.remoteAddress.address.hostAddress)) throw PlanRefused(429, "slow_down")
-          val body = ex.requestBody.use { it.readNBytes(64 * 1024) }
+          val adventure = path == "/api/adventure"
+          if (!(if (adventure) adventures else limiter).allow(ip ?: ex.remoteAddress.address.hostAddress)) throw PlanRefused(429, "slow_down")
+          val body = ex.requestBody.use { it.readNBytes(256 * 1024) }
           val json = try { JSONObject(String(body)) } catch (_: Exception) { throw PlanRefused(400, "bad_request") }
-          sendJson(ex, 200, planner.plan(json))
+          sendJson(ex, 200, if (adventure) planner.adventure(json) else planner.plan(json))
         }
         map != null && path.startsWith("/map/") -> sendFile(ex, File(map, path.removePrefix("/map/")), map)
         web != null && ex.requestMethod == "GET" -> sendFile(ex, File(web, path.removePrefix("/").ifEmpty { "index.html" }), web)
         else -> send(ex, 404, "text/plain", ByteArray(0))
       }
     } catch (e: PlanRefused) {
-      sendJson(ex, e.status, JSONObject().put("error", e.code))
+      sendJson(ex, e.status, JSONObject().put("error", e.code).also { j -> e.minutes?.let { j.put("minutes", it) } })
     } catch (e: Exception) {
       System.err.println("planner: ${e.javaClass.simpleName}: ${e.message}")
       runCatching { sendJson(ex, 500, JSONObject().put("error", "failed")) }

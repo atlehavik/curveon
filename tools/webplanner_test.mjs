@@ -23,7 +23,8 @@ async function device(link, name) {
     if (m?.type === "plan") got.plans.push(m.body);
     if (m?.type === "plan_del") got.deletes.push(m.body.ref);
   };
-  await new Promise((r) => { ws.onopen = r; });
+  // A relay that turns the connection down (e.g. too many new groups from one address) fails the test, not hangs it.
+  await new Promise((r, j) => { ws.onopen = r; ws.onerror = () => j(new Error("the relay refused the device")); setTimeout(() => j(new Error("the relay did not answer")), 10000); });
   let seq = 0;
   const send = async (type, body, slot) => ws.send(await ch.seal(type, me, { seq: ++seq, ts: Date.now(), ...body }, slot));
   return {
@@ -140,6 +141,37 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     await page.mouse.up();
     check(dashed > 0, "desktop: a dashed line while dragging the route");
     check((await page.$$eval("#stops li", (e) => e.length)) === 3, "desktop: dragging the route made a via point");
+    await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+
+    // Adventure: draw round the trip with the mouse button held down; it comes back as via points along fun roads.
+    await page.click("#adv");
+    check(await page.isVisible("#adv-box") && (await page.textContent("#adv-hint")).length > 20, "desktop: Adventure asks for an area to be drawn");
+    const box = await page.evaluate(() => {
+      const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates;
+      const b = l.reduce((bb, c) => bb.extend(c), new maplibregl.LngLatBounds(l[0], l[0]));
+      m.fitBounds(b, { padding: { top: 120, bottom: 120, left: 520, right: 140 }, animate: false });
+      const r = m.getCanvas().getBoundingClientRect(); const sw = m.project(b.getSouthWest()); const ne = m.project(b.getNorthEast());
+      return { x0: r.left + sw.x, y0: r.top + ne.y, x1: r.left + ne.x, y1: r.top + sw.y };
+    });
+    await page.waitForTimeout(800);
+    const cx = (box.x0 + box.x1) / 2, cy = (box.y0 + box.y1) / 2, rx = (box.x1 - box.x0) / 2 + 70, ry = (box.y1 - box.y0) / 2 + 70;
+    await page.mouse.move(cx + rx, cy);
+    await page.mouse.down();
+    for (let k = 1; k <= 48; k++) await page.mouse.move(cx + rx * Math.cos((k / 48) * 2 * Math.PI), cy + ry * Math.sin((k / 48) * 2 * Math.PI));
+    await page.mouse.up();
+    check(!(await page.$(".menu")), "desktop: ending the drawing opens no menu");
+    await page.screenshot({ path: `${out}/${name}-0-adventure-searching.png` });
+    const t0 = Date.now();
+    await page.waitForSelector("#adv-again:not([hidden])", { timeout: 150000 });
+    const advStops = await page.$$eval(".pin", (e) => e.length);
+    check((await page.$$eval("#stops li", (e) => e.length)) === 3, "desktop: the adventure's via points are one line in the list");
+    check(advStops >= 6 && (await page.isVisible("#summary")) && !(await page.$eval("#adv-hint", (e) => e.classList.contains("error"))),
+      `desktop: an adventure came back as a trip with ${advStops - 2} via points in ${((Date.now() - t0) / 1000).toFixed(0)} s (${await page.textContent("#adv-hint")})`);
+    await page.screenshot({ path: `${out}/${name}-0-adventure.png` });
+    await page.click("#undo");
+    check((await page.$$eval("#stops li", (e) => e.length)) === 3, "desktop: undo goes back to the trip before the adventure");
+    await page.click("#adv-close");
+    check(await page.isHidden("#adv-box"), "desktop: the adventure box closes");
     await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
   }
   if (name === "phone") await page.click("#fold");

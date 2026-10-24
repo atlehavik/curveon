@@ -56,6 +56,7 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #stops li.via .dot { background: #fff; border: 3px solid var(--amber); width: 16px; height: 16px; margin: 0 4px; }
 #stops li .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #stops li.via .name { color: var(--muted); font-size: 13px; }
+#stops li.group .name { cursor: pointer; text-decoration: underline dotted; }
 #stops li button { padding: 2px 7px; border: none; color: var(--muted); }
 #stops li button:hover { color: var(--text); }
 
@@ -63,6 +64,13 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #edit-row:not(:has(button:not([hidden]))) { display: none; }
 #edit-row button { font-size: 14px; }
 #clear { color: var(--muted); font-weight: 500; }
+#adv { align-self: flex-start; }
+#adv-box { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 11px; border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); background: color-mix(in srgb, var(--amber) 8%, transparent); }
+#adv-box .hint { color: var(--text); }
+#adv-box .hint.error { color: var(--red); }
+#adv-box label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+#adv-box select { width: auto; flex: 1; }
+#adv-box .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 #options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #options label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
 

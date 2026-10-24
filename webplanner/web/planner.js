@@ -21,6 +21,18 @@ const TEXTS = {
     err_busy: "The planner is busy. Try again in a moment.", err_no_route: "No road found between these places. Move a point onto a road.",
     err_too_long: "That is too long for one trip (over 1500 km). Split it into days.", err_slow_down: "That was a lot of routes at once. Wait a few minutes.",
     err_outside: "Routes can be worked out in Europe so far. Move the points there.",
+    adv_open: "Adventure: fun roads on the way", adv_title: "Adventure",
+    adv_draw: "Hold the mouse button down and draw round the area you want to ride in on the way there.",
+    adv_draw_touch: "Draw round the area you want to ride in on the way there, with your finger.",
+    adv_stops: "The stops on the way give way to the adventure's roads (Undo brings them back).",
+    adv_time: "Longest time", adv_no_limit: "No limit", adv_hm: (h, m) => `${h}:${String(m).padStart(2, "0")} h`,
+    adv_time_explain: "The longest the trip may take, or no limit and the area decides. It can be shorter if the area has too few good roads.",
+    adv_searching: "Looking for an adventure… it often takes half a minute or so.",
+    adv_found: "Here is an adventure. Change it like any trip, or ask for another.",
+    adv_again: "Another suggestion", adv_redraw: "Draw again", adv_close: "Close",
+    adv_too_small: "Draw a bigger area round where you want to ride.",
+    err_no_adventure: "No adventure found in that area. Draw it bigger, or give more time.",
+    err_adventure_too_short: (m) => `The quickest way takes ${m} min. Give more time for an adventure.`,
     err_failed: "The route could not be worked out. Try again.", err_offline: "No connection to the planner. Check your internet connection.",
     name_hint: "Name of the trip", send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
     sending: "Sending…", sent_ok: "Sent. It shows under Planned in Curveon the next time the app is online.",
@@ -30,7 +42,7 @@ const TEXTS = {
     connect: "Show the QR code", connect_more: "Connect another device", connect_title: "Connect your phone or tablet",
     connect_why: "Then what you plan here goes straight to Curveon, and you can open the trips already there. Click the button, then in Curveon tap Planned → From the web and scan the code.",
     menu_start: "Start here", menu_end: "Destination here", menu_new_end: "New destination here", menu_stop: "Stop here",
-    menu_via: "Via point here", make_stop: "Make it a stop", make_via: "Make it a via point", drag_to_move: "Drag the point to move it.", make_end: "Make it the destination",
+    menu_via: "Via point here", make_stop: "Make it a stop", make_via: "Make it a via point", drag_to_move: "Drag the point to move it.", make_end: "Make it the destination", vias_n: (n) => `${n} via points`, show_all: "Show them all",
     clear_all: "Clear all points", confirm_clear: "Remove all the points on the map?", undo: "↶ Undo", undo_title: "Undo the last change (Ctrl+Z)",
     copy_coords: "Copy coordinates", copied: "Copied ✓", zoom_here: "Zoom in here", on_route: (k, n) => `km ${k} of ${n} on the route`,
     road_motorway: "Motorway", road_main: "Main road", road_secondary: "Secondary road", road_minor: "Minor road", road_local: "Local road",
@@ -63,6 +75,18 @@ const TEXTS = {
     err_busy: "Planleggeren har mye å gjøre. Prøv igjen om litt.", err_no_route: "Fant ingen vei mellom disse stedene. Flytt et punkt inn på en vei.",
     err_too_long: "Det er for langt for én tur (over 1500 km). Del den opp i dager.", err_slow_down: "Det ble mange ruter på kort tid. Vent noen minutter.",
     err_outside: "Ruter kan foreløpig bare regnes ut i Europa. Flytt punktene dit.",
+    adv_open: "Eventyr: morsomme veier på veien dit", adv_title: "Eventyr",
+    adv_draw: "Hold museknappen nede og tegn rundt området du vil kjøre i på veien dit.",
+    adv_draw_touch: "Tegn rundt området du vil kjøre i på veien dit, med fingeren.",
+    adv_stops: "Stoppene underveis viker for eventyrets veier (Angre henter dem tilbake).",
+    adv_time: "Lengste tid", adv_no_limit: "Ingen grense", adv_hm: (h, m) => `${h}:${String(m).padStart(2, "0")} t`,
+    adv_time_explain: "Lengste tid turen kan ta, eller ingen grense, så bestemmer området. Den kan bli kortere hvis området ikke har gode veier nok.",
+    adv_searching: "Leter etter et eventyr … det tar gjerne et halvt minutt eller så.",
+    adv_found: "Her er et eventyr. Endre det som en vanlig tur, eller be om et annet.",
+    adv_again: "Et annet forslag", adv_redraw: "Tegn på nytt", adv_close: "Lukk",
+    adv_too_small: "Tegn et større område rundt der du vil kjøre.",
+    err_no_adventure: "Fant ikke noe eventyr i det området. Prøv å tegne det større, eller gi mer tid.",
+    err_adventure_too_short: (m) => `Raskeste vei tar ${m} min. Be om mer tid for å få et eventyr.`,
     err_failed: "Ruten kunne ikke regnes ut. Prøv igjen.", err_offline: "Får ikke kontakt med planleggeren. Sjekk internettforbindelsen.",
     name_hint: "Navn på turen", send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
     sending: "Sender …", sent_ok: "Sendt. Den dukker opp under Planlagte i Curveon neste gang appen er på nett.",
@@ -72,7 +96,7 @@ const TEXTS = {
     connect: "Vis QR-koden", connect_more: "Koble til en enhet til", connect_title: "Koble til telefonen eller nettbrettet",
     connect_why: "Da havner det du planlegger her rett i Curveon, og du kan åpne turene som allerede ligger der. Trykk på knappen, og i Curveon trykker du Planlagte → Fra nettet og skanner koden.",
     menu_start: "Start her", menu_end: "Mål her", menu_new_end: "Nytt mål her", menu_stop: "Stopp her",
-    menu_via: "Hjelpepunkt her", make_stop: "Gjør til stopp", make_via: "Gjør til hjelpepunkt", drag_to_move: "Dra i punktet for å flytte det.", make_end: "Gjør til mål",
+    menu_via: "Hjelpepunkt her", make_stop: "Gjør til stopp", make_via: "Gjør til hjelpepunkt", drag_to_move: "Dra i punktet for å flytte det.", make_end: "Gjør til mål", vias_n: (n) => `${n} hjelpepunkter`, show_all: "Vis alle",
     clear_all: "Fjern alle punktene", confirm_clear: "Fjerne alle punktene på kartet?", undo: "↶ Angre", undo_title: "Angre siste endring (Ctrl+Z)",
     copy_coords: "Kopier koordinater", copied: "Kopiert ✓", zoom_here: "Zoom inn hit", on_route: (k, n) => `km ${k} av ${n} på ruten`,
     road_motorway: "Motorvei", road_main: "Hovedvei", road_secondary: "Sekundærvei", road_minor: "Mindre vei", road_local: "Lokalvei",
@@ -129,6 +153,11 @@ let points = [];
 let result = null; // the planner's answer for these points and options (or the device's saved line)
 let editing = null;
 let viewOnly = false;
+/** An adventure being drawn or looked for, while its box is open: { area: [[lat, lon]], ends: [start, destination], variant, drawing, stroke }. */
+let adv = null;
+let advCtl = null;
+/** The via points in a row shown one by one in the list, not as one line. */
+let viasOpen = false;
 let options = Object.assign({ style: "CURVY", surface: "PAVED", ferries: false, motorways: false, trunk: false }, store.get("options", {}));
 /** The connected devices, by their id on the channel: { dev, ids: [trip ids, newest first], trips: Map id → trip, at }. */
 const devices = new Map();
@@ -182,6 +211,10 @@ function withRoute(style) {
   style.sources.route = { type: "geojson", data: routeData() };
   const at = style.layers.findIndex((l) => l.id.startsWith("places_"));
   style.layers.splice(at < 0 ? style.layers.length : at, 0,
+    // An adventure's area, under the route (and the place names).
+    { id: "area-fill", type: "fill", source: "area", paint: { "fill-color": "#ff9100", "fill-opacity": 0.1 } },
+    { id: "area-line", type: "line", source: "area", layout: { "line-join": "round" },
+      paint: { "line-color": "#ff9100", "line-width": 2.5, "line-opacity": 0.8, "line-dasharray": [2, 1.5] } },
     { id: "route-casing", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": "#5a3000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 10, 16, 14] } },
     { id: "route", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
@@ -191,6 +224,7 @@ function withRoute(style) {
     { id: "drag-line", type: "line", source: "drag", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": theme === "dark" ? "#00e5ff" : "#0091ea", "line-width": 4, "line-opacity": 0.9, "line-dasharray": [1.2, 1.2] } });
   style.sources.drag = { type: "geojson", data: emptyLine() };
+  style.sources.area = { type: "geojson", data: areaData() };
   return style;
 }
 map.on("load", showOnline);
@@ -302,8 +336,26 @@ function drawList() {
   remember();
   const ol = $("stops");
   ol.replaceChildren();
+  // Three via points or more in a row (an adventure has up to 16) are one line, opened with a click.
+  const runOf = (i) => { let n = 0; while (i + n < points.length && kindOf(i + n) === "via") n++; return n; };
   points.forEach((p, i) => {
     const kind = kindOf(i);
+    if (kind === "via" && !viasOpen) {
+      const first = kindOf(i - 1) !== "via";
+      let from = i; while (kindOf(from - 1) === "via") from--;
+      const n = runOf(from);
+      if (n >= 3) {
+        if (first) {
+          const li = el("li", "via group");
+          const name = el("span", "name", t("vias_n", n));
+          name.title = t("show_all");
+          name.onclick = () => { viasOpen = true; drawList(); };
+          li.append(el("span", "dot", ""), name);
+          ol.append(li);
+        }
+        return;
+      }
+    }
     const li = el("li", kind);
     const name = el("span", "name", kind === "via" ? t("via") : p.name || t("map_point"));
     name.title = name.textContent;
@@ -317,6 +369,7 @@ function drawList() {
   });
   $("clear").hidden = points.length === 0;
   $("undo").hidden = undoStack.length === 0;
+  drawAdventure();
   $("undo").title = t("undo_title");
   $("hint").textContent = viewOnly ? t("view_only") : editing?.ref ? t("editing_from", editing.dev) : t("hint_empty");
   $("hint").hidden = !viewOnly && !editing?.ref && points.length >= 2;
@@ -584,7 +637,7 @@ map.on("touchstart", "route-hit", (e) => { if (e.points.length === 1) startLineD
 
 function startLineDrag(e) {
   // Only the left button drags the line (the right one asks about the road there).
-  if (!result || viewOnly || points.length < 2 || onPinOrMenu(e) || e.originalEvent.button > 0) return;
+  if (!result || viewOnly || adv?.drawing || points.length < 2 || onPinOrMenu(e) || e.originalEvent.button > 0) return;
   e.preventDefault();
   closeMenu();
   draggingLine = true;
@@ -632,6 +685,7 @@ let routeTimer;
 
 /** The places or options changed: the road is worked out again (a trip opened from a device keeps its line until then). */
 function changed() {
+  advCtl?.abort();
   drawList();
   drawMarkers();
   result = null;
@@ -670,6 +724,153 @@ async function route() {
     clearTimeout(slow);
   }
 }
+
+// ---------- Adventure ----------
+// As in the app: from the start to the destination, the most fun roads inside an area the rider draws, within a time.
+// The answer becomes an ordinary trip (via points along it), to change and send like any other.
+const touchy = matchMedia("(pointer: coarse)").matches;
+
+function areaData() {
+  const a = adv?.drawing ? adv.stroke : adv?.area;
+  if (!a || a.length < 2) return emptyLine();
+  const ring = a.map(([la, lo]) => [lo, la]);
+  return adv.drawing ? { type: "Feature", geometry: { type: "LineString", coordinates: ring } }
+    : { type: "Feature", geometry: { type: "Polygon", coordinates: [[...ring, ring[0]]] } };
+}
+const drawArea = () => map.getSource("area")?.setData(areaData());
+
+function openAdventure() {
+  closeMenu();
+  adv = { area: null, ends: [points[0], points[points.length - 1]], variant: 0, drawing: false, stroke: [] };
+  startDrawing();
+}
+
+function startDrawing() {
+  advCtl?.abort();
+  Object.assign(adv, { drawing: true, stroke: [], area: null });
+  map.dragPan.disable();
+  map.getCanvas().style.cursor = "crosshair";
+  drawArea();
+  drawAdventure(t(touchy ? "adv_draw_touch" : "adv_draw") + (points.length > 2 ? " " + t("adv_stops") : ""));
+}
+
+function stopDrawing() {
+  map.dragPan.enable();
+  map.getCanvas().style.cursor = "";
+  if (adv) adv.drawing = false;
+}
+
+function closeAdventure() {
+  advCtl?.abort();
+  stopDrawing();
+  adv = null;
+  drawArea();
+  drawAdventure();
+}
+
+/** The box in the panel: what to do now, the longest time, and what to do next. */
+function drawAdventure(text, error = false) {
+  $("adv").hidden = !!adv || viewOnly || !hasEnd();
+  $("adv-box").hidden = !adv;
+  if (!adv) return;
+  if (text !== undefined) { $("adv-hint").textContent = text; $("adv-hint").classList.toggle("error", error); }
+  $("adv-again").hidden = !adv.area || !!advCtl;
+  $("adv-redraw").hidden = adv.drawing || !!advCtl;
+}
+
+function fillTimes() {
+  const sel = $("adv-time");
+  const keep = sel.value;
+  sel.replaceChildren(el("option", "", t("adv_no_limit")), ...[60, 90, 120, 150, 180, 240, 300, 360, 480].map((m) => {
+    const o = el("option", "", t("adv_hm", Math.floor(m / 60), m % 60));
+    o.value = String(m);
+    return o;
+  }));
+  sel.firstChild.value = "";
+  sel.value = keep;
+  sel.title = t("adv_time_explain");
+}
+
+// Drawing the area: mouse button or one finger held down, round the area.
+function strokeAt(e) {
+  const s = adv.stroke, ll = e.lngLat, last = s[s.length - 1];
+  if (last) { const a = map.project([last[1], last[0]]); if (Math.hypot(a.x - e.point.x, a.y - e.point.y) < 4) return; }
+  s.push([ll.lat, ll.lng]);
+  drawArea();
+}
+let stroking = false;
+function strokeStart(e) {
+  if (!adv?.drawing || (e.originalEvent.button ?? 0) !== 0) return;
+  if (e.points && e.points.length !== 1) return;
+  e.preventDefault();
+  stroking = true;
+  adv.stroke = [];
+  strokeAt(e);
+}
+function strokeMove(e) { if (stroking && adv?.drawing) strokeAt(e); }
+function strokeEnd() {
+  if (!stroking || !adv?.drawing) return;
+  stroking = false;
+  // The click that ends the stroke is not a click on the map.
+  draggingLine = true;
+  setTimeout(() => { draggingLine = false; }, 50);
+  // Round enough to be an area: some 8 km round at the least, as in the app.
+  const s = adv.stroke;
+  let m = 0;
+  for (let k = 1; k <= s.length; k++) {
+    const a = s[k - 1], b = s[k % s.length];
+    m += Math.hypot(a[0] - b[0], (a[1] - b[1]) * Math.cos((a[0] * Math.PI) / 180)) * 111195;
+  }
+  if (s.length < 8 || m < 8000) { adv.stroke = []; drawArea(); drawAdventure(t("adv_too_small"), true); return; }
+  // Thinned for the request: a point every few pixels is plenty.
+  adv.area = s.filter((_, k) => k % Math.ceil(s.length / 400) === 0);
+  stopDrawing();
+  drawArea();
+  findAdventure();
+}
+map.on("mousedown", strokeStart);
+map.on("touchstart", strokeStart);
+map.on("mousemove", strokeMove);
+map.on("touchmove", strokeMove);
+map.on("mouseup", strokeEnd);
+map.on("touchend", strokeEnd);
+
+async function findAdventure() {
+  routeCtl?.abort();
+  clearTimeout(routeTimer);
+  advCtl?.abort();
+  const ctl = (advCtl = new AbortController());
+  const minutes = $("adv-time").value ? Number($("adv-time").value) : null;
+  drawAdventure(t("adv_searching"));
+  setStatus("");
+  try {
+    const r = await fetch(BASE + "api/adventure", {
+      method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ points: adv.ends.map((p) => [p.lat, p.lon]), area: adv.area, minutes, variant: adv.variant, options: routeOptions() }),
+    });
+    const j = await r.json().catch(() => ({ error: "failed" }));
+    if (advCtl !== ctl) return;
+    advCtl = null;
+    if (!r.ok) { drawAdventure(t("err_" + (j.error || "failed"), j.minutes), true); return; }
+    const [a, b] = adv.ends;
+    points = [{ ...a }, ...j.vias.map(([lat, lon]) => ({ name: "", lat, lon, via: true })), { ...b }];
+    delete points[points.length - 1].stop;
+    result = j;
+    viasOpen = false;
+    drawList(); drawMarkers(); drawRoute(); drawSummary();
+    drawAdventure(t("adv_found"));
+  } catch (e) {
+    if (e.name === "AbortError" || advCtl !== ctl) return;
+    advCtl = null;
+    drawAdventure(t("err_offline"), true);
+  }
+}
+
+$("adv").addEventListener("click", openAdventure);
+$("adv-again").addEventListener("click", () => { adv.variant++; findAdventure(); });
+$("adv-redraw").addEventListener("click", startDrawing);
+$("adv-close").addEventListener("click", closeAdventure);
+$("adv-time").addEventListener("change", () => { if (adv?.area) findAdventure(); });
 
 function routeOptions() {
   return { style: options.style, surface: options.surface, ferries: options.ferries, motorways: options.motorways, trunk: options.trunk, toll: false };
@@ -951,12 +1152,14 @@ $("clear").addEventListener("click", () => {
   if (points.length > 2 && !confirm(t("confirm_clear"))) return;
   points = [];
   closeMenu();
+  closeAdventure();
   changed();
 });
 $("new").addEventListener("click", () => {
   if (result && !editing && !viewOnly && !confirm(t("confirm_new"))) return;
   points = []; editing = null; viewOnly = false; $("name").value = "";
   closeMenu();
+  closeAdventure();
   changed();
   drawDevices();
 });
@@ -968,7 +1171,7 @@ $("theme").addEventListener("click", async () => {
   map.setStyle(withRoute(await loadStyle()));
   map.once("idle", showOnline);
 });
-$("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); drawList(); drawSummary(); drawDevices(); drawPending(); });
+$("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); fillTimes(); drawList(); drawSummary(); drawDevices(); drawPending(); });
 $("fold").addEventListener("click", () => {
   const folded = $("panel").classList.toggle("folded");
   $("fold").ariaExpanded = String(!folded);
@@ -976,6 +1179,7 @@ $("fold").addEventListener("click", () => {
 });
 
 applyTexts();
+fillTimes();
 showOptions();
 drawList();
 drawDevices();
