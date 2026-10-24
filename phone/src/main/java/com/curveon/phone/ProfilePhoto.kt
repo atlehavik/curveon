@@ -43,6 +43,11 @@ object ProfilePhoto {
         val exif = resolver.openInputStream(uri)?.use { ExifInterface(it) }
         val rotation = exif?.let { rotationOf(it) } ?: 0f
         val mirror = selfie && !isBackCamera(resolver, uri)
+        // TEMPORARY: what does the camera write in a selfie file, with and without its "keep selfies as previewed"?
+        android.util.Log.i("ProfilePhoto", "selfie=$selfie orientation=${exif?.getAttributeInt(ExifInterface.TAG_ORIENTATION, -1)} " +
+            "size=${decoded.width}x${decoded.height} mirror=$mirror all=" + listOf("Make", "Model", "Software", "UserComment", "ImageDescription",
+            "SubjectArea", "SceneType", "SceneCaptureType", "DigitalZoomRatio", "FocalLength", "FocalLengthIn35mmFilm", "ExposureProgram", "Flash")
+            .joinToString { "$it=${exif?.getAttribute(it)}" })
         if (rotation == 0f && !mirror) decoded
         else Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply {
             postRotate(rotation)
