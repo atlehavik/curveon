@@ -9,13 +9,13 @@ const TEXTS = {
   en: {
     title: "Curveon planner", search_hint: "Search for a place, or click the map", lang: "Norsk",
     theme_dark: "Dark map", theme_light: "Light map",
-    hint_empty: "Click the map or search to set where you start. Every place you add after that becomes where you are going, and the one before it a stop. Drag the line to make it take another road.",
+    hint_empty: "Click the map or search to choose where you start, then where you are going. Click a point to change or remove it, drag it to move it, and drag the line to take another road. Right-click adds a point straight away.",
     opt_style: "Roads", opt_surface: "Surface", opt_ferries: "Ferries", opt_motorways: "Motorways",
     style_fastest: "Fastest", style_curvy: "Curvy", style_super_curvy: "Super curvy",
     surface_tarmac_only: "Tarmac only", surface_mixed: "Mixed", surface_gravel: "Gravel", surface_offroad: "Offroad",
     ferries_ok: "Ferries OK", no_ferries: "No ferries", motorways_ok: "Motorways OK", no_motorways: "No motorways",
     no_motorways_e_roads: "No motorways or E-roads",
-    start: "Start", via: "Through here", map_point: "Map point", remove: "Remove", up: "Earlier", down: "Later",
+    start: "Start", via: "Via point", map_point: "Map point", remove: "Remove", up: "Earlier", down: "Later",
     km: "km", h: "h", min: "min", curvy: "curvy", up_m: "m climb", ferries_n: (n) => n === 1 ? "1 ferry" : `${n} ferries`,
     routing: "Finding the road…", queued: "Busy right now, your route is next in line…",
     err_busy: "The planner is busy. Try again in a moment.", err_no_route: "No road found between these places. Move a point onto a road.",
@@ -27,7 +27,10 @@ const TEXTS = {
     updated_ok: (d) => `Sent. The trip on ${d} is updated the next time the app is online.`,
     send_failed: "The trip could not be sent. Check your internet connection and try again.",
     pending_title: "Waiting for Curveon", waiting: "Not fetched yet", forget: "Remove from this list",
-    connect: "Connect Curveon", connect_more: "Connect another device", connected_to: (d) => `Connected to ${d}`,
+    connect: "Show the QR code", connect_more: "Connect another device", connect_title: "Connect your phone or tablet",
+    connect_why: "Then what you plan here goes straight to Curveon, and you can open the trips already there. Click the button, then in Curveon tap Planned → From the web and scan the code.",
+    menu_start: "Start here", menu_end: "Destination here", menu_new_end: "New destination here", menu_stop: "Stop here",
+    menu_via: "Via point here", make_stop: "Make it a stop", make_via: "Make it a via point", drag_to_move: "Drag the point to move it.", connected_to: (d) => `Connected to ${d}`,
     on_device: (d) => `On ${d}`, no_trips: "No planned trips there yet.", loose: "Not in a group",
     edit: "Open to work on it", delete_on: (d) => `Delete from ${d}`,
     confirm_delete: (n, d) => `Delete “${n}” from ${d}? It is gone from Planned there the next time the app is online.`,
@@ -43,13 +46,13 @@ const TEXTS = {
   nb: {
     title: "Curveon-planlegger", search_hint: "Søk etter et sted, eller klikk i kartet", lang: "English",
     theme_dark: "Mørkt kart", theme_light: "Lyst kart",
-    hint_empty: "Klikk i kartet eller søk for å velge hvor du starter. Hvert sted du legger til etter det blir målet, og det forrige blir et stopp. Dra i linjen for å få den til å ta en annen vei.",
+    hint_empty: "Klikk i kartet eller søk for å velge hvor du starter, og så hvor du skal. Klikk på et punkt for å endre eller fjerne det, dra i det for å flytte det, og dra i linjen for å ta en annen vei. Høyreklikk legger til et punkt med en gang.",
     opt_style: "Veier", opt_surface: "Underlag", opt_ferries: "Ferjer", opt_motorways: "Motorvei",
     style_fastest: "Raskest", style_curvy: "Svingete", style_super_curvy: "Supersvingete",
     surface_tarmac_only: "Kun asfalt", surface_mixed: "Blandet", surface_gravel: "Grus", surface_offroad: "Offroad",
     ferries_ok: "Ferjer OK", no_ferries: "Ingen ferjer", motorways_ok: "Motorvei OK", no_motorways: "Ingen motorvei",
     no_motorways_e_roads: "Ingen motorvei eller E-vei",
-    start: "Start", via: "Gjennom her", map_point: "Kartpunkt", remove: "Fjern", up: "Tidligere", down: "Senere",
+    start: "Start", via: "Hjelpepunkt", map_point: "Kartpunkt", remove: "Fjern", up: "Tidligere", down: "Senere",
     km: "km", h: "t", min: "min", curvy: "svingete", up_m: "m stigning", ferries_n: (n) => n === 1 ? "1 ferje" : `${n} ferjer`,
     routing: "Finner veien …", queued: "Travelt akkurat nå, ruten din står først i køen …",
     err_busy: "Planleggeren har mye å gjøre. Prøv igjen om litt.", err_no_route: "Fant ingen vei mellom disse stedene. Flytt et punkt inn på en vei.",
@@ -61,7 +64,10 @@ const TEXTS = {
     updated_ok: (d) => `Sendt. Turen på ${d} oppdateres neste gang appen er på nett.`,
     send_failed: "Turen ble ikke sendt. Sjekk internettforbindelsen og prøv igjen.",
     pending_title: "Venter på Curveon", waiting: "Ikke hentet ennå", forget: "Fjern fra listen",
-    connect: "Koble til Curveon", connect_more: "Koble til en enhet til", connected_to: (d) => `Koblet til ${d}`,
+    connect: "Vis QR-koden", connect_more: "Koble til en enhet til", connect_title: "Koble til telefonen eller nettbrettet",
+    connect_why: "Da havner det du planlegger her rett i Curveon, og du kan åpne turene som allerede ligger der. Trykk på knappen, og i Curveon trykker du Planlagte → Fra nettet og skanner koden.",
+    menu_start: "Start her", menu_end: "Mål her", menu_new_end: "Nytt mål her", menu_stop: "Stopp her",
+    menu_via: "Hjelpepunkt her", make_stop: "Gjør til stopp", make_via: "Gjør til hjelpepunkt", drag_to_move: "Dra i punktet for å flytte det.", connected_to: (d) => `Koblet til ${d}`,
     on_device: (d) => `På ${d}`, no_trips: "Ingen planlagte turer der ennå.", loose: "Uten gruppe",
     edit: "Åpne for å jobbe med den", delete_on: (d) => `Slett fra ${d}`,
     confirm_delete: (n, d) => `Slette «${n}» fra ${d}? Den forsvinner fra Planlagte der neste gang appen er på nett.`,
@@ -150,7 +156,10 @@ const map = new maplibregl.Map({
   attributionControl: { compact: true, customAttribution: t("attribution") },
   // Where the map is stays in the address (#zoom/lat/lon): a view can be shared, and comes back on reload.
   hash: true,
+  // No turning the map (there is no compass to set it straight again): the right button adds points instead.
+  dragRotate: false, pitchWithRotate: false, touchPitch: false,
 });
+map.touchZoomRotate.disableRotation();
 if (params.has("debug")) window.curveonMap = map; // for tools/webplanner_test.mjs
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: false }, trackUserLocation: false }), "top-right");
@@ -167,7 +176,11 @@ function withRoute(style) {
       paint: { "line-color": "#5a3000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 10, 16, 14] } },
     { id: "route", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": "#ff9100", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 6, 16, 9] } },
-    { id: "route-hit", type: "line", source: "route", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 22 } });
+    { id: "route-hit", type: "line", source: "route", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 22 } },
+    // While dragging: the dashed guess from the place before, through the pointer, to the place after (as in the app).
+    { id: "drag-line", type: "line", source: "drag", layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": theme === "dark" ? "#00e5ff" : "#0091ea", "line-width": 4, "line-opacity": 0.9, "line-dasharray": [1.2, 1.2] } });
+  style.sources.drag = { type: "geojson", data: emptyLine() };
   return style;
 }
 map.on("load", showOnline);
@@ -200,6 +213,12 @@ function drawRoute() {
   map.getSource("route")?.setData(routeData());
 }
 
+/** The dashed guess while dragging, through [ll] between the places [prev] and [next] (either may be missing). */
+function drawDrag(prev, ll, next) {
+  const c = [prev && [prev.lon, prev.lat], ll && [ll.lng, ll.lat], next && [next.lon, next.lat]].filter(Boolean);
+  map.getSource("drag")?.setData(c.length >= 2 ? { type: "Feature", geometry: { type: "LineString", coordinates: c } } : emptyLine());
+}
+
 function fitTo(coords) {
   if (!coords.length) return;
   const b = coords.reduce((bb, [la, lo]) => bb.extend([lo, la]), new maplibregl.LngLatBounds([coords[0][1], coords[0][0]], [coords[0][1], coords[0][0]]));
@@ -220,16 +239,19 @@ function drawMarkers() {
     const e = el("div", "pin " + kind, pinText(kind, i));
     e.title = p.name || t(kind === "via" ? "via" : "map_point");
     const m = new maplibregl.Marker({ element: e, draggable: true }).setLngLat([p.lon, p.lat]).addTo(map);
-    m.on("dragstart", () => { draggingLine = true; });
+    m.on("dragstart", () => { draggingLine = true; closeMenu(); });
+    m.on("drag", () => drawDrag(points[i - 1], m.getLngLat(), points[i + 1]));
     m.on("dragend", async () => {
       const ll = m.getLngLat();
-      points[i] = { ...points[i], lat: ll.lat, lon: ll.lng };
+      drawDrag();
+      const moved = (points[i] = { ...points[i], lat: ll.lat, lon: ll.lng });
       setTimeout(() => { draggingLine = false; }, 50);
       changed();
-      if (!points[i].via) { points[i].name = await placeName(ll.lat, ll.lng); drawList(); }
+      if (!moved.via) { moved.name = await placeName(ll.lat, ll.lng); drawList(); drawSummary(); }
     });
-    // A click on a through-point removes it: it was only there to bend the line.
-    e.addEventListener("click", (ev) => { ev.stopPropagation(); if (points[i]?.via) { points.splice(i, 1); changed(); } });
+    // A click asks what to do with the point; a right-click removes it at once. (A drag ends in a click too: not that one.)
+    e.addEventListener("click", (ev) => { ev.stopPropagation(); if (!draggingLine) pointMenu(p); });
+    e.addEventListener("contextmenu", (ev) => { ev.preventDefault(); ev.stopPropagation(); removePoint(p); });
     return m;
   });
 }
@@ -259,6 +281,90 @@ function addPlace(p) {
   if (viewOnly) { viewOnly = false; result = null; editing = null; }
   points.push({ name: p.name, lat: p.lat, lon: p.lon, via: false });
   changed();
+}
+
+function removePoint(p) {
+  const i = points.indexOf(p);
+  if (i >= 0) { points.splice(i, 1); changed(); }
+}
+
+/**
+ * A clicked place [p] ({ lat, lon, naming: Promise of its name }) put in as [kind]: start or destination at the end,
+ * a stop or via point on the leg it bends least.
+ */
+async function addAt(p, kind) {
+  if (viewOnly) { viewOnly = false; result = null; editing = null; points = []; }
+  const pt = { name: t("map_point"), lat: p.lat, lon: p.lon, via: kind === "via" };
+  if (kind === "start" || kind === "end") points.push(pt);
+  else points.splice(bestLeg(pt) + 1, 0, pt);
+  changed();
+  if (kind === "via") return;
+  pt.name = await p.naming;
+  if (points.includes(pt)) { drawList(); drawMarkers(); drawSummary(); }
+}
+
+/** The leg (points[i] to points[i + 1]) that [p] lengthens least, as the crow flies. */
+function bestLeg(p) {
+  const d = (a, b) => Math.hypot(a.lat - b.lat, (a.lon - b.lon) * Math.cos((a.lat * Math.PI) / 180));
+  let best = 0, bd = Infinity;
+  for (let i = 0; i < points.length - 1; i++) {
+    const v = d(points[i], p) + d(p, points[i + 1]) - d(points[i], points[i + 1]);
+    if (v < bd) { bd = v; best = i; }
+  }
+  return best;
+}
+
+// ---------- The little menu on the map ----------
+let menu = null;
+function closeMenu() { menu?.remove(); menu = null; }
+
+/** A menu at [ll] with a [title] and [items] ([label, action, class]); returns the title, to name the place once known. */
+function showMenu(ll, title, items, note) {
+  closeMenu();
+  const box = el("div", "menu");
+  const head = el("div", "menu-title", title);
+  box.append(head);
+  for (const [label, fn, cls] of items) {
+    const b = el("button", cls || "", label);
+    b.type = "button";
+    b.onclick = (ev) => { ev.stopPropagation(); closeMenu(); fn(); };
+    box.append(b);
+  }
+  if (note) box.append(el("small", "", note));
+  // On a phone the sheet covers the bottom of the map: the menu goes above the point unless that is near the top.
+  const y = map.project(ll).y;
+  const anchor = innerWidth <= 640 ? (y < 220 ? "top" : "bottom") : undefined;
+  menu = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: "curveon-menu", offset: 16, maxWidth: "280px", anchor })
+    .setLngLat(ll).setDOMContent(box).addTo(map);
+  return head;
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+
+/** What a click on the map can make of the place: start first, then destination, then a stop, via point or new destination. */
+function placeMenu(ll) {
+  const p = { lat: ll.lat, lon: ll.lng };
+  p.naming = placeName(p.lat, p.lon);
+  const n = viewOnly ? 0 : points.length;
+  const items = n === 0 ? [[t("menu_start"), () => addAt(p, "start")]]
+    : n === 1 ? [[t("menu_end"), () => addAt(p, "end")]]
+    : [[t("menu_stop"), () => addAt(p, "stop")], [t("menu_via"), () => addAt(p, "via")], [t("menu_new_end"), () => addAt(p, "end")]];
+  const head = showMenu(ll, "…", items);
+  p.naming.then((name) => { head.textContent = name; });
+}
+
+/** A click on a point: a stop can become a via point and back, and any point can go. Dragging moves it. */
+function pointMenu(p) {
+  const i = points.indexOf(p);
+  if (i < 0) return;
+  const kind = kindOf(i);
+  const items = [];
+  if (kind === "stop") items.push([t("make_via"), () => { p.via = true; drawList(); drawMarkers(); }]);
+  if (kind === "via") items.push([t("make_stop"), async () => {
+    p.via = false; drawList(); drawMarkers();
+    if (!p.name) { p.name = await placeName(p.lat, p.lon); drawList(); drawMarkers(); }
+  }]);
+  items.push([t("remove"), () => removePoint(p), "danger"]);
+  showMenu([p.lon, p.lat], kind === "via" ? t("via") : p.name || t("map_point"), items, t("drag_to_move"));
 }
 
 // ---------- Search ----------
@@ -334,13 +440,22 @@ async function placeName(lat, lon) {
 
 // ---------- Clicking and dragging on the map ----------
 let draggingLine = false;
-map.on("click", async (e) => {
-  if (draggingLine) return;
-  const p = { name: t("map_point"), lat: e.lngLat.lat, lon: e.lngLat.lng };
-  addPlace(p);
-  const i = points.length - 1;
-  const name = await placeName(p.lat, p.lon);
-  if (points[i] && points[i].lat === p.lat) { points[i].name = name; drawList(); drawMarkers(); }
+// The map hears clicks on the points and the menu before they do: those are theirs.
+const onPinOrMenu = (e) => !!e.originalEvent.target.closest?.(".maplibregl-marker, .maplibregl-popup");
+// A click asks what the place should be; a click beside an open menu only closes it.
+map.on("click", (e) => {
+  if (draggingLine || onPinOrMenu(e)) return;
+  if (menu) { closeMenu(); return; }
+  placeMenu(e.lngLat);
+});
+// A right-click puts the place straight in, without asking: the start, else the new destination.
+map.on("contextmenu", (e) => {
+  e.preventDefault();
+  if (onPinOrMenu(e)) return;
+  closeMenu();
+  const p = { lat: e.lngLat.lat, lon: e.lngLat.lng };
+  p.naming = placeName(p.lat, p.lon);
+  addAt(p, !viewOnly && points.length ? "end" : "start");
 });
 
 // Drag the line: a through-point goes in where it was grabbed, on the leg it belongs to.
@@ -350,16 +465,26 @@ map.on("mousedown", "route-hit", (e) => startLineDrag(e));
 map.on("touchstart", "route-hit", (e) => { if (e.points.length === 1) startLineDrag(e); });
 
 function startLineDrag(e) {
-  if (!result || viewOnly || points.length < 2) return;
+  if (!result || viewOnly || points.length < 2 || onPinOrMenu(e)) return;
   e.preventDefault();
+  closeMenu();
   draggingLine = true;
   const leg = legAt(e.lngLat);
+  const from = e.point;
+  let moved = false;
   const ghost = new maplibregl.Marker({ element: el("div", "pin via") }).setLngLat(e.lngLat).addTo(map);
-  const move = (ev) => ghost.setLngLat(ev.lngLat);
+  const move = (ev) => {
+    moved ||= Math.hypot(ev.point.x - from.x, ev.point.y - from.y) > 4;
+    ghost.setLngLat(ev.lngLat);
+    drawDrag(points[leg], ev.lngLat, points[leg + 1]);
+  };
   const up = () => {
     map.off("mousemove", move); map.off("touchmove", move);
     const ll = ghost.getLngLat();
     ghost.remove();
+    drawDrag();
+    // Only a click on the line, not a drag: the click that follows asks what the place should be.
+    if (!moved) { draggingLine = false; return; }
     points.splice(leg + 1, 0, { name: "", lat: ll.lat, lon: ll.lng, via: true });
     changed();
     setTimeout(() => { draggingLine = false; }, 50);
@@ -592,6 +717,10 @@ function drawDevices() {
   const names = [...devices.values()].filter((d) => d.at).map((d) => d.dev);
   $("session").textContent = names.length ? t("connected_to", names.join(", ")) : "";
   $("session").hidden = !names.length;
+  // Not connected yet: a card that says what connecting gives and how; connected, only a quiet link for one more.
+  $("session-row").classList.toggle("unpaired", !names.length);
+  $("connect-intro").hidden = !!names.length;
+  $("pair").className = names.length ? "link" : "primary";
   $("pair").textContent = names.length ? t("connect_more") : t("connect");
 }
 
@@ -698,6 +827,7 @@ $("pair").addEventListener("click", showPairing);
 $("new").addEventListener("click", () => {
   if (result && !editing && !viewOnly && !confirm(t("confirm_new"))) return;
   points = []; editing = null; viewOnly = false; $("name").value = "";
+  closeMenu();
   changed();
   drawDevices();
 });

@@ -55,17 +55,63 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   const fitsInside = async (sel) => page.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; });
 
   // Drawn before connecting: it stays and becomes part of the session.
-  const clickAt = async (lat, lon) => {
+  const clickAt = async (lat, lon, button) => {
     const p = await page.evaluate(([la, lo]) => { const m = window.curveonMap; m.jumpTo({ center: [lo, la], zoom: 9 }); const q = m.project([lo, la]); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y }; }, [lat, lon]);
     await page.waitForTimeout(300);
-    await page.mouse.click(p.x, p.y);
+    await page.mouse.click(p.x, p.y, button ? { button } : {});
+    return p;
   };
+  // A click asks what the place is: first only the start, then the destination, then stop, via point or new destination.
+  const menuItems = () => page.$$eval(".menu button", (b) => b.map((x) => x.textContent));
+  const pick = async (label) => { await page.locator(".menu button", { hasText: label }).click(); await page.waitForTimeout(200); };
+  check(await page.isVisible("#connect-intro") && (await page.getAttribute("#pair", "class")) === "primary", `${name}: not connected: a card says how to connect`);
   if (name === "phone") await page.click("#fold");
   await clickAt(59.7795, 5.2049);
+  check(JSON.stringify(await menuItems()) === JSON.stringify([name === "phone" ? "Start her" : "Start here"]), `${name}: the first click offers the start (${await menuItems()})`);
+  if (name === "phone") await page.screenshot({ path: `${out}/${name}-0-menu.png` });
+  await pick(name === "phone" ? "Start her" : "Start here");
   await clickAt(60.0689, 6.5462);
+  check((await menuItems()).length === 1, `${name}: the second click offers the destination (${await menuItems()})`);
+  await pick(name === "phone" ? "Mål her" : "Destination here");
   if (name === "phone") await page.click("#fold");
   await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
   check(true, `${name}: a route drawn before connecting`);
+
+  // With a route: a third click offers stop, via point and new destination; a click on a point offers to change or remove it.
+  if (name === "phone") await page.click("#fold");
+  await clickAt(59.95, 5.9);
+  check((await menuItems()).length === 3, `${name}: a third click offers stop, via point, new destination (${await menuItems()})`);
+  if (name === "desktop") await page.screenshot({ path: `${out}/${name}-0-menu.png` });
+  await pick(name === "phone" ? "Stopp her" : "Stop here");
+  check((await page.$$eval("#stops li", (e) => e.length)) === 3 && (await page.$$eval("#stops li", (e) => e[1].className)) === "stop", `${name}: the stop went in between start and destination`);
+  await page.locator(".pin.stop").click();
+  check((await menuItems()).length === 2, `${name}: a click on a stop offers via point and remove (${await menuItems()})`);
+  await pick(name === "phone" ? "Gjør til hjelpepunkt" : "Make it a via point");
+  check((await page.$$eval("#stops li", (e) => e[1].className)) === "via", `${name}: the stop became a via point`);
+  await page.locator(".pin.via").click();
+  await pick(name === "phone" ? "Fjern" : "Remove");
+  check((await page.$$eval("#stops li", (e) => e.length)) === 2, `${name}: the via point was removed`);
+  if (name === "desktop") {
+    // Right-click puts a point straight in (a new destination), and right-click on it takes it away again.
+    await clickAt(59.95, 5.9, "right");
+    check((await page.$$eval("#stops li", (e) => e.length)) === 3 && !(await page.$(".menu")), "desktop: right-click adds a destination without asking");
+    await page.locator(".pin.end").click({ button: "right" });
+    check((await page.$$eval("#stops li", (e) => e.length)) === 2, "desktop: right-click on a point removes it");
+    await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+    // Dragging the line: a dashed guess through the pointer while dragging, a via point after.
+    const mid = await page.evaluate(() => { const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; const c = l[Math.floor(l.length / 2)]; const q = m.project(c); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y }; });
+    await page.mouse.move(mid.x, mid.y);
+    await page.mouse.down();
+    await page.mouse.move(mid.x + 40, mid.y + 60, { steps: 5 });
+    await page.waitForTimeout(200);
+    const dashed = await page.evaluate(() => window.curveonMap.querySourceFeatures("drag").length);
+    await page.screenshot({ path: `${out}/${name}-0-drag.png` });
+    await page.mouse.up();
+    check(dashed > 0, "desktop: a dashed line while dragging the route");
+    check((await page.$$eval("#stops li", (e) => e.length)) === 3, "desktop: dragging the route made a via point");
+    await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+  }
+  if (name === "phone") await page.click("#fold");
 
   // Connect: the code shows, a device scans it and shows its trips, and the code goes away by itself.
   await page.locator("#pair").scrollIntoViewIfNeeded();
@@ -81,7 +127,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   await page.waitForSelector(".device ul.trips li", { timeout: 10000 });
   const listed = await page.$$eval(".device", (els) => els.map((e) => e.innerText.replace(/\s+/g, " ")));
   check(/test pixel/i.test(listed[0] || "") && listed[0].includes("Helgetur") && listed[0].includes("Sommer"), `${name}: the device's trips in their groups (${listed[0]})`);
-  check((await page.$$eval("#stops li", (e) => e.length)) === 2, `${name}: what was drawn is still on the map`);
+  check((await page.$$eval("#stops li", (e) => e.length)) === (name === "desktop" ? 3 : 2), `${name}: what was drawn is still on the map`);
   await page.screenshot({ path: `${out}/${name}-2-session.png` });
 
   // Send what was drawn: a new trip on the device.

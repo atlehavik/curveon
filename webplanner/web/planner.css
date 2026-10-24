@@ -71,6 +71,9 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #send-row button { flex: none; }
 
 #session-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+#session-row.unpaired { flex-direction: column; align-items: stretch; padding: 12px; border-radius: 11px; background: color-mix(in srgb, var(--amber) 13%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); }
+#connect-intro { display: flex; flex-direction: column; gap: 4px; }
+#connect-intro .hint { color: var(--text); }
 #session { color: var(--green); font-weight: 600; font-size: 14px; }
 #session::before { content: "● "; }
 button.link { border: none; padding: 2px 0; color: var(--amber-ink); font-weight: 600; text-align: left; }
@@ -103,6 +106,16 @@ dialog form { display: flex; justify-content: flex-end; margin-top: 12px; }
 .pin.start { background: var(--green); }
 .pin.end { background: var(--red); }
 .pin.via { width: 16px; height: 16px; background: #fff; border: 3px solid var(--amber); }
+
+/* The little menu on the map (a click on the map or on a point). */
+.curveon-menu .maplibregl-popup-tip { display: none; }
+.curveon-menu .maplibregl-popup-content { background: var(--panel); color: var(--text); border-radius: 12px; padding: 6px; box-shadow: var(--shadow); }
+.menu { display: flex; flex-direction: column; min-width: 190px; font: 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.menu-title { font-weight: 600; padding: 6px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.menu button { border: none; text-align: left; padding: 9px 10px; border-radius: 8px; }
+.menu button:hover, .menu button:focus-visible { background: color-mix(in srgb, var(--amber) 16%, transparent); outline: none; }
+.menu button.danger { color: var(--red); }
+.menu small { color: var(--muted); padding: 4px 10px; font-size: 13px; }
 
 /* Phone: the panel becomes a sheet at the bottom, folded down to its header when the map needs the room. */
 @media (max-width: 640px) {
