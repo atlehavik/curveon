@@ -1,0 +1,1 @@
+Pictures attached to bug reports and ideas sent from the Curveon app (Settings → Help). Each issue links its own pictures. Nothing here is part of the app.
