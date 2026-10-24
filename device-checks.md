@@ -6,6 +6,13 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — Nettplanleggeren: koble fra, midtknapp, farger, ikoner
+
+- [ ] PC: «Koble fra» ved «Koble til en enhet til»: bekreft. Siden viser QR-kortet igjen og ingen av turene dine. På Pixelen: Planlagte → Fra nettet → «Koble fra» fjerner koblingen der også. Skann så koden på nytt: turene kommer tilbake.
+- [ ] PC: start en rundtur og hold midtre museknapp nede mens du drar: kartet flyttes, uten at det tegnes. Etter tegningen står «Rundtur: Regner ut … 5 s» øverst på kartet, og området pulserer til turen er klar.
+- [ ] PC: velg Underlag Grus eller Offroad: ruten er blå, grus oransje og traktorveier lilla, som i appen. Rullegardinene Veier, Underlag, Ferjer og Motorvei har et ikon for hvert valg.
+- [ ] PC: åpne en rundtur eller kjørt tur fra Pixelen (den som bare kan vises), og klikk på linjen: «Hjelpepunkt her» gjør den til en tur du kan endre og sende som ny.
+
 ## 2026-10-24 — Nettplanleggeren: dager, høyder, steder, rundtur
 
 - [ ] PC (relay.curveon.no/plan): legg inn et stopp, klikk det og velg «Overnatt her». Lista viser «Dag 1» og «Dag 2» med km og tid. Send med «Hver dag som egen tur». Pixel: to turer under Planlagte, «… – dag 1» og «… – dag 2», og dag 2 starter der dag 1 slutter.

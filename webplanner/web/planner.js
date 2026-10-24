@@ -9,7 +9,7 @@ const TEXTS = {
   en: {
     title: "Curveon planner", search_hint: "Search for a place, or click the map", lang: "Norsk",
     theme_dark: "Dark map", theme_light: "Light map",
-    hint_empty: "Click the map or search to choose where you start, then where you are going. Click a point to change or remove it, drag it to move it, and drag the line to take another road. Right-click tells you about the road there.",
+    hint_empty: "Click the map or search to choose where you start, then where you are going. Click a point to change or remove it, drag it to move it. Click the line to put a via point or stop there, or drag it to take another road. Right-click tells you about the road there; the middle mouse button moves the map, also while drawing.",
     opt_style: "Roads", opt_surface: "Surface", opt_ferries: "Ferries", opt_motorways: "Motorways",
     style_fastest: "Fastest", style_curvy: "Curvy", style_super_curvy: "Super curvy",
     surface_tarmac_only: "Tarmac only", surface_mixed: "Mixed", surface_gravel: "Gravel", surface_offroad: "Offroad",
@@ -56,7 +56,7 @@ const TEXTS = {
     on_device: (d) => `On ${d}`, no_trips: "No planned trips there yet.", loose: "Not in a group",
     edit: "Open to work on it", delete_on: (d) => `Delete from ${d}`,
     confirm_delete: (n, d) => `Delete “${n}” from ${d}? It is gone from Planned there the next time the app is online.`,
-    view_only: "A line without stops (a ride kept as a trip, or a loop): it can be shown here, not changed.",
+    view_only: "A line without stops (a ride kept as a trip, or a loop). Click the line to put a via point or stop on it: it then becomes a trip to change, and goes to Curveon as a new one.",
     editing_from: (d) => `Opened from ${d}: Update changes the trip there.`,
     new_trip: "New trip",
     pair_title: "Connect Curveon to this page", pair_step1: "Open Curveon on your phone or tablet.",
@@ -87,11 +87,15 @@ const TEXTS = {
     layer_food: "Food and coffee", layer_ferries: "Ferries", layer_motorcycle: "Motorcycle shops and workshops",
     save_gpx: "Save as GPX", share: "Copy link", link_copied: "Link copied. Whoever opens it sees this trip and can change it.",
     opened_link: "Opened from a link. Change it, save it as a draft, or send it to Curveon.",
+    disconnect: "Disconnect",
+    confirm_disconnect: (d) => `Disconnect ${d}? This browser forgets the connection, so nobody using it can see or change the trips there. To connect again, scan the code again.`,
+    disconnected: "Disconnected. This browser can no longer reach your phone or tablet. To remove it there too: Planned → From the web → Disconnect.",
+    seconds: (n) => `${n} s`,
   },
   nb: {
     title: "Curveon-planlegger", search_hint: "Søk etter et sted, eller klikk i kartet", lang: "English",
     theme_dark: "Mørkt kart", theme_light: "Lyst kart",
-    hint_empty: "Klikk i kartet eller søk for å velge hvor du starter, og så hvor du skal. Klikk på et punkt for å endre eller fjerne det, dra i det for å flytte det, og dra i linjen for å ta en annen vei. Høyreklikk forteller om veien der.",
+    hint_empty: "Klikk i kartet eller søk for å velge hvor du starter, og så hvor du skal. Klikk på et punkt for å endre eller fjerne det, dra i det for å flytte det. Klikk på linjen for å legge et hjelpepunkt eller stopp der, eller dra i den for å ta en annen vei. Høyreklikk forteller om veien der; midtre museknapp flytter kartet, også mens du tegner.",
     opt_style: "Veier", opt_surface: "Underlag", opt_ferries: "Ferjer", opt_motorways: "Motorvei",
     style_fastest: "Raskest", style_curvy: "Svingete", style_super_curvy: "Supersvingete",
     surface_tarmac_only: "Kun asfalt", surface_mixed: "Blandet", surface_gravel: "Grus", surface_offroad: "Offroad",
@@ -138,7 +142,7 @@ const TEXTS = {
     on_device: (d) => `På ${d}`, no_trips: "Ingen planlagte turer der ennå.", loose: "Uten gruppe",
     edit: "Åpne for å jobbe med den", delete_on: (d) => `Slett fra ${d}`,
     confirm_delete: (n, d) => `Slette «${n}» fra ${d}? Den forsvinner fra Planlagte der neste gang appen er på nett.`,
-    view_only: "En linje uten stopp (en kjørt tur lagret som tur, eller en rundtur): den kan vises her, men ikke endres.",
+    view_only: "En linje uten stopp (en kjørt tur lagret som tur, eller en rundtur). Klikk på linjen for å legge et hjelpepunkt eller stopp på den: da blir den en tur du kan endre, og den går til Curveon som en ny tur.",
     editing_from: (d) => `Åpnet fra ${d}: Oppdater endrer turen der.`,
     new_trip: "Ny tur",
     pair_title: "Koble Curveon til denne siden", pair_step1: "Åpne Curveon på telefonen eller nettbrettet.",
@@ -169,6 +173,10 @@ const TEXTS = {
     layer_food: "Mat og kaffe", layer_ferries: "Ferjer", layer_motorcycle: "MC-butikker og verksteder",
     save_gpx: "Lagre som GPX", share: "Kopier lenke", link_copied: "Lenken er kopiert. Den som åpner den, ser turen og kan endre den.",
     opened_link: "Åpnet fra en lenke. Endre den, lagre den som utkast, eller send den til Curveon.",
+    disconnect: "Koble fra",
+    confirm_disconnect: (d) => `Koble fra ${d}? Denne nettleseren glemmer koblingen, så ingen som bruker den kan se eller endre turene der. Skann koden på nytt for å koble til igjen.`,
+    disconnected: "Koblet fra. Denne nettleseren kommer ikke lenger til telefonen eller nettbrettet ditt. For å fjerne koblingen der også: Planlagte → Fra nettet → Koble fra.",
+    seconds: (n) => `${n} s`,
   },
 };
 
@@ -200,6 +208,7 @@ function applyTexts() {
   $("theme").title = t(theme === "dark" ? "theme_light" : "theme_dark");
   $("theme").ariaLabel = $("theme").title;
   $("fold").textContent = $("panel").classList.contains("folded") ? "▴" : "▾";
+  if (typeof iconSelects !== "undefined") drawSelects();
 }
 
 // ---------- State ----------
@@ -274,6 +283,7 @@ function withRoute(style) {
   style.sources.route = { type: "geojson", data: routeData() };
   style.sources["cv-alt"] = { type: "geojson", data: altData() };
   style.sources["cv-gap"] = { type: "geojson", data: gapData() };
+  style.sources["cv-surface"] = { type: "geojson", data: surfData() };
   style.sources["cv-hover"] = { type: "geojson", data: emptyLine() };
   style.sources["cv-pois"] = { type: "geojson", data: poiData() };
   const at = style.layers.findIndex((l) => l.id.startsWith("places_"));
@@ -287,16 +297,19 @@ function withRoute(style) {
     // The other road styles, while they are compared: thin, under the route.
     { id: "cv-alt", type: "line", source: "cv-alt", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": theme === "dark" ? "#9aa3b2" : "#6b7280", "line-width": 3, "line-opacity": 0.75, "line-dasharray": [1.5, 1] } },
+    // As in the app: blue, gravel orange and tracks purple on top of it, with a light (or, at night, dark) edge.
     { id: "route-casing", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
-      paint: { "line-color": "#5a3000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 10, 16, 14] } },
+      paint: { "line-color": theme === "dark" ? "#00363d" : "#ffffff", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 6, 12, 11, 16, 16] } },
     { id: "route", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
-      paint: { "line-color": "#ff9100", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 6, 16, 9] } },
+      paint: { "line-color": theme === "dark" ? "#00e5ff" : "#0091ea", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3.5, 12, 7, 16, 11] } },
+    { id: "cv-surface", type: "line", source: "cv-surface", layout: { "line-join": "round", "line-cap": "butt" },
+      paint: { "line-color": ["match", ["get", "k"], 2, "#d500f9", "#ff9100"], "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3.5, 12, 7, 16, 11] } },
     // The longest stretch without fuel, when the rider asks to see it.
     { id: "cv-gap", type: "line", source: "cv-gap", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": "#d50000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 6, 16, 9], "line-dasharray": [1, 1] } },
     { id: "route-hit", type: "line", source: "route", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 22 } },
     // Where the pointer is on the height profile.
-    { id: "cv-hover", type: "circle", source: "cv-hover", paint: { "circle-radius": 7, "circle-color": "#ffffff", "circle-stroke-color": "#5a3000", "circle-stroke-width": 3 } },
+    { id: "cv-hover", type: "circle", source: "cv-hover", paint: { "circle-radius": 7, "circle-color": "#ffffff", "circle-stroke-color": "#004a77", "circle-stroke-width": 3 } },
     // Places on the map (fuel, viewpoints, …), their names from close up.
     { id: "cv-pois", type: "symbol", source: "cv-pois",
       layout: { "icon-image": ["concat", "poi-", ["get", "k"]], "icon-size": 1, "icon-allow-overlap": false, "icon-padding": 1,
@@ -338,12 +351,24 @@ const lineFeature = (line) => ({ type: "Feature", geometry: { type: "LineString"
 function routeData() { return result ? lineFeature(result.line) : emptyLine(); }
 function altData() { return { type: "FeatureCollection", features: alts.map((a) => lineFeature(a.line)) }; }
 function gapData() { return gapLine ? lineFeature(gapLine) : emptyLine(); }
+/** The route's gravel (k 1) and track (k 2) stretches, each its part of the line. */
+function surfData() {
+  const r = result;
+  if (!r?.surf?.length || r.line.length < 2) return emptyLine();
+  const along = alongOf(r);
+  const at = (m) => { let a = 0, b = along.length - 1; while (b - a > 1) { const mid = (a + b) >> 1; if (along[mid] <= m) a = mid; else b = mid; } return a; };
+  return { type: "FeatureCollection", features: r.surf.map(([from, to, k]) => {
+    const line = r.line.slice(at(from), Math.min(r.line.length, at(to) + 2));
+    return line.length < 2 ? null : { ...lineFeature(line), properties: { k } };
+  }).filter(Boolean) };
+}
 
 function drawRoute() {
   if (!result) gapLine = null;
   map.getSource("route")?.setData(routeData());
   map.getSource("cv-gap")?.setData(gapData());
   map.getSource("cv-alt")?.setData(altData());
+  map.getSource("cv-surface")?.setData(surfData());
 }
 
 /** The dashed guess while dragging, through [ll] between the places [prev] and [next] (either may be missing). */
@@ -629,15 +654,18 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(
  * point on that part of it.
  */
 function placeMenu(ll, onRoute, known) {
+  // A line shown only (a device's ride or loop): a via point or stop on it first makes it a trip with points along it.
+  const shown = viewOnly && onRoute;
   const p = { lat: ll.lat, lon: ll.lng };
   p.naming = known ? Promise.resolve(known) : placeName(p.lat, p.lon);
-  const n = viewOnly ? 0 : points.length;
-  const leg = onRoute && n >= 2 ? legAt(ll) : undefined;
+  const n = viewOnly && !shown ? 0 : points.length;
+  const leg = onRoute && !shown && n >= 2 ? legAt(ll) : undefined;
+  const onLine = (kind) => () => { if (shown) lineToTrip(); addAt(p, kind, shown ? legAt(ll) : leg); };
   // The number a stop would get where it goes in.
   const stopNo = (at) => String(points.slice(1, at + 1).filter((_, k) => kindOf(k + 1) === "stop").length + 1);
-  const at = leg ?? (hasEnd() ? bestLeg(p) : points.length - 1);
-  const items = n === 0 ? [[t("menu_start"), () => addAt(p, "start"), "", ["start", "A"]]]
-    : onRoute ? [[t("menu_via"), () => addAt(p, "via", leg), "", ["via"]], [t("menu_stop"), () => addAt(p, "stop", leg), "", ["stop", stopNo(at)]]]
+  const at = shown ? 0 : leg ?? (hasEnd() ? bestLeg(p) : points.length - 1);
+  const items = onRoute ? [[t("menu_via"), onLine("via"), "", ["via"]], [t("menu_stop"), onLine("stop"), "", ["stop", stopNo(at)]]]
+    : n === 0 ? [[t("menu_start"), () => addAt(p, "start"), "", ["start", "A"]]]
     : [[t("menu_via"), () => addAt(p, "via"), "", ["via"]], [t("menu_stop"), () => addAt(p, "stop"), "", ["stop", stopNo(at)]],
       [t(hasEnd() ? "menu_new_end" : "menu_end"), () => addAt(p, "end"), "", ["end", "B"]]];
   const head = showMenu(ll, "…", items);
@@ -736,6 +764,52 @@ async function placeName(lat, lon) {
   }
 }
 
+/**
+ * The line on the map as a trip: its ends as start and destination and points along it about every 15 km (as an
+ * adventure has), so that it is routed along the same roads when changed. A new trip: the device's own stays as it was.
+ */
+function pointsAlong(line, m) {
+  let next = 0, along = 0;
+  const count = Math.max(2, Math.min(16, Math.round(m / 15000)));
+  const vias = [];
+  for (let k = 1; k < line.length - 1; k++) {
+    along += Math.hypot(line[k][0] - line[k - 1][0], (line[k][1] - line[k - 1][1]) * Math.cos((line[k][0] * Math.PI) / 180)) * 111195;
+    if (next < count && along >= (m * (next + 1)) / (count + 1)) { vias.push({ name: "", lat: line[k][0], lon: line[k][1], via: true }); next++; }
+  }
+  const [a, b] = [line[0], line[line.length - 1]];
+  return [{ name: t("start"), lat: a[0], lon: a[1], via: false }, ...vias, { name: t("map_point"), lat: b[0], lon: b[1], via: false }];
+}
+function lineToTrip() {
+  if (!viewOnly || !result) return;
+  points = pointsAlong(result.line, result.m);
+  viewOnly = false;
+  editing = null;
+  viasOpen = false;
+  forgetUndo();
+  for (const p of [points[0], points[points.length - 1]]) placeName(p.lat, p.lon).then((n) => { p.name = n; drawList(); drawMarkers(); });
+}
+
+// ---------- The middle mouse button moves the map ----------
+// Always, also while an area is drawn (when the left button draws), as in most map and drawing programs.
+map.getCanvasContainer().addEventListener("mousedown", (e) => {
+  if (e.button !== 1) return;
+  e.preventDefault(); // no autoscroll
+  let last = [e.clientX, e.clientY];
+  const cursor = map.getCanvas().style.cursor;
+  map.getCanvas().style.cursor = "grabbing";
+  const move = (ev) => { map.panBy([last[0] - ev.clientX, last[1] - ev.clientY], { animate: false }); last = [ev.clientX, ev.clientY]; };
+  const up = (ev) => {
+    if (ev.button !== 1) return;
+    removeEventListener("mousemove", move);
+    removeEventListener("mouseup", up);
+    map.getCanvas().style.cursor = cursor;
+  };
+  addEventListener("mousemove", move);
+  addEventListener("mouseup", up);
+});
+// Linux pastes on a middle click: not on the map.
+map.getCanvasContainer().addEventListener("auxclick", (e) => { if (e.button === 1) e.preventDefault(); });
+
 // ---------- Clicking and dragging on the map ----------
 let draggingLine = false;
 // The map hears clicks on the points and the menu before they do: those are theirs.
@@ -751,7 +825,7 @@ map.on("click", (e) => {
     placeMenu({ lat, lng: lon }, false, poi.properties.name || t("layer_" + poi.properties.k));
     return;
   }
-  placeMenu(e.lngLat, !!result && !viewOnly && map.queryRenderedFeatures(e.point, { layers: ["route-hit"] }).length > 0);
+  placeMenu(e.lngLat, !!result && map.queryRenderedFeatures(e.point, { layers: ["route-hit"] }).length > 0);
 });
 map.on("mouseenter", "cv-pois", () => { if (!adv?.drawing) map.getCanvas().style.cursor = "pointer"; });
 map.on("mouseleave", "cv-pois", () => { if (!adv?.drawing) map.getCanvas().style.cursor = ""; });
@@ -826,14 +900,16 @@ function infoMenu(ll, pt) {
 }
 
 // Drag the line: a through-point goes in where it was grabbed, on the leg it belongs to.
-map.on("mouseenter", "route-hit", () => { if (!viewOnly) map.getCanvas().style.cursor = "grab"; });
+map.on("mouseenter", "route-hit", () => { map.getCanvas().style.cursor = "grab"; });
 map.on("mouseleave", "route-hit", () => { map.getCanvas().style.cursor = ""; });
 map.on("mousedown", "route-hit", (e) => startLineDrag(e));
 map.on("touchstart", "route-hit", (e) => { if (e.points.length === 1) startLineDrag(e); });
 
 function startLineDrag(e) {
   // Only the left button drags the line (the right one asks about the road there).
-  if (!result || viewOnly || adv?.drawing || points.length < 2 || onPinOrMenu(e) || e.originalEvent.button > 0) return;
+  if (!result || adv?.drawing || onPinOrMenu(e) || e.originalEvent.button > 0) return;
+  if (viewOnly) lineToTrip();
+  if (points.length < 2) return;
   e.preventDefault();
   closeMenu();
   draggingLine = true;
@@ -910,6 +986,33 @@ function changed() {
   routeTimer = setTimeout(route, 200);
 }
 
+/**
+ * While the planner works for more than a moment: a chip on the map with what it does and the seconds so far, and an
+ * adventure's or roundtrip's area breathing. Returns the function that ends it.
+ */
+function busy(label, delay = 700) {
+  const t0 = Date.now();
+  let timer = null, pulse = null;
+  const show = () => {
+    const sec = Math.floor((Date.now() - t0) / 1000);
+    $("busy-text").textContent = label + (sec >= 2 ? " " + t("seconds", sec) : "");
+    $("busy").hidden = false;
+  };
+  const start = setTimeout(() => {
+    show();
+    timer = setInterval(show, 1000);
+    if (adv?.area) {
+      let k = 0;
+      pulse = setInterval(() => { if (map.getLayer("area-fill")) map.setPaintProperty("area-fill", "fill-opacity", 0.08 + 0.14 * (0.5 + 0.5 * Math.sin(k++ / 3))); }, 120);
+    }
+  }, delay);
+  return () => {
+    clearTimeout(start); clearInterval(timer); clearInterval(pulse);
+    if (map.getLayer("area-fill")) map.setPaintProperty("area-fill", "fill-opacity", 0.1);
+    $("busy").hidden = true;
+  };
+}
+
 function setStatus(text, error = false) {
   $("status").textContent = text || "";
   $("status").classList.toggle("error", error);
@@ -950,9 +1053,10 @@ async function legsFor(pts, o, signal, tab, onLeg = () => {}) {
 
 /** One trip from its legs: the line and heights end to end, where each point is on it (cuts), and the numbers. */
 function joinLegs(legs) {
-  const line = [], ele = [], cuts = [0], fuel = [];
+  const line = [], ele = [], cuts = [0], fuel = [], surf = [];
   let m = 0, deg = 0;
   legs.forEach((l, n) => {
+    for (const [a, b, k] of l.surf || []) surf.push([m + a, m + b, k]);
     for (const f of l.fuel || []) if (!fuel.length || m + f[0] > fuel[fuel.length - 1][0] + 50) fuel.push([m + f[0], f[1], f[2], f[3]]);
     for (let k = n === 0 ? 0 : 1; k < l.line.length; k++) { line.push(l.line[k]); ele.push(l.ele?.[k] ?? 0); }
     cuts.push(line.length - 1);
@@ -965,6 +1069,7 @@ function joinLegs(legs) {
     curvy: m ? Math.min(100, Math.floor(deg / m / 3)) : 0, ferries: sum("ferries"), unpaved: sum("unpaved"),
     // Fuel only when the service knows the stations (else nothing is said about it).
     fuel: legs.every((l) => l.fuel) ? fuel : null,
+    surf,
     legs: legs.map((l) => ({ m: l.m, s: l.s, up: l.up, dpk: l.dpk, ferries: l.ferries, unpaved: l.unpaved, arrive: l.arrive })),
   };
 }
@@ -979,8 +1084,9 @@ function adoptLegs(r, pts, o) {
   r.legs.forEach((l, n) => {
     const [a, b] = [r.cuts[n], r.cuts[n + 1]];
     const fuel = r.fuel?.filter((f) => f[0] >= along && f[0] < along + l.m).map((f) => [f[0] - along, f[1], f[2], f[3]]);
+    const surf = (r.surf || []).filter(([x, y]) => y > along && x < along + l.m).map(([x, y, k]) => [Math.max(0, x - along), Math.min(l.m, y - along), k]);
     keepLeg(pts[n], pts[n + 1], o, n === 0 ? null : r.legs[n - 1].arrive,
-      { ...l, line: r.line.slice(a, b + 1), ele: r.ele ? r.ele.slice(a, b + 1) : null, ...(r.fuel ? { fuel } : {}) });
+      { ...l, line: r.line.slice(a, b + 1), ele: r.ele ? r.ele.slice(a, b + 1) : null, surf, ...(r.fuel ? { fuel } : {}) });
     along += l.m;
   });
 }
@@ -992,6 +1098,7 @@ async function route() {
   const pts = points.slice(), o = routeOptions();
   setStatus(t("routing"));
   const slow = setTimeout(() => { if (routeCtl === ctl) setStatus(t("queued")); }, 6000);
+  const done = busy(t("routing"), 1200);
   try {
     // The legs there already show while the rest are worked out.
     const legs = await legsFor(pts, o, ctl.signal, TAB, (got) => {
@@ -1013,6 +1120,7 @@ async function route() {
     setStatus(e instanceof Refused ? t("err_" + e.code, e.minutes) : t("err_offline"), true);
   } finally {
     clearTimeout(slow);
+    done();
   }
 }
 
@@ -1148,6 +1256,8 @@ async function findAdventure() {
   const loop = adv.loop;
   drawAdventure(t(loop ? "loop_searching" : "adv_searching"));
   setStatus("");
+  $("adv-busy").hidden = false;
+  const done = busy(t(loop ? "loop_title" : "adv_title") + ": " + t("compare_wait"), 0);
   try {
     const [start, end] = adv.ends;
     const ask = loop ? { start: [start.lat, start.lon], area: adv.area, km: limit, variant: adv.variant, options: o, tab: TAB }
@@ -1173,6 +1283,10 @@ async function findAdventure() {
     if (e.name === "AbortError" || advCtl !== ctl) return;
     advCtl = null;
     drawAdventure(t("err_offline"), true);
+  } finally {
+    // Only this search's: a newer one has its own.
+    if (advCtl === null || advCtl === ctl) { $("adv-busy").hidden = true; done(); }
+    else done();
   }
 }
 
@@ -1222,6 +1336,89 @@ function drawSummary() {
 
 const defaultName = () => points.length >= 2 ? `${points[0].name || t("map_point")} – ${points[points.length - 1].name || t("map_point")}` : t("name_hint");
 
+// ---------- Lists with icons ----------
+// The road style, surface, ferries and motorways are picked from lists with a sign for each choice (a browser's own
+// list shows text only). The page's <select> stays the one that holds the value; this shows it and sets it.
+const stroke = (d, w = 2.2) => `<path d="${d}" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+const MOTORWAY = '<path fill="#1565c0" d="M4 1h16a3 3 0 0 1 3 3v16a3 3 0 0 1-3 3H4a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3z"/><path fill="#fff" d="M3.5 5.5h17v2h-17zM4.5 21l5.7-11.5h1L9.6 21zM19.5 21l-5.7-11.5h-1l1.6 11.5z"/>';
+const EROAD = '<path fill="#fff" d="M3 3h18a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path fill="#00843d" d="M4.2 4.3h15.6a1.5 1.5 0 0 1 1.5 1.5v12.4a1.5 1.5 0 0 1-1.5 1.5H4.2a1.5 1.5 0 0 1-1.5-1.5V5.8a1.5 1.5 0 0 1 1.5-1.5z"/><path fill="#fff" d="M8 7h8.2v2h-6v2h5v2h-5v2h6v2H8z"/>';
+const BOAT = '<path fill="currentColor" d="M3 14h18l-3.2 5.5H6.2z"/>' + stroke("M7 13V9h10v4M12 9V5", 2);
+// A red slash, as the app crosses out what the route keeps off.
+const CROSS = '<path d="M3 3l18 18" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M3 3l18 18" stroke="#d32f2f" stroke-width="2.6" stroke-linecap="round"/>';
+const DOTS = (pts) => pts.map(([x, y, r = 1.6]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="currentColor"/>`).join("");
+const OPTION_ICONS = {
+  style: { FASTEST: stroke("M12 21V4M6 10l6-6 6 6"), CURVY: stroke("M10 21.5c0-3.5 6.5-3.5 6.5-7.5S7.5 10 7.5 6.5c0-2 1.5-3.5 3.5-3.5"),
+    VERY_CURVY: stroke("M7 22c0-2.6 10-2 10-4.6S7 15.2 7 12.6s10-2 10-4.6S7 5.8 7 3", 2) },
+  surface: { PAVED: stroke("M8 3 4 21M16 3l4 18") + stroke("M12 4v3M12 10.5v3M12 17v3", 1.8),
+    MIXED: stroke("M8 3 4 21") + stroke("M11 5v3M11 11v3M11 17v3", 1.8) + DOTS([[16, 7], [18.5, 12], [15.5, 15.5], [19.5, 19]]),
+    GRAVEL: DOTS([[6, 6], [12, 4.5, 1.8], [18, 7], [8.5, 11.5, 1.9], [15, 11], [5, 17], [11.5, 17.5, 2], [18.5, 16.5], [14.5, 21, 1.4]]),
+    OFFROAD: '<path fill="currentColor" d="M2 20l6-10 4 6 3-4 7 8z"/>' + DOTS([[7, 22, 1], [12, 22, 1], [17, 22, 1]]) },
+  ferries: { ok: BOAT, no: BOAT + CROSS },
+  motorways: { ok: MOTORWAY, no: MOTORWAY + CROSS, noe: EROAD + CROSS },
+};
+const iconSvg = (inner) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">${inner}</svg>`;
+
+function iconSelect(sel) {
+  const icons = OPTION_ICONS[sel.id];
+  const btn = el("button", "isel");
+  btn.type = "button";
+  btn.id = sel.id + "-btn";
+  btn.ariaHasPopup = "listbox";
+  sel.hidden = true;
+  sel.after(btn);
+  let list = null, at = 0;
+  const opts = () => [...sel.options];
+  const close = () => { list?.remove(); list = null; btn.ariaExpanded = "false"; document.removeEventListener("pointerdown", outside, true); };
+  const outside = (e) => { if (!list?.contains(e.target) && e.target !== btn && !btn.contains(e.target)) close(); };
+  const pick = (v) => { close(); if (sel.value !== v) { sel.value = v; sel.dispatchEvent(new Event("change")); } show(); btn.focus(); };
+  const mark = () => [...list.children].forEach((li, k) => { li.ariaSelected = String(k === at); if (k === at) li.scrollIntoView({ block: "nearest" }); });
+  function show() {
+    const o = sel.selectedOptions[0];
+    btn.innerHTML = iconSvg(icons[sel.value] || "");
+    btn.append(el("span", "", o?.textContent || ""));
+    btn.title = o?.textContent || "";
+  }
+  function open() {
+    if (list) return close();
+    list = el("ul", "isel-list");
+    list.role = "listbox";
+    opts().forEach((o, k) => {
+      const li = el("li");
+      li.role = "option";
+      li.dataset.value = o.value;
+      li.innerHTML = iconSvg(icons[o.value] || "");
+      li.append(el("span", "", o.textContent));
+      li.onclick = () => pick(o.value);
+      if (o.value === sel.value) { li.classList.add("current"); at = k; }
+      list.append(li);
+    });
+    document.body.append(list);
+    // Below the button, or above it when the screen ends first; as wide as the button at least.
+    const r = btn.getBoundingClientRect();
+    list.style.minWidth = r.width + "px";
+    list.style.left = Math.min(r.left, innerWidth - list.offsetWidth - 8) + "px";
+    list.style.top = (r.bottom + list.offsetHeight + 8 < innerHeight ? r.bottom + 4 : Math.max(8, r.top - list.offsetHeight - 4)) + "px";
+    btn.ariaExpanded = "true";
+    mark();
+    document.addEventListener("pointerdown", outside, true);
+  }
+  btn.onclick = open;
+  btn.onkeydown = (e) => {
+    if (!list && ["ArrowDown", "ArrowUp"].includes(e.key)) { e.preventDefault(); open(); return; }
+    if (!list) return;
+    if (e.key === "Escape") { e.preventDefault(); close(); }
+    else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); at = Math.max(0, Math.min(sel.options.length - 1, at + (e.key === "ArrowDown" ? 1 : -1))); mark(); }
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(sel.options[at].value); }
+  };
+  addEventListener("resize", close);
+  $("body").addEventListener("scroll", close);
+  show();
+  return show;
+}
+const iconSelects = ["style", "surface", "ferries", "motorways"].map((id) => iconSelect($(id)));
+/** After the value or the language changed: the buttons say it again. */
+const drawSelects = () => iconSelects.forEach((show) => show());
+
 // Options, as the app keeps them.
 function readOptions() {
   options = {
@@ -1236,6 +1433,7 @@ function showOptions() {
   $("surface").value = options.surface;
   $("ferries").value = options.ferries ? "no" : "ok";
   $("motorways").value = options.trunk ? "noe" : options.motorways ? "no" : "ok";
+  if (typeof iconSelects !== "undefined") drawSelects();
 }
 ["style", "surface", "ferries", "motorways"].forEach((id) => $(id).addEventListener("change", () => { readOptions(); drawDrafts(); }));
 
@@ -1607,14 +1805,15 @@ function openLink() {
 
 // ---------- The session with the devices ----------
 let link = store.get("link", null) && parseLink(store.get("link"));
-const rider = unb64(store.get("rider", null) || (() => { const r = b64(random(16)); store.set("rider", r); return r; })());
+const riderId = () => unb64(store.get("rider", null) || (() => { const r = b64(random(16)); store.set("rider", r); return r; })());
+let rider = riderId();
 const nextSeq = () => { const s = store.get("seq", 0) + 1; store.set("seq", s); return s; };
 let ch = null;
 let socket = null;
 let backoff = 1000;
 
 async function ensureLink() {
-  if (!link) { link = newLink(RELAY); store.set("link", linkUri(link)); }
+  if (!link) { link = newLink(RELAY); store.set("link", linkUri(link)); rider = riderId(); }
   if (!ch) ch = await channel(link, WS_SCHEME);
   return ch;
 }
@@ -1633,6 +1832,7 @@ async function connect() {
     else if (m.type === "plan_got") gotAnswer(m.body);
   };
   ws.onclose = () => {
+    if (socket !== ws) return; // closed on purpose (disconnected)
     socket = null;
     if (document.visibilityState === "visible") setTimeout(connect, (backoff = Math.min(backoff * 2, 60000)));
   };
@@ -1734,6 +1934,8 @@ function drawDevices() {
   $("connect-intro").hidden = !!names.length;
   $("pair").className = names.length ? "link" : "primary";
   $("pair").textContent = names.length ? t("connect_more") : t("connect");
+  $("unpair").hidden = !names.length;
+  $("unpair").textContent = t("disconnect");
 }
 
 /** The devices a trip opened from one device is updated on: that one, and those with the same trip. */
@@ -1897,15 +2099,7 @@ async function openGpx(file) {
   closeMenu();
   closeAdventure();
   // Points along it, as an adventure has: change it, and it is routed through them.
-  let next = 0, along = 0;
-  const count = Math.max(2, Math.min(16, Math.round(g.m / 15000)));
-  const vias = [];
-  for (let k = 1; k < g.line.length - 1; k++) {
-    along += Math.hypot(g.line[k][0] - g.line[k - 1][0], (g.line[k][1] - g.line[k - 1][1]) * Math.cos((g.line[k][0] * Math.PI) / 180)) * 111195;
-    if (next < count && along >= (g.m * (next + 1)) / (count + 1)) { vias.push({ name: "", lat: g.line[k][0], lon: g.line[k][1], via: true }); next++; }
-  }
-  const [a, b] = [g.line[0], g.line[g.line.length - 1]];
-  points = [{ name: t("start"), lat: a[0], lon: a[1], via: false }, ...vias, { name: t("map_point"), lat: b[0], lon: b[1], via: false }];
+  points = pointsAlong(g.line, g.m);
   result = { line: g.line, ele: g.ele, m: Math.round(g.m), s: Math.round(g.m / (60 / 3.6)), up: Math.round(g.up), curvy: null, ferries: 0 };
   editing = null; viewOnly = false; currentDraft = null; viasOpen = false;
   $("name").value = g.name;
@@ -2025,6 +2219,26 @@ async function showPairing() {
   pairingOpenedAt = 0;
 }
 $("pair").addEventListener("click", showPairing);
+
+/**
+ * Disconnect: this browser forgets the channel's keys and who the rider is here, so whoever uses it next can neither
+ * see nor change the trips on the devices (everything on the channel is sealed with those keys). The devices keep their
+ * side until they forget it (Planned → From the web → Disconnect); scanning a new code connects again.
+ */
+$("unpair").addEventListener("click", () => {
+  const names = [...devices.values()].filter((d) => d.at).map((d) => d.dev);
+  if (!confirm(t("confirm_disconnect", names.join(t("and"))))) return;
+  socket?.close();
+  socket = null;
+  ch = null;
+  link = null;
+  for (const k of ["link", "rider", "seq", "sent"]) { try { localStorage.removeItem("curveon." + k); } catch { /* nothing kept */ } }
+  devices.clear();
+  deleting.clear();
+  if (editing?.ref) { editing = null; viewOnly = false; }
+  drawDevices(); drawPending(); drawList(); drawSummary();
+  setStatus(t("disconnected"));
+});
 
 // ---------- The rest of the panel ----------
 $("undo").addEventListener("click", undo);

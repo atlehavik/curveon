@@ -176,6 +176,7 @@ class Planner(
       .put("m", Math.round(r.distanceMeters)).put("s", Math.round(r.durationSeconds)).put("up", Math.round(r.ascentMeters))
       .put("dpk", Math.round(Curviness.degreesPerKm(line(r)))).put("ferries", r.ferryCount).put("unpaved", Math.round(r.unpavedMeters))
       .put("arrive", arrival(r)?.toInt() ?: JSONObject.NULL)
+      .put("surf", JSONArray(surfaces(r).map { (from, to, kind) -> JSONArray().put(from).put(to).put(kind) }))
       .apply {
         if (pois == null) return@apply
         val corridor = RouteCorridor(r)
@@ -299,6 +300,26 @@ class Planner(
       return Route(rebased, emptyList(), pts.last().distanceFromStart - d0, pts.last().secondsFromStart - s0, up,
         Curviness.score(rebased.map { LatLon(it.lat, it.lon) }), unpaved, ferries)
     }
+
+    /**
+     * The unpaved stretches of [r] as the app colours them on the route: [from, to] metres along it and the kind, 1 for
+     * gravel (orange), 2 for a track (purple). A point's kind is that of the road leading to it.
+     */
+    fun surfaces(r: Route): List<Triple<Long, Long, Int>> {
+      val out = ArrayList<Triple<Long, Long, Int>>()
+      val pts = r.points
+      var i = 1
+      while (i < pts.size) {
+        val kind = surfaceKind(pts[i])
+        var j = i
+        while (j + 1 < pts.size && surfaceKind(pts[j + 1]) == kind) j++
+        if (kind != 0) out += Triple(Math.round(pts[i - 1].distanceFromStart), Math.round(pts[j].distanceFromStart), kind)
+        i = j + 1
+      }
+      return out
+    }
+
+    private fun surfaceKind(p: com.curveon.routing.RoutePoint) = if (p.highway == "track") 2 else if (p.unpaved) 1 else 0
 
     /** Which way [leg] arrives, in whole degrees: the leg after it is asked to leave that way, here and from the page alike. */
     private fun arrival(leg: Route): Double? = BRouterEngine.arrivalHeading(leg)?.roundToInt()?.toDouble()?.rem(360.0)

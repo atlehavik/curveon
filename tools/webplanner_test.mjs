@@ -71,6 +71,8 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   // A click asks what the place is: first only the start, then the destination, then stop, via point or new destination.
   const menuItems = () => page.$$eval(".menu button", (b) => b.map((x) => x.lastChild.textContent));
   const pick = async (label) => { await page.locator(".menu button", { hasText: label }).click(); await page.waitForTimeout(200); };
+  // The road style and surface are lists with a sign for each choice: open, then click the choice.
+  const choose = async (id, value) => { await page.click(`#${id}-btn`); await page.click(`.isel-list li[data-value="${value}"]`); };
   check(await page.isVisible("#connect-intro") && (await page.getAttribute("#pair", "class")) === "primary", `${name}: not connected: a card says how to connect`);
   if (name === "phone") await page.click("#fold");
   await clickAt(59.7795, 5.2049);
@@ -89,6 +91,16 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     check(await page.isVisible(sel) && await fitsInside(sel), `${name}: ${sel} shows and fits`);
   }
   check((await page.$$eval("#stops li .leg", (e) => e.map((x) => x.textContent)))[0]?.includes("km"), `${name}: the destination says how far from the start`);
+  // The options' lists show a sign for every choice, and fit on the screen.
+  await page.locator("#motorways-btn").scrollIntoViewIfNeeded();
+  await page.click("#motorways-btn");
+  check((await page.$$eval(".isel-list li svg", (e) => e.length)) === 3 && await fitsInside(".isel-list"), `${name}: the motorway list has a sign for each choice and fits`);
+  if (name === "desktop") await page.screenshot({ path: `${out}/${name}-0-options.png` });
+  await page.keyboard.press("Escape");
+  check(!(await page.$(".isel-list")), `${name}: Escape closes the list`);
+  // Coloured as in the app: blue, with gravel and tracks known for each leg.
+  check((await page.evaluate(() => window.curveonMap.getPaintProperty("route", "line-color"))) === "#0091ea" &&
+    (await page.evaluate(() => !!window.curveonMap.getSource("cv-surface"))), `${name}: the route is blue, with a layer for gravel and tracks`);
   await page.screenshot({ path: `${out}/${name}-0-route.png` });
 
   // With a route: a third click offers stop, via point and new destination; a click on a point offers to change or remove it.
@@ -189,10 +201,10 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
 
     // Leg by leg: back to a road style seen before, the page has every leg and asks the planner for nothing.
     const done = () => page.waitForFunction(() => !document.querySelector("#summary").hidden, null, { timeout: 60000 });
-    await page.selectOption("#style", "FASTEST");
+    await choose("style", "FASTEST");
     await done();
     const n0 = asked.length;
-    await page.selectOption("#style", "CURVY");
+    await choose("style", "CURVY");
     await done();
     check(asked.length === n0, `desktop: back to Curvy came from the legs the page had (${asked.length - n0} requests)`);
 
@@ -214,7 +226,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     check(asked.length === n1 && await page.isVisible("#compare-box"), `desktop: picking Fastest is at once, and the comparison stays (${asked.length - n1} requests)`);
     await page.click("#compare-close");
     check(await page.isHidden("#compare-box") && (await page.evaluate(() => window.curveonMap.getStyle().sources["cv-alt"].data.features.length)) === 0, "desktop: closing the comparison takes the other lines away");
-    await page.selectOption("#style", "CURVY");
+    await choose("style", "CURVY");
     await done();
 
     // A night on the way: the list shows the trip day by day, and it can go to Curveon a day at a time.
@@ -312,7 +324,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
 
   // Changed after sending, then another trip clicked: the page asks first, and keeps it as a draft.
   check(await page.isHidden("#save-draft"), `${name}: nothing to save right after sending`);
-  await page.selectOption("#surface", "MIXED");
+  await choose("surface", "MIXED");
   check(await page.isVisible("#save-draft"), `${name}: a change shows Save as draft`);
   await page.locator(".device").first().locator("ul.trips li .what", { hasText: "Helgetur" }).click();
   await page.waitForSelector("#unsaved[open]", { timeout: 5000 }).then(() => check(true, `${name}: opening another trip asks about the unsaved one`), () => check(false, `${name}: opening another trip asks about the unsaved one`));
@@ -321,14 +333,14 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   await page.click("#unsaved button[value=save]");
   await page.waitForSelector("#drafts:not([hidden])", { timeout: 5000 });
   check((await page.$$eval("#drafts-list li", (e) => e.length)) === 1, `${name}: it is kept among the drafts`);
-  await page.selectOption("#surface", "PAVED");
+  await choose("surface", "PAVED");
 
   // Open the device's trip, change it, update it there.
   if ((await page.inputValue("#name")) !== "Helgetur") await page.locator(".device").first().locator("ul.trips li .what", { hasText: "Helgetur" }).click();
   check((await page.inputValue("#name")) === "Helgetur" && (await page.textContent("#send")).includes("Test Pixel") && (await page.textContent("#send")).includes("Test X7"), `${name}: the device's trip opened, Update names both devices with it (${await page.textContent("#send")})`);
   check((await page.$$eval("#stops li", (e) => e.length)) === 2, `${name}: its start and destination on the map`);
   await page.screenshot({ path: `${out}/${name}-3-opened.png` });
-  await page.selectOption("#style", "VERY_CURVY");
+  await choose("style", "VERY_CURVY");
   await page.waitForFunction(() => !document.querySelector("#summary").hidden && !document.querySelector("#send-row").hidden, null, { timeout: 60000 });
   await page.locator("#send").scrollIntoViewIfNeeded();
   await page.click("#send");
@@ -340,9 +352,23 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   await page.locator("#send-new").scrollIntoViewIfNeeded();
   check(await fitsInside("#send-new"), `${name}: Save as a new trip on screen`);
 
-  // A line without stops: shown, not changed.
+  // A line without stops: shown, not changed, until a via point or stop is put on the line.
   await page.locator(".device ul.trips li .what", { hasText: "Kjørt tur" }).click();
   check(await page.isHidden("#send-row") && (await page.textContent("#hint")).length > 20, `${name}: a ride kept as a trip is shown only`);
+  if (name === "desktop") {
+    const onLine = await page.evaluate(() => {
+      const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; const c = l[Math.floor(l.length / 2)];
+      m.jumpTo({ center: c, zoom: 10 }); const q = m.project(c); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y };
+    });
+    await page.waitForTimeout(800);
+    await page.mouse.click(onLine.x, onLine.y);
+    check(JSON.stringify(await menuItems()) === JSON.stringify(["Via point here", "Stop here"]), `desktop: a click on a shown line offers a via point or stop (${await menuItems()})`);
+    await pick("Via point here");
+    await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+    check(await page.isVisible("#send-row") && (await page.$$eval(".pin", (e) => e.length)) >= 3, "desktop: with a via point on it, the line became a trip to change and send");
+    await page.click("#new");
+    if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
+  }
 
   // Delete from the device.
   await page.locator(".device").first().locator("ul.trips li", { hasText: "Helgetur" }).locator("button").click();
@@ -392,6 +418,14 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     await pick("Start here");
     check(await page.isVisible("#loop"), "desktop: with only a start, Roundtrip is offered");
     await page.click("#loop");
+    // While drawing, the middle button still moves the map (the left one draws).
+    const before3 = await page.evaluate(() => window.curveonMap.getCenter().lng);
+    await page.mouse.move(800, 450);
+    await page.mouse.down({ button: "middle" });
+    await page.mouse.move(700, 450, { steps: 5 });
+    await page.mouse.up({ button: "middle" });
+    const after3 = await page.evaluate(() => window.curveonMap.getCenter().lng);
+    check(after3 > before3 && !(await page.$(".menu")), `desktop: the middle button moves the map while drawing (${before3.toFixed(3)} → ${after3.toFixed(3)})`);
     const c = await page.evaluate(() => { const m = window.curveonMap; m.jumpTo({ center: [5.45, 59.75], zoom: 9 }); const q = m.project([5.45, 59.75]); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y }; });
     await page.waitForTimeout(500);
     await page.mouse.move(c.x + 150, c.y);
@@ -399,12 +433,33 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     for (let k = 1; k <= 48; k++) await page.mouse.move(c.x + 150 * Math.cos((k / 48) * 2 * Math.PI), c.y + 110 * Math.sin((k / 48) * 2 * Math.PI));
     await page.mouse.up();
     const t1 = Date.now();
+    await page.waitForTimeout(300);
+    check(await page.isVisible("#adv-busy") && await page.isVisible("#busy"), `desktop: while the roundtrip is looked for, the map and the box show it is working (${await page.textContent("#busy")})`);
     await page.waitForSelector("#adv-again:not([hidden])", { timeout: 150000 }).catch(() => {});
     const pins = await page.$$eval(".pin", (e) => e.length);
     const ends = await page.evaluate(() => { const l = window.curveonMap.getStyle().sources.route.data.geometry?.coordinates || []; return l.length ? [l[0], l[l.length - 1]] : null; });
     check(pins >= 6 && ends && Math.hypot(ends[0][0] - ends[1][0], ends[0][1] - ends[1][1]) < 0.01,
       `desktop: a roundtrip came back to the start with ${pins - 2} via points in ${((Date.now() - t1) / 1000).toFixed(0)} s (${await page.textContent("#adv-hint")})`);
     await page.screenshot({ path: `${out}/${name}-6-roundtrip.png` });
+    check(await page.isHidden("#busy"), "desktop: the working chip goes when the roundtrip is there");
+    // A click on the roundtrip's line offers a via point there.
+    const mid2 = await page.evaluate(() => {
+      const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; const c = l[Math.floor(l.length / 3)];
+      m.jumpTo({ center: c, zoom: 11 }); const q = m.project(c); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y };
+    });
+    await page.waitForTimeout(800);
+    const pinsBefore = await page.$$eval(".pin", (e) => e.length);
+    await page.mouse.click(mid2.x, mid2.y);
+    check((await menuItems()).includes("Via point here"), `desktop: a click on the roundtrip offers a via point (${await menuItems()})`);
+    await pick("Via point here");
+    check((await page.$$eval(".pin", (e) => e.length)) === pinsBefore + 1, "desktop: the via point went on the roundtrip");
+
+    // Disconnect: this browser forgets the connection; the devices are gone from the page.
+    await page.locator("#unpair").scrollIntoViewIfNeeded();
+    await page.click("#unpair");
+    check(await page.isHidden("#devices") && (await page.textContent("#pair")) === "Show the QR code" &&
+      (await page.evaluate(() => localStorage.getItem("curveon.link"))) === null, "desktop: Disconnect forgets the connection and shows Connect again");
+    await page.screenshot({ path: `${out}/${name}-7-disconnected.png` });
   }
 
   dev.close();

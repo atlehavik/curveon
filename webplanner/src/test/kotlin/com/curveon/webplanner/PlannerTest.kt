@@ -220,6 +220,16 @@ class PlannerTest {
     assertEquals("too_long", refused { p.pois("-10,35,30,70", "fuel") })
   }
 
+  @Test fun `gravel and tracks along a leg, as the app colours them`() {
+    // Points every km: km 2–4 gravel, km 4–5 a track, the rest tarmac.
+    val r = Route((0..8).map { i ->
+      RoutePoint(59.0 + i * 0.009, 5.0, 0.0, i * 1000.0, i * 40.0, if (i == 5) "track" else "secondary", null, i in 3..4, false)
+    }, emptyList(), 8000.0, 320.0, 0.0, 10, 2000.0, 0)
+    assertEquals(listOf(Triple(2000L, 4000L, 1), Triple(4000L, 5000L, 2)), Planner.surfaces(r))
+    val leg = Planner({ _, _, _, _ -> r }).plan(JSONObject("""{"points":[[59.0,5.0],[59.07,5.0]],"legs":true}""")).getJSONArray("legs").getJSONObject(0)
+    assertEquals(2, leg.getJSONArray("surf").length())
+  }
+
   @Test fun `a roundtrip is asked as the page asks it`() {
     var got: LoopAsk? = null
     val r = Planner(leg, roundtrip = { a -> got = a; long() }).roundtrip(JSONObject("""{"start":[59.79,5.14],"area":[[59.6,5.1],[59.6,6.6],[60.2,6.6]],"km":200,"variant":1,"options":{"style":"VERY_CURVY"}}"""))

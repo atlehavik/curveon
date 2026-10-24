@@ -11,6 +11,7 @@
 </head>
 <body>
   <div id="map" aria-label="Map"></div>
+  <div id="busy" role="status" hidden><span class="spinner"></span><span id="busy-text"></span></div>
 
   <aside id="panel">
     <header>
@@ -27,7 +28,10 @@
           <p class="hint" data-t="connect_why"></p>
         </div>
         <span id="session" hidden></span>
-        <button id="pair" class="link" type="button"></button>
+        <span class="pair-buttons">
+          <button id="pair" class="link" type="button"></button>
+          <button id="unpair" class="link danger" type="button" hidden></button>
+        </span>
       </div>
 
       <div class="search">
@@ -38,15 +42,16 @@
       <p id="hint" class="hint" data-t="hint_empty"></p>
       <ol id="stops"></ol>
       <div id="edit-row">
-        <button id="undo" class="link" type="button" data-t="undo" hidden></button>
-        <button id="clear" class="link" type="button" data-t="clear_all" hidden></button>
-        <button id="save-draft" class="link" type="button" hidden></button>
+        <button id="undo" class="small" type="button" data-t="undo" hidden></button>
+        <button id="clear" class="small" type="button" data-t="clear_all" hidden></button>
+        <button id="save-draft" class="small" type="button" hidden></button>
       </div>
       <button id="adv" class="link" type="button" hidden>✦ <span data-t="adv_open"></span></button>
       <button id="loop" class="link" type="button" hidden>↻ <span data-t="loop_open"></span></button>
       <section id="adv-box" hidden>
         <b id="adv-head"></b>
         <p id="adv-hint" class="hint"></p>
+        <div id="adv-busy" class="busy-bar" hidden></div>
         <label><span id="adv-time-label"></span> <select id="adv-time"></select></label>
         <div class="buttons">
           <button id="adv-again" class="primary" type="button" data-t="adv_again" hidden></button>
@@ -109,8 +114,8 @@
         </select></label>
       <button id="send-new" class="link" type="button" data-t="send_new" hidden></button>
       <div id="share-row" hidden>
-        <button id="save-gpx" class="link" type="button" data-t="save_gpx"></button>
-        <button id="share" class="link" type="button" data-t="share"></button>
+        <button id="save-gpx" class="small" type="button" data-t="save_gpx"></button>
+        <button id="share" class="small" type="button" data-t="share"></button>
       </div>
 
       <section id="drafts" hidden>

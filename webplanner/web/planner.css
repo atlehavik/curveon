@@ -68,10 +68,13 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #stops li.day small { color: var(--muted); }
 #stops li.night .dot, .pin.night, .menu .dot.night { background: #3949ab; }
 
-#edit-row { display: flex; gap: 18px; margin-top: -6px; }
+#edit-row { display: flex; gap: 8px; margin-top: -4px; }
+/* Small buttons that look like buttons: undo, clear, save as draft, GPX, link. */
+button.small { font-size: 14px; padding: 5px 11px; border-radius: 8px; border: 1px solid var(--line); background: color-mix(in srgb, var(--text) 4%, transparent); color: var(--text); font-weight: 500; }
+button.small:hover { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent); }
 #edit-row:not(:has(button:not([hidden]))) { display: none; }
-#edit-row button { font-size: 14px; }
-#clear { color: var(--muted); font-weight: 500; }
+#clear { color: var(--muted); }
+#save-draft { color: var(--amber-ink); font-weight: 600; border-color: color-mix(in srgb, var(--amber) 55%, transparent); }
 #adv, #loop, #compare, #fuel-gap { align-self: flex-start; }
 #fuel-gap.warn { color: var(--red); margin-top: -6px; }
 #compare { margin-top: -6px; }
@@ -93,11 +96,20 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #profile { margin: -4px 0 0; display: flex; flex-direction: column; gap: 2px; }
 #profile canvas { width: 100%; height: 80px; display: block; cursor: crosshair; touch-action: none; border-radius: 6px; background: color-mix(in srgb, var(--text) 3%, transparent); }
 #profile figcaption { font-size: 12px; color: var(--muted); min-height: 1.3em; }
-#share-row { display: flex; gap: 18px; margin-top: -6px; flex-wrap: wrap; }
-#share-row button { font-size: 14px; }
+#share-row { display: flex; gap: 8px; margin-top: -4px; flex-wrap: wrap; }
 
 #options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #options label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+/* A list with a sign for each choice (road style, surface, ferries, motorways). */
+button.isel { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 28px 6px 8px; text-align: left; font-size: 14px; color: var(--text); background: var(--bg) no-repeat right 9px center / 10px; position: relative; min-height: 40px; }
+button.isel::after { content: ""; position: absolute; right: 11px; top: 50%; width: 6px; height: 6px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-70%) rotate(45deg); }
+button.isel span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.isel svg, .isel-list svg { flex: none; color: var(--text); }
+button.isel:focus-visible { outline: 2px solid var(--amber); outline-offset: -1px; }
+.isel-list { position: fixed; z-index: 20; list-style: none; margin: 0; padding: 5px; background: var(--panel); color: var(--text); border-radius: 11px; box-shadow: var(--shadow); max-height: 60vh; overflow-y: auto; font: 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.isel-list li { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 8px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+.isel-list li:hover, .isel-list li[aria-selected="true"] { background: color-mix(in srgb, var(--amber) 16%, transparent); }
+.isel-list li.current { font-weight: 700; color: var(--amber-ink); }
 
 #summary { display: flex; flex-wrap: wrap; gap: 6px 14px; font-weight: 600; }
 #summary span small { color: var(--muted); font-weight: 400; margin-left: 3px; }
@@ -114,6 +126,17 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #connect-intro { display: flex; flex-direction: column; gap: 4px; }
 #connect-intro .hint { color: var(--text); }
 #session { color: var(--green); font-weight: 600; font-size: 14px; }
+.pair-buttons { display: flex; gap: 16px; flex-wrap: wrap; }
+button.link.danger { color: var(--red); }
+
+/* The planner at work: a chip at the top of the map, and a bar in the adventure's box. */
+#busy { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-radius: 22px; background: var(--panel); color: var(--text); box-shadow: var(--shadow); font-weight: 600; font-size: 14px; white-space: nowrap; }
+@media (min-width: 641px) { #busy { left: calc(50% + 206px); } }
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--amber) 30%, transparent); border-top-color: var(--amber); animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.busy-bar { height: 4px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--amber) 20%, transparent); position: relative; }
+.busy-bar::after { content: ""; position: absolute; inset: 0; width: 35%; background: var(--amber); border-radius: 2px; animation: slide 1.2s ease-in-out infinite; }
+@keyframes slide { from { left: -35%; } to { left: 100%; } }
 #session::before { content: "● "; }
 button.link { border: none; padding: 2px 0; color: var(--amber-ink); font-weight: 600; text-align: left; }
 button.link:hover { text-decoration: underline; }
