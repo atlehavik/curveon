@@ -29,6 +29,7 @@ object TestScenarios {
     private const val ACTION_CALL = "com.curveon.companion.TEST_CALL"
     private const val EXTRA_ID = "id"
     private const val EXTRA_CHOICE = "choice"
+    private const val EXTRA_CALLER = "caller"
 
     private var nextId = 100
 
@@ -68,20 +69,13 @@ object TestScenarios {
     /**
      * Rings from a real phone-book contact ("Pappa" if there is one, otherwise a favourite) without
      * attaching a picture, so the companion has to find the photo in the phone book itself.
+     * Answering it from the tablet turns the same notification into an ongoing call, like a real dialer.
      */
     fun postCall(context: Context) {
         val contact = findContact(context)
         val caller = contact ?: "Ola Hansen"
         val id = nextId++
         val nm = channel(context)
-        fun action(title: String, choice: String) = Notification.Action.Builder(
-            Icon.createWithResource(context, R.drawable.ic_companion), title,
-            PendingIntent.getBroadcast(
-                context, id * 10 + choice.length,
-                Intent(context, TestActionReceiver::class.java).setAction(ACTION_CALL).putExtra(EXTRA_ID, id).putExtra(EXTRA_CHOICE, choice),
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-        ).build()
         val n = Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_companion)
             .setContentTitle(caller)
@@ -89,8 +83,8 @@ object TestScenarios {
             .apply { if (contact == null) setLargeIcon(avatar(caller)) }
             .setCategory(Notification.CATEGORY_CALL)
             .setOngoing(true)
-            .addAction(action("Answer", "answered"))
-            .addAction(action("Decline", "declined"))
+            .addAction(callAction(context, id, caller, 0, "Answer", "answered"))
+            .addAction(callAction(context, id, caller, 1, "Decline", "declined"))
             .addExtras(android.os.Bundle().apply { putBoolean(EXTRA_TEST, true) })
             .build()
         nm.notify(id, n)
@@ -98,6 +92,38 @@ object TestScenarios {
             it.copy(lastEvent = "Test call from $caller ringing" + if (contact == null) " (no \"Pappa\" or favourite in contacts)" else "")
         }
     }
+
+    /**
+     * The answered call, like the dialer shows it: a running call timer and "Speaker" / "Hang up".
+     * The phone's listener sees the timer and reports the call as ongoing to the tablet.
+     */
+    private fun postOngoing(context: Context, id: Int, caller: String) {
+        val n = Notification.Builder(context, CHANNEL)
+            .setSmallIcon(R.drawable.ic_companion)
+            .setContentTitle(caller)
+            .setContentText("Ongoing call")
+            .apply { if (findContact(context) != caller) setLargeIcon(avatar(caller)) }
+            .setCategory(Notification.CATEGORY_CALL)
+            .setOngoing(true)
+            .setShowWhen(true)
+            .setUsesChronometer(true)
+            .addAction(callAction(context, id, caller, 0, "Speaker", "speaker"))
+            .addAction(callAction(context, id, caller, 1, "Hang up", "hungup"))
+            .addExtras(android.os.Bundle().apply { putBoolean(EXTRA_TEST, true) })
+            .build()
+        channel(context).notify(id, n)
+    }
+
+    /** One of a test call's buttons; [slot] keeps the pending intents apart (extras don't count when they are compared). */
+    private fun callAction(context: Context, id: Int, caller: String, slot: Int, title: String, choice: String) = Notification.Action.Builder(
+        Icon.createWithResource(context, R.drawable.ic_companion), title,
+        PendingIntent.getBroadcast(
+            context, id * 10 + slot,
+            Intent(context, TestActionReceiver::class.java).setAction(ACTION_CALL)
+                .putExtra(EXTRA_ID, id).putExtra(EXTRA_CHOICE, choice).putExtra(EXTRA_CALLER, caller),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+    ).build()
 
     private fun findContact(context: Context): String? {
         if (context.checkSelfPermission(android.Manifest.permission.READ_CONTACTS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return null
@@ -148,6 +174,11 @@ object TestScenarios {
                 ACTION_CALL -> {
                     val choice = intent.getStringExtra(EXTRA_CHOICE)
                     PhoneHub.update { it.copy(lastEvent = "✓ Test call $choice from the tablet") }
+                    when (choice) {
+                        // Answered: the same call carries on as an ongoing one. Speaker doesn't end it.
+                        "answered" -> { postOngoing(context, id, intent.getStringExtra(EXTRA_CALLER) ?: "Ola Hansen"); return }
+                        "speaker" -> return
+                    }
                 }
             }
             nm.cancel(id)

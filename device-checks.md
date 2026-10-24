@@ -6,6 +6,10 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — Falsk samtale i companion
+
+- [ ] Pixel (debug-companion): Test → «Incoming call», og trykk Answer på X7. Samtalen skal gå over til pågående (samtaletid, «Speaker» / «Hang up») på X7-dashbordet, og Hang up skal avslutte den. Ikke prøvd med ekte Bluetooth.
+
 ## 2026-10-24 — Fartsskilt, veikort og samtale (1.2.6)
 
 - [ ] X7: Innstillinger → Visning → størst fartsgrenseskilt. Skiltet skal stikke ut over fartskortet (ikke klippes) når du kjører eller har demofart med grense.
