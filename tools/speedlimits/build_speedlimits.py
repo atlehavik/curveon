@@ -11,8 +11,10 @@ Official speed limits for Curveon, one SQLite file per country, from free govern
                the signs in Verkeersborden.Vlaanderen on the Wegenregister), Modellicentie Gratis
                Hergebruik. Brussels and Wallonia publish none.
 
-Not (yet): Sweden (Trafikverket's NVDB is CC0, but its API needs a registered key), Denmark
-(Vejdirektoratet publishes state roads only).
+  sweden       Trafikverket, NVDB "Hastighetsgräns", CC0. From Lastkajen's ready-made GeoPackage (needs a
+               login, so downloaded by hand: see sweden()). Speed limits only, no road numbers or signs yet.
+
+Not (yet): Denmark (Vejdirektoratet publishes state roads only).
 
 The tablet shows the official limit for the road it is on, and falls back to OpenStreetMap's
 maxspeed where there is none (other countries, private roads).
@@ -329,7 +331,6 @@ WKD = "https://downloads.rijkswaterstaatdata.nl/wkd/geogegevens/Geopackage/Maxim
 
 def netherlands(work="work"):
     """The newest monthly WKD speed limits (a GeoPackage of the whole NWB in RD New, ~800 MB)."""
-    import struct
     from pyproj import Transformer
     with urllib.request.urlopen(urllib.request.Request(WKD, headers=HEADERS), timeout=120) as r:
         months = re.findall(r'href="(\d\d)-(\d\d)-(\d{4})/"', r.read().decode())
@@ -356,22 +357,52 @@ def netherlands(work="work"):
     to_wgs84 = Transformer.from_crs(28992, 4326, always_xy=True)
     db = sqlite3.connect(path)
     for geom, kmh in db.execute("SELECT geom, MAXSHD FROM Snelheden"):
-        if not geom or not kmh or not str(kmh).strip().isdigit():
+        if not kmh or not str(kmh).strip().isdigit():
             continue  # "NVT": paths and such without one
-        # GeoPackage geometry: "GP", version, flags (envelope size in bits 1-3), srs id, envelope, WKB.
-        flags = geom[3]
-        env = {0: 0, 1: 32, 2: 48, 3: 48, 4: 64}.get((flags >> 1) & 7, 0)
-        wkb = geom[8 + env:]
-        bo = "<" if wkb[0] == 1 else ">"
-        gtype = struct.unpack(bo + "I", wkb[1:5])[0]
-        dims = 3 if gtype in (1002, 0x80000002) else 4 if gtype == 3002 else 2
-        if gtype % 1000 != 2 and gtype != 0x80000002:
+        pts = gpkg_line(geom, to_wgs84)
+        if pts:
+            yield int(kmh), pts
+
+
+def gpkg_line(geom, to_wgs84):
+    """[(lat, lon), …] simplified, from a GeoPackage LineString (2D or Z) in the projected CRS of [to_wgs84]; None otherwise."""
+    import struct
+    if not geom:
+        return None
+    # GeoPackage geometry: "GP", version, flags (envelope size in bits 1-3), srs id, envelope, WKB.
+    env = {0: 0, 1: 32, 2: 48, 3: 48, 4: 64}.get((geom[3] >> 1) & 7, 0)
+    wkb = geom[8 + env:]
+    bo = "<" if wkb[0] == 1 else ">"
+    gtype = struct.unpack(bo + "I", wkb[1:5])[0]
+    dims = 3 if gtype in (1002, 0x80000002) else 4 if gtype == 3002 else 2
+    if gtype % 1000 != 2 and gtype != 0x80000002:
+        return None
+    n = struct.unpack(bo + "I", wkb[5:9])[0]
+    vals = struct.unpack(bo + "d" * (n * dims), wkb[9:9 + 8 * n * dims])
+    xs, ys = to_wgs84.transform(vals[0::dims], vals[1::dims])
+    pts = simplify(list(zip(ys, xs)))
+    return pts if len(pts) >= 2 else None
+
+
+def sweden(work="work"):
+    """Trafikverket's NVDB "Hastighetsgräns" for all of Sweden as a GeoPackage in SWEREF 99 TM (~1.5 GB).
+    Lastkajen needs a login, so the file is fetched there by hand (Färdiga datapaket → Hastighetsgräns,
+    GeoPackage, Sverige) and unpacked to [work]/Sverige_Hastighetsgrans.gpkg, or given in $SWEDEN_GPKG."""
+    from pyproj import Transformer
+    path = os.environ.get("SWEDEN_GPKG") or os.path.join(work, "Sverige_Hastighetsgrans.gpkg")
+    if not os.path.exists(path):
+        raise SystemExit(f"{path} is missing: download it from lastkajen.trafikverket.se (see sweden())")
+    to_wgs84 = Transformer.from_crs(3006, 4326, always_xy=True)
+    db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    sample = " LIMIT 20000" if os.environ.get("SAMPLE") else ""
+    # Time-limited exceptions (school zones, other vehicle types) are left out: the main limit is the
+    # one that holds most of the time. "gångfart" (walking pace) has no number.
+    for geom, kmh in db.execute("SELECT geom, Hogsta_tillatna_hastighet FROM NVDB_DK_O_48_Hastighetsgrans "
+                                f"WHERE VALID_TO >= 99991231{sample}"):
+        if not kmh or not str(kmh).strip().isdigit() or int(kmh) <= 0:
             continue
-        n = struct.unpack(bo + "I", wkb[5:9])[0]
-        vals = struct.unpack(bo + "d" * (n * dims), wkb[9:9 + 8 * n * dims])
-        xs, ys = to_wgs84.transform(vals[0::dims], vals[1::dims])
-        pts = simplify(list(zip(ys, xs)))
-        if len(pts) >= 2:
+        pts = gpkg_line(geom, to_wgs84)
+        if pts:
             yield int(kmh), pts
 
 
@@ -380,6 +411,7 @@ SOURCES = {
     "finland": (finland, "Väylävirasto, Digiroad", "CC BY 4.0"),
     "netherlands": (netherlands, "NDW / Rijkswaterstaat, Wegkenmerkendatabase", "CC0 1.0"),
     "belgium": (belgium, "Bron: MOW - AWV (Flanders)", "Modellicentie Gratis Hergebruik v1.0"),
+    "sweden": (sweden, "Trafikverket, NVDB", "CC0 1.0"),
 }
 
 
