@@ -72,7 +72,7 @@ const TEXTS = {
     loop_open: "Roundtrip: draw where you want to ride", loop_title: "Roundtrip",
     loop_draw: "Hold the mouse button down and draw round the area you want to ride in. The trip goes round it and back to the start.",
     loop_draw_touch: "Draw round the area you want to ride in, with your finger. The trip goes round it and back to the start.",
-    loop_len: "Longest trip", loop_len_explain: "The longest the roundtrip may be, or no limit and the area decides.",
+    loop_len: "Length", loop_max_any: "Whole area", loop_max_km: (k) => `Max ${k} km`, roundtrip_draw_km: (k) => `About ${k} km round`, loop_len_explain: "The longest the roundtrip may be, or no limit and the area decides.",
     loop_searching: "Looking for a roundtrip… it can take up to a minute.",
     loop_found: "Here is a roundtrip. Change it like any trip, or ask for another.",
     err_no_roundtrip: "No roundtrip found in that area. Draw it bigger, or round more roads.",
@@ -179,7 +179,7 @@ const TEXTS = {
     loop_open: "Rundtur: tegn hvor du vil kjøre", loop_title: "Rundtur",
     loop_draw: "Hold museknappen nede og tegn rundt området du vil kjøre i. Turen går rundt det og tilbake til start.",
     loop_draw_touch: "Tegn rundt området du vil kjøre i med fingeren. Turen går rundt det og tilbake til start.",
-    loop_len: "Lengste tur", loop_len_explain: "Hvor lang rundturen høyst kan være, eller ingen grense, så avgjør området.",
+    loop_len: "Lengde", loop_max_any: "Hele området", loop_max_km: (k) => `Maks ${k} km`, roundtrip_draw_km: (k) => `Omtrent ${k} km rundt`, loop_len_explain: "Hvor lang rundturen høyst kan være, eller ingen grense, så avgjør området.",
     loop_searching: "Leter etter en rundtur … det kan ta opptil et minutt.",
     loop_found: "Her er en rundtur. Endre den som en hvilken som helst tur, eller be om en annen.",
     err_no_roundtrip: "Fant ingen rundtur i det området. Tegn det større, eller rundt flere veier.",
@@ -336,7 +336,12 @@ function withRoute(style) {
   const roadColour = theme === "dark" ? "#ffffff" : "#707070";
   // A little bolder than the app's on a phone: a big screen shows far more road at once.
   const dashWidth = ["interpolate", ["exponential", 1.6], ["zoom"], 11, 1.4, 12.5, 2.2, 15, 3, 18, 11];
+  const ferry = { "line-color": theme === "dark" ? "#6fa3cf" : "#4a7fae", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1, 12, 1.6, 16, 2.5], "line-dasharray": [3, 2.5] };
   style.layers.splice(labels < 0 ? style.layers.length : labels, 0,
+    // Where the ferries go: dashed across the water, from the Norway map's roads and, beyond it, the online map's
+    // (an "online-" layer, shown and hidden with the rest of that map).
+    { id: "cv-ferry", type: "line", source: "protomaps", "source-layer": "roads", filter: ["==", ["get", "kind"], "ferry"], paint: ferry },
+    ...(style.sources.online ? [{ id: "online-ferry", type: "line", source: "online", "source-layer": "transportation", filter: ["==", ["get", "class"], "ferry"], paint: ferry }] : []),
     { id: "cv-gravel-road", type: "line", source: "cv-gravel", minzoom: 11, maxzoom: 12.2, filter: ["==", ["get", "k"], "road"],
       layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": roadColour, "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 11, 1, 14.5, 1.2] } },
@@ -1230,6 +1235,8 @@ function startDrawing() {
   $("draw-text").textContent = t(adv.loop ? (touchy ? "loop_draw_touch" : "loop_draw") : touchy ? "adv_draw_touch" : "adv_draw");
   $("draw").hidden = false;
   requestAnimationFrame(() => $("adv-box").scrollIntoView({ block: "nearest", behavior: "smooth" }));
+  // As the app: drawn from no closer than zoom 9, so the area is a day's ride round, not a few streets.
+  if (map.getZoom() > 9) map.easeTo({ zoom: 9, center: adv.loop && points[0] ? [points[0].lon, points[0].lat] : map.getCenter(), duration: 500 });
   drawAdventure(adv.loop ? t(touchy ? "loop_draw_touch" : "loop_draw")
     : t(touchy ? "adv_draw_touch" : "adv_draw") + (points.length > 2 ? " " + t("adv_stops") : ""));
 }
@@ -1268,9 +1275,10 @@ function fillTimes() {
   const sel = $("adv-time");
   const loop = !!adv?.loop;
   const keep = store.get(loop ? "loopKm" : "advMinutes", "");
-  const choices = loop ? [50, 100, 150, 200, 250, 300, 400] : [60, 90, 120, 150, 180, 240, 300, 360, 480];
-  sel.replaceChildren(el("option", "", t("adv_no_limit")), ...choices.map((v) => {
-    const o = el("option", "", loop ? `${v} ${t("km")}` : t("adv_hm", Math.floor(v / 60), v % 60));
+  // The app's choices: a loop round the whole area, or at most so long; an adventure within so many hours.
+  const choices = loop ? [50, 80, 100, 150, 200, 300] : [60, 90, 120, 150, 180, 240, 300, 360, 480];
+  sel.replaceChildren(el("option", "", t(loop ? "loop_max_any" : "adv_no_limit")), ...choices.map((v) => {
+    const o = el("option", "", loop ? t("loop_max_km", v) : t("adv_hm", Math.floor(v / 60), v % 60));
     o.value = String(v);
     return o;
   }));
@@ -1285,6 +1293,11 @@ function strokeAt(e) {
   if (last) { const a = map.project([last[1], last[0]]); if (Math.hypot(a.x - e.point.x, a.y - e.point.y) < 4) return; }
   s.push([ll.lat, ll.lng]);
   drawArea();
+  // How far round it is so far, as the app tells while the finger draws.
+  let m = 0;
+  for (let k = 1; k < s.length; k++) m += Math.hypot(s[k][0] - s[k - 1][0], (s[k][1] - s[k - 1][1]) * Math.cos((s[k][0] * Math.PI) / 180)) * 111195;
+  if (s.length > 2) m += Math.hypot(s[0][0] - s[s.length - 1][0], (s[0][1] - s[s.length - 1][1]) * Math.cos((s[0][0] * Math.PI) / 180)) * 111195;
+  $("draw-text").textContent = t("roundtrip_draw_km", Math.round(m / 1000));
 }
 let stroking = false;
 function strokeStart(e) {
