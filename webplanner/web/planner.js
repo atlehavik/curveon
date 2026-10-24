@@ -9,7 +9,7 @@ const TEXTS = {
   en: {
     title: "Curveon planner", search_hint: "Search for a place, or click the map", lang: "Norsk",
     theme_dark: "Dark map", theme_light: "Light map",
-    hint_empty: "Click the map or search to choose where you start, then where you are going. Click a point to change or remove it, drag it to move it, and drag the line to take another road. Right-click adds a point straight away.",
+    hint_empty: "Click the map or search to choose where you start, then where you are going. Click a point to change or remove it, drag it to move it, and drag the line to take another road. Right-click tells you about the road there.",
     opt_style: "Roads", opt_surface: "Surface", opt_ferries: "Ferries", opt_motorways: "Motorways",
     style_fastest: "Fastest", style_curvy: "Curvy", style_super_curvy: "Super curvy",
     surface_tarmac_only: "Tarmac only", surface_mixed: "Mixed", surface_gravel: "Gravel", surface_offroad: "Offroad",
@@ -30,7 +30,12 @@ const TEXTS = {
     connect: "Show the QR code", connect_more: "Connect another device", connect_title: "Connect your phone or tablet",
     connect_why: "Then what you plan here goes straight to Curveon, and you can open the trips already there. Click the button, then in Curveon tap Planned → From the web and scan the code.",
     menu_start: "Start here", menu_end: "Destination here", menu_new_end: "New destination here", menu_stop: "Stop here",
-    menu_via: "Via point here", make_stop: "Make it a stop", make_via: "Make it a via point", drag_to_move: "Drag the point to move it.", connected_to: (d) => `Connected to ${d}`,
+    menu_via: "Via point here", make_stop: "Make it a stop", make_via: "Make it a via point", drag_to_move: "Drag the point to move it.", make_end: "Make it the destination",
+    clear_all: "Clear all points", confirm_clear: "Remove all the points on the map?", undo: "↶ Undo", undo_title: "Undo the last change (Ctrl+Z)",
+    copy_coords: "Copy coordinates", copied: "Copied ✓", zoom_here: "Zoom in here", on_route: (k, n) => `km ${k} of ${n} on the route`,
+    road_motorway: "Motorway", road_main: "Main road", road_secondary: "Secondary road", road_minor: "Minor road", road_local: "Local road",
+    road_service: "Access road", road_track: "Track (gravel or dirt)", road_path: "Path, not for motorcycles", road_ramp: "Slip road",
+    road_tunnel: "tunnel", road_bridge: "bridge", road_oneway: "one-way", road_paved: "tarmac", road_unpaved: "gravel", connected_to: (d) => `Connected to ${d}`,
     on_device: (d) => `On ${d}`, no_trips: "No planned trips there yet.", loose: "Not in a group",
     edit: "Open to work on it", delete_on: (d) => `Delete from ${d}`,
     confirm_delete: (n, d) => `Delete “${n}” from ${d}? It is gone from Planned there the next time the app is online.`,
@@ -46,7 +51,7 @@ const TEXTS = {
   nb: {
     title: "Curveon-planlegger", search_hint: "Søk etter et sted, eller klikk i kartet", lang: "English",
     theme_dark: "Mørkt kart", theme_light: "Lyst kart",
-    hint_empty: "Klikk i kartet eller søk for å velge hvor du starter, og så hvor du skal. Klikk på et punkt for å endre eller fjerne det, dra i det for å flytte det, og dra i linjen for å ta en annen vei. Høyreklikk legger til et punkt med en gang.",
+    hint_empty: "Klikk i kartet eller søk for å velge hvor du starter, og så hvor du skal. Klikk på et punkt for å endre eller fjerne det, dra i det for å flytte det, og dra i linjen for å ta en annen vei. Høyreklikk forteller om veien der.",
     opt_style: "Veier", opt_surface: "Underlag", opt_ferries: "Ferjer", opt_motorways: "Motorvei",
     style_fastest: "Raskest", style_curvy: "Svingete", style_super_curvy: "Supersvingete",
     surface_tarmac_only: "Kun asfalt", surface_mixed: "Blandet", surface_gravel: "Grus", surface_offroad: "Offroad",
@@ -67,7 +72,12 @@ const TEXTS = {
     connect: "Vis QR-koden", connect_more: "Koble til en enhet til", connect_title: "Koble til telefonen eller nettbrettet",
     connect_why: "Da havner det du planlegger her rett i Curveon, og du kan åpne turene som allerede ligger der. Trykk på knappen, og i Curveon trykker du Planlagte → Fra nettet og skanner koden.",
     menu_start: "Start her", menu_end: "Mål her", menu_new_end: "Nytt mål her", menu_stop: "Stopp her",
-    menu_via: "Hjelpepunkt her", make_stop: "Gjør til stopp", make_via: "Gjør til hjelpepunkt", drag_to_move: "Dra i punktet for å flytte det.", connected_to: (d) => `Koblet til ${d}`,
+    menu_via: "Hjelpepunkt her", make_stop: "Gjør til stopp", make_via: "Gjør til hjelpepunkt", drag_to_move: "Dra i punktet for å flytte det.", make_end: "Gjør til mål",
+    clear_all: "Fjern alle punktene", confirm_clear: "Fjerne alle punktene på kartet?", undo: "↶ Angre", undo_title: "Angre siste endring (Ctrl+Z)",
+    copy_coords: "Kopier koordinater", copied: "Kopiert ✓", zoom_here: "Zoom inn hit", on_route: (k, n) => `km ${k} av ${n} på ruten`,
+    road_motorway: "Motorvei", road_main: "Hovedvei", road_secondary: "Sekundærvei", road_minor: "Mindre vei", road_local: "Lokalvei",
+    road_service: "Adkomstvei", road_track: "Traktorvei eller grusvei", road_path: "Sti, ikke for motorsykkel", road_ramp: "Rampe",
+    road_tunnel: "tunnel", road_bridge: "bru", road_oneway: "enveiskjørt", road_paved: "asfalt", road_unpaved: "grus", connected_to: (d) => `Koblet til ${d}`,
     on_device: (d) => `På ${d}`, no_trips: "Ingen planlagte turer der ennå.", loose: "Uten gruppe",
     edit: "Åpne for å jobbe med den", delete_on: (d) => `Slett fra ${d}`,
     confirm_delete: (n, d) => `Slette «${n}» fra ${d}? Den forsvinner fra Planlagte der neste gang appen er på nett.`,
@@ -228,8 +238,10 @@ function fitTo(coords) {
 
 // ---------- Markers ----------
 let markers = [];
-function kindOf(i) { return i === 0 ? "start" : i === points.length - 1 ? "end" : points[i].via ? "via" : "stop"; }
-function stopNumber(i) { let n = 0; for (let k = 1; k <= i; k++) if (!points[k].via && k < points.length - 1) n++; return n; }
+// The last point is the destination, unless the rider made it a stop or via point (still working towards the end).
+function kindOf(i) { return i === 0 ? "start" : points[i].via ? "via" : i === points.length - 1 && !points[i].stop ? "end" : "stop"; }
+function stopNumber(i) { let n = 0; for (let k = 1; k <= i; k++) if (kindOf(k) === "stop") n++; return n; }
+const hasEnd = () => points.length >= 2 && kindOf(points.length - 1) === "end";
 const pinText = (kind, i) => kind === "start" ? "A" : kind === "end" ? "B" : kind === "stop" ? String(stopNumber(i)) : "";
 
 function drawMarkers() {
@@ -249,15 +261,45 @@ function drawMarkers() {
       changed();
       if (!moved.via) { moved.name = await placeName(ll.lat, ll.lng); drawList(); drawSummary(); }
     });
-    // A click asks what to do with the point; a right-click removes it at once. (A drag ends in a click too: not that one.)
+    // A click (or right-click) asks what to do with the point. (A drag ends in a click too: not that one.)
     e.addEventListener("click", (ev) => { ev.stopPropagation(); if (!draggingLine) pointMenu(p); });
-    e.addEventListener("contextmenu", (ev) => { ev.preventDefault(); ev.stopPropagation(); removePoint(p); });
+    e.addEventListener("contextmenu", (ev) => { ev.preventDefault(); ev.stopPropagation(); pointMenu(p); });
     return m;
   });
 }
 
 // ---------- The list of places ----------
+// ---------- Undo ----------
+// Every change to the points (added, moved, removed, made a stop or via point, all cleared) can be taken back, one at a
+// time. A name that arrives later is not a change of its own: it goes into the state it belongs to.
+const undoStack = [];
+const placesKey = () => JSON.stringify(points.map((p) => [p.lat, p.lon, !!p.via, !!p.stop]));
+let lastKey = placesKey(), lastState = JSON.stringify(points);
+function remember() {
+  const key = placesKey();
+  if (key !== lastKey) { undoStack.push(lastState); if (undoStack.length > 100) undoStack.shift(); lastKey = key; }
+  lastState = JSON.stringify(points);
+}
+/** A trip opened from a device starts afresh: undo does not go back past it. */
+function forgetUndo() { undoStack.length = 0; lastKey = placesKey(); lastState = JSON.stringify(points); }
+function undo() {
+  if (!undoStack.length) return;
+  closeMenu();
+  if (viewOnly) { viewOnly = false; editing = null; }
+  lastState = undoStack.pop();
+  points = JSON.parse(lastState);
+  lastKey = placesKey();
+  changed();
+}
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "z" && !/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName)) {
+    e.preventDefault();
+    undo();
+  }
+});
+
 function drawList() {
+  remember();
   const ol = $("stops");
   ol.replaceChildren();
   points.forEach((p, i) => {
@@ -273,6 +315,9 @@ function drawList() {
     btn("✕", t("remove"), () => { points.splice(i, 1); changed(); });
     ol.append(li);
   });
+  $("clear").hidden = points.length === 0;
+  $("undo").hidden = undoStack.length === 0;
+  $("undo").title = t("undo_title");
   $("hint").textContent = viewOnly ? t("view_only") : editing?.ref ? t("editing_from", editing.dev) : t("hint_empty");
   $("hint").hidden = !viewOnly && !editing?.ref && points.length >= 2;
 }
@@ -289,14 +334,14 @@ function removePoint(p) {
 }
 
 /**
- * A clicked place [p] ({ lat, lon, naming: Promise of its name }) put in as [kind]: start or destination at the end,
- * a stop or via point on the leg it bends least.
+ * A clicked place [p] ({ lat, lon, naming: Promise of its name }) put in as [kind]. Without a destination yet it goes
+ * last (the rider works forward); with one, a stop or via point goes on [leg], or else on the leg it bends least.
  */
-async function addAt(p, kind) {
+async function addAt(p, kind, leg) {
   if (viewOnly) { viewOnly = false; result = null; editing = null; points = []; }
-  const pt = { name: t("map_point"), lat: p.lat, lon: p.lon, via: kind === "via" };
-  if (kind === "start" || kind === "end") points.push(pt);
-  else points.splice(bestLeg(pt) + 1, 0, pt);
+  const pt = { name: t("map_point"), lat: p.lat, lon: p.lon, via: kind === "via", ...(kind === "stop" ? { stop: true } : {}) };
+  if (kind === "start" || kind === "end" || !hasEnd()) points.push(pt);
+  else points.splice((leg ?? bestLeg(pt)) + 1, 0, pt);
   changed();
   if (kind === "via") return;
   pt.name = await p.naming;
@@ -318,19 +363,24 @@ function bestLeg(p) {
 let menu = null;
 function closeMenu() { menu?.remove(); menu = null; }
 
-/** A menu at [ll] with a [title] and [items] ([label, action, class]); returns the title, to name the place once known. */
-function showMenu(ll, title, items, note) {
+/**
+ * A menu at [ll] with a [title], [items] ([label, action, class]; an action that returns "keep" leaves it open) and
+ * lines of [notes] under them (above them when [infoFirst]); returns the title, to name the place once known.
+ */
+function showMenu(ll, title, items, notes, infoFirst = false) {
   closeMenu();
   const box = el("div", "menu");
   const head = el("div", "menu-title", title);
   box.append(head);
+  const lines = [notes].flat().filter(Boolean).map((n) => el("small", "", n));
+  if (infoFirst) box.append(...lines);
   for (const [label, fn, cls] of items) {
     const b = el("button", cls || "", label);
     b.type = "button";
-    b.onclick = (ev) => { ev.stopPropagation(); closeMenu(); fn(); };
+    b.onclick = (ev) => { ev.stopPropagation(); if (fn(b) !== "keep") closeMenu(); };
     box.append(b);
   }
-  if (note) box.append(el("small", "", note));
+  if (!infoFirst) box.append(...lines);
   // On a phone the sheet covers the bottom of the map: the menu goes above the point unless that is near the top.
   const y = map.project(ll).y;
   const anchor = innerWidth <= 640 ? (y < 220 ? "top" : "bottom") : undefined;
@@ -340,14 +390,19 @@ function showMenu(ll, title, items, note) {
 }
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
 
-/** What a click on the map can make of the place: start first, then destination, then a stop, via point or new destination. */
-function placeMenu(ll) {
+/**
+ * What a click on the map can make of the place: first the start; then, step by step forward, a via point, stop or the
+ * destination; with a destination, a stop or via point on the way, or a new destination. On the route: a stop or via
+ * point on that part of it.
+ */
+function placeMenu(ll, onRoute) {
   const p = { lat: ll.lat, lon: ll.lng };
   p.naming = placeName(p.lat, p.lon);
   const n = viewOnly ? 0 : points.length;
+  const leg = onRoute && n >= 2 ? legAt(ll) : undefined;
   const items = n === 0 ? [[t("menu_start"), () => addAt(p, "start")]]
-    : n === 1 ? [[t("menu_end"), () => addAt(p, "end")]]
-    : [[t("menu_stop"), () => addAt(p, "stop")], [t("menu_via"), () => addAt(p, "via")], [t("menu_new_end"), () => addAt(p, "end")]];
+    : onRoute ? [[t("menu_via"), () => addAt(p, "via", leg)], [t("menu_stop"), () => addAt(p, "stop", leg)]]
+    : [[t("menu_via"), () => addAt(p, "via")], [t("menu_stop"), () => addAt(p, "stop")], [t(hasEnd() ? "menu_new_end" : "menu_end"), () => addAt(p, "end")]];
   const head = showMenu(ll, "…", items);
   p.naming.then((name) => { head.textContent = name; });
 }
@@ -357,12 +412,15 @@ function pointMenu(p) {
   const i = points.indexOf(p);
   if (i < 0) return;
   const kind = kindOf(i);
+  const last = i > 0 && i === points.length - 1;
+  const redraw = async () => {
+    drawList(); drawMarkers(); drawSummary();
+    if (!p.via && !p.name) { p.name = await placeName(p.lat, p.lon); drawList(); drawMarkers(); drawSummary(); }
+  };
   const items = [];
-  if (kind === "stop") items.push([t("make_via"), () => { p.via = true; drawList(); drawMarkers(); }]);
-  if (kind === "via") items.push([t("make_stop"), async () => {
-    p.via = false; drawList(); drawMarkers();
-    if (!p.name) { p.name = await placeName(p.lat, p.lon); drawList(); drawMarkers(); }
-  }]);
+  if (kind === "stop" || kind === "end") items.push([t("make_via"), () => { p.via = true; delete p.stop; redraw(); }]);
+  if (kind === "via" || kind === "end") items.push([t("make_stop"), () => { p.via = false; if (last) p.stop = true; redraw(); }]);
+  if (last && kind !== "end") items.push([t("make_end"), () => { p.via = false; delete p.stop; redraw(); }]);
   items.push([t("remove"), () => removePoint(p), "danger"]);
   showMenu([p.lon, p.lat], kind === "via" ? t("via") : p.name || t("map_point"), items, t("drag_to_move"));
 }
@@ -446,17 +504,77 @@ const onPinOrMenu = (e) => !!e.originalEvent.target.closest?.(".maplibregl-marke
 map.on("click", (e) => {
   if (draggingLine || onPinOrMenu(e)) return;
   if (menu) { closeMenu(); return; }
-  placeMenu(e.lngLat);
+  placeMenu(e.lngLat, !!result && !viewOnly && map.queryRenderedFeatures(e.point, { layers: ["route-hit"] }).length > 0);
 });
-// A right-click puts the place straight in, without asking: the start, else the new destination.
+// A right-click is the usual context menu: what is there (the road, the place, how far along the route), to copy or zoom.
 map.on("contextmenu", (e) => {
   e.preventDefault();
   if (onPinOrMenu(e)) return;
-  closeMenu();
-  const p = { lat: e.lngLat.lat, lon: e.lngLat.lng };
-  p.naming = placeName(p.lat, p.lon);
-  addAt(p, !viewOnly && points.length ? "end" : "start");
+  infoMenu(e.lngLat, e.point);
 });
+
+// Road classes in both maps (Norway's kind_detail, the online map's class), the bigger first.
+const ROAD_KINDS = [
+  [["motorway"], "road_motorway"], [["trunk", "primary"], "road_main"], [["secondary"], "road_secondary"],
+  [["tertiary"], "road_minor"], [["unclassified", "residential", "living_street", "minor"], "road_local"],
+  [["service"], "road_service"], [["track"], "road_track"], [["path", "footway", "cycleway", "bridleway", "steps", "pedestrian"], "road_path"],
+];
+
+/** The biggest road drawn within a few pixels of [pt], described from the map's own data; null if none. */
+function roadAt(pt) {
+  const box = [[pt.x - 6, pt.y - 6], [pt.x + 6, pt.y + 6]];
+  let best = null, bestRank = Infinity;
+  for (const f of map.queryRenderedFeatures(box)) {
+    if (f.sourceLayer !== "roads" && f.sourceLayer !== "transportation") continue;
+    const p = f.properties;
+    const cls = String(p.kind_detail || p.class || "").replace(/_link$/, "");
+    const rank = ROAD_KINDS.findIndex(([names]) => names.includes(cls));
+    if (rank < 0) continue;
+    // Of the same class, the one with a name or number tells more.
+    const r = rank - (p.name || p.ref ? 0.5 : 0);
+    if (r < bestRank) { bestRank = r; best = { p, kind: ROAD_KINDS[rank][1], link: /_link$/.test(p.kind_detail || "") || !!p.ramp }; }
+  }
+  if (!best) return null;
+  const { p } = best;
+  const what = [t(best.link ? "road_ramp" : best.kind)];
+  if (p.is_tunnel || p.brunnel === "tunnel") what.push(t("road_tunnel"));
+  if (p.is_bridge || p.brunnel === "bridge") what.push(t("road_bridge"));
+  if (p.oneway === "yes" || p.oneway === 1) what.push(t("road_oneway"));
+  if (p.surface === "paved" || p.surface === "unpaved") what.push(t("road_" + p.surface));
+  return { name: [p.ref, p.name].filter(Boolean).join(" · "), what: what.join(", ") };
+}
+
+/** How far along the route [pt] is, if it is on the line: "km 45 of 134". */
+function alongRoute(pt) {
+  if (!result?.line?.length) return null;
+  const line = result.line;
+  const m = (a, b) => Math.hypot(a[0] - b[0], (a[1] - b[1]) * Math.cos((a[0] * Math.PI) / 180));
+  let best = -1, bd = Infinity;
+  for (let k = 0; k < line.length; k++) {
+    const q = map.project([line[k][1], line[k][0]]);
+    const d = Math.hypot(q.x - pt.x, q.y - pt.y);
+    if (d < bd) { bd = d; best = k; }
+  }
+  if (bd > 14) return null;
+  let upTo = 0, all = 0;
+  for (let k = 1; k < line.length; k++) { const d = m(line[k - 1], line[k]); all += d; if (k <= best) upTo += d; }
+  // Scaled to the planner's own length, so the end says the same as the summary.
+  return t("on_route", Math.round((upTo / all) * result.m / 1000), Math.round(result.m / 1000));
+}
+
+/** The right-click menu: the road there and what kind it is, the place, how far along the route, the coordinates. */
+function infoMenu(ll, pt) {
+  const road = roadAt(pt);
+  const coords = `${ll.lat.toFixed(5)}, ${ll.lng.toFixed(5)}`;
+  const items = [[t("copy_coords"), (b) => {
+    navigator.clipboard?.writeText(coords).then(() => { b.textContent = t("copied"); }, () => {});
+    return "keep";
+  }]];
+  if (map.getZoom() < 14) items.push([t("zoom_here"), () => map.easeTo({ center: ll, zoom: Math.min(16, map.getZoom() + 3) })]);
+  const head = showMenu(ll, road?.name || "…", items, [road?.what, alongRoute(pt), coords], true);
+  // The place's name: under the road's, or the title when the road has none.
+  placeName(ll.lat, ll.lng).then((name) => { if (road?.name) head.after(el("small", "place", name)); else head.textContent = name; });
+}
 
 // Drag the line: a through-point goes in where it was grabbed, on the leg it belongs to.
 map.on("mouseenter", "route-hit", () => { if (!viewOnly) map.getCanvas().style.cursor = "grab"; });
@@ -465,7 +583,8 @@ map.on("mousedown", "route-hit", (e) => startLineDrag(e));
 map.on("touchstart", "route-hit", (e) => { if (e.points.length === 1) startLineDrag(e); });
 
 function startLineDrag(e) {
-  if (!result || viewOnly || points.length < 2 || onPinOrMenu(e)) return;
+  // Only the left button drags the line (the right one asks about the road there).
+  if (!result || viewOnly || points.length < 2 || onPinOrMenu(e) || e.originalEvent.button > 0) return;
   e.preventDefault();
   closeMenu();
   draggingLine = true;
@@ -741,6 +860,7 @@ function openTrip(r, d, x) {
     viewOnly = true;
     editing = null;
   }
+  forgetUndo();
   if (x.options) { options = Object.assign(options, x.options); showOptions(); }
   $("name").value = x.name;
   setStatus("");
@@ -758,8 +878,10 @@ async function send(asNew) {
   const target = asNew ? null : editing;
   const tid = target?.tid || b64(random(12));
   const stop = (p) => ({ name: p.name || "", lat: +p.lat.toFixed(6), lon: +p.lon.toFixed(6), ...(p.via ? { via: true } : {}) });
+  // The trip ends where the last point is, also when the rider had not made it the destination yet.
+  const { via: _, ...destination } = stop(points[points.length - 1]);
   const trip = {
-    v: 1, name, start: stop(points[0]), destination: stop(points[points.length - 1]), stops: points.slice(1, -1).map(stop),
+    v: 1, name, start: stop(points[0]), destination, stops: points.slice(1, -1).map(stop),
     options: routeOptions(), line: result.line.map(([la, lo]) => `${la.toFixed(5)},${lo.toFixed(5)}`).join(";"),
     m: result.m, s: result.s, up: result.up, curvy: result.curvy, ...(target?.ref ? { ref: target.ref } : {}),
   };
@@ -824,6 +946,13 @@ async function showPairing() {
 $("pair").addEventListener("click", showPairing);
 
 // ---------- The rest of the panel ----------
+$("undo").addEventListener("click", undo);
+$("clear").addEventListener("click", () => {
+  if (points.length > 2 && !confirm(t("confirm_clear"))) return;
+  points = [];
+  closeMenu();
+  changed();
+});
 $("new").addEventListener("click", () => {
   if (result && !editing && !viewOnly && !confirm(t("confirm_new"))) return;
   points = []; editing = null; viewOnly = false; $("name").value = "";

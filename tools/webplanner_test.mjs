@@ -71,7 +71,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   if (name === "phone") await page.screenshot({ path: `${out}/${name}-0-menu.png` });
   await pick(name === "phone" ? "Start her" : "Start here");
   await clickAt(60.0689, 6.5462);
-  check((await menuItems()).length === 1, `${name}: the second click offers the destination (${await menuItems()})`);
+  check((await menuItems()).length === 3, `${name}: the second click offers via point, stop or destination (${await menuItems()})`);
   await pick(name === "phone" ? "Mål her" : "Destination here");
   if (name === "phone") await page.click("#fold");
   await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
@@ -79,7 +79,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
 
   // With a route: a third click offers stop, via point and new destination; a click on a point offers to change or remove it.
   if (name === "phone") await page.click("#fold");
-  await clickAt(59.95, 5.9);
+  await clickAt(60.39, 5.32);
   check((await menuItems()).length === 3, `${name}: a third click offers stop, via point, new destination (${await menuItems()})`);
   if (name === "desktop") await page.screenshot({ path: `${out}/${name}-0-menu.png` });
   await pick(name === "phone" ? "Stopp her" : "Stop here");
@@ -91,15 +91,46 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   await page.locator(".pin.via").click();
   await pick(name === "phone" ? "Fjern" : "Remove");
   check((await page.$$eval("#stops li", (e) => e.length)) === 2, `${name}: the via point was removed`);
+  // Undo brings it back, and once more makes it a stop again; then it goes for good.
+  if (name === "phone") await page.click("#fold");
+  await page.locator("#undo").scrollIntoViewIfNeeded();
+  check(await fitsInside("#undo"), `${name}: Undo on screen`);
+  await page.click("#undo");
+  check((await page.$$eval("#stops li", (e) => e.length)) === 3 && (await page.$$eval("#stops li", (e) => e[1].className)) === "via", `${name}: undo brought the via point back`);
+  await page.click("#undo");
+  check((await page.$$eval("#stops li", (e) => e[1].className)) === "stop", `${name}: undo again made it a stop again`);
+  if (name === "phone") await page.click("#fold");
+  await page.locator(".pin.stop").click();
+  await pick(name === "phone" ? "Fjern" : "Remove");
+  if (name === "phone") await page.click("#fold");
+  check((await page.$$eval("#stops li", (e) => e.length)) === 2, `${name}: the stop was removed again`);
+  if (name === "phone") await page.click("#fold");
   if (name === "desktop") {
-    // Right-click puts a point straight in (a new destination), and right-click on it takes it away again.
-    await clickAt(59.95, 5.9, "right");
-    check((await page.$$eval("#stops li", (e) => e.length)) === 3 && !(await page.$(".menu")), "desktop: right-click adds a destination without asking");
-    await page.locator(".pin.end").click({ button: "right" });
-    check((await page.$$eval("#stops li", (e) => e.length)) === 2, "desktop: right-click on a point removes it");
+    // Right-click is a context menu about the place: on the route it tells the road and how far along the route it is.
     await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+    const routeMid = () => page.evaluate(() => { const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; const c = l[Math.floor(l.length / 2)]; const q = m.project(c); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y }; });
+    await page.evaluate(() => { const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; m.jumpTo({ center: l[Math.floor(l.length / 2)], zoom: 12 }); });
+    await page.waitForTimeout(1500);
+    const at = await routeMid();
+    await page.mouse.click(at.x, at.y, { button: "right" });
+    const info = await page.$eval(".menu", (e) => e.innerText);
+    check(/km \d+ of \d+ on the route/.test(info) && /road|Motorway/i.test(info) && /Copy coordinates/.test(info) && (await page.$$eval("#stops li", (e) => e.length)) === 2,
+      `desktop: right-click on the route tells about the road and adds nothing (${info.replace(/\s+/g, " ")})`);
+    await page.screenshot({ path: `${out}/${name}-0-info.png` });
+    await page.keyboard.press("Escape");
+    // A left click on the route: only a via point or stop there.
+    await page.mouse.click(at.x, at.y);
+    check((await menuItems()).length === 2, `desktop: a click on the route offers via point or stop (${await menuItems()})`);
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => { const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; m.jumpTo({ center: l[l.length - 1] }); });
+    await page.waitForTimeout(300);
+    await page.locator(".pin.end").click({ button: "right" });
+    check((await menuItems()).includes("Remove"), "desktop: right-click on a point gives its menu");
+    await page.keyboard.press("Escape");
     // Dragging the line: a dashed guess through the pointer while dragging, a via point after.
-    const mid = await page.evaluate(() => { const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; const c = l[Math.floor(l.length / 2)]; const q = m.project(c); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y }; });
+    await page.evaluate(() => { const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; m.jumpTo({ center: l[Math.floor(l.length / 2)] }); });
+    await page.waitForTimeout(500);
+    const mid = await routeMid();
     await page.mouse.move(mid.x, mid.y);
     await page.mouse.down();
     await page.mouse.move(mid.x + 40, mid.y + 60, { steps: 5 });

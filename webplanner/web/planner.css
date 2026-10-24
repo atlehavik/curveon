@@ -59,6 +59,10 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #stops li button { padding: 2px 7px; border: none; color: var(--muted); }
 #stops li button:hover { color: var(--text); }
 
+#edit-row { display: flex; gap: 18px; margin-top: -6px; }
+#edit-row:not(:has(button:not([hidden]))) { display: none; }
+#edit-row button { font-size: 14px; }
+#clear { color: var(--muted); font-weight: 500; }
 #options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #options label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
 
