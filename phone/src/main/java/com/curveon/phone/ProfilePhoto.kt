@@ -1,5 +1,6 @@
 package com.curveon.phone
 
+import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -18,16 +19,20 @@ object ProfilePhoto {
     /** What every rider's picture is made as. */
     const val SIZE = 192
     private const val MAX_BYTES = 24_000
+    private const val HEADER_BYTES = 128 * 1024
+    private val BACK_LENS = Regex("back[ _-]?camera|rear[ _-]?camera", RegexOption.IGNORE_CASE)
 
     /**
      * The photo at [uri], turned the right way up and not larger than [maxSide] pixels (so a 12-megapixel photo is not
      * held whole), ready to be cut. Null if it cannot be read.
      *
-     * With [mirrorFrontCamera], a photo taken with the front camera is turned left to right. The camera app shows the
-     * rider the mirror view while framing a selfie but saves the picture the other way round, and the rider then
-     * sees a face that is not the one they just looked at: a selfie must feel like the selfie they took.
+     * With [selfie], the photo is turned left to right (unless the file says it was taken with the back camera). The
+     * camera app shows the rider the mirror view while framing a selfie but saves the picture the other way round, and
+     * the rider then sees a face that is not the one they just looked at: a selfie must feel like the selfie they took.
+     * The camera app's file says nothing about which camera it was (only maker, model and time), and a picture for a
+     * profile is nearly always a selfie, so a picture from the camera is a selfie.
      */
-    fun load(context: Context, uri: Uri, maxSide: Int = 1280, mirrorFrontCamera: Boolean = false): Bitmap? = runCatching {
+    fun load(context: Context, uri: Uri, maxSide: Int = 1280, selfie: Boolean = false): Bitmap? = runCatching {
         val resolver = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
@@ -37,7 +42,7 @@ object ProfilePhoto {
             ?: return null
         val exif = resolver.openInputStream(uri)?.use { ExifInterface(it) }
         val rotation = exif?.let { rotationOf(it) } ?: 0f
-        val mirror = mirrorFrontCamera && exif != null && isFrontCamera(exif)
+        val mirror = selfie && !isBackCamera(resolver, uri)
         if (rotation == 0f && !mirror) decoded
         else Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply {
             postRotate(rotation)
@@ -45,9 +50,14 @@ object ProfilePhoto {
         }, true)
     }.getOrNull()
 
-    /** The camera apps name the lens in the file ("... front camera 2.2mm f/2.2"). */
-    private fun isFrontCamera(exif: ExifInterface) =
-        exif.getAttribute("LensModel")?.contains("front", ignoreCase = true) == true
+    /**
+     * Some cameras name the lens in the file's EXIF header ("Pixel 9a back camera 4.53mm f/1.7"). Android's own
+     * ExifInterface does not know that tag on every version, so the start of the file (where the header is) is read as text.
+     */
+    private fun isBackCamera(resolver: ContentResolver, uri: Uri): Boolean = runCatching {
+        val head = resolver.openInputStream(uri)?.use { it.readNBytes(HEADER_BYTES) } ?: return false
+        BACK_LENS.containsMatchIn(String(head, Charsets.ISO_8859_1))
+    }.getOrDefault(false)
 
     private fun rotationOf(exif: ExifInterface) = when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
         ExifInterface.ORIENTATION_ROTATE_90 -> 90f

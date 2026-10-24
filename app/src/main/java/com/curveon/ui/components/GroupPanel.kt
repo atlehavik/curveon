@@ -409,12 +409,20 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
     fun toast(res: Int) = android.widget.Toast.makeText(context, context.getString(res), android.widget.Toast.LENGTH_LONG).show()
     // [fromCamera]: a selfie is turned the way the rider saw it while framing it; a picture chosen from the gallery is left as it is.
     fun cutFrom(uri: android.net.Uri, fromCamera: Boolean = false) {
-        val bitmap = com.curveon.phone.ProfilePhoto.load(context, uri, mirrorFrontCamera = fromCamera)
+        val bitmap = com.curveon.phone.ProfilePhoto.load(context, uri, selfie = fromCamera)
         runCatching { captureFile.delete() } // a picture of the rider's face is not left in the cache
         if (bitmap != null) toCut = bitmap else toast(R.string.group_photo_failed)
     }
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) cutFrom(uri) }
-    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> if (ok) cutFrom(captureUri(), fromCamera = true) }
+    // Starts on the front camera (a picture for a profile is a selfie); the rider can still switch.
+    val takeSelfie = remember {
+        object : ActivityResultContracts.TakePicture() {
+            override fun createIntent(context: Context, input: android.net.Uri) = super.createIntent(context, input)
+                .putExtra("android.intent.extras.CAMERA_FACING", 1).putExtra("android.intent.extras.LENS_FACING_FRONT", 1)
+                .putExtra("android.intent.extra.USE_FRONT_CAMERA", true)
+        }
+    }
+    val camera = rememberLauncherForActivityResult(takeSelfie) { ok -> if (ok) cutFrom(captureUri(), fromCamera = true) }
     // The app holds the camera permission for scanning, so Android wants it also to start the camera app.
     val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) camera.launch(captureUri()) else toast(R.string.group_photo_camera_denied) }
     fun takePhoto() {
