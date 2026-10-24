@@ -505,7 +505,7 @@
     <string name="toast_saved_to_planned">Vistað í fyrirhugaðar ferðir</string>
     <string name="toast_saved">Vistað</string>
     <string name="save_route_to_where_to">Hvert?</string>
-    <string name="planned_empty">Engar fyrirhugaðar ferðir enn. Vistaðu leið úr skipuleggjaranum með bókamerkjahnappnum, eða vistaðu eina af ferðunum þínum.</string>
+    <string name="planned_empty">Engar fyrirhugaðar ferðir enn. Vistaðu leið úr skipuleggjaranum með bókamerkjahnappnum, vistaðu eina af ferðunum þínum eða skipuleggðu ferð í vafranum á curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d ferð</item>
         <item quantity="other">%d ferðir</item>

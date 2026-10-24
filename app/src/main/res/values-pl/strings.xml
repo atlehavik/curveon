@@ -524,7 +524,7 @@
     <string name="toast_saved_to_planned">Zapisano w planowanych trasach</string>
     <string name="toast_saved">Zapisano</string>
     <string name="save_route_to_where_to">Dokąd?</string>
-    <string name="planned_empty">Brak planowanych tras. Zapisz trasę z planera przyciskiem zakładki albo zapisz jeden ze swoich przejazdów.</string>
+    <string name="planned_empty">Brak planowanych tras. Zapisz trasę z planera przyciskiem zakładki, zapisz jeden ze swoich przejazdów albo zaplanuj trasę w przeglądarce na curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d trasa</item>
         <item quantity="few">%d trasy</item>

@@ -506,7 +506,7 @@
     <string name="toast_saved_to_planned">Sparad i planerade turer</string>
     <string name="toast_saved">Sparad</string>
     <string name="save_route_to_where_to">Vart?</string>
-    <string name="planned_empty">Inga planerade turer än. Spara en rutt från planeraren med bokmärkesknappen, eller spara en av dina turer.</string>
+    <string name="planned_empty">Inga planerade turer än. Spara en rutt från planeraren med bokmärkesknappen, spara en av dina körda turer eller planera en tur i webbläsaren på curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d tur</item>
         <item quantity="other">%d turer</item>

@@ -515,7 +515,7 @@
     <string name="toast_saved_to_planned">Guardado en viajes planificados</string>
     <string name="toast_saved">Guardado</string>
     <string name="save_route_to_where_to">¿Adónde vamos?</string>
-    <string name="planned_empty">Aún no hay viajes planificados. Guarda una ruta desde el planificador con el botón de marcador o guarda una de tus salidas.</string>
+    <string name="planned_empty">Aún no hay viajes planificados. Guarda una ruta desde el planificador con el botón de marcador, guarda una de tus salidas o planifica un viaje en el navegador en curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d viaje</item>
         <item quantity="many">%d viajes</item>

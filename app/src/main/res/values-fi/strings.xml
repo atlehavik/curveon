@@ -471,7 +471,7 @@
     <string name="toast_saved_to_planned">Tallennettu suunniteltuihin matkoihin</string>
     <string name="toast_saved">Tallennettu</string>
     <string name="save_route_to_where_to">Minne?</string>
-    <string name="planned_empty">Ei vielä suunniteltuja matkoja. Tallenna reitti suunnittelijasta kirjanmerkkipainikkeella tai tallenna jokin ajoistasi.</string>
+    <string name="planned_empty">Ei vielä suunniteltuja matkoja. Tallenna reitti suunnittelijasta kirjanmerkkipainikkeella, tallenna jokin ajamistasi matkoista tai suunnittele matka selaimessa osoitteessa curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d matka</item>
         <item quantity="other">%d matkaa</item>

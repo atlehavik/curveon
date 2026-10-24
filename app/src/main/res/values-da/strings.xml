@@ -506,7 +506,7 @@
     <string name="toast_saved_to_planned">Gemt i planlagte ture</string>
     <string name="toast_saved">Gemt</string>
     <string name="save_route_to_where_to">Hvor skal du hen?</string>
-    <string name="planned_empty">Ingen planlagte ture endnu. Gem en rute fra planlæggeren med bogmærkeknappen, eller gem en af dine ture.</string>
+    <string name="planned_empty">Ingen planlagte ture endnu. Gem en rute fra planlæggeren med bogmærkeknappen, gem en af dine kørte ture, eller planlæg en tur i browseren på curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d tur</item>
         <item quantity="other">%d ture</item>
