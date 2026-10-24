@@ -2,37 +2,59 @@
   {
     "version": "1.2.6",
     "en": [
-      "Taking a profile picture now opens Curveon's own camera, on the selfie lens, and the picture comes out exactly as you saw it in the mirror view, whatever your phone's camera app is set to"
+      "Taking a profile picture now opens Curveon's own camera, on the selfie lens, and the picture comes out exactly as you saw it in the mirror view, whatever your phone's camera app is set to",
+      "If a friend removes you, they now disappear from your list too, and if you are removed from a ride group it leaves your list by itself, with a short note saying what happened",
+      "When you link your phone and tablet, a profile you have set up with a name or picture is no longer replaced by an empty one"
     ],
     "nb": [
-      "Når du tar profilbilde, åpner Curveon nå sitt eget kamera på selfie-linsen, og bildet blir akkurat slik du så det i speilbildet, uansett hva kameraappen på telefonen er innstilt på"
+      "Når du tar profilbilde, åpner Curveon nå sitt eget kamera på selfie-linsen, og bildet blir akkurat slik du så det i speilbildet, uansett hva kameraappen på telefonen er innstilt på",
+      "Fjerner en venn deg, forsvinner han nå også fra listen din, og blir du fjernet fra en turgruppe, forsvinner gruppa av seg selv, med en kort beskjed om hva som skjedde",
+      "Når du kobler telefonen og nettbrettet, blir en profil du har satt opp med navn eller bilde ikke lenger byttet ut med en tom"
     ],
     "sv": [
-      "När du tar en profilbild öppnas nu Curveons egen kamera på selfielinsen, och bilden blir precis som du såg den i spegelbilden, oavsett hur telefonens kameraapp är inställd"
+      "När du tar en profilbild öppnas nu Curveons egen kamera på selfielinsen, och bilden blir precis som du såg den i spegelbilden, oavsett hur telefonens kameraapp är inställd",
+      "Tar en vän bort dig försvinner han nu också från din lista, och om du tas bort från en turgrupp försvinner gruppen av sig själv, med ett kort meddelande om vad som hände",
+      "När du länkar telefonen och surfplattan ersätts en profil du har satt upp med namn eller bild inte längre av en tom"
     ],
     "da": [
-      "Når du tager et profilbillede, åbner Curveon nu sit eget kamera på selfie-linsen, og billedet bliver præcis, som du så det i spejlbilledet, uanset hvad kameraappen på telefonen er indstillet til"
+      "Når du tager et profilbillede, åbner Curveon nu sit eget kamera på selfie-linsen, og billedet bliver præcis, som du så det i spejlbilledet, uanset hvad kameraappen på telefonen er indstillet til",
+      "Fjerner en ven dig, forsvinder han nu også fra din liste, og bliver du fjernet fra en turgruppe, forsvinder gruppen af sig selv, med en kort besked om, hvad der skete",
+      "Når du forbinder telefonen og tabletten, bliver en profil, du har sat op med navn eller billede, ikke længere erstattet af en tom"
     ],
     "fi": [
-      "Kun otat profiilikuvan, Curveon avaa nyt oman kameransa selfie-linssillä, ja kuva tulee täsmälleen sellaisena kuin näit sen peilikuvassa, vaikka puhelimen kamerasovelluksen asetukset olisivat mitkä"
+      "Kun otat profiilikuvan, Curveon avaa nyt oman kameransa selfie-linssillä, ja kuva tulee täsmälleen sellaisena kuin näit sen peilikuvassa, vaikka puhelimen kamerasovelluksen asetukset olisivat mitkä",
+      "Jos kaveri poistaa sinut, hän katoaa nyt myös sinun luettelostasi, ja jos sinut poistetaan ajoryhmästä, ryhmä poistuu luettelostasi itsestään lyhyen ilmoituksen kera",
+      "Kun yhdistät puhelimen ja tabletin, nimellä tai kuvalla täytetty profiili ei enää korvaudu tyhjällä"
     ],
     "is": [
-      "Þegar þú tekur prófílmynd opnast nú eigin myndavél Curveon á selfie-linsunni og myndin verður nákvæmlega eins og þú sást hana í speglinum, sama hvernig myndavélaappið í símanum er stillt"
+      "Þegar þú tekur prófílmynd opnast nú eigin myndavél Curveon á selfie-linsunni og myndin verður nákvæmlega eins og þú sást hana í speglinum, sama hvernig myndavélaappið í símanum er stillt",
+      "Ef vinur fjarlægir þig hverfur hann nú líka af listanum þínum, og ef þú ert fjarlægð(ur) úr ferðahóp hverfur hópurinn sjálfkrafa með stuttri tilkynningu um hvað gerðist",
+      "Þegar þú tengir símann og spjaldtölvuna er prófíll með nafni eða mynd ekki lengur settur út fyrir tóman"
     ],
     "de": [
-      "Für das Profilbild öffnet Curveon jetzt seine eigene Kamera mit der Selfie-Linse, und das Bild wird genau so, wie du es im Spiegelbild gesehen hast, egal wie die Kamera-App deines Telefons eingestellt ist"
+      "Für das Profilbild öffnet Curveon jetzt seine eigene Kamera mit der Selfie-Linse, und das Bild wird genau so, wie du es im Spiegelbild gesehen hast, egal wie die Kamera-App deines Telefons eingestellt ist",
+      "Wenn dich ein Freund entfernt, verschwindet er jetzt auch aus deiner Liste, und wenn du aus einer Fahrgruppe entfernt wirst, verschwindet die Gruppe von selbst, mit einem kurzen Hinweis, was passiert ist",
+      "Beim Koppeln von Handy und Tablet wird ein eingerichtetes Profil mit Namen oder Bild nicht mehr durch ein leeres ersetzt"
     ],
     "es": [
-      "Al hacer la foto de perfil, Curveon abre ahora su propia cámara con el objetivo de selfie, y la foto sale exactamente como la viste en la vista de espejo, sea cual sea el ajuste de la app de cámara del teléfono"
+      "Al hacer la foto de perfil, Curveon abre ahora su propia cámara con el objetivo de selfie, y la foto sale exactamente como la viste en la vista de espejo, sea cual sea el ajuste de la app de cámara del teléfono",
+      "Si un amigo te quita, ahora también desaparece de tu lista, y si te sacan de un grupo de ruta, el grupo se va solo de tu lista con un aviso breve de lo ocurrido",
+      "Al enlazar el móvil y la tablet, un perfil que ya has configurado con nombre o foto ya no se sustituye por uno vacío"
     ],
     "fr": [
-      "Pour la photo de profil, Curveon ouvre maintenant sa propre caméra sur l'objectif selfie, et la photo est exactement celle que tu as vue dans le miroir, quel que soit le réglage de l'appli photo du téléphone"
+      "Pour la photo de profil, Curveon ouvre maintenant sa propre caméra sur l'objectif selfie, et la photo est exactement celle que tu as vue dans le miroir, quel que soit le réglage de l'appli photo du téléphone",
+      "Si un ami te retire, il disparaît maintenant aussi de ta liste, et si tu es retiré d'un groupe de balade, le groupe quitte ta liste tout seul, avec un court message pour dire ce qui s'est passé",
+      "Quand tu associes le téléphone et la tablette, un profil déjà rempli avec un nom ou une photo n'est plus remplacé par un profil vide"
     ],
     "nl": [
-      "Voor je profielfoto opent Curveon nu zijn eigen camera met de selfielens, en de foto wordt precies zoals je hem in de spiegelweergave zag, wat de camera-app van je telefoon ook heeft ingesteld"
+      "Voor je profielfoto opent Curveon nu zijn eigen camera met de selfielens, en de foto wordt precies zoals je hem in de spiegelweergave zag, wat de camera-app van je telefoon ook heeft ingesteld",
+      "Als een vriend je verwijdert, verdwijnt hij nu ook uit jouw lijst, en word je uit een rittengroep gezet, dan verdwijnt de groep vanzelf, met een kort bericht over wat er gebeurde",
+      "Als je telefoon en tablet koppelt, wordt een profiel met naam of foto niet meer vervangen door een leeg profiel"
     ],
     "pl": [
-      "Przy zdjęciu profilowym Curveon otwiera teraz własny aparat z obiektywem do selfie, a zdjęcie wychodzi dokładnie takie, jakie widziałeś w lustrzanym podglądzie, niezależnie od ustawień aplikacji aparatu w telefonie"
+      "Przy zdjęciu profilowym Curveon otwiera teraz własny aparat z obiektywem do selfie, a zdjęcie wychodzi dokładnie takie, jakie widziałeś w lustrzanym podglądzie, niezależnie od ustawień aplikacji aparatu w telefonie",
+      "Gdy znajomy Cię usunie, znika teraz także z Twojej listy, a gdy usuną Cię z grupy przejazdu, grupa sama znika z listy, z krótką informacją, co się stało",
+      "Po połączeniu telefonu i tabletu skonfigurowany profil z nazwą lub zdjęciem nie jest już zastępowany pustym"
     ]
   },
   {

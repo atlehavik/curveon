@@ -553,6 +553,16 @@ object GroupHub {
                 nudgeIn(id, e.riderId, e.nudge, e.tsMs, peer?.nickname, peer?.colour ?: 0xFF00E5FF.toInt(), peer?.photoBase64)
             }
             is GroupEvent.NudgeSeen -> if (state.kind == GroupKind.FRIEND) nudgeSeen(id, e, friend = true)
+            // The friend removed us: they go from our list too (and from our other device, through the sync).
+            is GroupEvent.MemberLeft -> if (state.kind == GroupKind.FRIEND && state.peer?.riderId == e.riderId) {
+                val name = state.peer?.nickname.orEmpty()
+                dropGroup(id)
+                trackGone(id)
+                track(SHARE_KEY, sharePayload())
+                publish()
+                send(friendList())
+                send(Message.ContactEnded(name, friend = true))
+            }
             is GroupEvent.TripReceived -> when {
                 state.kind == GroupKind.SELF && e.trip.tripId == SYNC_TRIP -> onSyncReceived(e.trip.doc)
                 state.kind == GroupKind.FRIEND && e.trip.tripId == SHARE_TRIP && !e.mine -> friendSharesWithMe(id, e.trip.doc == "1")
@@ -585,7 +595,8 @@ object GroupHub {
 
     private fun removeFriend(id: String) {
         val state = groups[id]?.takeIf { it.kind == GroupKind.FRIEND } ?: return
-        friendClients[id]?.leave()
+        val open = friendClients[id]?.takeIf { it.connected }
+        if (open != null) open.leave() else farewell(state)
         stopFriend(id)
         groups.remove(id)
         store?.delete(id)
@@ -595,6 +606,17 @@ object GroupHub {
         track(SHARE_KEY, sharePayload())
         publish()
         send(friendList())
+    }
+
+    /** The channel was not open when the friend was removed: open it just long enough to tell them, so they are not left with a friend who is gone. */
+    private fun farewell(state: GroupState) {
+        val holder = arrayOfNulls<GroupClient>(1)
+        val c = GroupClient(state, transports, { e ->
+            if (e == GroupEvent.Connected) exec.execute { holder[0]?.let { it.leave(); it.shutdown() } }
+        }, { })
+        holder[0] = c
+        c.start()
+        exec.schedule({ c.shutdown() }, 10_000, TimeUnit.MILLISECONDS)
     }
 
     /** A new private channel for one friend to join (the code and the link). Kept open while the code is on show. */
@@ -778,7 +800,8 @@ object GroupHub {
 
     private fun trackGone(groupIdHex: String) = track(SyncDoc.groupKey(groupIdHex), null)
 
-    private fun profilePayload(): String? = store?.profile?.let { p ->
+    /** Null for no profile, and for the one nobody has set up (the name "Rider", no picture or icon): that must never win over a real one. */
+    private fun profilePayload(): String? = store?.profile?.takeUnless { it.isUnset() }?.let { p ->
         JSONObject().put("nick", p.nickname).put("colour", p.colour).put("icon", p.icon ?: JSONObject.NULL)
             .put("photo", p.photoJpegBase64 ?: JSONObject.NULL).toString()
     }
@@ -910,6 +933,8 @@ object GroupHub {
         profileChanged()
     }
 
+    private fun Message.GroupProfile.isUnset() = (nickname.isBlank() || nickname == "Rider") && icon == null && photoJpegBase64 == null
+
     private fun profileChanged() {
         send(profileMessage())
         friendClients.forEach { (id, c) -> groups[id]?.let { c.setProfile(helloFor(it)) } }
@@ -1009,10 +1034,12 @@ object GroupHub {
                 store?.save(state)
             }
             GroupEvent.Removed -> {
-                removed = true
-                connected = false
-                send(Message.GroupConnection(state.groupIdHex, Message.GroupStatus.REMOVED, 0))
-                // The group is of no use any more; the rider sees "removed" and can leave it from the list.
+                // The group is of no use any more: it goes from the list by itself, with a line saying why.
+                val name = state.name.orEmpty()
+                dropGroup(state.groupIdHex)
+                trackGone(state.groupIdHex)
+                send(groupList())
+                send(Message.ContactEnded(name, friend = false))
             }
         }
     }

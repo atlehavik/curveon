@@ -1049,6 +1049,8 @@
     <string name="friends_link_failed">Linket kunne ikke laves. Tjek internettet, og prøv igen.</string>
     <string name="friends_high_five_title">High five!</string>
     <string name="friends_high_five_text">Du og %1$s er venner nu</string>
+    <string name="friend_removed_you">%1$s fjernede dig som ven</string>
+    <string name="group_removed_you">Du blev fjernet fra %1$s</string>
     <string name="group_add_friends">Føj venner til gruppen</string>
     <string name="group_add_friends_none">Du har ingen venner at tilføje endnu. Tilføj nogle under Mine venner.</string>
     <string name="group_add_friends_send">Send invitation</string>

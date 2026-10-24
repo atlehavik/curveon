@@ -86,6 +86,7 @@ class ProtocolTest {
         Message.RequestFriendLink,
         Message.FriendLink("https://relay.curveon.no/join#v=1"),
         Message.FriendAdded("f1", "Ola"),
+        Message.ContactEnded("Ola", true),
         Message.FriendAddToGroup("0123", listOf("f1", "f2")),
         Message.FriendAddToGroup("0123", emptyList()),
         Message.GroupInviteAnswer("o1", true),

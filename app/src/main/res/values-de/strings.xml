@@ -1048,6 +1048,8 @@
     <string name="friends_link_failed">Der Link konnte nicht erstellt werden. Prüfe das Internet und versuch es nochmal.</string>
     <string name="friends_high_five_title">High Five!</string>
     <string name="friends_high_five_text">Du und %1$s seid jetzt Freunde</string>
+    <string name="friend_removed_you">%1$s hat dich als Freund entfernt</string>
+    <string name="group_removed_you">Du wurdest aus %1$s entfernt</string>
     <string name="group_add_friends">Freunde zur Gruppe hinzufügen</string>
     <string name="group_add_friends_none">Du hast noch keine Freunde zum Hinzufügen. Füge welche unter Meine Freunde hinzu.</string>
     <string name="group_add_friends_send">Einladung senden</string>

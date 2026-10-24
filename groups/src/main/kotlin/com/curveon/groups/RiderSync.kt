@@ -9,8 +9,12 @@ class SyncEntry(val key: String, val ts: Long, val deleted: Boolean, val payload
   fun beats(other: SyncEntry): Boolean = when {
     ts != other.ts -> ts > other.ts
     deleted != other.deleted -> deleted
+    // Two profiles nobody has changed since syncing began: the one with a picture wins, not whichever name sorts last.
+    key == SyncDoc.PROFILE && hasPhoto() != other.hasPhoto() -> hasPhoto()
     else -> (payload ?: "") > (other.payload ?: "")
   }
+
+  private fun hasPhoto() = payload?.let { runCatching { !JSONObject(it).isNull("photo") }.getOrDefault(false) } ?: false
 
   fun sameAs(other: SyncEntry) = ts == other.ts && deleted == other.deleted && payload == other.payload
 }

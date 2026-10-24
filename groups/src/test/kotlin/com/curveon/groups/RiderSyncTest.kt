@@ -21,6 +21,13 @@ class RiderSyncTest {
     assertEquals(1L, m.entries.getValue("g:3").ts)
   }
 
+  @Test fun ofTwoUntouchedProfilesTheOneWithAPictureWinsWhateverTheNames() {
+    val withPhoto = e(SyncDoc.PROFILE, 0, """{"nick":"Atle","photo":"abc"}""")
+    val without = e(SyncDoc.PROFILE, 0, """{"nick":"Ola","photo":null}""")
+    assertTrue(withPhoto.beats(without))
+    assertFalse(without.beats(withPhoto))
+  }
+
   @Test fun mergingGivesTheSameWhateverTheOrderAndHoweverOften() {
     val a = doc(e("g:1", 10), e("profile", 3), e("g:9", 7, null, deleted = true))
     val b = doc(e("g:1", 12), e("g:2", 4), e("g:9", 5))

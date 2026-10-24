@@ -6,6 +6,12 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-24 — Fjernet venn og utkastet fra gruppe (1.2.6)
+
+- [ ] To telefoner som er venner: slett vennen på den ene. Den andre skal få en melding «… fjernet deg som venn», og vennen skal være borte fra listen. Prøv også med den andre telefonen uten nett når du sletter, og slå på nett igjen etterpå (da kan beskjeden komme litt senere).
+- [ ] Gruppeeier sparker ut et medlem: på medlemmets telefon skal gruppa forsvinne av seg selv, med meldingen «Du ble fjernet fra …». Ingen manuell «forlat».
+- [ ] Koble to enheter (Mine enheter): har den ene «Rider» uten bilde og den andre et navn med bilde, skal navnet med bilde vinne på begge. Venner fra begge enheter skal ligge på begge.
+
 ## 2026-10-24 — Veiskiltet bare på veien (1.2.5)
 
 - [ ] Pixel/X7 på kafé eller parkering (fri kjøring): veiskiltet øverst til venstre forsvinner etter ca. 2 minutter stille, og kommer tilbake når du kjører igjen. Står du for rødt lys eller i kø, blir det stående.
