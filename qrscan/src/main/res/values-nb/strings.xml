@@ -4,4 +4,8 @@
     <string name="qr_scan_denied">Kameraet trengs for å skanne. Gi tilgang i Android-innstillingene, eller åpne invitasjonslenken i stedet.</string>
     <string name="qr_scan_wrong">Det er ikke en Curveon-invitasjon.</string>
     <string name="qr_scan_cancel">Avbryt</string>
+    <string name="selfie_take">Ta bildet</string>
+    <string name="selfie_switch">Bytt kamera</string>
+    <string name="selfie_denied">Kameraet trengs for å ta bildet. Gi tilgang i Android-innstillingene, eller velg et bilde fra galleriet i stedet.</string>
+    <string name="selfie_failed">Bildet ble ikke tatt. Prøv igjen.</string>
 </resources>

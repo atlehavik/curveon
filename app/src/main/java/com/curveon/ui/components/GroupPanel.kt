@@ -405,30 +405,22 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
     // The photo just taken or chosen, waiting to be cut.
     var toCut by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val captureFile = remember { java.io.File(context.cacheDir, "photos/profile.jpg") }
-    fun captureUri() = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.photos", captureFile.also { it.parentFile?.mkdirs() })
     fun toast(res: Int) = android.widget.Toast.makeText(context, context.getString(res), android.widget.Toast.LENGTH_LONG).show()
-    // [fromCamera]: a selfie is turned the way the rider saw it while framing it; a picture chosen from the gallery is left as it is.
-    fun cutFrom(uri: android.net.Uri, fromCamera: Boolean = false) {
-        val bitmap = com.curveon.phone.ProfilePhoto.load(context, uri, selfie = fromCamera)
+    fun cutFrom(uri: android.net.Uri) {
+        val bitmap = com.curveon.phone.ProfilePhoto.load(context, uri)
         runCatching { captureFile.delete() } // a picture of the rider's face is not left in the cache
         if (bitmap != null) toCut = bitmap else toast(R.string.group_photo_failed)
     }
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) cutFrom(uri) }
-    // Starts on the front camera (a picture for a profile is a selfie); the rider can still switch.
-    val takeSelfie = remember {
-        object : ActivityResultContracts.TakePicture() {
-            override fun createIntent(context: Context, input: android.net.Uri) = super.createIntent(context, input)
-                .putExtra("android.intent.extras.CAMERA_FACING", 1).putExtra("android.intent.extras.LENS_FACING_FRONT", 1)
-                .putExtra("android.intent.extra.USE_FRONT_CAMERA", true)
-        }
-    }
-    val camera = rememberLauncherForActivityResult(takeSelfie) { ok -> if (ok) cutFrom(captureUri(), fromCamera = true) }
-    // The app holds the camera permission for scanning, so Android wants it also to start the camera app.
-    val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) camera.launch(captureUri()) else toast(R.string.group_photo_camera_denied) }
-    fun takePhoto() {
-        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) camera.launch(captureUri())
-        else askCamera.launch(android.Manifest.permission.CAMERA)
-    }
+    // The picture is taken in Curveon's own camera (front lens, mirror view, saved as shown): the phone's camera app saves a
+    // selfie mirrored or not depending on its own setting, so what came back could be the other way round from what the rider saw.
+    var cameraOpen by remember { mutableStateOf(false) }
+    fun takePhoto() { cameraOpen = true }
+    if (cameraOpen) com.curveon.qrscan.SelfieCameraDialog(
+        file = captureFile.also { it.parentFile?.mkdirs() },
+        onPicture = { cameraOpen = false; cutFrom(android.net.Uri.fromFile(captureFile)) },
+        onDismiss = { cameraOpen = false }
+    )
 
     // Taken from the profile once: what comes back after a save must not undo letters typed meanwhile.
     var nick by rememberSaveable { mutableStateOf(me.nickname) }

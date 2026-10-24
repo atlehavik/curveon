@@ -5,4 +5,8 @@
     <string name="qr_scan_denied">Do skanowania potrzebny jest aparat. Zezwól na to w ustawieniach Androida albo otwórz link z zaproszeniem.</string>
     <string name="qr_scan_wrong">To nie jest zaproszenie do Curveon.</string>
     <string name="qr_scan_cancel">Anuluj</string>
+    <string name="selfie_take">Zrób zdjęcie</string>
+    <string name="selfie_switch">Przełącz aparat</string>
+    <string name="selfie_denied">Aparat jest potrzebny do zrobienia zdjęcia. Zezwól na niego w ustawieniach Androida albo wybierz zdjęcie z galerii.</string>
+    <string name="selfie_failed">Nie udało się zrobić zdjęcia. Spróbuj ponownie.</string>
 </resources>
