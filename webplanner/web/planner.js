@@ -8,6 +8,7 @@ import { b64, channel, decodePolyline, linkUri, newLink, parseLink, random, unb6
 const TEXTS = {
   en: {
     title: "Curveon planner", search_hint: "Search for a place, or click the map", lang: "Norsk",
+    theme_dark: "Dark map", theme_light: "Light map",
     hint_empty: "Click the map or search to set where you start. Every place you add after that becomes where you are going, and the one before it a stop. Drag the line to make it take another road.",
     opt_style: "Roads", opt_surface: "Surface", opt_ferries: "Ferries", opt_motorways: "Motorways",
     style_fastest: "Fastest", style_curvy: "Curvy", style_super_curvy: "Super curvy",
@@ -19,6 +20,7 @@ const TEXTS = {
     routing: "Finding the road…", queued: "Busy right now, your route is next in line…",
     err_busy: "The planner is busy. Try again in a moment.", err_no_route: "No road found between these places. Move a point onto a road.",
     err_too_long: "That is too long for one trip (over 1500 km). Split it into days.", err_slow_down: "That was a lot of routes at once. Wait a few minutes.",
+    err_outside: "Routes can be worked out in Europe so far. Move the points there.",
     err_failed: "The route could not be worked out. Try again.", err_offline: "No connection to the planner. Check your internet connection.",
     name_hint: "Name of the trip", send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
     sending: "Sending…", sent_ok: "Sent. It shows under Planned in Curveon the next time the app is online.",
@@ -40,6 +42,7 @@ const TEXTS = {
   },
   nb: {
     title: "Curveon-planlegger", search_hint: "Søk etter et sted, eller klikk i kartet", lang: "English",
+    theme_dark: "Mørkt kart", theme_light: "Lyst kart",
     hint_empty: "Klikk i kartet eller søk for å velge hvor du starter. Hvert sted du legger til etter det blir målet, og det forrige blir et stopp. Dra i linjen for å få den til å ta en annen vei.",
     opt_style: "Veier", opt_surface: "Underlag", opt_ferries: "Ferjer", opt_motorways: "Motorvei",
     style_fastest: "Raskest", style_curvy: "Svingete", style_super_curvy: "Supersvingete",
@@ -51,6 +54,7 @@ const TEXTS = {
     routing: "Finner veien …", queued: "Travelt akkurat nå, ruten din står først i køen …",
     err_busy: "Planleggeren har mye å gjøre. Prøv igjen om litt.", err_no_route: "Fant ingen vei mellom disse stedene. Flytt et punkt inn på en vei.",
     err_too_long: "Det er for langt for én tur (over 1500 km). Del den opp i dager.", err_slow_down: "Det ble mange ruter på kort tid. Vent noen minutter.",
+    err_outside: "Ruter kan foreløpig bare regnes ut i Europa. Flytt punktene dit.",
     err_failed: "Ruten kunne ikke regnes ut. Prøv igjen.", err_offline: "Får ikke kontakt med planleggeren. Sjekk internettforbindelsen.",
     name_hint: "Navn på turen", send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
     sending: "Sender …", sent_ok: "Sendt. Den dukker opp under Planlagte i Curveon neste gang appen er på nett.",
@@ -95,6 +99,9 @@ function applyTexts() {
   document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
   document.querySelectorAll("[data-tp]").forEach((e) => { e.placeholder = t(e.dataset.tp); });
   $("lang").textContent = t("lang");
+  $("theme").textContent = theme === "dark" ? "☀" : "☾";
+  $("theme").title = t(theme === "dark" ? "theme_light" : "theme_dark");
+  $("theme").ariaLabel = $("theme").title;
   $("fold").textContent = $("panel").classList.contains("folded") ? "▴" : "▾";
 }
 
@@ -113,16 +120,24 @@ const devices = new Map();
 const deleting = new Set();
 
 // ---------- Map ----------
-const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+const emptyLine = () => ({ type: "FeatureCollection", features: [] });
+// Light by default, dark when the rider picks it (both in the app's normal contrast); the page follows the map.
+let theme = ["light", "dark"].includes(params.get("theme")) ? params.get("theme") : store.get("theme", "light");
+document.documentElement.dataset.theme = theme;
+const MAP = location.origin + BASE + "map/";
 const protocol = new pmtiles.Protocol();
 maplibregl.addProtocol("pmtiles", protocol.tile);
+// The Norway map, also asked directly whether it covers the view (else the online map shows, as in the app).
+const norway = new pmtiles.PMTiles(MAP + "norway.pmtiles");
+protocol.add(norway);
+let norwayMaxZoom = 15;
+norway.getHeader().then((h) => { norwayMaxZoom = h.maxZoom; }).catch(() => {});
 
 async function loadStyle() {
-  const style = await (await fetch(`${BASE}map/styles/${dark ? "dark" : "light"}.json`)).json();
-  const abs = location.origin + BASE + "map/";
-  style.sources.protomaps.url = "pmtiles://" + abs + "norway.pmtiles";
-  style.glyphs = abs + "fonts/{fontstack}/{range}.pbf";
-  style.sprite = abs + "sprites/" + (dark ? "dark" : "light");
+  const style = await (await fetch(`${BASE}map/styles/${theme}.json`)).json();
+  style.sources.protomaps.url = "pmtiles://" + MAP + "norway.pmtiles";
+  style.glyphs = MAP + "fonts/{fontstack}/{range}.pbf";
+  style.sprite = MAP + "sprites/" + theme;
   // Beyond the Norway map there is only background: the sea's colour, so the edge of the map doesn't show.
   const water = style.layers.find((l) => l.id === "water")?.paint?.["fill-color"];
   const bg = style.layers.find((l) => l.id === "background");
@@ -131,31 +146,58 @@ async function loadStyle() {
 }
 
 const map = new maplibregl.Map({
-  container: "map", style: await loadStyle(), center: [8.5, 61.2], zoom: 5.2, minZoom: 3.5, maxZoom: 18,
-  attributionControl: { compact: true, customAttribution: t("attribution") }, hash: false,
+  container: "map", style: withRoute(await loadStyle()), center: [8.5, 61.2], zoom: 5.2, minZoom: 3.5, maxZoom: 18,
+  attributionControl: { compact: true, customAttribution: t("attribution") },
+  // Where the map is stays in the address (#zoom/lat/lon): a view can be shared, and comes back on reload.
+  hash: true,
 });
 if (params.has("debug")) window.curveonMap = map; // for tools/webplanner_test.mjs
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
 map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: false }, trackUserLocation: false }), "top-right");
 
-map.on("load", () => {
-  map.addSource("route", { type: "geojson", data: emptyLine() });
-  // Under the place names, which stay on top of every line (as in the app).
-  const firstName = map.getStyle().layers.find((l) => l.id.startsWith("places_"))?.id;
-  map.addLayer({ id: "route-casing", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": "#5a3000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 10, 16, 14] } }, firstName);
-  map.addLayer({ id: "route", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": "#ff9100", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 6, 16, 9] } }, firstName);
-  map.addLayer({ id: "route-hit", type: "line", source: "route", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 22 } }, firstName);
-  drawRoute();
-});
+/**
+ * The route's line in [style], under the place names (which stay on top of every line, as in the app). Part of the
+ * style itself, so a change between light and dark keeps it.
+ */
+function withRoute(style) {
+  style.sources.route = { type: "geojson", data: routeData() };
+  const at = style.layers.findIndex((l) => l.id.startsWith("places_"));
+  style.layers.splice(at < 0 ? style.layers.length : at, 0,
+    { id: "route-casing", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": "#5a3000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 10, 16, 14] } },
+    { id: "route", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": "#ff9100", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 6, 16, 9] } },
+    { id: "route-hit", type: "line", source: "route", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 22 } });
+  return style;
+}
+map.on("load", showOnline);
 
-const emptyLine = () => ({ type: "FeatureCollection", features: [] });
+/** The online map where the Norway map has no tiles in view (its middle or a corner), hidden where it does. */
+async function showOnline() {
+  const ids = map.getStyle().layers.map((l) => l.id).filter((id) => id.startsWith("online-"));
+  if (!ids.length) return;
+  const z = Math.max(0, Math.min(Math.floor(map.getZoom()), norwayMaxZoom));
+  const n = 2 ** z;
+  const c = map.getContainer();
+  const spots = [[0.5, 0.5], [0.1, 0.1], [0.9, 0.1], [0.1, 0.9], [0.9, 0.9]].map(([fx, fy]) => map.unproject([c.clientWidth * fx, c.clientHeight * fy]));
+  let covered = true;
+  for (const ll of spots) {
+    const lat = Math.max(-85, Math.min(85, ll.lat)) * Math.PI / 180;
+    const x = Math.min(n - 1, Math.max(0, Math.floor((ll.lng + 180) / 360 * n)));
+    const y = Math.min(n - 1, Math.max(0, Math.floor((1 - Math.log(Math.tan(lat) + 1 / Math.cos(lat)) / Math.PI) / 2 * n)));
+    if (!(await norway.getZxy(z, x, y).catch(() => null))) { covered = false; break; }
+  }
+  const v = covered ? "none" : "visible";
+  for (const id of ids) if (map.getLayer(id) && map.getLayoutProperty(id, "visibility") !== v) map.setLayoutProperty(id, "visibility", v);
+}
+let onlineTimer;
+map.on("moveend", () => { clearTimeout(onlineTimer); onlineTimer = setTimeout(showOnline, 150); });
+
+
+function routeData() { return result ? { type: "Feature", geometry: { type: "LineString", coordinates: result.line.map(([la, lo]) => [lo, la]) } } : emptyLine(); }
 
 function drawRoute() {
-  const src = map.getSource("route");
-  if (!src) return;
-  src.setData(result ? { type: "Feature", geometry: { type: "LineString", coordinates: result.line.map(([la, lo]) => [lo, la]) } } : emptyLine());
+  map.getSource("route")?.setData(routeData());
 }
 
 function fitTo(coords) {
@@ -658,6 +700,14 @@ $("new").addEventListener("click", () => {
   points = []; editing = null; viewOnly = false; $("name").value = "";
   changed();
   drawDevices();
+});
+$("theme").addEventListener("click", async () => {
+  theme = theme === "dark" ? "light" : "dark";
+  store.set("theme", theme);
+  document.documentElement.dataset.theme = theme;
+  applyTexts();
+  map.setStyle(withRoute(await loadStyle()));
+  map.once("idle", showOnline);
 });
 $("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); drawList(); drawSummary(); drawDevices(); drawPending(); });
 $("fold").addEventListener("click", () => {

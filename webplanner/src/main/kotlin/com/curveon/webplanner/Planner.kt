@@ -48,7 +48,8 @@ class Planner(
         val r = try {
           route(points, options)
         } catch (e: RoutingException) {
-          throw PlanRefused(422, "no_route")
+          // "datafile E10_N50.rd5 not found": a place outside the routing data the server has.
+          throw PlanRefused(422, if (e.message.orEmpty().startsWith("datafile")) "outside" else "no_route")
         }
         return result(r)
       } finally {

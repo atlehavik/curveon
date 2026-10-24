@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Puts together what the web planner serves, in one folder (default build/webplanner):
 #   web/            the page (webplanner/web) with the map libraries in web/vendor (pinned versions, checked by sha256)
-#   web/map/        the app's map style, fonts and sprites, and the Norway map (norway.pmtiles from ~/develop/Curveon-data)
+#   web/map/        the map styles (built as the app builds them), fonts, sprites, and the Norway map (norway.pmtiles from ~/develop/Curveon-data)
 #   webplanner-server.jar
 # tools/deploy-webplanner.sh copies it to the VPS. To try it on this PC:
 #   SEGMENTS=~/develop/Curveon-data/brouter/segments4 WEB_DIR=build/webplanner/web MAP_DIR=build/webplanner/web/map \
@@ -32,10 +32,13 @@ echo "$LIBS" | while read -r name url sum; do
   fi
 done
 
-rsync -a --delete app/src/main/assets/map/styles app/src/main/assets/map/fonts app/src/main/assets/map/sprites "$OUT/web/map/"
+rsync -a --delete app/src/main/assets/map/fonts app/src/main/assets/map/sprites "$OUT/web/map/"
 # The map is 1.6 GB: linked here, copied to the VPS only when it changed (deploy-webplanner.sh).
 ln -sfn "$DATA/norway.pmtiles" "$OUT/web/map/norway.pmtiles"
 
 ./gradlew -q :webplanner:serverJar
 cp webplanner/build/libs/webplanner-server.jar "$OUT/"
+# The map styles as the app draws them (MapStyle), light and dark in normal contrast, the online map under Norway's.
+rm -rf "$OUT/web/map/styles"
+"${JAVA:-java}" -cp "$OUT/webplanner-server.jar" com.curveon.webplanner.StylesKt app/src/main/assets/map/styles "$OUT/web/map/styles"
 echo "assembled in $OUT"

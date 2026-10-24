@@ -88,4 +88,13 @@ class PlannerTest {
     // Thinned to 5 m: a few points per km, not one every few metres.
     assertTrue("${r.getJSONArray("line").length()} points", r.getJSONArray("line").length() < km * 40)
   }
+
+  @Test fun `outside the routing data the planner says so`() {
+    val segments = File(System.getProperty("curveon.segments") ?: "")
+    assumeTrue(File(segments, "E5_N55.rd5").exists() && !File(segments, "E10_N50.rd5").exists())
+    val engine = BRouterEngine(segments, ProfileInstaller.install(Files.createTempDirectory("p").toFile()))
+    // Berlin to Munich: no routing data there.
+    val e = try { Planner(engine).plan(JSONObject("""{"points":[[52.52,13.40],[48.14,11.58]]}""")); null } catch (x: PlanRefused) { x }
+    assertEquals("outside", e?.code)
+  }
 }

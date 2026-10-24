@@ -12,6 +12,7 @@ kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarg
 
 dependencies {
   implementation(project(":routing"))
+  implementation(project(":mapstyle"))
   implementation(libs.json)
   testImplementation(libs.junit)
 }

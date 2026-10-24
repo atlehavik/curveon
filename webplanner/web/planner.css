@@ -11,18 +11,7 @@
   --shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #101216;
-    --panel: #181b21;
-    --text: #eef0f3;
-    --muted: #a3a9b4;
-    --line: #2b3039;
-    --amber-ink: #ffb54d;
-    --shadow: 0 6px 28px rgba(0, 0, 0, 0.5);
-    color-scheme: dark;
-  }
-}
+/* Light unless the rider picks the dark map (the button at the top): the page follows the map. */
 :root[data-theme="dark"] {
   --bg: #101216; --panel: #181b21; --text: #eef0f3; --muted: #a3a9b4; --line: #2b3039; --amber-ink: #ffb54d;
   color-scheme: dark;

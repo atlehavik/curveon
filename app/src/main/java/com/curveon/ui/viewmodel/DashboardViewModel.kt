@@ -91,7 +91,7 @@ enum class MapDetail(val label: Int, val surfaceZoom: Float) {
  * is grey and high contrast dark grey; on the night map normal is a little softer than the white of high contrast.
  */
 enum class RoadContrast(val label: Int, val road: String, val path: String, val nightRoad: String, val nightPath: String) {
-    NORMAL(com.curveon.R.string.road_contrast_normal, "#9a9a9a", "#c4c4c4",
+    NORMAL(com.curveon.R.string.road_contrast_normal, com.curveon.mapstyle.MapStyle.DAY_ROAD, com.curveon.mapstyle.MapStyle.DAY_PATH,
         com.curveon.data.map.OfflineMaps.NIGHT_ROAD, com.curveon.data.map.OfflineMaps.NIGHT_PATH),
     HIGH(com.curveon.R.string.road_contrast_high, com.curveon.data.map.OfflineMaps.HC_ROAD, com.curveon.data.map.OfflineMaps.HC_PATH,
         com.curveon.data.map.OfflineMaps.NIGHT_ROAD_HC, com.curveon.data.map.OfflineMaps.NIGHT_PATH_HC)

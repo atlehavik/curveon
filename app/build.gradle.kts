@@ -84,6 +84,7 @@ dependencies {
   implementation(project(":phone"))
   implementation(project(":groups"))
   implementation(project(":pmtiles"))
+  implementation(project(":mapstyle"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.material.icons.core)
