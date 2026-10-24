@@ -12,8 +12,8 @@ android {
     applicationId = "com.curveon.app"
     minSdk = 29
     targetSdk = 36
-    versionCode = 9
-    versionName = "1.2.4"
+    versionCode = 10
+    versionName = "1.2.5"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -84,6 +84,7 @@ dependencies {
   implementation(project(":phone"))
   implementation(project(":groups"))
   implementation(project(":pmtiles"))
+  implementation(project(":mapstyle"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.material.icons.core)

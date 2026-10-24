@@ -273,6 +273,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // Long enough to read: a message that says what to do stays up longer than "Saved".
     LaunchedEffect(toast) { toast?.let { delay((2500L + (it.length - 60).coerceAtLeast(0) * 40L).coerceAtMost(7000L)); toast = null } }
     LaunchedEffect(phone) { phone.phoneErrors.collect { toast = it } }
+    // Trips from the web planner: Planned → From the web, and a word when new ones came in.
+    var showWebPlan by remember { mutableStateOf(false) }
+    val webPlan by viewModel.webPlan.collectAsStateWithLifecycle()
+    LaunchedEffect(webPlan) {
+        val added = webPlan.added ?: 0
+        if (!webPlan.fetching && added + webPlan.changed + webPlan.deleted > 0) toast = listOfNotNull(
+            added.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_new, it, it) },
+            webPlan.changed.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_changed, it, it) },
+            webPlan.deleted.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_deleted, it, it) },
+        ).joinToString(" · ")
+    }
     // Trips for the tablet, sent from Curveon on the phone through Curveon Companion: only offered when it is installed.
     var companionInstalled by remember { mutableStateOf(TabletRoutes.companionInstalled(context)) }
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
@@ -1169,7 +1180,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onDismiss = { showGpx = false },
                     embedded = true
                 )
-                TracksTab.PLANNED -> PlannedTripsPage(
+                TracksTab.PLANNED -> {
+                // Connected to the web planner while this page is open: a trip sent there arrives at once.
+                DisposableEffect(Unit) { viewModel.webPlanShown(); onDispose { viewModel.webPlanHidden() } }
+                PlannedTripsPage(
                     trips = savedRoutes.filter { it.inPlanned },
                     groups = routeGroups,
                     onRide = { t, reversed -> showGpx = false; viewModel.ridePlanned(t, reversed) },
@@ -1180,8 +1194,17 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onDelete = viewModel::deletePlannedTrips,
                     onRenameGroup = viewModel::renamePlannedGroup,
                     onDeleteGroup = viewModel::deletePlannedGroup,
-                    onSendToTablet = if (companionInstalled) sendToTablet else null
+                    onSendToTablet = if (companionInstalled) sendToTablet else null,
+                    onFromWeb = { showWebPlan = true }
                 )
+                if (showWebPlan) com.curveon.ui.components.WebPlanDialog(
+                    state = webPlan,
+                    onLink = { uri -> viewModel.addWebPlanLink(uri).also { if (it) toast = context.getString(R.string.web_plan_linked) } },
+                    onFetch = { viewModel.fetchWebPlans() },
+                    onForget = { viewModel.forgetWebPlans(); showWebPlan = false },
+                    onDismiss = { showWebPlan = false }
+                )
+                }
                 TracksTab.SHARED -> SharedTripsPage(
                     trips = sharedTripList,
                     onRide = { t -> showGpx = false; viewModel.sharedTrips.open(t) },

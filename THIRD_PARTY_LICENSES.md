@@ -85,6 +85,17 @@ Each is licensed under the Apache License, Version 2.0.
 
 ---
 
+## Web planner page: MapLibre GL JS 5.6.0, PMTiles 4.3.0, qrcode-generator 1.4.4
+
+Served with the web planner (relay.curveon.no/plan), not part of the apps. Fetched at pinned versions by
+`tools/webplanner_assemble.sh`; not vendored in this repository.
+
+- **MapLibre GL JS**, BSD 3-Clause. <https://github.com/maplibre/maplibre-gl-js/blob/main/LICENSE.txt>
+- **PMTiles** (JavaScript), BSD 3-Clause. <https://github.com/protomaps/PMTiles/blob/main/LICENSE>
+- **qrcode-generator** by Kazuhiko Arase, MIT. <https://github.com/kazuhikoarase/qrcode-generator/blob/master/LICENSE>
+
+---
+
 ## Map data
 
 The offline and online map tiles are built from **OpenStreetMap** data.

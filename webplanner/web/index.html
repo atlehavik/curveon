@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Curveon planner</title>
+  <meta name="description" content="Plan a motorcycle trip on a big screen and send it to Curveon on your phone or tablet.">
+  <link rel="icon" href="icon.png">
+  <link rel="stylesheet" href="vendor/maplibre-gl.css">
+  <link rel="stylesheet" href="planner.css">
+</head>
+<body>
+  <div id="map" aria-label="Map"></div>
+
+  <aside id="panel">
+    <header>
+      <h1><img src="icon.png" alt="" width="28" height="28"> <span data-t="title"></span></h1>
+      <button id="theme" class="ghost" type="button"></button>
+      <button id="lang" class="ghost" type="button" aria-label="Language"></button>
+      <button id="fold" class="ghost" type="button" aria-expanded="true"></button>
+    </header>
+
+    <div id="body">
+      <div id="session-row">
+        <span id="session" hidden></span>
+        <button id="pair" class="link" type="button"></button>
+      </div>
+
+      <div class="search">
+        <input id="q" type="search" autocomplete="off" data-tp="search_hint">
+        <ul id="hits" role="listbox"></ul>
+      </div>
+
+      <p id="hint" class="hint" data-t="hint_empty"></p>
+      <ol id="stops"></ol>
+
+      <div id="options">
+        <label><span data-t="opt_style"></span>
+          <select id="style">
+            <option value="FASTEST" data-t="style_fastest"></option>
+            <option value="CURVY" data-t="style_curvy"></option>
+            <option value="VERY_CURVY" data-t="style_super_curvy"></option>
+          </select></label>
+        <label><span data-t="opt_surface"></span>
+          <select id="surface">
+            <option value="PAVED" data-t="surface_tarmac_only"></option>
+            <option value="MIXED" data-t="surface_mixed"></option>
+            <option value="GRAVEL" data-t="surface_gravel"></option>
+            <option value="OFFROAD" data-t="surface_offroad"></option>
+          </select></label>
+        <label><span data-t="opt_ferries"></span>
+          <select id="ferries">
+            <option value="ok" data-t="ferries_ok"></option>
+            <option value="no" data-t="no_ferries"></option>
+          </select></label>
+        <label><span data-t="opt_motorways"></span>
+          <select id="motorways">
+            <option value="ok" data-t="motorways_ok"></option>
+            <option value="no" data-t="no_motorways"></option>
+            <option value="noe" data-t="no_motorways_e_roads"></option>
+          </select></label>
+      </div>
+
+      <div id="summary" hidden></div>
+      <p id="status" role="status"></p>
+
+      <div id="send-row" hidden>
+        <input id="name" type="text" maxlength="80" data-tp="name_hint">
+        <button id="send" class="primary" type="button" data-t="send"></button>
+      </div>
+      <button id="send-new" class="link" type="button" data-t="send_new" hidden></button>
+
+      <section id="pending" hidden>
+        <h2 data-t="pending_title"></h2>
+        <ul id="pending-list" class="trips"></ul>
+      </section>
+
+      <div id="devices" hidden></div>
+
+      <footer>
+        <button id="new" class="ghost" type="button" data-t="new_trip"></button>
+      </footer>
+    </div>
+  </aside>
+
+  <dialog id="pairing">
+    <h2 data-t="pair_title"></h2>
+    <div id="qr"></div>
+    <ol class="steps">
+      <li data-t="pair_step1"></li>
+      <li data-t="pair_step2"></li>
+      <li data-t="pair_step3"></li>
+    </ol>
+    <p class="hint" data-t="pair_more"></p>
+    <form method="dialog"><button class="primary" data-t="pair_done"></button></form>
+  </dialog>
+
+  <script src="vendor/maplibre-gl.js"></script>
+  <script src="vendor/pmtiles.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script type="module" src="planner.js"></script>
+</body>
+</html>

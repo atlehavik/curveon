@@ -51,33 +51,41 @@ private val Amber = Color(0xFFFF9100)
 fun hasCamera(): Boolean = LocalContext.current.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)
 
 /** What a Curveon group invite (or the link for the rider's other device) looks like, in a QR code. */
-private fun isInvite(text: String) = text.startsWith("curveon://join#") || text.contains("/join#v=")
+fun isInvite(text: String) = text.startsWith("curveon://join#") || text.contains("/join#v=")
 
 /**
  * Scans a group invite with the camera. The camera permission is asked for only now, when scanning starts. The picture
  * is read here on the device (ZXing), and nothing of it is kept or sent anywhere. [onInvite] gets the link.
+ * Another kind of code ([accept], e.g. the web planner's) comes with its own [hint] and [wrong] texts.
  */
 @Composable
-fun QrScanDialog(onInvite: (String) -> Unit, onDismiss: () -> Unit) {
+fun QrScanDialog(
+    onInvite: (String) -> Unit, onDismiss: () -> Unit,
+    accept: (String) -> Boolean = ::isInvite, hint: String? = null, wrong: String? = null,
+) {
     val context = LocalContext.current
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
     var denied by remember { mutableStateOf(false) }
-    var wrong by remember { mutableStateOf(false) }
+    var isWrong by remember { mutableStateOf(false) }
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> granted = ok; denied = !ok }
     LaunchedEffect(Unit) { if (!granted) ask.launch(Manifest.permission.CAMERA) }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         HideBars()
         Box(Modifier.fillMaxSize().background(Color.Black).testTag("qr_scan")) {
-            if (granted) CameraScan(onInvite = onInvite, onOther = { wrong = true })
+            if (granted) CameraScan(accept = accept, onInvite = onInvite, onOther = { isWrong = true })
             Column(
                 Modifier.align(Alignment.TopCenter).fillMaxWidth().background(Color(0xAA000000)).displayCutoutPadding().padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(stringResource(R.string.qr_scan_title), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
                 Text(
-                    stringResource(when { denied -> R.string.qr_scan_denied; wrong -> R.string.qr_scan_wrong; else -> R.string.qr_scan_hint }),
-                    color = if (denied || wrong) Amber else Color.White, fontSize = 15.sp, textAlign = TextAlign.Center
+                    when {
+                        denied -> stringResource(R.string.qr_scan_denied)
+                        isWrong -> wrong ?: stringResource(R.string.qr_scan_wrong)
+                        else -> hint ?: stringResource(R.string.qr_scan_hint)
+                    },
+                    color = if (denied || isWrong) Amber else Color.White, fontSize = 15.sp, textAlign = TextAlign.Center
                 )
             }
             Button(
@@ -108,7 +116,7 @@ private fun HideBars() {
 
 /** The camera's picture on screen, and every frame looked at for a QR code, the latest first (older ones are skipped). */
 @Composable
-private fun CameraScan(onInvite: (String) -> Unit, onOther: () -> Unit) {
+private fun CameraScan(accept: (String) -> Boolean, onInvite: (String) -> Unit, onOther: () -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val analysisThread = remember { Executors.newSingleThreadExecutor() }
@@ -136,7 +144,7 @@ private fun CameraScan(onInvite: (String) -> Unit, onOther: () -> Unit) {
                             ResolutionStrategy(Size(1280, 960), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER)).build())
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
-                    analysis.setAnalyzer(analysisThread) { image -> look(image, done, main, { latestInvite(it) }, { latestOther() }) }
+                    analysis.setAnalyzer(analysisThread) { image -> look(image, done, main, accept, { latestInvite(it) }, { latestOther() }) }
                     runCatching {
                         future.get().apply {
                             unbindAll()
@@ -150,7 +158,7 @@ private fun CameraScan(onInvite: (String) -> Unit, onOther: () -> Unit) {
 }
 
 /** One frame: its brightness plane to ZXing. A Curveon invite ends the scan; any other code just says so. */
-private fun look(image: ImageProxy, done: AtomicBoolean, main: Executor, invite: (String) -> Unit, other: () -> Unit) {
+private fun look(image: ImageProxy, done: AtomicBoolean, main: Executor, accept: (String) -> Boolean, invite: (String) -> Unit, other: () -> Unit) {
     try {
         if (done.get()) return
         val plane = image.planes[0]
@@ -164,7 +172,7 @@ private fun look(image: ImageProxy, done: AtomicBoolean, main: Executor, invite:
             buffer.get(luma, row * w, w)
         }
         val text = QrCode.read(luma, w, h) ?: return
-        if (isInvite(text)) { if (done.compareAndSet(false, true)) main.execute { invite(text) } }
+        if (accept(text)) { if (done.compareAndSet(false, true)) main.execute { invite(text) } }
         else main.execute { other() }
     } finally {
         image.close()

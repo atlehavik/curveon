@@ -149,6 +149,33 @@ The first message on every connection (not a catch-up after a rekey) is the rela
 (bytes, frames per 10 s per socket, seconds). Clients from before it drop it (it has no `r`), which is why it may be sent
 to everyone. A client may use it to choose how to send; none needs it to work.
 
+## Web planner
+The web planner (`relay.curveon.no/plan`, source `webplanner/`) works in a session with the rider's devices, on a
+channel of its own made with the same keys and frames as a group (code: `groups/.../WebPlan.kt`, and
+`webplanner/web/webplan.js` for the page, tested against each other in `WebPlanInteropTest`). Everything is kept with
+`k` (slot) and `x = 30 days`, so page and devices need not be online at the same time.
+
+- The page makes `groupId`, `groupKey` and a random 32-byte `a` (nobody holds an admin key, so the channel is never
+  rekeyed; epoch stays 0) and shows them as a QR code: `curveon://webplan#v=1&g=<b64>&k=<b64>&a=<b64>&r=<relay host>`.
+  It is not an invite: an app keeps it apart from its groups, so it can never replace the group it rides with.
+  Scanning it starts the session; every device that scans it takes part.
+- **The device's trips** (app → page): `plan_have` `{seq, ts, trip}` under slot `h<id>`, one per planned trip (the
+  newest 60), `trip` = `{id, rev, name, group?, loop?, start?, destination?, stops[], options, poly, m, s, up, curvy,
+  at}` with the line as a Google encoded polyline (1e-5, thinned to 5 m); no `destination` = a line without stops,
+  shown only. `plan_index` `{seq, ts, dev, ids[]}` under slot `index` lists the trips the device has now (newest
+  first) and its name. A trip gone from the planned trips is forgotten (`plan_have` `{gone: id}` with `x = 0`). The
+  app sends only what changed since it last did (kept per channel).
+- **Trips from the page** (page → app): `plan` `{seq, ts, tid, rev, trip}` under slot `tid`; `trip` is
+  `{v:1, name, start?, destination, stops[], options, line, m, s, up, curvy, ref?}`: stops as in a TripDoc, `options`
+  the app's saved-route options, `line` `lat,lon;…` (5 decimals). `ref` `{r, id}` = a change of trip `id` on the
+  device whose rider id is `r`: that device replaces its trip (keeping its group, and the name it gave it); other
+  devices get it as a new trip. `rev` is the page's clock in ms, so a later send always wins. `plan_del` `{seq, ts,
+  ref}` under slot `d<id><r…>` asks device `r` to take trip `id` out of its planned trips.
+- The app answers each trip with `plan_got` `{seq, ts, tid, rev, dev, id}` (slot `tid`), shown on the page.
+- When: the app fetches and publishes on one short connection at start, when it comes back on screen, and 2 s after a
+  planned trip changes (only if something the page shows did change); while the planned trips are open it stays
+  connected, so what the page sends arrives at once. The page is connected while it is open.
+
 ## Evolving the protocol
 Riders do not all update at once, and a friend may run a version from months ago. Every change must leave the older
 apps working, and the relay must keep serving every older client. The rules:

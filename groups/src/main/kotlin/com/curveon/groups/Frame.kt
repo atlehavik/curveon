@@ -13,7 +13,12 @@ import javax.crypto.spec.SecretKeySpec
  */
 enum class FrameType(val wire: String) {
   POS("pos"), HELLO("hello"), ROUTE("route"), SOS("sos"), SOS_ACK("sos_ack"), SOS_CANCEL("sos_cancel"),
-  LEAVE("leave"), CLAIM("claim"), INVITE("invite"), TRIP("trip"), NUDGE("nudge"), NUDGE_SEEN("nudge_seen"), FRIEND_REQ("friend_req"), REKEY("rekey");
+  LEAVE("leave"), CLAIM("claim"), INVITE("invite"), TRIP("trip"), NUDGE("nudge"), NUDGE_SEEN("nudge_seen"), FRIEND_REQ("friend_req"),
+  /**
+   * The web planner's own channel ([WebPlan]): a trip from the page, the app's word that it has it, one of the device's
+   * planned trips and their list (for the page to open), and the page asking a device to delete one.
+   */
+  PLAN("plan"), PLAN_GOT("plan_got"), PLAN_HAVE("plan_have"), PLAN_INDEX("plan_index"), PLAN_DEL("plan_del"), REKEY("rekey");
 
   companion object { fun of(wire: String) = entries.firstOrNull { it.wire == wire } }
 }

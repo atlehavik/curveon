@@ -121,6 +121,12 @@ class MainActivity : ComponentActivity() {
         // An invite link to a group ride or a friend (curveon://join#... or https://relay.curveon.no/join#...) goes to the phone side, not the GPX importer.
         if ((uri.scheme == "curveon" && uri.host == "join") || (uri.scheme == "https" && uri.host == com.curveon.phone.RELAY_HOST && uri.path == "/join"))
             return dashboardViewModel.phoneCompanion.groups.join(uri.toString())
+        // The web planner's code (curveon://webplan#...), read with the phone's own camera app: connect and fetch.
+        if (uri.scheme == "curveon" && uri.host == "webplan") {
+            if (dashboardViewModel.addWebPlanLink(uri.toString()))
+                android.widget.Toast.makeText(this, R.string.web_plan_linked, android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
         dashboardViewModel.openGpx(uri)
     }
 

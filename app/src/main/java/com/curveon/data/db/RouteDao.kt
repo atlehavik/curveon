@@ -14,6 +14,13 @@ interface RouteDao {
     @Query("SELECT * FROM saved_routes ORDER BY timestamp DESC")
     fun getAllRoutes(): Flow<List<RouteItem>>
 
+    /** The planned trips, newest first (for the web planner's list of what is on this device). */
+    @Query("SELECT * FROM saved_routes WHERE inPlanned = 1 ORDER BY timestamp DESC")
+    suspend fun getPlannedRoutes(): List<RouteItem>
+
+    @Query("SELECT * FROM route_groups")
+    suspend fun getGroups(): List<RouteGroup>
+
     @Query("SELECT * FROM saved_routes WHERE id = :id")
     suspend fun getRouteById(id: Long): RouteItem?
 

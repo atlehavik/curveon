@@ -20,3 +20,6 @@ dependencies {
   testImplementation(libs.json)
   testImplementation(libs.junit)
 }
+
+// WebPlanInteropTest runs the planner page's script from the repo.
+tasks.test { systemProperty("curveon.root", rootDir.path) }

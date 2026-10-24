@@ -62,7 +62,9 @@ fun ColumnScope.PlannedTripsPage(
     /** (group, keep its trips as loose ones). */
     onDeleteGroup: (RouteGroup, Boolean) -> Unit,
     /** Send the trip to the tablet through Curveon Companion (null: no companion on this phone). */
-    onSendToTablet: ((RouteItem) -> Unit)? = null
+    onSendToTablet: ((RouteItem) -> Unit)? = null,
+    /** Trips planned on the web planner: how to connect it, and fetching (null: not offered). */
+    onFromWeb: (() -> Unit)? = null
 ) {
     var expandedGroups by rememberSaveable { mutableStateOf(listOf<Long>()) }
     /** The trip whose details are open. */
@@ -81,14 +83,16 @@ fun ColumnScope.PlannedTripsPage(
     }
 
     if (trips.isEmpty() && groups.isEmpty()) {
-        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+        Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(R.string.planned_empty), color = TextMuted, fontSize = 14.sp, modifier = Modifier.padding(24.dp))
+            onFromWeb?.let { PillButton(Icons.Default.Public, stringResource(R.string.web_plan_button), CockpitSurfaceVariant, TextPrimary, Modifier.testTag("planned_from_web"), onClick = it) }
         }
     } else {
         // Fixed row on a phone held upright, the frame's title bar on a wide screen: never scrolls away.
         val pickedNow = selection
-        if (trips.isNotEmpty()) PageToolbar(pickedNow?.let { pluralStringResource(R.plurals.rides_selected, it.size, it.size) }) {
+        if (trips.isNotEmpty() || onFromWeb != null) PageToolbar(pickedNow?.let { pluralStringResource(R.plurals.rides_selected, it.size, it.size) }) {
             val sel = pickedNow
+            if (sel == null) onFromWeb?.let { PillButton(Icons.Default.Public, stringResource(R.string.web_plan_button), CockpitSurfaceVariant, TextPrimary, Modifier.testTag("planned_from_web"), onClick = it) }
             if (sel != null) {
                 val all = sel.size == trips.size
                 PillButton(if (all) Icons.Default.RemoveDone else Icons.Default.DoneAll,
@@ -99,7 +103,7 @@ fun ColumnScope.PlannedTripsPage(
                     confirmDelete = trips.filter { it.id in sel }
                 }
             }
-            RoundButton(
+            if (trips.isNotEmpty()) RoundButton(
                 Icons.Default.Checklist, stringResource(R.string.rides_select), 48.dp,
                 if (sel != null) ElectricCyan else CockpitSurfaceVariant, if (sel != null) Color(0xFF00363D) else TextPrimary
             ) { selection = if (sel == null) emptySet() else null }

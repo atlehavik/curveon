@@ -1200,4 +1200,32 @@
     <string name="friend_request_offer_title">%1$s veut être ton ami</string>
     <string name="friend_request_offer_group">Vous vous êtes rencontrés dans %1$s</string>
     <string name="friend_request_decline">Non merci</string>
+    <string name="web_plan_button">Depuis le web</string>
+    <string name="web_plan_title">Trajets depuis le web</string>
+    <string name="web_plan_intro">Prépare tes trajets sur un ordinateur sur curveon.no/plan, avec une grande carte et les mêmes routes qu\'ici. Scanne le code affiché par la page pour te connecter : la page voit alors tes trajets prévus, pour continuer à y travailler là-bas, et ce que tu prépares là-bas arrive ici dans Prévus.</string>
+    <string name="web_plan_connected">Connecté au planificateur web : la page voit tes trajets prévus, et ce que tu y prépares ou modifies arrive ici. Ça arrive au démarrage de Curveon et quand tu ouvres Prévus.</string>
+    <string name="web_plan_scan">Scanner le code</string>
+    <string name="web_plan_scan_another">Scanner le code d\'un autre navigateur</string>
+    <string name="web_plan_fetch">Récupérer</string>
+    <string name="web_plan_fetching">Récupération…</string>
+    <string name="web_plan_offline">Pas de connexion internet pour l\'instant. Les trajets arriveront la prochaine fois que Curveon sera en ligne.</string>
+    <string name="web_plan_nothing_new">Rien de nouveau depuis le web.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d nouveau trajet depuis le web</item>
+        <item quantity="other">%d nouveaux trajets depuis le web</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d trajet modifié sur le web</item>
+        <item quantity="other">%d trajets modifiés sur le web</item>
+    </plurals>
+    <string name="web_plan_live">Connecté maintenant : ce que tu envoies depuis la page arrive tout de suite.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d trajet supprimé depuis le web</item>
+        <item quantity="other">%d trajets supprimés depuis le web</item>
+    </plurals>
+    <string name="web_plan_forget">Déconnecter</string>
+    <string name="web_plan_scan_hint">Tiens la caméra devant le code de la page du planificateur.</string>
+    <string name="web_plan_scan_wrong">Ce n\'est pas le code du planificateur web. La page l\'affiche quand tu appuies sur Send to Curveon ou Code for the app.</string>
+    <string name="web_plan_no_camera">Cet appareil n\'a pas de caméra. Scanne le code avec Curveon sur le téléphone, puis envoie le trajet à la tablette depuis là.</string>
+    <string name="web_plan_linked">Connecté au planificateur web</string>
 </resources>

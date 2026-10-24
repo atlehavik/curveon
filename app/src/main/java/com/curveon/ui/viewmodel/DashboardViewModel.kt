@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.curveon.R
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.data.bluetooth.TabletRoutes
+import com.curveon.data.webplan.WebPlans
 import com.curveon.data.db.AppDatabase
 import com.curveon.data.gpx.GpxGroups
 import com.curveon.data.gpx.GpxWriter
@@ -90,7 +91,7 @@ enum class MapDetail(val label: Int, val surfaceZoom: Float) {
  * is grey and high contrast dark grey; on the night map normal is a little softer than the white of high contrast.
  */
 enum class RoadContrast(val label: Int, val road: String, val path: String, val nightRoad: String, val nightPath: String) {
-    NORMAL(com.curveon.R.string.road_contrast_normal, "#9a9a9a", "#c4c4c4",
+    NORMAL(com.curveon.R.string.road_contrast_normal, com.curveon.mapstyle.MapStyle.DAY_ROAD, com.curveon.mapstyle.MapStyle.DAY_PATH,
         com.curveon.data.map.OfflineMaps.NIGHT_ROAD, com.curveon.data.map.OfflineMaps.NIGHT_PATH),
     HIGH(com.curveon.R.string.road_contrast_high, com.curveon.data.map.OfflineMaps.HC_ROAD, com.curveon.data.map.OfflineMaps.HC_PATH,
         com.curveon.data.map.OfflineMaps.NIGHT_ROAD_HC, com.curveon.data.map.OfflineMaps.NIGHT_PATH_HC)
@@ -621,6 +622,102 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun dismissRouteFromPhone() { _routeFromPhone.value = null }
+
+    // ---------------------------------------------------------------- Planning session with the web planner
+
+    private val webPlans = WebPlans(application, repository)
+
+    /** The web planner as the Planned page shows it: how many browsers are connected, and how the last fetch went. */
+    data class WebPlanState(
+        val browsers: Int = 0, val fetching: Boolean = false,
+        /** Trips new or changed in the last fetch; null before one, or when the relay could not be reached ([offline]). */
+        val added: Int? = null, val changed: Int = 0, val deleted: Int = 0, val offline: Boolean = false,
+        /** Connected right now (the planned trips are open): what the page sends arrives at once. */
+        val live: Boolean = false,
+    )
+    private val _webPlan = MutableStateFlow(WebPlanState(browsers = webPlans.links().size))
+    val webPlan: StateFlow<WebPlanState> = _webPlan.asStateFlow()
+    private var webPlanFetched = 0L
+    private var webPlanSession: com.curveon.data.webplan.WebPlanSession? = null
+    private var webPlanWanted = 0
+
+    init {
+        if (webPlans.links().isNotEmpty()) fetchWebPlans()
+        showPlannedOnWeb()
+    }
+
+    /**
+     * A planned trip saved, renamed, moved or deleted here: the page sees it (at once while connected, else on a
+     * short connection, and only when something it shows did change).
+     */
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
+    private fun showPlannedOnWeb() = viewModelScope.launch {
+        combine(savedRoutes, repository.allRouteGroups) { r, g -> r to g }.drop(1).debounce(2000).collect {
+            if (webPlans.links().isEmpty()) return@collect
+            val session = webPlanSession
+            if (session != null) runCatching { session.publish() }
+            else if (webPlans.needsPublish()) fetchWebPlans()
+        }
+    }
+
+    /** Fetches what the web planner sent and shows it this device's trips; [auto] (app shown, Planned opened) at most every half minute. */
+    fun fetchWebPlans(auto: Boolean = false) {
+        if (_webPlan.value.fetching || webPlans.links().isEmpty() || webPlanSession != null) return
+        if (auto && System.currentTimeMillis() - webPlanFetched < 30_000) return
+        webPlanFetched = System.currentTimeMillis()
+        _webPlan.value = _webPlan.value.copy(fetching = true)
+        viewModelScope.launch {
+            val r = runCatching { webPlans.sync() }.getOrNull()
+            _webPlan.value = _webPlan.value.copy(fetching = false, added = r?.added, changed = r?.changed ?: 0, deleted = r?.deleted ?: 0, offline = r == null)
+        }
+    }
+
+    /** While the planned trips are on screen: connected, so a trip from the page arrives at once. Pair with [webPlanHidden]. */
+    fun webPlanShown() {
+        webPlanWanted++
+        connectWebPlans()
+    }
+
+    fun webPlanHidden() {
+        webPlanWanted = (webPlanWanted - 1).coerceAtLeast(0)
+        if (webPlanWanted == 0) { webPlanSession?.close(); webPlanSession = null; _webPlan.value = _webPlan.value.copy(live = false) }
+    }
+
+    private fun connectWebPlans() {
+        if (webPlanSession != null || webPlanWanted == 0 || webPlans.links().isEmpty()) return
+        webPlanSession = webPlans.live(
+            onResult = { r ->
+                if (r.added + r.changed + r.deleted > 0) _webPlan.value = _webPlan.value.copy(added = r.added, changed = r.changed, deleted = r.deleted, offline = false)
+            },
+            onDropped = {
+                // Coverage gone or the relay restarted: try again in a while, as long as the trips are still open.
+                viewModelScope.launch {
+                    webPlanSession = null
+                    _webPlan.value = _webPlan.value.copy(live = false)
+                    delay(10_000)
+                    connectWebPlans()
+                }
+            }
+        )
+        _webPlan.value = _webPlan.value.copy(live = true, offline = false)
+    }
+
+    /** A scanned (or opened) web planner code: the session starts, and the page sees this device's trips. False when it is not one. */
+    fun addWebPlanLink(uri: String): Boolean {
+        if (!webPlans.add(uri)) return false
+        _webPlan.value = _webPlan.value.copy(browsers = webPlans.links().size)
+        // Connected anew, so the new browser is in it.
+        webPlanSession?.close(); webPlanSession = null
+        if (webPlanWanted > 0) connectWebPlans() else fetchWebPlans()
+        return true
+    }
+
+    /** Ends the planning sessions; the trips here stay. */
+    fun forgetWebPlans() {
+        webPlanSession?.close(); webPlanSession = null
+        webPlans.forgetAll()
+        _webPlan.value = WebPlanState()
+    }
     /** Named sets of planned trips ("Trips for the weekend"). */
     val routeGroups = repository.allRouteGroups.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -914,12 +1011,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    /** The road's number sign: Norway's road register where it has the road, else the map's ref read the country's way. */
+    /**
+     * The road's number sign: Norway's road register when it is downloaded, else the map's ref read the country's way.
+     * The register has every public road, so nothing in it within reach means not on one (a café, a car park): no sign,
+     * rather than the map's road nearby with a guessed Rv or Fv (the map can't tell them apart).
+     */
     private suspend fun roadRefAt(lat: Double, lon: Double, headingDeg: Double?, road: com.curveon.data.road.MapRoad?) =
         withContext(Dispatchers.IO) {
             val country = mapCatalog.areaAt(lat, lon)?.iso
-            (if (country == "NO") speedLimits.roadRef(lat, lon, headingDeg) else null)
-                ?: com.curveon.data.road.RoadRef.fromOsm(road?.ref, road?.kindDetail, country)
+            if (country == "NO" && speedLimits.hasData()) speedLimits.roadRef(lat, lon, headingDeg)
+            else com.curveon.data.road.RoadRef.fromOsm(road?.ref, road?.kindDetail, country)
         }
 
     /** Settings → Display: the number and priority sign of the road the rider is on, by the speed. */
@@ -942,11 +1043,17 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun watchCurrentRoad() = viewModelScope.launch {
         var readAt: LatLon? = null
+        var stoppedSince: Long? = null
         while (true) {
             delay(2_000)
             untilAwake()
             val t = _telemetry.value
             if (!_showRoadInfo.value || !t.hasGpsFix) { _currentRoad.value = null; continue }
+            // Parked (a café, a fuel stop): the sign goes after a while and comes back once riding on; a red light
+            // or a queue keeps it.
+            val now = System.currentTimeMillis()
+            stoppedSince = if (t.speedKmh < PARKED_KMH) stoppedSince ?: now else null
+            if (stoppedSince != null && now - stoppedSince > PARKED_AFTER_MS) { _currentRoad.value = null; continue }
             // On the route: where it is drawn and the route's direction; else the GPS and its heading
             // (none while slow: it's noise then, and a crossing road could win at a junction).
             val p = navigator.state.value.progress?.takeIf { !it.offRoute && it.distanceFromRoute < 25 }
@@ -1269,7 +1376,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Called by the activity once location permission is granted. Safe to call repeatedly. */
     /** Curveon is on screen ([shown]) or out of sight: see [awake]. */
-    fun setOnScreen(shown: Boolean) { onScreen.value = shown }
+    fun setOnScreen(shown: Boolean) {
+        onScreen.value = shown
+        // Back on screen: anything planned on the web meanwhile comes in.
+        if (shown) fetchWebPlans(auto = true)
+    }
 
     private fun watchSleep() = viewModelScope.launch {
         combine(onScreen, isNavigating, _mapDownload) { shown, navigating, download ->
@@ -2432,6 +2543,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     companion object {
+        /** Below this, for [PARKED_AFTER_MS], the rider has stopped somewhere: the road sign goes. */
+        private const val PARKED_KMH = 3f
+        private const val PARKED_AFTER_MS = 120_000L
         /** Long enough that anything counting seconds has moved, short enough to stand at the pump. */
         private const val FUEL_CONTROL_GAP_MS = 15_000L
         /** Countries (ISO 3166) where they drive on the left. */

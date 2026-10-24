@@ -1182,4 +1182,32 @@
     <string name="friend_request_offer_title">%1$s vill bli din vän</string>
     <string name="friend_request_offer_group">Ni möttes i %1$s</string>
     <string name="friend_request_decline">Nej tack</string>
+    <string name="web_plan_button">Från webben</string>
+    <string name="web_plan_title">Turer från webben</string>
+    <string name="web_plan_intro">Planera på en dator på curveon.no/plan, med stor karta och samma vägar som här. Skanna koden som sidan visar för att ansluta: då ser sidan dina planerade turer så att du kan jobba vidare med dem där, och det du planerar där kommer hit under Planerade.</string>
+    <string name="web_plan_connected">Ansluten till webbplaneraren: sidan ser dina planerade turer, och det du planerar eller ändrar där kommer hit. Det kommer när Curveon startar och när du öppnar Planerade.</string>
+    <string name="web_plan_scan">Skanna koden</string>
+    <string name="web_plan_scan_another">Skanna en kod från en annan webbläsare</string>
+    <string name="web_plan_fetch">Hämta nu</string>
+    <string name="web_plan_fetching">Hämtar…</string>
+    <string name="web_plan_offline">Ingen internetanslutning just nu. Turerna kommer nästa gång Curveon är online.</string>
+    <string name="web_plan_nothing_new">Inget nytt från webben.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d ny tur från webben</item>
+        <item quantity="other">%d nya turer från webben</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d tur ändrad på webben</item>
+        <item quantity="other">%d turer ändrade på webben</item>
+    </plurals>
+    <string name="web_plan_live">Ansluten nu: det du skickar från sidan kommer direkt.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d tur raderad från webben</item>
+        <item quantity="other">%d turer raderade från webben</item>
+    </plurals>
+    <string name="web_plan_forget">Koppla från</string>
+    <string name="web_plan_scan_hint">Håll kameran framför koden på planerarsidan.</string>
+    <string name="web_plan_scan_wrong">Det är inte webbplanerarens kod. Sidan visar den när du trycker på Send to Curveon eller Code for the app.</string>
+    <string name="web_plan_no_camera">Den här enheten har ingen kamera. Skanna koden med Curveon på telefonen och skicka turen till surfplattan därifrån.</string>
+    <string name="web_plan_linked">Ansluten till webbplaneraren</string>
 </resources>

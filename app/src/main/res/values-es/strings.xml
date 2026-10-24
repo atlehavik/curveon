@@ -1200,4 +1200,32 @@
     <string name="friend_request_offer_title">%1$s quiere ser tu amigo</string>
     <string name="friend_request_offer_group">Os conocisteis en %1$s</string>
     <string name="friend_request_decline">No, gracias</string>
+    <string name="web_plan_button">Desde la web</string>
+    <string name="web_plan_title">Rutas desde la web</string>
+    <string name="web_plan_intro">Planifica en un ordenador en curveon.no/plan, con un mapa grande y las mismas carreteras que aquí. Escanea el código de la página para conectar: la página verá tus rutas planificadas para que sigas trabajando en ellas allí, y lo que planifiques allí llegará aquí, en Planificados.</string>
+    <string name="web_plan_connected">Conectado al planificador web: la página ve tus rutas planificadas, y lo que planifiques o cambies allí llega aquí. Llega cuando Curveon se inicia y cuando abres Planificados.</string>
+    <string name="web_plan_scan">Escanear el código</string>
+    <string name="web_plan_scan_another">Escanear un código de otro navegador</string>
+    <string name="web_plan_fetch">Recibir ahora</string>
+    <string name="web_plan_fetching">Recibiendo…</string>
+    <string name="web_plan_offline">Ahora mismo no hay conexión a internet. Las rutas llegarán la próxima vez que Curveon esté en línea.</string>
+    <string name="web_plan_nothing_new">Nada nuevo desde la web.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d ruta nueva desde la web</item>
+        <item quantity="other">%d rutas nuevas desde la web</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d ruta cambiada en la web</item>
+        <item quantity="other">%d rutas cambiadas en la web</item>
+    </plurals>
+    <string name="web_plan_live">Conectado ahora: lo que envíes desde la página llega al momento.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d ruta borrada desde la web</item>
+        <item quantity="other">%d rutas borradas desde la web</item>
+    </plurals>
+    <string name="web_plan_forget">Desconectar</string>
+    <string name="web_plan_scan_hint">Sujeta la cámara delante del código de la página del planificador.</string>
+    <string name="web_plan_scan_wrong">Ese no es el código del planificador web. La página lo muestra cuando pulsas Send to Curveon o Code for the app.</string>
+    <string name="web_plan_no_camera">Este dispositivo no tiene cámara. Escanea el código con Curveon en el teléfono y envía la ruta a la tableta desde allí.</string>
+    <string name="web_plan_linked">Conectado al planificador web</string>
 </resources>

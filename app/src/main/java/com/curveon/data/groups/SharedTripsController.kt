@@ -9,6 +9,7 @@ import com.curveon.data.routing.SavedRoutes
 import com.curveon.data.routing.Stop
 import com.curveon.groups.TripDoc
 import com.curveon.groups.TripStop
+import com.curveon.routing.Geo
 import com.curveon.routing.LatLon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
@@ -108,7 +109,7 @@ class SharedTripsController(
         val pts = routeOf(s, g)?.points?.map { LatLon(it.lat, it.lon) }?.takeIf { it.size >= 2 } ?: return null
         val places = g.stops.map { it.point } + g.destination
         if (places.any { p -> distanceTo(p, pts) > 120 }) return null
-        return SavedRoutes.encode(simplify(pts, 5.0))
+        return SavedRoutes.encode(Geo.simplify(pts, 5.0))
     }
 
     /** The rider's own route to a shared trip changed: if it is not what the group has, send the new trip. */
@@ -240,31 +241,6 @@ private fun TripStop.toStop() = Stop(name, LatLon(lat, lon), via)
 /** How far [p] is from the nearest part of [line], in metres (flat, which is close enough over a few hundred metres). */
 private fun distanceTo(p: LatLon, line: List<LatLon>): Double {
     var best = Double.MAX_VALUE
-    for (i in 0 until line.size - 1) best = minOf(best, segment(p, line[i], line[i + 1]))
+    for (i in 0 until line.size - 1) best = minOf(best, Geo.segmentDistance(p, line[i], line[i + 1]))
     return best
-}
-
-private fun segment(p: LatLon, a: LatLon, b: LatLon): Double {
-    val kx = Math.cos(Math.toRadians(p.lat)) * 111_320.0
-    val ky = 110_540.0
-    val ax = (a.lon - p.lon) * kx; val ay = (a.lat - p.lat) * ky
-    val bx = (b.lon - p.lon) * kx; val by = (b.lat - p.lat) * ky
-    val dx = bx - ax; val dy = by - ay
-    val len = dx * dx + dy * dy
-    val t = if (len == 0.0) 0.0 else (-(ax * dx + ay * dy) / len).coerceIn(0.0, 1.0)
-    return Math.hypot(ax + t * dx, ay + t * dy)
-}
-
-/** [pts] with the points left out that are within [tolerance] metres of a straight line between their neighbours kept. */
-private fun simplify(pts: List<LatLon>, tolerance: Double): List<LatLon> {
-    if (pts.size < 3) return pts
-    val keep = BooleanArray(pts.size).also { it[0] = true; it[pts.lastIndex] = true }
-    val todo = ArrayDeque<Pair<Int, Int>>().apply { add(0 to pts.lastIndex) }
-    while (todo.isNotEmpty()) {
-        val (a, b) = todo.removeLast()
-        var worst = -1; var far = tolerance
-        for (i in a + 1 until b) { val d = segment(pts[i], pts[a], pts[b]); if (d > far) { far = d; worst = i } }
-        if (worst > 0) { keep[worst] = true; todo.add(a to worst); todo.add(worst to b) }
-    }
-    return pts.filterIndexed { i, _ -> keep[i] }
 }

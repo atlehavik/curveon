@@ -1182,4 +1182,33 @@
     <string name="friend_request_offer_title">%1$s vil bli venn med deg</string>
     <string name="friend_request_offer_group">Dere møttes i %1$s</string>
     <string name="friend_request_decline">Nei takk</string>
+    <!-- Turer fra nettplanleggeren (Planlagte → Fra nettet) -->
+    <string name="web_plan_button">Fra nettet</string>
+    <string name="web_plan_title">Turer fra nettet</string>
+    <string name="web_plan_intro">Planlegg på en datamaskin på curveon.no/plan, med stort kart og de samme veiene som her. Skann koden siden viser for å koble til: da ser siden de planlagte turene dine, så du kan jobbe videre med dem der, og det du planlegger der kommer hit under Planlagte.</string>
+    <string name="web_plan_connected">Koblet til nettplanleggeren: siden ser de planlagte turene dine, og det du planlegger eller endrer der kommer hit. Det kommer når Curveon starter og når du åpner Planlagte.</string>
+    <string name="web_plan_scan">Skann koden</string>
+    <string name="web_plan_scan_another">Skann kode fra en annen nettleser</string>
+    <string name="web_plan_fetch">Hent nå</string>
+    <string name="web_plan_fetching">Henter …</string>
+    <string name="web_plan_offline">Ingen internettforbindelse akkurat nå. Turene kommer neste gang Curveon er på nett.</string>
+    <string name="web_plan_nothing_new">Ingenting nytt fra nettet.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d ny tur fra nettet</item>
+        <item quantity="other">%d nye turer fra nettet</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d tur endret på nettet</item>
+        <item quantity="other">%d turer endret på nettet</item>
+    </plurals>
+    <string name="web_plan_live">Tilkoblet nå: det du sender fra siden kommer med en gang.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d tur slettet fra nettet</item>
+        <item quantity="other">%d turer slettet fra nettet</item>
+    </plurals>
+    <string name="web_plan_forget">Koble fra</string>
+    <string name="web_plan_scan_hint">Hold kameraet foran koden på planleggersiden.</string>
+    <string name="web_plan_scan_wrong">Det er ikke koden fra nettplanleggeren. Siden viser den når du trykker Send til Curveon eller Kode til appen.</string>
+    <string name="web_plan_no_camera">Denne enheten har ikke kamera. Skann koden med Curveon på telefonen, og send turen til nettbrettet derfra.</string>
+    <string name="web_plan_linked">Koblet til nettplanleggeren</string>
 </resources>
