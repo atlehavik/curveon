@@ -14,7 +14,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** A device in the session: what it got from the page, and frames it sends (sealed as WebPlan.kt does). */
 async function device(link, name) {
-  const ch = await channel(link, "ws");
+  const ch = await channel(link, /^(localhost|127\.)/.test(relay) ? "ws" : "wss");
   const me = random(16);
   const ws = new WebSocket(ch.url);
   const got = { plans: [], deletes: [] };
@@ -49,7 +49,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("dialog", (d) => d.accept());
-  await page.goto(`${base}?relay=${relay}&debug`);
+  await page.goto(/^(localhost|127\.)/.test(relay) ? `${base}?relay=${relay}&debug` : `${base}?debug`);
   await page.waitForFunction(() => window.curveonMap?.loaded(), null, { timeout: 30000 });
   await page.waitForTimeout(1500);
   const fitsInside = async (sel) => page.$eval(sel, (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; });
