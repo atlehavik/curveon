@@ -146,7 +146,9 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
     const routeMid = () => page.evaluate(() => { const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; const c = l[Math.floor(l.length / 2)]; const q = m.project(c); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y }; });
     await page.evaluate(() => { const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; m.jumpTo({ center: l[Math.floor(l.length / 2)], zoom: 12 }); });
-    await page.waitForTimeout(1500);
+    // The road there must be in the tiles: over the internet they take a moment.
+    await page.waitForFunction(() => window.curveonMap.loaded() && window.curveonMap.areTilesLoaded(), null, { timeout: 20000 }).catch(() => {});
+    await page.waitForTimeout(500);
     const at = await routeMid();
     await page.mouse.click(at.x, at.y, { button: "right" });
     const info = await page.$eval(".menu", (e) => e.innerText);
@@ -466,6 +468,20 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     check((await menuItems()).includes("Via point here"), `desktop: a click on the roundtrip offers a via point (${await menuItems()})`);
     await pick("Via point here");
     check((await page.$$eval(".pin", (e) => e.length)) === pinsBefore + 1, "desktop: the via point went on the roundtrip");
+
+    // Working forward without a destination: a via point clicked between two places goes between them, not last.
+    await page.click("#new");
+    if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
+    await clickAt(59.7795, 5.2049);
+    await pick("Start here");
+    await clickAt(60.0689, 6.5462);
+    await pick("Stop here");
+    await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+    await clickAt(59.95, 5.95);
+    await pick("Via point here");
+    check(JSON.stringify(await page.$$eval("#stops li", (e) => e.map((x) => x.className.split(" ")[0]))) === JSON.stringify(["start", "via", "stop"]),
+      `desktop: a via point between the start and the last stop goes between them (${await page.$$eval("#stops li", (e) => e.map((x) => x.className).join(","))})`);
+    await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
 
     // Disconnect: this browser forgets the connection; the devices are gone from the page.
     await page.locator("#unpair").scrollIntoViewIfNeeded();

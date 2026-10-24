@@ -329,6 +329,7 @@ function withRoute(style) {
   style.sources.route = { type: "geojson", data: routeData() };
   style.sources["cv-alt"] = { type: "geojson", data: altData() };
   style.sources["cv-gap"] = { type: "geojson", data: gapData() };
+  style.sources["cv-legs"] = { type: "geojson", data: legsData() };
   style.sources["cv-surface"] = { type: "geojson", data: surfData() };
   style.sources["cv-gravel"] = { type: "geojson", data: gravelData() };
   // Gravel and soft roads dashed over the map's own roads, as the app's map has them: under the road names.
@@ -372,7 +373,7 @@ function withRoute(style) {
     // The longest stretch without fuel, when the rider asks to see it.
     { id: "cv-gap", type: "line", source: "cv-gap", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": "#d50000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 6, 16, 9], "line-dasharray": [1, 1] } },
-    { id: "route-hit", type: "line", source: "route", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 22 } },
+    { id: "route-hit", type: "line", source: "cv-legs", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 22 } },
     // Where the pointer is on the height profile.
     { id: "cv-hover", type: "circle", source: "cv-hover", paint: { "circle-radius": 7, "circle-color": "#ffffff", "circle-stroke-color": "#004a77", "circle-stroke-width": 3 } },
     // Places on the map (fuel, viewpoints, …), their names from close up.
@@ -416,6 +417,13 @@ const lineFeature = (line) => ({ type: "Feature", geometry: { type: "LineString"
 function routeData() { return result ? lineFeature(result.line) : emptyLine(); }
 function altData() { return { type: "FeatureCollection", features: alts.map((a) => lineFeature(a.line)) }; }
 function gapData() { return gapLine ? lineFeature(gapLine) : emptyLine(); }
+/** The route as one line per leg (with its number), so a click or drag on it knows which leg it is, also where legs overlap. */
+function legsData() {
+  if (!result) return emptyLine();
+  const st = legStats();
+  if (!st) return { ...lineFeature(result.line), properties: {} };
+  return { type: "FeatureCollection", features: st.cuts.slice(1).map((b, i) => ({ ...lineFeature(result.line.slice(st.cuts[i], b + 1)), properties: { leg: i } })) };
+}
 /** The route's gravel (k 1) and track (k 2) stretches, each its part of the line. */
 function surfData() {
   const r = result;
@@ -432,6 +440,7 @@ function drawRoute() {
   if (!result) gapLine = null;
   map.getSource("route")?.setData(routeData());
   map.getSource("cv-gap")?.setData(gapData());
+  map.getSource("cv-legs")?.setData(legsData());
   map.getSource("cv-alt")?.setData(altData());
   map.getSource("cv-surface")?.setData(surfData());
 }
@@ -661,8 +670,17 @@ function removePoint(p) {
 async function addAt(p, kind, leg) {
   if (viewOnly) { viewOnly = false; result = null; editing = null; points = []; }
   const pt = { name: t("map_point"), lat: p.lat, lon: p.lon, via: kind === "via", ...(kind === "stop" ? { stop: true } : {}) };
-  if (kind === "start" || kind === "end" || !hasEnd()) points.push(pt);
-  else points.splice((leg ?? bestLeg(pt)) + 1, 0, pt);
+  if (kind === "start" || kind === "end" || points.length < 2) points.push(pt);
+  else if (leg != null || hasEnd()) points.splice((leg ?? bestLeg(pt)) + 1, 0, pt);
+  else {
+    // No destination yet (the rider works forward): after the last place, unless it lies on the way between two
+    // places already there, which then go round it by less than riding on to it would.
+    const d = (a, b) => Math.hypot(a.lat - b.lat, (a.lon - b.lon) * Math.cos((a.lat * Math.PI) / 180));
+    const at = bestLeg(pt);
+    const detour = d(points[at], pt) + d(pt, points[at + 1]) - d(points[at], points[at + 1]);
+    if (detour < d(points[points.length - 1], pt)) points.splice(at + 1, 0, pt);
+    else points.push(pt);
+  }
   changed();
   if (kind === "via") return;
   pt.name = await p.naming;
@@ -718,18 +736,20 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(
  * destination; with a destination, a stop or via point on the way, or a new destination. On the route: a stop or via
  * point on that part of it.
  */
-function placeMenu(ll, onRoute, known) {
+function placeMenu(ll, onLine, known) {
   // A line shown only (a device's ride or loop): a via point or stop on it first makes it a trip with points along it.
-  const shown = viewOnly && onRoute;
+  const shown = viewOnly && onLine && !!result;
+  // On the route only with one there (a line just taken away may still be drawn for a moment).
+  const onRoute = shown || (onLine && !!result && !viewOnly && points.length >= 2);
   const p = { lat: ll.lat, lon: ll.lng };
   p.naming = known ? Promise.resolve(known) : placeName(p.lat, p.lon);
   const n = viewOnly && !shown ? 0 : points.length;
   const leg = onRoute && !shown && n >= 2 ? legAt(ll) : undefined;
-  const onLine = (kind) => () => { if (shown) lineToTrip(); addAt(p, kind, shown ? legAt(ll) : leg); };
+  const there = (kind) => () => { if (shown) lineToTrip(); addAt(p, kind, shown ? legAt(ll) : leg); };
   // The number a stop would get where it goes in.
   const stopNo = (at) => String(points.slice(1, at + 1).filter((_, k) => kindOf(k + 1) === "stop").length + 1);
   const at = shown ? 0 : leg ?? (hasEnd() ? bestLeg(p) : points.length - 1);
-  const items = onRoute ? [[t("menu_via"), onLine("via"), "", ["via"]], [t("menu_stop"), onLine("stop"), "", ["stop", stopNo(at)]]]
+  const items = onRoute ? [[t("menu_via"), there("via"), "", ["via"]], [t("menu_stop"), there("stop"), "", ["stop", stopNo(at)]]]
     : n === 0 ? [[t("menu_start"), () => addAt(p, "start"), "", ["start", "A"]]]
     : [[t("menu_via"), () => addAt(p, "via"), "", ["via"]], [t("menu_stop"), () => addAt(p, "stop"), "", ["stop", stopNo(at)]],
       [t(hasEnd() ? "menu_new_end" : "menu_end"), () => addAt(p, "end"), "", ["end", "B"]]];
@@ -1016,6 +1036,16 @@ function startLineDrag(e) {
 
 /** Which leg (from points[i] to points[i + 1]) the line is at [ll]: where the nearest line point falls between the places. */
 function legAt(ll) {
+  // The leg drawn under the pointer; where several are (a road ridden there and back), the one nearest it.
+  const q = map.project(ll);
+  const hit = [...new Set(map.queryRenderedFeatures([[q.x - 8, q.y - 8], [q.x + 8, q.y + 8]], { layers: ["route-hit"] })
+    .map((f) => f.properties.leg).filter((v) => Number.isInteger(v) && v < points.length - 1))];
+  if (hit.length === 1) return hit[0];
+  const st = hit.length > 1 && legStats();
+  if (st) {
+    const near = (i) => { let best = Infinity; for (let k = st.cuts[i]; k <= st.cuts[i + 1]; k++) { const r = map.project([result.line[k][1], result.line[k][0]]); best = Math.min(best, Math.hypot(r.x - q.x, r.y - q.y)); } return best; };
+    return hit.reduce((a, b) => (near(b) < near(a) ? b : a));
+  }
   const line = result.line;
   const d = (a, b) => (a[0] - b[0]) ** 2 + ((a[1] - b[1]) * Math.cos((a[0] * Math.PI) / 180)) ** 2;
   const nearest = (q, from) => { let best = from, bd = Infinity; for (let k = from; k < line.length; k++) { const v = d(line[k], q); if (v < bd) { bd = v; best = k; } } return best; };
