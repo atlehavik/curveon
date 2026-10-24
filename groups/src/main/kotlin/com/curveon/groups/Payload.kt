@@ -160,6 +160,7 @@ object PayloadCodec {
         o.getString("id"), o.getString("to"),
         SealedBox(B64.decode(o.getString("eph")), B64.decode(o.getString("n")), B64.decode(o.getString("c"))),
       )
+      FrameType.PLAN, FrameType.PLAN_GOT -> return null // the web planner's own channel, read by [WebPlan]
       FrameType.REKEY -> return null // not encrypted with the group key
     }
     Signed(o.getLong("seq"), o.getLong("ts"), payload, o.optString("dev"))

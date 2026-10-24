@@ -471,4 +471,40 @@ class RelayIntegrationTest {
     b.client.start()
     a.await { (it as? GroupEvent.SosReceived)?.takeIf { e -> e.riderId == b.id } }
   }
+
+  @Test fun `a trip from the web planner waits on the relay until the app fetches it`() {
+    val link = WebPlanLink(GroupKeys.newGroupId(), GroupKeys.newGroupKey(), GroupKeys.randomBytes(32), "127.0.0.1:$port")
+    val trip = WebPlanTrip("t1", 1, "Test", null, TripStop("B", 60.0, 6.0), emptyList(), "{}", "59.00000,5.00000;60.00000,6.00000",
+      1000.0, 60.0, 0.0, 0, System.currentTimeMillis())
+    // The planner page: connects, sends, leaves.
+    val opened = java.util.concurrent.CountDownLatch(1)
+    val page = JdkTransportFactory().open(link.relayUrl("ws"), object : TransportListener {
+      override fun onOpen() = opened.countDown()
+      override fun onMessage(text: String) {}
+      override fun onClosed(code: Int) {}
+    })
+    assertTrue(opened.await(5, java.util.concurrent.TimeUnit.SECONDS))
+    assertTrue(page.send(WebPlan.planFrame(link, GroupKeys.newRiderId(), 1, trip)))
+    Thread.sleep(300)
+    page.close()
+    Thread.sleep(200)
+
+    val got = WebPlanInbox(JdkTransportFactory(), scheme = "ws").fetch(link, quietMs = 500) { trips ->
+      trips.map { WebPlan.gotFrame(link, GroupKeys.newRiderId(), 1, it.tripId, it.rev, "Pixel", System.currentTimeMillis()) }
+    }
+    assertEquals(listOf("t1"), got?.map { it.tripId })
+
+    // The page comes back and sees that the app has it.
+    Thread.sleep(300)
+    val seen = CopyOnWriteArrayList<String>()
+    val again = JdkTransportFactory().open(link.relayUrl("ws"), object : TransportListener {
+      override fun onOpen() {}
+      override fun onMessage(text: String) { seen.add(text) }
+      override fun onClosed(code: Int) {}
+    })
+    val end = System.currentTimeMillis() + 3000
+    while (System.currentTimeMillis() < end && seen.none { it.contains("\"plan_got\"") }) Thread.sleep(50)
+    again.close()
+    assertTrue(seen.any { it.contains("\"plan_got\"") })
+  }
 }

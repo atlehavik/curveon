@@ -13,7 +13,9 @@ import javax.crypto.spec.SecretKeySpec
  */
 enum class FrameType(val wire: String) {
   POS("pos"), HELLO("hello"), ROUTE("route"), SOS("sos"), SOS_ACK("sos_ack"), SOS_CANCEL("sos_cancel"),
-  LEAVE("leave"), CLAIM("claim"), INVITE("invite"), TRIP("trip"), NUDGE("nudge"), NUDGE_SEEN("nudge_seen"), FRIEND_REQ("friend_req"), REKEY("rekey");
+  LEAVE("leave"), CLAIM("claim"), INVITE("invite"), TRIP("trip"), NUDGE("nudge"), NUDGE_SEEN("nudge_seen"), FRIEND_REQ("friend_req"),
+  /** A trip from the web planner, and the app's word that it has it ([WebPlan]); only on a web planner's own channel. */
+  PLAN("plan"), PLAN_GOT("plan_got"), REKEY("rekey");
 
   companion object { fun of(wire: String) = entries.firstOrNull { it.wire == wire } }
 }
