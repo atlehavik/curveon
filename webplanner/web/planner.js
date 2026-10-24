@@ -68,7 +68,25 @@ const TEXTS = {
     confirm_delete_draft: (n) => `Delete the draft “${n}”?`,
     unsaved_title: "Keep what you are working on?", unsaved_text: "The trip on the map is not saved or sent since you last changed it.",
     unsaved_save: "Save as draft", unsaved_discard: "Throw it away", unsaved_cancel: "Cancel",
-    attribution: "Routes: Curveon (BRouter) · Search: Photon, Kartverket",
+    attribution: "Routes: Curveon (BRouter) · Search: Photon, Kartverket · Places: OpenStreetMap, Overture Maps",
+    loop_open: "Roundtrip: draw where you want to ride", loop_title: "Roundtrip",
+    loop_draw: "Hold the mouse button down and draw round the area you want to ride in. The trip goes round it and back to the start.",
+    loop_draw_touch: "Draw round the area you want to ride in, with your finger. The trip goes round it and back to the start.",
+    loop_len: "Longest trip", loop_len_explain: "The longest the roundtrip may be, or no limit and the area decides.",
+    loop_searching: "Looking for a roundtrip… it can take up to a minute.",
+    loop_found: "Here is a roundtrip. Change it like any trip, or ask for another.",
+    err_no_roundtrip: "No roundtrip found in that area. Draw it bigger, or round more roads.",
+    day_n: (n) => `Day ${n}`, night_here: "Stay the night here", night_not: "Not staying the night here", night: "night",
+    as_days: "Each day as a trip", day_suffix: (n) => ` – day ${n}`,
+    profile_title: "Height along the route", profile_at: (km, m) => `km ${km} · ${m} m above sea`,
+    fuel_gap: (km, from) => `⛽ ${km} km without fuel, from km ${from}`, fuel_gap_title: "Show it on the map",
+    compare: "Compare Fastest, Curvy and Super curvy", compare_title: "Road styles", compare_wait: "Working it out…",
+    compare_pick: "Use this one", compare_close: "Close",
+    places: "Places", places_title: "Places on the map", places_zoom: "Zoom in to see them.",
+    layer_fuel: "Fuel", layer_viewpoints: "Viewpoints", layer_passes: "Mountain passes", layer_camping: "Camping",
+    layer_food: "Food and coffee", layer_ferries: "Ferries", layer_motorcycle: "Motorcycle shops and workshops",
+    save_gpx: "Save as GPX", share: "Copy link", link_copied: "Link copied. Whoever opens it sees this trip and can change it.",
+    opened_link: "Opened from a link. Change it, save it as a draft, or send it to Curveon.",
   },
   nb: {
     title: "Curveon-planlegger", search_hint: "Søk etter et sted, eller klikk i kartet", lang: "English",
@@ -132,7 +150,25 @@ const TEXTS = {
     confirm_delete_draft: (n) => `Slette utkastet «${n}»?`,
     unsaved_title: "Ta vare på det du holder på med?", unsaved_text: "Turen på kartet er ikke lagret eller sendt siden du sist endret den.",
     unsaved_save: "Lagre som utkast", unsaved_discard: "Forkast den", unsaved_cancel: "Avbryt",
-    attribution: "Ruter: Curveon (BRouter) · Søk: Photon, Kartverket",
+    attribution: "Ruter: Curveon (BRouter) · Søk: Photon, Kartverket · Steder: OpenStreetMap, Overture Maps",
+    loop_open: "Rundtur: tegn hvor du vil kjøre", loop_title: "Rundtur",
+    loop_draw: "Hold museknappen nede og tegn rundt området du vil kjøre i. Turen går rundt det og tilbake til start.",
+    loop_draw_touch: "Tegn rundt området du vil kjøre i med fingeren. Turen går rundt det og tilbake til start.",
+    loop_len: "Lengste tur", loop_len_explain: "Hvor lang rundturen høyst kan være, eller ingen grense, så avgjør området.",
+    loop_searching: "Leter etter en rundtur … det kan ta opptil et minutt.",
+    loop_found: "Her er en rundtur. Endre den som en hvilken som helst tur, eller be om en annen.",
+    err_no_roundtrip: "Fant ingen rundtur i det området. Tegn det større, eller rundt flere veier.",
+    day_n: (n) => `Dag ${n}`, night_here: "Overnatt her", night_not: "Ikke overnatt her", night: "natt",
+    as_days: "Hver dag som egen tur", day_suffix: (n) => ` – dag ${n}`,
+    profile_title: "Høyden langs ruten", profile_at: (km, m) => `km ${km} · ${m} moh.`,
+    fuel_gap: (km, from) => `⛽ ${km} km uten bensin, fra km ${from}`, fuel_gap_title: "Vis det på kartet",
+    compare: "Sammenlign Raskest, Svingete og Supersvingete", compare_title: "Veivalg", compare_wait: "Regner ut …",
+    compare_pick: "Bruk denne", compare_close: "Lukk",
+    places: "Steder", places_title: "Steder på kartet", places_zoom: "Zoom inn for å se dem.",
+    layer_fuel: "Bensin", layer_viewpoints: "Utsiktspunkt", layer_passes: "Fjelloverganger", layer_camping: "Camping",
+    layer_food: "Mat og kaffe", layer_ferries: "Ferjer", layer_motorcycle: "MC-butikker og verksteder",
+    save_gpx: "Lagre som GPX", share: "Kopier lenke", link_copied: "Lenken er kopiert. Den som åpner den, ser turen og kan endre den.",
+    opened_link: "Åpnet fra en lenke. Endre den, lagre den som utkast, eller send den til Curveon.",
   },
 };
 
@@ -184,6 +220,12 @@ let options = Object.assign({ style: "CURVY", surface: "PAVED", ferries: false, 
 const devices = new Map();
 /** Trips the page asked a device to delete ("rider:id"), hidden until its list says they are gone. */
 const deleting = new Set();
+/** The other road styles' lines while they are compared: [{ style, line }]. */
+let alts = [];
+/** The stretch without fuel shown on the map ([[lat, lon]]), when the rider asked to see it. */
+let gapLine = null;
+/** The places in view for the map's layers: [[kind, lat, lon, name]]. */
+let poiList = [];
 
 // ---------- Map ----------
 const emptyLine = () => ({ type: "FeatureCollection", features: [] });
@@ -230,17 +272,37 @@ map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAc
  */
 function withRoute(style) {
   style.sources.route = { type: "geojson", data: routeData() };
+  style.sources["cv-alt"] = { type: "geojson", data: altData() };
+  style.sources["cv-gap"] = { type: "geojson", data: gapData() };
+  style.sources["cv-hover"] = { type: "geojson", data: emptyLine() };
+  style.sources["cv-pois"] = { type: "geojson", data: poiData() };
   const at = style.layers.findIndex((l) => l.id.startsWith("places_"));
+  // The places' names in the map's own font.
+  const font = style.layers.find((l) => l.id.startsWith("places_") && Array.isArray(l.layout?.["text-font"]))?.layout["text-font"] || ["Noto Sans Regular"];
   style.layers.splice(at < 0 ? style.layers.length : at, 0,
     // An adventure's area, under the route (and the place names).
     { id: "area-fill", type: "fill", source: "area", paint: { "fill-color": "#ff9100", "fill-opacity": 0.1 } },
     { id: "area-line", type: "line", source: "area", layout: { "line-join": "round" },
       paint: { "line-color": "#ff9100", "line-width": 2.5, "line-opacity": 0.8, "line-dasharray": [2, 1.5] } },
+    // The other road styles, while they are compared: thin, under the route.
+    { id: "cv-alt", type: "line", source: "cv-alt", layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": theme === "dark" ? "#9aa3b2" : "#6b7280", "line-width": 3, "line-opacity": 0.75, "line-dasharray": [1.5, 1] } },
     { id: "route-casing", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": "#5a3000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 5, 12, 10, 16, 14] } },
     { id: "route", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": "#ff9100", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 6, 16, 9] } },
+    // The longest stretch without fuel, when the rider asks to see it.
+    { id: "cv-gap", type: "line", source: "cv-gap", layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": "#d50000", "line-width": ["interpolate", ["linear"], ["zoom"], 5, 3, 12, 6, 16, 9], "line-dasharray": [1, 1] } },
     { id: "route-hit", type: "line", source: "route", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 22 } },
+    // Where the pointer is on the height profile.
+    { id: "cv-hover", type: "circle", source: "cv-hover", paint: { "circle-radius": 7, "circle-color": "#ffffff", "circle-stroke-color": "#5a3000", "circle-stroke-width": 3 } },
+    // Places on the map (fuel, viewpoints, …), their names from close up.
+    { id: "cv-pois", type: "symbol", source: "cv-pois",
+      layout: { "icon-image": ["concat", "poi-", ["get", "k"]], "icon-size": 1, "icon-allow-overlap": false, "icon-padding": 1,
+        "text-field": ["step", ["zoom"], "", 12, ["get", "name"]], "text-font": font, "text-size": 11.5, "text-offset": [0, 1.25],
+        "text-anchor": "top", "text-optional": true, "text-max-width": 9 },
+      paint: { "text-color": theme === "dark" ? "#e6e8eb" : "#2b2f36", "text-halo-color": theme === "dark" ? "#101216" : "#ffffff", "text-halo-width": 1.4 } },
     // While dragging: the dashed guess from the place before, through the pointer, to the place after (as in the app).
     { id: "drag-line", type: "line", source: "drag", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": theme === "dark" ? "#00e5ff" : "#0091ea", "line-width": 4, "line-opacity": 0.9, "line-dasharray": [1.2, 1.2] } });
@@ -272,10 +334,16 @@ let onlineTimer;
 map.on("moveend", () => { clearTimeout(onlineTimer); onlineTimer = setTimeout(showOnline, 150); });
 
 
-function routeData() { return result ? { type: "Feature", geometry: { type: "LineString", coordinates: result.line.map(([la, lo]) => [lo, la]) } } : emptyLine(); }
+const lineFeature = (line) => ({ type: "Feature", geometry: { type: "LineString", coordinates: line.map(([la, lo]) => [lo, la]) } });
+function routeData() { return result ? lineFeature(result.line) : emptyLine(); }
+function altData() { return { type: "FeatureCollection", features: alts.map((a) => lineFeature(a.line)) }; }
+function gapData() { return gapLine ? lineFeature(gapLine) : emptyLine(); }
 
 function drawRoute() {
+  if (!result) gapLine = null;
   map.getSource("route")?.setData(routeData());
+  map.getSource("cv-gap")?.setData(gapData());
+  map.getSource("cv-alt")?.setData(altData());
 }
 
 /** The dashed guess while dragging, through [ll] between the places [prev] and [next] (either may be missing). */
@@ -303,7 +371,7 @@ function drawMarkers() {
   markers.forEach((m) => m.remove());
   markers = points.map((p, i) => {
     const kind = kindOf(i);
-    const e = el("div", "pin " + kind, pinText(kind, i));
+    const e = el("div", "pin " + kind + (isNight(i) ? " night" : ""), pinText(kind, i));
     e.title = p.name || t(kind === "via" ? "via" : "map_point");
     const m = new maplibregl.Marker({ element: e, draggable: true }).setLngLat([p.lon, p.lat]).addTo(map);
     m.on("dragstart", () => { draggingLine = true; closeMenu(); });
@@ -328,7 +396,7 @@ function drawMarkers() {
 // Every change to the points (added, moved, removed, made a stop or via point, all cleared) can be taken back, one at a
 // time. A name that arrives later is not a change of its own: it goes into the state it belongs to.
 const undoStack = [];
-const placesKey = () => JSON.stringify(points.map((p) => [p.lat, p.lon, !!p.via, !!p.stop]));
+const placesKey = () => JSON.stringify(points.map((p) => [p.lat, p.lon, !!p.via, !!p.stop, !!p.night]));
 let lastKey = placesKey(), lastState = JSON.stringify(points);
 function remember() {
   const key = placesKey();
@@ -353,10 +421,90 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+/** A stop where the rider stays the night: the next day starts there. */
+const isNight = (i) => !!points[i]?.night && kindOf(i) === "stop" && i < points.length - 1;
+const dur = (s) => { const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h} ${t("h")} ${m} ${t("min")}` : `${m} ${t("min")}`; };
+const kmText = (m) => `${Math.round(m / 1000)} ${t("km")}`;
+
+/**
+ * Each leg's numbers (points[i] to points[i + 1]) and where each point is on the line ([cuts], indexes into it). From the
+ * legs the planner sent; for a line from elsewhere (a device's trip, a GPX file) from where the points lie along it.
+ */
+const legMemo = new WeakMap();
+function legStats() {
+  const r = result;
+  if (!r || viewOnly || points.length < 2 || r.line.length < 2) return null;
+  if (r.legs && r.cuts && r.legs.length === points.length - 1) return { legs: r.legs, cuts: r.cuts };
+  const key = placesKey();
+  const memo = legMemo.get(r);
+  if (memo?.key === key) return memo.st;
+  const line = r.line;
+  const d = (a, b) => (a[0] - b[0]) ** 2 + ((a[1] - b[1]) * Math.cos((a[0] * Math.PI) / 180)) ** 2;
+  const cuts = [0];
+  let from = 0;
+  for (let i = 1; i < points.length - 1; i++) {
+    let best = from, bd = Infinity;
+    for (let k = from; k < line.length; k++) { const v = d(line[k], [points[i].lat, points[i].lon]); if (v < bd) { bd = v; best = k; } }
+    cuts.push((from = best));
+  }
+  cuts.push(line.length - 1);
+  const along = alongOf(r);
+  const legs = cuts.slice(1).map((b, n) => {
+    const a = cuts[n], m = along[b] - along[a];
+    let up = 0;
+    if (r.ele) for (let k = a + 1; k <= b; k++) up += Math.max(0, r.ele[k] - r.ele[k - 1]);
+    return { m, s: r.m ? (r.s * m) / r.m : 0, up: Math.round(up) };
+  });
+  const st = { legs, cuts };
+  legMemo.set(r, { key, st });
+  return st;
+}
+
+/** Metres along [r]'s line at each of its points, scaled so that the end says what the summary says. */
+const alongMemo = new WeakMap();
+function alongOf(r) {
+  if (alongMemo.has(r)) return alongMemo.get(r);
+  const line = r.line, out = [0];
+  for (let k = 1; k < line.length; k++) {
+    const [a, b] = [line[k - 1], line[k]];
+    out.push(out[k - 1] + Math.hypot(a[0] - b[0], (a[1] - b[1]) * Math.cos((a[0] * Math.PI) / 180)) * 111195);
+  }
+  const f = r.m && out[out.length - 1] ? r.m / out[out.length - 1] : 1;
+  const scaled = out.map((v) => v * f);
+  alongMemo.set(r, scaled);
+  return scaled;
+}
+
+/** The days of the trip: from the start, or a night's stop, to the next night's stop or the end ([from, to] point indexes). */
+function days() {
+  const out = [];
+  let from = 0;
+  for (let i = 1; i < points.length; i++) if (isNight(i) || i === points.length - 1) { out.push([from, i]); from = i; }
+  return out;
+}
+const hasNights = () => points.some((_, i) => isNight(i));
+/** The numbers from point [a] to point [b], summed over the legs between. */
+function between(st, a, b) {
+  const legs = st.legs.slice(a, b);
+  return { m: legs.reduce((x, l) => x + l.m, 0), s: legs.reduce((x, l) => x + l.s, 0), up: legs.reduce((x, l) => x + (l.up || 0), 0) };
+}
+
 function drawList() {
   remember();
   const ol = $("stops");
   ol.replaceChildren();
+  // Under each place, how far and how long from the place before it; with nights, a line for each day.
+  const st = legStats();
+  const dayList = hasNights() ? days() : [];
+  const dayHead = (n) => {
+    const [a, b] = dayList[n];
+    const li = el("li", "day");
+    li.append(el("b", "", t("day_n", n + 1)));
+    if (st) { const x = between(st, a, b); li.append(el("small", "", `${kmText(x.m)} · ${dur(x.s)}`)); }
+    ol.append(li);
+  };
+  if (dayList.length) dayHead(0);
+  let prevMajor = 0;
   // Three via points or more in a row (an adventure has up to 16) are one line, opened with a click.
   const runOf = (i) => { let n = 0; while (i + n < points.length && kindOf(i + n) === "via") n++; return n; };
   points.forEach((p, i) => {
@@ -377,16 +525,24 @@ function drawList() {
         return;
       }
     }
-    const li = el("li", kind);
-    const name = el("span", "name", kind === "via" ? t("via") : p.name || t("map_point"));
+    const li = el("li", kind + (isNight(i) ? " night" : ""));
+    const name = el("span", "name", kind === "via" ? t("via") : (p.name || t("map_point")) + (isNight(i) ? " ☾" : ""));
     name.title = name.textContent;
     name.onclick = () => map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 11) });
     li.append(el("span", "dot", pinText(kind, i)), name);
+    if (kind !== "via" && i > 0 && st) {
+      const x = between(st, prevMajor, i);
+      const leg = el("small", "leg", `${kmText(x.m)} · ${dur(x.s)}`);
+      leg.title = `${points[prevMajor].name || t("map_point")} → ${p.name || t("map_point")}`;
+      li.append(leg);
+    }
+    if (kind !== "via") prevMajor = i;
     const btn = (label, title, fn) => { const b = el("button", "", label); b.type = "button"; b.title = title; b.ariaLabel = title; b.onclick = fn; li.append(b); };
     if (i > 0) btn("↑", t("up"), () => { [points[i - 1], points[i]] = [points[i], points[i - 1]]; changed(); });
     if (i < points.length - 1) btn("↓", t("down"), () => { [points[i + 1], points[i]] = [points[i], points[i + 1]]; changed(); });
     btn("✕", t("remove"), () => { points.splice(i, 1); changed(); });
     ol.append(li);
+    if (isNight(i)) dayHead(dayList.findIndex(([a]) => a === i));
   });
   $("clear").hidden = points.length === 0;
   $("undo").hidden = undoStack.length === 0;
@@ -472,9 +628,9 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(
  * destination; with a destination, a stop or via point on the way, or a new destination. On the route: a stop or via
  * point on that part of it.
  */
-function placeMenu(ll, onRoute) {
+function placeMenu(ll, onRoute, known) {
   const p = { lat: ll.lat, lon: ll.lng };
-  p.naming = placeName(p.lat, p.lon);
+  p.naming = known ? Promise.resolve(known) : placeName(p.lat, p.lon);
   const n = viewOnly ? 0 : points.length;
   const leg = onRoute && n >= 2 ? legAt(ll) : undefined;
   // The number a stop would get where it goes in.
@@ -500,9 +656,11 @@ function pointMenu(p) {
   };
   const items = [];
   const no = String(points.slice(1, i).filter((_, k) => kindOf(k + 1) === "stop").length + 1);
-  if (kind === "stop" || kind === "end") items.push([t("make_via"), () => { p.via = true; delete p.stop; redraw(); }, "", ["via"]]);
+  if (kind === "stop" || kind === "end") items.push([t("make_via"), () => { p.via = true; delete p.stop; delete p.night; redraw(); }, "", ["via"]]);
   if (kind === "via" || kind === "end") items.push([t("make_stop"), () => { p.via = false; if (last) p.stop = true; redraw(); }, "", ["stop", no]]);
   if (last && kind !== "end") items.push([t("make_end"), () => { p.via = false; delete p.stop; redraw(); }, "", ["end", "B"]]);
+  // A stop on the way can be where the day ends: the trip shows day by day, and can go to Curveon a day at a time.
+  if (kind === "stop" && !last) items.push([t(p.night ? "night_not" : "night_here"), () => { if (p.night) delete p.night; else p.night = true; redraw(); drawSummary(); }, "", ["stop night", "☾"]]);
   items.push([t("remove"), () => removePoint(p), "danger"]);
   showMenu([p.lon, p.lat], kind === "via" ? t("via") : p.name || t("map_point"), items, t("drag_to_move"));
 }
@@ -586,8 +744,17 @@ const onPinOrMenu = (e) => !!e.originalEvent.target.closest?.(".maplibregl-marke
 map.on("click", (e) => {
   if (draggingLine || onPinOrMenu(e)) return;
   if (menu) { closeMenu(); return; }
+  // A place on the map's layers (a fuel station, a viewpoint): the same menu, at the place and with its name.
+  const poi = map.queryRenderedFeatures(e.point, { layers: ["cv-pois"] })[0];
+  if (poi) {
+    const [lon, lat] = poi.geometry.coordinates;
+    placeMenu({ lat, lng: lon }, false, poi.properties.name || t("layer_" + poi.properties.k));
+    return;
+  }
   placeMenu(e.lngLat, !!result && !viewOnly && map.queryRenderedFeatures(e.point, { layers: ["route-hit"] }).length > 0);
 });
+map.on("mouseenter", "cv-pois", () => { if (!adv?.drawing) map.getCanvas().style.cursor = "pointer"; });
+map.on("mouseleave", "cv-pois", () => { if (!adv?.drawing) map.getCanvas().style.cursor = ""; });
 // A right-click is the usual context menu: what is there (the road, the place, how far along the route), to copy or zoom.
 map.on("contextmenu", (e) => {
   e.preventDefault();
@@ -709,12 +876,31 @@ function legAt(ll) {
 }
 
 // ---------- Routing ----------
+// Leg by leg, as the planner service routes: the page keeps every leg it got (from one point to the next, with the
+// options, and the way the leg before arrived), and asks only for the legs it does not have. Dragging one point of a long
+// trip is then two short searches, and going back to a road style already seen costs nothing. A newer request from this
+// page makes the service give up the one before (TAB).
 let routeCtl = null;
 let routeTimer;
+const TAB = b64(random(9));
+const legCache = new Map(); // legKey → leg, oldest first
+const legPairs = new Set(); // the same without the heading: a leg the page has some version of
+const ll6 = (p) => `${p.lat.toFixed(6)},${p.lon.toFixed(6)}`;
+const pairKey = (a, b, o) => `${ll6(a)};${ll6(b)};${JSON.stringify(o)}`;
+const legKey = (a, b, o, heading) => `${pairKey(a, b, o)};${heading ?? "-"}`;
+function keepLeg(a, b, o, heading, leg) {
+  const k = legKey(a, b, o, heading);
+  legCache.delete(k);
+  legCache.set(k, leg);
+  legPairs.add(pairKey(a, b, o));
+  // A few hundred legs: a long evening's planning, a few MB at most.
+  while (legCache.size > 400) legCache.delete(legCache.keys().next().value);
+}
 
 /** The places or options changed: the road is worked out again (a trip opened from a device keeps its line until then). */
 function changed() {
   advCtl?.abort();
+  closeCompare();
   drawList();
   drawMarkers();
   result = null;
@@ -729,34 +915,111 @@ function setStatus(text, error = false) {
   $("status").classList.toggle("error", error);
 }
 
+/** Thrown with the service's error code, to show in the rider's language. */
+class Refused extends Error { constructor(code, minutes) { super(code); this.code = code; this.minutes = minutes; } }
+
+/**
+ * The legs between [pts] with options [o], from the cache where it has them and from the service where not ([onLeg]
+ * hears of each as it comes). [tab] names the search, so the service drops this page's search before.
+ */
+async function legsFor(pts, o, signal, tab, onLeg = () => {}) {
+  const legs = [];
+  let i = 0;
+  while (i < pts.length - 1) {
+    const heading = i === 0 ? null : legs[i - 1].arrive;
+    const have = legCache.get(legKey(pts[i], pts[i + 1], o, heading));
+    if (have) { legs[i] = have; onLeg(legs); i++; continue; }
+    // Ask for the legs from here up to one the page already has some version of (it most likely still fits).
+    let j = i + 1;
+    while (j < pts.length - 1 && !legPairs.has(pairKey(pts[j], pts[j + 1], o))) j++;
+    const r = await fetch(API, {
+      method: "POST", signal, headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ points: pts.slice(i, j + 1).map((p) => [p.lat, p.lon]), options: o, heading, legs: true, tab }),
+    });
+    const res = await r.json().catch(() => ({ error: "failed" }));
+    if (!r.ok) throw new Refused(res.error || "failed", res.minutes);
+    res.legs.forEach((leg, n) => {
+      keepLeg(pts[i + n], pts[i + n + 1], o, n === 0 ? heading : res.legs[n - 1].arrive, leg);
+      legs[i + n] = leg;
+    });
+    onLeg(legs);
+    i = j;
+  }
+  return legs;
+}
+
+/** One trip from its legs: the line and heights end to end, where each point is on it (cuts), and the numbers. */
+function joinLegs(legs) {
+  const line = [], ele = [], cuts = [0], fuel = [];
+  let m = 0, deg = 0;
+  legs.forEach((l, n) => {
+    for (const f of l.fuel || []) if (!fuel.length || m + f[0] > fuel[fuel.length - 1][0] + 50) fuel.push([m + f[0], f[1], f[2], f[3]]);
+    for (let k = n === 0 ? 0 : 1; k < l.line.length; k++) { line.push(l.line[k]); ele.push(l.ele?.[k] ?? 0); }
+    cuts.push(line.length - 1);
+    m += l.m;
+    deg += l.dpk * l.m;
+  });
+  const sum = (key) => legs.reduce((a, l) => a + (l[key] || 0), 0);
+  return {
+    line, ele: legs.every((l) => l.ele) ? ele : null, cuts, m, s: sum("s"), up: sum("up"),
+    curvy: m ? Math.min(100, Math.floor(deg / m / 3)) : 0, ferries: sum("ferries"), unpaved: sum("unpaved"),
+    // Fuel only when the service knows the stations (else nothing is said about it).
+    fuel: legs.every((l) => l.fuel) ? fuel : null,
+    legs: legs.map((l) => ({ m: l.m, s: l.s, up: l.up, dpk: l.dpk, ferries: l.ferries, unpaved: l.unpaved, arrive: l.arrive })),
+  };
+}
+
+/**
+ * The legs of a [r] made from legs (an adventure, a roundtrip, a draft) back in the cache for these points and options,
+ * so that changing it later asks only for what changed.
+ */
+function adoptLegs(r, pts, o) {
+  if (!r?.legs || !r.cuts || r.legs.length !== pts.length - 1 || r.cuts.length !== pts.length) return;
+  let along = 0;
+  r.legs.forEach((l, n) => {
+    const [a, b] = [r.cuts[n], r.cuts[n + 1]];
+    const fuel = r.fuel?.filter((f) => f[0] >= along && f[0] < along + l.m).map((f) => [f[0] - along, f[1], f[2], f[3]]);
+    keepLeg(pts[n], pts[n + 1], o, n === 0 ? null : r.legs[n - 1].arrive,
+      { ...l, line: r.line.slice(a, b + 1), ele: r.ele ? r.ele.slice(a, b + 1) : null, ...(r.fuel ? { fuel } : {}) });
+    along += l.m;
+  });
+}
+
 async function route() {
   routeCtl?.abort();
   if (points.length < 2) { setStatus(""); return; }
   const ctl = (routeCtl = new AbortController());
+  const pts = points.slice(), o = routeOptions();
   setStatus(t("routing"));
   const slow = setTimeout(() => { if (routeCtl === ctl) setStatus(t("queued")); }, 6000);
   try {
-    const r = await fetch(API, {
-      method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ points: points.map((p) => [p.lat, p.lon]), options: routeOptions() }),
+    // The legs there already show while the rest are worked out.
+    const legs = await legsFor(pts, o, ctl.signal, TAB, (got) => {
+      if (routeCtl !== ctl) return;
+      const known = got.filter(Boolean);
+      map.getSource("route")?.setData({ type: "Feature", geometry: { type: "MultiLineString", coordinates: known.map((l) => l.line.map(([la, lo]) => [lo, la])) } });
     });
-    const j = await r.json().catch(() => ({ error: "failed" }));
     if (routeCtl !== ctl) return;
-    if (!r.ok) { setStatus(t("err_" + (j.error || "failed")), true); return; }
-    result = j;
+    result = joinLegs(legs);
     setStatus("");
     drawRoute();
+    drawList();
     drawSummary();
+    // A road style picked while comparing: the comparison stays, from the legs already here.
+    if (compareKeep) { compareKeep = false; openCompare(); }
   } catch (e) {
-    if (e.name !== "AbortError" && routeCtl === ctl) setStatus(t("err_offline"), true);
+    if (routeCtl !== ctl || e.name === "AbortError" || e.code === "superseded") return;
+    drawRoute();
+    setStatus(e instanceof Refused ? t("err_" + e.code, e.minutes) : t("err_offline"), true);
   } finally {
     clearTimeout(slow);
   }
 }
 
-// ---------- Adventure ----------
-// As in the app: from the start to the destination, the most fun roads inside an area the rider draws, within a time.
-// The answer becomes an ordinary trip (via points along it), to change and send like any other.
+// ---------- Adventure and roundtrip ----------
+// As in the app. An adventure: from the start to the destination, the most fun roads inside an area the rider draws,
+// within a time. A roundtrip: from the start round an area the rider draws and back, at most so long. Either answer
+// becomes an ordinary trip (via points along it), to change and send like any other.
 const touchy = matchMedia("(pointer: coarse)").matches;
 
 function areaData() {
@@ -768,9 +1031,12 @@ function areaData() {
 }
 const drawArea = () => map.getSource("area")?.setData(areaData());
 
-function openAdventure() {
+/** [loop]: a roundtrip from the start; else an adventure from the start to the destination. */
+function openAdventure(loop = false) {
   closeMenu();
-  adv = { area: null, ends: [points[0], points[points.length - 1]], variant: 0, drawing: false, stroke: [] };
+  closeCompare();
+  adv = { loop, area: null, ends: loop ? [points[0]] : [points[0], points[points.length - 1]], variant: 0, drawing: false, stroke: [] };
+  fillTimes();
   startDrawing();
 }
 
@@ -780,7 +1046,8 @@ function startDrawing() {
   map.dragPan.disable();
   map.getCanvas().style.cursor = "crosshair";
   drawArea();
-  drawAdventure(t(touchy ? "adv_draw_touch" : "adv_draw") + (points.length > 2 ? " " + t("adv_stops") : ""));
+  drawAdventure(adv.loop ? t(touchy ? "loop_draw_touch" : "loop_draw")
+    : t(touchy ? "adv_draw_touch" : "adv_draw") + (points.length > 2 ? " " + t("adv_stops") : ""));
 }
 
 function stopDrawing() {
@@ -797,27 +1064,34 @@ function closeAdventure() {
   drawAdventure();
 }
 
-/** The box in the panel: what to do now, the longest time, and what to do next. */
+/** The box in the panel: what to do now, the longest time (or length), and what to do next. */
 function drawAdventure(text, error = false) {
   $("adv").hidden = !!adv || viewOnly || !hasEnd();
+  // With only a start, a roundtrip from it.
+  $("loop").hidden = !!adv || viewOnly || points.length !== 1;
   $("adv-box").hidden = !adv;
   if (!adv) return;
+  $("adv-head").textContent = adv.loop ? "↻ " + t("loop_title") : "✦ " + t("adv_title");
+  $("adv-time-label").textContent = t(adv.loop ? "loop_len" : "adv_time");
   if (text !== undefined) { $("adv-hint").textContent = text; $("adv-hint").classList.toggle("error", error); }
   $("adv-again").hidden = !adv.area || !!advCtl;
   $("adv-redraw").hidden = adv.drawing || !!advCtl;
 }
 
+/** Times for an adventure, lengths for a roundtrip (kept apart: an hour is not 60 km). */
 function fillTimes() {
   const sel = $("adv-time");
-  const keep = sel.value;
-  sel.replaceChildren(el("option", "", t("adv_no_limit")), ...[60, 90, 120, 150, 180, 240, 300, 360, 480].map((m) => {
-    const o = el("option", "", t("adv_hm", Math.floor(m / 60), m % 60));
-    o.value = String(m);
+  const loop = !!adv?.loop;
+  const keep = store.get(loop ? "loopKm" : "advMinutes", "");
+  const choices = loop ? [50, 100, 150, 200, 250, 300, 400] : [60, 90, 120, 150, 180, 240, 300, 360, 480];
+  sel.replaceChildren(el("option", "", t("adv_no_limit")), ...choices.map((v) => {
+    const o = el("option", "", loop ? `${v} ${t("km")}` : t("adv_hm", Math.floor(v / 60), v % 60));
+    o.value = String(v);
     return o;
   }));
   sel.firstChild.value = "";
-  sel.value = keep;
-  sel.title = t("adv_time_explain");
+  sel.value = String(keep);
+  sel.title = t(loop ? "loop_len_explain" : "adv_time_explain");
 }
 
 // Drawing the area: mouse button or one finger held down, round the area.
@@ -869,25 +1143,32 @@ async function findAdventure() {
   clearTimeout(routeTimer);
   advCtl?.abort();
   const ctl = (advCtl = new AbortController());
-  const minutes = $("adv-time").value ? Number($("adv-time").value) : null;
-  drawAdventure(t("adv_searching"));
+  const limit = $("adv-time").value ? Number($("adv-time").value) : null;
+  const o = routeOptions();
+  const loop = adv.loop;
+  drawAdventure(t(loop ? "loop_searching" : "adv_searching"));
   setStatus("");
   try {
-    const r = await fetch(BASE + "api/adventure", {
-      method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ points: adv.ends.map((p) => [p.lat, p.lon]), area: adv.area, minutes, variant: adv.variant, options: routeOptions() }),
+    const [start, end] = adv.ends;
+    const ask = loop ? { start: [start.lat, start.lon], area: adv.area, km: limit, variant: adv.variant, options: o, tab: TAB }
+      : { points: adv.ends.map((p) => [p.lat, p.lon]), area: adv.area, minutes: limit, variant: adv.variant, options: o, tab: TAB };
+    const r = await fetch(BASE + (loop ? "api/roundtrip" : "api/adventure"), {
+      method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(ask),
     });
     const j = await r.json().catch(() => ({ error: "failed" }));
     if (advCtl !== ctl) return;
     advCtl = null;
-    if (!r.ok) { drawAdventure(t("err_" + (j.error || "failed"), j.minutes), true); return; }
-    const [a, b] = adv.ends;
-    points = [{ ...a }, ...j.vias.map(([lat, lon]) => ({ name: "", lat, lon, via: true })), { ...b }];
+    if (!r.ok) { if (j.error !== "superseded") drawAdventure(t("err_" + (j.error || "failed"), j.minutes), true); return; }
+    // A roundtrip ends where it starts.
+    const last = loop ? { ...start, via: false } : { ...end };
+    points = [{ ...start }, ...j.vias.map(([lat, lon]) => ({ name: "", lat, lon, via: true })), last];
     delete points[points.length - 1].stop;
-    result = j;
+    delete points[points.length - 1].night;
+    j.legs.forEach((leg, n) => keepLeg(points[n], points[n + 1], o, n === 0 ? null : j.legs[n - 1].arrive, leg));
+    result = joinLegs(j.legs);
     viasOpen = false;
     drawList(); drawMarkers(); drawRoute(); drawSummary();
-    drawAdventure(t("adv_found"));
+    drawAdventure(t(loop ? "loop_found" : "adv_found"));
   } catch (e) {
     if (e.name === "AbortError" || advCtl !== ctl) return;
     advCtl = null;
@@ -895,11 +1176,15 @@ async function findAdventure() {
   }
 }
 
-$("adv").addEventListener("click", openAdventure);
+$("adv").addEventListener("click", () => openAdventure(false));
+$("loop").addEventListener("click", () => openAdventure(true));
 $("adv-again").addEventListener("click", () => { adv.variant++; findAdventure(); });
 $("adv-redraw").addEventListener("click", startDrawing);
 $("adv-close").addEventListener("click", closeAdventure);
-$("adv-time").addEventListener("change", () => { if (adv?.area) findAdventure(); });
+$("adv-time").addEventListener("change", () => {
+  store.set(adv?.loop ? "loopKm" : "advMinutes", $("adv-time").value);
+  if (adv?.area) findAdventure();
+});
 
 function routeOptions() {
   return { style: options.style, surface: options.surface, ferries: options.ferries, motorways: options.motorways, trunk: options.trunk, toll: false };
@@ -910,6 +1195,15 @@ function drawSummary() {
   $("send-row").hidden = !result || viewOnly;
   $("send-new").hidden = !result || viewOnly || !editing?.ref;
   $("send-as-row").hidden = !result || viewOnly || !!editing?.ref;
+  // A trip with nights can go a day at a time.
+  const daysOk = hasNights() && !!result;
+  $("send-as").querySelector('[value="days"]').hidden = !daysOk;
+  if (!daysOk && $("send-as").value === "days") $("send-as").value = "trip";
+  $("share-row").hidden = !result;
+  $("share").hidden = viewOnly || points.length < 2;
+  drawFuelGap();
+  drawProfile();
+  $("compare").hidden = !result || viewOnly || points.length < 2 || compareOpen || !!adv;
   if (!result) { s.hidden = true; return; }
   const h = Math.floor(result.s / 3600), m = Math.round((result.s % 3600) / 60);
   const part = (v, unit) => { const e = el("span", "", v); e.append(el("small", "", unit)); return e; };
@@ -944,6 +1238,372 @@ function showOptions() {
   $("motorways").value = options.trunk ? "noe" : options.motorways ? "no" : "ok";
 }
 ["style", "surface", "ferries", "motorways"].forEach((id) => $(id).addEventListener("change", () => { readOptions(); drawDrafts(); }));
+
+// ---------- Height profile ----------
+// The heights along the route under the numbers: the pointer on it shows the place on the map, and how high it is.
+function drawProfile() {
+  const fig = $("profile");
+  const r = result;
+  if (!r?.ele || r.ele.length !== r.line.length || r.line.length < 2) { fig.hidden = true; map.getSource("cv-hover")?.setData(emptyLine()); return; }
+  fig.hidden = false;
+  const c = $("profile-canvas");
+  const w = c.clientWidth || 340, hgt = 80, dpr = devicePixelRatio || 1;
+  c.width = Math.round(w * dpr); c.height = Math.round(hgt * dpr);
+  const g = c.getContext("2d");
+  g.scale(dpr, dpr);
+  const along = alongOf(r), total = along[along.length - 1] || 1;
+  let lo = Infinity, hi = -Infinity;
+  for (const e of r.ele) { lo = Math.min(lo, e); hi = Math.max(hi, e); }
+  // Some room above and below; a flat trip is not drawn as mountains.
+  const span = Math.max(hi - lo, 100);
+  const base = lo - span * 0.08, top = base + span * 1.2;
+  const y = (e) => hgt - 4 - ((e - base) / (top - base)) * (hgt - 8);
+  const css = getComputedStyle(document.documentElement);
+  // The highest point in each column of pixels, so a pass shows on a long trip.
+  const cols = new Array(Math.ceil(w)).fill(-Infinity);
+  for (let k = 0; k < r.ele.length; k++) { const x = Math.min(cols.length - 1, Math.floor((along[k] / total) * (w - 1))); cols[x] = Math.max(cols[x], r.ele[k]); }
+  for (let x = 1; x < cols.length; x++) if (cols[x] === -Infinity) cols[x] = cols[x - 1];
+  g.beginPath();
+  g.moveTo(0, hgt);
+  cols.forEach((e, x) => g.lineTo(x, y(e === -Infinity ? lo : e)));
+  g.lineTo(w, hgt);
+  g.closePath();
+  g.fillStyle = "rgba(255, 145, 0, 0.28)";
+  g.fill();
+  g.beginPath();
+  cols.forEach((e, x) => (x ? g.lineTo(x, y(e === -Infinity ? lo : e)) : g.moveTo(x, y(e === -Infinity ? lo : e))));
+  g.strokeStyle = css.getPropertyValue("--amber-ink").trim() || "#8a4b00";
+  g.lineWidth = 1.5;
+  g.stroke();
+  // The stops (and nights) as thin lines.
+  const st = legStats();
+  if (st) {
+    g.strokeStyle = css.getPropertyValue("--muted").trim() || "#5f6672";
+    for (let i = 1; i < points.length - 1; i++) {
+      if (kindOf(i) === "via") continue;
+      const x = Math.round((along[st.cuts[i]] / total) * (w - 1)) + 0.5;
+      g.setLineDash(isNight(i) ? [] : [3, 3]);
+      g.beginPath(); g.moveTo(x, 0); g.lineTo(x, hgt); g.stroke();
+    }
+    g.setLineDash([]);
+  }
+  g.fillStyle = css.getPropertyValue("--muted").trim() || "#5f6672";
+  g.font = "11px system-ui, sans-serif";
+  g.fillText(`${Math.round(hi)} m`, 4, 12);
+  g.fillText(`${Math.round(lo)} m`, 4, hgt - 6);
+  $("profile-at").textContent = t("profile_title");
+  c.ariaLabel = `${t("profile_title")}: ${Math.round(lo)}–${Math.round(hi)} m`;
+}
+
+function profileAt(ev) {
+  const r = result;
+  if (!r?.ele) return;
+  const c = $("profile-canvas");
+  const box = c.getBoundingClientRect();
+  const along = alongOf(r), total = along[along.length - 1];
+  const want = Math.max(0, Math.min(1, (ev.clientX - box.left) / box.width)) * total;
+  let a = 0, b = along.length - 1;
+  while (b - a > 1) { const mid = (a + b) >> 1; if (along[mid] <= want) a = mid; else b = mid; }
+  const [la, lo] = r.line[a];
+  map.getSource("cv-hover")?.setData({ type: "Feature", geometry: { type: "Point", coordinates: [lo, la] } });
+  $("profile-at").textContent = t("profile_at", Math.round(along[a] / 1000), r.ele[a]);
+}
+$("profile-canvas").addEventListener("pointermove", profileAt);
+$("profile-canvas").addEventListener("pointerdown", profileAt);
+$("profile-canvas").addEventListener("pointerleave", () => { map.getSource("cv-hover")?.setData(emptyLine()); $("profile-at").textContent = t("profile_title"); });
+new ResizeObserver(() => { if (!$("profile").hidden) drawProfile(); }).observe($("panel"));
+
+// ---------- Fuel along the route ----------
+// As in the app: the fuel stations by the route, and a word when the longest stretch without one is too long for a
+// motorcycle's tank. Only when the planner knows the stations there (it says nothing it does not know).
+const LONG_GAP_M = 120_000;
+function fuelGap() {
+  const r = result;
+  if (!r?.fuel || viewOnly) return null;
+  const marks = [0, ...r.fuel.map((f) => f[0]), r.m];
+  let best = null;
+  for (let k = 1; k < marks.length; k++) if (!best || marks[k] - marks[k - 1] > best.to - best.from) best = { from: marks[k - 1], to: marks[k] };
+  return best && best.to - best.from > LONG_GAP_M ? best : null;
+}
+function drawFuelGap() {
+  const gap = fuelGap();
+  $("fuel-gap").hidden = !gap;
+  if (!gap) return;
+  $("fuel-gap").textContent = t("fuel_gap", Math.round((gap.to - gap.from) / 1000), Math.round(gap.from / 1000));
+  $("fuel-gap").title = t("fuel_gap_title");
+}
+$("fuel-gap").addEventListener("click", () => {
+  const gap = fuelGap();
+  if (!gap) return;
+  const along = alongOf(result);
+  gapLine = result.line.filter((_, k) => along[k] >= gap.from - 1 && along[k] <= gap.to + 1);
+  drawRoute();
+  fitTo(gapLine);
+});
+
+// ---------- Comparing road styles ----------
+// Only when the rider asks: the same points as Fastest, Curvy and Super curvy, side by side, the others as thin lines.
+// The legs stay in the cache, so picking one is instant.
+const STYLES = [["FASTEST", "style_fastest"], ["CURVY", "style_curvy"], ["VERY_CURVY", "style_super_curvy"]];
+let compareOpen = false, compareCtl = null, compareKeep = false;
+
+function closeCompare() {
+  compareCtl?.abort();
+  compareCtl = null;
+  compareOpen = false;
+  alts = [];
+  map.getSource("cv-alt")?.setData(altData());
+  $("compare-box").hidden = true;
+  $("compare").hidden = !result || viewOnly || points.length < 2 || !!adv;
+}
+
+async function openCompare() {
+  if (!result || points.length < 2) return;
+  compareCtl?.abort();
+  const ctl = (compareCtl = new AbortController());
+  compareOpen = true;
+  alts = [];
+  $("compare").hidden = true;
+  $("compare-box").hidden = false;
+  $("compare-box").scrollIntoView({ block: "nearest", behavior: "smooth" });
+  const pts = points.slice(), base = routeOptions();
+  const rows = new Map();
+  const list = $("compare-list");
+  list.replaceChildren(...STYLES.map(([style, label]) => {
+    const li = el("li", style === base.style ? "current" : "");
+    const b = el("button", "", "");
+    b.type = "button";
+    b.append(el("b", "", t(label)), el("small", "", style === base.style ? numbers(result) : t("compare_wait")));
+    b.title = style === base.style ? "" : t("compare_pick");
+    b.disabled = style === base.style;
+    b.onclick = () => {
+      compareKeep = true;
+      options.style = style;
+      store.set("options", options);
+      showOptions();
+      changed();
+    };
+    li.append(b);
+    rows.set(style, li);
+    return li;
+  }));
+  // One at a time: the service has two places for everyone.
+  for (const [style] of STYLES) {
+    if (style === base.style) continue;
+    try {
+      const r = joinLegs(await legsFor(pts, { ...base, style }, ctl.signal, TAB + "c"));
+      if (compareCtl !== ctl) return;
+      rows.get(style).querySelector("small").textContent = numbers(r);
+      alts.push({ style, line: r.line });
+      map.getSource("cv-alt")?.setData(altData());
+    } catch (e) {
+      if (compareCtl !== ctl || e.name === "AbortError") return;
+      rows.get(style).querySelector("small").textContent = e instanceof Refused ? t("err_" + e.code) : t("err_offline");
+    }
+  }
+}
+const numbers = (r) => `${kmText(r.m)} · ${dur(r.s)} · ${r.curvy}/100 ${t("curvy")}`;
+$("compare").addEventListener("click", openCompare);
+$("compare-close").addEventListener("click", closeCompare);
+
+// ---------- Places on the map ----------
+// As the app's map layers (Settings → Display): fuel, viewpoints, passes, camping, food, ferries, motorcycle shops, from
+// the same data. Each kind shows from close enough that it stays readable; a click on one asks what it should be.
+const LAYERS = [
+  ["fuel", ["fuel"], 40, "#1565c0"], ["viewpoints", ["viewpoint"], 80, "#2e7d32"],
+  ["passes", ["pass"], 250, "#6d4c41"], ["camping", ["camp_site"], 40, "#558b2f"],
+  ["food", ["cafe", "restaurant", "fast_food"], 12, "#e65100"], ["ferries", ["ferry"], 120, "#00838f"],
+  ["motorcycle", ["motorcycle_shop", "workshop"], 25, "#455a64"],
+];
+/** Each kind's sign in white, on a 24 × 24 grid: [paths to fill (even-odd), paths to stroke]. */
+const SIGNS = {
+  fuel: [["M5 4h9v16H5z M7 6h5v4H7z"], ["M14 9h2.5v8a1.5 1.5 0 0 0 3 0V8l-2-2"]],
+  viewpoints: [["M12 9a3 3 0 1 0 0.01 0z"], ["M2 12c3-5 7-7 10-7s7 2 10 7c-3 5-7 7-10 7s-7-2-10-7z"]],
+  passes: [["M2 19l7-11 4 6 3-4 6 9z"], []],
+  camping: [["M12 4l9 15H3z M12 11l-3.5 8h7z"], []],
+  food: [["M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"], ["M16 11h1.5a2.5 2.5 0 0 1 0 5H16", "M9 3v4", "M12 3v4"]],
+  ferries: [["M3 14h18l-3 5H6z", "M7 9h10v4H7z", "M11 5h2v4h-2z"], []],
+  motorcycle: [["M8 15l3-5h4l2 3h-3l-2 3z"], ["M6 12.8a3.2 3.2 0 1 0 0.01 0z", "M18 12.8a3.2 3.2 0 1 0 0.01 0z", "M14 10l1-3h3"]],
+};
+/** A round badge in the kind's colour with its sign, [size] pixels across. */
+function badge(key, size) {
+  const [, , , colour] = LAYERS.find(([k]) => k === key);
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  g.beginPath(); g.arc(size / 2, size / 2, size / 2 - size / 16, 0, Math.PI * 2);
+  g.fillStyle = colour; g.fill();
+  g.lineWidth = size / 16; g.strokeStyle = "#ffffff"; g.stroke();
+  const k = (size * 0.6) / 24;
+  g.translate(size * 0.2, size * 0.2);
+  g.scale(k, k);
+  g.fillStyle = "#ffffff"; g.strokeStyle = "#ffffff"; g.lineWidth = 1.8; g.lineCap = "round"; g.lineJoin = "round";
+  const [fills, strokes] = SIGNS[key];
+  for (const d of fills) g.fill(new Path2D(d), "evenodd");
+  for (const d of strokes) g.stroke(new Path2D(d));
+  return c;
+}
+const layerOfKind = Object.fromEntries(LAYERS.flatMap(([key, kinds]) => kinds.map((k) => [k, key])));
+let shownLayers = new Set(store.get("layers", []).filter((k) => LAYERS.some(([key]) => key === k)));
+let poiCtl = null, poiTimer;
+
+function poiData() {
+  return { type: "FeatureCollection", features: poiList.map(([k, la, lo, name]) => ({
+    type: "Feature", properties: { k: layerOfKind[k] || k, name }, geometry: { type: "Point", coordinates: [lo, la] },
+  })) };
+}
+
+// The map's own sprites have no sign for fuel or camping: the badges are drawn here, for each style the map loads.
+map.on("styleimagemissing", (e) => {
+  const key = e.id.replace(/^poi-/, "");
+  if (!e.id.startsWith("poi-") || !SIGNS[key] || map.hasImage(e.id)) return;
+  const c = badge(key, 48);
+  map.addImage(e.id, c.getContext("2d").getImageData(0, 0, 48, 48), { pixelRatio: 2 });
+});
+
+/** The view's width in km, as the app decides when a layer is readable. */
+function viewKm() {
+  const b = map.getBounds(), lat = map.getCenter().lat;
+  return Math.abs(b.getEast() - b.getWest()) * 111.32 * Math.cos((lat * Math.PI) / 180);
+}
+
+async function loadPois() {
+  poiCtl?.abort();
+  const km = viewKm();
+  const on = LAYERS.filter(([key]) => shownLayers.has(key));
+  const near = on.filter(([, , maxKm]) => km <= maxKm);
+  if ($("places-zoom")) $("places-zoom").hidden = !on.length || near.length === on.length;
+  if (!near.length) { poiList = []; map.getSource("cv-pois")?.setData(poiData()); return; }
+  const b = map.getBounds();
+  const padX = (b.getEast() - b.getWest()) * 0.2, padY = (b.getNorth() - b.getSouth()) * 0.2;
+  const box = [b.getWest() - padX, b.getSouth() - padY, b.getEast() + padX, b.getNorth() + padY].map((v) => v.toFixed(4)).join(",");
+  const ctl = (poiCtl = new AbortController());
+  try {
+    const r = await fetch(`${BASE}api/pois?b=${box}&k=${near.flatMap(([, kinds]) => kinds).join(",")}`, { signal: ctl.signal });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (poiCtl !== ctl) return;
+    poiList = j.pois;
+    map.getSource("cv-pois")?.setData(poiData());
+  } catch { /* offline or moved on: the places stay as they were */ }
+}
+map.on("moveend", () => { clearTimeout(poiTimer); if (shownLayers.size) poiTimer = setTimeout(loadPois, 300); });
+
+/** The button on the map that opens the list of kinds. */
+class PlacesControl {
+  onAdd() {
+    const box = el("div", "maplibregl-ctrl maplibregl-ctrl-group places-ctrl");
+    const btn = el("button", "places-btn", "");
+    btn.type = "button";
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>';
+    const pop = el("div", "places-pop");
+    pop.id = "places-pop";
+    pop.hidden = true;
+    btn.onclick = () => { pop.hidden = !pop.hidden; drawPlaces(); };
+    box.append(btn, pop);
+    this.box = box;
+    return box;
+  }
+  onRemove() { this.box.remove(); }
+}
+map.addControl(new PlacesControl(), "top-right");
+
+function drawPlaces() {
+  const btn = document.querySelector(".places-btn");
+  btn.title = t("places_title"); btn.ariaLabel = t("places_title");
+  btn.classList.toggle("on", shownLayers.size > 0);
+  const pop = $("places-pop");
+  const head = el("b", "", t("places_title"));
+  const zoom = el("small", "hint", t("places_zoom"));
+  zoom.id = "places-zoom";
+  zoom.hidden = true;
+  pop.replaceChildren(head, ...LAYERS.map(([key]) => {
+    const label = el("label");
+    const box = el("input");
+    box.type = "checkbox";
+    box.checked = shownLayers.has(key);
+    box.onchange = () => {
+      if (box.checked) shownLayers.add(key); else shownLayers.delete(key);
+      store.set("layers", [...shownLayers]);
+      btn.classList.toggle("on", shownLayers.size > 0);
+      loadPois();
+    };
+    const sign = el("img", "badge");
+    sign.src = badge(key, 40).toDataURL();
+    sign.alt = "";
+    label.append(box, sign, el("span", "", t("layer_" + key)));
+    return label;
+  }), zoom);
+  loadPois();
+}
+
+// ---------- GPX out, and a link to the trip ----------
+const xml = (s) => String(s).replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" })[c]);
+
+/** The trip as a GPX file for any other app or GPS: its places as waypoints and a route, and the line with heights. */
+function gpxText() {
+  const name = $("name").value.trim() || defaultName();
+  const pt = (tag, p, inner = "") => `<${tag} lat="${p.lat.toFixed(6)}" lon="${p.lon.toFixed(6)}">${inner}</${tag}>`;
+  const named = points.map((p, i) => ({ p, i })).filter(({ i }) => kindOf(i) !== "via");
+  const ele = result.ele;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Curveon planner (curveon.no/plan)" xmlns="http://www.topografix.com/GPX/1/1">
+<metadata><name>${xml(name)}</name></metadata>
+${named.map(({ p }) => pt("wpt", p, `<name>${xml(p.name || t("map_point"))}</name>`)).join("\n")}
+${points.length >= 2 ? `<rte><name>${xml(name)}</name>
+${points.map((p) => pt("rtept", p, p.via ? "" : `<name>${xml(p.name || t("map_point"))}</name>`)).join("\n")}
+</rte>` : ""}
+<trk><name>${xml(name)}</name><trkseg>
+${result.line.map(([la, lo], k) => `<trkpt lat="${la.toFixed(6)}" lon="${lo.toFixed(6)}">${ele ? `<ele>${ele[k]}</ele>` : ""}</trkpt>`).join("\n")}
+</trkseg></trk>
+</gpx>
+`;
+}
+$("save-gpx").addEventListener("click", () => {
+  if (!result) return;
+  const a = el("a");
+  a.href = URL.createObjectURL(new Blob([gpxText()], { type: "application/gpx+xml" }));
+  a.download = ($("name").value.trim() || defaultName()).replace(/[\\/:*?"<>|]+/g, " ").trim().slice(0, 80) + ".gpx";
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+});
+
+/** A link with this trip in it (its places, options and name; nothing else), to open on another computer or send a friend. */
+function tripLink() {
+  const data = { v: 1, n: $("name").value.trim(), o: routeOptions(),
+    p: points.map((p) => [+p.lat.toFixed(5), +p.lon.toFixed(5), (p.via ? "v" : "") + (p.stop ? "s" : "") + (p.night ? "n" : ""), p.via ? "" : p.name || ""]) };
+  const url = new URL(location.href);
+  url.hash = "";
+  url.searchParams.delete("debug");
+  url.searchParams.set("trip", b64(new TextEncoder().encode(JSON.stringify(data))));
+  return url.toString();
+}
+$("share").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(tripLink()); setStatus(t("link_copied")); } catch { prompt(t("share"), tripLink()); }
+});
+
+/** A trip from a link (tripLink): on the map to change, save or send. */
+function openLink() {
+  const raw = params.get("trip");
+  if (!raw) return;
+  const url = new URL(location.href);
+  url.searchParams.delete("trip");
+  history.replaceState(null, "", url);
+  let data;
+  try { data = JSON.parse(new TextDecoder().decode(unb64(raw))); } catch { return; }
+  const ok = (v) => Number.isFinite(v) && Math.abs(v) <= 180;
+  if (data?.v !== 1 || !Array.isArray(data.p) || data.p.length > 27 || !data.p.every((q) => ok(q[0]) && ok(q[1]))) return;
+  points = data.p.map(([lat, lon, f = "", name = ""]) => ({ name: String(name).slice(0, 120), lat, lon, via: f.includes("v"),
+    ...(f.includes("s") ? { stop: true } : {}), ...(f.includes("n") ? { night: true } : {}) }));
+  if (data.o && typeof data.o === "object") { options = Object.assign(options, data.o); showOptions(); }
+  $("name").value = String(data.n || "").slice(0, 80);
+  forgetUndo();
+  changed();
+  if (points.length) fitTo(points.map((q) => [q.lat, q.lon]));
+  setStatus(t("opened_link"));
+}
 
 // ---------- The session with the devices ----------
 let link = store.get("link", null) && parseLink(store.get("link"));
@@ -1149,6 +1809,7 @@ function openDraft(d) {
   closeAdventure();
   points = d.points; result = d.result; editing = d.editing; viewOnly = false;
   options = Object.assign(options, d.options); showOptions();
+  adoptLegs(result, points, routeOptions());
   $("name").value = d.name;
   currentDraft = d.id;
   forgetUndo();
@@ -1222,7 +1883,9 @@ function parseGpx(text, fileName) {
     line.push(q);
   }
   const name = doc.querySelector("trk > name, rte > name, metadata > name")?.textContent?.trim() || fileName.replace(/\.(gpx|xml)$/i, "");
-  return { name, line: line.map(([la, lo]) => [la, lo]), m, up };
+  // Heights when the file has them for every point.
+  const ele = line.every((q) => Number.isFinite(q[2])) ? line.map((q) => Math.round(q[2])) : null;
+  return { name, line: line.map(([la, lo]) => [la, lo]), ele, m, up };
 }
 
 async function openGpx(file) {
@@ -1243,7 +1906,7 @@ async function openGpx(file) {
   }
   const [a, b] = [g.line[0], g.line[g.line.length - 1]];
   points = [{ name: t("start"), lat: a[0], lon: a[1], via: false }, ...vias, { name: t("map_point"), lat: b[0], lon: b[1], via: false }];
-  result = { line: g.line, m: Math.round(g.m), s: Math.round(g.m / (60 / 3.6)), up: Math.round(g.up), curvy: null, ferries: 0 };
+  result = { line: g.line, ele: g.ele, m: Math.round(g.m), s: Math.round(g.m / (60 / 3.6)), up: Math.round(g.up), curvy: null, ferries: 0 };
   editing = null; viewOnly = false; currentDraft = null; viasOpen = false;
   $("name").value = g.name;
   $("send-as").value = "track";
@@ -1283,21 +1946,33 @@ async function send(asNew) {
   const rev = Date.now();
   // A trip opened from a device is updated there, and in the same trip's copies on the other devices, each on its own.
   const copies = target?.ref ? [{ ...target.ref, dev: target.dev }, ...(target.copies || [])] : [null];
-  // A new one goes as the rider picked: a trip to change, a GPX track ridden as it is, or both.
+  // A new one goes as the rider picked: a trip to change, a GPX track ridden as it is, both, or a trip for each day.
   const as = target?.ref ? "trip" : $("send-as").value;
-  const sends = as === "track" ? [] : copies.map((c) => [
+  const sends = as === "track" || as === "days" ? [] : copies.map((c) => [
     c && c !== copies[0] ? "r" + c.id + "-" + c.r.slice(0, 8) : tid, c ? { ...trip, ref: { r: c.r, id: c.id } } : trip]);
-  if (as !== "trip") {
+  if (as === "track" || as === "both") {
     const { start: _s, destination: _d, ...rest } = trip;
     sends.push([as === "both" ? tid + "-t" : tid, { ...rest, name: as === "both" ? name + t("track_suffix") : name, stops: [], track: true }]);
   }
+  const st = as === "days" && legStats();
+  if (st) days().forEach(([a, b], n) => {
+    // Each day from its morning's place to its night's (or the end), with its own part of the line.
+    const x = between(st, a, b);
+    const dpk = st.legs.slice(a, b).every((l) => l.dpk != null) && x.m ? st.legs.slice(a, b).reduce((v, l) => v + l.dpk * l.m, 0) / x.m : null;
+    const { via: _v, ...dest } = stop(points[b]);
+    sends.push([tid + "-d" + (n + 1), {
+      ...trip, name: name + t("day_suffix", n + 1), start: stop(points[a]), destination: dest, stops: points.slice(a + 1, b).map(stop),
+      line: result.line.slice(st.cuts[a], st.cuts[b] + 1).map(([la, lo]) => `${la.toFixed(5)},${lo.toFixed(5)}`).join(";"),
+      m: Math.round(x.m), s: Math.round(x.s), up: Math.round(x.up), curvy: dpk != null ? Math.min(100, Math.floor(dpk / 3)) : trip.curvy,
+    }]);
+  });
   let ok = true;
   for (const [k, body] of sends) ok = (await sendFrame(await ch.plan(rider, nextSeq(), k, rev, body))) && ok;
   $("send").disabled = $("send-new").disabled = false;
   if (!ok) { setStatus(t("send_failed"), true); return; }
   if (!target?.ref) {
     const list = store.get("sent", []).filter((x) => !sends.some(([k]) => k === x.tid));
-    for (const [k, body] of sends) list.unshift({ tid: k, rev, name: body.name, km: Math.round(result.m / 1000), at: Date.now(), got: {} });
+    for (const [k, body] of sends) list.unshift({ tid: k, rev, name: body.name, km: Math.round(body.m / 1000), at: Date.now(), got: {} });
     store.set("sent", list.slice(0, 30));
     editing = { tid, ref: null, dev: null };
   }
@@ -1375,8 +2050,9 @@ $("theme").addEventListener("click", async () => {
   applyTexts();
   map.setStyle(withRoute(await loadStyle()));
   map.once("idle", showOnline);
+  drawProfile();
 });
-$("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); fillTimes(); drawList(); drawSummary(); drawDevices(); drawPending(); });
+$("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); fillTimes(); drawList(); drawSummary(); drawDevices(); drawPending(); drawPlaces(); });
 $("fold").addEventListener("click", () => {
   const folded = $("panel").classList.toggle("folded");
   $("fold").ariaExpanded = String(!folded);
@@ -1389,5 +2065,7 @@ showOptions();
 drawList();
 drawDevices();
 drawPending();
+openLink();
 markClean();
 connect();
+if (map.loaded()) drawPlaces(); else map.once("load", drawPlaces);

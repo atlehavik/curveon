@@ -6,6 +6,14 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-24 — Nettplanleggeren: dager, høyder, steder, rundtur
+
+- [ ] PC (relay.curveon.no/plan): legg inn et stopp, klikk det og velg «Overnatt her». Lista viser «Dag 1» og «Dag 2» med km og tid. Send med «Hver dag som egen tur». Pixel: to turer under Planlagte, «… – dag 1» og «… – dag 2», og dag 2 starter der dag 1 slutter.
+- [ ] PC: dra et punkt på en lang tur med mange stopp. Ruten kommer raskere enn før, og «Sammenlign Raskest, Svingete og Supersvingete» viser alle tre. Velg en av dem: byttet skjer med en gang.
+- [ ] PC: knappen med kartnål øverst til høyre → kryss av for Bensin (og gjerne Utsiktspunkt). Zoom inn i Sverige eller Tyskland: stedene vises også der. Klikk en bensinstasjon og velg «Stopp her».
+- [ ] PC: pek i høydeprofilen under tallene: et punkt følger ruten på kartet. «Lagre som GPX» og «Kopier lenke»: åpne lenka i en annen nettleser, og samme tur (med overnatting) kommer opp.
+- [ ] PC: med bare et startpunkt, trykk «Rundtur: tegn hvor du vil kjøre», og tegn rundt et område. Turen går rundt og tilbake til start, og kan sendes som vanlig.
+
 ## 2026-10-24 — Nettplanleggeren på kryss og tvers (1.2.6)
 
 - [ ] Pixel og X7 begge koblet til relay.curveon.no/plan: åpne en tur som ligger på begge, endre den, og trykk «Oppdater på X7 og Pixel 9a». Begge får turen endret, ingen av dem får en ekstra kopi.

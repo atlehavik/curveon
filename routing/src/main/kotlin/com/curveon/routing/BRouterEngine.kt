@@ -70,15 +70,7 @@ class BRouterEngine(
             return ordinary
         }
         if (visitEveryVia && waypoints.size > 2) {
-            // Leg by leg: each stop is a leg's end, so it can't be cut out. (BRouter's allowSamewayback
-            // would keep it too, but turns a plain A→B trip into there and back.)
-            val legs = ArrayList<Route>(waypoints.size - 1)
-            for ((i, ab) in waypoints.zipWithNext().withIndex()) {
-                val (a, b) = ab
-                legs += if (i == 0) route(listOf(a, b), options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort)
-                    else leaveStop(a, b, legs.last(), options, viaCatchingRangeMeters, avoidedFerryCost, noGo, tracksAsLastResort)
-            }
-            return Routes.joinLegs(legs)
+            return Routes.joinLegs(legs(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, null, noGo, tracksAsLastResort, maxMillis))
         }
         val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false, maxMillis = maxMillis)
         // Start and end on the rider's own road even where the map doesn't join it to the network.
@@ -86,18 +78,41 @@ class BRouterEngine(
     }
 
     /**
-     * The leg from [stop] on to [next], leaving the stop the way [arrived] came in. A leg on its own starts
+     * The legs from each waypoint to the next, every one a route of its own, as [route] rides them with
+     * visitEveryVia: a planner can keep the legs that did not change and ask only for the ones that did.
+     * [arrivedHeadingDeg]: the way the rider rode into the first waypoint (from a leg before these, see
+     * [arrivalHeading]), so it is left the same way instead of by turning round.
+     */
+    fun routeLegs(waypoints: List<LatLon>, options: RouteOptions, arrivedHeadingDeg: Double? = null, maxMillis: Long? = null): List<Route> =
+        legs(waypoints, options, null, AVOIDED_FERRY_COST, null, arrivedHeadingDeg, emptyList(), true, maxMillis)
+
+    /** Leg by leg: each stop is a leg's end, so it can't be cut out. (BRouter's allowSamewayback would keep it too, but turns a plain A→B trip into there and back.) */
+    private fun legs(
+        waypoints: List<LatLon>, options: RouteOptions, viaCatchingRangeMeters: Double?, avoidedFerryCost: Int, startHeadingDeg: Double?,
+        arrivedHeadingDeg: Double?, noGo: List<NoGo>, tracksAsLastResort: Boolean, maxMillis: Long?
+    ): List<Route> {
+        require(waypoints.size >= 2) { "Need at least start and destination" }
+        val legs = ArrayList<Route>(waypoints.size - 1)
+        for ((i, ab) in waypoints.zipWithNext().withIndex()) {
+            val (a, b) = ab
+            val heading = if (i == 0) arrivedHeadingDeg else arrivalHeading(legs.last())
+            legs += if (heading == null) route(listOf(a, b), options, viaCatchingRangeMeters, avoidedFerryCost, if (i == 0) startHeadingDeg else null, noGo, tracksAsLastResort, maxMillis = maxMillis)
+                else leaveStop(a, b, heading, options, viaCatchingRangeMeters, avoidedFerryCost, noGo, tracksAsLastResort, maxMillis)
+        }
+        return legs
+    }
+
+    /**
+     * The leg from [stop] on to [next], leaving the stop the way the rider rode in ([heading]). A leg on its own starts
      * in any direction, so a stop by the road (a fuel station beside the main road, a via point) became
      * "ride to the point and turn round on the road", even at 80 km/h. Turning round at the stop is kept
      * only for a dead end, or when going on to a place to turn costs more than [STOP_TURN_SLACK_S].
      */
     private fun leaveStop(
-        stop: LatLon, next: LatLon, arrived: Route, options: RouteOptions, viaCatchingRangeMeters: Double?,
-        avoidedFerryCost: Int, noGo: List<NoGo>, tracksAsLastResort: Boolean
+        stop: LatLon, next: LatLon, heading: Double, options: RouteOptions, viaCatchingRangeMeters: Double?,
+        avoidedFerryCost: Int, noGo: List<NoGo>, tracksAsLastResort: Boolean, maxMillis: Long?
     ): Route {
-        val plain = route(listOf(stop, next), options, viaCatchingRangeMeters, avoidedFerryCost, null, noGo, tracksAsLastResort)
-        if (arrived.distanceMeters < 40) return plain
-        val heading = Routes.pointAt(arrived, arrived.distanceMeters - 20).second
+        val plain = route(listOf(stop, next), options, viaCatchingRangeMeters, avoidedFerryCost, null, noGo, tracksAsLastResort, maxMillis = maxMillis)
         if (!OffRoutePlanner.turnsBack(plain, stop, heading) && !OffRoutePlanner.uTurnsAhead(plain)) return plain
         val ahead = OffRoutePlanner(this).forwardOnly(stop, heading, listOf(next), options, noGo).second ?: return plain
         return if (ahead.durationSeconds - plain.durationSeconds <= STOP_TURN_SLACK_S) ahead else plain
@@ -149,7 +164,9 @@ class BRouterEngine(
         }
         val engine = RoutingEngine(null, null, segmentDir, nodes, rc, RoutingEngine.BROUTER_ENGINEMODE_ROUTING)
         engine.quite = true
-        engine.doRun(maxMillis ?: timeoutMillis)
+        val cancel = CANCEL.get()
+        cancel?.running(engine) { engine.doRun(maxMillis ?: timeoutMillis) } ?: engine.doRun(maxMillis ?: timeoutMillis)
+        if (cancel?.cancelled == true) throw RoutingException(CANCELLED)
         engine.errorMessage?.let { throw RoutingException(it) }
         val track = engine.foundTrack ?: throw RoutingException("No route found")
         return toRoute(track)
@@ -246,8 +263,45 @@ class BRouterEngine(
         return out
     }
 
+    /**
+     * Lets a search on another thread be given up (a planner page asked for something newer): [cancel] stops the
+     * BRouter runs going on under [cancellable], and those not started yet end at once with a [RoutingException].
+     */
+    class Cancel {
+        @Volatile var cancelled = false
+            private set
+        private val engines = java.util.concurrent.ConcurrentHashMap.newKeySet<RoutingEngine>()
+
+        fun cancel() {
+            cancelled = true
+            engines.forEach { it.terminate() }
+        }
+
+        internal fun running(engine: RoutingEngine, run: () -> Unit) {
+            if (cancelled) throw RoutingException(CANCELLED)
+            engines += engine
+            try { run() } finally { engines -= engine }
+        }
+    }
+
     companion object {
         const val PROFILE_FILE = "curveon-moto.brf"
+        /** The message of a search given up with [Cancel]. */
+        const val CANCELLED = "cancelled"
+        private val CANCEL = ThreadLocal<Cancel?>()
+
+        /** Runs [block] on this thread so that [cancel] stops the routes it works out (not those on other threads). */
+        fun <T> cancellable(cancel: Cancel, block: () -> T): T {
+            CANCEL.set(cancel)
+            try { return block() } finally { CANCEL.remove() }
+        }
+
+        /** Whether the search this thread runs for was given up (for work between BRouter runs). */
+        fun cancelled(): Boolean = CANCEL.get()?.cancelled == true
+
+        /** Which way a route ends: the bearing over its last 20 m, or null for a leg too short to say. */
+        fun arrivalHeading(leg: Route): Double? =
+            if (leg.distanceMeters < 40) null else Routes.pointAt(leg, leg.distanceMeters - 20).second
         /** Gravel pull tried in turn while a gravel route strays too far: full, then weaker. */
         private val GRAVEL_PULLS = listOf(100, 50, 20)
 

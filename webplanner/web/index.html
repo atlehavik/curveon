@@ -43,10 +43,11 @@
         <button id="save-draft" class="link" type="button" hidden></button>
       </div>
       <button id="adv" class="link" type="button" hidden>✦ <span data-t="adv_open"></span></button>
+      <button id="loop" class="link" type="button" hidden>↻ <span data-t="loop_open"></span></button>
       <section id="adv-box" hidden>
-        <b>✦ <span data-t="adv_title"></span></b>
+        <b id="adv-head"></b>
         <p id="adv-hint" class="hint"></p>
-        <label><span data-t="adv_time"></span> <select id="adv-time"></select></label>
+        <label><span id="adv-time-label"></span> <select id="adv-time"></select></label>
         <div class="buttons">
           <button id="adv-again" class="primary" type="button" data-t="adv_again" hidden></button>
           <button id="adv-redraw" type="button" data-t="adv_redraw" hidden></button>
@@ -82,6 +83,17 @@
       </div>
 
       <div id="summary" hidden></div>
+      <figure id="profile" hidden>
+        <canvas id="profile-canvas" height="80" role="img"></canvas>
+        <figcaption id="profile-at"></figcaption>
+      </figure>
+      <button id="fuel-gap" class="link warn" type="button" hidden></button>
+      <button id="compare" class="link" type="button" data-t="compare" hidden></button>
+      <section id="compare-box" hidden>
+        <b data-t="compare_title"></b>
+        <ul id="compare-list"></ul>
+        <div class="buttons"><button id="compare-close" class="ghost" type="button" data-t="compare_close"></button></div>
+      </section>
       <p id="status" role="status"></p>
 
       <div id="send-row" hidden>
@@ -93,8 +105,13 @@
           <option value="trip" data-t="as_trip"></option>
           <option value="track" data-t="as_track"></option>
           <option value="both" data-t="as_both"></option>
+          <option value="days" data-t="as_days" hidden></option>
         </select></label>
       <button id="send-new" class="link" type="button" data-t="send_new" hidden></button>
+      <div id="share-row" hidden>
+        <button id="save-gpx" class="link" type="button" data-t="save_gpx"></button>
+        <button id="share" class="link" type="button" data-t="share"></button>
+      </div>
 
       <section id="drafts" hidden>
         <h2 data-t="drafts_title"></h2>

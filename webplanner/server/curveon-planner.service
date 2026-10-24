@@ -11,12 +11,14 @@ WorkingDirectory=/opt/curveon-planner
 Environment=SEGMENTS=/opt/curveon-planner/segments
 Environment=PORT=8788
 Environment=TRUST_PROXY=1
-ExecStart=/usr/bin/java -Xmx700m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -jar /opt/curveon-planner/webplanner-server.jar
+Environment=POIS=/opt/curveon-planner/pois
+# Two searches at once (~660 MB) and Europe's places in memory (some tens of MB).
+ExecStart=/usr/bin/java -Xmx800m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -jar /opt/curveon-planner/webplanner-server.jar
 Restart=always
 RestartSec=3
 Nice=10
 CPUWeight=50
-MemoryMax=1100M
+MemoryMax=1200M
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true

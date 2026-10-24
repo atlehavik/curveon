@@ -1,8 +1,11 @@
 // Drives the web planner in a real browser (Playwright, Firefox) against a planner service and a relay, and plays a
 // device in the session with webplanner/web/webplan.js: it shows its planned trips, the page opens one, changes and
-// updates it, deletes one, and sends a trip drawn before connecting. Screenshots go to OUT.
+// updates it, deletes one, and sends a trip drawn before connecting. On the way: legs kept by the page, the height
+// profile, nights and days, comparing road styles, places on the map, a link and a GPX file of the trip, and a roundtrip.
+// Screenshots go to OUT.
 //   PLAYWRIGHT_DIR=<folder with node_modules/playwright> node tools/webplanner_test.mjs http://localhost:18788/plan/ localhost:18787 OUT
 import { createRequire } from "node:module";
+import fs from "node:fs/promises";
 import { b64, channel, parseLink, random } from "../webplanner/web/webplan.js";
 
 const { firefox } = createRequire((process.env.PLAYWRIGHT_DIR || process.cwd()) + "/")("playwright");
@@ -50,6 +53,9 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("dialog", (d) => d.accept());
+  // What the planner service is asked for: the number of points in each route request.
+  const asked = [];
+  page.on("request", (r) => { if (r.url().endsWith("/api/route")) asked.push(JSON.parse(r.postData()).points.length); });
   await page.goto(/^(localhost|127\.)/.test(relay) ? `${base}?relay=${relay}&debug` : `${base}?debug`);
   await page.waitForFunction(() => window.curveonMap?.loaded(), null, { timeout: 30000 });
   await page.waitForTimeout(1500);
@@ -77,6 +83,13 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   if (name === "phone") await page.click("#fold");
   await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
   check(true, `${name}: a route drawn before connecting`);
+  // Under the numbers: the heights along the route, and Compare; under Send: GPX and a link. All on screen.
+  for (const sel of ["#profile-canvas", "#compare", "#save-gpx", "#share"]) {
+    await page.locator(sel).scrollIntoViewIfNeeded();
+    check(await page.isVisible(sel) && await fitsInside(sel), `${name}: ${sel} shows and fits`);
+  }
+  check((await page.$$eval("#stops li .leg", (e) => e.map((x) => x.textContent)))[0]?.includes("km"), `${name}: the destination says how far from the start`);
+  await page.screenshot({ path: `${out}/${name}-0-route.png` });
 
   // With a route: a third click offers stop, via point and new destination; a click on a point offers to change or remove it.
   if (name === "phone") await page.click("#fold");
@@ -86,7 +99,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   await pick(name === "phone" ? "Stopp her" : "Stop here");
   check((await page.$$eval("#stops li", (e) => e.length)) === 3 && (await page.$$eval("#stops li", (e) => e[1].className)) === "stop", `${name}: the stop went in between start and destination`);
   await page.locator(".pin.stop").click();
-  check((await menuItems()).length === 2, `${name}: a click on a stop offers via point and remove (${await menuItems()})`);
+  check((await menuItems()).length === 3, `${name}: a click on a stop offers via point, the night there, and remove (${await menuItems()})`);
   await pick(name === "phone" ? "Gjør til hjelpepunkt" : "Make it a via point");
   check((await page.$$eval("#stops li", (e) => e[1].className)) === "via", `${name}: the stop became a via point`);
   await page.locator(".pin.via").click();
@@ -173,6 +186,97 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     await page.click("#adv-close");
     check(await page.isHidden("#adv-box"), "desktop: the adventure box closes");
     await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+
+    // Leg by leg: back to a road style seen before, the page has every leg and asks the planner for nothing.
+    const done = () => page.waitForFunction(() => !document.querySelector("#summary").hidden, null, { timeout: 60000 });
+    await page.selectOption("#style", "FASTEST");
+    await done();
+    const n0 = asked.length;
+    await page.selectOption("#style", "CURVY");
+    await done();
+    check(asked.length === n0, `desktop: back to Curvy came from the legs the page had (${asked.length - n0} requests)`);
+
+    // The height profile: pointing at it shows the place on the map and how high it is.
+    const pbox = await page.locator("#profile-canvas").boundingBox();
+    await page.mouse.move(pbox.x + pbox.width / 2, pbox.y + 40);
+    const hover = await page.evaluate(() => window.curveonMap.getStyle().sources["cv-hover"].data);
+    check(/km \d+ · -?\d+ m/.test(await page.textContent("#profile-at")) && hover?.geometry?.type === "Point", `desktop: pointing at the profile shows the place (${await page.textContent("#profile-at")})`);
+
+    // Compare the road styles: all three with their numbers, the other two on the map; picking one asks for nothing new.
+    await page.click("#compare");
+    await page.waitForFunction(() => [...document.querySelectorAll("#compare-list small")].every((x) => / km /.test(x.textContent)), null, { timeout: 120000 });
+    const alts = await page.evaluate(() => window.curveonMap.getStyle().sources["cv-alt"].data.features.length);
+    check(alts === 2, `desktop: three road styles side by side, the other two on the map (${await page.$eval("#compare-list", (e) => e.innerText.replace(/\s+/g, " "))})`);
+    await page.screenshot({ path: `${out}/${name}-0-compare.png` });
+    const n1 = asked.length;
+    await page.locator("#compare-list li", { hasText: "Fastest" }).locator("button").click();
+    await page.waitForFunction(() => document.querySelector("#style").value === "FASTEST" && !document.querySelector("#summary").hidden, null, { timeout: 60000 });
+    check(asked.length === n1 && await page.isVisible("#compare-box"), `desktop: picking Fastest is at once, and the comparison stays (${asked.length - n1} requests)`);
+    await page.click("#compare-close");
+    check(await page.isHidden("#compare-box") && (await page.evaluate(() => window.curveonMap.getStyle().sources["cv-alt"].data.features.length)) === 0, "desktop: closing the comparison takes the other lines away");
+    await page.selectOption("#style", "CURVY");
+    await done();
+
+    // A night on the way: the list shows the trip day by day, and it can go to Curveon a day at a time.
+    await clickAt(60.39, 5.32);
+    await pick("Stop here");
+    await done();
+    await page.locator(".pin.stop").click();
+    await pick("Stay the night here");
+    const dayLines = await page.$$eval("#stops li.day", (e) => e.map((x) => x.innerText.replace(/\s+/g, " ")));
+    check(dayLines.length === 2 && dayLines.every((d) => / km · /.test(d)) && (await page.$$eval(".pin.night", (e) => e.length)) === 1,
+      `desktop: a night makes two days (${dayLines.join(" | ")})`);
+    check(await page.$eval('#send-as option[value="days"]', (o) => !o.hidden), "desktop: with a night, Send as offers each day as a trip");
+    await page.screenshot({ path: `${out}/${name}-0-days.png` });
+
+    // A link to the trip: opened elsewhere, the same places, nights and name, routed there.
+    await page.fill("#name", "Linktur");
+    await page.evaluate(() => { navigator.clipboard.writeText = async (x) => { window.copied = x; }; });
+    await page.click("#share");
+    const tripUrl = await page.evaluate(() => window.copied);
+    check(/[?&]trip=/.test(tripUrl || "") && /copied/i.test(await page.textContent("#status")), "desktop: Copy link puts the trip in a link");
+    const other = await browser.newPage({ viewport, locale: "en-GB" });
+    await other.goto(tripUrl + "&debug");
+    await other.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+    check((await other.inputValue("#name")) === "Linktur" && (await other.$$eval(".pin", (e) => e.length)) === await page.$$eval(".pin", (e) => e.length) &&
+      (await other.$$eval(".pin.night", (e) => e.length)) === 1 && !/trip=/.test(other.url()), "desktop: the link opens the same trip, with its night, and leaves the address");
+    await other.close();
+
+    // Save as GPX: the line with its heights, the places as waypoints and as a route.
+    const dl = page.waitForEvent("download");
+    await page.click("#save-gpx");
+    const gpx = await fs.readFile(await (await dl).path(), "utf8");
+    check(/<trkpt[^>]+><ele>-?\d+<\/ele>/.test(gpx) && (gpx.match(/<wpt /g) || []).length === 3 && /<rte>/.test(gpx) && gpx.includes("<name>Linktur</name>"), "desktop: Save as GPX gives the line with heights, the places and the route");
+
+    // Back to the trip as it was, for the session below.
+    await page.fill("#name", "");
+    await page.click("#undo");
+    await page.click("#undo");
+    check((await page.$$eval("#stops li", (e) => e.length)) === 3, "desktop: undo takes the night and the stop away again");
+    await done();
+
+    // Places on the map: fuel stations near by, and a click on one offers it as a place on the trip.
+    await page.click(".places-btn");
+    await page.locator(".places-pop label", { hasText: "Fuel" }).click();
+    await page.evaluate(() => { window.curveonMap.jumpTo({ center: [5.33, 60.39], zoom: 12 }); });
+    await page.waitForFunction(() => window.curveonMap.getStyle().sources["cv-pois"].data.features.length > 0, null, { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: `${out}/${name}-0-places.png` });
+    const poi = await page.evaluate(() => {
+      // One out on the map, not behind the panel or the places list.
+      const m = window.curveonMap; const w = m.getCanvas().clientWidth;
+      const f = m.queryRenderedFeatures({ layers: ["cv-pois"] }).find((x) => { const q = m.project(x.geometry.coordinates); return x.properties.name && q.x > 440 && q.x < w - 300 && q.y > 60 && q.y < 840; });
+      if (!f) return null; const q = m.project(f.geometry.coordinates); const r = m.getCanvas().getBoundingClientRect();
+      return { x: r.left + q.x, y: r.top + q.y, name: f.properties.name };
+    });
+    check(!!poi, "desktop: fuel stations show on the map");
+    if (poi) {
+      await page.click(".places-btn");
+      await page.mouse.click(poi.x, poi.y);
+      await page.waitForSelector(".menu");
+      check((await page.textContent(".menu-title")) === poi.name && (await menuItems()).length >= 2, `desktop: a click on ${poi.name} offers it as a place on the trip (${await menuItems()})`);
+      await page.keyboard.press("Escape");
+    }
   }
   if (name === "phone") await page.click("#fold");
 
@@ -264,6 +368,44 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   const track = got.find((p) => p.trip.track), asTrip = got.find((p) => !p.trip.track);
   check(track && !track.trip.destination && track.trip.stops.length === 0 && track.trip.line.split(";").length > 100 && asTrip?.trip.destination && asTrip.tid !== track.tid,
     `${name}: sent as both, a GPX track and a trip (${got.map((p) => p.trip.name).join(", ")})`);
+
+  if (name === "desktop") {
+    // Each day as a trip: a via point of the GPX trip made a stop and a night, then sent a day at a time.
+    await page.locator(".pin.via").nth(1).click();
+    await pick("Make it a stop");
+    await page.locator(".pin.stop").click();
+    await pick("Stay the night here");
+    const before2 = dev.got.plans.length;
+    await page.selectOption("#send-as", "days");
+    await page.locator("#send").scrollIntoViewIfNeeded();
+    await page.click("#send");
+    for (let i = 0; i < 50 && dev.got.plans.length < before2 + 2; i++) await sleep(100);
+    const daysGot = dev.got.plans.slice(before2).map((p) => p.trip);
+    check(daysGot.length === 2 && daysGot[0].name.endsWith(" – day 1") && daysGot[1].name.endsWith(" – day 2") &&
+      Math.abs(daysGot[0].destination.lat - daysGot[1].start.lat) < 1e-6 && daysGot.every((d) => d.line.split(";").length > 20),
+      `desktop: each day went as a trip of its own (${daysGot.map((d) => `${d.name} ${Math.round(d.m / 1000)} km`).join(", ")})`);
+
+    // A roundtrip: only a start, then draw round where to ride; back to the start through via points.
+    await page.click("#new");
+    if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
+    await clickAt(59.7795, 5.2049);
+    await pick("Start here");
+    check(await page.isVisible("#loop"), "desktop: with only a start, Roundtrip is offered");
+    await page.click("#loop");
+    const c = await page.evaluate(() => { const m = window.curveonMap; m.jumpTo({ center: [5.45, 59.75], zoom: 9 }); const q = m.project([5.45, 59.75]); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y }; });
+    await page.waitForTimeout(500);
+    await page.mouse.move(c.x + 150, c.y);
+    await page.mouse.down();
+    for (let k = 1; k <= 48; k++) await page.mouse.move(c.x + 150 * Math.cos((k / 48) * 2 * Math.PI), c.y + 110 * Math.sin((k / 48) * 2 * Math.PI));
+    await page.mouse.up();
+    const t1 = Date.now();
+    await page.waitForSelector("#adv-again:not([hidden])", { timeout: 150000 }).catch(() => {});
+    const pins = await page.$$eval(".pin", (e) => e.length);
+    const ends = await page.evaluate(() => { const l = window.curveonMap.getStyle().sources.route.data.geometry?.coordinates || []; return l.length ? [l[0], l[l.length - 1]] : null; });
+    check(pins >= 6 && ends && Math.hypot(ends[0][0] - ends[1][0], ends[0][1] - ends[1][1]) < 0.01,
+      `desktop: a roundtrip came back to the start with ${pins - 2} via points in ${((Date.now() - t1) / 1000).toFixed(0)} s (${await page.textContent("#adv-hint")})`);
+    await page.screenshot({ path: `${out}/${name}-6-roundtrip.png` });
+  }
 
   dev.close();
   dev2.close();

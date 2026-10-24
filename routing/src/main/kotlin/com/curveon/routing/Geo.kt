@@ -63,7 +63,14 @@ object Geo {
     /** [pts] with the points left out that are within [tolerance] metres of a straight line between their neighbours kept. */
     fun simplify(pts: List<LatLon>, tolerance: Double): List<LatLon> {
         if (pts.size < 3) return pts
-        val keep = BooleanArray(pts.size).also { it[0] = true; it[pts.lastIndex] = true }
+        val keep = simplifyKeep(pts, tolerance)
+        return pts.filterIndexed { i, _ -> keep[i] }
+    }
+
+    /** Which of [pts] [simplify] keeps, to thin what goes with them (heights, times) the same way. */
+    fun simplifyKeep(pts: List<LatLon>, tolerance: Double): BooleanArray {
+        val keep = BooleanArray(pts.size).also { if (pts.isNotEmpty()) { it[0] = true; it[pts.lastIndex] = true } }
+        if (pts.size < 3) return keep
         val todo = ArrayDeque<Pair<Int, Int>>().apply { add(0 to pts.lastIndex) }
         while (todo.isNotEmpty()) {
             val (a, b) = todo.removeLast()
@@ -71,6 +78,6 @@ object Geo {
             for (i in a + 1 until b) { val d = segmentDistance(pts[i], pts[a], pts[b]); if (d > far) { far = d; worst = i } }
             if (worst > 0) { keep[worst] = true; todo.add(a to worst); todo.add(worst to b) }
         }
-        return pts.filterIndexed { i, _ -> keep[i] }
+        return keep
     }
 }

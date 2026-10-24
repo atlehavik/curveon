@@ -3,6 +3,7 @@
 #   /opt/curveon-planner/webplanner-server.jar   routing service (systemd curveon-planner, 127.0.0.1:8788)
 #   /opt/curveon-planner/segments/               BRouter segments for Europe (fetched by the VPS from brouter.de)
 #   /opt/curveon-planner/plan/                   the page and the map, served by Caddy at https://relay.curveon.no/plan/
+#   /opt/curveon-planner/pois/                   places for the map's layers and fuel along routes (webplanner_pois.py)
 # Without --apply it only shows what it would do. The map (1.6 GB) and segments are copied only when they changed.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -16,7 +17,7 @@ echo "Assembled in $OUT:"
 du -shL "$OUT/web" "$OUT/webplanner-server.jar"
 if [ "$APPLY" != "--apply" ]; then
   echo
-  echo "Would: install openjdk-21-jre-headless and rsync, add user 'planner', copy the above to /opt/curveon-planner,"
+  echo "Would: install openjdk-21-jre-headless and rsync, add user 'planner', copy the above to /opt/curveon-planner, update Europe's places,"
   echo "install webplanner/server/curveon-planner.service and webplanner/server/Caddyfile, restart curveon-planner, reload caddy."
   echo "Run again with --apply to do it."
   exit 0
@@ -36,6 +37,11 @@ ssh "$HOST" 'set -e; cd /opt/curveon-planner/segments
     rm -f "$f.part"
   done; done
   echo "segments: $(ls *.rd5 | wc -l) tiles, $(du -sh . | cut -f1)"'
+# Places (fuel, viewpoints, passes, camping, food, ferries, motorcycle shops) for Europe, taken by the VPS out of the
+# app's search indexes: only areas whose index changed since last time are downloaded (a few GB the first time).
+scp -q tools/webplanner_pois.py app/src/main/assets/map/countries.json "$HOST:/opt/curveon-planner/"
+ssh "$HOST" 'set -e; mkdir -p /opt/curveon-planner/pois
+  python3 -I /opt/curveon-planner/webplanner_pois.py /opt/curveon-planner/pois --catalog /opt/curveon-planner/countries.json | tail -5'
 rsync -a --partial --info=progress2 --copy-links "$OUT/web/map/norway.pmtiles" "$HOST:/opt/curveon-planner/plan/map/"
 rsync -a --delete --exclude map/norway.pmtiles "$OUT/web/" "$HOST:/opt/curveon-planner/plan/"
 rsync -a "$OUT/webplanner-server.jar" "$HOST:/opt/curveon-planner/"
