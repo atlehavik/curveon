@@ -42,6 +42,30 @@ class PlannerTest {
     assertEquals(RouteOptions(RoadStyle.VERY_CURVY, SurfacePreference.MIXED, avoidFerries = true, avoidToll = true), got)
   }
 
+  @Test fun `the gravel detour is read as the app plans it, and only the app's choices`() {
+    assertEquals(5, Planner.routeOptions(JSONObject("""{"surface":"GRAVEL","gravelReachKm":5}""")).gravelReachKm)
+    assertEquals(null, Planner.routeOptions(JSONObject("""{"surface":"GRAVEL","gravelReachKm":null}""")).gravelReachKm)
+    assertEquals(null, Planner.routeOptions(JSONObject("""{"surface":"GRAVEL","gravelReachKm":7}""")).gravelReachKm)
+    assertEquals(null, Planner.routeOptions(JSONObject("""{"surface":"GRAVEL"}""")).gravelReachKm)
+  }
+
+  @Test fun `gravel roads for the map only in a box the reader can take`() {
+    val p = Planner(leg)
+    assertEquals(0, p.surfaceWays("5.2,59.7,5.4,59.8").getJSONArray("ways").length())
+    assertEquals("too_long", refused { p.surfaceWays("4.0,59.0,6.0,60.0") })
+    assertEquals("bad_request", refused { p.surfaceWays("5.4,59.7,5.2,59.8") })
+  }
+
+  @Test fun `real gravel roads on Bomlo, as the app's map shows them`() {
+    val segments = File(System.getProperty("curveon.segments") ?: "")
+    assumeTrue(File(segments, "E5_N55.rd5").exists())
+    val profiles = ProfileInstaller.install(Files.createTempDirectory("p").toFile())
+    val p = Planner(BRouterEngine(segments, profiles), com.curveon.routing.SurfaceReader(segments, File(profiles, "lookups.dat")))
+    val ways = p.surfaceWays("5.10,59.70,5.40,59.85").getJSONArray("ways")
+    val kinds = (0 until ways.length()).map { ways.getJSONArray(it).getString(0) }.toSet()
+    assertTrue("$kinds, ${ways.length()} ways", "gravel" in kinds && ways.length() > 20)
+  }
+
   @Test fun `the answer has the line and what the app shows`() {
     val r = Planner(leg).plan(body)
     assertEquals(2, r.getJSONArray("line").length())

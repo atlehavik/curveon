@@ -14,7 +14,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
- * Serves `/api/route`, `/api/adventure`, `/api/roundtrip` and `/api/pois` (and, for trying it on a PC, the page itself from WEB_DIR). On the VPS Caddy is in front: it
+ * Serves `/api/route`, `/api/adventure`, `/api/roundtrip`, `/api/pois` and `/api/surface` (and, for trying it on a PC, the page itself from WEB_DIR). On the VPS Caddy is in front: it
  * serves the page and the map from disk and hands only `/plan/api/…` to this. Nothing about riders is logged or kept.
  *
  * Environment: SEGMENTS (BRouter .rd5 files), PORT (8788), HOST (127.0.0.1), TRUST_PROXY=1 behind Caddy, WEB_DIR,
@@ -61,6 +61,12 @@ fun main() {
           val body = ex.requestBody.use { it.readNBytes(256 * 1024) }
           val json = try { JSONObject(String(body)) } catch (_: Exception) { throw PlanRefused(400, "bad_request") }
           sendJson(ex, 200, when (path) { "/api/adventure" -> planner.adventure(json); "/api/roundtrip" -> planner.roundtrip(json); else -> planner.plan(json) })
+        }
+        path == "/api/surface" && ex.requestMethod == "GET" -> {
+          allow(places)
+          planner.stats.asked("surface")
+          val q = ex.requestURI.rawQuery.orEmpty().split('&').associate { kv -> kv.substringBefore('=') to java.net.URLDecoder.decode(kv.substringAfter('=', ""), Charsets.UTF_8) }
+          sendJson(ex, 200, planner.surfaceWays(q["b"]))
         }
         path == "/api/pois" && ex.requestMethod == "GET" -> {
           allow(places)

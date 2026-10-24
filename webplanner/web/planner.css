@@ -113,6 +113,8 @@ button.isel:focus-visible { outline: 2px solid var(--amber); outline-offset: -1p
 
 #summary { display: flex; flex-wrap: wrap; gap: 6px 14px; font-weight: 600; }
 #summary span small { color: var(--muted); font-weight: 400; margin-left: 3px; }
+#summary .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: 0; }
+#options .wide-row { grid-column: 1 / -1; }
 #status { margin: 0; min-height: 1.4em; color: var(--muted); font-size: 14px; }
 #status.error { color: var(--red); }
 #status:empty { display: none; }
@@ -188,6 +190,7 @@ dialog form.buttons { flex-wrap: wrap; gap: 8px; }
 .places-pop label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .places-pop input { width: auto; margin: 0; accent-color: var(--amber); }
 .places-pop .badge { flex: none; width: 20px; height: 20px; }
+.places-pop .dash-sign { flex: none; width: 20px; height: 4px; background: repeating-linear-gradient(90deg, #707070 0 5px, transparent 5px 9px); }
 .places-pop small { font-size: 12px; }
 
 /* The little menu on the map (a click on the map or on a point). */

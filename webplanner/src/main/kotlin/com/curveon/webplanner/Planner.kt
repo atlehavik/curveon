@@ -12,6 +12,7 @@ import com.curveon.routing.Route
 import com.curveon.routing.RouteCorridor
 import com.curveon.routing.RouteOptions
 import com.curveon.routing.RoutingException
+import com.curveon.routing.SurfaceKind
 import com.curveon.routing.SurfacePreference
 import com.curveon.routing.SurfaceReader
 import org.json.JSONArray
@@ -57,6 +58,8 @@ class Planner(
   private val queue: Int = 8,
   private val waitSeconds: Long = 25,
   val stats: Stats = Stats(),
+  /** The roads' surfaces from the routing data, for the map's gravel dashes (as the app's map has them). */
+  private val roads: SurfaceReader? = null,
 ) {
   private val running = Semaphore(parallel, true)
   private val waiting = AtomicInteger(0)
@@ -68,6 +71,7 @@ class Planner(
     { a -> AdventurePlanner(engine, roads = roads).plan(a.start, a.destination, a.area, a.minutes, a.options, a.variant) },
     { l -> RoundtripPlanner(engine).planArea(l.start, l.area, l.options, l.variant, l.maxKm?.toDouble()) },
     pois,
+    roads = roads,
   )
 
   /**
@@ -145,6 +149,22 @@ class Planner(
     val list = pois?.inBox(b[1], b[3], b[0], b[2], ks, MAX_POIS + 1).orEmpty()
     return JSONObject().put("pois", JSONArray(list.take(MAX_POIS).map { JSONArray().put(it.kind).put(round5(it.lat)).put(round5(it.lon)).put(it.name) }))
       .put("more", list.size > MAX_POIS)
+  }
+
+  /**
+   * The gravel, soft and small tarmac roads leading to them in a box (`b`: west,south,east,north), read out of the routing
+   * data as the app's map reads them: `[kind, rank, [lon, lat, …]]`, kind "gravel", "soft" or "road". At most what the
+   * reader decodes at once (about 0.6° square); the page asks only from close enough.
+   */
+  fun surfaceWays(box: String?): JSONObject {
+    val b = box?.split(',')?.mapNotNull { it.toDoubleOrNull() }?.takeIf { it.size == 4 && it[2] > it[0] && it[3] > it[1] } ?: throw PlanRefused(400, "bad_request")
+    if ((b[2] - b[0]) * 32 + 1 > 40 || ((b[2] - b[0]) * 32 + 2) * ((b[3] - b[1]) * 32 + 2) > 400) throw PlanRefused(400, "too_long")
+    val r = roads ?: return JSONObject().put("ways", JSONArray())
+    val ways = SurfaceReader.leadingToGravel(r.ways(b[1], b[0], b[3], b[2]))
+    return JSONObject().put("ways", JSONArray(ways.map { w ->
+      JSONArray().put(when (w.kind) { SurfaceKind.GRAVEL -> "gravel"; SurfaceKind.SOFT -> "soft"; else -> "road" }).put(w.rank)
+        .put(JSONArray(w.coords.map { round5(it) }))
+    }))
   }
 
   /** The route, its legs between the points along it ([vias]) as [plan] gives them, and those points. */
@@ -339,13 +359,21 @@ class Planner(
       return pts
     }
 
-    /** The app's options JSON (SavedRoutes.optionsJson): style, surface, ferries, motorways, trunk, toll. */
+    /**
+     * The app's options JSON (SavedRoutes.optionsJson): style, surface, ferries, motorways, trunk, toll; and, as the app
+     * plans it (PlanDraft), how far off the ordinary route Gravel and Offroad may go for gravel (`gravelReachKm`, none
+     * for as far as it likes). With a reach a leg is worked out up to four times, so only the app's choices are taken.
+     */
     fun routeOptions(j: JSONObject) = RouteOptions(
       runCatching { RoadStyle.valueOf(j.optString("style", "CURVY")) }.getOrDefault(RoadStyle.CURVY),
       runCatching { SurfacePreference.valueOf(j.optString("surface", "PAVED")) }.getOrDefault(SurfacePreference.PAVED),
       avoidFerries = j.optBoolean("ferries"), avoidMotorways = j.optBoolean("motorways"),
       avoidTrunk = j.optBoolean("trunk"), avoidToll = j.optBoolean("toll"),
+      gravelReachKm = if (j.has("gravelReachKm") && !j.isNull("gravelReachKm")) j.optInt("gravelReachKm").takeIf { it in GRAVEL_REACH_KM } else null,
     )
+
+    /** The detours the app offers for gravel (GRAVEL_REACH_KM in the app). */
+    val GRAVEL_REACH_KM = setOf(1, 3, 5, 10, 20)
 
     private fun line(r: Route) = r.points.map { LatLon(it.lat, it.lon) }
 

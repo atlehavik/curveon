@@ -84,7 +84,7 @@ const TEXTS = {
     compare_pick: "Use this one", compare_close: "Close",
     places: "Places", places_title: "Places on the map", places_zoom: "Zoom in to see them.",
     layer_fuel: "Fuel", layer_viewpoints: "Viewpoints", layer_passes: "Mountain passes", layer_camping: "Camping",
-    layer_food: "Food and coffee", layer_ferries: "Ferries", layer_motorcycle: "Motorcycle shops and workshops",
+    layer_gravel: "Gravel roads (from zoom 11)", layer_food: "Food and coffee", layer_ferries: "Ferries", layer_motorcycle: "Motorcycle shops and workshops",
     save_gpx: "Save as GPX", share: "Copy link", link_copied: "Link copied. Whoever opens it sees this trip and can change it.",
     opened_link: "Opened from a link. Change it, save it as a draft, or send it to Curveon.",
     sec_trip: "Trip", sec_options: "Roads", sec_route: "Route", sec_save: "Save and send", name_label: "Name",
@@ -106,6 +106,8 @@ const TEXTS = {
     tip_new: "Start a new, empty trip", tip_open_gpx: "Open a GPX file from this computer (or drop it on the map)",
     tip_pair: "Show the code to scan in Curveon (Planned → From the web)", tip_unpair: "Make this browser forget your phone and tablet",
     tip_lang: "Norsk / English", tip_fold: "Fold the panel away, or out again",
+    opt_reach: "Detour for gravel", reach_any: "Up to double length", reach_km: (k) => `Up to ${k} km`,
+    tip_reach: "How far off the usual route to find gravel?", gravel_amount: "gravel", track_amount: "tracks",
     disconnect: "Disconnect",
     confirm_disconnect: (d) => `Disconnect ${d}? This browser forgets the connection, so nobody using it can see or change the trips there. To connect again, scan the code again.`,
     disconnected: "Disconnected. This browser can no longer reach your phone or tablet. To remove it there too: Planned → From the web → Disconnect.",
@@ -189,7 +191,7 @@ const TEXTS = {
     compare_pick: "Bruk denne", compare_close: "Lukk",
     places: "Steder", places_title: "Steder på kartet", places_zoom: "Zoom inn for å se dem.",
     layer_fuel: "Bensin", layer_viewpoints: "Utsiktspunkt", layer_passes: "Fjelloverganger", layer_camping: "Camping",
-    layer_food: "Mat og kaffe", layer_ferries: "Ferjer", layer_motorcycle: "MC-butikker og verksteder",
+    layer_gravel: "Grusveier (fra zoom 11)", layer_food: "Mat og kaffe", layer_ferries: "Ferjer", layer_motorcycle: "MC-butikker og verksteder",
     save_gpx: "Lagre som GPX", share: "Kopier lenke", link_copied: "Lenken er kopiert. Den som åpner den, ser turen og kan endre den.",
     opened_link: "Åpnet fra en lenke. Endre den, lagre den som utkast, eller send den til Curveon.",
     sec_trip: "Turen", sec_options: "Veivalg", sec_route: "Ruten", sec_save: "Lagre og send", name_label: "Navn",
@@ -211,6 +213,8 @@ const TEXTS = {
     tip_new: "Begynn på en ny, tom tur", tip_open_gpx: "Åpne en GPX-fil fra denne PC-en (eller slipp den på kartet)",
     tip_pair: "Vis koden du skanner i Curveon (Planlagte → Fra nettet)", tip_unpair: "Få denne nettleseren til å glemme telefonen og nettbrettet ditt",
     tip_lang: "Norsk / English", tip_fold: "Fell panelet sammen, eller ut igjen",
+    opt_reach: "Omvei for grus", reach_any: "Inntil dobbel lengde", reach_km: (k) => `Inntil ${k} km`,
+    tip_reach: "Hvor langt fra vanlig rute for å finne grus?", gravel_amount: "grus", track_amount: "traktorvei",
     disconnect: "Koble fra",
     confirm_disconnect: (d) => `Koble fra ${d}? Denne nettleseren glemmer koblingen, så ingen som bruker den kan se eller endre turene der. Skann koden på nytt for å koble til igjen.`,
     disconnected: "Koblet fra. Denne nettleseren kommer ikke lenger til telefonen eller nettbrettet ditt. For å fjerne koblingen der også: Planlagte → Fra nettet → Koble fra.",
@@ -241,6 +245,7 @@ function applyTexts() {
   document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
   document.querySelectorAll("[data-tp]").forEach((e) => { e.placeholder = t(e.dataset.tp); });
   document.querySelectorAll("[data-tip]").forEach((e) => { e.title = t(e.dataset.tip); });
+  for (const o of $("reach").options) o.textContent = o.value ? t("reach_km", Number(o.value)) : t("reach_any");
   $("lang").textContent = t("lang");
   $("send-as").title = t("send_as_explain");
   $("theme").textContent = theme === "dark" ? "☀" : "☾";
@@ -274,6 +279,8 @@ let alts = [];
 let gapLine = null;
 /** The places in view for the map's layers: [[kind, lat, lon, name]]. */
 let poiList = [];
+/** The gravel roads in (and round) view, for the map's dashes, and the box they cover. */
+let gravelWays = [], gravelHave = null, gravelCtl = null;
 
 // ---------- Map ----------
 const emptyLine = () => ({ type: "FeatureCollection", features: [] });
@@ -323,6 +330,20 @@ function withRoute(style) {
   style.sources["cv-alt"] = { type: "geojson", data: altData() };
   style.sources["cv-gap"] = { type: "geojson", data: gapData() };
   style.sources["cv-surface"] = { type: "geojson", data: surfData() };
+  style.sources["cv-gravel"] = { type: "geojson", data: gravelData() };
+  // Gravel and soft roads dashed over the map's own roads, as the app's map has them: under the road names.
+  const labels = style.layers.findIndex((l) => l.type === "symbol" && !l.id.startsWith("online-"));
+  const roadColour = theme === "dark" ? "#ffffff" : "#707070";
+  // A little bolder than the app's on a phone: a big screen shows far more road at once.
+  const dashWidth = ["interpolate", ["exponential", 1.6], ["zoom"], 11, 1.4, 12.5, 2.2, 15, 3, 18, 11];
+  style.layers.splice(labels < 0 ? style.layers.length : labels, 0,
+    { id: "cv-gravel-road", type: "line", source: "cv-gravel", minzoom: 11, maxzoom: 12.2, filter: ["==", ["get", "k"], "road"],
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": roadColour, "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 11, 1, 14.5, 1.2] } },
+    { id: "cv-gravel-soft", type: "line", source: "cv-gravel", minzoom: 11, filter: ["==", ["get", "k"], "soft"],
+      paint: { "line-color": theme === "dark" ? "#a07850" : "#7a5230", "line-width": dashWidth, "line-dasharray": [2, 1.5] } },
+    { id: "cv-gravel-gravel", type: "line", source: "cv-gravel", minzoom: 11, filter: ["==", ["get", "k"], "gravel"],
+      paint: { "line-color": roadColour, "line-width": dashWidth, "line-dasharray": [1.8, 1.7] } });
   style.sources["cv-hover"] = { type: "geojson", data: emptyLine() };
   style.sources["cv-pois"] = { type: "geojson", data: poiData() };
   const at = style.layers.findIndex((l) => l.id.startsWith("places_"));
@@ -1359,8 +1380,11 @@ $("adv-time").addEventListener("change", () => {
 });
 
 function routeOptions() {
-  return { style: options.style, surface: options.surface, ferries: options.ferries, motorways: options.motorways, trunk: options.trunk, toll: false };
+  return { style: options.style, surface: options.surface, ferries: options.ferries, motorways: options.motorways, trunk: options.trunk, toll: false,
+    // How far off the ordinary route for gravel: only with Gravel or Offroad, as in the app.
+    ...(gravelSurface() && options.gravelReachKm ? { gravelReachKm: options.gravelReachKm } : {}) };
 }
+const gravelSurface = () => options.surface === "GRAVEL" || options.surface === "OFFROAD";
 
 function drawSummary() {
   const s = $("summary");
@@ -1387,10 +1411,26 @@ function drawSummary() {
     ...(result.curvy != null ? [part(`${result.curvy}/100`, t("curvy"))] : []),
     part(result.up, t("up_m")),
     ...(result.ferries ? [el("span", "", t("ferries_n", result.ferries))] : []),
+    // How much of it is gravel and tracks (as the app tells), in the colours the route has on the map.
+    ...surfaceParts(),
   );
   s.hidden = false;
   if (!$("name").value) $("name").placeholder = defaultName();
   $("send").textContent = editing?.ref ? t("update_on", devNames(editing)) : t("send");
+}
+
+/** "12 km gravel", "800 m tracks": from the route's stretches, when it has any. */
+function surfaceParts() {
+  const sum = [0, 0, 0];
+  for (const [a, b, k] of result?.surf || []) sum[k] += b - a;
+  const short = (m) => m < 1000 ? [`${Math.round(m / 100) * 100}`, "m"] : [`${m < 10000 ? (m / 1000).toFixed(1) : Math.round(m / 1000)}`, t("km")];
+  return [[1, "gravel_amount", "#ff9100"], [2, "track_amount", "#d500f9"]].filter(([k]) => sum[k] >= 100).map(([k, key, colour]) => {
+    const [v, unit] = short(sum[k]);
+    const e = el("span", "surf", v);
+    e.prepend(Object.assign(el("i", "swatch"), { style: `background:${colour}` }));
+    e.append(el("small", "", `${unit} ${t(key)}`));
+    return e;
+  });
 }
 
 const defaultName = () => points.length >= 2 ? `${points[0].name || t("map_point")} – ${points[points.length - 1].name || t("map_point")}` : t("name_hint");
@@ -1413,6 +1453,9 @@ const OPTION_ICONS = {
     GRAVEL: DOTS([[6, 6], [12, 4.5, 1.8], [18, 7], [8.5, 11.5, 1.9], [15, 11], [5, 17], [11.5, 17.5, 2], [18.5, 16.5], [14.5, 21, 1.4]]),
     OFFROAD: '<path fill="currentColor" d="M2 20l6-10 4 6 3-4 7 8z"/>' + DOTS([[7, 22, 1], [12, 22, 1], [17, 22, 1]]) },
   ferries: { ok: BOAT, no: BOAT + CROSS },
+  // The road straight on, and a detour off it and back: higher the further it may go.
+  reach: Object.fromEntries([["", 15], ["1", 4], ["3", 6.5], ["5", 9], ["10", 11.5], ["20", 13.5]].map(([v, h]) =>
+    [v, stroke("M2 19h20", 1.6) + stroke(`M6 19C6 ${19 - h} 18 ${19 - h} 18 19`, 2.2)])),
   motorways: { ok: MOTORWAY, no: MOTORWAY + CROSS, noe: EROAD + CROSS },
 };
 const iconSvg = (inner) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">${inner}</svg>`;
@@ -1479,7 +1522,7 @@ function iconSelect(sel) {
   show();
   return show;
 }
-const iconSelects = ["style", "surface", "ferries", "motorways"].map((id) => iconSelect($(id)));
+const iconSelects = ["style", "surface", "ferries", "motorways", "reach"].map((id) => iconSelect($(id)));
 /** After the value or the language changed: the buttons say it again. */
 const drawSelects = () => iconSelects.forEach((show) => show());
 
@@ -1488,6 +1531,7 @@ function readOptions() {
   options = {
     style: $("style").value, surface: $("surface").value, ferries: $("ferries").value === "no",
     motorways: $("motorways").value !== "ok", trunk: $("motorways").value === "noe",
+    gravelReachKm: $("reach").value ? Number($("reach").value) : null,
   };
   store.set("options", options);
   if (!viewOnly) changed();
@@ -1497,9 +1541,11 @@ function showOptions() {
   $("surface").value = options.surface;
   $("ferries").value = options.ferries ? "no" : "ok";
   $("motorways").value = options.trunk ? "noe" : options.motorways ? "no" : "ok";
+  $("reach").value = options.gravelReachKm ? String(options.gravelReachKm) : "";
+  $("reach-row").hidden = !gravelSurface();
   if (typeof iconSelects !== "undefined") drawSelects();
 }
-["style", "surface", "ferries", "motorways"].forEach((id) => $(id).addEventListener("change", () => { readOptions(); drawDrafts(); }));
+["style", "surface", "ferries", "motorways", "reach"].forEach((id) => $(id).addEventListener("change", () => { readOptions(); showOptions(); drawDrafts(); }));
 
 /** "Save and send" shows when there is something to save or send. */
 function drawSaveBlock() {
@@ -1786,7 +1832,15 @@ function drawPlaces() {
   const zoom = el("small", "hint", t("places_zoom"));
   zoom.id = "places-zoom";
   zoom.hidden = true;
-  pop.replaceChildren(head, ...LAYERS.map(([key]) => {
+  // Gravel roads first: on by default, as in the app.
+  const gl = el("label");
+  const gbox = el("input");
+  gbox.type = "checkbox";
+  gbox.checked = gravelOn();
+  gbox.onchange = () => { store.set("gravelMap", gbox.checked); showGravel(); };
+  const dash = el("span", "dash-sign");
+  gl.append(gbox, dash, el("span", "", t("layer_gravel")));
+  pop.replaceChildren(head, gl, ...LAYERS.map(([key]) => {
     const label = el("label");
     const box = el("input");
     box.type = "checkbox";
@@ -1805,6 +1859,45 @@ function drawPlaces() {
   }), zoom);
   loadPois();
 }
+
+// ---------- Gravel roads on the map ----------
+// As the app's map: from zoom 11, the gravel roads dashed in the roads' colour, soft ground dashed brown, and the small
+// tarmac roads that lead to them, read by the planner service out of the routing data (the map's tiles don't say).
+const gravelOn = () => store.get("gravelMap", true);
+function gravelData() {
+  return { type: "FeatureCollection", features: gravelWays.map(([k, rank, c]) => ({
+    type: "Feature", properties: { k, rank }, geometry: { type: "LineString", coordinates: Array.from({ length: c.length / 2 }, (_, i) => [c[2 * i], c[2 * i + 1]]) },
+  })) };
+}
+async function loadGravel() {
+  if (!gravelOn() || map.getZoom() < 11) return;
+  const b = map.getBounds();
+  const [w, s0, e, n] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+  if (gravelHave && w >= gravelHave[0] && s0 >= gravelHave[1] && e <= gravelHave[2] && n <= gravelHave[3]) return;
+  // A margin round the view, so small moves need nothing new; less of one when the view is already large.
+  const cells = (bw, bh) => (bw * 32 + 2) * (bh * 32 + 2);
+  let m = 0.3;
+  while (m > 0 && cells((e - w) * (1 + 2 * m), (n - s0) * (1 + 2 * m)) > 400) m -= 0.1;
+  if (cells(e - w, n - s0) > 400 || (e - w) * 32 + 1 > 40) return;
+  const box = [w - (e - w) * m, s0 - (n - s0) * m, e + (e - w) * m, n + (n - s0) * m];
+  gravelCtl?.abort();
+  const ctl = (gravelCtl = new AbortController());
+  try {
+    const r = await fetch(`${BASE}api/surface?b=${box.map((v) => v.toFixed(4)).join(",")}`, { signal: ctl.signal });
+    if (!r.ok || gravelCtl !== ctl) return;
+    gravelWays = (await r.json()).ways;
+    gravelHave = box;
+    map.getSource("cv-gravel")?.setData(gravelData());
+  } catch { /* offline or moved on */ }
+}
+function showGravel() {
+  const v = gravelOn() ? "visible" : "none";
+  for (const id of ["cv-gravel-road", "cv-gravel-soft", "cv-gravel-gravel"]) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", v);
+  loadGravel();
+}
+let gravelTimer;
+map.on("moveend", () => { clearTimeout(gravelTimer); gravelTimer = setTimeout(loadGravel, 250); });
+map.on("styledata", () => { if (!gravelOn()) showGravel(); });
 
 // ---------- GPX out, and a link to the trip ----------
 const xml = (s) => String(s).replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" })[c]);
@@ -1866,7 +1959,7 @@ function openLink() {
   if (data?.v !== 1 || !Array.isArray(data.p) || data.p.length > 27 || !data.p.every((q) => ok(q[0]) && ok(q[1]))) return;
   points = data.p.map(([lat, lon, f = "", name = ""]) => ({ name: String(name).slice(0, 120), lat, lon, via: f.includes("v"),
     ...(f.includes("s") ? { stop: true } : {}), ...(f.includes("n") ? { night: true } : {}) }));
-  if (data.o && typeof data.o === "object") { options = Object.assign(options, data.o); showOptions(); }
+  if (data.o && typeof data.o === "object") { options = Object.assign(options, { gravelReachKm: null }, data.o); showOptions(); }
   $("name").value = String(data.n || "").slice(0, 80);
   forgetUndo();
   changed();
@@ -2052,7 +2145,7 @@ function openTrip(r, d, x) {
     editing = null;
   }
   forgetUndo();
-  if (x.options) { options = Object.assign(options, x.options); showOptions(); }
+  if (x.options) { options = Object.assign(options, { gravelReachKm: null }, x.options); showOptions(); }
   closeAdventure();
   $("name").value = x.name;
   setStatus("");
@@ -2087,7 +2180,7 @@ function openDraft(d) {
   closeMenu();
   closeAdventure();
   points = d.points; result = d.result; editing = d.editing; viewOnly = false;
-  options = Object.assign(options, d.options); showOptions();
+  options = Object.assign(options, { gravelReachKm: null }, d.options); showOptions();
   adoptLegs(result, points, routeOptions());
   $("name").value = d.name;
   currentDraft = d.id;
@@ -2360,4 +2453,4 @@ drawPending();
 openLink();
 markClean();
 connect();
-if (map.loaded()) drawPlaces(); else map.once("load", drawPlaces);
+if (map.loaded()) { drawPlaces(); showGravel(); } else map.once("load", () => { drawPlaces(); showGravel(); });
