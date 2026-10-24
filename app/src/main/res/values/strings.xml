@@ -975,6 +975,7 @@
     <string name="feedback_open_github">Write it on GitHub instead</string>
     <string name="feedback_crash_note">The latest crash report (delete it if you\'d rather not share it):</string>
     <string name="feedback_yours">Your reports</string>
+    <string name="feedback_forget">Remove from the list</string>
     <string name="feedback_status_open">Open</string>
     <string name="feedback_status_done">Done</string>
     <string name="feedback_status_closed">Closed</string>

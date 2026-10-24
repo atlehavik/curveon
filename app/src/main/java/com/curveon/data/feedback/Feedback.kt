@@ -27,8 +27,14 @@ data class Draft(val title: String = "", val text: String = "", val images: List
 /** A report the rider sent, kept on the device so they can follow it on GitHub. */
 data class SentReport(val number: Int, val url: String, val title: String, val bug: Boolean, val time: Long)
 
-/** How a sent report stands on GitHub: open, done (closed as completed) or closed otherwise, and how many replies. */
-data class ReportStatus(val open: Boolean, val done: Boolean, val replies: Int)
+/**
+ * How a sent report stands on GitHub: open, done (closed as completed) or closed otherwise, how many replies, and
+ * when it was closed. [gone]: deleted on GitHub (it answers 410, or 404), so there is nothing left to follow.
+ */
+data class ReportStatus(val open: Boolean, val done: Boolean, val replies: Int, val closedAt: Long? = null, val gone: Boolean = false) {
+    /** Off the list: deleted, or closed long enough ago that the rider has seen how it ended. */
+    fun finished(now: Long = System.currentTimeMillis()) = gone || (!open && closedAt != null && now - closedAt > Feedback.KEEP_CLOSED_MS)
+}
 
 sealed interface SendResult {
     data class Sent(val report: SentReport) : SendResult
@@ -44,6 +50,8 @@ sealed interface SendResult {
  */
 object Feedback {
     const val MAX_IMAGES = 4
+    /** A closed report stays on the list this long after it was closed, so the rider sees how it ended. */
+    const val KEEP_CLOSED_MS = 14 * 86_400_000L
     private const val REPO = "atlehavik/curveon"
     private const val MAX_SIDE = 1600
     private const val CRASH_DAYS = 3
@@ -63,9 +71,14 @@ object Feedback {
         }.sortedByDescending { it.time }
     }
 
-    private fun remember(context: Context, r: SentReport) {
+    private fun remember(context: Context, r: SentReport) = save(context, listOf(r) + sent(context))
+
+    /** Off the rider's list (the issue itself stays on GitHub). */
+    fun forget(context: Context, number: Int) = save(context, sent(context).filter { it.number != number })
+
+    private fun save(context: Context, reports: List<SentReport>) {
         val a = JSONArray()
-        (listOf(r) + sent(context)).take(30).forEach {
+        reports.take(30).forEach {
             a.put(JSONObject().put("n", it.number).put("u", it.url).put("t", it.title).put("b", it.bug).put("at", it.time))
         }
         prefs(context).edit().putString("sent", a.toString()).apply()
@@ -123,9 +136,12 @@ object Feedback {
             val request = Request.Builder().url("https://api.github.com/repos/$REPO/issues/${report.number}")
                 .header("Accept", "application/vnd.github+json").build()
             http.newCall(request).execute().use { res ->
+                if (res.code == 410 || res.code == 404) return@use ReportStatus(open = false, done = false, replies = 0, gone = true)
                 if (!res.isSuccessful) return@use null
                 val o = JSONObject(res.body!!.string())
-                ReportStatus(o.optString("state") == "open", o.optString("state_reason") == "completed", o.optInt("comments"))
+                val closedAt = o.optString("closed_at").takeIf { it.isNotEmpty() && it != "null" }
+                    ?.let { runCatching { java.time.Instant.parse(it).toEpochMilli() }.getOrNull() }
+                ReportStatus(o.optString("state") == "open", o.optString("state_reason") == "completed", o.optInt("comments"), closedAt)
             }
         }.getOrNull()
     }

@@ -50,8 +50,15 @@ fun FeedbackCard() {
     var writing by remember { mutableStateOf<Boolean?>(null) } // true: a bug, false: an idea
     var sent by remember { mutableStateOf(Feedback.sent(context)) }
     val status = remember { mutableStateMapOf<Int, ReportStatus>() }
-    // Only the latest few, once each time Help opens: GitHub's public API allows 60 an hour.
-    LaunchedEffect(sent) { sent.take(5).forEach { r -> Feedback.status(r)?.let { status[r.number] = it } } }
+    // Once each time Help opens, at most 10 (GitHub's public API allows 60 an hour). Deleted reports, and closed
+    // ones the rider has had two weeks to see, go off the list by themselves; open ones stay.
+    LaunchedEffect(Unit) {
+        sent.take(10).forEach { r ->
+            val s = Feedback.status(r) ?: return@forEach
+            if (s.finished()) Feedback.forget(context, r.number) else status[r.number] = s
+        }
+        sent = Feedback.sent(context)
+    }
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CockpitSurfaceVariant).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -78,7 +85,11 @@ fun FeedbackCard() {
         }
         if (sent.isNotEmpty()) {
             Text(stringResource(R.string.feedback_yours), color = TextMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            sent.take(5).forEach { r -> SentRow(r, status[r.number]) { runCatching { uri.openUri(r.url) } } }
+            sent.take(10).forEach { r ->
+                SentRow(r, status[r.number], onForget = { Feedback.forget(context, r.number); sent = Feedback.sent(context) }) {
+                    runCatching { uri.openUri(r.url) }
+                }
+            }
         }
     }
     writing?.let { bug ->
@@ -87,7 +98,7 @@ fun FeedbackCard() {
 }
 
 @Composable
-private fun SentRow(r: SentReport, status: ReportStatus?, onClick: () -> Unit) {
+private fun SentRow(r: SentReport, status: ReportStatus?, onForget: () -> Unit, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -105,6 +116,9 @@ private fun SentRow(r: SentReport, status: ReportStatus?, onClick: () -> Unit) {
             Text(state + replies, color = if (status.done) ElectricCyan else TextSecondary, fontSize = 13.sp, modifier = Modifier.padding(start = 8.dp))
         }
         Icon(Icons.Default.OpenInNew, null, tint = TextMuted, modifier = Modifier.padding(start = 8.dp).size(18.dp))
+        IconButton(onClick = onForget, modifier = Modifier.size(40.dp)) {
+            Icon(Icons.Default.Close, stringResource(R.string.feedback_forget), tint = TextMuted, modifier = Modifier.size(18.dp))
+        }
     }
 }
 

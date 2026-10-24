@@ -10,6 +10,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 - [ ] Pixel og X7: Innstillinger → Hjelp → «Meld fra om feil». Skriv tittel og tekst, legg ved et par skjermbilder (bildevelgeren skal åpne seg uten å spørre om tillatelse), og trykk Send. Det skal komme «Takk! Det er sak #…», og saken skal ligge på github.com/atlehavik/curveon/issues med bildene synlige og merket `bug`. (Krever at reléet har GitHub-nøkkelen.)
 - [ ] Etter sending: saken står under «Mine tilbakemeldinger» på Hjelp med «Åpen». Svar på saken på GitHub og lukk den som fullført; åpne Hjelp igjen: «Ferdig · 1 svar». Et trykk på raden åpner saken i nettleseren.
+- [ ] En sak du har slettet på GitHub (f.eks. #5) forsvinner fra «Mine tilbakemeldinger» når du åpner Hjelp (ev. lukk og åpne Hjelp en gang til). X-en på en linje fjerner den fra lista med en gang.
 - [ ] Uten nett (flymodus): Send gir «Fikk ikke sendt …» og knappen «Skriv det på GitHub i stedet», som åpner GitHub med tittel og tekst fylt inn.
 - [ ] Et bilde tatt med kameraet (med posisjon på): på GitHub skal bildet ikke ha posisjon (last det ned og sjekk EXIF, f.eks. `exiftool`).
 

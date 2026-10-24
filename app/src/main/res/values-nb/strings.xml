@@ -973,6 +973,7 @@
     <string name="feedback_open_github">Skriv det på GitHub i stedet</string>
     <string name="feedback_crash_note">Den siste krasjrapporten (slett den hvis du ikke vil dele den):</string>
     <string name="feedback_yours">Mine tilbakemeldinger</string>
+    <string name="feedback_forget">Fjern fra lista</string>
     <string name="feedback_status_open">Åpen</string>
     <string name="feedback_status_done">Ferdig</string>
     <string name="feedback_status_closed">Lukket</string>
