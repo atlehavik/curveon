@@ -1135,8 +1135,8 @@
     <string name="friend_request_decline">Ei kiitos</string>
     <string name="web_plan_button">Verkosta</string>
     <string name="web_plan_title">Reitit verkosta</string>
-    <string name="web_plan_intro">Suunnittele reitti tietokoneella osoitteessa curveon.no/plan isolla kartalla ja samoilla teillä kuin täällä. Paina siellä Send to Curveon ja skannaa näkyvä koodi. Reitti ilmestyy tänne kohtaan Suunnitellut.</string>
-    <string name="web_plan_connected">Yhdistetty verkkosuunnittelijaan. Uudet reitit tulevat, kun Curveon käynnistyy ja kun avaat Suunnitellut.</string>
+    <string name="web_plan_intro">Suunnittele tietokoneella osoitteessa curveon.no/plan isolla kartalla ja samoilla teillä kuin täällä. Yhdistä skannaamalla sivun näyttämä koodi: sivu näkee silloin suunnitellut reittisi, joten voit jatkaa niiden parissa siellä, ja siellä suunnittelemasi tulee tänne kohtaan Suunnitellut.</string>
+    <string name="web_plan_connected">Yhdistetty verkkosuunnittelijaan: sivu näkee suunnitellut reittisi, ja mitä siellä suunnittelet tai muutat, tulee tänne. Se tulee, kun Curveon käynnistyy ja kun avaat Suunnitellut.</string>
     <string name="web_plan_scan">Skannaa koodi</string>
     <string name="web_plan_scan_another">Skannaa koodi toisesta selaimesta</string>
     <string name="web_plan_fetch">Hae nyt</string>
@@ -1150,6 +1150,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d reitti muuttunut verkossa</item>
         <item quantity="other">%d reittiä muuttunut verkossa</item>
+    </plurals>
+    <string name="web_plan_live">Yhdistetty nyt: sivulta lähettämäsi tulee heti.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d reitti poistettu verkosta</item>
+        <item quantity="other">%d reittiä poistettu verkosta</item>
     </plurals>
     <string name="web_plan_forget">Katkaise yhteys</string>
     <string name="web_plan_scan_hint">Pidä kameraa suunnittelusivun koodin edessä.</string>

@@ -1,8 +1,9 @@
 # Web planner
 
-Plan a trip on a big screen at **https://relay.curveon.no/plan/** (also linked as curveon.no/plan) and send it to
-Curveon. Same map style (the app's `assets/map`), same roads (the app's `:routing`, BRouter), and the trip arrives
-among the planned trips with its stops and its exact line.
+Plan trips on a big screen at **https://relay.curveon.no/plan/** (also linked as curveon.no/plan), in a session with
+Curveon: scanning the page's code connects a phone or tablet, the page shows its planned trips to open, change and
+update there, and new trips go over too. Same map style (the app's `assets/map`), same roads (the app's `:routing`,
+BRouter), and a trip arrives among the planned trips with its stops and its exact line.
 
 ```
 browser ──POST /plan/api/route──> webplanner-server.jar (this module, 127.0.0.1:8788, 2 searches at once + a queue)

@@ -23,8 +23,9 @@ Notater fra samtalene 2026-10-11/12 og 2026-10-18. Ikke committet.
 - **Nettplanleggeren** (2026-10-24, `relay.curveon.no/plan`): en nettside utenfor appen, så den berører ikke
   Play-reglene direkte. Appen henter turer derfra over den krypterte relé-kanalen (samme som grupper), uten ny
   tillatelse (kameraet brukes allerede til QR-koder og spørres først når du skanner). Data safety: ruteforespørsler går
-  til vår tjener fra *nettleseren*, ikke fra appen; appen sender bare krypterte frames og en kvittering med
-  enhetsmodellen (`Build.MODEL`) til siden, kryptert. Personvernerklæringen har en egen del om nettplanleggeren.
+  til vår tjener fra *nettleseren*, ikke fra appen; appen sender bare krypterte frames til siden: kvitteringer med
+  enhetsmodellen (`Build.MODEL`), og under en økt de planlagte turene (navn, stopp, linje), alt ende-til-ende-kryptert
+  og bare til nettlesere rytteren selv har skannet koden fra. Personvernerklæringen har en egen del om nettplanleggeren.
 - **Mål:** Play-versjonen skal også være den du bruker selv, med dagens telefoni-UI.
 
 ## Viktig: hovedappen har også telefontillatelsene

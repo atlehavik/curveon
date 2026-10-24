@@ -1183,8 +1183,8 @@
     <string name="friend_request_decline">Nein danke</string>
     <string name="web_plan_button">Aus dem Web</string>
     <string name="web_plan_title">Touren aus dem Web</string>
-    <string name="web_plan_intro">Plane eine Tour am Computer auf curveon.no/plan, mit großer Karte und denselben Straßen wie hier. Tippe dort auf Send to Curveon und scanne den angezeigten Code. Die Tour erscheint dann hier unter Geplant.</string>
-    <string name="web_plan_connected">Mit dem Web-Planer verbunden. Neue Touren kommen, wenn Curveon startet und wenn du Geplant öffnest.</string>
+    <string name="web_plan_intro">Plane am Computer auf curveon.no/plan, mit großer Karte und denselben Straßen wie hier. Scanne den Code der Seite, um zu verbinden: Die Seite sieht dann deine geplanten Touren, sodass du dort daran weiterarbeiten kannst, und was du dort planst, kommt hier unter Geplant an.</string>
+    <string name="web_plan_connected">Mit dem Web-Planer verbunden: Die Seite sieht deine geplanten Touren, und was du dort planst oder änderst, kommt hier an. Es kommt, wenn Curveon startet und wenn du Geplant öffnest.</string>
     <string name="web_plan_scan">Code scannen</string>
     <string name="web_plan_scan_another">Code aus einem anderen Browser scannen</string>
     <string name="web_plan_fetch">Jetzt abrufen</string>
@@ -1198,6 +1198,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d Tour im Web geändert</item>
         <item quantity="other">%d Touren im Web geändert</item>
+    </plurals>
+    <string name="web_plan_live">Gerade verbunden: Was du von der Seite schickst, kommt sofort an.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d Tour im Web gelöscht</item>
+        <item quantity="other">%d Touren im Web gelöscht</item>
     </plurals>
     <string name="web_plan_forget">Trennen</string>
     <string name="web_plan_scan_hint">Halte die Kamera vor den Code auf der Planer-Seite.</string>

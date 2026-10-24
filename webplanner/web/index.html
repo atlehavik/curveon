@@ -20,6 +20,11 @@
     </header>
 
     <div id="body">
+      <div id="session-row">
+        <span id="session" hidden></span>
+        <button id="pair" class="link" type="button"></button>
+      </div>
+
       <div class="search">
         <input id="q" type="search" autocomplete="off" data-tp="search_hint">
         <ul id="hits" role="listbox"></ul>
@@ -62,15 +67,17 @@
         <input id="name" type="text" maxlength="80" data-tp="name_hint">
         <button id="send" class="primary" type="button" data-t="send"></button>
       </div>
+      <button id="send-new" class="link" type="button" data-t="send_new" hidden></button>
 
-      <section id="sent" hidden>
-        <h2 data-t="sent_title"></h2>
-        <ul id="sent-list"></ul>
+      <section id="pending" hidden>
+        <h2 data-t="pending_title"></h2>
+        <ul id="pending-list" class="trips"></ul>
       </section>
+
+      <div id="devices" hidden></div>
 
       <footer>
         <button id="new" class="ghost" type="button" data-t="new_trip"></button>
-        <button id="pair" class="ghost" type="button" data-t="show_code"></button>
       </footer>
     </div>
   </aside>

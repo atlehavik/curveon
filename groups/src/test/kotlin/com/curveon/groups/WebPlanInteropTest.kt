@@ -32,6 +32,16 @@ class WebPlanInteropTest {
     assertEquals(70, trip.curviness)
     assertEquals("tid-1", JSONObject(page.getString("frame")).getString("k"))
 
+    assertEquals(WebPlanRef("devicerider", 42), WebPlan.openPlan(link, page.getString("changed"))!!.ref)
+    assertEquals(WebPlanRef("devicerider", 42), WebPlan.openDelete(link, page.getString("del")))
+
+    val have = WebPlanHave(7, "r1", "Helgetur", "Sommer", false, null, TripStop("Odda", 60.069, 6.5459), emptyList(), "{}",
+      Polyline.encode(listOf(59.79421 to 5.14434, 60.069 to 6.5459)), 1000.0, 60.0, 5.0, 40, 0)
+    val shown = run("open", link.toUri(), WebPlan.haveFrame(link, GroupKeys.newRiderId(), 1, have, 9))
+    assertEquals("plan_have", shown.getJSONObject("opened").getString("type"))
+    assertEquals("Helgetur", shown.getJSONObject("opened").getJSONObject("body").getJSONObject("trip").getString("name"))
+    assertEquals(59.79421, shown.getJSONArray("line").getJSONArray(0).getDouble(0), 1e-9)
+
     val got = WebPlan.gotFrame(link, GroupKeys.newRiderId(), 1, "tid-1", 4, "Pixel 9a", 123)
     val opened = run("open", link.toUri(), got).getJSONObject("opened")
     assertEquals("plan_got", opened.getString("type"))

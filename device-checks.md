@@ -6,14 +6,16 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
-## 2026-10-24 — Planlegg på nett (1.2.4)
+## 2026-10-24 — Planlegg på nett, økt med telefonen (1.2.4)
 
-- [ ] PC: åpne https://relay.curveon.no/plan/ (eller curveon.no/plan når nettsiden er lagt ut). Kartet skal vise Norge med stedsnavn. Søk «Geiranger», klikk et startpunkt i kartet, og se at ruten tegnes med km, tid og svinger.
-- [ ] PC: dra i den oransje linjen til en annen vei: et hvitt «Gjennom her»-punkt kommer inn og ruten regnes ut på nytt. Bytt Veier til Supersvingete og Ferjer til Ingen ferjer: ruten endrer seg.
-- [ ] PC: trykk «Send til Curveon». Første gang vises en QR-kode. Pixel: GPX og turer → Planlagte → Fra nettet → Skann koden. Turen skal komme under Planlagte i løpet av noen sekunder, med riktig navn og km, og på PC-en skal den stå som «I Curveon på Pixel 9a».
-- [ ] Pixel: åpne turen og trykk Kjør: den skal følge veien slik den var planlagt på PC-en (også gjennom-punktet du dro til).
-- [ ] PC: endre turen (klikk den i «Sendt til Curveon», flytt et stopp, «Send endringene»). Pixel: åpne Planlagte: turen er oppdatert, ikke kopiert.
-- [ ] X7 (med nett via hotspot): skann den samme koden der også. Begge enhetene skal få nye turer.
+- [ ] PC: åpne https://relay.curveon.no/plan/ (eller curveon.no/plan når nettsiden er lagt ut). Kartet skal vise Norge med stedsnavn. Søk «Geiranger», klikk et startpunkt i kartet, og se at ruten tegnes med km, tid og svinger. Dra i den oransje linjen til en annen vei: et «Gjennom her»-punkt kommer inn.
+- [ ] PC: trykk «Koble til Curveon». Pixel: GPX og turer → Planlagte → Fra nettet → Skann koden. QR-koden på PC-en skal lukke seg selv, det skal stå «Koblet til Pixel 9a», og turene under Planlagte på Pixelen skal vises i gruppene sine. Det du tegnet før du skannet, ligger fortsatt på kartet.
+- [ ] PC: «Send til Curveon» for turen du tegnet: den dukker opp under Planlagte på Pixelen (med en gang hvis Planlagte står åpen, ellers når du åpner den).
+- [ ] PC: klikk en av Pixelens turer: den åpnes med sin linje. Bytt til Supersvingete (eller dra linjen) og trykk «Oppdater på Pixel 9a»: turen på Pixelen endres (samme tur, samme gruppe, ikke en kopi). Prøv også «Lagre som ny tur».
+- [ ] PC: ✕ på en av Pixelens turer og bekreft: den forsvinner fra Planlagte på Pixelen.
+- [ ] Pixel: gi nytt navn til en tur eller slett en: PC-siden viser endringen etter noen sekunder.
+- [ ] Pixel: åpne en tur fra PC-en og trykk Kjør: den følger veien slik den var planlagt.
+- [ ] X7 (med nett via hotspot): skann den samme koden der også. PC-en viser begge enhetene med hver sin liste.
 - [ ] Pixel: skann QR-koden med kameraappen i stedet for Curveon: «Koblet til nettplanleggeren» skal komme i Curveon.
 - [ ] Mobil i nettleseren (Pixel, Chrome): planleggeren som ark nederst, knappene skal være synlige og panelet kan felles ned (▾).
 

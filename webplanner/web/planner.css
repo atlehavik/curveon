@@ -81,14 +81,23 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #send-row input { flex: 1; }
 #send-row button { flex: none; }
 
-#sent h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 6px 0; }
-#sent-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-#sent-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); }
-#sent-list li .what { flex: 1; min-width: 0; cursor: pointer; }
-#sent-list li .what b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#sent-list li .what small { color: var(--muted); }
-#sent-list li .what small.got { color: var(--green); }
-#sent-list li button { border: none; color: var(--muted); padding: 2px 7px; }
+#session-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+#session { color: var(--green); font-weight: 600; font-size: 14px; }
+#session::before { content: "● "; }
+button.link { border: none; padding: 2px 0; color: var(--amber-ink); font-weight: 600; text-align: left; }
+button.link:hover { text-decoration: underline; }
+#pending h2, .device h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 6px 0; }
+.device h3 { font-size: 13px; margin: 10px 0 2px; color: var(--text); }
+.device { display: flex; flex-direction: column; }
+#devices { display: flex; flex-direction: column; gap: 10px; }
+ul.trips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+ul.trips li { display: flex; align-items: center; gap: 8px; padding: 6px 4px; border-top: 1px solid var(--line); border-radius: 6px; }
+ul.trips li.open { background: color-mix(in srgb, var(--amber) 14%, transparent); }
+ul.trips li .what { flex: 1; min-width: 0; cursor: pointer; }
+ul.trips li .what b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+ul.trips li .what small { color: var(--muted); }
+ul.trips li button { border: none; color: var(--muted); padding: 2px 7px; }
+ul.trips li button:hover { color: var(--red); }
 
 footer { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
 

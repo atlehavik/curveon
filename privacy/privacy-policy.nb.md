@@ -88,7 +88,7 @@ retting og sletting etter personvernforordningen (GDPR), og kan klage til Datati
 
 ## Nettplanleggeren
 
-Nettplanleggeren (relay.curveon.no/plan, også via curveon.no/plan) har ingen konto og ingen informasjonskapsler. Punktene du planlegger gjennom sendes til tjeneren vår for å finne veien; den svarer og lagrer ingenting, og ingenting om deg logges. Det du søker etter sendes til Photon (Komoot) og Kartverket, og et punkt du klikker på i kartet sendes til Photon for å få et navn. En tur du sender til Curveon krypteres i nettleseren med en nøkkel som bare nettleseren og appene som har skannet koden har; reléet tar vare på den, uleselig, i opptil 30 dager så appen kan hente den. Nøkkelen og listen over turer du har sendt lagres i nettleserens lokale lagring, og du kan slette dem med nettleserens nettstedsdata.
+Nettplanleggeren (relay.curveon.no/plan, også via curveon.no/plan) har ingen konto og ingen informasjonskapsler. Punktene du planlegger gjennom sendes til tjeneren vår for å finne veien; den svarer og lagrer ingenting, og ingenting om deg logges. Det du søker etter sendes til Photon (Komoot) og Kartverket, og et punkt du klikker på i kartet sendes til Photon for å få et navn. En tur du sender til Curveon krypteres i nettleseren med en nøkkel som bare nettleseren og appene som har skannet koden har; reléet tar vare på den, uleselig, i opptil 30 dager så appen kan hente den. Nøkkelen og listen over turer du har sendt lagres i nettleserens lokale lagring, og du kan slette dem med nettleserens nettstedsdata. Mens en telefon eller et nettbrett er koblet til siden, legger Curveon de planlagte turene (de 60 nyeste) kryptert på reléet på samme måte, så siden kan vise dem; avslutter du økten under Planlagte → Fra nettet, stopper det.
 
 ## Nettsiden
 

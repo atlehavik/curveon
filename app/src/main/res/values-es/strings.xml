@@ -1202,8 +1202,8 @@
     <string name="friend_request_decline">No, gracias</string>
     <string name="web_plan_button">Desde la web</string>
     <string name="web_plan_title">Rutas desde la web</string>
-    <string name="web_plan_intro">Planifica una ruta en un ordenador en curveon.no/plan, con un mapa grande y las mismas carreteras que aquí. Pulsa allí Send to Curveon y escanea el código que aparece. La ruta aparecerá aquí en Planificados.</string>
-    <string name="web_plan_connected">Conectado al planificador web. Las rutas nuevas llegan cuando Curveon se inicia y cuando abres Planificados.</string>
+    <string name="web_plan_intro">Planifica en un ordenador en curveon.no/plan, con un mapa grande y las mismas carreteras que aquí. Escanea el código de la página para conectar: la página verá tus rutas planificadas para que sigas trabajando en ellas allí, y lo que planifiques allí llegará aquí, en Planificados.</string>
+    <string name="web_plan_connected">Conectado al planificador web: la página ve tus rutas planificadas, y lo que planifiques o cambies allí llega aquí. Llega cuando Curveon se inicia y cuando abres Planificados.</string>
     <string name="web_plan_scan">Escanear el código</string>
     <string name="web_plan_scan_another">Escanear un código de otro navegador</string>
     <string name="web_plan_fetch">Recibir ahora</string>
@@ -1217,6 +1217,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d ruta cambiada en la web</item>
         <item quantity="other">%d rutas cambiadas en la web</item>
+    </plurals>
+    <string name="web_plan_live">Conectado ahora: lo que envíes desde la página llega al momento.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d ruta borrada desde la web</item>
+        <item quantity="other">%d rutas borradas desde la web</item>
     </plurals>
     <string name="web_plan_forget">Desconectar</string>
     <string name="web_plan_scan_hint">Sujeta la cámara delante del código de la página del planificador.</string>

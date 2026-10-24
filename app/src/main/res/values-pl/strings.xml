@@ -1220,8 +1220,8 @@
     <string name="friend_request_decline">Nie, dziękuję</string>
     <string name="web_plan_button">Z internetu</string>
     <string name="web_plan_title">Trasy z internetu</string>
-    <string name="web_plan_intro">Zaplanuj trasę na komputerze na curveon.no/plan, z dużą mapą i tymi samymi drogami co tutaj. Naciśnij tam Send to Curveon i zeskanuj pokazany kod. Trasa pojawi się tutaj w Planowane.</string>
-    <string name="web_plan_connected">Połączono z planerem internetowym. Nowe trasy przychodzą przy starcie Curveon i gdy otwierasz Planowane.</string>
+    <string name="web_plan_intro">Planuj na komputerze na curveon.no/plan, z dużą mapą i tymi samymi drogami co tutaj. Zeskanuj kod pokazany na stronie, aby się połączyć: strona zobaczy wtedy Twoje planowane trasy, więc możesz dalej nad nimi pracować tam, a to, co tam zaplanujesz, trafi tutaj do Planowane.</string>
+    <string name="web_plan_connected">Połączono z planerem internetowym: strona widzi Twoje planowane trasy, a to, co tam zaplanujesz lub zmienisz, trafia tutaj. Przychodzi przy starcie Curveon i gdy otwierasz Planowane.</string>
     <string name="web_plan_scan">Zeskanuj kod</string>
     <string name="web_plan_scan_another">Zeskanuj kod z innej przeglądarki</string>
     <string name="web_plan_fetch">Pobierz teraz</string>
@@ -1239,6 +1239,13 @@
         <item quantity="few">%d trasy zmienione w internecie</item>
         <item quantity="many">%d tras zmienionych w internecie</item>
         <item quantity="other">%d trasy zmienionej w internecie</item>
+    </plurals>
+    <string name="web_plan_live">Połączono teraz: to, co wyślesz ze strony, dotrze od razu.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d trasa usunięta z internetu</item>
+        <item quantity="few">%d trasy usunięte z internetu</item>
+        <item quantity="many">%d tras usuniętych z internetu</item>
+        <item quantity="other">%d trasy usuniętej z internetu</item>
     </plurals>
     <string name="web_plan_forget">Rozłącz</string>
     <string name="web_plan_scan_hint">Trzymaj aparat przed kodem na stronie planera.</string>

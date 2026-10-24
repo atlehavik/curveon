@@ -1184,8 +1184,8 @@
     <string name="friend_request_decline">Nej tak</string>
     <string name="web_plan_button">Fra nettet</string>
     <string name="web_plan_title">Ture fra nettet</string>
-    <string name="web_plan_intro">Planlæg en tur på en computer på curveon.no/plan, med stort kort og de samme veje som her. Tryk på Send to Curveon der og scan koden, der vises. Så dukker turen op her under Planlagt.</string>
-    <string name="web_plan_connected">Forbundet til webplanlæggeren. Nye ture kommer ind, når Curveon starter, og når du åbner Planlagt.</string>
+    <string name="web_plan_intro">Planlæg på en computer på curveon.no/plan, med stort kort og de samme veje som her. Scan koden, siden viser, for at forbinde: så ser siden dine planlagte ture, så du kan arbejde videre med dem der, og det, du planlægger der, kommer hertil under Planlagt.</string>
+    <string name="web_plan_connected">Forbundet til webplanlæggeren: siden ser dine planlagte ture, og det, du planlægger eller ændrer der, kommer hertil. Det kommer, når Curveon starter, og når du åbner Planlagt.</string>
     <string name="web_plan_scan">Scan koden</string>
     <string name="web_plan_scan_another">Scan en kode fra en anden browser</string>
     <string name="web_plan_fetch">Hent nu</string>
@@ -1199,6 +1199,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d tur ændret på nettet</item>
         <item quantity="other">%d ture ændret på nettet</item>
+    </plurals>
+    <string name="web_plan_live">Forbundet nu: det, du sender fra siden, kommer med det samme.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d tur slettet fra nettet</item>
+        <item quantity="other">%d ture slettet fra nettet</item>
     </plurals>
     <string name="web_plan_forget">Afbryd forbindelsen</string>
     <string name="web_plan_scan_hint">Hold kameraet foran koden på planlæggersiden.</string>

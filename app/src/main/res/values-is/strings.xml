@@ -1183,8 +1183,8 @@
     <string name="friend_request_decline">Nei takk</string>
     <string name="web_plan_button">Af vefnum</string>
     <string name="web_plan_title">Ferðir af vefnum</string>
-    <string name="web_plan_intro">Skipuleggðu ferð í tölvu á curveon.no/plan, með stóru korti og sömu vegum og hér. Ýttu þar á Send to Curveon og skannaðu kóðann sem birtist. Þá birtist ferðin hér undir Fyrirhugað.</string>
-    <string name="web_plan_connected">Tengt við vefskipuleggjandann. Nýjar ferðir koma inn þegar Curveon ræsist og þegar þú opnar Fyrirhugað.</string>
+    <string name="web_plan_intro">Skipuleggðu í tölvu á curveon.no/plan, með stóru korti og sömu vegum og hér. Skannaðu kóðann sem síðan sýnir til að tengjast: þá sér síðan fyrirhugaðar ferðir þínar svo þú getur haldið áfram með þær þar, og það sem þú skipuleggur þar kemur hingað undir Fyrirhugað.</string>
+    <string name="web_plan_connected">Tengt við vefskipuleggjandann: síðan sér fyrirhugaðar ferðir þínar, og það sem þú skipuleggur eða breytir þar kemur hingað. Það kemur þegar Curveon ræsist og þegar þú opnar Fyrirhugað.</string>
     <string name="web_plan_scan">Skanna kóðann</string>
     <string name="web_plan_scan_another">Skanna kóða úr öðrum vafra</string>
     <string name="web_plan_fetch">Sækja núna</string>
@@ -1198,6 +1198,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d ferð breytt á vefnum</item>
         <item quantity="other">%d ferðum breytt á vefnum</item>
+    </plurals>
+    <string name="web_plan_live">Tengt núna: það sem þú sendir af síðunni kemur strax.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d ferð eytt af vefnum</item>
+        <item quantity="other">%d ferðum eytt af vefnum</item>
     </plurals>
     <string name="web_plan_forget">Aftengja</string>
     <string name="web_plan_scan_hint">Haltu myndavélinni fyrir framan kóðann á skipulagssíðunni.</string>

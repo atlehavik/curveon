@@ -1184,8 +1184,8 @@
     <string name="friend_request_decline">Nej tack</string>
     <string name="web_plan_button">Från webben</string>
     <string name="web_plan_title">Turer från webben</string>
-    <string name="web_plan_intro">Planera en tur på en dator på curveon.no/plan, med stor karta och samma vägar som här. Tryck på Send to Curveon där och skanna koden som visas. Då dyker turen upp här under Planerade.</string>
-    <string name="web_plan_connected">Ansluten till webbplaneraren. Nya turer kommer in när Curveon startar och när du öppnar Planerade.</string>
+    <string name="web_plan_intro">Planera på en dator på curveon.no/plan, med stor karta och samma vägar som här. Skanna koden som sidan visar för att ansluta: då ser sidan dina planerade turer så att du kan jobba vidare med dem där, och det du planerar där kommer hit under Planerade.</string>
+    <string name="web_plan_connected">Ansluten till webbplaneraren: sidan ser dina planerade turer, och det du planerar eller ändrar där kommer hit. Det kommer när Curveon startar och när du öppnar Planerade.</string>
     <string name="web_plan_scan">Skanna koden</string>
     <string name="web_plan_scan_another">Skanna en kod från en annan webbläsare</string>
     <string name="web_plan_fetch">Hämta nu</string>
@@ -1199,6 +1199,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d tur ändrad på webben</item>
         <item quantity="other">%d turer ändrade på webben</item>
+    </plurals>
+    <string name="web_plan_live">Ansluten nu: det du skickar från sidan kommer direkt.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d tur raderad från webben</item>
+        <item quantity="other">%d turer raderade från webben</item>
     </plurals>
     <string name="web_plan_forget">Koppla från</string>
     <string name="web_plan_scan_hint">Håll kameran framför koden på planerarsidan.</string>

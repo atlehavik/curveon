@@ -278,9 +278,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val webPlan by viewModel.webPlan.collectAsStateWithLifecycle()
     LaunchedEffect(webPlan) {
         val added = webPlan.added ?: 0
-        if (!webPlan.fetching && added + webPlan.changed > 0) toast = listOfNotNull(
+        if (!webPlan.fetching && added + webPlan.changed + webPlan.deleted > 0) toast = listOfNotNull(
             added.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_new, it, it) },
             webPlan.changed.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_changed, it, it) },
+            webPlan.deleted.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_deleted, it, it) },
         ).joinToString(" · ")
     }
     // Trips for the tablet, sent from Curveon on the phone through Curveon Companion: only offered when it is installed.
@@ -1180,7 +1181,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     embedded = true
                 )
                 TracksTab.PLANNED -> {
-                LaunchedEffect(Unit) { viewModel.fetchWebPlans(auto = true) }
+                // Connected to the web planner while this page is open: a trip sent there arrives at once.
+                DisposableEffect(Unit) { viewModel.webPlanShown(); onDispose { viewModel.webPlanHidden() } }
                 PlannedTripsPage(
                     trips = savedRoutes.filter { it.inPlanned },
                     groups = routeGroups,

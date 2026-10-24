@@ -34,8 +34,8 @@ Open source and made for riders.
   map, with big buttons you can hit with gloves on.
 - 🗺️ **Plan your way.** Drag the route where you want it, draw a roundtrip with one finger, keep
   trips for later, and ride any GPX track.
-- 🖥️ **Plan on a big screen.** Plan a trip at curveon.no/plan on your computer, with the same map and roads,
-  and send it straight to Curveon on your phone or tablet.
+- 🖥️ **Plan on a big screen.** Connect curveon.no/plan on your computer to Curveon with a QR code: work on the
+  trips you have planned, with the same map and roads, and send new ones straight to your phone or tablet.
 
 ---
 

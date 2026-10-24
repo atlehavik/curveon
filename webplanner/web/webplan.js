@@ -71,7 +71,7 @@ export async function channel(link, scheme = "wss") {
       const f = JSON.parse(text);
       if (f.v !== 1 || f.e !== 0 || typeof f.t !== "string" || f.t === "relay") return null;
       const plain = await subtle.decrypt({ name: "AES-GCM", iv: unb64(f.n), additionalData: aad(unb64(f.r), f.t), tagLength: 128 }, encKey, unb64(f.c));
-      return { type: f.t, body: JSON.parse(dec.decode(plain)) };
+      return { type: f.t, rider: f.r, body: JSON.parse(dec.decode(plain)) };
     } catch {
       return null;
     }
@@ -80,8 +80,12 @@ export async function channel(link, scheme = "wss") {
   return {
     url,
     open,
+    /** Any frame on the channel (the app's kinds too: tools/webplanner_test.mjs plays a device with it). */
+    seal,
     /** A trip ({ tid, rev, trip }) for the app, kept by the relay under its id. */
     plan: (rider, seq, tid, rev, trip) => seal("plan", rider, { seq, ts: Date.now(), tid, rev, trip }, tid),
+    /** Asks the device [ref.r] to delete its trip [ref.id]; kept, so a device that is off now does it later. */
+    del: (rider, seq, ref) => seal("plan_del", rider, { seq, ts: Date.now(), ref }, "d" + ref.id + ref.r.slice(0, 8)),
     /** Tells the relay to forget [tid]: a frame of the same slot kept for 0 seconds. */
     forget: async (rider, seq, tid) => {
       const f = JSON.parse(await seal("plan", rider, { seq, ts: Date.now(), tid, rev: 0, gone: true }, tid));
@@ -93,3 +97,16 @@ export async function channel(link, scheme = "wss") {
 
 /** Relay slots are base64url; the same filter as WebPlan.slot. */
 export const slotOf = (tid) => (String(tid).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 43) || "t");
+
+/** Google's encoded polyline (1e-5), as groups/WebPlan.kt Polyline: [[lat, lon], ...]. */
+export function decodePolyline(s) {
+  const out = [];
+  let i = 0, lat = 0, lon = 0;
+  const next = () => {
+    let shift = 0, result = 0, b;
+    do { b = s.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    return result & 1 ? ~(result >> 1) : result >> 1;
+  };
+  while (i < s.length) { lat += next(); lon += next(); out.push([lat / 1e5, lon / 1e5]); }
+  return out;
+}

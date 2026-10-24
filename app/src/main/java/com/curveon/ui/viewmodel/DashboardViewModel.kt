@@ -623,7 +623,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun dismissRouteFromPhone() { _routeFromPhone.value = null }
 
-    // ---------------------------------------------------------------- Trips from the web planner
+    // ---------------------------------------------------------------- Planning session with the web planner
 
     private val webPlans = WebPlans(application, repository)
 
@@ -631,38 +631,90 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     data class WebPlanState(
         val browsers: Int = 0, val fetching: Boolean = false,
         /** Trips new or changed in the last fetch; null before one, or when the relay could not be reached ([offline]). */
-        val added: Int? = null, val changed: Int = 0, val offline: Boolean = false,
+        val added: Int? = null, val changed: Int = 0, val deleted: Int = 0, val offline: Boolean = false,
+        /** Connected right now (the planned trips are open): what the page sends arrives at once. */
+        val live: Boolean = false,
     )
     private val _webPlan = MutableStateFlow(WebPlanState(browsers = webPlans.links().size))
     val webPlan: StateFlow<WebPlanState> = _webPlan.asStateFlow()
     private var webPlanFetched = 0L
+    private var webPlanSession: com.curveon.data.webplan.WebPlanSession? = null
+    private var webPlanWanted = 0
 
     init {
         if (webPlans.links().isNotEmpty()) fetchWebPlans()
+        showPlannedOnWeb()
     }
 
-    /** Fetches what the web planner sent; [auto] (the Planned page opened) at most every half minute. */
+    /**
+     * A planned trip saved, renamed, moved or deleted here: the page sees it (at once while connected, else on a
+     * short connection, and only when something it shows did change).
+     */
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
+    private fun showPlannedOnWeb() = viewModelScope.launch {
+        combine(savedRoutes, repository.allRouteGroups) { r, g -> r to g }.drop(1).debounce(2000).collect {
+            if (webPlans.links().isEmpty()) return@collect
+            val session = webPlanSession
+            if (session != null) runCatching { session.publish() }
+            else if (webPlans.needsPublish()) fetchWebPlans()
+        }
+    }
+
+    /** Fetches what the web planner sent and shows it this device's trips; [auto] (app shown, Planned opened) at most every half minute. */
     fun fetchWebPlans(auto: Boolean = false) {
-        if (_webPlan.value.fetching || webPlans.links().isEmpty()) return
+        if (_webPlan.value.fetching || webPlans.links().isEmpty() || webPlanSession != null) return
         if (auto && System.currentTimeMillis() - webPlanFetched < 30_000) return
         webPlanFetched = System.currentTimeMillis()
         _webPlan.value = _webPlan.value.copy(fetching = true)
         viewModelScope.launch {
             val r = runCatching { webPlans.sync() }.getOrNull()
-            _webPlan.value = WebPlanState(webPlans.links().size, false, r?.added, r?.changed ?: 0, offline = r == null)
+            _webPlan.value = _webPlan.value.copy(fetching = false, added = r?.added, changed = r?.changed ?: 0, deleted = r?.deleted ?: 0, offline = r == null)
         }
     }
 
-    /** A scanned (or opened) web planner code: kept, and fetched from at once. False when it is not one. */
+    /** While the planned trips are on screen: connected, so a trip from the page arrives at once. Pair with [webPlanHidden]. */
+    fun webPlanShown() {
+        webPlanWanted++
+        connectWebPlans()
+    }
+
+    fun webPlanHidden() {
+        webPlanWanted = (webPlanWanted - 1).coerceAtLeast(0)
+        if (webPlanWanted == 0) { webPlanSession?.close(); webPlanSession = null; _webPlan.value = _webPlan.value.copy(live = false) }
+    }
+
+    private fun connectWebPlans() {
+        if (webPlanSession != null || webPlanWanted == 0 || webPlans.links().isEmpty()) return
+        webPlanSession = webPlans.live(
+            onResult = { r ->
+                if (r.added + r.changed + r.deleted > 0) _webPlan.value = _webPlan.value.copy(added = r.added, changed = r.changed, deleted = r.deleted, offline = false)
+            },
+            onDropped = {
+                // Coverage gone or the relay restarted: try again in a while, as long as the trips are still open.
+                viewModelScope.launch {
+                    webPlanSession = null
+                    _webPlan.value = _webPlan.value.copy(live = false)
+                    delay(10_000)
+                    connectWebPlans()
+                }
+            }
+        )
+        _webPlan.value = _webPlan.value.copy(live = true, offline = false)
+    }
+
+    /** A scanned (or opened) web planner code: the session starts, and the page sees this device's trips. False when it is not one. */
     fun addWebPlanLink(uri: String): Boolean {
         if (!webPlans.add(uri)) return false
         _webPlan.value = _webPlan.value.copy(browsers = webPlans.links().size)
-        fetchWebPlans()
+        // Connected anew, so the new browser is in it.
+        webPlanSession?.close(); webPlanSession = null
+        if (webPlanWanted > 0) connectWebPlans() else fetchWebPlans()
         return true
     }
 
-    /** Stops fetching from the web planner; the trips already here stay. */
+    /** Ends the planning sessions; the trips here stay. */
     fun forgetWebPlans() {
+        webPlanSession?.close(); webPlanSession = null
         webPlans.forgetAll()
         _webPlan.value = WebPlanState()
     }
@@ -1314,7 +1366,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Called by the activity once location permission is granted. Safe to call repeatedly. */
     /** Curveon is on screen ([shown]) or out of sight: see [awake]. */
-    fun setOnScreen(shown: Boolean) { onScreen.value = shown }
+    fun setOnScreen(shown: Boolean) {
+        onScreen.value = shown
+        // Back on screen: anything planned on the web meanwhile comes in.
+        if (shown) fetchWebPlans(auto = true)
+    }
 
     private fun watchSleep() = viewModelScope.launch {
         combine(onScreen, isNavigating, _mapDownload) { shown, navigating, download ->

@@ -1156,8 +1156,8 @@
     <string name="friend_request_decline">Nee, bedankt</string>
     <string name="web_plan_button">Van het web</string>
     <string name="web_plan_title">Ritten van het web</string>
-    <string name="web_plan_intro">Plan een rit op een computer op curveon.no/plan, met een grote kaart en dezelfde wegen als hier. Tik daar op Send to Curveon en scan de code die verschijnt. De rit komt dan hier onder Gepland.</string>
-    <string name="web_plan_connected">Verbonden met de webplanner. Nieuwe ritten komen binnen als Curveon start en als je Gepland opent.</string>
+    <string name="web_plan_intro">Plan op een computer op curveon.no/plan, met een grote kaart en dezelfde wegen als hier. Scan de code die de pagina toont om te verbinden: de pagina ziet dan je geplande ritten, zodat je er daar verder aan kunt werken, en wat je daar plant komt hier onder Gepland.</string>
+    <string name="web_plan_connected">Verbonden met de webplanner: de pagina ziet je geplande ritten, en wat je daar plant of wijzigt komt hier. Het komt als Curveon start en als je Gepland opent.</string>
     <string name="web_plan_scan">Code scannen</string>
     <string name="web_plan_scan_another">Code van een andere browser scannen</string>
     <string name="web_plan_fetch">Nu ophalen</string>
@@ -1171,6 +1171,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d rit gewijzigd op het web</item>
         <item quantity="other">%d ritten gewijzigd op het web</item>
+    </plurals>
+    <string name="web_plan_live">Nu verbonden: wat je vanaf de pagina stuurt, komt meteen.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d rit verwijderd via het web</item>
+        <item quantity="other">%d ritten verwijderd via het web</item>
     </plurals>
     <string name="web_plan_forget">Verbinding verbreken</string>
     <string name="web_plan_scan_hint">Houd de camera voor de code op de plannerpagina.</string>

@@ -18,6 +18,10 @@ class CurveonRepository(
 
     suspend fun route(id: Long): RouteItem? = routeDao.getRouteById(id)
 
+    suspend fun plannedNow(): List<RouteItem> = routeDao.getPlannedRoutes()
+
+    suspend fun routeGroupsNow(): List<RouteGroup> = routeDao.getGroups()
+
     suspend fun deleteRoute(id: Long) = routeDao.deleteRouteById(id)
 
     suspend fun renameRoute(id: Long, title: String) = routeDao.renameRoute(id, title)

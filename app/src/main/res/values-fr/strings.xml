@@ -1202,8 +1202,8 @@
     <string name="friend_request_decline">Non merci</string>
     <string name="web_plan_button">Depuis le web</string>
     <string name="web_plan_title">Trajets depuis le web</string>
-    <string name="web_plan_intro">Prépare un trajet sur un ordinateur sur curveon.no/plan, avec une grande carte et les mêmes routes qu\'ici. Appuie là-bas sur Send to Curveon et scanne le code affiché. Le trajet arrive ici dans Prévus.</string>
-    <string name="web_plan_connected">Connecté au planificateur web. Les nouveaux trajets arrivent au démarrage de Curveon et quand tu ouvres Prévus.</string>
+    <string name="web_plan_intro">Prépare tes trajets sur un ordinateur sur curveon.no/plan, avec une grande carte et les mêmes routes qu\'ici. Scanne le code affiché par la page pour te connecter : la page voit alors tes trajets prévus, pour continuer à y travailler là-bas, et ce que tu prépares là-bas arrive ici dans Prévus.</string>
+    <string name="web_plan_connected">Connecté au planificateur web : la page voit tes trajets prévus, et ce que tu y prépares ou modifies arrive ici. Ça arrive au démarrage de Curveon et quand tu ouvres Prévus.</string>
     <string name="web_plan_scan">Scanner le code</string>
     <string name="web_plan_scan_another">Scanner le code d\'un autre navigateur</string>
     <string name="web_plan_fetch">Récupérer</string>
@@ -1217,6 +1217,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d trajet modifié sur le web</item>
         <item quantity="other">%d trajets modifiés sur le web</item>
+    </plurals>
+    <string name="web_plan_live">Connecté maintenant : ce que tu envoies depuis la page arrive tout de suite.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d trajet supprimé depuis le web</item>
+        <item quantity="other">%d trajets supprimés depuis le web</item>
     </plurals>
     <string name="web_plan_forget">Déconnecter</string>
     <string name="web_plan_scan_hint">Tiens la caméra devant le code de la page du planificateur.</string>

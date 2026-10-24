@@ -489,10 +489,10 @@ class RelayIntegrationTest {
     page.close()
     Thread.sleep(200)
 
-    val got = WebPlanInbox(JdkTransportFactory(), scheme = "ws").fetch(link, quietMs = 500) { trips ->
-      trips.map { WebPlan.gotFrame(link, GroupKeys.newRiderId(), 1, it.tripId, it.rev, "Pixel", System.currentTimeMillis()) }
+    val got = WebPlanInbox(JdkTransportFactory(), scheme = "ws").fetch(link, quietMs = 500) { inbound ->
+      inbound.trips.map { WebPlan.gotFrame(link, GroupKeys.newRiderId(), 1, it.tripId, it.rev, "Pixel", System.currentTimeMillis()) }
     }
-    assertEquals(listOf("t1"), got?.map { it.tripId })
+    assertEquals(listOf("t1"), got?.trips?.map { it.tripId })
 
     // The page comes back and sees that the app has it.
     Thread.sleep(300)

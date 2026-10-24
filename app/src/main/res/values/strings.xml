@@ -1187,8 +1187,8 @@
     <!-- Trips from the web planner (Planned → From the web) -->
     <string name="web_plan_button">From the web</string>
     <string name="web_plan_title">Trips from the web</string>
-    <string name="web_plan_intro">Plan a trip on a computer at curveon.no/plan, with a big map and the same roads as here. Press Send to Curveon there and scan the code it shows. The trip then turns up here under Planned.</string>
-    <string name="web_plan_connected">Connected to the web planner. New trips come in when Curveon starts and when you open Planned.</string>
+    <string name="web_plan_intro">Plan on a computer at curveon.no/plan, with a big map and the same roads as here. Scan the code the page shows to connect: the page then sees your planned trips, so you can keep working on them there, and what you plan there comes here under Planned.</string>
+    <string name="web_plan_connected">Connected to the web planner: the page sees your planned trips, and what you plan or change there comes here. It arrives when Curveon starts and when you open Planned.</string>
     <string name="web_plan_scan">Scan the code</string>
     <string name="web_plan_scan_another">Scan a code from another browser</string>
     <string name="web_plan_fetch">Fetch now</string>
@@ -1202,6 +1202,11 @@
     <plurals name="web_plan_changed">
         <item quantity="one">%d trip changed on the web</item>
         <item quantity="other">%d trips changed on the web</item>
+    </plurals>
+    <string name="web_plan_live">Connected now: what you send from the page arrives at once.</string>
+    <plurals name="web_plan_deleted">
+        <item quantity="one">%d trip deleted from the web</item>
+        <item quantity="other">%d trips deleted from the web</item>
     </plurals>
     <string name="web_plan_forget">Disconnect</string>
     <string name="web_plan_scan_hint">Hold the camera in front of the code on the planner page.</string>

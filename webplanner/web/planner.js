@@ -1,7 +1,8 @@
-// Curveon's web planner: plan a trip on a big screen and send it to the app (docs: webplanner/README.md).
-// The route comes from the planner service (the app's own routing), the trip goes to the app end-to-end encrypted
-// through the relay (webplan.js). Nothing is stored on a server but the sealed trip, until the app has fetched it.
-import { b64, channel, linkUri, newLink, parseLink, random, unb64 } from "./webplan.js";
+// Curveon's web planner: plan a trip on a big screen, in a session with Curveon on the rider's phone or tablet
+// (webplanner/README.md). Scanning the page's code connects a device: the page then shows that device's planned trips
+// to open and work on, and sends new and changed trips back. The route comes from the planner service (the app's own
+// routing); everything between page and device goes end-to-end encrypted through the relay (webplan.js).
+import { b64, channel, decodePolyline, linkUri, newLink, parseLink, random, unb64 } from "./webplan.js";
 
 // ---------- Texts (English and Norwegian, as in the app) ----------
 const TEXTS = {
@@ -13,23 +14,28 @@ const TEXTS = {
     surface_tarmac_only: "Tarmac only", surface_mixed: "Mixed", surface_gravel: "Gravel", surface_offroad: "Offroad",
     ferries_ok: "Ferries OK", no_ferries: "No ferries", motorways_ok: "Motorways OK", no_motorways: "No motorways",
     no_motorways_e_roads: "No motorways or E-roads",
-    start: "Start", destination: "Destination", stop: "Stop", via: "Through here", map_point: "Map point",
-    remove: "Remove", up: "Earlier", down: "Later",
+    start: "Start", via: "Through here", map_point: "Map point", remove: "Remove", up: "Earlier", down: "Later",
     km: "km", h: "h", min: "min", curvy: "curvy", up_m: "m climb", ferries_n: (n) => n === 1 ? "1 ferry" : `${n} ferries`,
     routing: "Finding the road…", queued: "Busy right now, your route is next in line…",
     err_busy: "The planner is busy. Try again in a moment.", err_no_route: "No road found between these places. Move a point onto a road.",
     err_too_long: "That is too long for one trip (over 1500 km). Split it into days.", err_slow_down: "That was a lot of routes at once. Wait a few minutes.",
     err_failed: "The route could not be worked out. Try again.", err_offline: "No connection to the planner. Check your internet connection.",
-    name_hint: "Name of the trip", send: "Send to Curveon", resend: "Send changes",
+    name_hint: "Name of the trip", send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
     sending: "Sending…", sent_ok: "Sent. It shows under Planned in Curveon the next time the app is online.",
+    updated_ok: (d) => `Sent. The trip on ${d} is updated the next time the app is online.`,
     send_failed: "The trip could not be sent. Check your internet connection and try again.",
-    sent_title: "Sent to Curveon", waiting: "Waiting for Curveon to fetch it", got_on: (d) => `In Curveon on ${d}`,
-    changed: "changed since", forget: "Remove from this list", edit: "Open to change it",
-    new_trip: "New trip", show_code: "Code for the app",
+    pending_title: "Waiting for Curveon", waiting: "Not fetched yet", forget: "Remove from this list",
+    connect: "Connect Curveon", connect_more: "Connect another device", connected_to: (d) => `Connected to ${d}`,
+    on_device: (d) => `On ${d}`, no_trips: "No planned trips there yet.", loose: "Not in a group",
+    edit: "Open to work on it", delete_on: (d) => `Delete from ${d}`,
+    confirm_delete: (n, d) => `Delete “${n}” from ${d}? It is gone from Planned there the next time the app is online.`,
+    view_only: "A line without stops (a ride kept as a trip, or a loop): it can be shown here, not changed.",
+    editing_from: (d) => `Opened from ${d}: Update changes the trip there.`,
+    new_trip: "New trip",
     pair_title: "Connect Curveon to this page", pair_step1: "Open Curveon on your phone or tablet.",
     pair_step2: "Go to Planned and tap From the web.", pair_step3: "Point the camera at this code.",
-    pair_more: "Do it once per phone or tablet. Each one that has scanned the code gets every trip you send from this browser.",
-    pair_done: "Done", confirm_new: "Start a new trip? The one on the map is not sent yet.",
+    pair_more: "Once per phone or tablet. Then this page shows the trips on it, and what you plan here goes there.",
+    pair_done: "Close", confirm_new: "Start a new trip? The one on the map is not sent yet.",
     attribution: "Routes: Curveon (BRouter) · Search: Photon, Kartverket",
   },
   nb: {
@@ -40,29 +46,35 @@ const TEXTS = {
     surface_tarmac_only: "Kun asfalt", surface_mixed: "Blandet", surface_gravel: "Grus", surface_offroad: "Offroad",
     ferries_ok: "Ferjer OK", no_ferries: "Ingen ferjer", motorways_ok: "Motorvei OK", no_motorways: "Ingen motorvei",
     no_motorways_e_roads: "Ingen motorvei eller E-vei",
-    start: "Start", destination: "Mål", stop: "Stopp", via: "Gjennom her", map_point: "Kartpunkt",
-    remove: "Fjern", up: "Tidligere", down: "Senere",
+    start: "Start", via: "Gjennom her", map_point: "Kartpunkt", remove: "Fjern", up: "Tidligere", down: "Senere",
     km: "km", h: "t", min: "min", curvy: "svingete", up_m: "m stigning", ferries_n: (n) => n === 1 ? "1 ferje" : `${n} ferjer`,
     routing: "Finner veien …", queued: "Travelt akkurat nå, ruten din står først i køen …",
     err_busy: "Planleggeren har mye å gjøre. Prøv igjen om litt.", err_no_route: "Fant ingen vei mellom disse stedene. Flytt et punkt inn på en vei.",
     err_too_long: "Det er for langt for én tur (over 1500 km). Del den opp i dager.", err_slow_down: "Det ble mange ruter på kort tid. Vent noen minutter.",
     err_failed: "Ruten kunne ikke regnes ut. Prøv igjen.", err_offline: "Får ikke kontakt med planleggeren. Sjekk internettforbindelsen.",
-    name_hint: "Navn på turen", send: "Send til Curveon", resend: "Send endringene",
+    name_hint: "Navn på turen", send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
     sending: "Sender …", sent_ok: "Sendt. Den dukker opp under Planlagte i Curveon neste gang appen er på nett.",
+    updated_ok: (d) => `Sendt. Turen på ${d} oppdateres neste gang appen er på nett.`,
     send_failed: "Turen ble ikke sendt. Sjekk internettforbindelsen og prøv igjen.",
-    sent_title: "Sendt til Curveon", waiting: "Venter på at Curveon henter den", got_on: (d) => `I Curveon på ${d}`,
-    changed: "endret siden", forget: "Fjern fra listen", edit: "Åpne for å endre",
-    new_trip: "Ny tur", show_code: "Kode til appen",
+    pending_title: "Venter på Curveon", waiting: "Ikke hentet ennå", forget: "Fjern fra listen",
+    connect: "Koble til Curveon", connect_more: "Koble til en enhet til", connected_to: (d) => `Koblet til ${d}`,
+    on_device: (d) => `På ${d}`, no_trips: "Ingen planlagte turer der ennå.", loose: "Uten gruppe",
+    edit: "Åpne for å jobbe med den", delete_on: (d) => `Slett fra ${d}`,
+    confirm_delete: (n, d) => `Slette «${n}» fra ${d}? Den forsvinner fra Planlagte der neste gang appen er på nett.`,
+    view_only: "En linje uten stopp (en kjørt tur lagret som tur, eller en rundtur): den kan vises her, men ikke endres.",
+    editing_from: (d) => `Åpnet fra ${d}: Oppdater endrer turen der.`,
+    new_trip: "Ny tur",
     pair_title: "Koble Curveon til denne siden", pair_step1: "Åpne Curveon på telefonen eller nettbrettet.",
     pair_step2: "Gå til Planlagte og trykk Fra nettet.", pair_step3: "Rett kameraet mot denne koden.",
-    pair_more: "Det gjør du én gang per telefon eller nettbrett. Alle som har skannet koden får hver tur du sender fra denne nettleseren.",
-    pair_done: "Ferdig", confirm_new: "Begynne på en ny tur? Den på kartet er ikke sendt ennå.",
+    pair_more: "Én gang per telefon eller nettbrett. Da viser denne siden turene der, og det du planlegger her havner der.",
+    pair_done: "Lukk", confirm_new: "Begynne på en ny tur? Den på kartet er ikke sendt ennå.",
     attribution: "Ruter: Curveon (BRouter) · Søk: Photon, Kartverket",
   },
 };
 
 // ---------- Small helpers ----------
 const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
 const store = {
   get(key, fallback) { try { const v = localStorage.getItem("curveon." + key); return v === null ? fallback : JSON.parse(v); } catch { return fallback; } },
   set(key, value) { try { localStorage.setItem("curveon." + key, JSON.stringify(value)); } catch { /* private window: works until the tab closes */ } },
@@ -80,18 +92,25 @@ const t = (key, ...a) => { const v = TEXTS[lang][key] ?? TEXTS.en[key] ?? key; r
 function applyTexts() {
   document.documentElement.lang = lang === "nb" ? "nb" : "en";
   document.title = t("title");
-  document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
-  document.querySelectorAll("[data-tp]").forEach((el) => { el.placeholder = t(el.dataset.tp); });
+  document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
+  document.querySelectorAll("[data-tp]").forEach((e) => { e.placeholder = t(e.dataset.tp); });
   $("lang").textContent = t("lang");
   $("fold").textContent = $("panel").classList.contains("folded") ? "▴" : "▾";
 }
 
 // ---------- State ----------
-// points: [{ name, lat, lon, via }] start first, destination last. editing: the sent trip being changed, if any.
+// points: [{ name, lat, lon, via }] start first, destination last.
+// editing: what the map holds, if it was sent or opened from a device: { tid, ref: { r, id } | null, dev }.
+// viewOnly: a device's line without stops, shown but not changed.
 let points = [];
-let result = null; // the planner's answer for these points and options
-let editing = null; // { tid, rev }
+let result = null; // the planner's answer for these points and options (or the device's saved line)
+let editing = null;
+let viewOnly = false;
 let options = Object.assign({ style: "CURVY", surface: "PAVED", ferries: false, motorways: false, trunk: false }, store.get("options", {}));
+/** The connected devices, by their id on the channel: { dev, ids: [trip ids, newest first], trips: Map id → trip, at }. */
+const devices = new Map();
+/** Trips the page asked a device to delete ("rider:id"), hidden until its list says they are gone. */
+const deleting = new Set();
 
 // ---------- Map ----------
 const dark = matchMedia("(prefers-color-scheme: dark)").matches;
@@ -139,20 +158,26 @@ function drawRoute() {
   src.setData(result ? { type: "Feature", geometry: { type: "LineString", coordinates: result.line.map(([la, lo]) => [lo, la]) } } : emptyLine());
 }
 
+function fitTo(coords) {
+  if (!coords.length) return;
+  const b = coords.reduce((bb, [la, lo]) => bb.extend([lo, la]), new maplibregl.LngLatBounds([coords[0][1], coords[0][0]], [coords[0][1], coords[0][0]]));
+  const narrow = innerWidth <= 640;
+  map.fitBounds(b, { padding: narrow ? { top: 40, bottom: innerHeight * 0.55, left: 30, right: 30 } : { top: 60, bottom: 60, left: 420, right: 60 }, maxZoom: 12 });
+}
+
 // ---------- Markers ----------
 let markers = [];
 function kindOf(i) { return i === 0 ? "start" : i === points.length - 1 ? "end" : points[i].via ? "via" : "stop"; }
 function stopNumber(i) { let n = 0; for (let k = 1; k <= i; k++) if (!points[k].via && k < points.length - 1) n++; return n; }
+const pinText = (kind, i) => kind === "start" ? "A" : kind === "end" ? "B" : kind === "stop" ? String(stopNumber(i)) : "";
 
 function drawMarkers() {
   markers.forEach((m) => m.remove());
   markers = points.map((p, i) => {
-    const el = document.createElement("div");
     const kind = kindOf(i);
-    el.className = "pin " + kind;
-    el.textContent = kind === "start" ? "A" : kind === "end" ? "B" : kind === "stop" ? String(stopNumber(i)) : "";
-    el.title = p.name || t(kind === "via" ? "via" : "map_point");
-    const m = new maplibregl.Marker({ element: el, draggable: true }).setLngLat([p.lon, p.lat]).addTo(map);
+    const e = el("div", "pin " + kind, pinText(kind, i));
+    e.title = p.name || t(kind === "via" ? "via" : "map_point");
+    const m = new maplibregl.Marker({ element: e, draggable: true }).setLngLat([p.lon, p.lat]).addTo(map);
     m.on("dragstart", () => { draggingLine = true; });
     m.on("dragend", async () => {
       const ll = m.getLngLat();
@@ -162,7 +187,7 @@ function drawMarkers() {
       if (!points[i].via) { points[i].name = await placeName(ll.lat, ll.lng); drawList(); }
     });
     // A click on a through-point removes it: it was only there to bend the line.
-    el.addEventListener("click", (e) => { e.stopPropagation(); if (points[i]?.via) { points.splice(i, 1); changed(); } });
+    e.addEventListener("click", (ev) => { ev.stopPropagation(); if (points[i]?.via) { points.splice(i, 1); changed(); } });
     return m;
   });
 }
@@ -173,27 +198,23 @@ function drawList() {
   ol.replaceChildren();
   points.forEach((p, i) => {
     const kind = kindOf(i);
-    const li = document.createElement("li");
-    li.className = kind;
-    const dot = document.createElement("span");
-    dot.className = "dot";
-    dot.textContent = kind === "start" ? "A" : kind === "end" ? "B" : kind === "stop" ? String(stopNumber(i)) : "";
-    const name = document.createElement("span");
-    name.className = "name";
-    name.textContent = kind === "via" ? t("via") : p.name || t("map_point");
+    const li = el("li", kind);
+    const name = el("span", "name", kind === "via" ? t("via") : p.name || t("map_point"));
     name.title = name.textContent;
-    li.append(dot, name);
-    const btn = (label, title, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.title = title; b.ariaLabel = title; b.onclick = fn; li.append(b); };
+    name.onclick = () => map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 11) });
+    li.append(el("span", "dot", pinText(kind, i)), name);
+    const btn = (label, title, fn) => { const b = el("button", "", label); b.type = "button"; b.title = title; b.ariaLabel = title; b.onclick = fn; li.append(b); };
     if (i > 0) btn("↑", t("up"), () => { [points[i - 1], points[i]] = [points[i], points[i - 1]]; changed(); });
     if (i < points.length - 1) btn("↓", t("down"), () => { [points[i + 1], points[i]] = [points[i], points[i + 1]]; changed(); });
     btn("✕", t("remove"), () => { points.splice(i, 1); changed(); });
-    li.querySelector(".name").onclick = () => map.easeTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 11) });
     ol.append(li);
   });
-  $("hint").hidden = points.length >= 2;
+  $("hint").textContent = viewOnly ? t("view_only") : editing?.ref ? t("editing_from", editing.dev) : t("hint_empty");
+  $("hint").hidden = !viewOnly && !editing?.ref && points.length >= 2;
 }
 
 function addPlace(p) {
+  if (viewOnly) { viewOnly = false; result = null; editing = null; }
   points.push({ name: p.name, lat: p.lat, lon: p.lon, via: false });
   changed();
 }
@@ -227,14 +248,11 @@ async function search(q) {
 function showHits(list) {
   hits = list;
   picked = list.length ? 0 : -1;
-  const ul = $("hits");
-  ul.replaceChildren(...list.map((h, i) => {
-    const li = document.createElement("li");
+  $("hits").replaceChildren(...list.map((h, i) => {
+    const li = el("li");
     li.role = "option";
     li.ariaSelected = String(i === picked);
-    const b = document.createElement("span"); b.textContent = h.name;
-    const s = document.createElement("small"); s.textContent = h.area;
-    li.append(b, s);
+    li.append(el("span", "", h.name), el("small", "", h.area));
     li.onmousedown = (e) => { e.preventDefault(); choose(i); };
     return li;
   }));
@@ -284,19 +302,17 @@ map.on("click", async (e) => {
 });
 
 // Drag the line: a through-point goes in where it was grabbed, on the leg it belongs to.
-map.on("mouseenter", "route-hit", () => { map.getCanvas().style.cursor = "grab"; });
+map.on("mouseenter", "route-hit", () => { if (!viewOnly) map.getCanvas().style.cursor = "grab"; });
 map.on("mouseleave", "route-hit", () => { map.getCanvas().style.cursor = ""; });
 map.on("mousedown", "route-hit", (e) => startLineDrag(e));
 map.on("touchstart", "route-hit", (e) => { if (e.points.length === 1) startLineDrag(e); });
 
 function startLineDrag(e) {
-  if (!result) return;
+  if (!result || viewOnly || points.length < 2) return;
   e.preventDefault();
   draggingLine = true;
   const leg = legAt(e.lngLat);
-  const el = document.createElement("div");
-  el.className = "pin via";
-  const ghost = new maplibregl.Marker({ element: el }).setLngLat(e.lngLat).addTo(map);
+  const ghost = new maplibregl.Marker({ element: el("div", "pin via") }).setLngLat(e.lngLat).addTo(map);
   const move = (ev) => ghost.setLngLat(ev.lngLat);
   const up = () => {
     map.off("mousemove", move); map.off("touchmove", move);
@@ -328,6 +344,7 @@ function legAt(ll) {
 let routeCtl = null;
 let routeTimer;
 
+/** The places or options changed: the road is worked out again (a trip opened from a device keeps its line until then). */
 function changed() {
   drawList();
   drawMarkers();
@@ -374,20 +391,21 @@ function routeOptions() {
 
 function drawSummary() {
   const s = $("summary");
-  $("send-row").hidden = !result;
+  $("send-row").hidden = !result || viewOnly;
+  $("send-new").hidden = !result || viewOnly || !editing?.ref;
   if (!result) { s.hidden = true; return; }
   const h = Math.floor(result.s / 3600), m = Math.round((result.s % 3600) / 60);
-  const part = (v, unit) => { const e = document.createElement("span"); e.textContent = v; const u = document.createElement("small"); u.textContent = unit; e.append(u); return e; };
+  const part = (v, unit) => { const e = el("span", "", v); e.append(el("small", "", unit)); return e; };
   s.replaceChildren(
     part(Math.round(result.m / 1000), t("km")),
     ...(h ? [part(h, t("h")), part(m, t("min"))] : [part(m, t("min"))]),
     part(`${result.curvy}/100`, t("curvy")),
     part(result.up, t("up_m")),
-    ...(result.ferries ? [Object.assign(document.createElement("span"), { textContent: t("ferries_n", result.ferries) })] : []),
+    ...(result.ferries ? [el("span", "", t("ferries_n", result.ferries))] : []),
   );
   s.hidden = false;
   if (!$("name").value) $("name").placeholder = defaultName();
-  $("send").textContent = editing ? t("resend") : t("send");
+  $("send").textContent = editing?.ref ? t("update_on", editing.dev) : t("send");
 }
 
 const defaultName = () => points.length >= 2 ? `${points[0].name || t("map_point")} – ${points[points.length - 1].name || t("map_point")}` : t("name_hint");
@@ -399,7 +417,7 @@ function readOptions() {
     motorways: $("motorways").value !== "ok", trunk: $("motorways").value === "noe",
   };
   store.set("options", options);
-  changed();
+  if (!viewOnly) changed();
 }
 function showOptions() {
   $("style").value = options.style;
@@ -409,7 +427,7 @@ function showOptions() {
 }
 ["style", "surface", "ferries", "motorways"].forEach((id) => $(id).addEventListener("change", readOptions));
 
-// ---------- The channel to the app ----------
+// ---------- The session with the devices ----------
 let link = store.get("link", null) && parseLink(store.get("link"));
 const rider = unb64(store.get("rider", null) || (() => { const r = b64(random(16)); store.set("rider", r); return r; })());
 const nextSeq = () => { const s = store.get("seq", 0) + 1; store.set("seq", s); return s; };
@@ -423,7 +441,7 @@ async function ensureLink() {
   return ch;
 }
 
-/** Stays connected while the page is open, to hear the app say it has a trip. */
+/** Stays connected while the page is open: the devices' trips, and their word that a trip arrived. */
 async function connect() {
   if (!link || socket) return;
   const c = await ensureLink();
@@ -431,13 +449,10 @@ async function connect() {
   ws.onopen = () => { backoff = 1000; };
   ws.onmessage = async (ev) => {
     const m = await c.open(ev.data);
-    if (m?.type !== "plan_got") return;
-    const list = store.get("sent", []);
-    const s = list.find((x) => x.tid === m.body.tid);
-    if (!s) return;
-    s.got = Object.assign(s.got || {}, { [m.body.dev || "?"]: m.body.rev });
-    store.set("sent", list);
-    drawSent();
+    if (!m) return;
+    if (m.type === "plan_index") gotIndex(m.rider, m.body);
+    else if (m.type === "plan_have") gotTrip(m.rider, m.body);
+    else if (m.type === "plan_got") gotAnswer(m.body);
   };
   ws.onclose = () => {
     socket = null;
@@ -446,7 +461,43 @@ async function connect() {
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") connect(); });
 
-/** Sends one frame on a connection of its own if need be, and says whether it went. */
+function device(r) {
+  if (!devices.has(r)) devices.set(r, { dev: "Curveon", ids: [], trips: new Map(), at: 0 });
+  return devices.get(r);
+}
+
+function gotIndex(r, body) {
+  const d = device(r);
+  if (body.ts < d.at) return;
+  Object.assign(d, { dev: body.dev || d.dev, ids: body.ids || [], at: body.ts });
+  for (const id of [...d.trips.keys()]) if (!d.ids.includes(id)) d.trips.delete(id);
+  for (const k of [...deleting]) if (k.startsWith(r + ":") && !d.ids.includes(Number(k.split(":")[1]))) deleting.delete(k);
+  if (editing?.ref?.r === r) editing.dev = d.dev;
+  // A device that just scanned the code: the session is on, the code can go.
+  if (pairingOpenedAt && body.ts >= pairingOpenedAt - 5000) $("pairing").close();
+  drawDevices();
+  drawSummary();
+}
+
+function gotTrip(r, body) {
+  if (!body.trip) return; // one the device took off its list
+  const d = device(r);
+  const prev = d.trips.get(body.trip.id);
+  if (prev && prev.ts > body.ts) return;
+  d.trips.set(body.trip.id, { ...body.trip, ts: body.ts });
+  drawDevices();
+}
+
+function gotAnswer(body) {
+  const list = store.get("sent", []);
+  const s = list.find((x) => x.tid === body.tid);
+  if (!s) return;
+  s.got = Object.assign(s.got || {}, { [body.dev || "?"]: body.rev });
+  store.set("sent", list);
+  drawPending();
+}
+
+/** Sends one frame, connecting first if need be, and says whether it went. */
 async function sendFrame(frame) {
   await connect();
   for (let i = 0; i < 50 && socket?.readyState === WebSocket.CONNECTING; i++) await new Promise((r) => setTimeout(r, 100));
@@ -455,67 +506,129 @@ async function sendFrame(frame) {
   return true;
 }
 
+// The devices' trips, in their groups.
+function drawDevices() {
+  const box = $("devices");
+  box.replaceChildren();
+  for (const [r, d] of devices) {
+    if (!d.at) continue; // trips seen before the device's list: wait for it
+    const sec = el("section", "device");
+    sec.append(el("h2", "", t("on_device", d.dev)));
+    const trips = d.ids.map((id) => d.trips.get(id)).filter((x) => x && !deleting.has(r + ":" + x.id));
+    if (!trips.length) sec.append(el("p", "hint", t("no_trips")));
+    const groups = new Map();
+    for (const x of trips) { const g = x.group || ""; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(x); }
+    const named = [...groups.keys()].filter(Boolean).sort((a, b) => a.localeCompare(b));
+    for (const g of [...named, ...(groups.has("") ? [""] : [])]) {
+      if (named.length) sec.append(el("h3", "", g || t("loose")));
+      const ul = el("ul", "trips");
+      for (const x of groups.get(g)) {
+        const li = el("li", editing?.ref?.r === r && editing.ref.id === x.id ? "open" : "");
+        const what = el("div", "what");
+        what.title = t("edit");
+        what.append(el("b", "", x.name), el("small", "", `${Math.round(x.m / 1000)} ${t("km")}`));
+        what.onclick = () => openTrip(r, d, x);
+        const del = el("button", "", "✕");
+        del.type = "button"; del.title = t("delete_on", d.dev); del.ariaLabel = del.title;
+        del.onclick = async () => {
+          if (!confirm(t("confirm_delete", x.name, d.dev))) return;
+          await ensureLink();
+          if (await sendFrame(await ch.del(rider, nextSeq(), { r, id: x.id }))) {
+            deleting.add(r + ":" + x.id);
+            if (editing?.ref?.r === r && editing.ref.id === x.id) editing = null;
+            drawDevices(); drawList(); drawSummary();
+          } else setStatus(t("send_failed"), true);
+        };
+        li.append(what, del);
+        ul.append(li);
+      }
+      sec.append(ul);
+    }
+    box.append(sec);
+  }
+  box.hidden = box.childElementCount === 0;
+  const names = [...devices.values()].filter((d) => d.at).map((d) => d.dev);
+  $("session").textContent = names.length ? t("connected_to", names.join(", ")) : "";
+  $("session").hidden = !names.length;
+  $("pair").textContent = names.length ? t("connect_more") : t("connect");
+}
+
+/** A device's trip on the map, with its own line: changed here and sent back with Update. */
+function openTrip(r, d, x) {
+  const line = decodePolyline(x.poly);
+  if (line.length < 2) return;
+  routeCtl?.abort();
+  clearTimeout(routeTimer);
+  result = { line, m: x.m, s: x.s, up: x.up, curvy: x.curvy, ferries: 0 };
+  if (x.destination) {
+    const start = x.start || { name: t("start"), lat: line[0][0], lon: line[0][1] };
+    points = [start, ...(x.stops || []), x.destination].map((p) => ({ name: p.name || "", lat: p.lat, lon: p.lon, via: !!p.via }));
+    viewOnly = false;
+    editing = { tid: "r" + x.id + "-" + r.slice(0, 8), ref: { r, id: x.id }, dev: d.dev };
+  } else {
+    points = [];
+    viewOnly = true;
+    editing = null;
+  }
+  if (x.options) { options = Object.assign(options, x.options); showOptions(); }
+  $("name").value = x.name;
+  setStatus("");
+  drawList(); drawMarkers(); drawRoute(); drawSummary(); drawDevices();
+  fitTo(line);
+}
+
 // ---------- Sending ----------
-$("send").addEventListener("click", async () => {
-  if (!result) return;
+async function send(asNew) {
+  if (!result || viewOnly) return;
   const first = !store.get("link", null);
   await ensureLink();
   if (first) await showPairing();
   const name = $("name").value.trim() || defaultName();
-  const tid = editing?.tid || b64(random(12));
-  const rev = (editing?.rev || 0) + 1;
+  const target = asNew ? null : editing;
+  const tid = target?.tid || b64(random(12));
   const stop = (p) => ({ name: p.name || "", lat: +p.lat.toFixed(6), lon: +p.lon.toFixed(6), ...(p.via ? { via: true } : {}) });
   const trip = {
     v: 1, name, start: stop(points[0]), destination: stop(points[points.length - 1]), stops: points.slice(1, -1).map(stop),
     options: routeOptions(), line: result.line.map(([la, lo]) => `${la.toFixed(5)},${lo.toFixed(5)}`).join(";"),
-    m: result.m, s: result.s, up: result.up, curvy: result.curvy,
+    m: result.m, s: result.s, up: result.up, curvy: result.curvy, ...(target?.ref ? { ref: target.ref } : {}),
   };
-  $("send").disabled = true;
+  $("send").disabled = $("send-new").disabled = true;
   setStatus(t("sending"));
+  // Every send is newer than the one before: the time is the revision.
+  const rev = Date.now();
   const ok = await sendFrame(await ch.plan(rider, nextSeq(), tid, rev, trip));
-  $("send").disabled = false;
+  $("send").disabled = $("send-new").disabled = false;
   if (!ok) { setStatus(t("send_failed"), true); return; }
-  const list = store.get("sent", []).filter((x) => x.tid !== tid);
-  list.unshift({ tid, rev, name, km: Math.round(result.m / 1000), at: Date.now(), points, options, got: editing ? list.find((x) => x.tid === tid)?.got : {} });
-  store.set("sent", list.slice(0, 50));
-  editing = { tid, rev };
-  setStatus(t("sent_ok"));
-  drawSent();
+  if (!target?.ref) {
+    const list = store.get("sent", []).filter((x) => x.tid !== tid);
+    list.unshift({ tid, rev, name, km: Math.round(result.m / 1000), at: Date.now(), got: {} });
+    store.set("sent", list.slice(0, 30));
+    editing = { tid, ref: null, dev: null };
+  }
+  setStatus(target?.ref ? t("updated_ok", target.dev) : t("sent_ok"));
+  drawPending();
   drawSummary();
-});
+}
+$("send").addEventListener("click", () => send(false));
+$("send-new").addEventListener("click", () => send(true));
 
-function drawSent() {
+/** Trips sent from here that no device has fetched yet; the rest show in the devices' lists. */
+function drawPending() {
   const list = store.get("sent", []);
-  $("sent").hidden = list.length === 0;
-  $("sent-list").replaceChildren(...list.map((s) => {
-    const li = document.createElement("li");
-    const what = document.createElement("div");
-    what.className = "what";
-    what.title = t("edit");
-    const b = document.createElement("b"); b.textContent = s.name;
-    const small = document.createElement("small");
-    const got = Object.entries(s.got || {});
-    const current = got.filter(([, rev]) => rev >= s.rev).map(([d]) => d);
-    small.textContent = `${s.km} ${t("km")} · ` + (current.length ? t("got_on", current.join(", ")) : t("waiting"));
-    small.className = current.length ? "got" : "";
-    what.append(b, small);
-    what.onclick = () => {
-      points = s.points.map((p) => ({ ...p }));
-      options = Object.assign(options, s.options);
-      showOptions();
-      editing = { tid: s.tid, rev: s.rev };
-      $("name").value = s.name;
-      changed();
-      const bounds = points.reduce((bb, p) => bb.extend([p.lon, p.lat]), new maplibregl.LngLatBounds([points[0].lon, points[0].lat], [points[0].lon, points[0].lat]));
-      map.fitBounds(bounds, { padding: 80, maxZoom: 12 });
-    };
-    const x = document.createElement("button");
-    x.type = "button"; x.textContent = "✕"; x.title = t("forget"); x.ariaLabel = t("forget");
+  const waiting = list.filter((s) => !Object.values(s.got || {}).some((rev) => rev >= s.rev));
+  if (waiting.length !== list.length) store.set("sent", waiting);
+  $("pending").hidden = waiting.length === 0;
+  $("pending-list").replaceChildren(...waiting.map((s) => {
+    const li = el("li");
+    const what = el("div", "what");
+    what.append(el("b", "", s.name), el("small", "", `${s.km} ${t("km")} · ${t("waiting")}`));
+    const x = el("button", "", "✕");
+    x.type = "button"; x.title = t("forget"); x.ariaLabel = t("forget");
     x.onclick = async () => {
       store.set("sent", store.get("sent", []).filter((y) => y.tid !== s.tid));
       if (ch) sendFrame(await ch.forget(rider, nextSeq(), s.tid));
       if (editing?.tid === s.tid) editing = null;
-      drawSent(); drawSummary();
+      drawPending(); drawSummary();
     };
     li.append(what, x);
     return li;
@@ -523,6 +636,7 @@ function drawSent() {
 }
 
 // ---------- Pairing ----------
+let pairingOpenedAt = 0;
 async function showPairing() {
   await ensureLink();
   const qr = qrcode(0, "M");
@@ -530,19 +644,22 @@ async function showPairing() {
   qr.make();
   $("qr").innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   const d = $("pairing");
+  pairingOpenedAt = Date.now();
   d.showModal();
   connect();
   await new Promise((r) => d.addEventListener("close", r, { once: true }));
+  pairingOpenedAt = 0;
 }
 $("pair").addEventListener("click", showPairing);
 
 // ---------- The rest of the panel ----------
 $("new").addEventListener("click", () => {
-  if (result && !editing && !confirm(t("confirm_new"))) return;
-  points = []; editing = null; $("name").value = "";
+  if (result && !editing && !viewOnly && !confirm(t("confirm_new"))) return;
+  points = []; editing = null; viewOnly = false; $("name").value = "";
   changed();
+  drawDevices();
 });
-$("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); drawList(); drawSummary(); drawSent(); });
+$("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); drawList(); drawSummary(); drawDevices(); drawPending(); });
 $("fold").addEventListener("click", () => {
   const folded = $("panel").classList.toggle("folded");
   $("fold").ariaExpanded = String(!folded);
@@ -552,5 +669,6 @@ $("fold").addEventListener("click", () => {
 applyTexts();
 showOptions();
 drawList();
-drawSent();
+drawDevices();
+drawPending();
 connect();

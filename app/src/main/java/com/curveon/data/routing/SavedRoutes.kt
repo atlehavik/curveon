@@ -77,6 +77,31 @@ object SavedRoutes {
         )
     }
 
+    /**
+     * A planned trip as the web planner shows it ([group]: its group's name): stops and destination to work on there,
+     * and the line thinned to 5 m. A trip without a destination (a ride kept as a trip, a loop) is shown, not changed.
+     */
+    fun webHave(item: RouteItem, group: String?): com.curveon.groups.WebPlanHave {
+        val json = runCatching { JSONObject(item.waypointsJson) }.getOrNull() ?: JSONObject()
+        val options = json.optJSONObject("options")?.let(::parseOptions)
+            ?: RouteOptions(runCatching { RoadStyle.valueOf(item.roadType) }.getOrDefault(RoadStyle.CURVY),
+                runCatching { SurfacePreference.valueOf(item.groundType) }.getOrDefault(SurfacePreference.PAVED))
+        fun trip(s: Stop) = com.curveon.groups.TripStop(s.name, s.point.lat, s.point.lon, s.via)
+        val line = com.curveon.routing.Geo.simplify(decode(item.polylineJson), 5.0)
+        return com.curveon.groups.WebPlanHave(
+            id = item.id,
+            rev = listOf(item.title, item.polylineJson, item.waypointsJson, group, item.totalDistanceKm).hashCode().toUInt().toString(36),
+            name = item.title, group = group, roundtrip = item.isRoundtrip,
+            start = json.optJSONObject("start")?.let { trip(parseStop(it)) },
+            destination = json.optJSONObject("destination")?.let { trip(parseStop(it)) },
+            stops = json.optJSONArray("stops")?.let { a -> (0 until a.length()).map { trip(parseStop(a.getJSONObject(it))) } }.orEmpty(),
+            options = optionsToJson(options),
+            poly = com.curveon.groups.Polyline.encode(line.map { it.lat to it.lon }),
+            distanceMeters = item.totalDistanceKm * 1000.0, durationSeconds = item.estimatedMinutes * 60.0,
+            ascentMeters = item.elevationGainMeters.toDouble(), curviness = item.curvinessScore, savedAt = item.timestamp
+        )
+    }
+
     /** A planned trip made of a line ridden or drawn earlier (a ride from the log), to ride again as it is. */
     fun trackItem(name: String, points: List<LatLon>, distanceMeters: Double, minutes: Int, options: RouteOptions, groupId: Long?,
         inWhereTo: Boolean = false, inPlanned: Boolean = true) = RouteItem(
