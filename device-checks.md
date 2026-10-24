@@ -12,6 +12,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 - [ ] Pixel og X7: det du fikk 23:14 (stort fartsskilt, veikort med navn, venner) er der fortsatt.
 - [ ] PC: Koble fra, så Vis QR-koden og skann med Pixelen: siden viser «Koblet til Pixel 9a» med en gang.
 - [ ] PC: Underlag Grus → «Omvei for grus» kommer. Ruten viser «X km grus» og «Y km traktorvei». Zoom inn til 11 og mer: grusveier er stiplet som i appen, og ferjeruter er stiplet i sjøen.
+- [ ] PC: planlegg rundt en halvøy uten mål: «Hjelpepunkt her» legger punktet bakerst (turen fortsetter), også på vei tilbake. Ligger punktet nær en tidligere etappe, tilbys i tillegg «Hjelpepunkt mellom A og B». Med mål: «Hjelpepunkt rett før målet» finnes når punktet ellers ville havnet tidligere.
 - [ ] PC: Rundtur: kartet zoomer ut til 9, mens du tegner står «Omtrent X km rundt», og Lengde har Hele området eller Maks 50–300 km som i appen.
 
 ## 2026-10-25 — Nettplanleggeren: koble fra, midtknapp, farger, ikoner

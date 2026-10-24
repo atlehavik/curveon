@@ -108,6 +108,8 @@ const TEXTS = {
     tip_lang: "Norsk / English", tip_fold: "Fold the panel away, or out again",
     opt_reach: "Detour for gravel", reach_any: "Up to double length", reach_km: (k) => `Up to ${k} km`,
     tip_reach: "How far off the usual route to find gravel?", gravel_amount: "gravel", track_amount: "tracks",
+    menu_via_between: (a, b) => `Via point between ${a} and ${b}`, menu_stop_between: (a, b) => `Stop between ${a} and ${b}`,
+    menu_via_before_end: "Via point just before the destination", menu_stop_before_end: "Stop just before the destination",
     disconnect: "Disconnect",
     confirm_disconnect: (d) => `Disconnect ${d}? This browser forgets the connection, so nobody using it can see or change the trips there. To connect again, scan the code again.`,
     disconnected: "Disconnected. This browser can no longer reach your phone or tablet. To remove it there too: Planned → From the web → Disconnect.",
@@ -215,6 +217,8 @@ const TEXTS = {
     tip_lang: "Norsk / English", tip_fold: "Fell panelet sammen, eller ut igjen",
     opt_reach: "Omvei for grus", reach_any: "Inntil dobbel lengde", reach_km: (k) => `Inntil ${k} km`,
     tip_reach: "Hvor langt fra vanlig rute for å finne grus?", gravel_amount: "grus", track_amount: "traktorvei",
+    menu_via_between: (a, b) => `Hjelpepunkt mellom ${a} og ${b}`, menu_stop_between: (a, b) => `Stopp mellom ${a} og ${b}`,
+    menu_via_before_end: "Hjelpepunkt rett før målet", menu_stop_before_end: "Stopp rett før målet",
     disconnect: "Koble fra",
     confirm_disconnect: (d) => `Koble fra ${d}? Denne nettleseren glemmer koblingen, så ingen som bruker den kan se eller endre turene der. Skann koden på nytt for å koble til igjen.`,
     disconnected: "Koblet fra. Denne nettleseren kommer ikke lenger til telefonen eller nettbrettet ditt. For å fjerne koblingen der også: Planlagte → Fra nettet → Koble fra.",
@@ -670,17 +674,9 @@ function removePoint(p) {
 async function addAt(p, kind, leg) {
   if (viewOnly) { viewOnly = false; result = null; editing = null; points = []; }
   const pt = { name: t("map_point"), lat: p.lat, lon: p.lon, via: kind === "via", ...(kind === "stop" ? { stop: true } : {}) };
-  if (kind === "start" || kind === "end" || points.length < 2) points.push(pt);
-  else if (leg != null || hasEnd()) points.splice((leg ?? bestLeg(pt)) + 1, 0, pt);
-  else {
-    // No destination yet (the rider works forward): after the last place, unless it lies on the way between two
-    // places already there, which then go round it by less than riding on to it would.
-    const d = (a, b) => Math.hypot(a.lat - b.lat, (a.lon - b.lon) * Math.cos((a.lat * Math.PI) / 180));
-    const at = bestLeg(pt);
-    const detour = d(points[at], pt) + d(pt, points[at + 1]) - d(points[at], points[at + 1]);
-    if (detour < d(points[points.length - 1], pt)) points.splice(at + 1, 0, pt);
-    else points.push(pt);
-  }
+  // [leg]: on that leg (points[leg] to points[leg + 1]); "last": after the last place (going on); none: where it bends least.
+  if (kind === "start" || kind === "end" || points.length < 2 || leg === "last" || (leg == null && !hasEnd())) points.push(pt);
+  else points.splice((leg ?? bestLeg(pt)) + 1, 0, pt);
   changed();
   if (kind === "via") return;
   pt.name = await p.naming;
@@ -749,9 +745,21 @@ function placeMenu(ll, onLine, known) {
   // The number a stop would get where it goes in.
   const stopNo = (at) => String(points.slice(1, at + 1).filter((_, k) => kindOf(k + 1) === "stop").length + 1);
   const at = shown ? 0 : leg ?? (hasEnd() ? bestLeg(p) : points.length - 1);
+  // Off the route, a via point or stop either goes on from the last place (no destination yet) or goes where it bends the
+  // trip least (with one); the other way is offered too when it could be meant: a point between two places on the way
+  // there, or just before the destination. Guessing from the map alone goes wrong round a peninsula, coming back.
+  const label = (i) => kindOf(i) === "via" ? t("via") : points[i].name || t("map_point");
+  const near = n >= 2 && !onRoute ? bestLeg(p) : null;
+  const dd = (a, b) => Math.hypot(a.lat - b.lat, (a.lon - b.lon) * Math.cos((a.lat * Math.PI) / 180));
+  const between = near != null && !hasEnd() && dd(points[near], p) + dd(p, points[near + 1]) - dd(points[near], points[near + 1]) < dd(points[n - 1], p);
+  const beforeEnd = near != null && hasEnd() && near !== n - 2;
   const items = onRoute ? [[t("menu_via"), there("via"), "", ["via"]], [t("menu_stop"), there("stop"), "", ["stop", stopNo(at)]]]
     : n === 0 ? [[t("menu_start"), () => addAt(p, "start"), "", ["start", "A"]]]
     : [[t("menu_via"), () => addAt(p, "via"), "", ["via"]], [t("menu_stop"), () => addAt(p, "stop"), "", ["stop", stopNo(at)]],
+      ...(between ? [[t("menu_via_between", label(near), label(near + 1)), () => addAt(p, "via", near), "", ["via"]],
+        [t("menu_stop_between", label(near), label(near + 1)), () => addAt(p, "stop", near), "", ["stop", stopNo(near)]]] : []),
+      ...(beforeEnd ? [[t("menu_via_before_end"), () => addAt(p, "via", n - 2), "", ["via"]],
+        [t("menu_stop_before_end"), () => addAt(p, "stop", n - 2), "", ["stop", stopNo(n - 2)]]] : []),
       [t(hasEnd() ? "menu_new_end" : "menu_end"), () => addAt(p, "end"), "", ["end", "B"]]];
   const head = showMenu(ll, "…", items);
   p.naming.then((name) => { head.textContent = name; });

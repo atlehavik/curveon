@@ -477,10 +477,16 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     await clickAt(60.0689, 6.5462);
     await pick("Stop here");
     await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
+    const order = () => page.$$eval("#stops li", (e) => e.map((x) => x.className.split(" ")[0]).join(","));
     await clickAt(59.95, 5.95);
+    const offered = await menuItems();
+    check(offered.some((x) => x.startsWith("Via point between")), `desktop: a point near the way between two places offers to go between them (${offered})`);
     await pick("Via point here");
-    check(JSON.stringify(await page.$$eval("#stops li", (e) => e.map((x) => x.className.split(" ")[0]))) === JSON.stringify(["start", "via", "stop"]),
-      `desktop: a via point between the start and the last stop goes between them (${await page.$$eval("#stops li", (e) => e.map((x) => x.className).join(","))})`);
+    check((await order()) === "start,stop,via", `desktop: Via point here goes on from the last place (${await order()})`);
+    await page.click("#undo");
+    await clickAt(59.95, 5.95);
+    await pick("Via point between");
+    check((await order()) === "start,via,stop", `desktop: Via point between puts it between them (${await order()})`);
     await page.waitForSelector("#summary:not([hidden])", { timeout: 60000 });
 
     // Disconnect: this browser forgets the connection; the devices are gone from the page.
