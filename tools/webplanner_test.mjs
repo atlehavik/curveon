@@ -247,6 +247,24 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   check(!(await page.locator(".device").first().locator("ul.trips li", { hasText: "Helgetur" }).count()), `${name}: the deleted trip left the list`);
   await page.screenshot({ path: `${out}/${name}-4-after.png` });
 
+  // A GPX file opened on the page: shown as it is, sent as a GPX track (no destination, no stops), or as both.
+  if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
+  page.once("filechooser", () => {});
+  await page.setInputFiles("#gpx-file", process.env.GPX || `${out}/../gpxtest/fjellrunden.gpx`);
+  await page.waitForFunction(() => document.querySelector("#name").value === "Fjellrunden", null, { timeout: 5000 }).catch(() => {});
+  check((await page.inputValue("#name")) === "Fjellrunden" && (await page.inputValue("#send-as")) === "track" && (await page.$$eval(".pin", (e) => e.length)) >= 4,
+    `${name}: a GPX file opens as it is, with points along it, to send as a track`);
+  await page.screenshot({ path: `${out}/${name}-5-gpx.png` });
+  const before = dev.got.plans.length;
+  await page.selectOption("#send-as", "both");
+  await page.locator("#send").scrollIntoViewIfNeeded();
+  await page.click("#send");
+  for (let i = 0; i < 50 && dev.got.plans.length < before + 2; i++) await sleep(100);
+  const got = dev.got.plans.slice(before);
+  const track = got.find((p) => p.trip.track), asTrip = got.find((p) => !p.trip.track);
+  check(track && !track.trip.destination && track.trip.stops.length === 0 && track.trip.line.split(";").length > 100 && asTrip?.trip.destination && asTrip.tid !== track.tid,
+    `${name}: sent as both, a GPX track and a trip (${got.map((p) => p.trip.name).join(", ")})`);
+
   dev.close();
   dev2.close();
   check(errors.length === 0, `${name}: no errors on the page ${errors.join(" | ")}`);

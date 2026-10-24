@@ -88,6 +88,12 @@
         <input id="name" type="text" maxlength="80" data-tp="name_hint">
         <button id="send" class="primary" type="button" data-t="send"></button>
       </div>
+      <label id="send-as-row" hidden><span data-t="send_as"></span>
+        <select id="send-as">
+          <option value="trip" data-t="as_trip"></option>
+          <option value="track" data-t="as_track"></option>
+          <option value="both" data-t="as_both"></option>
+        </select></label>
       <button id="send-new" class="link" type="button" data-t="send_new" hidden></button>
 
       <section id="drafts" hidden>
@@ -104,6 +110,8 @@
 
       <footer>
         <button id="new" class="ghost" type="button" data-t="new_trip"></button>
+        <button id="open-gpx" class="ghost" type="button" data-t="open_gpx"></button>
+        <input id="gpx-file" type="file" accept=".gpx,.xml,application/gpx+xml" hidden>
       </footer>
     </div>
   </aside>

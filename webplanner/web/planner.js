@@ -34,7 +34,11 @@ const TEXTS = {
     err_no_adventure: "No adventure found in that area. Draw it bigger, or give more time.",
     err_adventure_too_short: (m) => `The quickest way takes ${m} min. Give more time for an adventure.`,
     err_failed: "The route could not be worked out. Try again.", err_offline: "No connection to the planner. Check your internet connection.",
-    and: " and ", name_hint: "Name of the trip", send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
+    and: " and ", name_hint: "Name of the trip",
+    open_gpx: "Open GPX", send_as: "Send as", as_trip: "A trip", as_track: "A GPX track", as_both: "Both",
+    send_as_explain: "A trip has its stops, to change in Curveon; a GPX track is ridden just as it is.",
+    gpx_loaded: (n) => `Opened “${n}”. Send it as a GPX track just as it is, as a trip you can change, or both.`,
+    gpx_bad: "No track found in that file.", track_suffix: " (track)", send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
     sending: "Sending…", sent_ok: "Sent. It shows under Planned in Curveon the next time the app is online.",
     updated_ok: (d) => `Sent. The trip on ${d} is updated the next time the app is online.`,
     send_failed: "The trip could not be sent. Check your internet connection and try again.",
@@ -93,7 +97,11 @@ const TEXTS = {
     err_no_adventure: "Fant ikke noe eventyr i det området. Prøv å tegne det større, eller gi mer tid.",
     err_adventure_too_short: (m) => `Raskeste vei tar ${m} min. Be om mer tid for å få et eventyr.`,
     err_failed: "Ruten kunne ikke regnes ut. Prøv igjen.", err_offline: "Får ikke kontakt med planleggeren. Sjekk internettforbindelsen.",
-    and: " og ", name_hint: "Navn på turen", send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
+    and: " og ", name_hint: "Navn på turen",
+    open_gpx: "Åpne GPX", send_as: "Send som", as_trip: "En tur", as_track: "Et GPX-spor", as_both: "Begge",
+    send_as_explain: "En tur har stoppene sine, så du kan endre den i Curveon; et GPX-spor kjøres akkurat som det er.",
+    gpx_loaded: (n) => `Åpnet «${n}». Send den som GPX-spor akkurat som den er, som en tur du kan endre, eller begge deler.`,
+    gpx_bad: "Fant ikke noe spor i den filen.", track_suffix: " (spor)", send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
     sending: "Sender …", sent_ok: "Sendt. Den dukker opp under Planlagte i Curveon neste gang appen er på nett.",
     updated_ok: (d) => `Sendt. Turen på ${d} oppdateres neste gang appen er på nett.`,
     send_failed: "Turen ble ikke sendt. Sjekk internettforbindelsen og prøv igjen.",
@@ -149,6 +157,7 @@ function applyTexts() {
   document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
   document.querySelectorAll("[data-tp]").forEach((e) => { e.placeholder = t(e.dataset.tp); });
   $("lang").textContent = t("lang");
+  $("send-as").title = t("send_as_explain");
   $("theme").textContent = theme === "dark" ? "☀" : "☾";
   $("theme").title = t(theme === "dark" ? "theme_light" : "theme_dark");
   $("theme").ariaLabel = $("theme").title;
@@ -898,13 +907,15 @@ function drawSummary() {
   const s = $("summary");
   $("send-row").hidden = !result || viewOnly;
   $("send-new").hidden = !result || viewOnly || !editing?.ref;
+  $("send-as-row").hidden = !result || viewOnly || !!editing?.ref;
   if (!result) { s.hidden = true; return; }
   const h = Math.floor(result.s / 3600), m = Math.round((result.s % 3600) / 60);
   const part = (v, unit) => { const e = el("span", "", v); e.append(el("small", "", unit)); return e; };
   s.replaceChildren(
     part(Math.round(result.m / 1000), t("km")),
     ...(h ? [part(h, t("h")), part(m, t("min"))] : [part(m, t("min"))]),
-    part(`${result.curvy}/100`, t("curvy")),
+    // Not known for a GPX file opened here.
+    ...(result.curvy != null ? [part(`${result.curvy}/100`, t("curvy"))] : []),
     part(result.up, t("up_m")),
     ...(result.ferries ? [el("span", "", t("ferries_n", result.ferries))] : []),
   );
@@ -1186,6 +1197,67 @@ function drawDrafts() {
 $("save-draft").addEventListener("click", saveDraft);
 $("name").addEventListener("input", () => drawDrafts());
 
+// ---------- GPX ----------
+// A GPX file opened here (the button, or dropped on the map): its line as it is, with points along it to change it as a
+// trip. It goes to Curveon as a GPX track, a trip, or both.
+function parseGpx(text, fileName) {
+  const doc = new DOMParser().parseFromString(text, "application/xml");
+  let pts = [...doc.getElementsByTagName("trkpt")];
+  if (!pts.length) pts = [...doc.getElementsByTagName("rtept")];
+  const raw = pts.map((p) => [Number(p.getAttribute("lat")), Number(p.getAttribute("lon")), Number(p.getElementsByTagName("ele")[0]?.textContent)])
+    .filter(([la, lo]) => Number.isFinite(la) && Number.isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180);
+  if (raw.length < 2) return null;
+  const d = (a, b) => Math.hypot(a[0] - b[0], (a[1] - b[1]) * Math.cos((a[0] * Math.PI) / 180)) * 111195;
+  // A point every 10 m or so is plenty, and keeps a long day's file small enough to send.
+  const line = [raw[0]];
+  let m = 0, up = 0;
+  for (const q of raw.slice(1)) {
+    const last = line[line.length - 1];
+    const step = d(last, q);
+    if (step < 10 && q !== raw[raw.length - 1]) continue;
+    m += step;
+    if (Number.isFinite(q[2]) && Number.isFinite(last[2]) && q[2] > last[2]) up += q[2] - last[2];
+    line.push(q);
+  }
+  const name = doc.querySelector("trk > name, rte > name, metadata > name")?.textContent?.trim() || fileName.replace(/\.(gpx|xml)$/i, "");
+  return { name, line: line.map(([la, lo]) => [la, lo]), m, up };
+}
+
+async function openGpx(file) {
+  if (!file || !(await leaveOk())) return;
+  const g = parseGpx(await file.text(), file.name);
+  if (!g) { setStatus(t("gpx_bad"), true); return; }
+  routeCtl?.abort();
+  clearTimeout(routeTimer);
+  closeMenu();
+  closeAdventure();
+  // Points along it, as an adventure has: change it, and it is routed through them.
+  let next = 0, along = 0;
+  const count = Math.max(2, Math.min(16, Math.round(g.m / 15000)));
+  const vias = [];
+  for (let k = 1; k < g.line.length - 1; k++) {
+    along += Math.hypot(g.line[k][0] - g.line[k - 1][0], (g.line[k][1] - g.line[k - 1][1]) * Math.cos((g.line[k][0] * Math.PI) / 180)) * 111195;
+    if (next < count && along >= (g.m * (next + 1)) / (count + 1)) { vias.push({ name: "", lat: g.line[k][0], lon: g.line[k][1], via: true }); next++; }
+  }
+  const [a, b] = [g.line[0], g.line[g.line.length - 1]];
+  points = [{ name: t("start"), lat: a[0], lon: a[1], via: false }, ...vias, { name: t("map_point"), lat: b[0], lon: b[1], via: false }];
+  result = { line: g.line, m: Math.round(g.m), s: Math.round(g.m / (60 / 3.6)), up: Math.round(g.up), curvy: null, ferries: 0 };
+  editing = null; viewOnly = false; currentDraft = null; viasOpen = false;
+  $("name").value = g.name;
+  $("send-as").value = "track";
+  drawList(); drawMarkers(); drawRoute(); drawSummary(); drawDevices();
+  fitTo(g.line);
+  setStatus(t("gpx_loaded", g.name));
+  for (const p of [points[0], points[points.length - 1]]) placeName(p.lat, p.lon).then((n) => { p.name = n; drawList(); drawMarkers(); });
+}
+$("open-gpx").addEventListener("click", () => $("gpx-file").click());
+$("gpx-file").addEventListener("change", (e) => { openGpx(e.target.files[0]); e.target.value = ""; });
+// A file dropped anywhere on the page.
+addEventListener("dragover", (e) => { if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === "file")) e.preventDefault(); });
+addEventListener("drop", (e) => { const f = e.dataTransfer?.files?.[0]; if (f) { e.preventDefault(); openGpx(f); } });
+$("send-as").value = store.get("sendAs", "trip");
+$("send-as").addEventListener("change", () => { if ($("send-as").value !== "track") store.set("sendAs", $("send-as").value); });
+
 // ---------- Sending ----------
 async function send(asNew) {
   if (!result || viewOnly) return;
@@ -1201,7 +1273,7 @@ async function send(asNew) {
   const trip = {
     v: 1, name, start: stop(points[0]), destination, stops: points.slice(1, -1).map(stop),
     options: routeOptions(), line: result.line.map(([la, lo]) => `${la.toFixed(5)},${lo.toFixed(5)}`).join(";"),
-    m: result.m, s: result.s, up: result.up, curvy: result.curvy,
+    m: result.m, s: result.s, up: result.up, curvy: result.curvy ?? 0,
   };
   $("send").disabled = $("send-new").disabled = true;
   setStatus(t("sending"));
@@ -1209,16 +1281,21 @@ async function send(asNew) {
   const rev = Date.now();
   // A trip opened from a device is updated there, and in the same trip's copies on the other devices, each on its own.
   const copies = target?.ref ? [{ ...target.ref, dev: target.dev }, ...(target.copies || [])] : [null];
-  let ok = true;
-  for (const c of copies) {
-    const ctid = c && c !== copies[0] ? "r" + c.id + "-" + c.r.slice(0, 8) : tid;
-    ok = (await sendFrame(await ch.plan(rider, nextSeq(), ctid, rev, c ? { ...trip, ref: { r: c.r, id: c.id } } : trip))) && ok;
+  // A new one goes as the rider picked: a trip to change, a GPX track ridden as it is, or both.
+  const as = target?.ref ? "trip" : $("send-as").value;
+  const sends = as === "track" ? [] : copies.map((c) => [
+    c && c !== copies[0] ? "r" + c.id + "-" + c.r.slice(0, 8) : tid, c ? { ...trip, ref: { r: c.r, id: c.id } } : trip]);
+  if (as !== "trip") {
+    const { start: _s, destination: _d, ...rest } = trip;
+    sends.push([as === "both" ? tid + "-t" : tid, { ...rest, name: as === "both" ? name + t("track_suffix") : name, stops: [], track: true }]);
   }
+  let ok = true;
+  for (const [k, body] of sends) ok = (await sendFrame(await ch.plan(rider, nextSeq(), k, rev, body))) && ok;
   $("send").disabled = $("send-new").disabled = false;
   if (!ok) { setStatus(t("send_failed"), true); return; }
   if (!target?.ref) {
-    const list = store.get("sent", []).filter((x) => x.tid !== tid);
-    list.unshift({ tid, rev, name, km: Math.round(result.m / 1000), at: Date.now(), got: {} });
+    const list = store.get("sent", []).filter((x) => !sends.some(([k]) => k === x.tid));
+    for (const [k, body] of sends) list.unshift({ tid: k, rev, name: body.name, km: Math.round(result.m / 1000), at: Date.now(), got: {} });
     store.set("sent", list.slice(0, 30));
     editing = { tid, ref: null, dev: null };
   }
