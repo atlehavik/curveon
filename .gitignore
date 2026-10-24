@@ -19,3 +19,6 @@ debug.keystore
 *.jks
 *.keystore
 signing.env
+
+# Screenshots from tools/ui_matrix.py
+/ui-matrix-out/
