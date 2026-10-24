@@ -276,9 +276,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // Trips from the web planner: Planned → From the web, and a word when new ones came in.
     var showWebPlan by remember { mutableStateOf(false) }
     val webPlan by viewModel.webPlan.collectAsStateWithLifecycle()
-    LaunchedEffect(webPlan) {
+    // Once for each time something came in: swiping between the tabs connects and disconnects, which is not news.
+    var webPlanShownReport by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0L) }
+    LaunchedEffect(webPlan.report) {
+        if (webPlan.report == 0L || webPlan.report == webPlanShownReport) return@LaunchedEffect
+        webPlanShownReport = webPlan.report
         val added = webPlan.added ?: 0
-        if (!webPlan.fetching && added + webPlan.changed + webPlan.deleted > 0) toast = listOfNotNull(
+        if (added + webPlan.changed + webPlan.deleted > 0) toast = listOfNotNull(
             added.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_new, it, it) },
             webPlan.changed.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_changed, it, it) },
             webPlan.deleted.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_deleted, it, it) },

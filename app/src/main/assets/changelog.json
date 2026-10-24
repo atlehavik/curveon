@@ -3,47 +3,58 @@
     "version": "1.2.6",
     "en": [
       "Taking a profile picture now opens Curveon's own camera, on the selfie lens, and the picture comes out exactly as you saw it in the mirror view, whatever your phone's camera app is set to",
-      "Change a trip on the web planner that is on both your phone and your tablet, and it is now updated on both. Before, one of them could get it as an extra trip beside the old one"
+      "Change a trip on the web planner that is on both your phone and your tablet, and it is now updated on both. Before, one of them could get it as an extra trip beside the old one",
+      "The note about trips from the web shows once when they arrive, and no longer pops up again every time you swipe between the tabs in GPX & rides"
     ],
     "nb": [
       "Når du tar profilbilde, åpner Curveon nå sitt eget kamera på selfie-linsen, og bildet blir akkurat slik du så det i speilbildet, uansett hva kameraappen på telefonen er innstilt på",
-      "Endrer du en tur i nettplanleggeren som ligger både på telefonen og nettbrettet, oppdateres den nå på begge. Før kunne den ene få den som en ekstra tur ved siden av den gamle"
+      "Endrer du en tur i nettplanleggeren som ligger både på telefonen og nettbrettet, oppdateres den nå på begge. Før kunne den ene få den som en ekstra tur ved siden av den gamle",
+      "Beskjeden om turer fra nettet vises én gang når de kommer, og dukker ikke lenger opp igjen hver gang du sveiper mellom fanene i GPX og turer"
     ],
     "sv": [
       "När du tar en profilbild öppnas nu Curveons egen kamera på selfielinsen, och bilden blir precis som du såg den i spegelbilden, oavsett hur telefonens kameraapp är inställd",
-      "Ändrar du en tur i webbplaneraren som finns både på telefonen och surfplattan uppdateras den nu på båda. Förut kunde den ena få den som en extra tur bredvid den gamla"
+      "Ändrar du en tur i webbplaneraren som finns både på telefonen och surfplattan uppdateras den nu på båda. Förut kunde den ena få den som en extra tur bredvid den gamla",
+      "Meddelandet om turer från webben visas en gång när de kommer, och dyker inte längre upp igen varje gång du sveper mellan flikarna i GPX och turer"
     ],
     "da": [
       "Når du tager et profilbillede, åbner Curveon nu sit eget kamera på selfie-linsen, og billedet bliver præcis, som du så det i spejlbilledet, uanset hvad kameraappen på telefonen er indstillet til",
-      "Ændrer du en tur i webplanlæggeren, som ligger både på telefonen og tabletten, bliver den nu opdateret på begge. Før kunne den ene få den som en ekstra tur ved siden af den gamle"
+      "Ændrer du en tur i webplanlæggeren, som ligger både på telefonen og tabletten, bliver den nu opdateret på begge. Før kunne den ene få den som en ekstra tur ved siden af den gamle",
+      "Beskeden om ture fra nettet vises én gang, når de kommer, og dukker ikke længere op igen, hver gang du swiper mellem fanerne i GPX og ture"
     ],
     "fi": [
       "Kun otat profiilikuvan, Curveon avaa nyt oman kameransa selfie-linssillä, ja kuva tulee täsmälleen sellaisena kuin näit sen peilikuvassa, vaikka puhelimen kamerasovelluksen asetukset olisivat mitkä",
-      "Kun muutat verkkosuunnittelijassa reittiä, joka on sekä puhelimessa että tabletissa, se päivittyy nyt molempiin. Ennen toinen saattoi saada sen ylimääräisenä reittinä vanhan viereen"
+      "Kun muutat verkkosuunnittelijassa reittiä, joka on sekä puhelimessa että tabletissa, se päivittyy nyt molempiin. Ennen toinen saattoi saada sen ylimääräisenä reittinä vanhan viereen",
+      "Ilmoitus verkosta tulleista reiteistä näkyy kerran, kun ne saapuvat, eikä enää ponnahda esiin aina, kun pyyhkäiset välilehdeltä toiselle GPX ja ajot -näkymässä"
     ],
     "is": [
       "Þegar þú tekur prófílmynd opnast nú eigin myndavél Curveon á selfie-linsunni og myndin verður nákvæmlega eins og þú sást hana í speglinum, sama hvernig myndavélaappið í símanum er stillt",
-      "Breytirðu ferð í vefskipuleggjandanum sem er bæði í símanum og spjaldtölvunni uppfærist hún nú á báðum. Áður gat annað tækið fengið hana sem auka ferð við hlið þeirrar gömlu"
+      "Breytirðu ferð í vefskipuleggjandanum sem er bæði í símanum og spjaldtölvunni uppfærist hún nú á báðum. Áður gat annað tækið fengið hana sem auka ferð við hlið þeirrar gömlu",
+      "Skilaboðin um ferðir af vefnum birtast einu sinni þegar þær koma og skjóta ekki lengur upp kollinum í hvert sinn sem þú strýkur á milli flipa í GPX og ferðum"
     ],
     "de": [
       "Für das Profilbild öffnet Curveon jetzt seine eigene Kamera mit der Selfie-Linse, und das Bild wird genau so, wie du es im Spiegelbild gesehen hast, egal wie die Kamera-App deines Telefons eingestellt ist",
-      "Änderst du im Web-Planer eine Tour, die auf Handy und Tablet liegt, wird sie jetzt auf beiden aktualisiert. Vorher konnte eines davon sie als zusätzliche Tour neben der alten bekommen"
+      "Änderst du im Web-Planer eine Tour, die auf Handy und Tablet liegt, wird sie jetzt auf beiden aktualisiert. Vorher konnte eines davon sie als zusätzliche Tour neben der alten bekommen",
+      "Der Hinweis auf Touren aus dem Web erscheint einmal, wenn sie ankommen, und taucht nicht mehr bei jedem Wischen zwischen den Reitern in GPX & Fahrten wieder auf"
     ],
     "es": [
       "Al hacer la foto de perfil, Curveon abre ahora su propia cámara con el objetivo de selfie, y la foto sale exactamente como la viste en la vista de espejo, sea cual sea el ajuste de la app de cámara del teléfono",
-      "Si cambias en el planificador web una ruta que tienes en el móvil y en la tableta, ahora se actualiza en los dos. Antes uno de ellos podía recibirla como una ruta más junto a la antigua"
+      "Si cambias en el planificador web una ruta que tienes en el móvil y en la tableta, ahora se actualiza en los dos. Antes uno de ellos podía recibirla como una ruta más junto a la antigua",
+      "El aviso de rutas desde la web aparece una vez cuando llegan, y ya no vuelve a salir cada vez que deslizas entre las pestañas de GPX y rutas"
     ],
     "fr": [
       "Pour la photo de profil, Curveon ouvre maintenant sa propre caméra sur l'objectif selfie, et la photo est exactement celle que tu as vue dans le miroir, quel que soit le réglage de l'appli photo du téléphone",
-      "Si tu modifies dans le planificateur web un trajet qui est sur ton téléphone et ta tablette, il est maintenant mis à jour sur les deux. Avant, l’un d’eux pouvait le recevoir comme un trajet en plus à côté de l’ancien"
+      "Si tu modifies dans le planificateur web un trajet qui est sur ton téléphone et ta tablette, il est maintenant mis à jour sur les deux. Avant, l’un d’eux pouvait le recevoir comme un trajet en plus à côté de l’ancien",
+      "Le message sur les trajets venus du web s’affiche une fois à leur arrivée, et ne réapparaît plus à chaque fois que tu glisses d’un onglet à l’autre dans GPX et sorties"
     ],
     "nl": [
       "Voor je profielfoto opent Curveon nu zijn eigen camera met de selfielens, en de foto wordt precies zoals je hem in de spiegelweergave zag, wat de camera-app van je telefoon ook heeft ingesteld",
-      "Pas je in de webplanner een rit aan die op je telefoon en je tablet staat, dan wordt hij nu op allebei bijgewerkt. Eerder kon een van de twee hem als extra rit naast de oude krijgen"
+      "Pas je in de webplanner een rit aan die op je telefoon en je tablet staat, dan wordt hij nu op allebei bijgewerkt. Eerder kon een van de twee hem als extra rit naast de oude krijgen",
+      "De melding over ritten van het web verschijnt één keer als ze binnenkomen, en komt niet meer terug telkens als je tussen de tabbladen in GPX & ritten veegt"
     ],
     "pl": [
       "Przy zdjęciu profilowym Curveon otwiera teraz własny aparat z obiektywem do selfie, a zdjęcie wychodzi dokładnie takie, jakie widziałeś w lustrzanym podglądzie, niezależnie od ustawień aplikacji aparatu w telefonie",
-      "Gdy zmienisz w planerze internetowym trasę, która jest i na telefonie, i na tablecie, zaktualizuje się teraz na obu. Wcześniej jedno z nich mogło dostać ją jako dodatkową trasę obok starej"
+      "Gdy zmienisz w planerze internetowym trasę, która jest i na telefonie, i na tablecie, zaktualizuje się teraz na obu. Wcześniej jedno z nich mogło dostać ją jako dodatkową trasę obok starej",
+      "Komunikat o trasach z sieci pojawia się raz, gdy przyjdą, i nie wyskakuje już przy każdym przesunięciu między kartami w GPX i przejazdach"
     ]
   },
   {

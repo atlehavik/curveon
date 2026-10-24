@@ -67,16 +67,19 @@ data class WebPlanRef(val rider: String, val id: Long) {
  * (`lat,lon;lat,lon;…`, the app's saved-route format), so the app rides exactly what was planned.
  * The same [tripId] with a higher [rev] is the same trip changed. [ref]: the trip on a device it is a change of
  * (opened on the page from that device's list); that device changes its trip, the others get it as a new one.
+ * Without a [destination] it is a track (`track: true`, e.g. a GPX file opened on the page): the line is ridden as it
+ * is, with no stops. An app older than that drops it unread.
  */
 class WebPlanTrip(
-  val tripId: String, val rev: Long, val name: String, val start: TripStop?, val destination: TripStop, val stops: List<TripStop>,
+  val tripId: String, val rev: Long, val name: String, val start: TripStop?, val destination: TripStop?, val stops: List<TripStop>,
   /** Road style, surface and what to avoid: the JSON the app keeps with a saved route. */
   val options: String, val line: String, val distanceMeters: Double, val durationSeconds: Double, val ascentMeters: Double,
   val curviness: Int, val sentAt: Long, val ref: WebPlanRef? = null,
 ) {
   fun toJson(): JSONObject = JSONObject().put("v", 1).put("name", name)
     .apply { start?.let { put("start", stop(it)) } }
-    .put("destination", stop(destination)).put("stops", JSONArray(stops.map(::stop)))
+    .apply { if (destination != null) put("destination", stop(destination)) else put("track", true) }
+    .put("stops", JSONArray(stops.map(::stop)))
     .put("options", JSONObject(options)).put("line", line)
     .put("m", distanceMeters).put("s", durationSeconds).put("up", ascentMeters).put("curvy", curviness)
     .apply { ref?.let { put("ref", it.toJson()) } }
@@ -91,7 +94,9 @@ class WebPlanTrip(
       if (line.count { it == ';' } < 1) return null
       val stops = o.optJSONArray("stops")?.let { a -> (0 until a.length()).map { stopOf(a.getJSONObject(it)) } }.orEmpty()
       return WebPlanTrip(
-        tripId, rev, o.optString("name"), o.optJSONObject("start")?.let(::stopOf), stopOf(o.getJSONObject("destination")), stops,
+        tripId, rev, o.optString("name"), o.optJSONObject("start")?.let(::stopOf),
+        // A track has none; anything else without one is not a trip.
+        if (o.optBoolean("track")) null else stopOf(o.getJSONObject("destination")), if (o.optBoolean("track")) emptyList() else stops,
         (o.optJSONObject("options") ?: JSONObject()).toString(), line, o.optDouble("m", 0.0), o.optDouble("s", 0.0),
         o.optDouble("up", 0.0), o.optInt("curvy", 0), sentAt, WebPlanRef.of(o.optJSONObject("ref")),
       )

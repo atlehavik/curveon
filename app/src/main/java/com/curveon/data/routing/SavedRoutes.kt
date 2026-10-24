@@ -56,8 +56,11 @@ object SavedRoutes {
     fun webItem(trip: com.curveon.groups.WebPlanTrip): RouteItem {
         val options = optionsFromJson(trip.options)
         fun stop(s: com.curveon.groups.TripStop) = stopJson(s.name, LatLon(s.lat, s.lon)).apply { if (s.via) put("via", true) }
+        val dest = trip.destination
+        // A track (a GPX file opened on the page): kept as the app keeps a ride saved as a trip, the line ridden as it is.
+        if (dest == null) return trackItem(trip.name.ifBlank { "GPX" }, decode(trip.line), trip.distanceMeters, (trip.durationSeconds / 60).toInt(), options, null)
         return RouteItem(
-            title = trip.name.ifBlank { trip.destination.name },
+            title = trip.name.ifBlank { dest.name },
             subtitle = trip.stops.filterNot { it.via }.let { real -> if (real.isEmpty()) "" else "via " + real.joinToString { it.name } },
             totalDistanceKm = (trip.distanceMeters / 1000).toFloat(),
             estimatedMinutes = (trip.durationSeconds / 60).toInt(),
@@ -69,7 +72,7 @@ object SavedRoutes {
             waypointsJson = JSONObject()
                 .put("options", optionsJson(options))
                 .put("stops", JSONArray(trip.stops.map(::stop)))
-                .put("destination", stop(trip.destination))
+                .put("destination", stop(dest))
                 .apply { trip.start?.let { put("start", stop(it)) } }
                 .toString(),
             inWhereTo = false,

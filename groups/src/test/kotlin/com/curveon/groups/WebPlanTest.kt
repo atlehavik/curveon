@@ -47,6 +47,19 @@ class WebPlanTest {
     assertEquals("CURVY", JSONObject(t.options).getString("style"))
   }
 
+  @Test fun `a track has no destination and no stops, and one without is not a trip`() {
+    val l = link()
+    val track = WebPlanTrip("gpx-1", 1, "Fjellrunden", null, null, emptyList(), "{}", "60.0,6.0;60.1,6.1;60.2,6.0", 30_000.0, 1_800.0, 0.0, 0, 0)
+    val text = WebPlan.planFrame(l, GroupKeys.newRiderId(), 1, track)
+    val t = WebPlan.openPlan(l, text)!!
+    assertNull(t.destination)
+    assertTrue(t.stops.isEmpty())
+    assertEquals("Fjellrunden", t.name)
+    // Without `track` and without a destination: dropped, as before.
+    val o = track.toJson().apply { remove("track") }
+    assertNull(runCatching { WebPlanTrip.fromJson("x", 1, 0, o) }.getOrNull())
+  }
+
   @Test fun `another key, an altered frame or the wrong type is dropped`() {
     val l = link()
     val text = WebPlan.planFrame(l, GroupKeys.newRiderId(), 1, trip())
