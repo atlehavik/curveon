@@ -35,7 +35,14 @@ Only when you use these functions, and only over HTTPS:
 - **Downloads of maps and road data** (Settings): map files from Protomaps (build.protomaps.com) and
   routing data from BRouter (brouter.de). They see your IP address and which regions you ask for.
 
-Curveon has no other servers and sends nothing to the developer. With downloaded maps you can ride fully offline.
+- **Bug reports and ideas** (Settings → Help, only when you tap Send). What you write, the pictures you pick, the app
+  version, the device model and Android version, and, if you leave it ticked, the start of the latest crash report go
+  through our relay (relay.curveon.no) to a **public** issue on GitHub (github.com/atlehavik/curveon), where anyone can
+  read it. The relay passes it on and keeps nothing; pictures are re-encoded first, which removes a photo's location.
+  GitHub (Microsoft) handles the issue under its own privacy terms. The app keeps the issue's number and link so you
+  can follow it, and asks GitHub how it stands when you open Help. To have an issue removed, ask us (contact below).
+
+Apart from bug reports and ideas you choose to send, Curveon has no other servers and sends nothing to the developer. With downloaded maps you can ride fully offline.
 
 ## What is kept on your device
 

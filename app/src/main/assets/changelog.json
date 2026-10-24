@@ -2,6 +2,7 @@
   {
     "version": "1.2.4",
     "en": [
+      "Found a bug or got an idea? Settings → Help now lets you tell us straight from the app, with a title, a few words and pictures if you like. No GitHub account needed: it becomes an issue on GitHub that anyone can read, and under Your reports you can see whether it is being worked on, how many replies it has, and open it to follow along",
       "No more turning round in the middle of the road: a trip a friend shares with you is now joined the way it goes, so you're never sent to a point on the road just to turn round there. And when a trip has a stop by the road, you ride on from it the way you came, to a junction or roundabout, instead of making a U-turn on the road",
       "When you're riding without a route, your marker now sits on the road you ride instead of drifting beside it, and points along it",
       "Writing an SMS from the full map now brings up the dashboard so you can see what you say, and goes back to the full map once it's sent or cancelled",
@@ -28,6 +29,7 @@
       "A selfie for your profile now looks like the one you framed: it is no longer flipped after you take it. And when you allow SMS or the microphone in the phone settings, the notice goes away at once"
     ],
     "nb": [
+      "Funnet en feil eller fått en idé? Under Innstillinger → Hjelp kan du nå si fra rett fra appen, med tittel, noen ord og gjerne bilder. Du trenger ingen GitHub-konto: det blir en sak på GitHub som alle kan lese, og under Mine tilbakemeldinger ser du om den er tatt tak i, hvor mange svar den har fått, og kan åpne den for å følge med",
       "Ingen flere vendinger midt i veien: en tur en venn deler med deg, kobles du nå på i den retningen den går, så du blir aldri sendt til et punkt på veien bare for å snu der. Og har turen et stopp langs veien, kjører du videre i samme retning til et kryss eller en rundkjøring i stedet for å snu på veien",
       "Når du kjører uten rute, ligger markøren nå på veien du kjører i stedet for å drive ved siden av, og den peker langs veien",
       "Skriver du en SMS fra fullkartet, kommer dashbordet fram så du ser hva du sier, og fullkartet kommer tilbake når den er sendt eller avbrutt",

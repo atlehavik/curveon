@@ -35,7 +35,14 @@ Bare når du bruker disse funksjonene, og bare over HTTPS:
 - **Nedlasting av kart og veidata** (Innstillinger): kartfiler fra Protomaps (build.protomaps.com) og
   rutedata fra BRouter (brouter.de). De ser IP-adressen din og hvilke områder du ber om.
 
-Curveon har ingen andre servere og sender ingenting til utvikleren. Med nedlastede kart kan du kjøre helt uten nett.
+- **Feilmeldinger og forslag** (Innstillinger → Hjelp, bare når du trykker Send). Det du skriver, bildene du velger,
+  appversjon, enhetsmodell og Android-versjon, og, hvis du lar det stå avkrysset, starten av siste krasjrapport, går
+  via reléet vårt (relay.curveon.no) til en **offentlig** sak på GitHub (github.com/atlehavik/curveon), der alle kan
+  lese den. Reléet sender det videre og lagrer ingenting; bildene kodes om først, så et bildes posisjon forsvinner.
+  GitHub (Microsoft) behandler saken etter sine egne personvernvilkår. Appen husker saksnummer og lenke så du kan
+  følge saken, og spør GitHub hvordan den står når du åpner Hjelp. Vil du ha en sak fjernet, spør oss (kontakt under).
+
+Utenom feilmeldinger og forslag du selv sender, har Curveon ingen andre servere og sender ingenting til utvikleren. Med nedlastede kart kan du kjøre helt uten nett.
 
 ## Hva som lagres på enheten din
 

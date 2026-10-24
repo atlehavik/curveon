@@ -6,6 +6,13 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-24 — Feilmeldinger og forslag fra appen (1.2.4)
+
+- [ ] Pixel og X7: Innstillinger → Hjelp → «Meld fra om feil». Skriv tittel og tekst, legg ved et par skjermbilder (bildevelgeren skal åpne seg uten å spørre om tillatelse), og trykk Send. Det skal komme «Takk! Det er sak #…», og saken skal ligge på github.com/atlehavik/curveon/issues med bildene synlige og merket `bug`. (Krever at reléet har GitHub-nøkkelen.)
+- [ ] Etter sending: saken står under «Mine tilbakemeldinger» på Hjelp med «Åpen». Svar på saken på GitHub og lukk den som fullført; åpne Hjelp igjen: «Ferdig · 1 svar». Et trykk på raden åpner saken i nettleseren.
+- [ ] Uten nett (flymodus): Send gir «Fikk ikke sendt …» og knappen «Skriv det på GitHub i stedet», som åpner GitHub med tittel og tekst fylt inn.
+- [ ] Et bilde tatt med kameraet (med posisjon på): på GitHub skal bildet ikke ha posisjon (last det ned og sjekk EXIF, f.eks. `exiftool`).
+
 ## 2026-10-24 — Livligere SOS og nudge, melding over fullt kart, større profilbilde (1.2.4)
 
 - [ ] SOS fra kameraten (eller DEV-demo): det røde kortet skal pulsere og blinke i takt med sirenen, og det skal ikke komme noe utenfor skjermen på Pixelen.

@@ -143,7 +143,7 @@ fun HideSystemBars() {
     }
 }
 
-private val LocalInHostDialog = compositionLocalOf { false }
+internal val LocalInHostDialog = compositionLocalOf { false }
 
 /** One dialog window whose [CockpitDialog] pages (e.g. GPX and Rides) can change in place. */
 @Composable

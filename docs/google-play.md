@@ -142,6 +142,18 @@ bildet forlater ikke enheten. Ingen nye tillatelser. Uten Play-tjenester (eller 
 bare «Vanlig». Datasikkerhetsskjemaet: ML Kit på enheten kan sende anonym bruks-/ytelsesstatistikk til Google;
 nevn det under «Data delt»/«samlet» hvis Google krever det for ML Kit.
 
+## Feilmeldinger og forslag (2026-10-24)
+
+Innstillinger → Hjelp sender tittel, tekst, opptil 4 bilder, appversjon/enhet og (valgfritt) starten av siste
+krasjrapport til reléet (`POST /feedback`), som gjør det om til en offentlig GitHub-sak. Bare på rytterens trykk.
+- **Ingen ny tillatelse**: bildene velges med systemets bildevelger (`PickMultipleVisualMedia`), som Play foretrekker
+  framfor `READ_MEDIA_IMAGES`.
+- **Data safety** må deklarere Photos, Other user-generated content, Crash logs og app performance data som samlet og
+  delt (se `google-play-data-safety.md`), og personvernerklæringen nevner det (gjort).
+- **User Generated Content-regelen** gjelder apper der brukere ser hverandres innhold *i appen*. Her vises bare rytterens
+  egne saker (tittel og status) i appen; innholdet ses på GitHub. Lav risiko, men si det slik i Console om de spør.
+- Reléet lagrer ingenting fra rapportene (Netcup-DPA-en trenger ikke endres for dette).
+
 ## Største risikoer hos Google
 
 1. **`READ_CALL_LOG`** og **`SEND_SMS`**, se over. Største risiko.

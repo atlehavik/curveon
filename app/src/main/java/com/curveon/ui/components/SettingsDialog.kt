@@ -548,6 +548,7 @@ private fun AppVersionCard(update: UpdateState, actions: SettingsActions) {
         }
         Icon(Icons.Default.OpenInNew, null, tint = TextMuted)
     }
+    FeedbackCard()
 }
 
 private const val GITHUB_URL = "https://github.com/atlehavik/curveon"

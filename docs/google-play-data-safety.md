@@ -24,6 +24,16 @@ For companion svares «no data collected or shared»: den har ikke internett, og
 |---|---|---|---|---|
 | **Location > Precise location** (posisjon sendt til Photon ved stedssøk) | Ja | Nei **(skjønn)** | App functionality | Ja (brukeren velger å søke på nett) |
 | **App activity > In-app search history** (søketekst til Photon og Kartverket) | Ja | Nei **(skjønn)** | App functionality | Ja |
+| **Photos and videos > Photos** (bilder rytteren legger ved en feilmelding/et forslag) | Ja | Ja **(skjønn)** | App functionality (support) | Ja |
+| **App activity > Other user-generated content** (tittel og tekst i feilmelding/forslag) | Ja | Ja **(skjønn)** | App functionality (support) | Ja |
+| **App info and performance > Crash logs** (starten av siste krasjrapport, bare hvis avkrysset) | Ja | Ja **(skjønn)** | Analytics / App functionality | Ja |
+| **App info and performance > Other app performance data** (appversjon, enhetsmodell, Android-versjon i rapporten) | Ja | Ja **(skjønn)** | App functionality | Ja |
+
+**Feilmeldinger og forslag** (Innstillinger → Hjelp, `Feedback.kt`, reléets `POST /feedback`): bare når rytteren trykker
+Send. Det blir en *offentlig* GitHub-sak, så vi krysser «delt» (GitHub er ikke bare vår underleverandør når innholdet
+publiseres). Play unntar riktignok overføring brukeren selv setter i gang og forventer, men offentlig publisering er
+tryggest å deklarere. Bildene velges med systemets bildevelger (ingen lagringstillatelse) og kodes om til JPEG uten EXIF.
+Krasjrapporter sendes **bare** her, og bare med rytterens avkrysning; ellers gjelder linja om krasjrapporter under.
 
 **Skjønn: «delt» eller ikke.** Play regner ikke overføring til en tjenesteleverandør som behandler data på våre vegne som
 «deling». Photon og Kartverket er geokodingtjenester vi bruker for å svare på søket, så vi svarer *ikke delt*. Er du
@@ -38,7 +48,7 @@ Ikke avkrysset fordi det ikke forlater enheten eller ikke samles av oss:
   med formål App functionality, ikke delt.
 - Kartfliser og nedlastinger (OpenFreeMap, Protomaps, BRouter): bare IP-adresse og område. IP-adresse som
   nettverksmetadata hos mottakeren er ikke noe appen «samler».
-- Krasjrapporter: lagres på enheten (`crashes/`), ikke sendt noe sted. (Ikke «Crash logs» i skjemaet.)
+- Krasjrapporter: lagres på enheten (`crashes/`), og sendes bare når rytteren legger dem ved en feilmelding (se over).
 
 ## Når kjøregrupper kommer (`groups.md`)
 
