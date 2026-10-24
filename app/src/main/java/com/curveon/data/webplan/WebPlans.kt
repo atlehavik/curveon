@@ -107,6 +107,9 @@ class WebPlans(
         var added = 0; var changed = 0; var deleted = 0
         val frames = mutableListOf<String>()
         for (trip in inbound.trips) {
+            // A change of another device's trip (the page updates each copy on its own): not this one's, unless the page
+            // sent it here before. Kept anyway, it came in as a new trip beside the copy already here.
+            if (trip.ref != null && trip.ref?.rider != me() && seen().optJSONObject(trip.tripId) == null) continue
             val (kept, id) = keep(trip)
             when (kept) { Kept.NEW -> added++; Kept.CHANGED -> changed++; Kept.SAME -> Unit }
             frames += WebPlan.gotFrame(link, riderId(), nextSeq(), trip.tripId, trip.rev, deviceName(), System.currentTimeMillis(), id)
