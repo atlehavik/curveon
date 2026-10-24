@@ -11,6 +11,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,6 +72,11 @@ class MainActivity : ComponentActivity() {
         get() = getSharedPreferences("companion", MODE_PRIVATE).getBoolean("stopped", false)
         set(v) { getSharedPreferences("companion", MODE_PRIVATE).edit().putBoolean("stopped", v).apply() }
 
+    /** Whether the hidden test card was switched on (debug builds only). */
+    private var testCardUnlocked: Boolean
+        get() = getSharedPreferences("companion", MODE_PRIVATE).getBoolean("test_card", false)
+        set(v) { getSharedPreferences("companion", MODE_PRIVATE).edit().putBoolean("test_card", v).apply() }
+
     @Composable
     private fun Screen() {
         val status by PhoneHub.status.collectAsStateWithLifecycle()
@@ -91,7 +98,19 @@ class MainActivity : ComponentActivity() {
             Modifier.fillMaxSize().background(Bg).safeDrawingPadding().padding(20.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text(stringResource(R.string.app_name), color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black)
+            // Debug builds only: tapping the title 7 times shows or hides the test card (like Android's build number).
+            var titleTaps by remember { mutableIntStateOf(0) }
+            var testCardShown by remember { mutableStateOf(BuildConfig.DEV && testCardUnlocked) }
+            Text(
+                stringResource(R.string.app_name), color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black,
+                modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, enabled = BuildConfig.DEV) {
+                    if (++titleTaps >= 7) {
+                        titleTaps = 0
+                        testCardShown = !testCardShown
+                        testCardUnlocked = testCardShown
+                    }
+                }
+            )
             Text(stringResource(R.string.intro), color = Muted, fontSize = 14.sp)
 
             Card(stringResource(R.string.status_title)) {
@@ -118,7 +137,7 @@ class MainActivity : ComponentActivity() {
 
             BatteryTestCard(notificationAccess)
 
-            if (BuildConfig.DEV) Card("Test") {
+            if (BuildConfig.DEV && testCardShown) Card("Test") {
                 Text("Send a fake message or call through the real chain to the tablet. " +
                     "What the tablet sends back (reply, answer, decline) shows up under Status.", color = Muted, fontSize = 13.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

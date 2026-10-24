@@ -8,7 +8,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 ## 2026-10-25 — Falsk samtale i companion
 
-- [ ] Pixel (debug-companion): Test → «Incoming call», og trykk Answer på X7. Samtalen skal gå over til pågående (samtaletid, «Speaker» / «Hang up») på X7-dashbordet, og Hang up skal avslutte den. Ikke prøvd med ekte Bluetooth.
+- [ ] Pixel (debug-companion): Test-kortet er nå skjult. Trykk 7 ganger på «Curveon Companion»-tittelen øverst for å vise det (7 ganger til skjuler det igjen). Så Test → «Incoming call», og trykk Answer på X7. Samtalen skal gå over til pågående (samtaletid, «Speaker» / «Hang up») på X7-dashbordet, og Hang up skal avslutte den. Ikke prøvd med ekte Bluetooth.
 
 ## 2026-10-24 — Fartsskilt, veikort og samtale (1.2.6)
 
