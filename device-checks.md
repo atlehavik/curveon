@@ -6,6 +6,12 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-24 — Fartsskilt, veikort og samtale (1.2.6)
+
+- [ ] X7: Innstillinger → Visning → størst fartsgrenseskilt. Skiltet skal stikke ut over fartskortet (ikke klippes) når du kjører eller har demofart med grense.
+- [ ] Trykk på veikortet øverst til venstre: veiskiltene blir store og veinavnet står ved siden av, eller under hvis det ikke er plass. Etter ca. 6 sek eller trykk utenfor går det tilbake. Sjekk også på Pixel, stående og liggende.
+- [ ] Ring opp telefonen mens du snakker (svar): på X7-dashbordet skal samtalekortet få plassen og musikkspilleren krympe til én rad.
+
 ## 2026-10-24 — Fjernet venn og utkastet fra gruppe (1.2.6)
 
 - [ ] To telefoner som er venner: slett vennen på den ene. Den andre skal få en melding «… fjernet deg som venn», og vennen skal være borte fra listen. Prøv også med den andre telefonen uten nett når du sletter, og slå på nett igjen etterpå (da kan beskjeden komme litt senere).
