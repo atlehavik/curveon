@@ -1011,12 +1011,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    /** The road's number sign: Norway's road register where it has the road, else the map's ref read the country's way. */
+    /**
+     * The road's number sign: Norway's road register when it is downloaded, else the map's ref read the country's way.
+     * The register has every public road, so nothing in it within reach means not on one (a café, a car park): no sign,
+     * rather than the map's road nearby with a guessed Rv or Fv (the map can't tell them apart).
+     */
     private suspend fun roadRefAt(lat: Double, lon: Double, headingDeg: Double?, road: com.curveon.data.road.MapRoad?) =
         withContext(Dispatchers.IO) {
             val country = mapCatalog.areaAt(lat, lon)?.iso
-            (if (country == "NO") speedLimits.roadRef(lat, lon, headingDeg) else null)
-                ?: com.curveon.data.road.RoadRef.fromOsm(road?.ref, road?.kindDetail, country)
+            if (country == "NO" && speedLimits.hasData()) speedLimits.roadRef(lat, lon, headingDeg)
+            else com.curveon.data.road.RoadRef.fromOsm(road?.ref, road?.kindDetail, country)
         }
 
     /** Settings → Display: the number and priority sign of the road the rider is on, by the speed. */
@@ -1039,11 +1043,17 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun watchCurrentRoad() = viewModelScope.launch {
         var readAt: LatLon? = null
+        var stoppedSince: Long? = null
         while (true) {
             delay(2_000)
             untilAwake()
             val t = _telemetry.value
             if (!_showRoadInfo.value || !t.hasGpsFix) { _currentRoad.value = null; continue }
+            // Parked (a café, a fuel stop): the sign goes after a while and comes back once riding on; a red light
+            // or a queue keeps it.
+            val now = System.currentTimeMillis()
+            stoppedSince = if (t.speedKmh < PARKED_KMH) stoppedSince ?: now else null
+            if (stoppedSince != null && now - stoppedSince > PARKED_AFTER_MS) { _currentRoad.value = null; continue }
             // On the route: where it is drawn and the route's direction; else the GPS and its heading
             // (none while slow: it's noise then, and a crossing road could win at a junction).
             val p = navigator.state.value.progress?.takeIf { !it.offRoute && it.distanceFromRoute < 25 }
@@ -2533,6 +2543,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     companion object {
+        /** Below this, for [PARKED_AFTER_MS], the rider has stopped somewhere: the road sign goes. */
+        private const val PARKED_KMH = 3f
+        private const val PARKED_AFTER_MS = 120_000L
         /** Long enough that anything counting seconds has moved, short enough to stand at the pump. */
         private const val FUEL_CONTROL_GAP_MS = 15_000L
         /** Countries (ISO 3166) where they drive on the left. */

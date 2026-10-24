@@ -12,8 +12,8 @@ android {
     applicationId = "com.curveon.app"
     minSdk = 29
     targetSdk = 36
-    versionCode = 9
-    versionName = "1.2.4"
+    versionCode = 10
+    versionName = "1.2.5"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

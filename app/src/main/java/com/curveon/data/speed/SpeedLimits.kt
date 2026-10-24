@@ -58,6 +58,9 @@ class SpeedLimits(private val context: Context) {
      */
     fun at(lat: Double, lon: Double, headingDeg: Double?): Int? = nearest(CELLS, lat, lon, headingDeg)
 
+    /** Whether a road register is here at all (a country's file is downloaded). */
+    fun hasData(): Boolean = open().isNotEmpty()
+
     /** The road's number from the road register (Norway: E39, Rv7, Fv541, Kv1209), as [at] finds the road. */
     fun roadRef(lat: Double, lon: Double, headingDeg: Double?): com.curveon.data.road.RoadRef? =
         nearest(REFS, lat, lon, headingDeg)?.let { com.curveon.data.road.RoadRef.fromNvdb(it) }

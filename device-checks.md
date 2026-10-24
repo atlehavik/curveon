@@ -6,6 +6,11 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-24 — Veiskiltet bare på veien (1.2.5)
+
+- [ ] Pixel/X7 på kafé eller parkering (fri kjøring): veiskiltet øverst til venstre forsvinner etter ca. 2 minutter stille, og kommer tilbake når du kjører igjen. Står du for rødt lys eller i kø, blir det stående.
+- [ ] Kjør Fv542 på Bømlo: skiltet viser hvitt «Fv542», aldri grønt «Rv542».
+
 ## 2026-10-24 — Planlegg på nett, økt med telefonen (1.2.4)
 
 - [ ] PC: åpne https://relay.curveon.no/plan/ (eller curveon.no/plan når nettsiden er lagt ut). Kartet skal vise Norge med stedsnavn. Søk «Geiranger», klikk et startpunkt i kartet, og se at ruten tegnes med km, tid og svinger. Dra i den oransje linjen til en annen vei: et «Gjennom her»-punkt kommer inn.

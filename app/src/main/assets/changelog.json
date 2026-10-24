@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.2.5",
+    "en": [
+      "The road sign in the corner only shows the road you are riding on. Stop for coffee and it goes away after a couple of minutes, back again once you ride on, and a big road close by no longer shows up with the wrong kind of sign"
+    ],
+    "nb": [
+      "Veiskiltet i hjørnet viser bare veien du kjører på. Stopper du for en kaffe, forsvinner det etter et par minutter og kommer tilbake når du kjører videre, og en stor vei like ved dukker ikke lenger opp med feil slags skilt"
+    ],
+    "sv": [
+      "Vägskylten i hörnet visar bara vägen du kör på. Stannar du för en kaffe försvinner den efter ett par minuter och kommer tillbaka när du kör vidare, och en stor väg alldeles intill visas inte längre med fel sorts skylt"
+    ],
+    "da": [
+      "Vejskiltet i hjørnet viser kun den vej, du kører på. Holder du en kaffepause, forsvinder det efter et par minutter og kommer igen, når du kører videre, og en stor vej lige ved siden af dukker ikke længere op med den forkerte slags skilt"
+    ],
+    "fi": [
+      "Kulman tiekyltti näyttää vain tien, jota ajat. Kun pysähdyt kahville, se katoaa parin minuutin päästä ja palaa, kun jatkat matkaa, eikä lähellä oleva iso tie enää näy väärällä kyltillä"
+    ],
+    "is": [
+      "Vegaskiltið í horninu sýnir bara veginn sem þú ekur á. Stopparðu í kaffi hverfur það eftir nokkrar mínútur og kemur aftur þegar þú heldur áfram, og stór vegur rétt hjá birtist ekki lengur með rangt skilti"
+    ],
+    "de": [
+      "Das Straßenschild in der Ecke zeigt nur noch die Straße, auf der du fährst. Machst du Kaffeepause, verschwindet es nach ein paar Minuten und kommt wieder, sobald du weiterfährst, und eine große Straße in der Nähe erscheint nicht mehr mit dem falschen Schild"
+    ],
+    "es": [
+      "La señal de carretera de la esquina solo muestra la carretera por la que vas. Si paras a tomar un café, desaparece a los pocos minutos y vuelve cuando sigues, y una carretera grande cercana ya no aparece con el tipo de señal equivocado"
+    ],
+    "fr": [
+      "Le panneau de route dans le coin ne montre plus que la route sur laquelle tu roules. Arrête-toi pour un café et il disparaît au bout de quelques minutes, puis revient quand tu repars, et une grande route toute proche n'apparaît plus avec le mauvais panneau"
+    ],
+    "nl": [
+      "Het wegbord in de hoek toont alleen de weg waarop je rijdt. Stop je voor koffie, dan verdwijnt het na een paar minuten en komt het terug zodra je verder rijdt, en een grote weg vlakbij verschijnt niet meer met het verkeerde bord"
+    ],
+    "pl": [
+      "Znak drogi w rogu pokazuje tylko drogę, którą jedziesz. Gdy zatrzymasz się na kawę, znika po kilku minutach i wraca, gdy ruszysz dalej, a duża droga obok nie pojawia się już z niewłaściwym znakiem"
+    ]
+  },
+  {
     "version": "1.2.4",
     "en": [
       "Found a bug or got an idea? Settings → Help now lets you tell us straight from the app, with a title, a few words and pictures if you like. No GitHub account needed: it becomes an issue on GitHub that anyone can read, and under Your reports you can see whether it is being worked on, how many replies it has, and open it to follow along. The list tidies itself: a report that is deleted goes away, and one that is closed stays for two weeks so you see how it ended",
