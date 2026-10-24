@@ -63,7 +63,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     return p;
   };
   // A click asks what the place is: first only the start, then the destination, then stop, via point or new destination.
-  const menuItems = () => page.$$eval(".menu button", (b) => b.map((x) => x.textContent));
+  const menuItems = () => page.$$eval(".menu button", (b) => b.map((x) => x.lastChild.textContent));
   const pick = async (label) => { await page.locator(".menu button", { hasText: label }).click(); await page.waitForTimeout(200); };
   check(await page.isVisible("#connect-intro") && (await page.getAttribute("#pair", "class")) === "primary", `${name}: not connected: a card says how to connect`);
   if (name === "phone") await page.click("#fold");
@@ -186,6 +186,9 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   const link = parseLink(JSON.parse(await page.evaluate(() => localStorage.getItem("curveon.link"))));
   const dev = await device(link, "Test Pixel");
   await dev.show([HAVE, TRACK]);
+  // A second device with the same trip (as the page sends to all at once): Update changes both copies.
+  const dev2 = await device(link, "Test X7");
+  await dev2.show([{ ...HAVE, id: 21 }]);
   await page.waitForSelector("#pairing:not([open])", { state: "attached", timeout: 10000 }).then(() => check(true, `${name}: the code closes when the device connects`), () => check(false, `${name}: the code closes when the device connects`));
   await page.waitForSelector(".device ul.trips li", { timeout: 10000 });
   const listed = await page.$$eval(".device", (els) => els.map((e) => e.innerText.replace(/\s+/g, " ")));
@@ -203,17 +206,32 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   if (sentNew) await dev.answer(sentNew);
   await page.waitForSelector("#pending", { state: "hidden", timeout: 10000 }).then(() => check(true, `${name}: no longer waiting once the device has it`), () => check(false, `${name}: no longer waiting once the device has it`));
 
+  // Changed after sending, then another trip clicked: the page asks first, and keeps it as a draft.
+  check(await page.isHidden("#save-draft"), `${name}: nothing to save right after sending`);
+  await page.selectOption("#surface", "MIXED");
+  check(await page.isVisible("#save-draft"), `${name}: a change shows Save as draft`);
+  await page.locator(".device").first().locator("ul.trips li .what", { hasText: "Helgetur" }).click();
+  await page.waitForSelector("#unsaved[open]", { timeout: 5000 }).then(() => check(true, `${name}: opening another trip asks about the unsaved one`), () => check(false, `${name}: opening another trip asks about the unsaved one`));
+  check(await fitsInside("#unsaved button[value=save]"), `${name}: Save as draft on screen in the question`);
+  await page.screenshot({ path: `${out}/${name}-2b-unsaved.png` });
+  await page.click("#unsaved button[value=save]");
+  await page.waitForSelector("#drafts:not([hidden])", { timeout: 5000 });
+  check((await page.$$eval("#drafts-list li", (e) => e.length)) === 1, `${name}: it is kept among the drafts`);
+  await page.selectOption("#surface", "PAVED");
+
   // Open the device's trip, change it, update it there.
-  await page.locator(".device ul.trips li .what", { hasText: "Helgetur" }).click();
-  check((await page.inputValue("#name")) === "Helgetur" && (await page.textContent("#send")).includes("Test Pixel"), `${name}: the device's trip opened, Update names the device (${await page.textContent("#send")})`);
+  if ((await page.inputValue("#name")) !== "Helgetur") await page.locator(".device").first().locator("ul.trips li .what", { hasText: "Helgetur" }).click();
+  check((await page.inputValue("#name")) === "Helgetur" && (await page.textContent("#send")).includes("Test Pixel") && (await page.textContent("#send")).includes("Test X7"), `${name}: the device's trip opened, Update names both devices with it (${await page.textContent("#send")})`);
   check((await page.$$eval("#stops li", (e) => e.length)) === 2, `${name}: its start and destination on the map`);
   await page.screenshot({ path: `${out}/${name}-3-opened.png` });
   await page.selectOption("#style", "VERY_CURVY");
   await page.waitForFunction(() => !document.querySelector("#summary").hidden && !document.querySelector("#send-row").hidden, null, { timeout: 60000 });
   await page.locator("#send").scrollIntoViewIfNeeded();
   await page.click("#send");
-  for (let i = 0; i < 50 && dev.got.plans.length < 2; i++) await sleep(100);
-  const update = dev.got.plans[1];
+  for (let i = 0; i < 50 && dev.got.plans.length < 3; i++) await sleep(100);
+  const update = dev.got.plans.find((p) => p.trip.ref?.r === dev.me);
+  const copy = dev2.got.plans.find((p) => p.trip.ref?.r === dev2.me);
+  check(copy?.trip.ref.id === 21 && copy.trip.options.style === "VERY_CURVY" && copy.tid !== update?.tid, `${name}: Update also changed the copy on the second device, as its own trip 21`);
   check(update?.trip.ref?.id === 11 && update.trip.ref.r === dev.me && update.trip.options.style === "VERY_CURVY", `${name}: Update reached the device as a change of its trip 11`);
   await page.locator("#send-new").scrollIntoViewIfNeeded();
   check(await fitsInside("#send-new"), `${name}: Save as a new trip on screen`);
@@ -223,13 +241,14 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   check(await page.isHidden("#send-row") && (await page.textContent("#hint")).length > 20, `${name}: a ride kept as a trip is shown only`);
 
   // Delete from the device.
-  await page.locator(".device ul.trips li", { hasText: "Helgetur" }).locator("button").click();
+  await page.locator(".device").first().locator("ul.trips li", { hasText: "Helgetur" }).locator("button").click();
   for (let i = 0; i < 50 && !dev.got.deletes.length; i++) await sleep(100);
   check(dev.got.deletes[0]?.id === 11 && dev.got.deletes[0].r === dev.me, `${name}: delete reached the device`);
-  check(!(await page.locator(".device ul.trips li", { hasText: "Helgetur" }).count()), `${name}: the deleted trip left the list`);
+  check(!(await page.locator(".device").first().locator("ul.trips li", { hasText: "Helgetur" }).count()), `${name}: the deleted trip left the list`);
   await page.screenshot({ path: `${out}/${name}-4-after.png` });
 
   dev.close();
+  dev2.close();
   check(errors.length === 0, `${name}: no errors on the page ${errors.join(" | ")}`);
   await page.close();
 }

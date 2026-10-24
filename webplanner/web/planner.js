@@ -27,14 +27,14 @@ const TEXTS = {
     adv_stops: "The stops on the way give way to the adventure's roads (Undo brings them back).",
     adv_time: "Longest time", adv_no_limit: "No limit", adv_hm: (h, m) => `${h}:${String(m).padStart(2, "0")} h`,
     adv_time_explain: "The longest the trip may take, or no limit and the area decides. It can be shorter if the area has too few good roads.",
-    adv_searching: "Looking for an adventure… it often takes half a minute or so.",
+    adv_searching: "Looking for an adventure… it can take up to a minute.",
     adv_found: "Here is an adventure. Change it like any trip, or ask for another.",
     adv_again: "Another suggestion", adv_redraw: "Draw again", adv_close: "Close",
     adv_too_small: "Draw a bigger area round where you want to ride.",
     err_no_adventure: "No adventure found in that area. Draw it bigger, or give more time.",
     err_adventure_too_short: (m) => `The quickest way takes ${m} min. Give more time for an adventure.`,
     err_failed: "The route could not be worked out. Try again.", err_offline: "No connection to the planner. Check your internet connection.",
-    name_hint: "Name of the trip", send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
+    and: " and ", name_hint: "Name of the trip", send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
     sending: "Sending…", sent_ok: "Sent. It shows under Planned in Curveon the next time the app is online.",
     updated_ok: (d) => `Sent. The trip on ${d} is updated the next time the app is online.`,
     send_failed: "The trip could not be sent. Check your internet connection and try again.",
@@ -57,7 +57,12 @@ const TEXTS = {
     pair_title: "Connect Curveon to this page", pair_step1: "Open Curveon on your phone or tablet.",
     pair_step2: "Go to Planned and tap From the web.", pair_step3: "Point the camera at this code.",
     pair_more: "Once per phone or tablet. Then this page shows the trips on it, and what you plan here goes there.",
-    pair_done: "Close", confirm_new: "Start a new trip? The one on the map is not sent yet.",
+    pair_done: "Close",
+    save_draft: "Save as draft", save_draft_again: "Save the draft", draft_saved: "Saved among the drafts on this page.",
+    drafts_title: "Drafts on this page", draft_points: (n) => `${n} points`, delete_draft: "Delete the draft",
+    confirm_delete_draft: (n) => `Delete the draft “${n}”?`,
+    unsaved_title: "Keep what you are working on?", unsaved_text: "The trip on the map is not saved or sent since you last changed it.",
+    unsaved_save: "Save as draft", unsaved_discard: "Throw it away", unsaved_cancel: "Cancel",
     attribution: "Routes: Curveon (BRouter) · Search: Photon, Kartverket",
   },
   nb: {
@@ -81,14 +86,14 @@ const TEXTS = {
     adv_stops: "Stoppene underveis viker for eventyrets veier (Angre henter dem tilbake).",
     adv_time: "Lengste tid", adv_no_limit: "Ingen grense", adv_hm: (h, m) => `${h}:${String(m).padStart(2, "0")} t`,
     adv_time_explain: "Lengste tid turen kan ta, eller ingen grense, så bestemmer området. Den kan bli kortere hvis området ikke har gode veier nok.",
-    adv_searching: "Leter etter et eventyr … det tar gjerne et halvt minutt eller så.",
+    adv_searching: "Leter etter et eventyr … det kan ta opptil et minutt.",
     adv_found: "Her er et eventyr. Endre det som en vanlig tur, eller be om et annet.",
     adv_again: "Et annet forslag", adv_redraw: "Tegn på nytt", adv_close: "Lukk",
     adv_too_small: "Tegn et større område rundt der du vil kjøre.",
     err_no_adventure: "Fant ikke noe eventyr i det området. Prøv å tegne det større, eller gi mer tid.",
     err_adventure_too_short: (m) => `Raskeste vei tar ${m} min. Be om mer tid for å få et eventyr.`,
     err_failed: "Ruten kunne ikke regnes ut. Prøv igjen.", err_offline: "Får ikke kontakt med planleggeren. Sjekk internettforbindelsen.",
-    name_hint: "Navn på turen", send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
+    and: " og ", name_hint: "Navn på turen", send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
     sending: "Sender …", sent_ok: "Sendt. Den dukker opp under Planlagte i Curveon neste gang appen er på nett.",
     updated_ok: (d) => `Sendt. Turen på ${d} oppdateres neste gang appen er på nett.`,
     send_failed: "Turen ble ikke sendt. Sjekk internettforbindelsen og prøv igjen.",
@@ -111,7 +116,12 @@ const TEXTS = {
     pair_title: "Koble Curveon til denne siden", pair_step1: "Åpne Curveon på telefonen eller nettbrettet.",
     pair_step2: "Gå til Planlagte og trykk Fra nettet.", pair_step3: "Rett kameraet mot denne koden.",
     pair_more: "Én gang per telefon eller nettbrett. Da viser denne siden turene der, og det du planlegger her havner der.",
-    pair_done: "Lukk", confirm_new: "Begynne på en ny tur? Den på kartet er ikke sendt ennå.",
+    pair_done: "Lukk",
+    save_draft: "Lagre som utkast", save_draft_again: "Lagre utkastet", draft_saved: "Lagret blant utkastene på denne siden.",
+    drafts_title: "Utkast på denne siden", draft_points: (n) => `${n} punkter`, delete_draft: "Slett utkastet",
+    confirm_delete_draft: (n) => `Slette utkastet «${n}»?`,
+    unsaved_title: "Ta vare på det du holder på med?", unsaved_text: "Turen på kartet er ikke lagret eller sendt siden du sist endret den.",
+    unsaved_save: "Lagre som utkast", unsaved_discard: "Forkast den", unsaved_cancel: "Avbryt",
     attribution: "Ruter: Curveon (BRouter) · Søk: Photon, Kartverket",
   },
 };
@@ -370,6 +380,7 @@ function drawList() {
   $("clear").hidden = points.length === 0;
   $("undo").hidden = undoStack.length === 0;
   drawAdventure();
+  drawDrafts();
   $("undo").title = t("undo_title");
   $("hint").textContent = viewOnly ? t("view_only") : editing?.ref ? t("editing_from", editing.dev) : t("hint_empty");
   $("hint").hidden = !viewOnly && !editing?.ref && points.length >= 2;
@@ -427,9 +438,11 @@ function showMenu(ll, title, items, notes, infoFirst = false) {
   box.append(head);
   const lines = [notes].flat().filter(Boolean).map((n) => el("small", "", n));
   if (infoFirst) box.append(...lines);
-  for (const [label, fn, cls] of items) {
+  for (const [label, fn, cls, icon] of items) {
     const b = el("button", cls || "", label);
     b.type = "button";
+    // The point's own mark, as on the map: green A, white via ring, orange stop with its number, red B.
+    if (icon) b.prepend(el("span", "dot " + icon[0], icon[1] ?? ""));
     b.onclick = (ev) => { ev.stopPropagation(); if (fn(b) !== "keep") closeMenu(); };
     box.append(b);
   }
@@ -453,9 +466,13 @@ function placeMenu(ll, onRoute) {
   p.naming = placeName(p.lat, p.lon);
   const n = viewOnly ? 0 : points.length;
   const leg = onRoute && n >= 2 ? legAt(ll) : undefined;
-  const items = n === 0 ? [[t("menu_start"), () => addAt(p, "start")]]
-    : onRoute ? [[t("menu_via"), () => addAt(p, "via", leg)], [t("menu_stop"), () => addAt(p, "stop", leg)]]
-    : [[t("menu_via"), () => addAt(p, "via")], [t("menu_stop"), () => addAt(p, "stop")], [t(hasEnd() ? "menu_new_end" : "menu_end"), () => addAt(p, "end")]];
+  // The number a stop would get where it goes in.
+  const stopNo = (at) => String(points.slice(1, at + 1).filter((_, k) => kindOf(k + 1) === "stop").length + 1);
+  const at = leg ?? (hasEnd() ? bestLeg(p) : points.length - 1);
+  const items = n === 0 ? [[t("menu_start"), () => addAt(p, "start"), "", ["start", "A"]]]
+    : onRoute ? [[t("menu_via"), () => addAt(p, "via", leg), "", ["via"]], [t("menu_stop"), () => addAt(p, "stop", leg), "", ["stop", stopNo(at)]]]
+    : [[t("menu_via"), () => addAt(p, "via"), "", ["via"]], [t("menu_stop"), () => addAt(p, "stop"), "", ["stop", stopNo(at)]],
+      [t(hasEnd() ? "menu_new_end" : "menu_end"), () => addAt(p, "end"), "", ["end", "B"]]];
   const head = showMenu(ll, "…", items);
   p.naming.then((name) => { head.textContent = name; });
 }
@@ -471,9 +488,10 @@ function pointMenu(p) {
     if (!p.via && !p.name) { p.name = await placeName(p.lat, p.lon); drawList(); drawMarkers(); drawSummary(); }
   };
   const items = [];
-  if (kind === "stop" || kind === "end") items.push([t("make_via"), () => { p.via = true; delete p.stop; redraw(); }]);
-  if (kind === "via" || kind === "end") items.push([t("make_stop"), () => { p.via = false; if (last) p.stop = true; redraw(); }]);
-  if (last && kind !== "end") items.push([t("make_end"), () => { p.via = false; delete p.stop; redraw(); }]);
+  const no = String(points.slice(1, i).filter((_, k) => kindOf(k + 1) === "stop").length + 1);
+  if (kind === "stop" || kind === "end") items.push([t("make_via"), () => { p.via = true; delete p.stop; redraw(); }, "", ["via"]]);
+  if (kind === "via" || kind === "end") items.push([t("make_stop"), () => { p.via = false; if (last) p.stop = true; redraw(); }, "", ["stop", no]]);
+  if (last && kind !== "end") items.push([t("make_end"), () => { p.via = false; delete p.stop; redraw(); }, "", ["end", "B"]]);
   items.push([t("remove"), () => removePoint(p), "danger"]);
   showMenu([p.lon, p.lat], kind === "via" ? t("via") : p.name || t("map_point"), items, t("drag_to_move"));
 }
@@ -892,7 +910,7 @@ function drawSummary() {
   );
   s.hidden = false;
   if (!$("name").value) $("name").placeholder = defaultName();
-  $("send").textContent = editing?.ref ? t("update_on", editing.dev) : t("send");
+  $("send").textContent = editing?.ref ? t("update_on", devNames(editing)) : t("send");
 }
 
 const defaultName = () => points.length >= 2 ? `${points[0].name || t("map_point")} – ${points[points.length - 1].name || t("map_point")}` : t("name_hint");
@@ -912,7 +930,7 @@ function showOptions() {
   $("ferries").value = options.ferries ? "no" : "ok";
   $("motorways").value = options.trunk ? "noe" : options.motorways ? "no" : "ok";
 }
-["style", "surface", "ferries", "motorways"].forEach((id) => $(id).addEventListener("change", readOptions));
+["style", "surface", "ferries", "motorways"].forEach((id) => $(id).addEventListener("change", () => { readOptions(); drawDrafts(); }));
 
 // ---------- The session with the devices ----------
 let link = store.get("link", null) && parseLink(store.get("link"));
@@ -960,6 +978,7 @@ function gotIndex(r, body) {
   for (const id of [...d.trips.keys()]) if (!d.ids.includes(id)) d.trips.delete(id);
   for (const k of [...deleting]) if (k.startsWith(r + ":") && !d.ids.includes(Number(k.split(":")[1]))) deleting.delete(k);
   if (editing?.ref?.r === r) editing.dev = d.dev;
+  for (const c of editing?.copies || []) if (c.r === r) c.dev = d.dev;
   // A device that just scanned the code: the session is on, the code can go.
   if (pairingOpenedAt && body.ts >= pairingOpenedAt - 5000) $("pairing").close();
   drawDevices();
@@ -1014,7 +1033,7 @@ function drawDevices() {
         const what = el("div", "what");
         what.title = t("edit");
         what.append(el("b", "", x.name), el("small", "", `${Math.round(x.m / 1000)} ${t("km")}`));
-        what.onclick = () => openTrip(r, d, x);
+        what.onclick = async () => { if (await leaveOk()) openTrip(r, d, x); };
         const del = el("button", "", "✕");
         del.type = "button"; del.title = t("delete_on", d.dev); del.ariaLabel = del.title;
         del.onclick = async () => {
@@ -1044,6 +1063,25 @@ function drawDevices() {
   $("pair").textContent = names.length ? t("connect_more") : t("connect");
 }
 
+/** The devices a trip opened from one device is updated on: that one, and those with the same trip. */
+const devNames = (e) => [e.dev, ...(e.copies || []).map((c) => c.dev)].join(t("and"));
+
+/**
+ * The same trip as [x] (on device [r]) on the other devices: what the page sent to them all at once, or the rider shared
+ * between them. Same name and length, same start and destination.
+ */
+function sameTrip(r, x) {
+  const near = (a, b) => a && b && Math.abs(a.lat - b.lat) + Math.abs(a.lon - b.lon) < 0.003;
+  const out = [];
+  for (const [r2, d2] of devices) {
+    if (r2 === r || !d2.at) continue;
+    const y = d2.ids.map((id) => d2.trips.get(id)).find((y) => y && !deleting.has(r2 + ":" + y.id) && y.name === x.name &&
+      Math.abs(y.m - x.m) <= x.m * 0.01 + 50 && near(y.start, x.start) && near(y.destination, x.destination));
+    if (y) out.push({ r: r2, id: y.id, dev: d2.dev });
+  }
+  return out;
+}
+
 /** A device's trip on the map, with its own line: changed here and sent back with Update. */
 function openTrip(r, d, x) {
   const line = decodePolyline(x.poly);
@@ -1055,7 +1093,7 @@ function openTrip(r, d, x) {
     const start = x.start || { name: t("start"), lat: line[0][0], lon: line[0][1] };
     points = [start, ...(x.stops || []), x.destination].map((p) => ({ name: p.name || "", lat: p.lat, lon: p.lon, via: !!p.via }));
     viewOnly = false;
-    editing = { tid: "r" + x.id + "-" + r.slice(0, 8), ref: { r, id: x.id }, dev: d.dev };
+    editing = { tid: "r" + x.id + "-" + r.slice(0, 8), ref: { r, id: x.id }, dev: d.dev, copies: sameTrip(r, x) };
   } else {
     points = [];
     viewOnly = true;
@@ -1063,11 +1101,90 @@ function openTrip(r, d, x) {
   }
   forgetUndo();
   if (x.options) { options = Object.assign(options, x.options); showOptions(); }
+  closeAdventure();
   $("name").value = x.name;
   setStatus("");
   drawList(); drawMarkers(); drawRoute(); drawSummary(); drawDevices();
+  currentDraft = null;
+  markClean();
   fitTo(line);
 }
+
+// ---------- Drafts, and not losing what is on the map ----------
+// What is on the map counts as unsaved when its points, options or name changed since it was last opened, sent or
+// saved as a draft. Drafts stay in this browser (as the trips sent from here do), to open again later.
+let currentDraft = null; // the draft's id, when the map holds one
+const workKey = () => JSON.stringify([placesKey(), routeOptions(), $("name").value.trim()]);
+let cleanKey = workKey();
+function markClean() { cleanKey = workKey(); drawDrafts(); }
+const unsaved = () => points.length > 0 && !viewOnly && workKey() !== cleanKey;
+
+function saveDraft() {
+  const list = store.get("drafts", []);
+  const id = currentDraft || b64(random(9));
+  const d = { id, name: $("name").value.trim() || defaultName(), at: Date.now(), points, options: routeOptions(), result, editing };
+  store.set("drafts", [d, ...list.filter((x) => x.id !== id)].slice(0, 30));
+  currentDraft = id;
+  markClean();
+  setStatus(t("draft_saved"));
+}
+
+function openDraft(d) {
+  routeCtl?.abort();
+  clearTimeout(routeTimer);
+  closeMenu();
+  closeAdventure();
+  points = d.points; result = d.result; editing = d.editing; viewOnly = false;
+  options = Object.assign(options, d.options); showOptions();
+  $("name").value = d.name;
+  currentDraft = d.id;
+  forgetUndo();
+  setStatus("");
+  drawList(); drawMarkers(); drawRoute(); drawSummary(); drawDevices();
+  markClean();
+  if (result) fitTo(result.line); else if (points.length) fitTo(points.map((q) => [q.lat, q.lon]));
+  if (!result && points.length >= 2) route();
+}
+
+/** Before something else takes the map: true to go on (saved or thrown away), false to stay. */
+async function leaveOk() {
+  if (!unsaved()) return true;
+  const dlg = $("unsaved");
+  dlg.returnValue = "";
+  dlg.showModal();
+  await new Promise((r) => dlg.addEventListener("close", r, { once: true }));
+  if (dlg.returnValue === "save") { saveDraft(); return true; }
+  return dlg.returnValue === "discard";
+}
+// Closing the tab or reloading with unsaved work: the browser asks first.
+addEventListener("beforeunload", (e) => { if (unsaved()) e.preventDefault(); });
+
+function drawDrafts() {
+  const list = store.get("drafts", []);
+  $("drafts").hidden = list.length === 0;
+  $("drafts-list").replaceChildren(...list.map((d) => {
+    const li = el("li", d.id === currentDraft ? "open" : "");
+    const what = el("div", "what");
+    const km = d.result ? `${Math.round(d.result.m / 1000)} ${t("km")}` : t("draft_points", d.points.length);
+    what.append(el("b", "", d.name), el("small", "", `${km} · ${new Date(d.at).toLocaleDateString(lang === "nb" ? "nb-NO" : "en-GB", { day: "numeric", month: "short" })}`));
+    what.onclick = async () => { if (d.id === currentDraft || await leaveOk()) openDraft(store.get("drafts", []).find((x) => x.id === d.id) || d); };
+    const x = el("button", "", "✕");
+    x.type = "button"; x.title = t("delete_draft"); x.ariaLabel = t("delete_draft");
+    x.onclick = () => {
+      if (!confirm(t("confirm_delete_draft", d.name))) return;
+      store.set("drafts", store.get("drafts", []).filter((y) => y.id !== d.id));
+      if (currentDraft === d.id) { currentDraft = null; cleanKey = ""; }
+      drawDrafts();
+    };
+    li.append(what, x);
+    return li;
+  }));
+  // The save button shows while there is something on the map not saved yet.
+  $("save-draft").hidden = !unsaved();
+  $("save-draft").textContent = t(currentDraft ? "save_draft_again" : "save_draft");
+}
+$("save-draft").addEventListener("click", saveDraft);
+$("name").addEventListener("input", () => drawDrafts());
 
 // ---------- Sending ----------
 async function send(asNew) {
@@ -1084,13 +1201,19 @@ async function send(asNew) {
   const trip = {
     v: 1, name, start: stop(points[0]), destination, stops: points.slice(1, -1).map(stop),
     options: routeOptions(), line: result.line.map(([la, lo]) => `${la.toFixed(5)},${lo.toFixed(5)}`).join(";"),
-    m: result.m, s: result.s, up: result.up, curvy: result.curvy, ...(target?.ref ? { ref: target.ref } : {}),
+    m: result.m, s: result.s, up: result.up, curvy: result.curvy,
   };
   $("send").disabled = $("send-new").disabled = true;
   setStatus(t("sending"));
   // Every send is newer than the one before: the time is the revision.
   const rev = Date.now();
-  const ok = await sendFrame(await ch.plan(rider, nextSeq(), tid, rev, trip));
+  // A trip opened from a device is updated there, and in the same trip's copies on the other devices, each on its own.
+  const copies = target?.ref ? [{ ...target.ref, dev: target.dev }, ...(target.copies || [])] : [null];
+  let ok = true;
+  for (const c of copies) {
+    const ctid = c && c !== copies[0] ? "r" + c.id + "-" + c.r.slice(0, 8) : tid;
+    ok = (await sendFrame(await ch.plan(rider, nextSeq(), ctid, rev, c ? { ...trip, ref: { r: c.r, id: c.id } } : trip))) && ok;
+  }
   $("send").disabled = $("send-new").disabled = false;
   if (!ok) { setStatus(t("send_failed"), true); return; }
   if (!target?.ref) {
@@ -1099,7 +1222,10 @@ async function send(asNew) {
     store.set("sent", list.slice(0, 30));
     editing = { tid, ref: null, dev: null };
   }
-  setStatus(target?.ref ? t("updated_ok", target.dev) : t("sent_ok"));
+  setStatus(target?.ref ? t("updated_ok", devNames(target)) : t("sent_ok"));
+  // Sent: it is no longer a draft (it waits for Curveon here, or is on the device).
+  if (currentDraft) { store.set("drafts", store.get("drafts", []).filter((x) => x.id !== currentDraft)); currentDraft = null; }
+  markClean();
   drawPending();
   drawSummary();
 }
@@ -1155,9 +1281,9 @@ $("clear").addEventListener("click", () => {
   closeAdventure();
   changed();
 });
-$("new").addEventListener("click", () => {
-  if (result && !editing && !viewOnly && !confirm(t("confirm_new"))) return;
-  points = []; editing = null; viewOnly = false; $("name").value = "";
+$("new").addEventListener("click", async () => {
+  if (!(await leaveOk())) return;
+  points = []; editing = null; viewOnly = false; $("name").value = ""; currentDraft = null;
   closeMenu();
   closeAdventure();
   changed();
@@ -1184,4 +1310,5 @@ showOptions();
 drawList();
 drawDevices();
 drawPending();
+markClean();
 connect();

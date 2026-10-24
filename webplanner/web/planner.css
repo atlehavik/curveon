@@ -90,7 +90,7 @@ input:focus, select:focus { outline: 2px solid var(--amber); outline-offset: -1p
 #session::before { content: "● "; }
 button.link { border: none; padding: 2px 0; color: var(--amber-ink); font-weight: 600; text-align: left; }
 button.link:hover { text-decoration: underline; }
-#pending h2, .device h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 6px 0; }
+#drafts h2, #pending h2, .device h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 6px 0; }
 .device h3 { font-size: 13px; margin: 10px 0 2px; color: var(--text); }
 .device { display: flex; flex-direction: column; }
 #devices { display: flex; flex-direction: column; gap: 10px; }
@@ -113,6 +113,9 @@ dialog h2 { margin: 0 0 12px; font-size: 19px; }
 .steps { padding-left: 20px; margin: 14px 0 8px; }
 .steps li { margin: 4px 0; }
 dialog form { display: flex; justify-content: flex-end; margin-top: 12px; }
+dialog form.buttons { flex-wrap: wrap; gap: 8px; }
+#edit-row { flex-wrap: wrap; row-gap: 4px; }
+#save-draft { margin-left: auto; }
 
 .pin { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.45); display: grid; place-items: center; color: #fff; font: 700 12px system-ui, sans-serif; background: var(--amber); cursor: grab; }
 .pin.start { background: var(--green); }
@@ -127,6 +130,11 @@ dialog form { display: flex; justify-content: flex-end; margin-top: 12px; }
 .menu button { border: none; text-align: left; padding: 9px 10px; border-radius: 8px; }
 .menu button:hover, .menu button:focus-visible { background: color-mix(in srgb, var(--amber) 16%, transparent); outline: none; }
 .menu button.danger { color: var(--red); }
+.menu button { display: flex; align-items: center; gap: 10px; }
+.menu .dot { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; background: var(--amber); border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15); }
+.menu .dot.start { background: var(--green); }
+.menu .dot.end { background: var(--red); }
+.menu .dot.via { width: 16px; height: 16px; margin: 0 3px; background: #fff; border: 3px solid var(--amber); box-shadow: none; }
 .menu small { color: var(--muted); padding: 4px 10px; font-size: 13px; }
 
 /* Phone: the panel becomes a sheet at the bottom, folded down to its header when the map needs the room. */

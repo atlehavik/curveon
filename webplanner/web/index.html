@@ -40,6 +40,7 @@
       <div id="edit-row">
         <button id="undo" class="link" type="button" data-t="undo" hidden></button>
         <button id="clear" class="link" type="button" data-t="clear_all" hidden></button>
+        <button id="save-draft" class="link" type="button" hidden></button>
       </div>
       <button id="adv" class="link" type="button" hidden>✦ <span data-t="adv_open"></span></button>
       <section id="adv-box" hidden>
@@ -89,6 +90,11 @@
       </div>
       <button id="send-new" class="link" type="button" data-t="send_new" hidden></button>
 
+      <section id="drafts" hidden>
+        <h2 data-t="drafts_title"></h2>
+        <ul id="drafts-list" class="trips"></ul>
+      </section>
+
       <section id="pending" hidden>
         <h2 data-t="pending_title"></h2>
         <ul id="pending-list" class="trips"></ul>
@@ -112,6 +118,16 @@
     </ol>
     <p class="hint" data-t="pair_more"></p>
     <form method="dialog"><button class="primary" data-t="pair_done"></button></form>
+  </dialog>
+
+  <dialog id="unsaved">
+    <h2 data-t="unsaved_title"></h2>
+    <p data-t="unsaved_text"></p>
+    <form method="dialog" class="buttons">
+      <button value="cancel" data-t="unsaved_cancel"></button>
+      <button value="discard" data-t="unsaved_discard"></button>
+      <button value="save" class="primary" data-t="unsaved_save"></button>
+    </form>
   </dialog>
 
   <script src="vendor/maplibre-gl.js"></script>
