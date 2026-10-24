@@ -1133,4 +1133,27 @@
     <string name="friend_request_offer_title">%1$s haluaa ystäväksesi</string>
     <string name="friend_request_offer_group">Tapasitte ryhmässä %1$s</string>
     <string name="friend_request_decline">Ei kiitos</string>
+    <string name="web_plan_button">Verkosta</string>
+    <string name="web_plan_title">Reitit verkosta</string>
+    <string name="web_plan_intro">Suunnittele reitti tietokoneella osoitteessa curveon.no/plan isolla kartalla ja samoilla teillä kuin täällä. Paina siellä Send to Curveon ja skannaa näkyvä koodi. Reitti ilmestyy tänne kohtaan Suunnitellut.</string>
+    <string name="web_plan_connected">Yhdistetty verkkosuunnittelijaan. Uudet reitit tulevat, kun Curveon käynnistyy ja kun avaat Suunnitellut.</string>
+    <string name="web_plan_scan">Skannaa koodi</string>
+    <string name="web_plan_scan_another">Skannaa koodi toisesta selaimesta</string>
+    <string name="web_plan_fetch">Hae nyt</string>
+    <string name="web_plan_fetching">Haetaan…</string>
+    <string name="web_plan_offline">Ei internetyhteyttä juuri nyt. Reitit tulevat, kun Curveon on seuraavan kerran verkossa.</string>
+    <string name="web_plan_nothing_new">Ei mitään uutta verkosta.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d uusi reitti verkosta</item>
+        <item quantity="other">%d uutta reittiä verkosta</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d reitti muuttunut verkossa</item>
+        <item quantity="other">%d reittiä muuttunut verkossa</item>
+    </plurals>
+    <string name="web_plan_forget">Katkaise yhteys</string>
+    <string name="web_plan_scan_hint">Pidä kameraa suunnittelusivun koodin edessä.</string>
+    <string name="web_plan_scan_wrong">Tämä ei ole verkkosuunnittelijan koodi. Sivu näyttää sen, kun painat Send to Curveon tai Code for the app.</string>
+    <string name="web_plan_no_camera">Tässä laitteessa ei ole kameraa. Skannaa koodi puhelimen Curveonilla ja lähetä reitti sieltä tabletille.</string>
+    <string name="web_plan_linked">Yhdistetty verkkosuunnittelijaan</string>
 </resources>

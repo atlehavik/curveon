@@ -1184,4 +1184,28 @@
     <string name="friend_request_offer_title">%1$s wants to be your friend</string>
     <string name="friend_request_offer_group">You met in %1$s</string>
     <string name="friend_request_decline">No thanks</string>
+    <!-- Trips from the web planner (Planned → From the web) -->
+    <string name="web_plan_button">From the web</string>
+    <string name="web_plan_title">Trips from the web</string>
+    <string name="web_plan_intro">Plan a trip on a computer at curveon.no/plan, with a big map and the same roads as here. Press Send to Curveon there and scan the code it shows. The trip then turns up here under Planned.</string>
+    <string name="web_plan_connected">Connected to the web planner. New trips come in when Curveon starts and when you open Planned.</string>
+    <string name="web_plan_scan">Scan the code</string>
+    <string name="web_plan_scan_another">Scan a code from another browser</string>
+    <string name="web_plan_fetch">Fetch now</string>
+    <string name="web_plan_fetching">Fetching…</string>
+    <string name="web_plan_offline">No internet connection right now. The trips come the next time Curveon is online.</string>
+    <string name="web_plan_nothing_new">Nothing new from the web.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d new trip from the web</item>
+        <item quantity="other">%d new trips from the web</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d trip changed on the web</item>
+        <item quantity="other">%d trips changed on the web</item>
+    </plurals>
+    <string name="web_plan_forget">Disconnect</string>
+    <string name="web_plan_scan_hint">Hold the camera in front of the code on the planner page.</string>
+    <string name="web_plan_scan_wrong">That is not the web planner\'s code. The page shows it when you press Send to Curveon or Code for the app.</string>
+    <string name="web_plan_no_camera">This device has no camera. Scan the code with Curveon on your phone, and send the trip to the tablet from there.</string>
+    <string name="web_plan_linked">Connected to the web planner</string>
 </resources>

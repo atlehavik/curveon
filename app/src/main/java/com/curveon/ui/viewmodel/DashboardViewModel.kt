@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.curveon.R
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.data.bluetooth.TabletRoutes
+import com.curveon.data.webplan.WebPlans
 import com.curveon.data.db.AppDatabase
 import com.curveon.data.gpx.GpxGroups
 import com.curveon.data.gpx.GpxWriter
@@ -621,6 +622,50 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun dismissRouteFromPhone() { _routeFromPhone.value = null }
+
+    // ---------------------------------------------------------------- Trips from the web planner
+
+    private val webPlans = WebPlans(application, repository)
+
+    /** The web planner as the Planned page shows it: how many browsers are connected, and how the last fetch went. */
+    data class WebPlanState(
+        val browsers: Int = 0, val fetching: Boolean = false,
+        /** Trips new or changed in the last fetch; null before one, or when the relay could not be reached ([offline]). */
+        val added: Int? = null, val changed: Int = 0, val offline: Boolean = false,
+    )
+    private val _webPlan = MutableStateFlow(WebPlanState(browsers = webPlans.links().size))
+    val webPlan: StateFlow<WebPlanState> = _webPlan.asStateFlow()
+    private var webPlanFetched = 0L
+
+    init {
+        if (webPlans.links().isNotEmpty()) fetchWebPlans()
+    }
+
+    /** Fetches what the web planner sent; [auto] (the Planned page opened) at most every half minute. */
+    fun fetchWebPlans(auto: Boolean = false) {
+        if (_webPlan.value.fetching || webPlans.links().isEmpty()) return
+        if (auto && System.currentTimeMillis() - webPlanFetched < 30_000) return
+        webPlanFetched = System.currentTimeMillis()
+        _webPlan.value = _webPlan.value.copy(fetching = true)
+        viewModelScope.launch {
+            val r = runCatching { webPlans.sync() }.getOrNull()
+            _webPlan.value = WebPlanState(webPlans.links().size, false, r?.added, r?.changed ?: 0, offline = r == null)
+        }
+    }
+
+    /** A scanned (or opened) web planner code: kept, and fetched from at once. False when it is not one. */
+    fun addWebPlanLink(uri: String): Boolean {
+        if (!webPlans.add(uri)) return false
+        _webPlan.value = _webPlan.value.copy(browsers = webPlans.links().size)
+        fetchWebPlans()
+        return true
+    }
+
+    /** Stops fetching from the web planner; the trips already here stay. */
+    fun forgetWebPlans() {
+        webPlans.forgetAll()
+        _webPlan.value = WebPlanState()
+    }
     /** Named sets of planned trips ("Trips for the weekend"). */
     val routeGroups = repository.allRouteGroups.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())

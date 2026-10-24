@@ -1181,4 +1181,27 @@
     <string name="friend_request_offer_title">%1$s vill vera vinur þinn</string>
     <string name="friend_request_offer_group">Þið hittust í %1$s</string>
     <string name="friend_request_decline">Nei takk</string>
+    <string name="web_plan_button">Af vefnum</string>
+    <string name="web_plan_title">Ferðir af vefnum</string>
+    <string name="web_plan_intro">Skipuleggðu ferð í tölvu á curveon.no/plan, með stóru korti og sömu vegum og hér. Ýttu þar á Send to Curveon og skannaðu kóðann sem birtist. Þá birtist ferðin hér undir Fyrirhugað.</string>
+    <string name="web_plan_connected">Tengt við vefskipuleggjandann. Nýjar ferðir koma inn þegar Curveon ræsist og þegar þú opnar Fyrirhugað.</string>
+    <string name="web_plan_scan">Skanna kóðann</string>
+    <string name="web_plan_scan_another">Skanna kóða úr öðrum vafra</string>
+    <string name="web_plan_fetch">Sækja núna</string>
+    <string name="web_plan_fetching">Sæki…</string>
+    <string name="web_plan_offline">Engin nettenging í augnablikinu. Ferðirnar koma næst þegar Curveon er á netinu.</string>
+    <string name="web_plan_nothing_new">Ekkert nýtt af vefnum.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d ný ferð af vefnum</item>
+        <item quantity="other">%d nýjar ferðir af vefnum</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d ferð breytt á vefnum</item>
+        <item quantity="other">%d ferðum breytt á vefnum</item>
+    </plurals>
+    <string name="web_plan_forget">Aftengja</string>
+    <string name="web_plan_scan_hint">Haltu myndavélinni fyrir framan kóðann á skipulagssíðunni.</string>
+    <string name="web_plan_scan_wrong">Þetta er ekki kóði vefskipuleggjandans. Síðan sýnir hann þegar þú ýtir á Send to Curveon eða Code for the app.</string>
+    <string name="web_plan_no_camera">Þetta tæki er ekki með myndavél. Skannaðu kóðann með Curveon í símanum og sendu ferðina þaðan í spjaldtölvuna.</string>
+    <string name="web_plan_linked">Tengt við vefskipuleggjandann</string>
 </resources>

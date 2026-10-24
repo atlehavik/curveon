@@ -49,6 +49,34 @@ object SavedRoutes {
         }
     }
 
+    /**
+     * A trip planned on the web (groups' WebPlanTrip), kept among the planned trips like one saved from the planner:
+     * its stops, start and destination, and the line the web planner worked out, ridden as it is.
+     */
+    fun webItem(trip: com.curveon.groups.WebPlanTrip): RouteItem {
+        val options = optionsFromJson(trip.options)
+        fun stop(s: com.curveon.groups.TripStop) = stopJson(s.name, LatLon(s.lat, s.lon)).apply { if (s.via) put("via", true) }
+        return RouteItem(
+            title = trip.name.ifBlank { trip.destination.name },
+            subtitle = trip.stops.filterNot { it.via }.let { real -> if (real.isEmpty()) "" else "via " + real.joinToString { it.name } },
+            totalDistanceKm = (trip.distanceMeters / 1000).toFloat(),
+            estimatedMinutes = (trip.durationSeconds / 60).toInt(),
+            roadType = options.roadStyle.name,
+            groundType = options.surface.name,
+            curvinessScore = trip.curviness,
+            elevationGainMeters = trip.ascentMeters.toInt(),
+            polylineJson = trip.line,
+            waypointsJson = JSONObject()
+                .put("options", optionsJson(options))
+                .put("stops", JSONArray(trip.stops.map(::stop)))
+                .put("destination", stop(trip.destination))
+                .apply { trip.start?.let { put("start", stop(it)) } }
+                .toString(),
+            inWhereTo = false,
+            inPlanned = true
+        )
+    }
+
     /** A planned trip made of a line ridden or drawn earlier (a ride from the log), to ride again as it is. */
     fun trackItem(name: String, points: List<LatLon>, distanceMeters: Double, minutes: Int, options: RouteOptions, groupId: Long?,
         inWhereTo: Boolean = false, inPlanned: Boolean = true) = RouteItem(

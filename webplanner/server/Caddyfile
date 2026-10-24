@@ -1,0 +1,20 @@
+# /etc/caddy/Caddyfile on the relay VPS: the relay, and the web planner under /plan.
+# The page and the map are files (the map read in pieces with Range, so not gzipped); /plan/api goes to the
+# planner service; everything else to the relay as before.
+relay.curveon.no {
+	@notmap not path /plan/map/*
+	encode @notmap gzip
+
+	redir /plan /plan/ 308
+	handle /plan/api/* {
+		reverse_proxy 127.0.0.1:8788
+	}
+	handle /plan/* {
+		root * /opt/curveon-planner
+		header /plan/map/* Cache-Control "public, max-age=86400"
+		file_server
+	}
+	handle {
+		reverse_proxy 127.0.0.1:8787
+	}
+}

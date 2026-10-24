@@ -234,10 +234,28 @@ def scenario_friendrequest(d):
     return [["~^(Request sent|Forespørsel sendt)"], ["Get attention", "Vil ha kontakt"]]
 
 
+def scenario_webplan(d):
+    """Planned -> From the web: the dialog (connected or not) with its buttons wholly on screen."""
+    go_home(d)
+    d.tap(["GPX & rides", "GPX og turer"])
+    d.tap(["Planned", "Planlagte"])
+    d.tap(["From the web", "Fra nettet"])
+    return [["Trips from the web", "Turer fra nettet"], ["Close", "Lukk"], ["~^(Fetch now|Hent nå|Scan the code|Skann koden)$"]]
+
+
+def scenario_webplanscan(d):
+    """Scanning the web planner's code: its own hint, and Cancel wholly on screen."""
+    d.sh("pm", "grant", PKG, "android.permission.CAMERA")
+    scenario_webplan(d)
+    d.tap(["~^(Scan the code|Skann koden|Scan a code from another browser|Skann kode fra en annen nettleser)$"], wait=4)
+    return [["~^(Cancel|Avbryt)$"], ["~(code on the planner page|koden på planleggersiden)"]]
+
+
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
              "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
              "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge,
-             "qrscan": scenario_qrscan, "friendrequest": scenario_friendrequest}
+             "qrscan": scenario_qrscan, "friendrequest": scenario_friendrequest,
+             "webplan": scenario_webplan, "webplanscan": scenario_webplanscan}
 
 
 def apply_variant(d, v, rotation):

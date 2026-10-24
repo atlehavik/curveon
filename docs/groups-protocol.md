@@ -149,6 +149,23 @@ The first message on every connection (not a catch-up after a rekey) is the rela
 (bytes, frames per 10 s per socket, seconds). Clients from before it drop it (it has no `r`), which is why it may be sent
 to everyone. A client may use it to choose how to send; none needs it to work.
 
+## Web planner
+The web planner (`relay.curveon.no/plan`, source `webplanner/`) reaches the rider's apps on a channel of its own, made
+with the same keys and frames as a group (code: `groups/.../WebPlan.kt`, and `webplanner/web/webplan.js` for the page,
+both tested against each other in `WebPlanInteropTest`):
+
+- The page makes `groupId`, `groupKey` and a random 32-byte `a` (nobody holds an admin key, so the channel is never
+  rekeyed; epoch stays 0) and shows them as a QR code: `curveon://webplan#v=1&g=<b64>&k=<b64>&a=<b64>&r=<relay host>`.
+  It is not an invite: an app that scans it keeps it apart from its groups, so it can never replace the group it rides with.
+- `plan` frames carry `{seq, ts, tid, rev, trip}`; `trip` is `{v:1, name, start?, destination, stops[], options, line,
+  m, s, up, curvy}`: stops as in a TripDoc, `options` the app's saved-route options, `line` the road as
+  `lat,lon;lat,lon;…` (5 decimals, thinned to 5 m), `m`/`s`/`up` metres, seconds, metres of climb. Kept with
+  `k = tid`, `x = 30 days`, so a changed trip (higher `rev`) replaces the one before. A trip taken back is sent as
+  `{tid, gone:true}` with `x = 0`.
+- The app connects for a moment (app start, Planned opened), reads what the relay replays, keeps each trip among the
+  planned trips, and answers `plan_got` `{seq, ts, tid, rev, dev}` (kept the same way), which the page shows as
+  "In Curveon on <dev>". Nothing stays connected.
+
 ## Evolving the protocol
 Riders do not all update at once, and a friend may run a version from months ago. Every change must leave the older
 apps working, and the relay must keep serving every older client. The rules:

@@ -1181,4 +1181,27 @@
     <string name="friend_request_offer_title">%1$s möchte dein Freund sein</string>
     <string name="friend_request_offer_group">Ihr habt euch in %1$s getroffen</string>
     <string name="friend_request_decline">Nein danke</string>
+    <string name="web_plan_button">Aus dem Web</string>
+    <string name="web_plan_title">Touren aus dem Web</string>
+    <string name="web_plan_intro">Plane eine Tour am Computer auf curveon.no/plan, mit großer Karte und denselben Straßen wie hier. Tippe dort auf Send to Curveon und scanne den angezeigten Code. Die Tour erscheint dann hier unter Geplant.</string>
+    <string name="web_plan_connected">Mit dem Web-Planer verbunden. Neue Touren kommen, wenn Curveon startet und wenn du Geplant öffnest.</string>
+    <string name="web_plan_scan">Code scannen</string>
+    <string name="web_plan_scan_another">Code aus einem anderen Browser scannen</string>
+    <string name="web_plan_fetch">Jetzt abrufen</string>
+    <string name="web_plan_fetching">Wird abgerufen…</string>
+    <string name="web_plan_offline">Gerade keine Internetverbindung. Die Touren kommen, sobald Curveon wieder online ist.</string>
+    <string name="web_plan_nothing_new">Nichts Neues aus dem Web.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d neue Tour aus dem Web</item>
+        <item quantity="other">%d neue Touren aus dem Web</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d Tour im Web geändert</item>
+        <item quantity="other">%d Touren im Web geändert</item>
+    </plurals>
+    <string name="web_plan_forget">Trennen</string>
+    <string name="web_plan_scan_hint">Halte die Kamera vor den Code auf der Planer-Seite.</string>
+    <string name="web_plan_scan_wrong">Das ist nicht der Code des Web-Planers. Die Seite zeigt ihn, wenn du auf Send to Curveon oder Code for the app tippst.</string>
+    <string name="web_plan_no_camera">Dieses Gerät hat keine Kamera. Scanne den Code mit Curveon auf dem Handy und schicke die Tour von dort ans Tablet.</string>
+    <string name="web_plan_linked">Mit dem Web-Planer verbunden</string>
 </resources>

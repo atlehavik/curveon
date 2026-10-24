@@ -85,6 +85,10 @@ apart from the encrypted data kept temporarily on the relay, so there is little 
 the right to access, correction and deletion under the GDPR, and to complain to the Norwegian Data Protection
 Authority (Datatilsynet). Contact [email address].
 
+## The web planner
+
+The web planner (relay.curveon.no/plan, also reached from curveon.no/plan) has no account and no cookies. The points you plan through go to our server to work out the road; it answers and keeps nothing, and nothing about you is logged. What you search for goes to Photon (Komoot) and Kartverket, and a point you click on the map goes to Photon to be named. A trip you send to Curveon is encrypted in your browser with a key that only the browser and the apps that scanned its code have; the relay keeps it, unreadable, for up to 30 days so the app can fetch it. The key and the list of trips you sent are kept in your browser's local storage, and you can clear them with the browser's site data.
+
 ## The website
 
 curveon.no and the invite page at relay.curveon.no use no tracking or cookies. The server sees your IP address

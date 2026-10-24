@@ -16,6 +16,8 @@ class CurveonRepository(
 
     suspend fun saveRoute(route: RouteItem): Long = routeDao.insertRoute(route)
 
+    suspend fun route(id: Long): RouteItem? = routeDao.getRouteById(id)
+
     suspend fun deleteRoute(id: Long) = routeDao.deleteRouteById(id)
 
     suspend fun renameRoute(id: Long, title: String) = routeDao.renameRoute(id, title)

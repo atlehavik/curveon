@@ -27,7 +27,8 @@
       "The GPX button in the main menu is now violet, so it no longer looks like the button next to it",
       "The buttons in the main menu now all behave the same: the open one lights up in its own colour, green for the phone, orange for friends and violet for GPX",
       "A selfie for your profile now looks like the one you framed: it is no longer flipped after you take it. And when you allow SMS or the microphone in the phone settings, the notice goes away at once",
-      "We went through every text in the app, in English and Norwegian, so buttons, hints and help say plainly what they do and match how Curveon works today. In a group ride the others are now called participants in Norwegian, and the companion app speaks your language too"
+      "We went through every text in the app, in English and Norwegian, so buttons, hints and help say plainly what they do and match how Curveon works today. In a group ride the others are now called participants in Norwegian, and the companion app speaks your language too",
+      "Plan your trips on a big screen! At curveon.no/plan you get the same map and the same roads as in the app, in the browser on your computer: search, click the map, drag the line where you want it to go and press Send to Curveon. Scan the code the page shows once, under Planned → From the web, and every trip you send turns up among your planned trips, ready to ride. The trip travels encrypted, so nobody else can read it on the way"
     ],
     "nb": [
       "Funnet en feil eller fått en idé? Under Innstillinger → Hjelp kan du nå si fra rett fra appen, med tittel, noen ord og gjerne bilder. Du trenger ingen GitHub-konto: det blir en sak på GitHub som alle kan lese, og under Mine tilbakemeldinger ser du om den er tatt tak i, hvor mange svar den har fått, og kan åpne den for å følge med. Lista rydder seg selv: en sak som slettes forsvinner, og en som lukkes blir stående i to uker så du ser hvordan det endte",
@@ -55,9 +56,11 @@
       "GPX-knappen i hovedmenyen er nå fiolett, så den ikke ser lik ut som knappen ved siden av",
       "Knappene i hovedmenyen oppfører seg nå likt: den som er åpen lyser i sin egen farge, grønn for telefon, oransje for venner og fiolett for GPX",
       "En selfie til profilen ser nå ut som den du rammet inn: den snus ikke lenger etter at du har tatt den. Og når du gir tillatelse til SMS eller mikrofon i telefoninnstillingene, forsvinner advarselen med en gang",
-      "Vi har gått gjennom alle tekstene i appen, på norsk og engelsk, så knapper, hint og hjelp sier rett ut hva de gjør og stemmer med hvordan Curveon virker i dag. På en gruppetur heter de andre nå deltakere, og Companion-appen snakker også norsk"
+      "Vi har gått gjennom alle tekstene i appen, på norsk og engelsk, så knapper, hint og hjelp sier rett ut hva de gjør og stemmer med hvordan Curveon virker i dag. På en gruppetur heter de andre nå deltakere, og Companion-appen snakker også norsk",
+      "Planlegg turene på stor skjerm! På curveon.no/plan får du det samme kartet og de samme veiene som i appen, i nettleseren på datamaskinen: søk, klikk i kartet, dra linjen dit du vil at den skal gå og trykk Send til Curveon. Skann koden siden viser én gang, under Planlagte → Fra nettet, så dukker hver tur du sender opp blant de planlagte turene dine, klar til å kjøres. Turen sendes kryptert, så ingen andre kan lese den underveis"
     ],
     "sv": [
+      "Hittat ett fel eller fått en idé? Under Inställningar → Hjälp kan du nu säga till direkt från appen, med rubrik, några ord och gärna bilder. Du behöver inget GitHub-konto: det blir ett ärende på GitHub som alla kan läsa, och under Dina rapporter ser du om det tas om hand, hur många svar det har fått, och kan öppna det för att följa med. Listan städar sig själv: ett ärende som raderas försvinner, och ett som stängs ligger kvar i två veckor så du ser hur det slutade",
       "Inga fler vändningar mitt på vägen: en tur som en vän delar med dig ansluter du nu till i den riktning den går, så du skickas aldrig till en punkt på vägen bara för att vända där. Och har turen ett stopp längs vägen kör du vidare åt samma håll till en korsning eller rondell i stället för att vända på vägen",
       "När du kör utan rutt ligger markören nu på vägen du kör i stället för att glida bredvid, och den pekar längs vägen",
       "Skriver du ett sms från helskärmskartan visas instrumentpanelen så att du ser vad du säger, och kartan kommer tillbaka när det är skickat eller avbrutet",
@@ -82,9 +85,11 @@
       "GPX-knappen i huvudmenyn är nu violett, så den inte ser ut som knappen bredvid",
       "Knapparna i huvudmenyn beter sig nu likadant: den som är öppen lyser i sin egen färg, grönt för telefon, orange för vänner och violett för GPX",
       "En selfie till profilen ser nu ut som den du ramade in: den vänds inte längre efter att du tagit den. Och när du tillåter SMS eller mikrofon i telefoninställningarna försvinner varningen direkt",
-      "Vi har gått igenom alla texter i appen, så knappar, tips och hjälp säger rakt ut vad de gör och stämmer med hur Curveon fungerar i dag. Companion-appen talar nu också ditt språk"
+      "Vi har gått igenom alla texter i appen, så knappar, tips och hjälp säger rakt ut vad de gör och stämmer med hur Curveon fungerar i dag. Companion-appen talar nu också ditt språk",
+      "Planera dina turer på stor skärm! På curveon.no/plan får du samma karta och samma vägar som i appen, i webbläsaren på datorn: sök, klicka på kartan, dra linjen dit du vill att den ska gå och tryck på Send to Curveon. Skanna koden som sidan visar en gång, under Planerade → Från webben, så dyker varje tur du skickar upp bland dina planerade turer, redo att köras. Turen skickas krypterad, så ingen annan kan läsa den på vägen"
     ],
     "da": [
+      "Fundet en fejl eller fået en idé? Under Indstillinger → Hjælp kan du nu sige til direkte fra appen, med titel, et par ord og gerne billeder. Du behøver ingen GitHub-konto: det bliver en sag på GitHub, som alle kan læse, og under Dine rapporter kan du se, om der bliver taget hånd om den, hvor mange svar den har fået, og åbne den for at følge med. Listen rydder op af sig selv: en sag, der slettes, forsvinder, og en, der lukkes, bliver stående i to uger, så du kan se, hvordan det endte",
       "Ingen flere vendinger midt på vejen: en tur, en ven deler med dig, kobler du dig nu på i den retning, den kører, så du bliver aldrig sendt hen til et punkt på vejen bare for at vende der. Og har turen et stop langs vejen, kører du videre samme vej til et kryds eller en rundkørsel i stedet for at vende på vejen",
       "Når du kører uden rute, ligger markøren nu på den vej, du kører, i stedet for at glide ved siden af, og den peger langs vejen",
       "Skriver du en sms fra fuldskærmskortet, kommer instrumentbrættet frem, så du kan se, hvad du siger, og kortet kommer tilbage, når den er sendt eller annulleret",
@@ -109,9 +114,11 @@
       "GPX-knappen i hovedmenuen er nu violet, så den ikke ligner knappen ved siden af",
       "Knapperne i hovedmenuen opfører sig nu ens: den, der er åben, lyser i sin egen farve, grøn for telefon, orange for venner og violet for GPX",
       "En selfie til profilen ser nu ud som den, du indrammede: den vendes ikke længere, når du har taget den. Og når du giver tilladelse til SMS eller mikrofon i telefonindstillingerne, forsvinder advarslen med det samme",
-      "Vi har gennemgået alle tekster i appen, så knapper, tips og hjælp siger klart, hvad de gør, og passer til, hvordan Curveon virker i dag. Companion-appen taler nu også dit sprog"
+      "Vi har gennemgået alle tekster i appen, så knapper, tips og hjælp siger klart, hvad de gør, og passer til, hvordan Curveon virker i dag. Companion-appen taler nu også dit sprog",
+      "Planlæg dine ture på stor skærm! På curveon.no/plan får du det samme kort og de samme veje som i appen, i browseren på din computer: søg, klik på kortet, træk linjen derhen, hvor du vil have den, og tryk på Send to Curveon. Scan koden, siden viser, én gang under Planlagt → Fra nettet, så dukker hver tur, du sender, op blandt dine planlagte ture, klar til at blive kørt. Turen sendes krypteret, så ingen andre kan læse den undervejs"
     ],
     "fi": [
+      "Löysitkö virheen tai tuliko idea? Kohdassa Asetukset → Ohje voit nyt kertoa siitä suoraan sovelluksesta, otsikon, muutaman sanan ja halutessasi kuvien kanssa. GitHub-tiliä ei tarvita: siitä tulee GitHubiin kaikkien luettavissa oleva ilmoitus, ja kohdassa Omat ilmoitukset näet, onko sitä käsitelty ja montako vastausta se on saanut, ja voit avata sen seurataksesi. Lista siivoaa itsensä: poistettu ilmoitus katoaa, ja suljettu jää näkyviin kahdeksi viikoksi, jotta näet, miten kävi",
       "Ei enää kääntymistä keskellä tietä: ystävän jakamaan reittiin liityt nyt sen kulkusuuntaan, joten sinua ei koskaan ohjata tien pisteeseen vain kääntymään siellä. Ja jos reitillä on pysähdys tien varrella, jatkat siitä samaan suuntaan risteykseen tai liikenneympyrään sen sijaan, että tekisit U-käännöksen tiellä",
       "Kun ajat ilman reittiä, merkkisi on nyt tiellä, jota ajat, eikä ajelehdi sen vieressä, ja se osoittaa tien suuntaan",
       "Kun kirjoitat tekstiviestin koko näytön kartalta, kojelauta tulee esiin, jotta näet mitä sanot, ja kartta palaa, kun viesti on lähetetty tai peruttu",
@@ -136,9 +143,11 @@
       "GPX-painike päävalikossa on nyt violetti, jotta se ei näytä viereiseltä painikkeelta",
       "Päävalikon painikkeet toimivat nyt samoin: avoin painike hehkuu omalla värillään, puhelin vihreänä, ystävät oranssina ja GPX violettina",
       "Profiilin selfie näyttää nyt samalta kuin rajasit sen: sitä ei enää käännetä oton jälkeen. Ja kun sallit tekstiviestit tai mikrofonin puhelimen asetuksissa, huomautus katoaa heti",
-      "Kävimme läpi kaikki sovelluksen tekstit, joten painikkeet, vihjeet ja ohjeet kertovat suoraan, mitä ne tekevät, ja vastaavat sitä, miten Curveon nyt toimii. Myös Companion-sovellus puhuu nyt kieltäsi"
+      "Kävimme läpi kaikki sovelluksen tekstit, joten painikkeet, vihjeet ja ohjeet kertovat suoraan, mitä ne tekevät, ja vastaavat sitä, miten Curveon nyt toimii. Myös Companion-sovellus puhuu nyt kieltäsi",
+      "Suunnittele reitit isolla näytöllä! Osoitteessa curveon.no/plan saat saman kartan ja samat tiet kuin sovelluksessa, tietokoneen selaimessa: hae, napsauta karttaa, vedä viiva sinne, mistä haluat sen kulkevan, ja paina Send to Curveon. Skannaa sivun näyttämä koodi kerran kohdassa Suunnitellut → Verkosta, niin jokainen lähettämäsi reitti ilmestyy suunniteltuihin reitteihisi valmiina ajettavaksi. Reitti kulkee salattuna, joten kukaan muu ei voi lukea sitä matkalla"
     ],
     "is": [
+      "Fannstu villu eða fékkstu hugmynd? Undir Stillingar → Hjálp geturðu nú látið vita beint úr appinu, með titli, nokkrum orðum og myndum ef þú vilt. Þú þarft engan GitHub-aðgang: þetta verður mál á GitHub sem allir geta lesið, og undir Þínar tilkynningar sérðu hvort verið er að vinna í því, hversu mörg svör það hefur fengið, og getur opnað það til að fylgjast með. Listinn tekur til eftir sig: mál sem er eytt hverfur, og mál sem er lokað stendur í tvær vikur svo þú sjáir hvernig fór",
       "Engar fleiri U-beygjur á miðjum vegi: ferð sem vinur deilir með þér tengist þú nú í þá átt sem hún liggur, svo þú ert aldrei sendur á punkt á veginum bara til að snúa þar við. Og ef ferðin hefur viðkomustað við veginn heldur þú áfram sömu leið að gatnamótum eða hringtorgi í stað þess að snúa við á veginum",
       "Þegar þú ekur án leiðar situr merkið þitt nú á veginum sem þú ekur í stað þess að reka við hliðina á honum, og vísar eftir veginum",
       "Þegar þú skrifar SMS af kortinu á öllum skjánum birtist mælaborðið svo þú sjáir hvað þú segir, og kortið kemur aftur þegar það er sent eða hætt við",
@@ -163,9 +172,11 @@
       "GPX-hnappurinn í aðalvalmyndinni er nú fjólublár, svo hann líti ekki út eins og hnappurinn við hliðina",
       "Hnapparnir í aðalvalmyndinni haga sér nú eins: sá sem er opinn lýsir í sínum eigin lit, grænn fyrir síma, appelsínugulur fyrir vini og fjólublár fyrir GPX",
       "Sjálfsmynd fyrir prófílinn lítur nú út eins og þú rammaðir hana inn: henni er ekki lengur snúið eftir að þú tekur hana. Og þegar þú leyfir SMS eða hljóðnema í símastillingunum hverfur ábendingin strax",
-      "Við fórum yfir alla texta í appinu, svo hnappar, ábendingar og hjálp segja skýrt hvað þau gera og passa við hvernig Curveon virkar í dag. Companion-appið talar nú líka þitt tungumál"
+      "Við fórum yfir alla texta í appinu, svo hnappar, ábendingar og hjálp segja skýrt hvað þau gera og passa við hvernig Curveon virkar í dag. Companion-appið talar nú líka þitt tungumál",
+      "Skipuleggðu ferðirnar á stórum skjá! Á curveon.no/plan færðu sama kort og sömu vegi og í appinu, í vafranum í tölvunni: leitaðu, smelltu á kortið, dragðu línuna þangað sem þú vilt að hún liggi og ýttu á Send to Curveon. Skannaðu kóðann sem síðan sýnir einu sinni, undir Fyrirhugað → Af vefnum, og hver ferð sem þú sendir birtist meðal fyrirhugaðra ferða, tilbúin til aksturs. Ferðin er send dulkóðuð, svo enginn annar getur lesið hana á leiðinni"
     ],
     "de": [
+      "Einen Fehler gefunden oder eine Idee? Unter Einstellungen → Hilfe kannst du uns das jetzt direkt aus der App schicken, mit Titel, ein paar Worten und gern Bildern. Ein GitHub-Konto brauchst du nicht: Daraus wird ein Eintrag auf GitHub, den alle lesen können, und unter Deine Berichte siehst du, ob er bearbeitet wird und wie viele Antworten er hat, und kannst ihn öffnen, um dranzubleiben. Die Liste räumt sich selbst auf: Ein gelöschter Bericht verschwindet, und ein geschlossener bleibt zwei Wochen stehen, damit du siehst, wie es ausgegangen ist",
       "Kein Wenden mehr mitten auf der Straße: In eine Tour, die ein Freund mit dir teilt, steigst du jetzt in Fahrtrichtung ein, sodass du nie zu einem Punkt auf der Straße geschickt wirst, nur um dort zu wenden. Und hat die Tour einen Stopp an der Straße, fährst du in deiner Richtung weiter bis zu einer Kreuzung oder einem Kreisverkehr, statt auf der Straße zu wenden",
       "Fährst du ohne Route, sitzt dein Marker jetzt auf der Straße, auf der du fährst, statt daneben zu treiben, und zeigt entlang der Straße",
       "Schreibst du eine SMS aus der Vollbildkarte, erscheint das Dashboard, damit du siehst, was du sagst, und die Karte kommt zurück, sobald sie gesendet oder abgebrochen ist",
@@ -190,9 +201,11 @@
       "Die GPX-Taste im Hauptmenü ist jetzt violett und sieht nicht mehr aus wie die Taste daneben",
       "Die Tasten im Hauptmenü verhalten sich jetzt alle gleich: Die geöffnete leuchtet in ihrer eigenen Farbe, grün für Telefon, orange für Freunde und violett für GPX",
       "Ein Selfie für dein Profil sieht jetzt so aus, wie du es aufgenommen hast: Es wird nach dem Foto nicht mehr gespiegelt. Und wenn du SMS oder das Mikrofon in den Telefoneinstellungen erlaubst, verschwindet der Hinweis sofort",
-      "Wir haben alle Texte der App durchgesehen: Schaltflächen, Hinweise und Hilfe sagen jetzt klar, was sie tun, und passen dazu, wie Curveon heute funktioniert. Auch die Companion-App spricht jetzt deine Sprache"
+      "Wir haben alle Texte der App durchgesehen: Schaltflächen, Hinweise und Hilfe sagen jetzt klar, was sie tun, und passen dazu, wie Curveon heute funktioniert. Auch die Companion-App spricht jetzt deine Sprache",
+      "Plane deine Touren am großen Bildschirm! Auf curveon.no/plan bekommst du dieselbe Karte und dieselben Straßen wie in der App, im Browser auf deinem Computer: suchen, auf die Karte klicken, die Linie dorthin ziehen, wo sie langgehen soll, und auf Send to Curveon tippen. Scanne den Code, den die Seite zeigt, einmal unter Geplant → Aus dem Web, und jede Tour, die du schickst, landet bei deinen geplanten Touren, bereit zum Fahren. Die Tour wird verschlüsselt übertragen, sodass unterwegs niemand sonst sie lesen kann"
     ],
     "es": [
+      "¿Has encontrado un fallo o tienes una idea? En Ajustes → Ayuda ahora puedes contárnoslo desde la propia app, con un título, unas palabras y fotos si quieres. No necesitas cuenta de GitHub: se convierte en una incidencia en GitHub que cualquiera puede leer, y en Tus informes ves si se está atendiendo, cuántas respuestas tiene, y puedes abrirla para seguirla. La lista se ordena sola: un informe borrado desaparece, y uno cerrado se queda dos semanas para que veas cómo acabó",
       "Se acabó dar la vuelta en mitad de la carretera: a una ruta que te comparte un amigo ahora te unes en su sentido, así que nunca te manda a un punto de la carretera solo para dar la vuelta allí. Y si la ruta tiene una parada junto a la carretera, sigues en la misma dirección hasta un cruce o una rotonda en lugar de hacer un cambio de sentido en la carretera",
       "Cuando vas sin ruta, tu marcador ahora va sobre la carretera por la que circulas en vez de desviarse a un lado, y apunta a lo largo de ella",
       "Si escribes un SMS desde el mapa a pantalla completa, aparece el panel para que veas lo que dices, y el mapa vuelve en cuanto se envía o se cancela",
@@ -217,9 +230,11 @@
       "El botón GPX del menú principal ahora es violeta, para que no se parezca al botón de al lado",
       "Los botones del menú principal ahora se comportan igual: el que está abierto se ilumina con su propio color, verde para el teléfono, naranja para amigos y violeta para GPX",
       "Un selfie para tu perfil ahora se ve como lo encuadraste: ya no se voltea después de hacerlo. Y cuando permites SMS o el micrófono en los ajustes del teléfono, el aviso desaparece al instante",
-      "Hemos revisado todos los textos de la app: botones, consejos y ayuda dicen claramente qué hacen y coinciden con cómo funciona Curveon hoy. La app Companion ahora también habla tu idioma"
+      "Hemos revisado todos los textos de la app: botones, consejos y ayuda dicen claramente qué hacen y coinciden con cómo funciona Curveon hoy. La app Companion ahora también habla tu idioma",
+      "¡Planifica tus rutas en una pantalla grande! En curveon.no/plan tienes el mismo mapa y las mismas carreteras que en la app, en el navegador de tu ordenador: busca, haz clic en el mapa, arrastra la línea por donde quieras que vaya y pulsa Send to Curveon. Escanea una vez el código que muestra la página, en Planificados → Desde la web, y cada ruta que envíes aparecerá entre tus rutas planificadas, lista para rodar. La ruta viaja cifrada, así que nadie más puede leerla por el camino"
     ],
     "fr": [
+      "Un bug ou une idée ? Dans Réglages → Aide, tu peux maintenant nous le dire directement depuis l'appli, avec un titre, quelques mots et des photos si tu veux. Pas besoin de compte GitHub : cela devient un ticket sur GitHub que tout le monde peut lire, et dans Tes signalements tu vois s'il est pris en charge, combien de réponses il a reçues, et tu peux l'ouvrir pour suivre. La liste se range toute seule : un signalement supprimé disparaît, et un signalement fermé reste deux semaines pour que tu voies comment ça s'est terminé",
       "Fini les demi-tours au milieu de la route : un trajet qu'un ami partage avec toi est désormais rejoint dans son sens, tu n'es donc jamais envoyé vers un point de la route juste pour y faire demi-tour. Et si le trajet a un arrêt au bord de la route, tu repars dans le même sens jusqu'à un carrefour ou un rond-point au lieu de faire demi-tour sur la route",
       "Quand tu roules sans itinéraire, ton marqueur reste maintenant sur la route que tu suis au lieu de dériver à côté, et il pointe le long de la route",
       "Quand tu écris un SMS depuis la carte plein écran, le tableau de bord s'affiche pour que tu voies ce que tu dis, et la carte revient dès qu'il est envoyé ou annulé",
@@ -244,9 +259,11 @@
       "Le bouton GPX du menu principal est maintenant violet, pour ne plus ressembler au bouton voisin",
       "Les boutons du menu principal se comportent maintenant tous pareil : celui qui est ouvert s'allume de sa propre couleur, vert pour le téléphone, orange pour les amis et violet pour GPX",
       "Un selfie pour ton profil ressemble maintenant à celui que tu as cadré : il n'est plus retourné après la prise. Et quand tu autorises les SMS ou le micro dans les réglages du téléphone, l'avis disparaît aussitôt",
-      "Nous avons relu tous les textes de l'appli : boutons, conseils et aide disent clairement ce qu'ils font et correspondent au fonctionnement actuel de Curveon. L'appli Companion parle aussi votre langue maintenant"
+      "Nous avons relu tous les textes de l'appli : boutons, conseils et aide disent clairement ce qu'ils font et correspondent au fonctionnement actuel de Curveon. L'appli Companion parle aussi votre langue maintenant",
+      "Prépare tes trajets sur grand écran ! Sur curveon.no/plan tu retrouves la même carte et les mêmes routes que dans l'appli, dans le navigateur de ton ordinateur : cherche, clique sur la carte, fais glisser la ligne là où tu veux qu'elle passe et appuie sur Send to Curveon. Scanne une fois le code affiché par la page, dans Prévus → Depuis le web, et chaque trajet que tu envoies arrive parmi tes trajets prévus, prêt à rouler. Le trajet voyage chiffré, personne d'autre ne peut le lire en chemin"
     ],
     "nl": [
+      "Een fout gevonden of een idee? Onder Instellingen → Hulp kun je het nu rechtstreeks vanuit de app laten weten, met een titel, een paar woorden en graag foto's. Je hebt geen GitHub-account nodig: het wordt een melding op GitHub die iedereen kan lezen, en onder Jouw meldingen zie je of eraan gewerkt wordt, hoeveel reacties er zijn, en kun je hem openen om hem te volgen. De lijst ruimt zichzelf op: een verwijderde melding verdwijnt, en een gesloten melding blijft twee weken staan zodat je ziet hoe het afliep",
       "Nooit meer keren midden op de weg: bij een rit die een vriend met je deelt, sluit je nu aan in de rijrichting, dus je wordt nooit naar een punt op de weg gestuurd alleen om daar te keren. En heeft de rit een stop langs de weg, dan rijd je in dezelfde richting door naar een kruising of rotonde in plaats van op de weg te keren",
       "Rijd je zonder route, dan staat je markering nu op de weg waarop je rijdt in plaats van ernaast te zweven, en wijst hij langs de weg",
       "Schrijf je een sms vanaf de volledige kaart, dan verschijnt het dashboard zodat je ziet wat je zegt, en komt de kaart terug zodra hij verstuurd of geannuleerd is",
@@ -271,9 +288,11 @@
       "De GPX-knop in het hoofdmenu is nu paars, zodat hij niet meer lijkt op de knop ernaast",
       "De knoppen in het hoofdmenu doen nu allemaal hetzelfde: de geopende licht op in zijn eigen kleur, groen voor telefoon, oranje voor vrienden en paars voor GPX",
       "Een selfie voor je profiel ziet er nu uit zoals je hem in beeld bracht: hij wordt na het nemen niet meer omgedraaid. En als je sms of de microfoon toestaat in de telefooninstellingen, verdwijnt de melding meteen",
-      "We hebben alle teksten in de app nagelopen: knoppen, tips en hulp zeggen duidelijk wat ze doen en kloppen met hoe Curveon nu werkt. De Companion-app spreekt nu ook jouw taal"
+      "We hebben alle teksten in de app nagelopen: knoppen, tips en hulp zeggen duidelijk wat ze doen en kloppen met hoe Curveon nu werkt. De Companion-app spreekt nu ook jouw taal",
+      "Plan je ritten op een groot scherm! Op curveon.no/plan krijg je dezelfde kaart en dezelfde wegen als in de app, in de browser op je computer: zoek, klik op de kaart, sleep de lijn naar waar je hem wilt hebben en tik op Send to Curveon. Scan de code die de pagina toont één keer, onder Gepland → Van het web, en elke rit die je stuurt verschijnt tussen je geplande ritten, klaar om te rijden. De rit gaat versleuteld, dus niemand anders kan hem onderweg lezen"
     ],
     "pl": [
+      "Znalazłeś błąd albo masz pomysł? W Ustawienia → Pomoc możesz teraz zgłosić to prosto z aplikacji, z tytułem, kilkoma słowami i zdjęciami, jeśli chcesz. Nie potrzebujesz konta GitHub: zgłoszenie trafia na GitHub, gdzie każdy może je przeczytać, a w Twoje zgłoszenia widzisz, czy ktoś się nim zajmuje, ile ma odpowiedzi, i możesz je otworzyć, żeby śledzić sprawę. Lista porządkuje się sama: usunięte zgłoszenie znika, a zamknięte zostaje na dwa tygodnie, żebyś zobaczył, jak się skończyło",
       "Koniec z zawracaniem na środku drogi: do trasy udostępnionej przez znajomego dołączasz teraz zgodnie z jej kierunkiem, więc nigdy nie zostaniesz wysłany do punktu na drodze tylko po to, by tam zawrócić. A jeśli trasa ma postój przy drodze, jedziesz dalej w tym samym kierunku do skrzyżowania lub ronda zamiast zawracać na drodze",
       "Gdy jedziesz bez trasy, twój znacznik leży teraz na drodze, którą jedziesz, zamiast dryfować obok, i wskazuje wzdłuż drogi",
       "Gdy piszesz SMS z mapy na pełnym ekranie, pojawia się panel, żebyś widział, co mówisz, a mapa wraca, gdy wiadomość zostanie wysłana lub anulowana",
@@ -298,7 +317,8 @@
       "Przycisk GPX w menu głównym jest teraz fioletowy, więc nie wygląda już jak sąsiedni przycisk",
       "Przyciski w menu głównym zachowują się teraz tak samo: otwarty świeci własnym kolorem, zielonym dla telefonu, pomarańczowym dla znajomych i fioletowym dla GPX",
       "Selfie do profilu wygląda teraz tak, jak je kadrowałeś: po zrobieniu nie jest już odwracane. A gdy zezwolisz na SMS-y lub mikrofon w ustawieniach telefonu, ostrzeżenie znika od razu",
-      "Przejrzeliśmy wszystkie teksty w aplikacji: przyciski, podpowiedzi i pomoc mówią jasno, co robią, i zgadzają się z tym, jak Curveon działa dziś. Aplikacja Companion mówi teraz także w Twoim języku"
+      "Przejrzeliśmy wszystkie teksty w aplikacji: przyciski, podpowiedzi i pomoc mówią jasno, co robią, i zgadzają się z tym, jak Curveon działa dziś. Aplikacja Companion mówi teraz także w Twoim języku",
+      "Planuj trasy na dużym ekranie! Na curveon.no/plan masz tę samą mapę i te same drogi co w aplikacji, w przeglądarce na komputerze: szukaj, klikaj na mapie, przeciągnij linię tam, gdzie ma prowadzić, i naciśnij Send to Curveon. Zeskanuj raz kod, który pokazuje strona, w Planowane → Z internetu, a każda wysłana trasa pojawi się wśród Twoich planowanych tras, gotowa do jazdy. Trasa jest przesyłana zaszyfrowana, więc nikt inny nie może jej po drodze przeczytać"
     ]
   },
   {

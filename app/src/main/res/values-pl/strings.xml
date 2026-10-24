@@ -1218,4 +1218,31 @@
     <string name="friend_request_offer_title">%1$s chce być twoim znajomym</string>
     <string name="friend_request_offer_group">Poznaliście się w %1$s</string>
     <string name="friend_request_decline">Nie, dziękuję</string>
+    <string name="web_plan_button">Z internetu</string>
+    <string name="web_plan_title">Trasy z internetu</string>
+    <string name="web_plan_intro">Zaplanuj trasę na komputerze na curveon.no/plan, z dużą mapą i tymi samymi drogami co tutaj. Naciśnij tam Send to Curveon i zeskanuj pokazany kod. Trasa pojawi się tutaj w Planowane.</string>
+    <string name="web_plan_connected">Połączono z planerem internetowym. Nowe trasy przychodzą przy starcie Curveon i gdy otwierasz Planowane.</string>
+    <string name="web_plan_scan">Zeskanuj kod</string>
+    <string name="web_plan_scan_another">Zeskanuj kod z innej przeglądarki</string>
+    <string name="web_plan_fetch">Pobierz teraz</string>
+    <string name="web_plan_fetching">Pobieranie…</string>
+    <string name="web_plan_offline">Brak połączenia z internetem. Trasy przyjdą, gdy Curveon będzie znowu online.</string>
+    <string name="web_plan_nothing_new">Nic nowego z internetu.</string>
+    <plurals name="web_plan_new">
+        <item quantity="one">%d nowa trasa z internetu</item>
+        <item quantity="few">%d nowe trasy z internetu</item>
+        <item quantity="many">%d nowych tras z internetu</item>
+        <item quantity="other">%d nowej trasy z internetu</item>
+    </plurals>
+    <plurals name="web_plan_changed">
+        <item quantity="one">%d trasa zmieniona w internecie</item>
+        <item quantity="few">%d trasy zmienione w internecie</item>
+        <item quantity="many">%d tras zmienionych w internecie</item>
+        <item quantity="other">%d trasy zmienionej w internecie</item>
+    </plurals>
+    <string name="web_plan_forget">Rozłącz</string>
+    <string name="web_plan_scan_hint">Trzymaj aparat przed kodem na stronie planera.</string>
+    <string name="web_plan_scan_wrong">To nie jest kod planera internetowego. Strona pokazuje go po naciśnięciu Send to Curveon lub Code for the app.</string>
+    <string name="web_plan_no_camera">To urządzenie nie ma aparatu. Zeskanuj kod Curveon na telefonie i stamtąd wyślij trasę na tablet.</string>
+    <string name="web_plan_linked">Połączono z planerem internetowym</string>
 </resources>

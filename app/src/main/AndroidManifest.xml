@@ -80,6 +80,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="curveon" android:host="join" />
             </intent-filter>
+            <!-- The web planner's code (relay.curveon.no/plan), when read with the phone's camera app instead of Curveon. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="curveon" android:host="webplan" />
+            </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
