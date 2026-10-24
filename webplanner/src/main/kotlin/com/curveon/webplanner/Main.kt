@@ -90,8 +90,9 @@ private fun send(ex: HttpExchange, status: Int, type: String, body: ByteArray) {
 
 /** A file under [root] (local trying only; Caddy does this on the VPS), with Range for the pmtiles map. */
 private fun sendFile(ex: HttpExchange, file: File, root: File) {
-  val f = file.canonicalFile
-  if (!f.path.startsWith(root.canonicalPath) || !f.isFile) return send(ex, 404, "text/plain", ByteArray(0))
+  // Normalised, not canonical: no way out of [root] with "..", but the map may be a link to the data folder.
+  val f = file.toPath().toAbsolutePath().normalize().toFile()
+  if (!f.toPath().startsWith(root.toPath().toAbsolutePath().normalize()) || !f.isFile) return send(ex, 404, "text/plain", ByteArray(0))
   val type = when (f.extension) {
     "html" -> "text/html; charset=utf-8"; "js" -> "text/javascript"; "css" -> "text/css"; "json" -> "application/json"
     "png" -> "image/png"; "svg" -> "image/svg+xml"; "pbf" -> "application/x-protobuf"; else -> "application/octet-stream"

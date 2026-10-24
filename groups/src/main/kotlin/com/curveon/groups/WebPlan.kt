@@ -106,7 +106,8 @@ object WebPlan {
 
   /** A trip from [text], or null for anything else (another type, another key, altered, malformed). */
   fun openPlan(link: WebPlanLink, text: String): WebPlanTrip? = open(link, text, FrameType.PLAN)?.let {
-    WebPlanTrip.fromJson(it.getString("tid"), it.getLong("rev"), it.optLong("ts"), it.getJSONObject("trip"))
+    // A trip the page took back comes as `gone` without one: nothing to fetch.
+    runCatching { WebPlanTrip.fromJson(it.getString("tid"), it.getLong("rev"), it.optLong("ts"), it.getJSONObject("trip")) }.getOrNull()
   }
 
   private fun sealed(link: WebPlanLink, type: FrameType, riderId: ByteArray, body: JSONObject, tripId: String): String {
@@ -124,7 +125,7 @@ object WebPlan {
   }
 
   /** Relay slots are base64url; trip ids from the page are already, but keep them in shape. */
-  internal fun slot(tripId: String) = tripId.filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(43).ifEmpty { "t" }
+  internal fun slot(tripId: String) = tripId.filter { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' || it == '-' || it == '_' }.take(43).ifEmpty { "t" }
 }
 
 /**
