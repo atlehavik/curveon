@@ -116,6 +116,22 @@ compiles it ahead of time instead of waiting for Android to do it overnight.
 
 Emulator for a 7" tablet: API 33, 1080x1920 @ 320 dpi, landscape.
 
+## Devices over wifi
+
+The X7 on the handlebars and the Pixel are often reached over wifi instead of USB.
+
+- `adb mdns services` lists a device as `_adb-tls-connect` once Wireless debugging is on and this PC
+  is paired; `adb connect <ip:port>` from that line (the port changes each time Wireless debugging
+  is switched on).
+- Not paired yet: on the device, Settings → Developer options → Wireless debugging → Pair device
+  with pairing code, then `adb pair <ip:pairport> <code>`.
+- Android switches Wireless debugging off by itself whenever the device's wifi drops (screen
+  off/sleep, roaming, reboot); "Connection refused" or "device offline" means that happened
+  (`adb mdns services` may still show a stale entry). Once connected, `adb -s <ip:port> tcpip 5555`
+  and use `<ip>:5555` from then on: that survives wifi drops until a reboot.
+- Last known addresses: the X7 `192.168.86.250` (mDNS name `adb-241181d1-…`, already paired), the
+  Pixel `192.168.86.199`.
+
 ## Releases and in-app updates
 
 Curveon looks for a newer version on this repo's GitHub releases when it starts (release builds
