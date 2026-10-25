@@ -155,14 +155,17 @@ fun RoutePreviewSheet(
                 color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
             )
-            if (goal is NavigationGoal.Roundtrip || goal is NavigationGoal.Adventure || (goal as? NavigationGoal.Destination)?.loop != null || (goal as? NavigationGoal.Destination)?.adventure != null) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
-            if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
-            if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.EditRoad, stringResource(R.string.preview_track_to_trip), onTrackToTrip)
-            if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
-            if (preview.selectedRoute != null) ShareIcon(onShare, onSendToTablet, onShareFriends)
-            SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
-            // A trip on the map may be half an hour of planning: ask before throwing it away.
-            SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { if (preview.selectedRoute != null && askBeforeClosing) askDiscard = true else onClose() }
+            // The symbols together, so the first-time walk-through can light them up as one.
+            Row(Modifier.tourTarget(TourTarget.PLAN_ICONS), verticalAlignment = Alignment.CenterVertically) {
+                if (goal is NavigationGoal.Roundtrip || goal is NavigationGoal.Adventure || (goal as? NavigationGoal.Destination)?.loop != null || (goal as? NavigationGoal.Destination)?.adventure != null) SmallIcon(Icons.Default.Shuffle, stringResource(R.string.preview_another_loop), onShuffle)
+                if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.SwapHoriz, stringResource(R.string.preview_reverse), onReverse)
+                if (goal is NavigationGoal.Track) SmallIcon(Icons.Default.EditRoad, stringResource(R.string.preview_track_to_trip), onTrackToTrip)
+                if (preview.selectedRoute != null) SmallIcon(Icons.Default.BookmarkBorder, stringResource(R.string.preview_save), onSave)
+                if (preview.selectedRoute != null) ShareIcon(onShare, onSendToTablet, onShareFriends)
+                SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
+                // A trip on the map may be half an hour of planning: ask before throwing it away.
+                SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { if (preview.selectedRoute != null && askBeforeClosing) askDiscard = true else onClose() }
+            }
         }
         if (askDiscard) DiscardTripDialog(
             onDiscard = { askDiscard = false; onClose() },
@@ -244,17 +247,20 @@ fun RoutePreviewSheet(
                     PlanChip(
                         Icons.Default.TripOrigin,
                         goal.start?.let { stringResource(R.string.from_place, it.name) } ?: stringResource(R.string.from_here),
-                        if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart
+                        if (goal.start != null) ElectricCyan else TextSecondary, "preview_start_chip", onEditStart,
+                        modifier = Modifier.tourTarget(TourTarget.PLAN_START)
                     )
                     // Not the quickest way there: a longer ride through an area drawn on the map.
                     if (goal.loop == null && goal.adventure == null && goal.fixedLine == null && goal.stops.isEmpty()) {
-                        PlanChip(Icons.Default.Explore, stringResource(R.string.adventure_chip), NeonAmber, "preview_adventure", onAdventure, outlined = true)
+                        PlanChip(Icons.Default.Explore, stringResource(R.string.adventure_chip), NeonAmber, "preview_adventure", onAdventure, outlined = true,
+                            modifier = Modifier.tourTarget(TourTarget.PLAN_ADVENTURE))
                     }
                     // "+ Stop" next to the start, so it stays in sight however many stops the trip has.
                     // Changing the route: a stop from the search, or on the map (points, dragging the line).
                     Box {
                         var adjust by remember { mutableStateOf(false) }
-                        PlanChip(Icons.Default.Tune, stringResource(R.string.adjust_route), NeonAmber, "preview_adjust_route", { adjust = true }, outlined = true)
+                        PlanChip(Icons.Default.Tune, stringResource(R.string.adjust_route), NeonAmber, "preview_adjust_route", { adjust = true }, outlined = true,
+                            modifier = Modifier.tourTarget(TourTarget.PLAN_ADJUST))
                         DropdownMenu(adjust, onDismissRequest = { adjust = false }, modifier = Modifier.background(CockpitSurface)) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.add_stop), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -290,7 +296,7 @@ fun RoutePreviewSheet(
             }
 
             // The alternatives
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.tourTarget(TourTarget.PLAN_ROADS), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 preview.candidates.forEachIndexed { i, c ->
                     CandidateCard(c, selected = i == preview.selected, single = preview.candidates.size == 1,
                         showArrival = (goal as? NavigationGoal.Destination)?.start == null, modifier = Modifier.weight(1f)) { onSelect(i) }
@@ -560,9 +566,9 @@ private fun stopTimes(stops: List<com.curveon.data.routing.Stop>, route: com.cur
     com.curveon.data.routing.alongDistances(stops, route).map { com.curveon.routing.Routes.secondsAt(route, it) }
 
 @Composable
-private fun PlanChip(icon: ImageVector?, text: String, color: Color, tag: String, onClick: () -> Unit, outlined: Boolean = false) {
+private fun PlanChip(icon: ImageVector?, text: String, color: Color, tag: String, onClick: () -> Unit, outlined: Boolean = false, modifier: Modifier = Modifier) {
     Row(
-        Modifier.height(36.dp).clip(RoundedCornerShape(18.dp))
+        modifier.height(36.dp).clip(RoundedCornerShape(18.dp))
             .background(if (outlined) Color.Transparent else color.copy(alpha = 0.16f))
             .border(1.dp, color.copy(alpha = if (outlined) 1f else 0.4f), RoundedCornerShape(18.dp))
             .clickable(onClick = onClick).padding(horizontal = 12.dp).testTag(tag),

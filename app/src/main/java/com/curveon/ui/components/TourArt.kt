@@ -25,7 +25,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /** The little animated drawings in the welcome tour. They carry no text, so they read the same in every language. */
-enum class TourArt(val seconds: Int) { PLAN(8), EDIT(9), MARK(14), LOOP(9), SETUP(10), SOLO(10), CARDS(16), ENGINE(10) }
+enum class TourArt(val seconds: Int) { PLAN(8), BUILD(10), EDIT(9), MARK(14), LOOP(9), ADVENTURE(11), SETUP(10), SOLO(10), CARDS(16), ENGINE(10) }
 
 /** One looping animation of [art] on a dark scrap of map. */
 @Composable
@@ -43,7 +43,9 @@ fun TourArtView(art: TourArt, modifier: Modifier = Modifier) {
         val appear = phase(t, 0f, 0.04f)
         when (art) {
             TourArt.PLAN -> drawPlan(t, fade * appear)
+            TourArt.BUILD -> drawBuild(t, fade * appear)
             TourArt.EDIT -> drawEdit(t, fade * appear)
+            TourArt.ADVENTURE -> drawAdventure(t, fade * appear)
             TourArt.MARK -> drawMark(t, fade * appear)
             TourArt.LOOP -> drawLoop(t, fade * appear)
             TourArt.SETUP -> drawSetup(t, fade * appear)
@@ -160,6 +162,80 @@ private fun DrawScope.drawPlan(t: Float, alpha: Float) {
     // A tap where the stop goes.
     val tap = phase(t, 0.38f, 0.5f)
     if (t in 0.38f..0.52f) finger(stop, alpha * (1f - phase(t, 0.48f, 0.52f)), press = tap)
+}
+
+// ---------------------------------------------------------------------------------- BUILD
+
+/** A trip built point by point: a tap for the start, one for a stop, one for the end; the route follows each tap. */
+private fun DrawScope.drawBuild(t: Float, alpha: Float) {
+    val a = p(0.09f, 0.72f)
+    val stop = p(0.48f, 0.26f)
+    val b = p(0.91f, 0.64f)
+    val first = Path().apply {
+        moveTo(a.x, a.y)
+        cubicTo(size.width * 0.16f, size.height * 0.30f, size.width * 0.34f, size.height * 0.10f, stop.x, stop.y)
+    }
+    val second = Path().apply {
+        moveTo(stop.x, stop.y)
+        cubicTo(size.width * 0.62f, size.height * 0.42f, size.width * 0.74f, size.height * 0.86f, b.x, b.y)
+    }
+    val grow1 = phase(t, 0.34f, 0.46f)
+    val grow2 = phase(t, 0.64f, 0.78f)
+    if (grow1 > 0f) route(partOf(first, grow1), ElectricCyan, alpha)
+    if (grow2 > 0f) route(partOf(second, grow2), ElectricCyan, alpha)
+    startDot(a, alpha * phase(t, 0.10f, 0.16f))
+    stopDot(stop, alpha, phase(t, 0.30f, 0.36f))
+    endDot(b, alpha * phase(t, 0.60f, 0.66f), phase(t, 0.60f, 0.68f))
+    // A tap for each point.
+    fun tap(at: Offset, from: Float, to: Float) {
+        if (t in from..to) finger(at, alpha * (1f - phase(t, to - 0.03f, to)), press = phase(t, from, from + 0.07f))
+    }
+    tap(a, 0.06f, 0.18f)
+    tap(stop, 0.26f, 0.38f)
+    tap(b, 0.56f, 0.68f)
+}
+
+// ---------------------------------------------------------------------------------- ADVENTURE
+
+/** The way to a place; an area is drawn beside it, and the route bends out to wind through it before going on. */
+private fun DrawScope.drawAdventure(t: Float, alpha: Float) {
+    val a = p(0.08f, 0.70f)
+    val b = p(0.92f, 0.28f)
+    val direct = Path().apply {
+        moveTo(a.x, a.y)
+        cubicTo(size.width * 0.34f, size.height * 0.66f, size.width * 0.62f, size.height * 0.36f, b.x, b.y)
+    }
+    val winding = Path().apply {
+        moveTo(a.x, a.y)
+        cubicTo(size.width * 0.20f, size.height * 0.92f, size.width * 0.36f, size.height * 0.90f, size.width * 0.44f, size.height * 0.76f)
+        cubicTo(size.width * 0.50f, size.height * 0.62f, size.width * 0.60f, size.height * 0.60f, size.width * 0.66f, size.height * 0.76f)
+        cubicTo(size.width * 0.72f, size.height * 0.92f, size.width * 0.86f, size.height * 0.86f, size.width * 0.82f, size.height * 0.62f)
+        cubicTo(size.width * 0.80f, size.height * 0.44f, size.width * 0.90f, size.height * 0.46f, b.x, b.y)
+    }
+    val area = List(61) { i ->
+        val ang = (i.toFloat() / 60) * 2f * PI.toFloat() + PI.toFloat() * 0.5f
+        val k = 1f + 0.07f * sin(3f * ang)
+        p(0.64f + 0.27f * k * cos(ang), 0.72f + 0.19f * k * sin(ang))
+    }
+    val drawDirect = phase(t, 0.04f, 0.20f)
+    val sketch = phase(t, 0.26f, 0.5f)
+    val closed = phase(t, 0.5f, 0.56f)
+    val bend = phase(t, 0.6f, 0.86f)
+
+    // The quick way, which gives way to the winding one.
+    route(partOf(direct, drawDirect), ElectricCyan, alpha * (1f - 0.65f * bend))
+    val count = (area.size * sketch).toInt().coerceIn(0, area.size - 1)
+    val outline = Path().apply { if (count > 0) { moveTo(area[0].x, area[0].y); for (i in 1..count) lineTo(area[i].x, area[i].y) } }
+    if (closed > 0f) drawPath(Path().apply { moveTo(area[0].x, area[0].y); area.forEach { lineTo(it.x, it.y) }; close() },
+        NeonAmber.copy(alpha = 0.13f * closed * alpha))
+    val outlineAlpha = alpha * (1f - 0.6f * bend)
+    drawPath(outline, NeonAmber.copy(alpha = outlineAlpha), style = Stroke(3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+    if (closed > 0f) drawPath(Path().apply { moveTo(area.last().x, area.last().y); lineTo(area[0].x, area[0].y) },
+        NeonAmber.copy(alpha = outlineAlpha * closed), style = Stroke(3.dp.toPx(), cap = StrokeCap.Round))
+    if (t in 0.26f..0.56f) finger(area[count], alpha * (1f - phase(t, 0.5f, 0.56f)), press = phase(t, 0.26f, 0.34f))
+    if (bend > 0f) route(partOf(winding, bend), ElectricCyan, alpha)
+    startDot(a, alpha)
+    endDot(b, alpha)
 }
 
 // ---------------------------------------------------------------------------------- EDIT

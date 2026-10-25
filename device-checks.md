@@ -6,6 +6,11 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — Frisket opp velkomstomvisning og førstegangshjelp for turkortet
+
+- [ ] Når bygget med 1.2.7 er på enheten: Innstillinger → Hjelp → Start omvisningen. Steg 2–6 forklarer hovedknappene (Hvor skal du?, GPX og turer, Telefon, Venner, Innstillinger), og «Bygg den i kartet» og «Eventyr» har egne tegninger. Sjekk at ingen knapp eller tekst er avkuttet på Pixel (stående og liggende) og X7.
+- [ ] Første gang du planlegger en tur til et sted etterpå (Hvor skal du? → velg et sted): en kort gjennomgang (5 steg) lyser over symbolene og knappene på turkortet. Den kommer ikke igjen etter OK; «Start omvisningen» i Hjelp henter den tilbake.
+
 ## 2026-10-25 — Fartsgrenseskilt også uten navigasjon
 
 - [ ] Kjør E39 (eller en annen vei med skiftende fartsgrense) uten navigasjon, over 15 km/t, med kartdata for ruting lastet: fartsgrenseskilt dukker opp på kartet i god tid før grensen endrer seg, og forsvinner når du har passert dem. Svinger du av, byttes de til den nye veien. Kommer ingen skilt: sjekk først at ruting er lastet ned (Innstillinger); i skarpe svinger kan veien foran ikke leses, og da vises ingenting (aldri feil skilt). Ikke prøvd på skjermen i emulator (emulatoren krasjet), bare testet mot ekte rutedata i `RoadAheadTest`.

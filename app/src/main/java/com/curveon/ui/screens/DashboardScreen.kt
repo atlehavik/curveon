@@ -574,7 +574,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onOpen = { showRouteMenu = true }
             )
         }
-        MapSpeedCluster({ telemetryState.value }, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp).tourTarget(TourTarget.SPEED)
+        MapSpeedCluster({ telemetryState.value }, cameraAlert, Modifier.align(Alignment.TopEnd).padding(14.dp)
             .onSizeChanged { speedSize = with(density) { androidx.compose.ui.unit.DpSize(it.width.toDp(), it.height.toDp()) } }, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, signSize = speedSign.dp.dp,
             // The pocket phone's battery: only with a companion phone connected (on "This device" it's the battery above).
             phoneBattery = phoneStatusNow?.takeIf { !thisDeviceIsPhone && phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO }
@@ -1310,7 +1310,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onDeleteMap = viewModel::deleteMap,
                     onImportMap = { importMapLauncher.launch(arrayOf("*/*")) },
                     onBrowseMaps = { showMapCatalog = true },
-                    onTour = { showSettings = false; tourIsFirst = false; showTour = true },
+                    onTour = { showSettings = false; tourIsFirst = false; showTour = true; viewModel.resetTripHelp() },
                     onMapLayer = viewModel::setMapLayer,
                     onCheckUpdate = { viewModel.checkForUpdate() },
                     onInstallUpdate = viewModel::installUpdate,
@@ -1486,6 +1486,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     }
     whatsNew?.let { WhatsNewDialog(it, onDismiss = { whatsNew = null }) }
     if (showTour) WelcomeTour(tourTargets, firstStart = tourIsFirst, onFinish = { showTour = false; tourIsFirst = false; viewModel.markTourSeen() })
+    // The first time a trip to a place is planned (the card open, not while planning on the map): a short walk over its symbols and buttons.
+    val tripHelpWanted = planGoal != null && planGoal.loop == null && planGoal.adventure == null && preview?.selectedRoute != null &&
+        !previewMinimized && !chaining && !showTour && !viewModel.tripHelpSeen
+    var tripHelpOpen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(tripHelpWanted) {
+        if (tripHelpWanted) { delay(800); tripHelpOpen = true } else tripHelpOpen = false
+    }
+    if (tripHelpOpen && tripHelpWanted) WelcomeTour(tourTargets, firstStart = false, tripCard = true,
+        onFinish = { tripHelpOpen = false; viewModel.markTripHelpSeen() })
     } }
 
     // ------------------------------------------------------------------ dialogs
@@ -1679,7 +1688,7 @@ private fun Rail(
     val group: @Composable () -> Unit = {
         Box {
             RailButton(Icons.Default.Diversity3, stringResource(R.string.friends_title), NeonAmber, NeonAmber, filled = active == RailPanel.GROUP,
-                tag = "rail_group", target = null, onClick = { onPress(RailPanel.GROUP) })
+                tag = "rail_group", target = TourTarget.FRIENDS, onClick = { onPress(RailPanel.GROUP) })
             if (groupAlert) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(12.dp).clip(CircleShape).background(WarningRed))
             else if (sharingPosition) Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(10.dp).clip(CircleShape).background(SharingBlue).testTag("rail_sharing"))
         }

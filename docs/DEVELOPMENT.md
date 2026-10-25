@@ -90,8 +90,8 @@ phone, with an optional companion app on the phone when a tablet is used.
   shares routes and trips (anyone can change a shared trip), and has SOS. End-to-end encrypted through
   a relay (`relay.curveon.no` by default, another under Advanced); a tablet without internet uses the
   phone's connection over Bluetooth. Design in [groups.md](../groups.md).
-- **Welcome tour** on the first start (language first; animated how-tos: how tablet, phone and intercom fit together, Curveon on just a phone, planning, editing a trip on the map, drawing a roundtrip): the screen dims and a lit ring walks over the buttons and
-  gestures with a card for each; again any time from Settings → Help, which also lists every symbol.
+- **Welcome tour** on the first start (language first; what is behind each main button; animated how-tos: how tablet, phone and intercom fit together, Curveon on just a phone, planning, building a trip point by point on the map, editing it, a roundtrip, an adventure): the screen dims and a lit ring walks over the buttons and
+  gestures with a card for each; again any time from Settings → Help, which also lists every symbol. The symbols are not in the tour. The first time a trip to a place is planned, the same machinery walks over the trip card (`tripHelpSeen`, five steps, `TRIP_STEPS`); "Start the tour" in Help brings that back too.
 - **Demo ride** (Settings) drives the active route without GPS; **demo phone data** (Phone link)
   shows the dashboard without a phone.
 

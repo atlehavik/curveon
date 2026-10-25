@@ -391,6 +391,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** The welcome tour has been shown (or skipped) once; Settings → Help brings it back. */
     val tourSeen: Boolean get() = settings.getBoolean("tourSeen", false)
     fun markTourSeen() = settings.edit().putBoolean("tourSeen", true).apply()
+    /** The short walk over the trip card, the first time a trip is planned; "Start the tour" in Settings → Help brings it back. */
+    val tripHelpSeen: Boolean get() = settings.getBoolean("tripHelpSeen", false)
+    fun markTripHelpSeen() = settings.edit().putBoolean("tripHelpSeen", true).apply()
+    fun resetTripHelp() = settings.edit().putBoolean("tripHelpSeen", false).apply()
 
     // ---------------------------------------------------------------- app updates (GitHub releases)
 

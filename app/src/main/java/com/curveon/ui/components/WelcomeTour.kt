@@ -55,7 +55,11 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 
 /** The parts of the dashboard the welcome tour points at. */
-enum class TourTarget { SEARCH, GPX, PHONE, SETTINGS, MAP_TOGGLE, MAP, MAP_BUTTONS, SPEED, CARDS }
+enum class TourTarget {
+    SEARCH, GPX, PHONE, FRIENDS, SETTINGS, MAP_TOGGLE, MAP, CARDS,
+    /** The trip card's parts, for the walk-through the first time a trip is planned. */
+    PLAN_ICONS, PLAN_START, PLAN_ADJUST, PLAN_ADVENTURE, PLAN_ROADS
+}
 
 /** Where each [TourTarget] is on screen right now; parts that aren't shown (e.g. the cards in full map) are missing. */
 class TourTargets {
@@ -172,33 +176,40 @@ private val STEPS = listOf(
     TourStep(TourTarget.SEARCH, Icons.Default.TwoWheeler, ElectricCyan, R.string.where_to, R.string.tour_search_body),
     TourStep(TourTarget.GPX, Icons.Default.Route, ElectricCyan, R.string.gpx_manager, R.string.tour_gpx_body),
     TourStep(TourTarget.PHONE, Icons.Default.Phone, EcoGreen, R.string.phone, R.string.tour_phone_body),
+    TourStep(TourTarget.FRIENDS, Icons.Default.Diversity3, NeonAmber, R.string.friends_title, R.string.tour_friends_body),
     TourStep(TourTarget.SETTINGS, Icons.Default.Settings, TextPrimary, R.string.settings, R.string.tour_settings_body),
     TourStep(TourTarget.MAP_TOGGLE, Icons.Default.Map, ElectricCyan, R.string.tour_toggle_title, R.string.tour_toggle_body),
-    TourStep(TourTarget.MAP, Icons.Default.TouchApp, ElectricCyan, R.string.tour_map_title, R.string.tour_map_body,
-        listOf(GESTURE_SYMBOLS[0])),
-    TourStep(TourTarget.MAP_BUTTONS, Icons.Default.Explore, ElectricCyan, R.string.tour_buttons_title, R.string.tour_buttons_body,
-        MAP_SYMBOLS.take(6)),
-    TourStep(TourTarget.SPEED, Icons.Default.Speed, NeonAmber, R.string.tour_speed_title, R.string.tour_speed_body),
+    TourStep(TourTarget.MAP, Icons.Default.TouchApp, ElectricCyan, R.string.tour_map_title, R.string.tour_map_body),
     TourStep(TourTarget.CARDS, Icons.Default.MusicNote, ElectricCyan, R.string.tour_cards_title, R.string.tour_cards_body, art = TourArt.CARDS),
     TourStep(null, Icons.Default.Speed, NeonAmber, R.string.tour_engine_title, R.string.tour_engine_body, art = TourArt.ENGINE),
     TourStep(null, Icons.Default.Bluetooth, BluetoothAccent, R.string.tour_setup_title, R.string.tour_setup_body, art = TourArt.SETUP),
     TourStep(null, Icons.Default.PhoneAndroid, EcoGreen, R.string.tour_solo_title, R.string.tour_solo_body, art = TourArt.SOLO),
     TourStep(TourTarget.SEARCH, Icons.Default.TwoWheeler, ElectricCyan, R.string.tour_trip_title, R.string.tour_trip_body, art = TourArt.PLAN),
+    TourStep(null, Icons.Default.Timeline, ElectricCyan, R.string.tour_build_title, R.string.tour_build_body, art = TourArt.BUILD),
     TourStep(null, Icons.Default.Gesture, NeonAmber, R.string.tour_edit_title, R.string.tour_edit_body, art = TourArt.EDIT),
     TourStep(null, Icons.Default.LinearScale, NeonAmber, R.string.tour_mark_title, R.string.tour_mark_body, art = TourArt.MARK),
     TourStep(TourTarget.SEARCH, Icons.Default.Draw, NeonAmber, R.string.tour_loop_title, R.string.tour_loop_body, art = TourArt.LOOP),
-    TourStep(null, Icons.Default.AltRoute, NeonAmber, R.string.help_group_plan, R.string.tour_plan_body, PLAN_SYMBOLS),
-    TourStep(null, Icons.Default.Navigation, EcoGreen, R.string.help_group_ride, R.string.tour_ride_body, RIDE_SYMBOLS),
+    TourStep(TourTarget.SEARCH, Icons.Default.Explore, NeonAmber, R.string.tour_adventure_title, R.string.tour_adventure_body, art = TourArt.ADVENTURE),
     TourStep(TourTarget.SETTINGS, Icons.Default.HelpOutline, ElectricCyan, R.string.tour_done_title, R.string.tour_done_body)
+)
+
+/** The walk-through the first time a trip is planned: the symbols and buttons of the trip card, top to bottom. */
+private val TRIP_STEPS = listOf(
+    TourStep(TourTarget.PLAN_ICONS, Icons.Default.BookmarkBorder, ElectricCyan, R.string.tripcoach_icons_title, R.string.tripcoach_icons_body),
+    TourStep(TourTarget.PLAN_START, Icons.Default.TripOrigin, ElectricCyan, R.string.tripcoach_start_title, R.string.tripcoach_start_body),
+    TourStep(TourTarget.PLAN_ADJUST, Icons.Default.Tune, NeonAmber, R.string.tripcoach_adjust_title, R.string.tripcoach_adjust_body),
+    TourStep(TourTarget.PLAN_ADVENTURE, Icons.Default.Explore, NeonAmber, R.string.tripcoach_adventure_title, R.string.tripcoach_adventure_body),
+    TourStep(TourTarget.PLAN_ROADS, Icons.Default.AltRoute, ElectricCyan, R.string.tripcoach_roads_title, R.string.tripcoach_roads_body)
 )
 
 /**
  * The guided welcome: the screen dims, a soft-edged hole glides from one part of the dashboard to
  * the next, and a card beside it says what that part does. Steps whose part isn't on screen are left
- * out. Shown once on the first start, and again from Settings → Help.
+ * out. Shown once on the first start, and again from Settings → Help. With [tripCard] it is the short walk
+ * over the trip card instead, the first time a trip is planned.
  */
 @Composable
-fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit) {
+fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit, tripCard: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
     // The tour itself is shown lying down, so the parts it points at stay put (a phone held upright turns once, when
     // "Start" is pressed: the language, the welcome and Android's questions come the way the phone is held); back to
@@ -221,7 +232,7 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
     var languageChosen by rememberSaveable { mutableStateOf(false) }
     fun look() {
         val askLanguage = firstStart && AppLanguage.canChoose && !languageChosen
-        found = STEPS.filter { (!it.language || askLanguage) && (it.target == null || it.target in targets.bounds) }
+        found = (if (tripCard) TRIP_STEPS else STEPS).filter { (!it.language || askLanguage) && (it.target == null || it.target in targets.bounds) }
     }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.withTimeoutOrNull(1500) { snapshotFlow { targets.bounds.size }.first { it >= 6 } }
@@ -235,7 +246,7 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
     val step = steps[index.coerceIn(steps.indices)]
     val last = index == steps.lastIndex
     // Steps before the first numbered one: the language, and the welcome.
-    val lead = steps.indexOfFirst { !it.welcome && !it.language }.coerceAtLeast(1)
+    val lead = steps.indexOfFirst { !it.welcome && !it.language }.coerceAtLeast(0)
     val next: () -> Unit = { if (last) onFinish() else index++ }
     val start: () -> Unit = { if (!landscapeNow) turning = true; lying = true; next() }
     androidx.activity.compose.BackHandler { if (index > 0) index-- else onFinish() }
@@ -290,7 +301,9 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
         val margin = with(density) { 16.dp.toPx() }
         val gap = with(density) { 14.dp.toPx() }
         // A long list of symbols gets a wider card with two columns, so it fits the height.
-        val maxCard = with(density) { (if (step.welcome || step.language || step.art != null) 460.dp else if (step.symbols.size > 4) 660.dp else 400.dp).toPx() }
+        // A phone held sideways is too low for a drawing above the text: the drawing goes beside it, on a wider card.
+        val lowScreen = with(density) { screen.height.toDp() } < 480.dp
+        val maxCard = with(density) { (if (step.art != null && lowScreen) 700.dp else if (step.welcome || step.language || step.art != null) 460.dp else if (step.symbols.size > 4) 660.dp else 400.dp).toPx() }
         val maxHeight = with(density) { (screen.height - 2 * margin).coerceAtLeast(0f).toDp() }
         val cardWidth = with(density) { minOf(maxCard, screen.width - 2 * margin).coerceAtLeast(0f).toDp() }
         val place = cardPlacement(targetRect, screen, cardSize, margin, gap)
@@ -324,7 +337,8 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
                         else { languageChosen = true; AppLanguage.set(context, picked) }
                     }
                     s.welcome -> WelcomeContent(s)
-                    else -> StepContent(s, i - lead + 1, steps.size - lead, columns = if (cardWidth >= 560.dp) 2 else 1)
+                    else -> StepContent(s, i - lead + 1, steps.size - lead, columns = if (cardWidth >= 560.dp) 2 else 1,
+                        artBeside = lowScreen && cardWidth >= 560.dp)
                 }
             }
             // Turned on its side for the tour only.
@@ -344,7 +358,7 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit)
                     if (!last) TourTextButton(stringResource(R.string.tour_skip), TextMuted, onFinish)
                     if (index > lead) TourTextButton(stringResource(R.string.tour_back), TextSecondary) { index-- }
                     Spacer(Modifier.width(6.dp))
-                    TourPrimaryButton(stringResource(if (last) R.string.tour_done else R.string.tour_next), next)
+                    TourPrimaryButton(stringResource(if (!last) R.string.tour_next else if (tripCard) R.string.ok else R.string.tour_done), next)
                 }
             }
         }
@@ -419,7 +433,7 @@ private fun LanguageContent(current: AppLanguage, onPick: (AppLanguage) -> Unit)
 }
 
 @Composable
-private fun StepContent(step: TourStep, number: Int, count: Int, columns: Int) {
+private fun StepContent(step: TourStep, number: Int, count: Int, columns: Int, artBeside: Boolean = false) {
     Column(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -434,12 +448,19 @@ private fun StepContent(step: TourStep, number: Int, count: Int, columns: Int) {
                 Text(stringResource(step.title), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
             }
         }
-        if (step.art != null) {
-            Spacer(Modifier.height(12.dp))
-            TourArtView(step.art)
-        }
         Spacer(Modifier.height(12.dp))
-        Text(stringResource(step.body), color = TextSecondary, fontSize = 15.sp, lineHeight = 21.sp)
+        if (step.art != null && artBeside) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                TourArtView(step.art, Modifier.weight(1f))
+                Text(stringResource(step.body), color = TextSecondary, fontSize = 15.sp, lineHeight = 21.sp, modifier = Modifier.weight(1f))
+            }
+        } else {
+            if (step.art != null) {
+                TourArtView(step.art)
+                Spacer(Modifier.height(12.dp))
+            }
+            Text(stringResource(step.body), color = TextSecondary, fontSize = 15.sp, lineHeight = 21.sp)
+        }
         if (step.symbols.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -476,12 +497,22 @@ fun HelpSymbolRow(symbol: HelpSymbol, modifier: Modifier = Modifier, compact: Bo
 
 @Composable
 private fun StepDots(count: Int, index: Int, modifier: Modifier = Modifier) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-        for (i in 1..count) {
-            val on = i == index
-            val width by animateDpAsState(if (on) 18.dp else 6.dp, spring(stiffness = Spring.StiffnessMediumLow), label = "dot")
-            val color by animateColorAsState(if (on) ElectricCyan else if (i < index) TextSecondary else CockpitBorder, label = "dotColor")
-            Box(Modifier.height(6.dp).width(width).clip(CircleShape).background(color))
+    BoxWithConstraints(modifier, contentAlignment = Alignment.CenterStart) {
+        // A dot for each step; with more steps than the card has room for, a thin bar that fills up instead.
+        if (6.dp * (count - 1) + 18.dp + 5.dp * (count - 1) <= maxWidth) {
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                for (i in 1..count) {
+                    val on = i == index
+                    val width by animateDpAsState(if (on) 18.dp else 6.dp, spring(stiffness = Spring.StiffnessMediumLow), label = "dot")
+                    val color by animateColorAsState(if (on) ElectricCyan else if (i < index) TextSecondary else CockpitBorder, label = "dotColor")
+                    Box(Modifier.height(6.dp).width(width).clip(CircleShape).background(color))
+                }
+            }
+        } else {
+            val filled by animateFloatAsState(index / count.toFloat(), tween(300), label = "stepBar")
+            Box(Modifier.fillMaxWidth().padding(end = 12.dp).height(4.dp).clip(CircleShape).background(CockpitBorder)) {
+                Box(Modifier.fillMaxWidth(filled).fillMaxHeight().clip(CircleShape).background(ElectricCyan))
+            }
         }
     }
 }
