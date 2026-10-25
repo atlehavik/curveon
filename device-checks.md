@@ -15,7 +15,6 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 ## 2026-10-25 — En tur fra nettet kjøres slik den ble tegnet
 
-- [ ] Pixel (release-bygg 10:39, også på X7): send «Bømlo til Sandnes» fra nettplanleggeren på nytt (Oppdater på Pixel 9a). Åpne den under Planlagte: ved hjelpepunktet på Lura går ruten ut den ene veien og tilbake den andre, som på nettet, ikke ut og tilbake samme vei.
 - [ ] PC: åpne en GPX med mange spor (TET Norge): hvert spor for seg på kartet, ingen streker mellom dem. Pek på et spor: navn og lengde. Klikk det: det åpnes. «Send alle 17 …» legger dem under GPX i appen, samlet i én gruppe (med bygget som har GPX under GPX).
 
 ## 2026-10-25 — Grus, ferjer og rundtur på nett; GPX og beskjeden på telefonen igjen
@@ -1315,9 +1314,7 @@ To endringer, installert på X7 (Pixelen var frakoblet: `./gradlew :app:installD
   for menyen (fjern, flytt, bytt sted, nytt stopp før), knappen med stiplet linje markerer en del
   av ruten.
 
-- [ ] X7: Bømlo → Haugesund uten stopp er én vei (~67 km), ikke dit og tilbake.
 
-- [ ] X7: legg til et stopp i en sidegate nær ruten: den blå linja går inn i gata til det.
 
 - [ ] Ruteforhåndsvisning → Juster ruten → Endre i kartet → åpne hengelåsen → dra linja → en
   omvei; knappen med stiplet linje (Marker delen som skal endres) → to nåler.
@@ -1505,9 +1502,6 @@ Fra zoom 11 og inn stiples veier rutingdataene kjenner som uasfalterte over kart
 eller komprimert, brun = bløtere, ulendt eller ukjent grunn. Leses fra rutingsegmentene, så det
 virker overalt der rutingdata er installert. Prøvd i emulatoren (skogsveier øst for Elverum).
 
-- [ ] På X7, Innstillinger → Skjerm → Veidekke = Stiplet, zoom til et skogsveiområde (eller kjør
-  et sted med grus): strekene dukker opp i løpet av et sekund etter at kartet slutter å bevege
-  seg, og panorering forblir jevn.
 - [ ] Stikkprøve på en vei du vet er grus og en du vet er asfalt: er bare grusveien stiplet?
 
 ## 2026-10-09 — Nettkart og nettsøk
