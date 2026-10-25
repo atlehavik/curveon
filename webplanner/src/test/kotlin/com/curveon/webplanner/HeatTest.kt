@@ -10,6 +10,7 @@ import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicBoolean
 
 class HeatTest {
   private val segments = File(System.getProperty("curveon.segments") ?: "")
@@ -31,6 +32,20 @@ class HeatTest {
     println("E5_N60: ${c.length() / 2} squares, ${body!!.size / 1024} kB")
     // A fresh service (a restart) has it from disk.
     assertTrue(Heat(segments, cache, lookups).tile("E5_N60") != null)
+  }
+
+  @Test fun `while a route is worked out it waits, then counts`() {
+    assumeTrue(File(segments, "E5_N60.rd5").exists())
+    val lookups = File(ProfileInstaller.install(Files.createTempDirectory("p").toFile()), "lookups.dat")
+    val busy = AtomicBoolean(true)
+    val heat = Heat(segments, Files.createTempDirectory("heat").toFile(), lookups) { busy.get() }
+    assertNull(heat.tile("E5_N60"))
+    Thread.sleep(5_000)
+    assertNull(heat.tile("E5_N60"))
+    busy.set(false)
+    var body: ByteArray? = null
+    for (i in 0 until 600) { body = heat.tile("E5_N60"); if (body != null) break; Thread.sleep(100) }
+    assertTrue(body != null)
   }
 
   @Test fun `no routing data there is an empty answer, and a made-up name is refused`() {

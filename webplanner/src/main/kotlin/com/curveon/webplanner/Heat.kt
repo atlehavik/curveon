@@ -13,10 +13,11 @@ import java.util.concurrent.LinkedBlockingDeque
  * the routing data one segment file (5° × 5°) at a time. Counting a file takes seconds, so it is done on one thread of
  * its own, never while a rider waits: [warmAll] counts every file after a start, and each is kept in [cacheDir] until
  * its segment file changes, so after the first start they are all there at once. A file asked for before it is counted
- * goes first in the line.
+ * goes first in the line. While a route is being worked out ([busy]) it waits: the VPS has two cores, and a rider
+ * waiting for a route comes first.
  */
-class Heat(private val segments: File, cacheDir: File, lookups: File) {
-  private val heat = GravelHeat(segments, cacheDir, SurfaceReader(segments, lookups))
+class Heat(private val segments: File, cacheDir: File, lookups: File, private val busy: () -> Boolean = { false }) {
+  private val heat = GravelHeat(segments, cacheDir, SurfaceReader(segments, lookups)) { while (busy()) Thread.sleep(250) }
   private val line = LinkedBlockingDeque<String>()
   /** Each file's answer, made once: some tens of kB of JSON. */
   private val answers = ConcurrentHashMap<String, ByteArray>()

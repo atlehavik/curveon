@@ -33,14 +33,15 @@ fun main() {
   // 128 MB of decoded map data per search: two at once stay well inside the service's memory limit.
   // The roads, read from the segments, put an adventure's anchors on them (as in the app).
   val planner = Planner(BRouterEngine(segments, profiles, timeoutMillis = 45_000, memoryClassMb = 128), SurfaceReader(segments, File(profiles, "lookups.dat")), pois)
-  // The gravel heat map, counted in the background from the start (minutes, the first time on the VPS).
-  val heat = Heat(segments, env["HEAT"]?.let(::File) ?: Files.createTempDirectory("curveon-heat").toFile(), File(profiles, "lookups.dat"))
-  heat.warmAll()
   val limiter = RateLimiter(perWindow = 120, windowMillis = 10 * 60_000)
   // An adventure or a roundtrip is dozens of routes: fewer of them.
   val adventures = RateLimiter(perWindow = 12, windowMillis = 10 * 60_000)
   // Places are a look in memory: many, as the rider moves the map about.
   val places = RateLimiter(perWindow = 1200, windowMillis = 10 * 60_000)
+  // The gravel heat map, counted in the background from the start (some 20 minutes the first time on the VPS), never
+  // while a route is being worked out.
+  val heat = Heat(segments, env["HEAT"]?.let(::File) ?: Files.createTempDirectory("curveon-heat").toFile(), File(profiles, "lookups.dat"), planner::busy)
+  heat.warmAll()
   // Every hour, how the planner kept up (counts only) goes to the journal.
   Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "stats").apply { isDaemon = true } }
     .scheduleAtFixedRate({ println("planner hour: ${planner.stats.roll()}") }, 1, 1, TimeUnit.HOURS)
