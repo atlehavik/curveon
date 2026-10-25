@@ -234,17 +234,19 @@ fun RideLogDialog(
                                 Modifier.weight(1f)) { onRideReversed(r) }
                         }
                         Spacer(Modifier.height(10.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Three round buttons beside Save: smaller on a phone, so Save keeps room for its label.
+                        val round = if (isNarrowScreen()) 48.dp else 56.dp
+                        Row(horizontalArrangement = Arrangement.spacedBy(if (isNarrowScreen()) 8.dp else 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.rides_save), CockpitSurface, TextPrimary, Modifier.weight(1f)) { saving = r }
                             onSendToTablet?.let { send ->
                                 Box(Modifier.testTag("send_to_tablet")) {
-                                    RoundButton(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet), 56.dp, CockpitSurface, TextPrimary) { send(r) }
+                                    RoundButton(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet), round, CockpitSurface, TextPrimary) { send(r) }
                                 }
                             }
                             onShareWithGroup?.let { share ->
-                                RoundButton(Icons.Default.Groups, stringResource(R.string.share_with_group), 56.dp, CockpitSurface, TextPrimary) { share(r) }
+                                RoundButton(Icons.Default.Groups, stringResource(R.string.share_with_group), round, CockpitSurface, TextPrimary) { share(r) }
                             }
-                            RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), 56.dp, CockpitSurface, TextMuted) { onDelete(listOf(r.id)) }
+                            RoundButton(Icons.Default.DeleteOutline, stringResource(R.string.delete), round, CockpitSurface, TextMuted) { onDelete(listOf(r.id)) }
                         }
                     }
                 }

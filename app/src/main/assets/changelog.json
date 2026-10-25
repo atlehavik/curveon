@@ -12,7 +12,8 @@
       "Tap the road card and the road's signs grow big, with the road name beside them, or under them when there is no room",
       "When a call comes in, the phone and notifications get the room on the dashboard and the music player shrinks to a single row",
       "If a friend removes you, they now disappear from your list too, and if you are removed from a ride group it leaves your list by itself, with a short note saying what happened",
-      "When you link your phone and tablet, a profile you have set up with a name or picture is no longer replaced by an empty one"
+      "When you link your phone and tablet, a profile you have set up with a name or picture is no longer replaced by an empty one",
+      "On a small phone, buttons with a long name, such as Ride reversed or Save to GPX, now make their text a little smaller instead of cutting it off, and an opened ride has room for Save beside its other buttons"
     ],
     "nb": [
       "Når du tar profilbilde, åpner Curveon nå sitt eget kamera på selfie-linsen, og bildet blir akkurat slik du så det i speilbildet, uansett hva kameraappen på telefonen er innstilt på",
@@ -25,7 +26,8 @@
       "Trykk på veikortet, så blir veiskiltene store, med veinavnet ved siden av, eller under hvis det ikke er plass",
       "Når det ringer, får telefonen og varslene plassen på dashbordet, og musikkspilleren krymper til én rad",
       "Fjerner en venn deg, forsvinner han nå også fra listen din, og blir du fjernet fra en turgruppe, forsvinner gruppa av seg selv, med en kort beskjed om hva som skjedde",
-      "Når du kobler telefonen og nettbrettet, blir en profil du har satt opp med navn eller bilde ikke lenger byttet ut med en tom"
+      "Når du kobler telefonen og nettbrettet, blir en profil du har satt opp med navn eller bilde ikke lenger byttet ut med en tom",
+      "På en liten telefon blir teksten på knapper med langt navn, som Kjør motsatt vei og Lagre i GPX, litt mindre i stedet for å bli kuttet, og en åpnet tur har plass til Lagre ved siden av de andre knappene"
     ],
     "sv": [
       "När du tar en profilbild öppnas nu Curveons egen kamera på selfielinsen, och bilden blir precis som du såg den i spegelbilden, oavsett hur telefonens kameraapp är inställd",

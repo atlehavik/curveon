@@ -24,6 +24,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
@@ -34,6 +35,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.CornerRadius
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -816,6 +819,14 @@ fun PillButton(icon: ImageVector, label: String, background: Color, content: Col
     ) {
         Icon(icon, null, tint = content, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(8.dp))
-        Text(label, color = content, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        // A label too long for a narrow button (Norwegian on a 360 dp phone) gets smaller, then two lines, instead of cut off.
+        var size by remember(label, LocalConfiguration.current.screenWidthDp) { mutableStateOf(16f) }
+        var ready by remember(label, LocalConfiguration.current.screenWidthDp) { mutableStateOf(false) }
+        Text(label, color = content, fontSize = size.sp, lineHeight = (size * 1.15f).sp, fontWeight = FontWeight.Bold, maxLines = 2,
+            textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.drawWithContent { if (ready) drawContent() },
+            onTextLayout = { r ->
+                if ((r.hasVisualOverflow || (r.lineCount > 1 && size > 13f)) && size > 11f) size -= 1f else ready = true
+            })
     }
 }
