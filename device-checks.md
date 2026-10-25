@@ -6,6 +6,10 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — Tilbakemeldinger med bilder venter på godkjenning
+
+- [ ] Pixel (når relay er deployet): installer ntfy-appen og abonner på emnet fra `grep NOTIFY ~/.curveon-vps/feedback-review.env` (delen etter `https://ntfy.sh/`). Send en feilmelding med ett bilde fra Innstillinger → Hjelp: issuet på GitHub sier «A picture is waiting to be looked over», og ntfy varsler. Trykk på varselet: relay.curveon.no/feedback/review spør om passord (`grep REVIEW_KEY ~/.curveon-vps/feedback-review.env`, hvilket som helst brukernavn), bildet er uskarpt til du trykker på det, og «Publiser bildene» får bildet inn i issuet. Lukk testissuet etterpå.
+
 ## 2026-10-25 — GPX fra nettet havner under GPX; varmekart og språkknapp på nett
 
 - [ ] Pixel og X7 (ny bygg med dette): send en GPX fra nettplanleggeren som «Et GPX-spor». Den havner under GPX i appen (ikke Planlagte), og beskjeden sier «1 nytt GPX-spor fra nettet, under GPX». Velg «Begge»: turen ligger under Planlagte og sporet under GPX, med samme navn, uten «(spor)».
