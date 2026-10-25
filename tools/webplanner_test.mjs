@@ -357,7 +357,8 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   await page.waitForFunction(() => !document.querySelector("#summary").hidden && !document.querySelector("#send-row").hidden, null, { timeout: 60000 });
   await page.locator("#send").scrollIntoViewIfNeeded();
   await page.click("#send");
-  for (let i = 0; i < 50 && dev.got.plans.length < 3; i++) await sleep(100);
+  // Both devices: over the real relay the second one's copy may come a moment after the first one's.
+  for (let i = 0; i < 50 && (dev.got.plans.length < 3 || !dev2.got.plans.some((p) => p.trip.ref?.r === dev2.me)); i++) await sleep(100);
   const update = dev.got.plans.find((p) => p.trip.ref?.r === dev.me);
   const copy = dev2.got.plans.find((p) => p.trip.ref?.r === dev2.me);
   check(copy?.trip.ref.id === 21 && copy.trip.options.style === "VERY_CURVY" && copy.tid !== update?.tid, `${name}: Update also changed the copy on the second device, as its own trip 21`);
