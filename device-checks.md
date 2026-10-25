@@ -8,6 +8,8 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 ## 2026-10-25 — Falsk samtale i companion
 
+- [ ] Pixel, stående: ha en pågående samtale, musikk og så en melding (f.eks. «Message» fra companion-testen). Samtalen og musikken skal stå side om side som ikoner (bilde + legg på + høyttaler, og cover + spill/neste), og meldingen under skal ha tekst, «Svar» og «Lukk» hele. Prøvd i emulatoren med demodata, men der uten «Speaker»-knappen.
+
 - [ ] X7 og Pixel (release-bygget ligger på begge; Pixel både stående og liggende, med kamerahullet): ta en samtale (ekte eller fra companion-testen) uten at det ligger meldinger på dashbordet. Samtalekortet skal da fylle hele høyden til høyre (foto eller store initialer, navn, store «Hang up» og «Speaker»), og musikkspilleren bli én rad under. Kommer det en melding, skal samtalen bli en liten rad igjen. Prøvd i emulatoren med demodata, ikke med ekte samtale.
 
 - [ ] Pixel (debug-companion): Test-kortet og Batteritest er nå skjult. Trykk 7 ganger på «Curveon Companion»-tittelen øverst for å vise dem (7 ganger til skjuler dem igjen; Batteritest finnes også i release-bygget). Så Test → «Incoming call», og trykk Answer på X7. Samtalen skal gå over til pågående (samtaletid, «Speaker» / «Hang up») på X7-dashbordet, og Hang up skal avslutte den. Ikke prøvd med ekte Bluetooth.

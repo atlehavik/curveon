@@ -921,11 +921,23 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 10.dp))
         }
     } }
+    // Portrait (a phone held upright): speed on top, then the map, the cards below it, the rail along the bottom.
+    val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val showEngine = obdEnabled && obdValues.isNotEmpty()
     // Messages or music (one of them gets the free height), and engine data.
     val cards: @Composable ColumnScope.() -> Unit = {
         val messages = notifications.filterNot { it.isIncomingCall }
+        // A message needs height (text, Reply, Dismiss); the call and the music only need icons. In a
+        // phone held upright, with the column to itself, they share one row above the message.
+        val iconRow = portrait && !showEngine && callOngoing && !isFullScreenMap && track != null && (voiceReply != null || messages.isNotEmpty())
+        if (iconRow) ringing?.let { call -> track?.let { t ->
+            Row(Modifier.fillMaxWidth().height(CallCardHeight), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OngoingCallIcons(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) }, Modifier.weight(1f).fillMaxHeight())
+                MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }, Modifier.weight(1f).fillMaxHeight(), compact = true)
+            }
+        } }
         // Alone in the column (no message or voice reply) the call gets the room; with one it stays a row.
-        if (callOngoing && !isFullScreenMap) ringing?.let { call ->
+        if (callOngoing && !isFullScreenMap && !iconRow) ringing?.let { call ->
             val alone = voiceReply == null && messages.isEmpty()
             OngoingCallCard(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) },
                 alone = alone, modifier = if (alone) Modifier.weight(1f, fill = false) else Modifier)
@@ -953,7 +965,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
         // A message shares the column with a one-row player.
         if (attention) {
-            if (ringing == null || callOngoing) track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
+            if ((ringing == null || callOngoing) && !iconRow) track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
         } else {
             FullMediaCard(
                 track = track, art = albumArt, phoneState = phoneState, phoneName = phoneName, apps = mediaApps,
@@ -971,13 +983,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
     // The engine panel (Settings → Engine), where the speed used to be.
-    val showEngine = obdEnabled && obdValues.isNotEmpty()
     val enginePanel: @Composable (Modifier) -> Unit = { m ->
         EnginePanel(obdState, obdValues, onOpenSettings = { settingsOnEngine = true; showSettings = true }, modifier = m)
     }
-    // Portrait (a phone held upright): speed on top, then the map, the cards below it, the rail along the bottom.
-    val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
-    // Turning the phone: the view last used in that orientation (not while the map is taken over for picking).
+    // Portrait: see above. Turning the phone: the view last used in that orientation (not while the map is taken over for picking).
     LaunchedEffect(portrait) { viewModel.setOrientation(portrait, restore = !mapMode) }
     // The rail's screens: the open one is lit; pressing it again closes it (like its close button),
     // pressing another one swaps it in. A pick on the map or a drawing in progress ends first.

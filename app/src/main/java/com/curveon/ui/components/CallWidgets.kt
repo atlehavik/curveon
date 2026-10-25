@@ -178,6 +178,26 @@ private fun OngoingCallRow(call: NotificationItem, onAction: (Int) -> Unit, onDi
 }
 
 /**
+ * The answered call as only icons: the caller's picture, Hang up and Speaker. Half a row wide, beside
+ * the music, so a message below keeps the height it needs.
+ */
+@Composable
+fun OngoingCallIcons(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    val buttons = callButtons(call, onAction, onDismiss)
+    DashCard(modifier.testTag("call_card_ongoing"), border = EcoGreen) {
+        Row(Modifier.fillMaxWidth().align(Alignment.Center).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            CallAvatar(call, 44.dp)
+            Spacer(Modifier.weight(1f))
+            RoundButton(Icons.Default.CallEnd, buttons.declineLabel, 44.dp, WarningRed, Color.White, buttons.onDecline)
+            if (buttons.onOther != null) {
+                Spacer(Modifier.width(6.dp))
+                RoundButton(Icons.Default.VolumeUp, buttons.otherLabel.orEmpty(), 44.dp, CockpitSurfaceVariant, Color.White, buttons.onOther)
+            }
+        }
+    }
+}
+
+/**
  * An answered call: never in the way, so just a green phone you can drag anywhere and leave there
  * (remembered). A tap opens the name with Hang up and Speaker for a few seconds. Fill the screen
  * area with [modifier]; it only takes touches where the icon is.
