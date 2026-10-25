@@ -1204,6 +1204,10 @@
         <item quantity="one">%d ny tur från webben</item>
         <item quantity="other">%d nya turer från webben</item>
     </plurals>
+    <plurals name="web_plan_tracks">
+        <item quantity="one">%d nytt GPX-spår från webben, under GPX</item>
+        <item quantity="other">%d nya GPX-spår från webben, under GPX</item>
+    </plurals>
     <plurals name="web_plan_changed">
         <item quantity="one">%d tur ändrad på webben</item>
         <item quantity="other">%d turer ändrade på webben</item>
