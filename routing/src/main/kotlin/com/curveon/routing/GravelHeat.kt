@@ -13,7 +13,11 @@ class HeatCell(val lon: Double, val lat: Double, val weight: Float)
  * segment file (5° × 5°) at a time. Counting a file takes seconds, so each is kept in [cacheDir]
  * until its segment file changes.
  */
-class GravelHeat(private val segmentDir: File, private val cacheDir: File, private val reader: SurfaceReader) {
+class GravelHeat(
+    private val segmentDir: File, private val cacheDir: File, private val reader: SurfaceReader,
+    /** Called before each row of the file while counting: may wait, to leave the CPU to something more urgent. */
+    private val pause: () -> Unit = {},
+) {
     private val loaded = HashMap<String, List<HeatCell>>()
 
     /** The segment files that cover the area and are on this device. */
@@ -50,11 +54,14 @@ class GravelHeat(private val segmentDir: File, private val cacheDir: File, priva
         val sums = FloatArray(side * side)
         val lonIdx0 = (lon0 + 180) * 32
         val latIdx0 = (lat0 + 90) * 32
-        for (y in 0 until side * per) for (x in 0 until side * per) {
+        for (y in 0 until side * per) {
+            pause()
+            for (x in 0 until side * per) {
             val ways = reader.cellWays(lonIdx0 + x, latIdx0 + y) ?: continue
             var w = 0.0
             for (way in ways) w += length(way.coords) * weight(way)
             if (w > 0) sums[(y / per) * side + x / per] += w.toFloat()
+            }
         }
         val size = 1.0 / CELLS_PER_DEGREE
         return sums.indices.filter { sums[it] > 0 }.map { i ->
@@ -119,7 +126,7 @@ class GravelHeat(private val segmentDir: File, private val cacheDir: File, priva
         internal fun tileName(lon: Int, lat: Int) = (if (lon < 0) "W${-lon}" else "E$lon") + "_" + (if (lat < 0) "S${-lat}" else "N$lat")
 
         /** "E5_N60" → (5, 60). */
-        internal fun origin(tile: String): Pair<Int, Int>? {
+        fun origin(tile: String): Pair<Int, Int>? {
             val m = Regex("([EW])(\\d+)_([NS])(\\d+)").matchEntire(tile) ?: return null
             val lon = m.groupValues[2].toInt() * (if (m.groupValues[1] == "W") -1 else 1)
             val lat = m.groupValues[4].toInt() * (if (m.groupValues[3] == "S") -1 else 1)

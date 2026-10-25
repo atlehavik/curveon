@@ -1155,6 +1155,10 @@
         <item quantity="one">%d uusi reitti verkosta</item>
         <item quantity="other">%d uutta reittiä verkosta</item>
     </plurals>
+    <plurals name="web_plan_tracks">
+        <item quantity="one">%d uusi GPX-reitti verkosta, GPX-kohdassa</item>
+        <item quantity="other">%d uutta GPX-reittiä verkosta, GPX-kohdassa</item>
+    </plurals>
     <plurals name="web_plan_changed">
         <item quantity="one">%d reitti muuttunut verkossa</item>
         <item quantity="other">%d reittiä muuttunut verkossa</item>

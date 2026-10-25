@@ -1222,6 +1222,10 @@
         <item quantity="one">%d nouveau trajet depuis le web</item>
         <item quantity="other">%d nouveaux trajets depuis le web</item>
     </plurals>
+    <plurals name="web_plan_tracks">
+        <item quantity="one">%d nouvelle trace GPX depuis le web, dans GPX</item>
+        <item quantity="other">%d nouvelles traces GPX depuis le web, dans GPX</item>
+    </plurals>
     <plurals name="web_plan_changed">
         <item quantity="one">%d trajet modifié sur le web</item>
         <item quantity="other">%d trajets modifiés sur le web</item>

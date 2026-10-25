@@ -24,6 +24,9 @@ browser ──POST /plan/api/route──> webplanner-server.jar (this module, 12
 - **Places** (fuel, viewpoints, passes, camping, food, ferries, motorcycle shops): `tools/webplanner_pois.py` takes them
   out of the app's search indexes (the `search` release of atlehavik/curveon-data) as TSVs, which the service holds in
   memory (`POIS`). The deploy updates them; only areas whose index changed are downloaded again.
+- **Where the gravel is** (`GET /plan/api/heat?t=E5_N60`, `Heat`): the app's gravel heat map, one segment file at a
+  time. Counted on one low-priority thread right after a start and kept in `HEAT` (`/var/lib/curveon-planner/heat`),
+  so a rider never waits for it; a file asked for before it is counted goes first and the page asks again.
 - **How it keeps up:** `curl 127.0.0.1:8788/plan/api/stats` on the VPS (only there): requests, legs, waits, busy and
   given-up searches this hour and for the last 24; every hour also a line `planner hour:` in the journal
   (`journalctl -u curveon-planner | grep "planner hour"`). Counts only, nothing about riders or places.

@@ -2,171 +2,205 @@
   {
     "version": "1.2.7",
     "en": [
+      "Round trips and adventures find the twisty roads even better: bends on small roads and gravel roads that are only roughly drawn on the map now count in full, and turning at junctions in town counts even less",
+      "The screen no longer goes to sleep while you ride slowly, in a queue or on a rough track: it now goes by how far you have moved, not how fast",
+      "The rev counter goes blank when you switch the engine off instead of showing the last revs, and engine data comes through more reliably with cheap OBD adapters",
       "A stop on the way, like a burger on the road, is now only \"reached\" when you get to it. Before, Curveon could say you had arrived while you were still passing it on the main road, and the rest of the trip went wrong from there",
-      "The speed limit signs on the map now show up when you just ride a road without navigating, too, so you see a limit change coming just like in the car"
+      "The speed limit signs on the map now show up when you just ride a road without navigating, too, so you see a limit change coming just like in the car",
+      "Plus a few minor bug fixes"
     ],
     "nb": [
+      "Rundturer og eventyr finner de svingete veiene enda bedre: svinger på småveier og grusveier som bare er grovt tegnet på kartet, teller nå fullt, og svinger i kryss i byen teller enda mindre",
+      "Skjermen slukker ikke lenger mens du kjører sakte, i kø eller på en humpete sti: den ser nå på hvor langt du har flyttet deg, ikke hvor fort",
+      "Turtelleren blir tom når du slår av motoren i stedet for å vise siste turtall, og motordataene kommer mer pålitelig fram med billige OBD-adaptere",
       "Et stopp på veien, for eksempel en burger underveis, regnes nå som nådd først når du faktisk kommer til det. Før kunne Curveon si at du var fremme mens du bare kjørte forbi på hovedveien, og resten av turen gikk skeis derfra",
-      "Fartsgrenseskiltene på kartet dukker nå opp også når du bare kjører en vei uten navigasjon, så du ser en endring i fartsgrensen komme, akkurat som i bilen"
+      "Fartsgrenseskiltene på kartet dukker nå opp også når du bare kjører en vei uten navigasjon, så du ser en endring i fartsgrensen komme, akkurat som i bilen",
+      "Pluss noen mindre feilrettinger"
     ],
     "sv": [
+      "Rundturer och äventyr hittar de kurviga vägarna ännu bättre: kurvor på småvägar och grusvägar som bara är grovt ritade på kartan räknas nu fullt ut, och svängar i korsningar i stan räknas ännu mindre",
+      "Skärmen slocknar inte längre när du kör långsamt, i kö eller på en guppig stig: den utgår nu från hur långt du har förflyttat dig, inte hur fort",
+      "Varvräknaren blir tom när du stänger av motorn i stället för att visa det sista varvtalet, och motordata kommer fram säkrare med billiga OBD-adaptrar",
       "Ett stopp på vägen, till exempel en hamburgare på vägen, räknas nu som nått först när du verkligen kommer fram till det. Förut kunde Curveon säga att du var framme medan du bara körde förbi på huvudvägen, och resten av turen gick snett därifrån",
-      "Hastighetsskyltarna på kartan visas nu också när du bara kör en väg utan navigering, så du ser en ändring av hastighetsgränsen komma, precis som i bilen"
+      "Hastighetsskyltarna på kartan visas nu också när du bara kör en väg utan navigering, så du ser en ändring av hastighetsgränsen komma, precis som i bilen",
+      "Plus några mindre buggfixar"
     ],
     "da": [
+      "Rundture og eventyr finder de snoede veje endnu bedre: sving på små veje og grusveje, der kun er groft tegnet på kortet, tæller nu fuldt ud, og drej i kryds i byen tæller endnu mindre",
+      "Skærmen slukker ikke længere, mens du kører langsomt, i kø eller på et ujævnt spor: den ser nu på, hvor langt du har flyttet dig, ikke hvor hurtigt",
+      "Omdrejningstælleren bliver tom, når du slukker motoren, i stedet for at vise de sidste omdrejninger, og motordata kommer mere pålideligt igennem med billige OBD-adaptere",
       "Et stop på vejen, for eksempel en burger undervejs, regnes nu først som nået, når du faktisk kommer frem til det. Før kunne Curveon sige, at du var fremme, mens du bare kørte forbi på hovedvejen, og resten af turen gik skævt derfra",
-      "Fartgrænseskiltene på kortet dukker nu også op, når du bare kører en vej uden navigation, så du kan se en ændring i fartgrænsen komme, ligesom i bilen"
+      "Fartgrænseskiltene på kortet dukker nu også op, når du bare kører en vej uden navigation, så du kan se en ændring i fartgrænsen komme, ligesom i bilen",
+      "Plus et par mindre fejlrettelser"
     ],
     "fi": [
+      "Kierrokset ja seikkailut löytävät mutkaiset tiet vielä paremmin: kartalle vain karkeasti piirrettyjen pikkuteiden ja soratien mutkat lasketaan nyt täysin, ja kaupungin risteyksissä kääntyminen lasketaan vielä vähemmän",
+      "Näyttö ei enää sammu, kun ajat hitaasti, jonossa tai kuoppaisella polulla: se katsoo nyt, kuinka pitkälle olet liikkunut, ei kuinka lujaa",
+      "Kierroslukumittari tyhjenee, kun sammutat moottorin, eikä enää näytä viimeisiä kierroksia, ja moottorin tiedot tulevat halvoilta OBD-sovittimilta luotettavammin",
       "Pysähdys matkan varrella, vaikkapa hampurilainen tien päällä, katsotaan nyt saavutetuksi vasta kun todella pääset perille asti. Ennen Curveon saattoi sanoa, että olit perillä, vaikka ajoit vasta pääväylää ohi, ja loppumatka meni siitä sekaisin",
-      "Nopeusrajoitusmerkit näkyvät nyt kartalla myös silloin, kun vain ajat tietä ilman navigointia, joten näet rajoituksen muutoksen tulevan aivan kuten autossa"
+      "Nopeusrajoitusmerkit näkyvät nyt kartalla myös silloin, kun vain ajat tietä ilman navigointia, joten näet rajoituksen muutoksen tulevan aivan kuten autossa",
+      "Lisäksi muutama pieni korjaus"
     ],
     "is": [
+      "Hringferðir og ævintýri finna hlykkjóttu vegina enn betur: beygjur á litlum vegum og malarvegum sem eru aðeins gróflega teiknaðar á kortinu telja nú að fullu, og beygjur á gatnamótum í bænum telja enn minna",
+      "Skjárinn slokknar ekki lengur á meðan þú ekur hægt, í biðröð eða á grófum slóða: hann miðar nú við hve langt þú hefur farið, ekki hve hratt",
+      "Snúningsmælirinn tæmist þegar þú drepur á vélinni í stað þess að sýna síðasta snúningshraða, og vélargögnin berast áreiðanlegar með ódýrum OBD-millistykkjum",
       "Stoppistöð á leiðinni, til dæmis hamborgari á leiðinni, telst nú aðeins náð þegar þú ert í raun kominn þangað. Áður gat Curveon sagt að þú værir kominn á áfangastað meðan þú ókst bara fram hjá á aðalveginum, og restin af ferðinni fór úr skorðum eftir það",
-      "Hraðatakmarkanaskiltin á kortinu birtast nú líka þegar þú ekur bara veg án leiðsagnar, svo þú sérð breytingu á hámarkshraða koma, alveg eins og í bílnum"
+      "Hraðatakmarkanaskiltin á kortinu birtast nú líka þegar þú ekur bara veg án leiðsagnar, svo þú sérð breytingu á hámarkshraða koma, alveg eins og í bílnum",
+      "Auk nokkurra smærri lagfæringa"
     ],
     "de": [
+      "Rundtouren und Abenteuer finden die kurvigen Straßen noch besser: Kurven auf kleinen Straßen und Schotterwegen, die auf der Karte nur grob gezeichnet sind, zählen jetzt voll, und Abbiegen an Kreuzungen in der Stadt zählt noch weniger",
+      "Der Bildschirm geht nicht mehr aus, wenn du langsam fährst, im Stau oder auf einem holprigen Weg: Er richtet sich jetzt danach, wie weit du gekommen bist, nicht wie schnell",
+      "Der Drehzahlmesser wird leer, wenn du den Motor abstellst, statt die letzte Drehzahl zu zeigen, und die Motordaten kommen mit günstigen OBD-Adaptern zuverlässiger an",
       "Ein Zwischenstopp unterwegs, etwa ein Burger an der Strecke, gilt jetzt erst als erreicht, wenn du wirklich dort bist. Vorher konnte Curveon sagen, du seist angekommen, obwohl du erst auf der Hauptstraße daran vorbeigefahren bist, und der Rest der Tour lief von da an schief",
-      "Die Tempolimit-Schilder auf der Karte erscheinen jetzt auch, wenn du einfach eine Straße entlangfährst, ohne zu navigieren, sodass du eine Änderung des Limits kommen siehst wie im Auto"
+      "Die Tempolimit-Schilder auf der Karte erscheinen jetzt auch, wenn du einfach eine Straße entlangfährst, ohne zu navigieren, sodass du eine Änderung des Limits kommen siehst wie im Auto",
+      "Dazu ein paar kleinere Fehlerbehebungen"
     ],
     "es": [
+      "Las rutas circulares y las aventuras encuentran aún mejor las carreteras con curvas: las curvas de carreteras pequeñas y pistas de tierra que en el mapa están dibujadas solo a grandes rasgos ahora cuentan del todo, y los giros en cruces de la ciudad cuentan todavía menos",
+      "La pantalla ya no se apaga mientras vas despacio, en un atasco o por una pista bacheada: ahora se fija en cuánto te has movido, no en lo rápido que vas",
+      "El cuentarrevoluciones se queda en blanco al apagar el motor en vez de mostrar las últimas revoluciones, y los datos del motor llegan con más fiabilidad con adaptadores OBD baratos",
       "Una parada en el camino, como una hamburguesa por la carretera, ahora solo se da por alcanzada cuando llegas de verdad. Antes Curveon podía decir que habías llegado cuando solo pasabas de largo por la carretera principal, y el resto del viaje se torcía desde ahí",
-      "Las señales de límite de velocidad del mapa ahora también aparecen cuando solo circulas por una carretera sin navegar, así ves venir un cambio de límite como en el coche"
+      "Las señales de límite de velocidad del mapa ahora también aparecen cuando solo circulas por una carretera sin navegar, así ves venir un cambio de límite como en el coche",
+      "Y algunas correcciones menores"
     ],
     "fr": [
+      "Les boucles et les aventures trouvent encore mieux les routes sinueuses : les virages des petites routes et des chemins de gravier, dessinés seulement à grands traits sur la carte, comptent désormais en entier, et tourner aux carrefours en ville compte encore moins",
+      "L'écran ne s'éteint plus quand vous roulez lentement, dans un bouchon ou sur une piste cahoteuse : il se fie maintenant à la distance parcourue, pas à la vitesse",
+      "Le compte-tours se vide quand vous coupez le moteur au lieu d'afficher le dernier régime, et les données moteur arrivent plus sûrement avec les adaptateurs OBD bon marché",
       "Un arrêt en chemin, comme un burger sur la route, n'est plus compté comme atteint que lorsque tu y arrives vraiment. Avant, Curveon pouvait dire que tu étais arrivé alors que tu ne faisais que passer sur la route principale, et le reste du trajet partait de travers",
-      "Les panneaux de limitation de vitesse sur la carte s'affichent maintenant aussi quand tu roules simplement sur une route sans navigation, pour voir venir un changement de limite comme en voiture"
+      "Les panneaux de limitation de vitesse sur la carte s'affichent maintenant aussi quand tu roules simplement sur une route sans navigation, pour voir venir un changement de limite comme en voiture",
+      "Et quelques petites corrections"
     ],
     "nl": [
+      "Rondritten en avonturen vinden de bochtige wegen nog beter: bochten op kleine wegen en gravelwegen die maar grof op de kaart staan, tellen nu volledig mee, en afslaan op kruispunten in de stad telt nog minder",
+      "Het scherm gaat niet meer uit terwijl je langzaam rijdt, in de file of op een hobbelig pad: het kijkt nu hoe ver je bent gekomen, niet hoe snel",
+      "De toerenteller wordt leeg als je de motor afzet, in plaats van het laatste toerental te tonen, en de motorgegevens komen betrouwbaarder door met goedkope OBD-adapters",
       "Een stop onderweg, zoals een hamburger langs de weg, telt nu pas als bereikt wanneer je er echt bent. Eerder kon Curveon zeggen dat je er was terwijl je nog over de hoofdweg langsreed, en de rest van de rit ging daarna mis",
-      "De snelheidsborden op de kaart verschijnen nu ook als je gewoon over een weg rijdt zonder te navigeren, zodat je een wijziging van de limiet ziet aankomen, net als in de auto"
+      "De snelheidsborden op de kaart verschijnen nu ook als je gewoon over een weg rijdt zonder te navigeren, zodat je een wijziging van de limiet ziet aankomen, net als in de auto",
+      "Plus een paar kleine verbeteringen"
     ],
     "pl": [
+      "Pętle i przygody jeszcze lepiej znajdują kręte drogi: zakręty na małych drogach i szutrach, narysowane na mapie tylko z grubsza, liczą się teraz w pełni, a skręty na skrzyżowaniach w mieście liczą się jeszcze mniej",
+      "Ekran nie gaśnie już, gdy jedziesz powoli, w korku albo po wyboistej ścieżce: liczy się teraz, jak daleko się przemieściłeś, a nie jak szybko",
+      "Obrotomierz staje się pusty po wyłączeniu silnika, zamiast pokazywać ostatnie obroty, a dane z silnika docierają pewniej przez tanie adaptery OBD",
       "Przystanek po drodze, na przykład burger przy trasie, jest teraz zaliczany dopiero wtedy, gdy naprawdę do niego dojedziesz. Wcześniej Curveon mógł powiedzieć, że jesteś na miejscu, choć dopiero mijałeś go główną drogą, a reszta trasy szła od tego momentu źle",
-      "Znaki ograniczenia prędkości na mapie pojawiają się teraz także wtedy, gdy po prostu jedziesz drogą bez nawigacji, więc widzisz nadchodzącą zmianę limitu, tak jak w samochodzie"
+      "Znaki ograniczenia prędkości na mapie pojawiają się teraz także wtedy, gdy po prostu jedziesz drogą bez nawigacji, więc widzisz nadchodzącą zmianę limitu, tak jak w samochodzie",
+      "Do tego kilka drobnych poprawek"
     ]
   },
   {
     "version": "1.2.6",
     "en": [
-      "A trip planned on the web planner is now ridden exactly as you drew it there. Before, Curveon could cut short a little loop out to a via point, and ride out to it and back the same way instead",
-      "Taking a profile picture now opens Curveon's own camera, on the selfie lens, and the picture comes out exactly as you saw it in the mirror view, whatever your phone's camera app is set to",
-      "Change a trip on the web planner that is on both your phone and your tablet, and it is now updated on both. Before, one of them could get it as an extra trip beside the old one",
-      "Connect to the web planner again after disconnecting there, and your phone or tablet now shows up on the page as soon as you have scanned the new code",
-      "The note about trips from the web shows once when they arrive, and no longer pops up again every time you swipe between the tabs in GPX & rides",
-      "Share more with your group ride: a ride you have ridden, a GPX track or any planned trip now has Share with the group, not only the trip on the map",
-      "Open a GPX file on the web planner and send it to Curveon as a track that is ridden just as it is, as a trip you can change, or both. And a GPX track in the app can go to Planned, so it shows on the web planner too",
-      "A big speed limit sign may now stick out over the speed card's edge again instead of being cut off, which looks even better",
-      "Tap the road card and the road's signs grow big, with the road name beside them, or under them when there is no room",
-      "When a call comes in, the phone and notifications get the room on the dashboard and the music player shrinks to a single row, and once you answer, the call stays big with a clear Hang up button when there is nothing else to show. On a phone held upright, the call and the music share one row of icons when a message arrives, so the message keeps room for its text and buttons",
-      "If a friend removes you, they now disappear from your list too, and if you are removed from a ride group it leaves your list by itself, with a short note saying what happened",
-      "When you link your phone and tablet, a profile you have set up with a name or picture is no longer replaced by an empty one",
-      "On a small phone, buttons with a long name, such as Ride reversed or Save to GPX, now make their text a little smaller instead of cutting it off, and an opened ride has room for Save beside its other buttons"
+      "Send GPX files from the web planner on curveon.no/plan straight to Curveon: as a track that is ridden just as it is, as a trip you can change, or both. And a GPX track in the app can be put in Planned, so it shows in the web planner too",
+      "Share more with your group ride: a ride you have ridden, a GPX track or any planned trip now has Share with the group",
+      "Tap the road card and the road's signs grow big, with the road name beside them",
+      "When a call comes in, it gets the room on the dashboard, and once you answer it stays big with a clear Hang up button",
+      "Taking a profile picture opens Curveon's own selfie camera, and the picture comes out just as you saw it",
+      "Round trips and adventures go for roads with real bends: hairpins now count in full, and turning at a junction in town no longer counts as a curve",
+      "The screen stays on while you ride, navigate or charge, but a phone or tablet parked on battery for ten minutes can now go to sleep instead of running its battery flat",
+      "Plus a number of minor bug fixes"
     ],
     "nb": [
-      "En tur du planlegger i nettplanleggeren, kjøres nå akkurat slik du tegnet den der. Før kunne Curveon kutte en liten sløyfe ut til et hjelpepunkt, og heller kjøre ut og tilbake samme vei",
-      "Når du tar profilbilde, åpner Curveon nå sitt eget kamera på selfie-linsen, og bildet blir akkurat slik du så det i speilbildet, uansett hva kameraappen på telefonen er innstilt på",
-      "Endrer du en tur i nettplanleggeren som ligger både på telefonen og nettbrettet, oppdateres den nå på begge. Før kunne den ene få den som en ekstra tur ved siden av den gamle",
-      "Kobler du til nettplanleggeren igjen etter å ha koblet fra der, dukker telefonen eller nettbrettet nå opp på siden med en gang du har skannet den nye koden",
-      "Beskjeden om turer fra nettet vises én gang når de kommer, og dukker ikke lenger opp igjen hver gang du sveiper mellom fanene i GPX og turer",
-      "Del mer med gruppa: en tur du har kjørt, et GPX-spor eller en hvilken som helst planlagt tur har nå «Del med gruppa», ikke bare turen på kartet",
-      "Åpne en GPX-fil i nettplanleggeren og send den til Curveon som et spor som kjøres akkurat slik det er, som en tur du kan endre, eller begge deler. Og et GPX-spor i appen kan legges i Planlagte, så det vises i nettplanleggeren også",
-      "Et stort fartsgrenseskilt får igjen stikke utenfor fartskortet i stedet for å bli klippet, og det ser faktisk litt kulere ut",
-      "Trykk på veikortet, så blir veiskiltene store, med veinavnet ved siden av, eller under hvis det ikke er plass",
-      "Når det ringer, får telefonen og varslene plassen på dashbordet, og musikkspilleren krymper til én rad. Når du har tatt samtalen, blir den stående stor med en tydelig legg-på-knapp, så lenge det ikke er noe annet å vise. På en telefon som holdes stående, deler samtalen og musikken én rad med ikoner når det kommer en melding, så meldingen beholder plassen til teksten og knappene sine",
-      "Fjerner en venn deg, forsvinner han nå også fra listen din, og blir du fjernet fra en turgruppe, forsvinner gruppa av seg selv, med en kort beskjed om hva som skjedde",
-      "Når du kobler telefonen og nettbrettet, blir en profil du har satt opp med navn eller bilde ikke lenger byttet ut med en tom",
-      "På en liten telefon blir teksten på knapper med langt navn, som Kjør motsatt vei og Lagre i GPX, litt mindre i stedet for å bli kuttet, og en åpnet tur har plass til Lagre ved siden av de andre knappene"
+      "Send GPX-filer fra nettplanleggeren på curveon.no/plan rett til Curveon: som et spor som kjøres akkurat slik det er, som en tur du kan endre, eller begge deler. Og et GPX-spor i appen kan legges i Planlagte, så det vises i nettplanleggeren også",
+      "Del mer med turgruppa: en tur du har kjørt, et GPX-spor eller en hvilken som helst planlagt tur har nå «Del med gruppa»",
+      "Trykk på veikortet, så blir veiskiltene store, med veinavnet ved siden av",
+      "Når det ringer, får samtalen plassen på dashbordet, og når du har svart, blir den stående stor med en tydelig legg-på-knapp",
+      "Tar du profilbilde, åpner Curveon sitt eget selfiekamera, og bildet blir akkurat slik du så det",
+      "Rundturer og eventyr går for veier med ekte svinger: hårnålssvinger teller nå fullt ut, og å svinge i et kryss i byen teller ikke lenger som en sving",
+      "Skjermen holder seg på mens du kjører, navigerer eller lader, men en telefon eller et nettbrett som står parkert på batteri i ti minutter, kan nå sovne i stedet for å tømme batteriet",
+      "Pluss en rekke mindre feilrettinger"
     ],
     "sv": [
-      "När du tar en profilbild öppnas nu Curveons egen kamera på selfielinsen, och bilden blir precis som du såg den i spegelbilden, oavsett hur telefonens kameraapp är inställd",
-      "Ändrar du en tur i webbplaneraren som finns både på telefonen och surfplattan uppdateras den nu på båda. Förut kunde den ena få den som en extra tur bredvid den gamla",
-      "Ansluter du till webbplaneraren igen efter att ha kopplat från där, syns telefonen eller surfplattan nu på sidan så fort du har skannat den nya koden",
-      "Meddelandet om turer från webben visas en gång när de kommer, och dyker inte längre upp igen varje gång du sveper mellan flikarna i GPX och turer",
-      "Dela mer med gruppen: en tur du har kört, ett GPX-spår eller vilken planerad tur som helst har nu Dela med gruppen, inte bara turen på kartan",
-      "Öppna en GPX-fil i webbplaneraren och skicka den till Curveon som ett spår som körs precis som det är, som en tur du kan ändra, eller båda. Och ett GPX-spår i appen kan läggas i Planerade, så att det syns i webbplaneraren också",
-      "Tar en vän bort dig försvinner han nu också från din lista, och om du tas bort från en turgrupp försvinner gruppen av sig själv, med ett kort meddelande om vad som hände",
-      "När du länkar telefonen och surfplattan ersätts en profil du har satt upp med namn eller bild inte längre av en tom"
+      "Skicka GPX-filer från webbplaneraren på curveon.no/plan direkt till Curveon: som ett spår som körs precis som det är, som en tur du kan ändra, eller både och. Och ett GPX-spår i appen kan läggas i Planerade, så att det syns i webbplaneraren också",
+      "Dela mer med turgruppen: en tur du har kört, ett GPX-spår eller vilken planerad tur som helst har nu Dela med gruppen",
+      "Tryck på vägkortet så blir vägens skyltar stora, med vägnamnet bredvid",
+      "När det ringer får samtalet platsen på instrumentpanelen, och när du har svarat stannar det stort med en tydlig knapp för att lägga på",
+      "Tar du en profilbild öppnas Curveons egen selfiekamera, och bilden blir precis som du såg den",
+      "Rundturer och äventyr väljer vägar med riktiga kurvor: hårnålskurvor räknas nu fullt ut, och att svänga i en korsning i stan räknas inte längre som en kurva",
+      "Skärmen håller sig på medan du kör, navigerar eller laddar, men en telefon eller surfplatta som står parkerad på batteri i tio minuter kan nu somna i stället för att tömma batteriet",
+      "Plus ett antal mindre buggfixar"
     ],
     "da": [
-      "Når du tager et profilbillede, åbner Curveon nu sit eget kamera på selfie-linsen, og billedet bliver præcis, som du så det i spejlbilledet, uanset hvad kameraappen på telefonen er indstillet til",
-      "Ændrer du en tur i webplanlæggeren, som ligger både på telefonen og tabletten, bliver den nu opdateret på begge. Før kunne den ene få den som en ekstra tur ved siden af den gamle",
-      "Forbinder du til webplanlæggeren igen efter at have afbrudt der, dukker telefonen eller tabletten nu op på siden, så snart du har scannet den nye kode",
-      "Beskeden om ture fra nettet vises én gang, når de kommer, og dukker ikke længere op igen, hver gang du swiper mellem fanerne i GPX og ture",
-      "Del mere med gruppen: en tur, du har kørt, et GPX-spor eller en hvilken som helst planlagt tur har nu Del med gruppen, ikke kun turen på kortet",
-      "Åbn en GPX-fil i webplanlæggeren og send den til Curveon som et spor, der køres præcis som det er, som en tur du kan ændre, eller begge dele. Og et GPX-spor i appen kan lægges i Planlagte, så det også vises i webplanlæggeren",
-      "Fjerner en ven dig, forsvinder han nu også fra din liste, og bliver du fjernet fra en turgruppe, forsvinder gruppen af sig selv, med en kort besked om, hvad der skete",
-      "Når du forbinder telefonen og tabletten, bliver en profil, du har sat op med navn eller billede, ikke længere erstattet af en tom"
+      "Send GPX-filer fra webplanlæggeren på curveon.no/plan direkte til Curveon: som et spor, der køres præcis som det er, som en tur, du kan ændre, eller begge dele. Og et GPX-spor i appen kan lægges i Planlagt, så det også vises i webplanlæggeren",
+      "Del mere med turgruppen: en tur, du har kørt, et GPX-spor eller enhver planlagt tur har nu Del med gruppen",
+      "Tryk på vejkortet, så bliver vejens skilte store med vejnavnet ved siden af",
+      "Når det ringer, får opkaldet pladsen på instrumentbrættet, og når du har svaret, bliver det stående stort med en tydelig knap til at lægge på",
+      "Tager du et profilbillede, åbner Curveon sit eget selfiekamera, og billedet bliver præcis, som du så det",
+      "Rundture og eventyr vælger veje med rigtige sving: hårnålesving tæller nu helt med, og at dreje i et kryds i byen tæller ikke længere som et sving",
+      "Skærmen bliver ved med at være tændt, mens du kører, navigerer eller lader, men en telefon eller tablet, der står parkeret på batteri i ti minutter, kan nu gå i dvale i stedet for at tømme batteriet",
+      "Plus en række mindre fejlrettelser"
     ],
     "fi": [
-      "Kun otat profiilikuvan, Curveon avaa nyt oman kameransa selfie-linssillä, ja kuva tulee täsmälleen sellaisena kuin näit sen peilikuvassa, vaikka puhelimen kamerasovelluksen asetukset olisivat mitkä",
-      "Kun muutat verkkosuunnittelijassa reittiä, joka on sekä puhelimessa että tabletissa, se päivittyy nyt molempiin. Ennen toinen saattoi saada sen ylimääräisenä reittinä vanhan viereen",
-      "Kun yhdistät verkkosuunnittelijaan uudelleen katkaistuasi yhteyden siellä, puhelin tai tabletti näkyy nyt sivulla heti, kun olet skannannut uuden koodin",
-      "Ilmoitus verkosta tulleista reiteistä näkyy kerran, kun ne saapuvat, eikä enää ponnahda esiin aina, kun pyyhkäiset välilehdeltä toiselle GPX ja ajot -näkymässä",
-      "Jaa ryhmälle enemmän: ajetulla reitillä, GPX-jäljellä ja millä tahansa suunnitellulla reitillä on nyt Jaa ryhmälle, ei vain kartalla olevalla reitillä",
-      "Avaa GPX-tiedosto verkkosuunnittelijassa ja lähetä se Curveoniin jälkenä, joka ajetaan juuri sellaisena kuin se on, reittinä jota voit muuttaa, tai molempina. Ja sovelluksen GPX-jäljen voi lisätä suunniteltuihin, jolloin se näkyy myös verkkosuunnittelijassa",
-      "Jos kaveri poistaa sinut, hän katoaa nyt myös sinun luettelostasi, ja jos sinut poistetaan ajoryhmästä, ryhmä poistuu luettelostasi itsestään lyhyen ilmoituksen kera",
-      "Kun yhdistät puhelimen ja tabletin, nimellä tai kuvalla täytetty profiili ei enää korvaudu tyhjällä"
+      "Lähetä GPX-tiedostoja verkkosuunnittelijasta osoitteessa curveon.no/plan suoraan Curveoniin: reittinä, joka ajetaan juuri sellaisenaan, muokattavana matkana tai molempina. Ja sovelluksen GPX-reitin voi lisätä Suunniteltuihin, jolloin se näkyy myös verkkosuunnittelijassa",
+      "Jaa enemmän ajoporukan kanssa: ajetulla ajolla, GPX-reitillä ja millä tahansa suunnitellulla matkalla on nyt Jaa ryhmälle",
+      "Napauta tiekorttia, niin tien merkit kasvavat isoiksi ja tien nimi näkyy niiden vieressä",
+      "Kun puhelu tulee, se saa tilan kojelaudalla, ja kun vastaat, se pysyy isona selkeän lopetuspainikkeen kanssa",
+      "Profiilikuvaa otettaessa avautuu Curveonin oma selfiekamera, ja kuvasta tulee juuri sellainen kuin näit sen",
+      "Kierrokset ja seikkailut hakeutuvat teille, joilla on oikeita mutkia: hiusneulamutkat lasketaan nyt täysimääräisesti, eikä kääntyminen kaupungin risteyksessä enää lasketa mutkaksi",
+      "Näyttö pysyy päällä, kun ajat, navigoit tai lataat, mutta akulla kymmenen minuuttia pysäköitynä seissyt puhelin tai tabletti voi nyt mennä lepoon sen sijaan, että akku tyhjenisi",
+      "Lisäksi joukko pieniä virhekorjauksia"
     ],
     "is": [
-      "Þegar þú tekur prófílmynd opnast nú eigin myndavél Curveon á selfie-linsunni og myndin verður nákvæmlega eins og þú sást hana í speglinum, sama hvernig myndavélaappið í símanum er stillt",
-      "Breytirðu ferð í vefskipuleggjandanum sem er bæði í símanum og spjaldtölvunni uppfærist hún nú á báðum. Áður gat annað tækið fengið hana sem auka ferð við hlið þeirrar gömlu",
-      "Ef þú tengist vefskipuleggjandanum aftur eftir að hafa aftengt þar, birtist síminn eða spjaldtölvan nú á síðunni um leið og þú hefur skannað nýja kóðann",
-      "Skilaboðin um ferðir af vefnum birtast einu sinni þegar þær koma og skjóta ekki lengur upp kollinum í hvert sinn sem þú strýkur á milli flipa í GPX og ferðum",
-      "Deildu meiru með hópnum: ferð sem þú hefur ekið, GPX-slóð eða hvaða skipulögð ferð sem er hefur nú Deila með hópnum, ekki bara ferðin á kortinu",
-      "Opnaðu GPX-skrá í vefskipuleggjandanum og sendu hana í Curveon sem slóð sem er ekin nákvæmlega eins og hún er, sem ferð sem þú getur breytt, eða hvort tveggja. Og GPX-slóð í appinu má setja í Skipulagt, svo hún sjáist líka í vefskipuleggjandanum",
-      "Ef vinur fjarlægir þig hverfur hann nú líka af listanum þínum, og ef þú ert fjarlægð(ur) úr ferðahóp hverfur hópurinn sjálfkrafa með stuttri tilkynningu um hvað gerðist",
-      "Þegar þú tengir símann og spjaldtölvuna er prófíll með nafni eða mynd ekki lengur settur út fyrir tóman"
+      "Sendu GPX-skrár úr vefskipulaginu á curveon.no/plan beint í Curveon: sem slóð sem er ekin nákvæmlega eins og hún er, sem ferð sem þú getur breytt, eða hvort tveggja. Og GPX-slóð í appinu má setja í Fyrirhugað, svo hún sjáist líka í vefskipulaginu",
+      "Deildu meiru með ferðahópnum: ferð sem þú hefur ekið, GPX-slóð eða hvaða skipulögð ferð sem er hefur nú Deila með hópnum",
+      "Ýttu á vegaspjaldið og merki vegarins stækka, með heiti vegarins við hliðina",
+      "Þegar hringt er fær símtalið plássið á mælaborðinu, og þegar þú hefur svarað helst það stórt með skýrum hnappi til að leggja á",
+      "Þegar þú tekur prófílmynd opnast eigin sjálfumyndavél Curveon, og myndin verður nákvæmlega eins og þú sást hana",
+      "Hringferðir og ævintýri velja vegi með alvöru beygjum: hárnálabeygjur teljast nú að fullu, og það að beygja á gatnamótum í bænum telst ekki lengur sem beygja",
+      "Skjárinn helst kveiktur meðan þú ekur, ert með leiðsögn eða í hleðslu, en sími eða spjaldtölva sem stendur kyrr á rafhlöðu í tíu mínútur getur nú farið í dvala í stað þess að tæma rafhlöðuna",
+      "Auk nokkurra minni villuleiðréttinga"
     ],
     "de": [
-      "Für das Profilbild öffnet Curveon jetzt seine eigene Kamera mit der Selfie-Linse, und das Bild wird genau so, wie du es im Spiegelbild gesehen hast, egal wie die Kamera-App deines Telefons eingestellt ist",
-      "Änderst du im Web-Planer eine Tour, die auf Handy und Tablet liegt, wird sie jetzt auf beiden aktualisiert. Vorher konnte eines davon sie als zusätzliche Tour neben der alten bekommen",
-      "Verbindest du dich nach dem Trennen wieder mit dem Web-Planer, erscheint dein Handy oder Tablet jetzt sofort auf der Seite, sobald du den neuen Code gescannt hast",
-      "Der Hinweis auf Touren aus dem Web erscheint einmal, wenn sie ankommen, und taucht nicht mehr bei jedem Wischen zwischen den Reitern in GPX & Fahrten wieder auf",
-      "Teile mehr mit deiner Gruppe: Eine gefahrene Tour, ein GPX-Track oder jede geplante Tour hat jetzt Mit der Gruppe teilen, nicht nur die Tour auf der Karte",
-      "Öffne im Web-Planer eine GPX-Datei und schick sie an Curveon als Track, der genau so gefahren wird, als Tour, die du ändern kannst, oder beides. Und ein GPX-Track in der App kann zu Geplant, damit er auch im Web-Planer erscheint",
-      "Wenn dich ein Freund entfernt, verschwindet er jetzt auch aus deiner Liste, und wenn du aus einer Fahrgruppe entfernt wirst, verschwindet die Gruppe von selbst, mit einem kurzen Hinweis, was passiert ist",
-      "Beim Koppeln von Handy und Tablet wird ein eingerichtetes Profil mit Namen oder Bild nicht mehr durch ein leeres ersetzt"
+      "Schick GPX-Dateien aus dem Web-Planer auf curveon.no/plan direkt an Curveon: als Track, der genau so gefahren wird, wie er ist, als Tour, die du ändern kannst, oder beides. Und ein GPX-Track in der App kann unter Geplant abgelegt werden, damit er auch im Web-Planer erscheint",
+      "Teile mehr mit deiner Gruppe: eine gefahrene Fahrt, ein GPX-Track oder jede geplante Tour hat jetzt Mit der Gruppe teilen",
+      "Tippe auf die Straßenkarte, und die Schilder der Straße werden groß, mit dem Straßennamen daneben",
+      "Wenn ein Anruf kommt, bekommt er den Platz auf dem Dashboard, und sobald du rangehst, bleibt er groß mit einer deutlichen Taste zum Auflegen",
+      "Beim Profilbild öffnet sich Curveons eigene Selfie-Kamera, und das Bild wird genau so, wie du es gesehen hast",
+      "Rundtouren und Abenteuer wählen Straßen mit echten Kurven: Haarnadelkurven zählen jetzt voll, und Abbiegen an einer Kreuzung in der Stadt zählt nicht mehr als Kurve",
+      "Der Bildschirm bleibt an, solange du fährst, navigierst oder lädst, aber ein Handy oder Tablet, das zehn Minuten im Akkubetrieb geparkt steht, darf jetzt in den Ruhezustand gehen, statt den Akku leer zu saugen",
+      "Dazu eine Reihe kleinerer Fehlerbehebungen"
     ],
     "es": [
-      "Al hacer la foto de perfil, Curveon abre ahora su propia cámara con el objetivo de selfie, y la foto sale exactamente como la viste en la vista de espejo, sea cual sea el ajuste de la app de cámara del teléfono",
-      "Si cambias en el planificador web una ruta que tienes en el móvil y en la tableta, ahora se actualiza en los dos. Antes uno de ellos podía recibirla como una ruta más junto a la antigua",
-      "Si vuelves a conectarte al planificador web después de desconectarte allí, tu móvil o tableta aparece ahora en la página en cuanto escaneas el nuevo código",
-      "El aviso de rutas desde la web aparece una vez cuando llegan, y ya no vuelve a salir cada vez que deslizas entre las pestañas de GPX y rutas",
-      "Comparte más con tu grupo: una ruta que ya hiciste, un track GPX o cualquier ruta planificada tiene ahora Compartir con el grupo, no solo la ruta del mapa",
-      "Abre un archivo GPX en el planificador web y envíalo a Curveon como un track que se recorre tal cual, como una ruta que puedes cambiar, o las dos cosas. Y un track GPX de la app puede ir a Planificadas, para que también salga en el planificador web",
-      "Si un amigo te quita, ahora también desaparece de tu lista, y si te sacan de un grupo de ruta, el grupo se va solo de tu lista con un aviso breve de lo ocurrido",
-      "Al enlazar el móvil y la tablet, un perfil que ya has configurado con nombre o foto ya no se sustituye por uno vacío"
+      "Envía archivos GPX desde el planificador web en curveon.no/plan directamente a Curveon: como un track que se recorre tal cual, como una ruta que puedes cambiar, o ambas cosas. Y un track GPX de la app se puede poner en Planificados, para que también aparezca en el planificador web",
+      "Comparte más con tu grupo: un viaje que has hecho, un track GPX o cualquier ruta planificada tiene ahora Compartir con el grupo",
+      "Toca la tarjeta de carretera y sus señales se hacen grandes, con el nombre de la carretera al lado",
+      "Cuando entra una llamada, ocupa el espacio del panel, y en cuanto contestas se queda grande con un botón claro para colgar",
+      "Al hacer una foto de perfil se abre la propia cámara selfie de Curveon, y la foto sale tal como la viste",
+      "Las rutas circulares y las aventuras buscan carreteras con curvas de verdad: las curvas de horquilla cuentan ahora completas, y girar en un cruce en la ciudad ya no cuenta como curva",
+      "La pantalla sigue encendida mientras conduces, navegas o cargas, pero un teléfono o tableta aparcado con batería durante diez minutos ahora puede apagarse en lugar de agotar la batería",
+      "Además de varias correcciones menores"
     ],
     "fr": [
-      "Pour la photo de profil, Curveon ouvre maintenant sa propre caméra sur l'objectif selfie, et la photo est exactement celle que tu as vue dans le miroir, quel que soit le réglage de l'appli photo du téléphone",
-      "Si tu modifies dans le planificateur web un trajet qui est sur ton téléphone et ta tablette, il est maintenant mis à jour sur les deux. Avant, l’un d’eux pouvait le recevoir comme un trajet en plus à côté de l’ancien",
-      "Si tu te reconnectes au planificateur web après t'y être déconnecté, ton téléphone ou ta tablette apparaît désormais sur la page dès que tu as scanné le nouveau code",
-      "Le message sur les trajets venus du web s’affiche une fois à leur arrivée, et ne réapparaît plus à chaque fois que tu glisses d’un onglet à l’autre dans GPX et sorties",
-      "Partage davantage avec ton groupe : une sortie déjà faite, une trace GPX ou n’importe quel trajet prévu a maintenant Partager avec le groupe, pas seulement le trajet sur la carte",
-      "Ouvre un fichier GPX dans le planificateur web et envoie-le à Curveon comme une trace suivie telle quelle, comme un trajet que tu peux modifier, ou les deux. Et une trace GPX de l’app peut aller dans Prévus, pour apparaître aussi dans le planificateur web",
-      "Si un ami te retire, il disparaît maintenant aussi de ta liste, et si tu es retiré d'un groupe de balade, le groupe quitte ta liste tout seul, avec un court message pour dire ce qui s'est passé",
-      "Quand tu associes le téléphone et la tablette, un profil déjà rempli avec un nom ou une photo n'est plus remplacé par un profil vide"
+      "Envoie des fichiers GPX depuis le planificateur web sur curveon.no/plan directement à Curveon : comme une trace suivie telle quelle, comme un trajet que tu peux modifier, ou les deux. Et une trace GPX de l'appli peut être mise dans Prévus, pour apparaître aussi dans le planificateur web",
+      "Partage davantage avec ton groupe : un trajet que tu as fait, une trace GPX ou n'importe quel trajet planifié a maintenant Partager avec le groupe",
+      "Touche la carte de route et ses panneaux s'agrandissent, avec le nom de la route à côté",
+      "Quand un appel arrive, il prend la place sur le tableau de bord, et une fois que tu décroches, il reste grand avec un bouton bien visible pour raccrocher",
+      "Pour la photo de profil, Curveon ouvre sa propre caméra selfie, et la photo sort exactement comme tu l'as vue",
+      "Les boucles et les aventures choisissent des routes avec de vrais virages : les épingles comptent maintenant en entier, et tourner à un carrefour en ville ne compte plus comme un virage",
+      "L'écran reste allumé quand tu roules, navigues ou charges, mais un téléphone ou une tablette garé sur batterie pendant dix minutes peut maintenant se mettre en veille au lieu de vider sa batterie",
+      "Et plusieurs petites corrections de bugs"
     ],
     "nl": [
-      "Voor je profielfoto opent Curveon nu zijn eigen camera met de selfielens, en de foto wordt precies zoals je hem in de spiegelweergave zag, wat de camera-app van je telefoon ook heeft ingesteld",
-      "Pas je in de webplanner een rit aan die op je telefoon en je tablet staat, dan wordt hij nu op allebei bijgewerkt. Eerder kon een van de twee hem als extra rit naast de oude krijgen",
-      "Maak je opnieuw verbinding met de webplanner nadat je daar de verbinding hebt verbroken, dan verschijnt je telefoon of tablet nu meteen op de pagina zodra je de nieuwe code hebt gescand",
-      "De melding over ritten van het web verschijnt één keer als ze binnenkomen, en komt niet meer terug telkens als je tussen de tabbladen in GPX & ritten veegt",
-      "Deel meer met je groep: een gereden rit, een GPX-track of elke geplande rit heeft nu Delen met de groep, niet alleen de rit op de kaart",
-      "Open een GPX-bestand in de webplanner en stuur het naar Curveon als een track die precies zo gereden wordt, als een rit die je kunt aanpassen, of allebei. En een GPX-track in de app kan naar Gepland, zodat hij ook in de webplanner staat",
-      "Als een vriend je verwijdert, verdwijnt hij nu ook uit jouw lijst, en word je uit een rittengroep gezet, dan verdwijnt de groep vanzelf, met een kort bericht over wat er gebeurde",
-      "Als je telefoon en tablet koppelt, wordt een profiel met naam of foto niet meer vervangen door een leeg profiel"
+      "Stuur GPX-bestanden vanuit de webplanner op curveon.no/plan rechtstreeks naar Curveon: als een track die precies zo wordt gereden, als een rit die je kunt aanpassen, of allebei. En een GPX-track in de app kan in Gepland worden gezet, zodat hij ook in de webplanner verschijnt",
+      "Deel meer met je groep: een gereden rit, een GPX-track of elke geplande rit heeft nu Delen met de groep",
+      "Tik op de wegkaart en de borden van de weg worden groot, met de wegnaam ernaast",
+      "Als er gebeld wordt, krijgt het gesprek de ruimte op het dashboard, en zodra je opneemt blijft het groot met een duidelijke knop om op te hangen",
+      "Voor een profielfoto opent Curveon zijn eigen selfiecamera, en de foto wordt precies zoals je hem zag",
+      "Rondritten en avonturen kiezen wegen met echte bochten: haarspeldbochten tellen nu volledig mee, en afslaan op een kruispunt in de stad telt niet meer als bocht",
+      "Het scherm blijft aan terwijl je rijdt, navigeert of oplaadt, maar een telefoon of tablet die tien minuten op de batterij geparkeerd staat, mag nu in slaap vallen in plaats van de batterij leeg te trekken",
+      "Plus een aantal kleinere bugfixes"
     ],
     "pl": [
-      "Przy zdjęciu profilowym Curveon otwiera teraz własny aparat z obiektywem do selfie, a zdjęcie wychodzi dokładnie takie, jakie widziałeś w lustrzanym podglądzie, niezależnie od ustawień aplikacji aparatu w telefonie",
-      "Gdy zmienisz w planerze internetowym trasę, która jest i na telefonie, i na tablecie, zaktualizuje się teraz na obu. Wcześniej jedno z nich mogło dostać ją jako dodatkową trasę obok starej",
-      "Gdy połączysz się ponownie z planerem w przeglądarce po rozłączeniu, telefon lub tablet pojawia się teraz na stronie od razu po zeskanowaniu nowego kodu",
-      "Komunikat o trasach z sieci pojawia się raz, gdy przyjdą, i nie wyskakuje już przy każdym przesunięciu między kartami w GPX i przejazdach",
-      "Udostępniaj grupie więcej: przejechana trasa, ślad GPX czy dowolna zaplanowana trasa mają teraz Udostępnij grupie, nie tylko trasa na mapie",
-      "Otwórz plik GPX w planerze internetowym i wyślij go do Curveon jako ślad jechany dokładnie tak, jak jest, jako trasę, którą możesz zmienić, albo jedno i drugie. A ślad GPX w aplikacji można dodać do zaplanowanych, żeby pokazał się też w planerze internetowym",
-      "Gdy znajomy Cię usunie, znika teraz także z Twojej listy, a gdy usuną Cię z grupy przejazdu, grupa sama znika z listy, z krótką informacją, co się stało",
-      "Po połączeniu telefonu i tabletu skonfigurowany profil z nazwą lub zdjęciem nie jest już zastępowany pustym"
+      "Wysyłaj pliki GPX z planera internetowego na curveon.no/plan prosto do Curveon: jako ślad przejeżdżany dokładnie tak, jak jest, jako trasę, którą możesz zmieniać, albo jedno i drugie. A ślad GPX w aplikacji można dodać do Zaplanowanych, żeby był widoczny także w planerze internetowym",
+      "Dziel się więcej z grupą: przejechana jazda, ślad GPX czy dowolna zaplanowana trasa ma teraz Udostępnij grupie",
+      "Stuknij kartę drogi, a znaki drogi się powiększą, z nazwą drogi obok",
+      "Gdy ktoś dzwoni, rozmowa dostaje miejsce na pulpicie, a po odebraniu zostaje duża z wyraźnym przyciskiem rozłączania",
+      "Przy zdjęciu profilowym otwiera się własny aparat selfie Curveon, a zdjęcie wychodzi dokładnie tak, jak je widziałeś",
+      "Pętle i przygody wybierają drogi z prawdziwymi zakrętami: agrafki liczą się teraz w całości, a skręt na skrzyżowaniu w mieście nie liczy się już jako zakręt",
+      "Ekran pozostaje włączony, gdy jedziesz, nawigujesz lub ładujesz, ale telefon lub tablet zaparkowany na baterii przez dziesięć minut może teraz zasnąć, zamiast rozładowywać baterię",
+      "Do tego kilka drobnych poprawek błędów"
     ]
   },
   {

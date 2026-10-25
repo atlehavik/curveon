@@ -81,6 +81,8 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   // The road style and surface are lists with a sign for each choice: open, then click the choice.
   const choose = async (id, value) => { await page.click(`#${id}-btn`); await page.click(`.isel-list li[data-value="${value}"]`); };
   check(await page.isVisible("#connect-intro") && (await page.getAttribute("#pair", "class")) === "primary", `${name}: not connected: a card says how to connect`);
+  const langShown = await page.textContent("#lang");
+  check(langShown === (name === "phone" ? "Norsk" : "English"), `${name}: the language button says the language the page is in (${langShown})`);
   if (name === "phone") await page.click("#fold");
   await clickAt(59.7795, 5.2049);
   check(JSON.stringify(await menuItems()) === JSON.stringify([name === "phone" ? "Start her" : "Start here"]), `${name}: the first click offers the start (${await menuItems()})`);
@@ -302,6 +304,24 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
       check((await page.textContent(".menu-title")) === poi.name && (await menuItems()).length >= 2, `desktop: a click on ${poi.name} offers it as a place on the trip (${await menuItems()})`);
       await page.keyboard.press("Escape");
     }
+
+    // Where the gravel is: the heat map, counted by the service, under the place names; on and off in the same list.
+    await page.evaluate(() => { window.curveonMap.jumpTo({ center: [8.5, 61.0], zoom: 7 }); });
+    if (await page.isHidden("#places-pop")) await page.click(".places-btn");
+    const heatBox = page.locator(".places-pop label", { hasText: "heat map" });
+    await heatBox.click();
+    await page.waitForFunction(() => window.curveonMap.getSource("cv-heat")._data.features?.length > 0, null, { timeout: 90000 }).catch(() => {});
+    await page.waitForTimeout(800);
+    const heat = await page.evaluate(() => {
+      const m = window.curveonMap, ids = m.getStyle().layers.map((l) => l.id);
+      return { n: m.getSource("cv-heat")._data.features.length, under: ids.indexOf("cv-heat") >= 0 && ids.indexOf("cv-heat") < ids.findIndex((id) => id.startsWith("places_")),
+        on: m.getLayoutProperty("cv-heat", "visibility") };
+    });
+    check(heat.n > 0 && heat.under && heat.on === "visible", `desktop: the gravel heat map shows, under the place names (${heat.n} squares)`);
+    await page.screenshot({ path: `${out}/${name}-0-heat.png` });
+    await heatBox.click();
+    check(await page.evaluate(() => window.curveonMap.getLayoutProperty("cv-heat", "visibility")) === "none", "desktop: and goes again when turned off");
+    await page.click(".places-btn");
   }
   if (name === "phone") await page.click("#fold");
 
@@ -444,9 +464,9 @@ ${SECTIONS.map((s) => `<trk><name>${s[0]}</name><trkseg>${sectionLine(s).map(([l
   await page.click("#file-send");
   for (let i = 0; i < 50 && dev.got.plans.length < before0 + 3; i++) await sleep(100);
   const sent3 = dev.got.plans.slice(before0).map((p) => p.trip);
-  check(sent3.length === 3 && sent3.every((p, i) => p.track && !p.destination && p.name === fs1.rows[i] && p.line.split(";").length === 200 &&
+  check(sent3.length === 3 && sent3.every((p, i) => p.track && !p.destination && p.name === fs1.rows[i] && p.group === "TET N" && p.line.split(";").length === 200 &&
     Math.abs(Number(p.line.split(";")[0].split(",")[0]) - SECTIONS[i][1][0]) < 1e-4),
-    `${name}: Send all sent each track as a GPX track of its own (${sent3.map((p) => p.name).join(", ")})`);
+    `${name}: Send all sent each track as a GPX track of its own, together as the file (${sent3.map((p) => `${p.name} in ${p.group}`).join(", ")})`);
   await page.click("#new");
   if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
   fs1 = await fileState();
@@ -467,7 +487,8 @@ ${SECTIONS.map((s) => `<trk><name>${s[0]}</name><trkseg>${sectionLine(s).map(([l
   for (let i = 0; i < 50 && dev.got.plans.length < before + 2; i++) await sleep(100);
   const got = dev.got.plans.slice(before);
   const track = got.find((p) => p.trip.track), asTrip = got.find((p) => !p.trip.track);
-  check(track && !track.trip.destination && track.trip.stops.length === 0 && track.trip.line.split(";").length > 100 && asTrip?.trip.destination && asTrip.tid !== track.tid,
+  check(track && !track.trip.destination && track.trip.stops.length === 0 && track.trip.line.split(";").length > 100 && asTrip?.trip.destination && asTrip.tid !== track.tid &&
+    track.trip.name === asTrip.trip.name,
     `${name}: sent as both, a GPX track and a trip (${got.map((p) => p.trip.name).join(", ")})`);
 
   if (name === "desktop") {

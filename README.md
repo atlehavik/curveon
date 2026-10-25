@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" width="96" alt="Curveon icon">
+<img src="website/icon-512.png" width="96" alt="Curveon icon">
 
 # Curveon
 
@@ -13,8 +13,9 @@ Open source and made for riders.
 <br>
 
 [![Download Curveon](https://img.shields.io/github/v/release/atlehavik/curveon?style=for-the-badge&label=Download%20Curveon&color=00E5FF&labelColor=0D1117&logo=android&logoColor=white)](https://github.com/atlehavik/curveon/releases/latest)
+[![curveon.no](https://img.shields.io/badge/Website-curveon.no-FF7A1A?style=for-the-badge&labelColor=0D1117)](https://curveon.no)
 
-<sub>Android 10 or newer · phone or tablet · English and Norwegian</sub>
+<sub>Android 10 or newer · phone or tablet · eleven languages</sub>
 
 <br>
 

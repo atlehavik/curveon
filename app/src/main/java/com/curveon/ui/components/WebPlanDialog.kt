@@ -89,9 +89,10 @@ private fun status(s: WebPlanState): String = when {
     s.live && s.added == null -> stringResource(R.string.web_plan_live)
     s.offline -> stringResource(R.string.web_plan_offline)
     s.added == null -> ""
-    s.added == 0 && s.changed == 0 && s.deleted == 0 -> stringResource(R.string.web_plan_nothing_new)
+    s.added == 0 && s.changed == 0 && s.deleted == 0 && s.tracks == 0 -> stringResource(R.string.web_plan_nothing_new)
     else -> listOfNotNull(
         s.added.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.web_plan_new, it, it) },
+        s.tracks.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.web_plan_tracks, it, it) },
         s.changed.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.web_plan_changed, it, it) },
         s.deleted.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.web_plan_deleted, it, it) },
     ).joinToString(" · ")

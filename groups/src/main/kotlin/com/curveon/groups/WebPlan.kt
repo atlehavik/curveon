@@ -68,13 +68,14 @@ data class WebPlanRef(val rider: String, val id: Long) {
  * The same [tripId] with a higher [rev] is the same trip changed. [ref]: the trip on a device it is a change of
  * (opened on the page from that device's list); that device changes its trip, the others get it as a new one.
  * Without a [destination] it is a track (`track: true`, e.g. a GPX file opened on the page): the line is ridden as it
- * is, with no stops. An app older than that drops it unread.
+ * is, with no stops, and kept among the GPX tracks; [group] (a file with several tracks) is the GPX group they go in
+ * together. An app older than that drops it unread.
  */
 class WebPlanTrip(
   val tripId: String, val rev: Long, val name: String, val start: TripStop?, val destination: TripStop?, val stops: List<TripStop>,
   /** Road style, surface and what to avoid: the JSON the app keeps with a saved route. */
   val options: String, val line: String, val distanceMeters: Double, val durationSeconds: Double, val ascentMeters: Double,
-  val curviness: Int, val sentAt: Long, val ref: WebPlanRef? = null,
+  val curviness: Int, val sentAt: Long, val ref: WebPlanRef? = null, val group: String? = null,
 ) {
   fun toJson(): JSONObject = JSONObject().put("v", 1).put("name", name)
     .apply { start?.let { put("start", stop(it)) } }
@@ -83,6 +84,7 @@ class WebPlanTrip(
     .put("options", JSONObject(options)).put("line", line)
     .put("m", distanceMeters).put("s", durationSeconds).put("up", ascentMeters).put("curvy", curviness)
     .apply { ref?.let { put("ref", it.toJson()) } }
+    .apply { group?.let { put("group", it) } }
 
   companion object {
     internal fun stop(s: TripStop) = JSONObject().put("name", s.name).put("lat", s.lat).put("lon", s.lon).apply { if (s.via) put("via", true) }
@@ -99,6 +101,7 @@ class WebPlanTrip(
         if (o.optBoolean("track")) null else stopOf(o.getJSONObject("destination")), if (o.optBoolean("track")) emptyList() else stops,
         (o.optJSONObject("options") ?: JSONObject()).toString(), line, o.optDouble("m", 0.0), o.optDouble("s", 0.0),
         o.optDouble("up", 0.0), o.optInt("curvy", 0), sentAt, WebPlanRef.of(o.optJSONObject("ref")),
+        o.optString("group").trim().take(120).takeIf { it.isNotEmpty() },
       )
     }
   }

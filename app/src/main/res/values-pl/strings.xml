@@ -1242,6 +1242,12 @@
         <item quantity="many">%d nowych tras z internetu</item>
         <item quantity="other">%d nowej trasy z internetu</item>
     </plurals>
+    <plurals name="web_plan_tracks">
+        <item quantity="one">%d nowy ślad GPX z internetu, w GPX</item>
+        <item quantity="few">%d nowe ślady GPX z internetu, w GPX</item>
+        <item quantity="many">%d nowych śladów GPX z internetu, w GPX</item>
+        <item quantity="other">%d nowego śladu GPX z internetu, w GPX</item>
+    </plurals>
     <plurals name="web_plan_changed">
         <item quantity="one">%d trasa zmieniona w internecie</item>
         <item quantity="few">%d trasy zmienione w internecie</item>

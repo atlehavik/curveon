@@ -93,7 +93,28 @@ class MapDownloads(
         }
     }
 
-    fun freeBytes() = maps.mapsDir.usableSpace
+    /** Free room for maps right now, without what Android could clear; quick. */
+    fun usableBytes(): Long = maps.mapsDir.usableSpace
+
+    /** Room for maps, counting other apps' cached files Android clears when it is asked for the space. Can take seconds. */
+    @androidx.annotation.WorkerThread
+    fun freeBytes(): Long {
+        val dir = maps.mapsDir
+        return runCatching {
+            val sm = context.getSystemService(android.os.storage.StorageManager::class.java)
+            sm.getAllocatableBytes(sm.getUuidForPath(dir))
+        }.getOrDefault(dir.usableSpace)
+    }
+
+    /** Asks Android for [bytes] (clearing cached files if need be); false when they can't be had. */
+    private fun reserve(bytes: Long): Boolean {
+        val dir = maps.mapsDir
+        if (dir.usableSpace > bytes) return true
+        return runCatching {
+            val sm = context.getSystemService(android.os.storage.StorageManager::class.java)
+            sm.allocateBytes(sm.getUuidForPath(dir), bytes)
+        }.isSuccess
+    }
 
     /** What downloading [area] would add: its map, plus the routing tiles not already on the tablet. */
     fun downloadBytes(area: CatalogArea, installedTiles: Set<String>) =
@@ -117,9 +138,7 @@ class MapDownloads(
         withContext(Dispatchers.IO) {
             // An old map stays usable until the new one is complete, so we need room for a full copy.
             val needed = (downloadBytes(area, routing.installedNames()) * 1.1).toLong()
-            check(maps.mapsDir.usableSpace > needed) {
-                context.getString(R.string.map_no_space, needed / 1e9, maps.mapsDir.usableSpace / 1e9)
-            }
+            check(reserve(needed)) { context.getString(R.string.map_no_space, needed / 1e9, freeBytes() / 1e9) }
             RegionExtractor(http).extract("https://build.protomaps.com/$build", area.tileMask(), MAX_ZOOM, file(area), onProgress = { p ->
                 val msg = when (p.stage) {
                     ExtractProgress.Stage.READING_INDEX ->

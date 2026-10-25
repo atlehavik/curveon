@@ -66,6 +66,9 @@ class Planner(
   /** The search each page (its `tab`) has going, to give up when the same page asks for something newer. */
   private val tabs = ConcurrentHashMap<String, BRouterEngine.Cancel>()
 
+  /** A route is being worked out, or waits for its turn: background work (the heat map) waits too. */
+  fun busy() = waiting.get() > 0
+
   constructor(engine: BRouterEngine, roads: SurfaceReader? = null, pois: Pois? = null) : this(
     { a, b, options, heading -> engine.routeLegs(listOf(a, b), options, heading, maxMillis = 45_000).single() },
     { a -> AdventurePlanner(engine, roads = roads).plan(a.start, a.destination, a.area, a.minutes, a.options, a.variant) },

@@ -169,7 +169,10 @@ channel of its own made with the same keys and frames as a group (code: `groups/
   `{v:1, name, start?, destination, stops[], options, line, m, s, up, curvy, ref?}`: stops as in a TripDoc, `options`
   the app's saved-route options, `line` `lat,lon;…` (5 decimals). `ref` `{r, id}` = a change of trip `id` on the
   device whose rider id is `r`: that device replaces its trip (keeping its group, and the name it gave it); other
-  devices get it as a new trip. `rev` is the page's clock in ms, so a later send always wins. `plan_del` `{seq, ts,
+  devices get it as a new trip. A GPX track (a GPX file opened on the page) has `track: true`, no `destination` and
+  no stops: the app keeps it among its GPX tracks, not the planned trips, and the tracks of one file carry
+  `group` (the file's name), the GPX group they go in together; its `plan_got` has no `id`.
+  `rev` is the page's clock in ms, so a later send always wins. `plan_del` `{seq, ts,
   ref}` under slot `d<id><r…>` asks device `r` to take trip `id` out of its planned trips.
 - The app answers each trip with `plan_got` `{seq, ts, tid, rev, dev, id}` (slot `tid`), shown on the page.
 - When: the app fetches and publishes on one short connection at start, when it comes back on screen, and 2 s after a

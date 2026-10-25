@@ -1203,6 +1203,10 @@
         <item quantity="one">%d neue Tour aus dem Web</item>
         <item quantity="other">%d neue Touren aus dem Web</item>
     </plurals>
+    <plurals name="web_plan_tracks">
+        <item quantity="one">%d neuer GPX-Track aus dem Web, unter GPX</item>
+        <item quantity="other">%d neue GPX-Tracks aus dem Web, unter GPX</item>
+    </plurals>
     <plurals name="web_plan_changed">
         <item quantity="one">%d Tour im Web geändert</item>
         <item quantity="other">%d Touren im Web geändert</item>

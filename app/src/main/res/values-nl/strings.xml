@@ -1176,6 +1176,10 @@
         <item quantity="one">%d nieuwe rit van het web</item>
         <item quantity="other">%d nieuwe ritten van het web</item>
     </plurals>
+    <plurals name="web_plan_tracks">
+        <item quantity="one">%d nieuwe GPX-track van het web, onder GPX</item>
+        <item quantity="other">%d nieuwe GPX-tracks van het web, onder GPX</item>
+    </plurals>
     <plurals name="web_plan_changed">
         <item quantity="one">%d rit gewijzigd op het web</item>
         <item quantity="other">%d ritten gewijzigd op het web</item>

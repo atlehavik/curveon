@@ -7,7 +7,7 @@ import { b64, channel, decodePolyline, linkUri, newLink, parseLink, random, unb6
 // ---------- Texts (English and Norwegian, as in the app) ----------
 const TEXTS = {
   en: {
-    title: "Curveon planner", search_hint: "Search for a place, or click the map", lang: "Norsk",
+    title: "Curveon planner", search_hint: "Search for a place, or click the map", lang: "English",
     theme_dark: "Dark map", theme_light: "Light map",
     hint_empty: "Click the map or search to choose where you start, then where you are going. Click a point to change or remove it, drag it to move it. Click the line to put a via point or stop there, or drag it to take another road. Right-click tells you about the road there; the middle mouse button moves the map, also while drawing.",
     opt_style: "Roads", opt_surface: "Surface", opt_ferries: "Ferries", opt_motorways: "Motorways",
@@ -37,15 +37,17 @@ const TEXTS = {
     err_failed: "The route could not be worked out. Try again.", err_offline: "No connection to the planner. Check your internet connection.",
     and: " and ", name_hint: "Name of the trip",
     open_gpx: "Open GPX", send_as: "Send as", as_trip: "A trip", as_track: "A GPX track", as_both: "Both",
-    send_as_explain: "A trip has its stops, to change in Curveon; a GPX track is ridden just as it is.",
+    send_as_explain: "A trip has its stops, to change in Curveon (under Planned); a GPX track goes under GPX and is ridden just as it is.",
     gpx_loaded: (n) => `Opened “${n}”. Send it as a GPX track just as it is, as a trip you can change, or both.`,
-    gpx_bad: "No track found in that file.", track_suffix: " (track)",
+    gpx_bad: "No track found in that file.",
     gpx_tracks: (n) => `${n} tracks, each on its own. Click one here or on the map to open it.`,
     gpx_opened_file: (f, n) => `Opened “${f}”: ${n} tracks.`, gpx_send_all: (n) => `Send all ${n} to Curveon as GPX tracks`,
-    gpx_sent_all: (n) => `Sent ${n} GPX tracks. They show under Planned in Curveon the next time the app is online.`,
+    gpx_sent_all: (n, f) => `Sent ${n} GPX tracks. They show under GPX in Curveon, together as “${f}”, the next time the app is online.`,
     gpx_close: "Close the file", tip_gpx_close: "Take the file's tracks off the map (the one you opened stays)", tip_gpx_track: "Open this track",
     send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
     sending: "Sending…", sent_ok: "Sent. It shows under Planned in Curveon the next time the app is online.",
+    sent_track_ok: "Sent. It shows under GPX in Curveon the next time the app is online.",
+    sent_both_ok: "Sent. The trip shows under Planned in Curveon and the track under GPX, the next time the app is online.",
     updated_ok: (d) => `Sent. The trip on ${d} is updated the next time the app is online.`,
     send_failed: "The trip could not be sent. Check your internet connection and try again.",
     pending_title: "Waiting for Curveon", waiting: "Not fetched yet", forget: "Remove from this list",
@@ -89,7 +91,8 @@ const TEXTS = {
     compare_pick: "Use this one", compare_close: "Close",
     places: "Places", places_title: "Places on the map", places_zoom: "Zoom in to see them.",
     layer_fuel: "Fuel", layer_viewpoints: "Viewpoints", layer_passes: "Mountain passes", layer_camping: "Camping",
-    layer_gravel: "Gravel roads (from zoom 11)", layer_food: "Food and coffee", layer_ferries: "Ferries", layer_motorcycle: "Motorcycle shops and workshops",
+    layer_gravel: "Gravel roads (from zoom 11)", layer_heat: "Where the gravel is (heat map)",
+    heat_counting: "Counting the gravel here, only the first time…", layer_food: "Food and coffee", layer_ferries: "Ferries", layer_motorcycle: "Motorcycle shops and workshops",
     save_gpx: "Save as GPX", share: "Copy link", link_copied: "Link copied. Whoever opens it sees this trip and can change it.",
     opened_link: "Opened from a link. Change it, save it as a draft, or send it to Curveon.",
     sec_trip: "Trip", sec_options: "Roads", sec_route: "Route", sec_save: "Save and send", name_label: "Name",
@@ -110,7 +113,7 @@ const TEXTS = {
     tip_share: "Copy a link to this trip: open it on another computer or send it to a friend",
     tip_new: "Start a new, empty trip", tip_open_gpx: "Open a GPX file from this computer (or drop it on the map)",
     tip_pair: "Show the code to scan in Curveon (Planned → From the web)", tip_unpair: "Make this browser forget your phone and tablet",
-    tip_lang: "Norsk / English", tip_fold: "Fold the panel away, or out again",
+    tip_lang: "Switch to Norwegian (norsk)", tip_fold: "Fold the panel away, or out again",
     opt_reach: "Detour for gravel", reach_any: "Up to double length", reach_km: (k) => `Up to ${k} km`,
     tip_reach: "How far off the usual route to find gravel?", gravel_amount: "gravel", track_amount: "tracks",
     menu_via_between: (a, b) => `Via point between ${a} and ${b}`, menu_stop_between: (a, b) => `Stop between ${a} and ${b}`,
@@ -121,7 +124,7 @@ const TEXTS = {
     seconds: (n) => `${n} s`,
   },
   nb: {
-    title: "Curveon-planlegger", search_hint: "Søk etter et sted, eller klikk i kartet", lang: "English",
+    title: "Curveon-planlegger", search_hint: "Søk etter et sted, eller klikk i kartet", lang: "Norsk",
     theme_dark: "Mørkt kart", theme_light: "Lyst kart",
     hint_empty: "Klikk i kartet eller søk for å velge hvor du starter, og så hvor du skal. Klikk på et punkt for å endre eller fjerne det, dra i det for å flytte det. Klikk på linjen for å legge et hjelpepunkt eller stopp der, eller dra i den for å ta en annen vei. Høyreklikk forteller om veien der; midtre museknapp flytter kartet, også mens du tegner.",
     opt_style: "Veier", opt_surface: "Underlag", opt_ferries: "Ferjer", opt_motorways: "Motorvei",
@@ -151,15 +154,17 @@ const TEXTS = {
     err_failed: "Ruten kunne ikke regnes ut. Prøv igjen.", err_offline: "Får ikke kontakt med planleggeren. Sjekk internettforbindelsen.",
     and: " og ", name_hint: "Navn på turen",
     open_gpx: "Åpne GPX", send_as: "Send som", as_trip: "En tur", as_track: "Et GPX-spor", as_both: "Begge",
-    send_as_explain: "En tur har stoppene sine, så du kan endre den i Curveon; et GPX-spor kjøres akkurat som det er.",
+    send_as_explain: "En tur har stoppene sine, så du kan endre den i Curveon (under Planlagte); et GPX-spor havner under GPX og kjøres akkurat som det er.",
     gpx_loaded: (n) => `Åpnet «${n}». Send den som GPX-spor akkurat som den er, som en tur du kan endre, eller begge deler.`,
-    gpx_bad: "Fant ikke noe spor i den filen.", track_suffix: " (spor)",
+    gpx_bad: "Fant ikke noe spor i den filen.",
     gpx_tracks: (n) => `${n} spor, hvert for seg. Klikk på et her eller i kartet for å åpne det.`,
     gpx_opened_file: (f, n) => `Åpnet «${f}»: ${n} spor.`, gpx_send_all: (n) => `Send alle ${n} til Curveon som GPX-spor`,
-    gpx_sent_all: (n) => `Sendte ${n} GPX-spor. De dukker opp under Planlagte i Curveon neste gang appen er på nett.`,
+    gpx_sent_all: (n, f) => `Sendte ${n} GPX-spor. De dukker opp under GPX i Curveon, samlet som «${f}», neste gang appen er på nett.`,
     gpx_close: "Lukk filen", tip_gpx_close: "Ta filens spor bort fra kartet (det du åpnet, blir værende)", tip_gpx_track: "Åpne dette sporet",
     send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
     sending: "Sender …", sent_ok: "Sendt. Den dukker opp under Planlagte i Curveon neste gang appen er på nett.",
+    sent_track_ok: "Sendt. Det dukker opp under GPX i Curveon neste gang appen er på nett.",
+    sent_both_ok: "Sendt. Turen dukker opp under Planlagte i Curveon og sporet under GPX, neste gang appen er på nett.",
     updated_ok: (d) => `Sendt. Turen på ${d} oppdateres neste gang appen er på nett.`,
     send_failed: "Turen ble ikke sendt. Sjekk internettforbindelsen og prøv igjen.",
     pending_title: "Venter på Curveon", waiting: "Ikke hentet ennå", forget: "Fjern fra listen",
@@ -203,7 +208,8 @@ const TEXTS = {
     compare_pick: "Bruk denne", compare_close: "Lukk",
     places: "Steder", places_title: "Steder på kartet", places_zoom: "Zoom inn for å se dem.",
     layer_fuel: "Bensin", layer_viewpoints: "Utsiktspunkt", layer_passes: "Fjelloverganger", layer_camping: "Camping",
-    layer_gravel: "Grusveier (fra zoom 11)", layer_food: "Mat og kaffe", layer_ferries: "Ferjer", layer_motorcycle: "MC-butikker og verksteder",
+    layer_gravel: "Grusveier (fra zoom 11)", layer_heat: "Hvor grusen er (varmekart)",
+    heat_counting: "Teller grusen her, bare første gang …", layer_food: "Mat og kaffe", layer_ferries: "Ferjer", layer_motorcycle: "MC-butikker og verksteder",
     save_gpx: "Lagre som GPX", share: "Kopier lenke", link_copied: "Lenken er kopiert. Den som åpner den, ser turen og kan endre den.",
     opened_link: "Åpnet fra en lenke. Endre den, lagre den som utkast, eller send den til Curveon.",
     sec_trip: "Turen", sec_options: "Veivalg", sec_route: "Ruten", sec_save: "Lagre og send", name_label: "Navn",
@@ -224,7 +230,7 @@ const TEXTS = {
     tip_share: "Kopier en lenke til turen: åpne den på en annen PC eller send den til en venn",
     tip_new: "Begynn på en ny, tom tur", tip_open_gpx: "Åpne en GPX-fil fra denne PC-en (eller slipp den på kartet)",
     tip_pair: "Vis koden du skanner i Curveon (Planlagte → Fra nettet)", tip_unpair: "Få denne nettleseren til å glemme telefonen og nettbrettet ditt",
-    tip_lang: "Norsk / English", tip_fold: "Fell panelet sammen, eller ut igjen",
+    tip_lang: "Bytt til engelsk (English)", tip_fold: "Fell panelet sammen, eller ut igjen",
     opt_reach: "Omvei for grus", reach_any: "Inntil dobbel lengde", reach_km: (k) => `Inntil ${k} km`,
     tip_reach: "Hvor langt fra vanlig rute for å finne grus?", gravel_amount: "grus", track_amount: "traktorvei",
     menu_via_between: (a, b) => `Hjelpepunkt mellom ${a} og ${b}`, menu_stop_between: (a, b) => `Stopp mellom ${a} og ${b}`,
@@ -295,6 +301,11 @@ let gapLine = null;
 let poiList = [];
 /** The gravel roads in (and round) view, for the map's dashes, and the box they cover. */
 let gravelWays = [], gravelHave = null, gravelCtl = null;
+/** The gravel heat map's squares: "E5_N60" → [[lon, lat, weight], …] (null while fetched), and the files in view. */
+const heatTiles = new Map();
+let heatShown = [], heatWaiting = false, heatTimer, heatRetry;
+/** How far north the heat map's blobs were sized for: the squares lie further apart up north (1/cos). */
+let heatLat = 61;
 /**
  * A GPX file with several tracks, while it is open: { name, tracks: [{ name, line, ele, m, up }], open: the index of the
  * one on the map as the trip (or null), clean: what that one was when opened, to go to another without asking }.
@@ -351,6 +362,7 @@ function withRoute(style) {
   style.sources["cv-legs"] = { type: "geojson", data: legsData() };
   style.sources["cv-surface"] = { type: "geojson", data: surfData() };
   style.sources["cv-gravel"] = { type: "geojson", data: gravelData() };
+  style.sources["cv-heat"] = { type: "geojson", data: heatData() };
   // Gravel and soft roads dashed over the map's own roads, as the app's map has them: under the road names.
   const labels = style.layers.findIndex((l) => l.type === "symbol" && !l.id.startsWith("online-"));
   const roadColour = theme === "dark" ? "#ffffff" : "#707070";
@@ -358,6 +370,18 @@ function withRoute(style) {
   const dashWidth = ["interpolate", ["exponential", 1.6], ["zoom"], 11, 1.4, 12.5, 2.2, 15, 3, 18, 11];
   const ferry = { "line-color": theme === "dark" ? "#6fa3cf" : "#4a7fae", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1, 12, 1.6, 16, 2.5], "line-dasharray": [3, 2.5] };
   style.layers.splice(labels < 0 ? style.layers.length : labels, 0,
+    // Where the gravel is, in the app's colours: warm where the 1/16° squares around have much gravel (from 2 km of
+    // gravel road in one, none, to 12 km, a lot), fading out from zoom 11 as the dashes come in. Each square's blob
+    // grows with the map, wider than the squares lie apart, so they make one surface, never rows of dots.
+    { id: "cv-heat", type: "heatmap", source: "cv-heat", maxzoom: 13, layout: { visibility: heatOn() ? "visible" : "none" },
+      paint: {
+        "heatmap-weight": ["interpolate", ["linear"], ["get", "w"], 2, 0, 12, 1],
+        "heatmap-intensity": 0.4,
+        "heatmap-radius": heatRadius(),
+        "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 11, theme === "dark" ? 0.8 : 0.7, 12.5, 0],
+        "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"], 0, "rgba(0,0,0,0)", 0.15, "rgba(255,145,0,0.25)",
+          0.4, "rgba(255,145,0,0.6)", 0.7, "rgba(255,61,0,0.8)", 1, "rgba(255,234,0,0.9)"],
+      } },
     // Where the ferries go: dashed across the water, from the Norway map's roads and, beyond it, the online map's
     // (an "online-" layer, shown and hidden with the rest of that map).
     { id: "cv-ferry", type: "line", source: "protomaps", "source-layer": "roads", filter: ["==", ["get", "kind"], "ferry"], paint: ferry },
@@ -1943,7 +1967,17 @@ function drawPlaces() {
   gbox.onchange = () => { store.set("gravelMap", gbox.checked); showGravel(); };
   const dash = el("span", "dash-sign");
   gl.append(gbox, dash, el("span", "", t("layer_gravel")));
-  pop.replaceChildren(head, gl, ...LAYERS.map(([key]) => {
+  // The heat map under it: off by default, as in the app.
+  const hl = el("label");
+  const hbox = el("input");
+  hbox.type = "checkbox";
+  hbox.checked = heatOn();
+  hbox.onchange = () => { store.set("gravelHeat", hbox.checked); showHeat(); };
+  hl.append(hbox, el("span", "heat-sign"), el("span", "", t("layer_heat")));
+  const counting = el("small", "hint", t("heat_counting"));
+  counting.id = "heat-counting";
+  counting.hidden = !heatWaiting;
+  pop.replaceChildren(head, gl, hl, counting, ...LAYERS.map(([key]) => {
     const label = el("label");
     const box = el("input");
     box.type = "checkbox";
@@ -2000,6 +2034,69 @@ function showGravel() {
 }
 let gravelTimer;
 map.on("moveend", () => { clearTimeout(gravelTimer); gravelTimer = setTimeout(loadGravel, 250); });
+
+// ---------- Where the gravel is ----------
+// The heat map's squares come from the planner service, one routing data file (5° × 5°) at a time, counted there ahead
+// of time: a file is a few kB, so turning it on shows it at once. Only the files in view are on the map.
+function heatOn() { return store.get("gravelHeat", false); }
+/** The routing data files the view covers, named as the service names them. */
+function heatNames() {
+  const b = map.getBounds(), out = [];
+  for (let la = Math.floor(Math.max(-85, b.getSouth()) / 5) * 5; la <= Math.min(85, b.getNorth()); la += 5)
+    for (let lo = Math.floor(Math.max(-180, b.getWest()) / 5) * 5; lo <= Math.min(179, b.getEast()); lo += 5)
+      out.push(`${lo < 0 ? "W" + -lo : "E" + lo}_${la < 0 ? "S" + -la : "N" + la}`);
+  return out;
+}
+/**
+ * The blobs' size, doubling with each zoom as the squares' distance on screen does, for where the map is. (A size per
+ * square, from its own latitude, would be exact, but MapLibre then draws rows of dots between zooms.)
+ */
+function heatRadius() {
+  const k = 4.5 / Math.cos((heatLat * Math.PI) / 180);
+  return ["interpolate", ["exponential", 2], ["zoom"], 5, k, 11, k * 64];
+}
+function heatData() {
+  const features = [];
+  if (heatOn()) for (const n of heatShown) for (const [lo, la, w] of heatTiles.get(n) || [])
+    features.push({ type: "Feature", properties: { w }, geometry: { type: "Point", coordinates: [lo, la] } });
+  return { type: "FeatureCollection", features };
+}
+async function loadHeat() {
+  clearTimeout(heatRetry);
+  if (!heatOn() || map.getZoom() >= 13) return;
+  const names = heatNames();
+  if (names.length > 60) return; // most of the world in view: nothing to see there
+  heatShown = names;
+  const lat = Math.max(-75, Math.min(75, map.getCenter().lat));
+  if (Math.abs(1 / Math.cos((lat * Math.PI) / 180) - 1 / Math.cos((heatLat * Math.PI) / 180)) > 0.1 && map.getLayer("cv-heat")) {
+    heatLat = lat;
+    map.setPaintProperty("cv-heat", "heatmap-radius", heatRadius());
+  }
+  let waiting = false;
+  await Promise.all(names.filter((n) => !heatTiles.has(n)).map(async (n) => {
+    heatTiles.set(n, null);
+    try {
+      const r = await fetch(`${BASE}api/heat?t=${n}`);
+      const j = r.ok ? await r.json() : null;
+      // Still being counted there (only ever the first time after the service started): asked again in a moment.
+      if (!j || j.counting) { heatTiles.delete(n); waiting ||= !!j?.counting; return; }
+      const side = 5 * (j.n || 16), k = 1 / (j.n || 16), cells = [];
+      for (let i = 0; i < j.c.length; i += 2) cells.push([j.lon + ((j.c[i] % side) + 0.5) * k, j.lat + (Math.floor(j.c[i] / side) + 0.5) * k, j.c[i + 1] / 10]);
+      heatTiles.set(n, cells);
+    } catch { heatTiles.delete(n); }
+  }));
+  heatWaiting = waiting;
+  if ($("heat-counting")) $("heat-counting").hidden = !waiting;
+  map.getSource("cv-heat")?.setData(heatData());
+  if (waiting) heatRetry = setTimeout(loadHeat, 4000);
+}
+function showHeat() {
+  if (map.getLayer("cv-heat")) map.setLayoutProperty("cv-heat", "visibility", heatOn() ? "visible" : "none");
+  map.getSource("cv-heat")?.setData(heatData());
+  loadHeat();
+}
+map.on("moveend", () => { clearTimeout(heatTimer); if (heatOn()) heatTimer = setTimeout(loadHeat, 200); });
+map.on("load", loadHeat);
 map.on("styledata", () => { if (!gravelOn()) showGravel(); });
 
 // ---------- GPX out, and a link to the trip ----------
@@ -2472,7 +2569,8 @@ $("file-send").addEventListener("click", async () => {
   const rev = Date.now(), base = b64(random(9));
   const sends = file.tracks.map((g, i) => [`${base}-${i}`, {
     v: 1, name: g.name, stops: [], options: routeOptions(), line: g.line.map(([la, lo]) => `${la.toFixed(5)},${lo.toFixed(5)}`).join(";"),
-    m: Math.round(g.m), s: Math.round(g.m / (60 / 3.6)), up: Math.round(g.up), curvy: 0, track: true,
+    // Curveon puts the file's tracks together in a GPX group of its name, as a file opened in the app.
+    m: Math.round(g.m), s: Math.round(g.m / (60 / 3.6)), up: Math.round(g.up), curvy: 0, track: true, group: file.name,
   }]);
   let ok = true;
   for (const [k, body] of sends) {
@@ -2485,7 +2583,7 @@ $("file-send").addEventListener("click", async () => {
   const list = store.get("sent", []);
   for (const [k, body] of sends) list.unshift({ tid: k, rev, name: body.name, km: Math.round(body.m / 1000), at: Date.now(), got: {} });
   store.set("sent", list.slice(0, Math.max(30, sends.length)));
-  setStatus(t("gpx_sent_all", sends.length));
+  setStatus(t("gpx_sent_all", sends.length, file.name));
   drawPending();
 });
 $("open-gpx").addEventListener("click", () => $("gpx-file").click());
@@ -2525,7 +2623,8 @@ async function send(asNew) {
     c && c !== copies[0] ? "r" + c.id + "-" + c.r.slice(0, 8) : tid, c ? { ...trip, ref: { r: c.r, id: c.id } } : trip]);
   if (as === "track" || as === "both") {
     const { start: _s, destination: _d, ...rest } = trip;
-    sends.push([as === "both" ? tid + "-t" : tid, { ...rest, name: as === "both" ? name + t("track_suffix") : name, stops: [], track: true }]);
+    // Curveon keeps a track among its GPX tracks, the trip under Planned: the same name in both.
+    sends.push([as === "both" ? tid + "-t" : tid, { ...rest, name, stops: [], track: true }]);
   }
   const st = as === "days" && legStats();
   if (st) days().forEach(([a, b], n) => {
@@ -2549,7 +2648,7 @@ async function send(asNew) {
     store.set("sent", list.slice(0, 30));
     editing = { tid, ref: null, dev: null };
   }
-  setStatus(target?.ref ? t("updated_ok", devNames(target)) : t("sent_ok"));
+  setStatus(target?.ref ? t("updated_ok", devNames(target)) : t(as === "track" ? "sent_track_ok" : as === "both" ? "sent_both_ok" : "sent_ok"));
   // Sent: it is no longer a draft (it waits for Curveon here, or is on the device).
   if (currentDraft) { store.set("drafts", store.get("drafts", []).filter((x) => x.id !== currentDraft)); currentDraft = null; }
   markClean();

@@ -1203,6 +1203,10 @@
         <item quantity="one">%d ný ferð af vefnum</item>
         <item quantity="other">%d nýjar ferðir af vefnum</item>
     </plurals>
+    <plurals name="web_plan_tracks">
+        <item quantity="one">%d ný GPX-slóð af vefnum, undir GPX</item>
+        <item quantity="other">%d nýjar GPX-slóðir af vefnum, undir GPX</item>
+    </plurals>
     <plurals name="web_plan_changed">
         <item quantity="one">%d ferð breytt á vefnum</item>
         <item quantity="other">%d ferðum breytt á vefnum</item>

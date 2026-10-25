@@ -56,6 +56,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.atan2
@@ -179,7 +180,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private var mapWorker: Job? = null
     private var mapFinisher: Job? = null
 
+    /** Room for maps, counting what Android would clear for them; may take seconds, so not on the main thread. */
     fun freeStorageBytes() = mapDownloads.freeBytes()
+    fun usableStorageBytes() = mapDownloads.usableBytes()
 
     /** Download size per area, given the routing tiles on the tablet right now. */
     fun mapDownloadSizer(): (com.curveon.data.map.CatalogArea) -> Long {
@@ -256,14 +259,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun downloadMap(areaId: String) {
         val running = (_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId
         if (areaId == running || areaId == _mapFinishing.value?.areaId || areaId in _mapQueue.value || mapCatalog.byId[areaId] == null) return
-        _mapQueue.value = _mapQueue.value + areaId
+        _mapQueue.update { it + areaId }
         if (mapWorker?.isActive != true) mapWorker = viewModelScope.launch { runMapQueue() }
     }
 
     private suspend fun runMapQueue() {
         while (true) {
             val id = _mapQueue.value.firstOrNull() ?: break
-            _mapQueue.value = _mapQueue.value.drop(1)
+            _mapQueue.update { it.drop(1) }
             val area = mapCatalog.byId[id] ?: continue
             cancelMapDownload = false
             _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(id, str(R.string.map_checking_newest), 0f)
@@ -326,7 +329,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         when {
             (_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId == areaId -> cancelMapDownload = true
             _mapFinishing.value?.areaId == areaId -> cancelMapFinish = true
-            else -> _mapQueue.value = _mapQueue.value - areaId
+            else -> _mapQueue.update { it - areaId }
         }
     }
 
@@ -633,6 +636,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val browsers: Int = 0, val fetching: Boolean = false,
         /** Trips new or changed in the last fetch; null before one, or when the relay could not be reached ([offline]). */
         val added: Int? = null, val changed: Int = 0, val deleted: Int = 0, val offline: Boolean = false,
+        /** GPX tracks from the page in the last fetch: they went among the GPX tracks, not the planned trips. */
+        val tracks: Int = 0,
         /** Connected right now (the planned trips are open): what the page sends arrives at once. */
         val live: Boolean = false,
         /**
@@ -671,12 +676,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (_webPlan.value.fetching || webPlans.links().isEmpty() || webPlanSession != null) return
         if (auto && System.currentTimeMillis() - webPlanFetched < 30_000) return
         webPlanFetched = System.currentTimeMillis()
-        _webPlan.value = _webPlan.value.copy(fetching = true)
+        _webPlan.update { it.copy(fetching = true) }
         viewModelScope.launch {
             val r = runCatching { webPlans.sync() }.getOrNull()
-            val news = r != null && r.added + r.changed + r.deleted > 0
-            _webPlan.value = _webPlan.value.copy(fetching = false, added = r?.added, changed = r?.changed ?: 0, deleted = r?.deleted ?: 0, offline = r == null,
-                report = if (news) System.currentTimeMillis() else _webPlan.value.report)
+            val news = r != null && r.any
+            _webPlan.update { it.copy(fetching = false, added = r?.added, changed = r?.changed ?: 0, deleted = r?.deleted ?: 0, tracks = r?.tracks ?: 0, offline = r == null,
+                report = if (news) System.currentTimeMillis() else it.report) }
         }
     }
 
@@ -688,32 +693,32 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun webPlanHidden() {
         webPlanWanted = (webPlanWanted - 1).coerceAtLeast(0)
-        if (webPlanWanted == 0) { webPlanSession?.close(); webPlanSession = null; _webPlan.value = _webPlan.value.copy(live = false) }
+        if (webPlanWanted == 0) { webPlanSession?.close(); webPlanSession = null; _webPlan.update { it.copy(live = false) } }
     }
 
     private fun connectWebPlans() {
         if (webPlanSession != null || webPlanWanted == 0 || webPlans.links().isEmpty()) return
         webPlanSession = webPlans.live(
             onResult = { r ->
-                if (r.added + r.changed + r.deleted > 0) _webPlan.value = _webPlan.value.copy(added = r.added, changed = r.changed, deleted = r.deleted, offline = false, report = System.currentTimeMillis())
+                if (r.any) _webPlan.update { it.copy(added = r.added, changed = r.changed, deleted = r.deleted, tracks = r.tracks, offline = false, report = System.currentTimeMillis()) }
             },
             onDropped = {
                 // Coverage gone or the relay restarted: try again in a while, as long as the trips are still open.
                 viewModelScope.launch {
                     webPlanSession = null
-                    _webPlan.value = _webPlan.value.copy(live = false)
+                    _webPlan.update { it.copy(live = false) }
                     delay(10_000)
                     connectWebPlans()
                 }
             }
         )
-        _webPlan.value = _webPlan.value.copy(live = true, offline = false)
+        _webPlan.update { it.copy(live = true, offline = false) }
     }
 
     /** A scanned (or opened) web planner code: the session starts, and the page sees this device's trips. False when it is not one. */
     fun addWebPlanLink(uri: String): Boolean {
         if (!webPlans.add(uri)) return false
-        _webPlan.value = _webPlan.value.copy(browsers = webPlans.links().size)
+        _webPlan.update { it.copy(browsers = webPlans.links().size) }
         // Connected anew, so the new browser is in it.
         webPlanSession?.close(); webPlanSession = null
         if (webPlanWanted > 0) connectWebPlans() else fetchWebPlans()
@@ -1283,7 +1288,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 val p = s.progress ?: return@map 0
                 withContext(Dispatchers.IO) { speedLimits.at(p.snapped.lat, p.snapped.lon, p.routeBearingDeg) } ?: p.speedLimitKmh ?: 0
             }.distinctUntilChanged().collect { limit ->
-                if (navigator.state.value.isNavigating) _telemetry.value = _telemetry.value.copy(speedLimitKmh = limit)
+                if (navigator.state.value.isNavigating) _telemetry.update { it.copy(speedLimitKmh = limit) }
             }
         }
         // Speed limits of the countries we have maps of and the one we are in (maps or not), as soon
@@ -1333,7 +1338,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 val limit = if (t.speedKmh < 8f) t.speedLimitKmh // standing still: heading is unreliable, keep last
                 else withContext(Dispatchers.IO) { speedLimits.at(here.lat, here.lon, t.headingDeg.toDouble()) }
                     ?: navigator.probeSpeedLimit(here, t.headingDeg.toDouble()) ?: 0
-                _telemetry.value = _telemetry.value.copy(speedLimitKmh = limit)
+                _telemetry.update { it.copy(speedLimitKmh = limit) }
                 _cameraAlert.value = if (t.speedKmh < 15f) null else hazards.cameraAheadFreeRide(here, t.headingDeg.toDouble())
             }
         }
@@ -1494,6 +1499,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private var lastRealFixAt = 0L
 
+    private var movedFrom: LatLon? = null
+    private val _lastMovedAt = MutableStateFlow(android.os.SystemClock.elapsedRealtime())
+    /** When the rider last moved [MOVED_M] on (or the app started), on [android.os.SystemClock.elapsedRealtime]: the screen may sleep a while after. */
+    val lastMovedAt: StateFlow<Long> = _lastMovedAt.asStateFlow()
+
     private fun onGpsFix(fix: GpsFix) {
         lastRealFixAt = System.currentTimeMillis()
         handleFix(fix, estimated = false)
@@ -1516,11 +1526,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val route = nav.route
             val gap = now - lastRealFixAt
             val lost = lastRealFixAt != 0L && gap > GPS_LOST_MS
-            if (_telemetry.value.gpsLost != lost) _telemetry.value = _telemetry.value.copy(gpsLost = lost)
+            if (_telemetry.value.gpsLost != lost) _telemetry.update { it.copy(gpsLost = lost) }
             // A demo ride guesses too while it plays at losing the signal (see demoSignalLost).
             if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || (_isDemoRiding.value && !_demoSignalLost.value)) {
                 anchorTime = 0L
-                if (_telemetry.value.isDeadReckoning) _telemetry.value = _telemetry.value.copy(isDeadReckoning = false)
+                if (_telemetry.value.isDeadReckoning) _telemetry.update { it.copy(isDeadReckoning = false) }
                 continue
             }
             if (anchorTime == 0L) {
@@ -1545,6 +1555,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun handleFix(fix: GpsFix, estimated: Boolean) {
         NavTrace.fix(fix, locationSource.satellitesUsed, estimated)
+        // Moved on from where the rider last was, however slowly (a queue, a rough track); a poor fix indoors doesn't count.
+        if (estimated || (fix.accuracyMeters ?: 0f) <= MOVED_ACCURACY_M) {
+            val from = movedFrom
+            if (from == null || Geo.distance(from.lat, from.lon, fix.latitude, fix.longitude) > MOVED_M) {
+                movedFrom = LatLon(fix.latitude, fix.longitude)
+                _lastMovedAt.value = android.os.SystemClock.elapsedRealtime()
+            }
+        }
         tripTracker.onFix(fix)
         if (!estimated) phoneCompanion.groups.onFix(fix)
         navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble(),
@@ -1568,17 +1586,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 else (fix.accuracyMeters ?: 10f).toDouble()
         )
         val stats = tripTracker.stats
-        _telemetry.value = _telemetry.value.copy(
-            speedKmh = tripTracker.speedKmh,
-            headingDeg = heading,
-            altitudeMeters = (fix.altitudeMeters ?: _telemetry.value.altitudeMeters.toDouble()).roundToInt(),
-            hasGpsFix = true,
-            gpsAccuracyMeters = (fix.accuracyMeters ?: 0f).roundToInt(),
-            isDeadReckoning = estimated,
-            gpsLost = estimated && _telemetry.value.gpsLost,
-            tripDistanceKm = (stats.distanceMeters / 1000.0).toFloat(),
-            tripDurationMinutes = (stats.movingTimeMillis / 60_000L).toInt()
-        )
+        _telemetry.update {
+            it.copy(
+                speedKmh = tripTracker.speedKmh,
+                headingDeg = heading,
+                altitudeMeters = (fix.altitudeMeters ?: it.altitudeMeters.toDouble()).roundToInt(),
+                hasGpsFix = true,
+                gpsAccuracyMeters = (fix.accuracyMeters ?: 0f).roundToInt(),
+                isDeadReckoning = estimated,
+                gpsLost = estimated && it.gpsLost,
+                tripDistanceKm = (stats.distanceMeters / 1000.0).toFloat(),
+                tripDurationMinutes = (stats.movingTimeMillis / 60_000L).toInt()
+            )
+        }
         recordRide(fix)
         watchTracks(fix)
     }
@@ -2009,7 +2029,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun resetTrip() {
         tripTracker.reset()
-        _telemetry.value = _telemetry.value.copy(tripDistanceKm = 0f, tripDurationMinutes = 0)
+        _telemetry.update { it.copy(tripDistanceKm = 0f, tripDurationMinutes = 0) }
     }
 
     private var portraitNow = false
@@ -2031,12 +2051,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun setFullScreenMap(on: Boolean) { _isFullScreenMap.value = on }
 
     fun toggleSpeedUnits() {
-        _telemetry.value = _telemetry.value.copy(useMph = !_telemetry.value.useMph)
+        _telemetry.update { it.copy(useMph = !it.useMph) }
         settings.edit().putBoolean("mph", _telemetry.value.useMph).apply()
     }
 
     fun toggleObd() {
-        _telemetry.value = _telemetry.value.copy(isObdEnabled = !_telemetry.value.isObdEnabled)
+        _telemetry.update { it.copy(isObdEnabled = !it.isObdEnabled) }
         settings.edit().putBoolean("obd", _telemetry.value.isObdEnabled).apply()
         connectObd()
     }
@@ -2607,6 +2627,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         private const val DR_START_MS = 3_000L
         /** The GPS gives a fix every second, standing still too: this long without one, the signal is gone. */
         private const val GPS_LOST_MS = 8_000L
+        /** Further than this from where the rider last was is moving on, beyond a parked phone's GPS wander. */
+        private const val MOVED_M = 50.0
+        private const val MOVED_ACCURACY_M = 25f
         /** A single fix further from the route than this is shown as it is, even before off-route kicks in. */
         private const val SNAP_LEAVE_M = 20.0
         private const val SNAP_LEAVE_TURNING_M = 7.0

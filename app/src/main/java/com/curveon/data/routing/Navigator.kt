@@ -31,6 +31,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -98,6 +100,7 @@ data class WrongTurn(
     val leftAlong: Double,
     /** Extra minutes the best way ahead costs over turning back, null when there is none. */
     val aheadExtraMinutes: Int?,
+    /** When to carry on by itself, on [android.os.SystemClock.elapsedRealtime] (a clock the network time can't move). */
     val autoAtMillis: Long,
     /** Where the rider was when asked: carrying on by itself needs them to have ridden on since. */
     val askedAt: LatLon
@@ -456,12 +459,12 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         previewHistory.clear()
         // The loop's road style stays picked.
         val style = RoadStyle.entries.indexOf(g.options.roadStyle)
-        preview(NavigationGoal.Destination(home.name, home.point, g.options, vias, g.start, loop = g), keepSelection = style, keepHistory = true)
-        // The loop stays on the map until its own style's route through the points is in.
-        synchronized(this) {
-            val p = _state.value.preview ?: return
-            if (p.candidates[style].route == null && p.candidates[style].error == null) _state.value = _state.value.copy(
-                preview = p.copy(candidates = p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) }))
+        val trip = NavigationGoal.Destination(home.name, home.point, g.options, vias, g.start, loop = g)
+        preview(trip, keepSelection = style, keepHistory = true)
+        // The loop stays on the map until its own style's route through the points is in (if the trip did open: it holds every style).
+        updatePreview({ it.goal == trip }) { p ->
+            if (p.candidates[style].route != null || p.candidates[style].error != null) p
+            else p.copy(candidates = p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) })
         }
     }
 
@@ -477,18 +480,18 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val tiles = tilesAround(points + from)
         if (!canRoute(tiles)) return fail(routingData.describe())
         calcJob?.cancel()
-        _state.value = _state.value.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_following, name)), preview = null)
+        _state.update { it.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_following, name)), preview = null) }
         val goal = NavigationGoal.Track(name, points, options)
         calcJob = scope.launch {
             try {
                 fetchRoutingData(tiles)
-                _state.value = _state.value.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_following, name)))
+                _state.update { it.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_following, name))) }
                 val route = withContext(Dispatchers.Default) { TrackFollower(engine).route(from, points, options) }
                 activate(goal, route)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_follow_failed, name, message(e))))
+                _state.update { it.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_follow_failed, name, message(e)))) }
             }
         }
     }
@@ -518,7 +521,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         scope.launch {
             val converting = context.getString(R.string.nav_converting, g.name)
             // The status card is hidden under the trip sheet, so from there the sheet shows the progress.
-            _state.value = _state.value.let { s ->
+            _state.update { s ->
                 if (fromPreview && s.preview != null) s.copy(preview = s.preview.copy(fetching = converting))
                 else s.copy(status = RoutingStatus.Calculating(converting))
             }
@@ -548,10 +551,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             preview(trip, keepSelection = style, keepHistory = true)
             pruneVias(trip, style)
             // The track's line stays on the map until the route through the points is in.
-            if (shown != null) synchronized(this@Navigator) {
-                val now = _state.value.preview ?: return@launch
-                if (now.candidates[style].route == null && now.candidates[style].error == null) _state.value = _state.value.copy(
-                    preview = now.copy(candidates = now.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, shown) }))
+            if (shown != null) updatePreview({ it.goal == trip }) { now ->
+                if (now.candidates[style].route != null || now.candidates[style].error != null) now
+                else now.copy(candidates = now.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, shown) })
             }
         }
     }
@@ -575,12 +577,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 }
             }.toSet()
             if (kept.size == trip.stops.size) return@launch
-            synchronized(this@Navigator) {
-                val p = _state.value.preview ?: return@launch
-                if (p.goal != trip) return@launch
-                // The routes already in stay: they are the same road without the dropped points.
-                _state.value = _state.value.copy(preview = p.copy(goal = trip.copy(stops = trip.stops.filter { it.point in kept })))
-            }
+            if (_state.value.preview?.goal != trip) return@launch
+            // The routes already in stay: they are the same road without the dropped points.
+            updatePreview({ it.goal == trip }) { p -> p.copy(goal = trip.copy(stops = trip.stops.filter { it.point in kept })) }
             android.util.Log.i("Curveon", "Pruned ${trip.name}: ${trip.stops.size} -> ${kept.size} via points")
         }
     }
@@ -605,8 +604,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun selectCandidate(index: Int) {
-        val p = _state.value.preview ?: return
-        _state.value = _state.value.copy(preview = p.copy(selected = index))
+        updatePreview { it.copy(selected = index) }
     }
 
     /** Drop the previewed trip's destination: the last stop becomes the destination (none left: nothing to drop). */
@@ -624,7 +622,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         previewJob?.cancel()
         pruneJob?.cancel()
         adventureJob?.cancel()
-        _state.value = _state.value.copy(preview = null, status = RoutingStatus.Idle)
+        _state.update { it.copy(preview = null, status = RoutingStatus.Idle) }
     }
 
     /** Ride the selected preview candidate. */
@@ -674,10 +672,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         if (!keepAdventure) adventureJob?.cancel()
         val styles: List<RoadStyle?> = if (planned != null && planned.fixedLine == null) RoadStyle.entries else listOf(null)
         val selected = (keepSelection ?: styles.indexOf(preferredStyle)).coerceIn(0, styles.lastIndex)
-        _state.value = _state.value.copy(
-            preview = RoutePreview(goal, styles.map { RouteCandidate(it) }, selected, canUndo = previewHistory.isNotEmpty()),
-            status = RoutingStatus.Idle
-        )
+        _state.update {
+            it.copy(preview = RoutePreview(goal, styles.map { RouteCandidate(it) }, selected, canUndo = previewHistory.isNotEmpty()), status = RoutingStatus.Idle)
+        }
         previewJob = scope.launch {
             // Planning online somewhere no country was downloaded: fetch just the routing data first.
             try { fetchRoutingData(tiles) } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
@@ -692,13 +689,11 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                     android.util.Log.i("Curveon", "Routed ${goal::class.simpleName} ${style ?: ""} in %.1f s: %s".format(
                         (System.nanoTime() - t0) / 1e9,
                         result.fold({ "%.0f km, %d ferries, %.0f m unpaved".format(it.distanceMeters / 1000, it.ferryCount, it.unpavedMeters) }, { "failed: ${it.message}" })))
-                    synchronized(this@Navigator) {
-                        val p = _state.value.preview ?: return@async
-                        if (p.goal != goal) return@async
+                    updatePreview({ it.goal == goal }) { p ->
                         val updated = p.candidates.toMutableList().also {
                             it[i] = RouteCandidate(style, result.getOrNull(), result.exceptionOrNull()?.let(::message))
                         }
-                        _state.value = _state.value.copy(preview = p.copy(candidates = updated, fetching = if (goal is NavigationGoal.Adventure) null else p.fetching))
+                        p.copy(candidates = updated, fetching = if (goal is NavigationGoal.Adventure) null else p.fetching)
                     }
                 }
             }.awaitAll()
@@ -712,9 +707,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     /** "Finding roads… 12 of 48" in the sheet while an adventure is worked out. */
-    private fun adventureProgress(goal: NavigationGoal, done: Int, total: Int) = synchronized(this) {
-        val p = _state.value.preview?.takeIf { it.goal == goal && it.selectedRoute == null } ?: return
-        _state.value = _state.value.copy(preview = p.copy(fetching = context.getString(R.string.nav_adventure_progress, done, total)))
+    private fun adventureProgress(goal: NavigationGoal, done: Int, total: Int) {
+        val text = context.getString(R.string.nav_adventure_progress, done, total)
+        updatePreview({ it.goal == goal && it.selectedRoute == null }) { it.copy(fetching = text) }
     }
 
     // ------------------------------------------------------------------ routing data on demand
@@ -749,14 +744,15 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         watched = watched + trip
         preview(trip, keepSelection = style, keepHistory = true, keepAdventure = true)
         // The adventure stays on the map until its own style's route through the points is in.
-        synchronized(this) {
-            val p = _state.value.preview ?: return trip
+        val found = synchronized(this) { suggestions.toList() }
+        val improving = adventureRunning
+        // Only if the trip did open (it holds every style): it may not, e.g. without routing data there.
+        updatePreview({ it.goal == trip }) { p ->
             val candidates = if (p.candidates[style].route == null && p.candidates[style].error == null)
                 p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) } else p.candidates
-            _state.value = _state.value.copy(preview = p.copy(
-                candidates = candidates, suggestions = suggestions.toList(), suggestion = index, improving = adventureRunning))
+            p.copy(candidates = candidates, suggestions = found, suggestion = index, improving = improving)
         }
-        return trip
+        return trip.takeIf { _state.value.preview?.goal == trip }
     }
 
     /**
@@ -786,28 +782,22 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 if (first) {
                     first = false
                     android.util.Log.i("Curveon", "First adventure in %.1f s: %.0f km".format((System.nanoTime() - t0) / 1e9, route.distanceMeters / 1000))
-                    synchronized(this@Navigator) {
-                        val p = _state.value.preview?.takeIf { it.goal == goal } ?: return@synchronized
-                        _state.value = _state.value.copy(preview = p.copy(candidates = listOf(RouteCandidate(null, route)), fetching = null))
-                    }
+                    updatePreview({ it.goal == goal }) { it.copy(candidates = listOf(RouteCandidate(null, route)), fetching = null) }
                     synchronized(this@Navigator) { suggestions += route }
                     tripFromAdventure(goal, route)
                 } else synchronized(this@Navigator) {
                     // A better one: kept beside the others and drawn grey on the map, for the rider to switch to.
                     suggestions += route
-                    val p = _state.value.preview?.takeIf { it.goal in watched } ?: return@synchronized
-                    _state.value = _state.value.copy(preview = p.copy(suggestions = suggestions.toList()))
+                    val found = suggestions.toList()
+                    updatePreview({ it.goal in watched }) { it.copy(suggestions = found) }
                 }
             }
             adventureRunning = false
             val failure = try { planning.await(); null } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { e }
-            synchronized(this@Navigator) {
-                val p = _state.value.preview ?: return@synchronized
-                if (first && failure != null && p.goal == goal) {
-                    android.util.Log.i("Curveon", "Adventure failed: ${failure.message}")
-                    _state.value = _state.value.copy(preview = p.copy(candidates = listOf(RouteCandidate(null, null, message(failure))), fetching = null))
-                } else if (p.improving && p.goal in watched) _state.value = _state.value.copy(preview = p.copy(improving = false))
-            }
+            if (first && failure != null && _state.value.preview?.goal == goal) {
+                android.util.Log.i("Curveon", "Adventure failed: ${failure.message}")
+                updatePreview({ it.goal == goal }) { it.copy(candidates = listOf(RouteCandidate(null, null, message(failure))), fetching = null) }
+            } else updatePreview({ it.improving && it.goal in watched }) { it.copy(improving = false) }
         }
     }
 
@@ -844,13 +834,11 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         try {
             routingData.fetch(tiles) { done, total ->
                 val text = context.getString(R.string.nav_fetching_routing, done + 1, total)
-                val s = _state.value
                 // In a preview the sheet says it; otherwise the status line does.
-                _state.value = if (s.preview != null) s.copy(preview = s.preview.copy(fetching = text)) else s.copy(status = RoutingStatus.Calculating(text))
+                _state.update { s -> if (s.preview != null) s.copy(preview = s.preview.copy(fetching = text)) else s.copy(status = RoutingStatus.Calculating(text)) }
             }
         } finally {
-            val s = _state.value
-            _state.value = if (s.preview != null) s.copy(preview = s.preview.copy(fetching = null)) else s.copy(status = RoutingStatus.Idle)
+            _state.update { s -> if (s.preview != null) s.copy(preview = s.preview.copy(fetching = null)) else s.copy(status = RoutingStatus.Idle) }
         }
     }
 
@@ -913,12 +901,19 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun dismissError() {
-        if (_state.value.status is RoutingStatus.Failed) _state.value = _state.value.copy(status = RoutingStatus.Idle)
+        if (_state.value.status is RoutingStatus.Failed) _state.update { it.copy(status = RoutingStatus.Idle) }
     }
 
     private fun fail(message: String) {
-        _state.value = _state.value.copy(status = RoutingStatus.Failed(message))
+        _state.update { it.copy(status = RoutingStatus.Failed(message)) }
     }
+
+    /**
+     * Changes the trip shown in the planner, if one that [shown] accepts is still there. Read and written in one step:
+     * a route coming in on another thread and a GPS fix on the main one would otherwise each write over the other.
+     */
+    private fun updatePreview(shown: (RoutePreview) -> Boolean = { true }, change: (RoutePreview) -> RoutePreview) =
+        _state.update { st -> val p = st.preview; if (p == null || !shown(p)) st else st.copy(preview = change(p)) }
 
     private fun activate(goal: NavigationGoal, route: Route) {
         previewJob?.cancel()
@@ -963,39 +958,45 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         pendingFollow?.let { goal -> pendingFollow = null; if (tracker == null) followTrackNow(goal.name, goal.points, goal.options) }
         val t = tracker ?: return
         val progress = t.update(position, accuracyMeters, lastHeading)
-        var current = _state.value.copy(progress = progress)
-        // Getting to where the route starts: done once on it; gone elsewhere, it's off route as usual.
-        current.approach?.let { a ->
-            if (progress.distanceFromRoute <= offRouteSettings.offRouteMeters || Geo.distance(position, a) > approachGap + APPROACH_SLACK_M)
-                current = current.copy(approach = null)
-        }
-
         // Drop stops we have ridden past, so a reroute doesn't send us back to them.
-        val passed = current.stopsAlong.filter { it.second < progress.distanceAlongRoute - STOP_REACHED_AFTER_M }
-        if (passed.isNotEmpty()) {
-            val g = current.goal as? NavigationGoal.Destination
-            // A shared trip is told first, so passing a stop is not mistaken for the rider removing it.
-            if (g?.shared != null) onStopsPassed?.invoke(g, passed.map { it.first })
-            val gone = passed.map { it.first }.toSet()
-            // The same trip open in the planner (being changed while riding) loses them too, so GO doesn't go back for them.
-            val p = current.preview
-            val pg = p?.goal as? NavigationGoal.Destination
-            current = current.copy(
-                goal = g?.copy(stops = g.stops - gone) ?: current.goal,
-                stopsAlong = current.stopsAlong - passed.toSet(),
-                preview = if (pg != null && pg.stops.any { it in gone }) p.copy(goal = pg.copy(stops = pg.stops - gone)) else p
-            )
+        fun passed(s: NavigationState) = s.stopsAlong.filter { it.second < progress.distanceAlongRoute - STOP_REACHED_AFTER_M }
+        // A shared trip is told first, so passing a stop is not mistaken for the rider removing it.
+        _state.value.let { s ->
+            val g = s.goal as? NavigationGoal.Destination
+            val passed = passed(s)
+            if (passed.isNotEmpty() && g?.shared != null) onStopsPassed?.invoke(g, passed.map { it.first })
         }
-        _state.value = current
+        val current = _state.updateAndGet { s ->
+            var next = s.copy(progress = progress)
+            // Getting to where the route starts: done once on it; gone elsewhere, it's off route as usual.
+            next.approach?.let { a ->
+                if (progress.distanceFromRoute <= offRouteSettings.offRouteMeters || Geo.distance(position, a) > approachGap + APPROACH_SLACK_M)
+                    next = next.copy(approach = null)
+            }
+            val passed = passed(next)
+            if (passed.isNotEmpty()) {
+                val g = next.goal as? NavigationGoal.Destination
+                val gone = passed.map { it.first }.toSet()
+                // The same trip open in the planner (being changed while riding) loses them too, so GO doesn't go back for them.
+                val p = next.preview
+                val pg = p?.goal as? NavigationGoal.Destination
+                next = next.copy(
+                    goal = g?.copy(stops = g.stops - gone) ?: next.goal,
+                    stopsAlong = next.stopsAlong - passed.toSet(),
+                    preview = if (pg != null && pg.stops.any { it in gone }) p.copy(goal = pg.copy(stops = pg.stops - gone)) else p
+                )
+            }
+            next
+        }
 
         val asking = current.wrongTurn
         when {
             progress.arrived && current.goal !is NavigationGoal.Roundtrip ->
                 if (arrivalJob == null) arrivalJob = scope.launch { delay(15_000); if (tracker === t) stop() }
             // Back on the line while we were asking: nothing to decide any more.
-            asking != null && !progress.offRoute -> _state.value = current.copy(wrongTurn = null)
+            asking != null && !progress.offRoute -> _state.update { it.copy(wrongTurn = null) }
             // Not answered and still riding away: carry on the way the rider is going.
-            asking != null -> if (System.currentTimeMillis() >= asking.autoAtMillis && calcJob?.isActive != true &&
+            asking != null -> if (android.os.SystemClock.elapsedRealtime() >= asking.autoAtMillis && calcJob?.isActive != true &&
                 Geo.distance(asking.askedAt, position) > AUTO_AFTER_RIDING_M) {
                 if (asking.isTrip) newRouteFromHere(keepStops = true) else rejoinAhead()
             }
@@ -1020,7 +1021,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps)).also { trace("no position yet, nothing done") }
         trace("started, ${(goal as? NavigationGoal.Destination)?.stops?.size ?: -1} stops before, route ${route.points.size} points, calculating was ${calcJob?.isActive}")
         calcJob?.cancel()
-        _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_adding_stop, stop.name)))
+        _state.update { it.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_adding_stop, stop.name))) }
         calcJob = scope.launch {
             try {
                 val (newGoal, newRoute) = withContext(Dispatchers.Default) {
@@ -1047,7 +1048,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 throw e
             } catch (e: Exception) {
                 trace("failed: ${e.message}")
-                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_add_stop_failed, stop.name, message(e))))
+                _state.update { it.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_add_stop_failed, stop.name, message(e)))) }
             }
         }
     }
@@ -1069,7 +1070,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      * ([WrongTurn]): turn back, or carry on with a new route.
      */
     private fun maybeReroute(position: LatLon) {
-        val now = System.currentTimeMillis()
+        val now = android.os.SystemClock.elapsedRealtime()
         val current = _state.value
         if (calcJob?.isActive == true || now - lastRerouteAt < REROUTE_COOLDOWN_MS) return
         val goal = current.goal ?: return
@@ -1077,7 +1078,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val heading = lastHeading
         val leftAlong = current.progress?.distanceAlongRoute ?: 0.0
         lastRerouteAt = now
-        _state.value = current.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))
+        _state.update { it.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating))) }
         calcJob = scope.launch {
             try {
                 val s = offRouteSettings
@@ -1091,17 +1092,17 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 android.util.Log.i("CurveonNav", "Off route at %.0f m, heading %s: %s".format(leftAlong, heading?.let { "%.0f".format(it) } ?: "none", describe(decision)))
                 when (decision) {
                     is OffRouteDecision.Rejoin -> adopt(position, decision.way.route)
-                    is OffRouteDecision.Ask -> _state.value = _state.value.copy(
-                        status = RoutingStatus.Idle,
-                        wrongTurn = WrongTurn(
+                    is OffRouteDecision.Ask -> {
+                        val wrongTurn = WrongTurn(
                             isTrip = goal is NavigationGoal.Destination,
                             stopsLeft = (goal as? NavigationGoal.Destination)?.stops?.size ?: 0,
                             leftAlong = leftAlong,
                             aheadExtraMinutes = decision.ahead?.let { ((it.totalSeconds - decision.back.totalSeconds) / 60).roundToInt().coerceAtLeast(0) },
-                            autoAtMillis = System.currentTimeMillis() + WRONG_TURN_AUTO_MS,
+                            autoAtMillis = android.os.SystemClock.elapsedRealtime() + WRONG_TURN_AUTO_MS,
                             askedAt = position
                         )
-                    )
+                        _state.update { it.copy(status = RoutingStatus.Idle, wrongTurn = wrongTurn) }
+                    }
                     OffRouteDecision.Replan -> adopt(position, when (goal) {
                         // Nothing found from the route's point of view: re-plan as before.
                         is NavigationGoal.Destination -> routeFromHere(position, goal.stops.map { it.point } + goal.destination, goal.options)
@@ -1112,7 +1113,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 throw e
             } catch (e: Exception) {
                 // Keep the old route on screen; we will try again after the cooldown.
-                _state.value = _state.value.copy(status = RoutingStatus.Idle)
+                _state.update { it.copy(status = RoutingStatus.Idle) }
             }
         }
     }
@@ -1147,37 +1148,36 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private fun answerWrongTurn(message: Int, carryOn: Boolean = false, plan: (LatLon, NavigationGoal, Route, WrongTurn) -> Pair<NavigationGoal, Route>) {
         val s = _state.value
         val wt = s.wrongTurn ?: return
-        followUntil = if (carryOn) System.currentTimeMillis() + FOLLOW_MS else 0L
+        followUntil = if (carryOn) android.os.SystemClock.elapsedRealtime() + FOLLOW_MS else 0L
         val goal = s.goal ?: return
         val route = s.route ?: return
         val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
         calcJob?.cancel()
-        _state.value = s.copy(wrongTurn = null, status = RoutingStatus.Calculating(context.getString(message)))
+        _state.update { it.copy(wrongTurn = null, status = RoutingStatus.Calculating(context.getString(message))) }
         calcJob = scope.launch {
             try {
                 val (newGoal, newRoute) = withContext(Dispatchers.Default) { plan(pos, goal, route, wt) }
-                lastRerouteAt = System.currentTimeMillis()
-                _state.value = _state.value.copy(goal = newGoal)
+                lastRerouteAt = android.os.SystemClock.elapsedRealtime()
+                _state.update { it.copy(goal = newGoal) }
                 adopt(pos, newRoute)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e))))
+                _state.update { it.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e)))) }
             }
         }
     }
 
     /** Ride [newRoute] from now on, keeping the goal. */
     private fun adopt(position: LatLon, newRoute: Route) {
+        val goal = _state.value.goal ?: return
         tracker = newTracker(newRoute)
-        _state.value = _state.value.copy(
-            route = newRoute,
-            progress = tracker!!.update(position, headingDeg = lastHeading),
-            status = RoutingStatus.Idle,
-            wrongTurn = null,
-            stopsAlong = stopsAlong(_state.value.goal ?: return, newRoute),
-            approach = approachTo(newRoute)
-        )
+        val progress = tracker!!.update(position, headingDeg = lastHeading)
+        val along = stopsAlong(goal, newRoute)
+        val approach = approachTo(newRoute)
+        _state.update {
+            it.copy(route = newRoute, progress = progress, status = RoutingStatus.Idle, wrongTurn = null, stopsAlong = along, approach = approach)
+        }
     }
 
     /**
@@ -1196,15 +1196,16 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     /** The trip in the preview or being ridden is now the shared trip [tripId]: its changes go to the group, and the group's come here. */
     fun tagShared(tripId: String) {
-        val s = _state.value
-        val g = s.goal as? NavigationGoal.Destination
-        val p = s.preview
-        val pg = p?.goal as? NavigationGoal.Destination
         // Both, when the trip being ridden is open in the planner: GO then rides it still shared.
-        _state.value = s.copy(
-            goal = g?.copy(shared = tripId) ?: s.goal,
-            preview = if (pg != null && (g == null || pg.destination == g.destination)) p.copy(goal = pg.copy(shared = tripId)) else p
-        )
+        _state.update { s ->
+            val g = s.goal as? NavigationGoal.Destination
+            val p = s.preview
+            val pg = p?.goal as? NavigationGoal.Destination
+            s.copy(
+                goal = g?.copy(shared = tripId) ?: s.goal,
+                preview = if (pg != null && (g == null || pg.destination == g.destination)) p.copy(goal = pg.copy(shared = tripId)) else p
+            )
+        }
     }
 
     /** Called when stops of a shared trip are ridden past (and so dropped from this rider's own route). */
@@ -1227,7 +1228,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val updated = g.copy(destination = change.destination, stops = change.stops, fixedLine = change.fixedLine,
             options = if (change.fixedLine != null) change.options else g.options)
         calcJob?.cancel()
-        _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))
+        _state.update { it.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating))) }
         calcJob = scope.launch {
             try {
                 val r = withContext(Dispatchers.Default) {
@@ -1238,7 +1239,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e))))
+                _state.update { it.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e)))) }
             }
         }
     }
@@ -1251,7 +1252,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
         val newGoal = g.copy(stops = g.stops.filterIndexed { i, _ -> i != index }, fixedLine = null)
         calcJob?.cancel()
-        _state.value = s.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating)))
+        _state.update { it.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating))) }
         calcJob = scope.launch {
             try {
                 val r = withContext(Dispatchers.Default) {
@@ -1261,7 +1262,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e))))
+                _state.update { it.copy(status = RoutingStatus.Failed(context.getString(R.string.nav_reroute_failed, message(e)))) }
             }
         }
     }

@@ -56,6 +56,8 @@ class CurveonRepository(
 
     suspend fun findGpxTrack(name: String): GpxTrack? = gpxDao.getTrackByName(name)
 
+    suspend fun gpxTrack(id: Long): GpxTrack? = gpxDao.getTrackById(id)
+
     suspend fun updateGpxTracks(tracks: List<GpxTrack>) = gpxDao.updateTracks(tracks)
 
     suspend fun gpxTracksInGroup(groupId: Long): List<GpxTrack> = gpxDao.getTracksInGroup(groupId)

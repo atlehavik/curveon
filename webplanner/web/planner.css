@@ -197,6 +197,7 @@ dialog form.buttons { flex-wrap: wrap; gap: 8px; }
 .places-pop input { width: auto; margin: 0; accent-color: var(--amber); }
 .places-pop .badge { flex: none; width: 20px; height: 20px; }
 .places-pop .dash-sign { flex: none; width: 20px; height: 4px; background: repeating-linear-gradient(90deg, #707070 0 5px, transparent 5px 9px); }
+.places-pop .heat-sign { flex: none; width: 20px; height: 14px; border-radius: 7px; background: radial-gradient(closest-side, #ffea00, #ff3d00 45%, rgba(255, 145, 0, 0.35) 80%, transparent); }
 .places-pop small { font-size: 12px; }
 
 /* The little menu on the map (a click on the map or on a point). */
