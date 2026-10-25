@@ -94,14 +94,11 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 - [ ] PC: ✕ på en av Pixelens turer og bekreft: den forsvinner fra Planlagte på Pixelen.
 - [ ] Pixel: gi nytt navn til en tur eller slett en: PC-siden viser endringen etter noen sekunder.
 - [ ] Pixel: åpne en tur fra PC-en og trykk Kjør: den følger veien slik den var planlagt.
-- [ ] X7 (med nett via hotspot): skann den samme koden der også. PC-en viser begge enhetene med hver sin liste.
 - [ ] Pixel: skann QR-koden med kameraappen i stedet for Curveon: «Koblet til nettplanleggeren» skal komme i Curveon.
 - [ ] Mobil i nettleseren (Pixel, Chrome): planleggeren som ark nederst, knappene skal være synlige og panelet kan felles ned (▾).
 
 ## 2026-10-24 — Tekstgjennomgang (1.2.4)
 
-- [ ] X7: Avslutt Curveon midt i en navigering (sveip den bort) og start den igjen: kortet «Fortsette navigeringen?» skal ha knappene «Fortsett» og «Nei takk» (før sto det «Fortsett den turen»).
-- [ ] Companion på Pixelen, med telefonen på norsk: oppsett, status og varselet skal være på norsk («Tillat», «Start deling med nettbrettet», «Venter på nettbrettet…»), og på engelsk når telefonen er på engelsk.
 - [ ] Gruppetur: panelet sier «Deltakere» og «Inviter deltakere», og kortet på kartet «%d deltakere».
 
 ## 2026-10-24 — Feilmeldinger og forslag fra appen (1.2.4)
@@ -141,11 +138,6 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 ## 2026-10-23 — Ingen vending midt i veien, markør på veien, SMS fra fullkart, blå deling, venneforespørsel i gruppe (1.2.4)
 
-- [ ] Venneforespørsel fra en gruppe, med to ekte enheter (X7 og Pixelen er samme rytter, så bruk en annen telefon, f.eks. kameratens,
-  i samme gruppe): på X7, Venner → Gruppetur → gruppa → «Legg til som venn» ved kameraten (ikonet med + til høyre, eller trykk
-  rytteren på kartet). Hos kameraten kommer kortet «<navn> vil være din venn». «Legg til som venn» gir high five på begge, og kameraten står
-  i vennelista. Prøv også «Nei takk»: X7 får ingen beskjed, og en ny forespørsel fra samme rytter i samme gruppe vises ikke.
-  Knappen skal ikke vises ved en som allerede er venn.
 
 - [ ] Telefon med SIM som aldri er koblet til en Companion (kameratens: det holder å oppdatere til 1.2.4):
   Innstillinger → Telefon står på «Denne enheten» uten at noe er valgt, telefonpanelet viser «Tillat», og
@@ -237,9 +229,6 @@ Trenger to telefoner med Curveon som er venner (emulatoren har ingen venner).
 
 Emulatoren finner ingen person i bildet (ML Kit mangler GPU der), så effektene kan bare prøves på ekte enhet.
 
-- [ ] **Pixel og X7:** Venner → Meg → Velg fra bilder (eller ta et bilde) av deg selv: en cyan ring går rundt bildet med
-  «Finner deg i bildet …», så kommer stilene. Velg Neon: ringen og «Lager effekten …» vises til effekten er klar, og «Bruk dette bildet»
-  er grå så lenge.
 - [ ] **Ingen krasj:** gjør det to-tre ganger etter hverandre med ulike bilder. Curveon skal ikke lukke seg (før lukket ML Kit seg med en
   krasj). Ved krasj: `adb pull /sdcard/Android/data/com.curveon.app/files/crashes`.
 
@@ -361,9 +350,7 @@ Tre «svarer ikke» 17:49–17:55: kartets tegnetråd og skjermen ventet på hve
 - [ ] Med et stopp: under ankomsttiden står klokkeslettet for stoppet i mindre oransje skrift.
 - [ ] X ved tiden spør «Avslutte hele ruten?» før ruten avsluttes.
 
-## 2026-10-21 — Si stedet i «Hvor skal du?»
 
-- [ ] Med Pixel koblet til X7: åpne «Hvor skal du?», trykk mikrofonen til høyre i feltet og si et sted i hjelmen (f.eks. «Geiranger»). Feltet fylles mens du snakker, og søket viser stedet. Trykk mikrofonen igjen midt i for å stoppe.
 
 ## 2026-10-21 — Ring eller SMS fra Telefon
 
@@ -374,9 +361,7 @@ Companion og Curveon («Denne enheten») ber nå om lov til å sende SMS: godta 
 - [ ] «Si det igjen» (runde pil-knappen) på SMS-kortet starter opptak på nytt, X avbryter uten å sende.
 - [ ] Ring fra dialogen ringer det valgte nummeret (prøv en kontakt med to numre).
 
-## 2026-10-21 — Les opp meldinger
 
-- [ ] Med Pixel koblet til X7: få en melding, trykk høyttaleren ved avsendernavnet. Meldingen skal leses opp i hjelmen («Navn skriver: …»), musikken dempes litt mens den leses. Uten norsk stemme lastet ned på telefonen kommer bare en lyd.
 
 ## 2026-10-21 — SOS-knappen utløses ikke lenger av å skli
 
