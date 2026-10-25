@@ -39,7 +39,12 @@ const TEXTS = {
     open_gpx: "Open GPX", send_as: "Send as", as_trip: "A trip", as_track: "A GPX track", as_both: "Both",
     send_as_explain: "A trip has its stops, to change in Curveon; a GPX track is ridden just as it is.",
     gpx_loaded: (n) => `Opened “${n}”. Send it as a GPX track just as it is, as a trip you can change, or both.`,
-    gpx_bad: "No track found in that file.", track_suffix: " (track)", send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
+    gpx_bad: "No track found in that file.", track_suffix: " (track)",
+    gpx_tracks: (n) => `${n} tracks, each on its own. Click one here or on the map to open it.`,
+    gpx_opened_file: (f, n) => `Opened “${f}”: ${n} tracks.`, gpx_send_all: (n) => `Send all ${n} to Curveon as GPX tracks`,
+    gpx_sent_all: (n) => `Sent ${n} GPX tracks. They show under Planned in Curveon the next time the app is online.`,
+    gpx_close: "Close the file", tip_gpx_close: "Take the file's tracks off the map (the one you opened stays)", tip_gpx_track: "Open this track",
+    send: "Send to Curveon", update_on: (d) => `Update on ${d}`, send_new: "Save as a new trip",
     sending: "Sending…", sent_ok: "Sent. It shows under Planned in Curveon the next time the app is online.",
     updated_ok: (d) => `Sent. The trip on ${d} is updated the next time the app is online.`,
     send_failed: "The trip could not be sent. Check your internet connection and try again.",
@@ -148,7 +153,12 @@ const TEXTS = {
     open_gpx: "Åpne GPX", send_as: "Send som", as_trip: "En tur", as_track: "Et GPX-spor", as_both: "Begge",
     send_as_explain: "En tur har stoppene sine, så du kan endre den i Curveon; et GPX-spor kjøres akkurat som det er.",
     gpx_loaded: (n) => `Åpnet «${n}». Send den som GPX-spor akkurat som den er, som en tur du kan endre, eller begge deler.`,
-    gpx_bad: "Fant ikke noe spor i den filen.", track_suffix: " (spor)", send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
+    gpx_bad: "Fant ikke noe spor i den filen.", track_suffix: " (spor)",
+    gpx_tracks: (n) => `${n} spor, hvert for seg. Klikk på et her eller i kartet for å åpne det.`,
+    gpx_opened_file: (f, n) => `Åpnet «${f}»: ${n} spor.`, gpx_send_all: (n) => `Send alle ${n} til Curveon som GPX-spor`,
+    gpx_sent_all: (n) => `Sendte ${n} GPX-spor. De dukker opp under Planlagte i Curveon neste gang appen er på nett.`,
+    gpx_close: "Lukk filen", tip_gpx_close: "Ta filens spor bort fra kartet (det du åpnet, blir værende)", tip_gpx_track: "Åpne dette sporet",
+    send: "Send til Curveon", update_on: (d) => `Oppdater på ${d}`, send_new: "Lagre som ny tur",
     sending: "Sender …", sent_ok: "Sendt. Den dukker opp under Planlagte i Curveon neste gang appen er på nett.",
     updated_ok: (d) => `Sendt. Turen på ${d} oppdateres neste gang appen er på nett.`,
     send_failed: "Turen ble ikke sendt. Sjekk internettforbindelsen og prøv igjen.",
@@ -285,6 +295,11 @@ let gapLine = null;
 let poiList = [];
 /** The gravel roads in (and round) view, for the map's dashes, and the box they cover. */
 let gravelWays = [], gravelHave = null, gravelCtl = null;
+/**
+ * A GPX file with several tracks, while it is open: { name, tracks: [{ name, line, ele, m, up }], open: the index of the
+ * one on the map as the trip (or null), clean: what that one was when opened, to go to another without asking }.
+ */
+let gpxFile = null;
 
 // ---------- Map ----------
 const emptyLine = () => ({ type: "FeatureCollection", features: [] });
@@ -355,6 +370,7 @@ function withRoute(style) {
     { id: "cv-gravel-gravel", type: "line", source: "cv-gravel", minzoom: 11, filter: ["==", ["get", "k"], "gravel"],
       paint: { "line-color": roadColour, "line-width": dashWidth, "line-dasharray": [1.8, 1.7] } });
   style.sources["cv-hover"] = { type: "geojson", data: emptyLine() };
+  style.sources["cv-file"] = { type: "geojson", data: fileData(), promoteId: "i" };
   style.sources["cv-pois"] = { type: "geojson", data: poiData() };
   const at = style.layers.findIndex((l) => l.id.startsWith("places_"));
   // The places' names in the map's own font.
@@ -364,6 +380,11 @@ function withRoute(style) {
     { id: "area-fill", type: "fill", source: "area", paint: { "fill-color": "#ff9100", "fill-opacity": 0.1 } },
     { id: "area-line", type: "line", source: "area", layout: { "line-join": "round" },
       paint: { "line-color": "#ff9100", "line-width": 2.5, "line-opacity": 0.8, "line-dasharray": [2, 1.5] } },
+    // The tracks of an open GPX file, each on its own: thin, under the route; the one pointed at (here or in the list) stands out.
+    { id: "cv-file", type: "line", source: "cv-file", layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": theme === "dark" ? "#00e5ff" : "#0091ea", "line-width": ["case", ["boolean", ["feature-state", "hot"], false], 5, 2.5],
+        "line-opacity": ["case", ["boolean", ["feature-state", "hot"], false], 0.95, 0.5] } },
+    { id: "cv-file-hit", type: "line", source: "cv-file", paint: { "line-color": "#000", "line-opacity": 0, "line-width": 16 } },
     // The other road styles, while they are compared: thin, under the route.
     { id: "cv-alt", type: "line", source: "cv-alt", layout: { "line-join": "round", "line-cap": "round" },
       paint: { "line-color": theme === "dark" ? "#9aa3b2" : "#6b7280", "line-width": 3, "line-opacity": 0.75, "line-dasharray": [1.5, 1] } },
@@ -421,6 +442,10 @@ const lineFeature = (line) => ({ type: "Feature", geometry: { type: "LineString"
 function routeData() { return result ? lineFeature(result.line) : emptyLine(); }
 function altData() { return { type: "FeatureCollection", features: alts.map((a) => lineFeature(a.line)) }; }
 function gapData() { return gapLine ? lineFeature(gapLine) : emptyLine(); }
+/** An open GPX file's tracks (the one opened as the trip lies under the route: changed, it still shows where it went). */
+function fileData() {
+  return { type: "FeatureCollection", features: (gpxFile?.tracks || []).map((g, i) => ({ ...lineFeature(g.line), properties: { i } })) };
+}
 /** The route as one line per leg (with its number), so a click or drag on it knows which leg it is, also where legs overlap. */
 function legsData() {
   if (!result) return emptyLine();
@@ -920,8 +945,35 @@ map.on("click", (e) => {
     placeMenu({ lat, lng: lon }, false, poi.properties.name || t("layer_" + poi.properties.k));
     return;
   }
-  placeMenu(e.lngLat, !!result && map.queryRenderedFeatures(e.point, { layers: ["route-hit"] }).length > 0);
+  // Another track of an open GPX file (not on the route): it opens.
+  const onRoute = !!result && map.queryRenderedFeatures(e.point, { layers: ["route-hit"] }).length > 0;
+  const track = !onRoute && gpxFile && map.queryRenderedFeatures(e.point, { layers: ["cv-file-hit"] })[0];
+  if (track) { openFileTrack(track.properties.i); return; }
+  placeMenu(e.lngLat, onRoute);
 });
+// Pointing at a track of an open GPX file: it stands out, with its name and length beside the pointer.
+const fileTip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: "file-tip", offset: 14, maxWidth: "none" });
+let hotFile = null, fileCursor = false;
+function hotTrack(i) {
+  if (hotFile === i) return;
+  if (hotFile != null) map.setFeatureState({ source: "cv-file", id: hotFile }, { hot: false });
+  hotFile = i;
+  if (i != null) map.setFeatureState({ source: "cv-file", id: i }, { hot: true });
+}
+function fileTipOff() {
+  hotTrack(null);
+  fileTip.remove();
+  if (fileCursor) { map.getCanvas().style.cursor = ""; fileCursor = false; }
+}
+map.on("mousemove", "cv-file-hit", (e) => {
+  const g = gpxFile?.tracks[e.features[0]?.properties.i];
+  if (!g || adv?.drawing || draggingLine || (result && map.queryRenderedFeatures(e.point, { layers: ["route-hit"] }).length)) { fileTipOff(); return; }
+  hotTrack(e.features[0].properties.i);
+  map.getCanvas().style.cursor = "pointer";
+  fileCursor = true;
+  fileTip.setLngLat(e.lngLat).setText(`${g.name} · ${kmText(g.m)}`).addTo(map);
+});
+map.on("mouseleave", "cv-file-hit", fileTipOff);
 map.on("mouseenter", "cv-pois", () => { if (!adv?.drawing) map.getCanvas().style.cursor = "pointer"; });
 map.on("mouseleave", "cv-pois", () => { if (!adv?.drawing) map.getCanvas().style.cursor = ""; });
 // A right-click is the usual context menu: what is there (the road, the place, how far along the route), to copy or zoom.
@@ -2198,6 +2250,7 @@ function openTrip(r, d, x) {
   forgetUndo();
   if (x.options) { options = Object.assign(options, { gravelReachKm: null }, x.options); showOptions(); }
   closeAdventure();
+  closeFile();
   $("name").value = x.name;
   setStatus("");
   drawList(); drawMarkers(); drawRoute(); drawSummary(); drawDevices();
@@ -2230,6 +2283,7 @@ function openDraft(d) {
   clearTimeout(routeTimer);
   closeMenu();
   closeAdventure();
+  closeFile();
   points = d.points; result = d.result; editing = d.editing; viewOnly = false;
   options = Object.assign(options, { gravelReachKm: null }, d.options); showOptions();
   adoptLegs(result, points, routeOptions());
@@ -2286,51 +2340,154 @@ $("name").addEventListener("input", () => drawDrafts());
 
 // ---------- GPX ----------
 // A GPX file opened here (the button, or dropped on the map): its line as it is, with points along it to change it as a
-// trip. It goes to Curveon as a GPX track, a trip, or both.
+// trip. It goes to Curveon as a GPX track, a trip, or both. A file with several tracks (the TET country downloads hold
+// one per section) has each on its own, as in the app, never joined into one line: all on the map, one opened at a time.
+
+/** "TET_N-04-Lysefjorden-Utne_20260827" → "TET N-04 Lysefjorden-Utne", as the app's GpxParser.prettyName. */
+const prettyName = (raw) => raw.replace(/_\d{8}$/, "").replace(/^(TET)_([A-Z]{1,3})-(\d+)[-_]/, "$1 $2-$3 ").replace(/_/g, " ").trim();
+
+/** { name, tracks: [{ name, line, ele, m, up }] }: each <trk> (or, in a file without any, each <rte>) on its own. */
 function parseGpx(text, fileName) {
   const doc = new DOMParser().parseFromString(text, "application/xml");
-  let pts = [...doc.getElementsByTagName("trkpt")];
-  if (!pts.length) pts = [...doc.getElementsByTagName("rtept")];
-  const raw = pts.map((p) => [Number(p.getAttribute("lat")), Number(p.getAttribute("lon")), Number(p.getElementsByTagName("ele")[0]?.textContent)])
-    .filter(([la, lo]) => Number.isFinite(la) && Number.isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180);
-  if (raw.length < 2) return null;
+  const own = (e, tag) => [...e.children].find((c) => c.localName === tag)?.textContent?.trim();
+  const meta = [...(doc.documentElement?.children || [])].find((c) => c.localName === "metadata");
+  const title = prettyName((meta && own(meta, "name")) || fileName.replace(/\.(gpx|xml)$/i, ""));
   const d = (a, b) => Math.hypot(a[0] - b[0], (a[1] - b[1]) * Math.cos((a[0] * Math.PI) / 180)) * 111195;
-  // A point every 10 m or so is plenty, and keeps a long day's file small enough to send.
-  const line = [raw[0]];
-  let m = 0, up = 0;
-  for (const q of raw.slice(1)) {
-    const last = line[line.length - 1];
-    const step = d(last, q);
-    if (step < 10 && q !== raw[raw.length - 1]) continue;
-    m += step;
-    if (Number.isFinite(q[2]) && Number.isFinite(last[2]) && q[2] > last[2]) up += q[2] - last[2];
-    line.push(q);
-  }
-  const name = doc.querySelector("trk > name, rte > name, metadata > name")?.textContent?.trim() || fileName.replace(/\.(gpx|xml)$/i, "");
-  // Heights when the file has them for every point.
-  const ele = line.every((q) => Number.isFinite(q[2])) ? line.map((q) => Math.round(q[2])) : null;
-  return { name, line: line.map(([la, lo]) => [la, lo]), ele, m, up };
+  const read = (e, tag) => {
+    const raw = [...e.getElementsByTagName(tag)].map((p) => [Number(p.getAttribute("lat")), Number(p.getAttribute("lon")), Number(p.getElementsByTagName("ele")[0]?.textContent)])
+      .filter(([la, lo]) => Number.isFinite(la) && Number.isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180);
+    if (raw.length < 2) return null;
+    // A point every 10 m or so is plenty, and keeps a long day's file small enough to send.
+    const line = [raw[0]];
+    let m = 0, up = 0;
+    for (const q of raw.slice(1)) {
+      const last = line[line.length - 1];
+      const step = d(last, q);
+      if (step < 10 && q !== raw[raw.length - 1]) continue;
+      m += step;
+      if (Number.isFinite(q[2]) && Number.isFinite(last[2]) && q[2] > last[2]) up += q[2] - last[2];
+      line.push(q);
+    }
+    // Heights when the file has them for every point.
+    const ele = line.every((q) => Number.isFinite(q[2])) ? line.map((q) => Math.round(q[2])) : null;
+    return { name: own(e, "name") ? prettyName(own(e, "name")) : "", line: line.map(([la, lo]) => [la, lo]), ele, m, up };
+  };
+  // Routes only when there is no track: a file with both (as this page saves) has the places as its route.
+  const of = (kind, pt) => [...(doc.documentElement?.children || [])].filter((c) => c.localName === kind).map((e) => read(e, pt)).filter(Boolean);
+  let tracks = of("trk", "trkpt");
+  if (!tracks.length) tracks = of("rte", "rtept");
+  if (!tracks.length) return null;
+  tracks.forEach((g, i) => { g.name ||= tracks.length > 1 ? `${title} ${i + 1}` : title; });
+  return { name: title, tracks };
 }
 
 async function openGpx(file) {
   if (!file || !(await leaveOk())) return;
-  const g = parseGpx(await file.text(), file.name);
-  if (!g) { setStatus(t("gpx_bad"), true); return; }
+  const f = parseGpx(await file.text(), file.name);
+  if (!f) { setStatus(t("gpx_bad"), true); return; }
   routeCtl?.abort();
   clearTimeout(routeTimer);
   closeMenu();
   closeAdventure();
+  if (f.tracks.length === 1) { closeFile(); showTrack(f.tracks[0]); return; }
+  // Several: all on the map, each on its own, to open one (in the list or on the map) or send them all.
+  fileTipOff();
+  gpxFile = { ...f, open: null, clean: null };
+  map.getSource("cv-file")?.setData(fileData());
+  points = []; result = null; editing = null; viewOnly = false; currentDraft = null; viasOpen = false;
+  $("name").value = "";
+  forgetUndo();
+  drawList(); drawMarkers(); drawRoute(); drawSummary(); drawDevices(); drawFile();
+  fitTo(f.tracks.flatMap((g) => g.line));
+  setStatus(t("gpx_opened_file", f.name, f.tracks.length));
+}
+
+/** One of the open file's tracks as the trip; going from one that was not changed to another asks nothing. */
+async function openFileTrack(i) {
+  if (!gpxFile?.tracks[i]) return;
+  if (gpxFile.open === i && result) { fitTo(result.line); return; }
+  if (!(gpxFile.open != null && workKey() === gpxFile.clean) && !(await leaveOk())) return;
+  routeCtl?.abort();
+  clearTimeout(routeTimer);
+  closeMenu();
+  closeAdventure();
+  fileTipOff();
+  gpxFile.open = i;
+  showTrack(gpxFile.tracks[i]);
+}
+
+/** A track on the map as it is, to send as it is or change as a trip. */
+function showTrack(g) {
   // Points along it, as an adventure has: change it, and it is routed through them.
   points = pointsAlong(g.line, g.m);
   result = { line: g.line, ele: g.ele, m: Math.round(g.m), s: Math.round(g.m / (60 / 3.6)), up: Math.round(g.up), curvy: null, ferries: 0 };
   editing = null; viewOnly = false; currentDraft = null; viasOpen = false;
   $("name").value = g.name;
   $("send-as").value = "track";
-  drawList(); drawMarkers(); drawRoute(); drawSummary(); drawDevices();
+  drawList(); drawMarkers(); drawRoute(); drawSummary(); drawDevices(); drawFile();
+  if (gpxFile) gpxFile.clean = workKey();
   fitTo(g.line);
   setStatus(t("gpx_loaded", g.name));
   for (const p of [points[0], points[points.length - 1]]) placeName(p.lat, p.lon).then((n) => { p.name = n; drawList(); drawMarkers(); });
 }
+
+/** The open file's block: its tracks to open (pointing at one shows it on the map), send them all, or close it. */
+function drawFile() {
+  $("file-block").hidden = !gpxFile;
+  if (!gpxFile) return;
+  $("file-name").textContent = gpxFile.name;
+  $("file-hint").textContent = t("gpx_tracks", gpxFile.tracks.length);
+  $("file-send").textContent = t("gpx_send_all", gpxFile.tracks.length);
+  $("file-list").replaceChildren(...gpxFile.tracks.map((g, i) => {
+    const li = el("li", i === gpxFile.open ? "open" : "");
+    const what = el("div", "what");
+    what.title = t("tip_gpx_track");
+    what.append(el("b", "", g.name), el("small", "", kmText(g.m)));
+    what.onclick = () => openFileTrack(i);
+    li.onmouseenter = () => hotTrack(i);
+    li.onmouseleave = () => hotTrack(null);
+    li.append(what);
+    return li;
+  }));
+}
+/** The file's tracks off the map; the one opened stays as the trip. */
+function closeFile() {
+  if (!gpxFile) return;
+  fileTipOff();
+  gpxFile = null;
+  map.getSource("cv-file")?.setData(fileData());
+  drawFile();
+}
+$("file-close").addEventListener("click", closeFile);
+
+/** Every track of the file to Curveon as a GPX track of its own, ridden as it is. */
+$("file-send").addEventListener("click", async () => {
+  if (!gpxFile) return;
+  const file = gpxFile;
+  const first = !store.get("link", null);
+  await ensureLink();
+  if (first) await showPairing();
+  $("file-send").disabled = true;
+  setStatus(t("sending"));
+  const rev = Date.now(), base = b64(random(9));
+  const sends = file.tracks.map((g, i) => [`${base}-${i}`, {
+    v: 1, name: g.name, stops: [], options: routeOptions(), line: g.line.map(([la, lo]) => `${la.toFixed(5)},${lo.toFixed(5)}`).join(";"),
+    m: Math.round(g.m), s: Math.round(g.m / (60 / 3.6)), up: Math.round(g.up), curvy: 0, track: true,
+  }]);
+  let ok = true;
+  for (const [k, body] of sends) {
+    ok = (await sendFrame(await ch.plan(rider, nextSeq(), k, rev, body))) && ok;
+    // The relay takes 30 frames in 10 s from one connection: a big file goes a little slower.
+    if (sends.length > 20) await new Promise((r) => setTimeout(r, 400));
+  }
+  $("file-send").disabled = false;
+  if (!ok) { setStatus(t("send_failed"), true); return; }
+  const list = store.get("sent", []);
+  for (const [k, body] of sends) list.unshift({ tid: k, rev, name: body.name, km: Math.round(body.m / 1000), at: Date.now(), got: {} });
+  store.set("sent", list.slice(0, Math.max(30, sends.length)));
+  setStatus(t("gpx_sent_all", sends.length));
+  drawPending();
+});
 $("open-gpx").addEventListener("click", () => $("gpx-file").click());
 $("gpx-file").addEventListener("change", (e) => { openGpx(e.target.files[0]); e.target.value = ""; });
 // A file dropped anywhere on the page.
@@ -2476,6 +2633,7 @@ $("new").addEventListener("click", async () => {
   points = []; editing = null; viewOnly = false; $("name").value = ""; currentDraft = null;
   closeMenu();
   closeAdventure();
+  closeFile();
   changed();
   drawDevices();
 });
@@ -2488,7 +2646,7 @@ $("theme").addEventListener("click", async () => {
   map.once("idle", showOnline);
   drawProfile();
 });
-$("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); fillTimes(); drawList(); drawSummary(); drawDevices(); drawPending(); drawPlaces(); });
+$("lang").addEventListener("click", () => { lang = lang === "nb" ? "en" : "nb"; store.set("lang", lang); applyTexts(); fillTimes(); drawList(); drawSummary(); drawDevices(); drawPending(); drawPlaces(); drawFile(); });
 $("fold").addEventListener("click", () => {
   const folded = $("panel").classList.toggle("folded");
   $("fold").ariaExpanded = String(!folded);

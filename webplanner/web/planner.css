@@ -91,6 +91,12 @@ button.small:hover { border-color: var(--amber); background: color-mix(in srgb, 
 #compare-list li.current button { border-color: var(--amber); border-width: 2px; }
 #compare-list small { color: var(--muted); font-size: 13px; }
 #compare-box .buttons { display: flex; justify-content: flex-end; }
+/* A GPX file with several tracks: its list (scrolls when long), and the name under the pointer on the map. */
+#file-list { max-height: 280px; overflow-y: auto; }
+#file-block .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.file-tip { pointer-events: none; }
+.file-tip .maplibregl-popup-tip { display: none; }
+.file-tip .maplibregl-popup-content { background: var(--panel); color: var(--text); border-radius: 8px; padding: 4px 9px; box-shadow: var(--shadow); font: 13px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; white-space: nowrap; }
 
 #profile { margin: -4px 0 0; display: flex; flex-direction: column; gap: 2px; }
 #profile canvas { width: 100%; height: 80px; display: block; cursor: crosshair; touch-action: none; border-radius: 6px; background: color-mix(in srgb, var(--text) 3%, transparent); }

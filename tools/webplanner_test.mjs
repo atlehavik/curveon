@@ -391,6 +391,66 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
   check(!(await page.locator(".device").first().locator("ul.trips li", { hasText: "Helgetur" }).count()), `${name}: the deleted trip left the list`);
   await page.screenshot({ path: `${out}/${name}-4-after.png` });
 
+  // A GPX file with several tracks (as the TET country downloads): each on its own on the map, never joined into one
+  // line; one opened from the map or the list, all sent at once as GPX tracks, and the file closed by New.
+  const SECTIONS = [["TET_N-01-Bømlo-Odda_20260827", [59.78, 5.20], [60.07, 6.55]], ["TET_N-02-Lom-Grotli_20260827", [61.86, 8.68], [61.81, 7.71]],
+    ["TET_N-03-Lakselv-Nordkapp_20260827", [70.05, 24.97], [71.17, 25.78]]];
+  const sectionLine = ([, a, b]) => Array.from({ length: 200 }, (_, k) => [a[0] + ((b[0] - a[0]) * k) / 199, a[1] + ((b[1] - a[1]) * k) / 199]);
+  const multi = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">
+<metadata><name>TET_N_20260827</name></metadata><wpt lat="61.85" lon="8.5"><name>FUEL_Lom</name></wpt>
+${SECTIONS.map((s) => `<trk><name>${s[0]}</name><trkseg>${sectionLine(s).map(([la, lo], k) => `<trkpt lat="${la.toFixed(6)}" lon="${lo.toFixed(6)}"><ele>${100 + k}</ele></trkpt>`).join("")}</trkseg></trk>`).join("\n")}
+</gpx>`;
+  if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
+  await page.setInputFiles("#gpx-file", { name: "tet-test.gpx", mimeType: "application/gpx+xml", buffer: Buffer.from(multi) });
+  await page.waitForTimeout(300);
+  if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
+  await page.waitForSelector("#file-block:not([hidden])", { timeout: 5000 }).catch(() => {});
+  const fileState = () => page.evaluate(() => {
+    const s = window.curveonMap.getStyle().sources;
+    return { tracks: s["cv-file"].data.features.length, route: s.route.data.geometry?.coordinates || [],
+      rows: [...document.querySelectorAll("#file-list li")].map((li) => li.querySelector("b").textContent), open: [...document.querySelectorAll("#file-list li")].findIndex((li) => li.classList.contains("open")),
+      name: document.querySelector("#name").value };
+  });
+  let fs1 = await fileState();
+  check(fs1.tracks === 3 && fs1.route.length === 0 && fs1.rows.join("|") === "TET N-01 Bømlo-Odda|TET N-02 Lom-Grotli|TET N-03 Lakselv-Nordkapp" &&
+    (await page.$$eval(".pin", (e) => e.length)) === 0 && (await page.textContent("#file-name")) === "TET N",
+    `${name}: a GPX file with several tracks shows each on its own, none opened yet (${fs1.tracks} on the map: ${fs1.rows.join(", ")})`);
+  for (const sel of ["#file-send", "#file-close"]) { await page.locator(sel).scrollIntoViewIfNeeded(); check(await fitsInside(sel), `${name}: ${sel} is wholly on screen`); }
+  await page.waitForFunction(() => !window.curveonMap.isMoving(), null, { timeout: 10000 }).catch(() => {});
+  await page.screenshot({ path: `${out}/${name}-5-gpx-file.png` });
+  // A click on the second track on the map opens it, with its own line only (nothing from the others). Clicked high on
+  // the map: on a phone the panel covers its lower half.
+  const onTrack = sectionLine(SECTIONS[1])[100];
+  const at = await page.evaluate(([la, lo]) => {
+    const m = window.curveonMap; const r = m.getCanvas().getBoundingClientRect();
+    m.jumpTo({ center: [lo, la], zoom: 9 }); m.panBy([0, r.height / 2 - innerHeight * 0.25], { animate: false });
+    const q = m.project([lo, la]); return { x: r.left + q.x, y: r.top + q.y };
+  }, onTrack);
+  await page.waitForTimeout(300);
+  await page.mouse.click(at.x, at.y);
+  await page.waitForTimeout(500);
+  fs1 = await fileState();
+  check(fs1.name === "TET N-02 Lom-Grotli" && fs1.open === 1 && fs1.route.length === 200 && Math.abs(fs1.route[0][1] - 61.86) < 1e-6 && Math.abs(fs1.route[199][1] - 61.81) < 1e-6,
+    `${name}: a click on a track on the map opens just that track (${fs1.name}, ${fs1.route.length} points)`);
+  // Unchanged, another one opens from the list without asking.
+  await page.locator("#file-list li").nth(2).locator(".what").click();
+  await page.waitForTimeout(300);
+  fs1 = await fileState();
+  check(!(await page.isVisible("#unsaved[open]")) && fs1.name === "TET N-03 Lakselv-Nordkapp" && fs1.open === 2 && fs1.tracks === 3,
+    `${name}: another track opens from the list, without asking to save the one before (${fs1.name})`);
+  const before0 = dev.got.plans.length;
+  await page.locator("#file-send").scrollIntoViewIfNeeded();
+  await page.click("#file-send");
+  for (let i = 0; i < 50 && dev.got.plans.length < before0 + 3; i++) await sleep(100);
+  const sent3 = dev.got.plans.slice(before0).map((p) => p.trip);
+  check(sent3.length === 3 && sent3.every((p, i) => p.track && !p.destination && p.name === fs1.rows[i] && p.line.split(";").length === 200 &&
+    Math.abs(Number(p.line.split(";")[0].split(",")[0]) - SECTIONS[i][1][0]) < 1e-4),
+    `${name}: Send all sent each track as a GPX track of its own (${sent3.map((p) => p.name).join(", ")})`);
+  await page.click("#new");
+  if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
+  fs1 = await fileState();
+  check(await page.isHidden("#file-block") && fs1.tracks === 0, `${name}: New closes the file and takes its tracks off the map`);
+
   // A GPX file opened on the page: shown as it is, sent as a GPX track (no destination, no stops), or as both.
   if (await page.isVisible("#unsaved[open]")) await page.click("#unsaved button[value=discard]");
   page.once("filechooser", () => {});
@@ -499,7 +559,10 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
 
   dev.close();
   dev2.close();
-  check(errors.length === 0, `${name}: no errors on the page ${errors.join(" | ")}`);
+  // Photon (place names) turning a burst of lookups away, or not answering after many test runs, is theirs, not the
+  // page's: the page goes on without the name ("Map point").
+  const own = errors.filter((e) => !/photon\.komoot\.io.*Status code: (429|5\d\d|\(null\))/.test(e));
+  check(own.length === 0, `${name}: no errors on the page ${own.join(" | ")}`);
   await page.close();
 }
 await browser.close();
