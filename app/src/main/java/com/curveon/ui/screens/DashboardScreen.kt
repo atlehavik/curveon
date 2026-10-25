@@ -923,10 +923,13 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     } }
     // Messages or music (one of them gets the free height), and engine data.
     val cards: @Composable ColumnScope.() -> Unit = {
-        if (callOngoing && !isFullScreenMap) ringing?.let { call ->
-            OngoingCallCard(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) })
-        }
         val messages = notifications.filterNot { it.isIncomingCall }
+        // Alone in the column (no message or voice reply) the call gets the room; with one it stays a row.
+        if (callOngoing && !isFullScreenMap) ringing?.let { call ->
+            val alone = voiceReply == null && messages.isEmpty()
+            OngoingCallCard(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) },
+                alone = alone, modifier = if (alone) Modifier.weight(1f, fill = false) else Modifier)
+        }
         // A call, like a message, gets the room: the player shrinks to one row.
         val attention = voiceReply != null || messages.isNotEmpty() || ringing != null
         when {

@@ -92,8 +92,21 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
         EcoGreen, EcoGreen.copy(alpha = 0.25f), infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "border"
     )
     val buttons = callButtons(call, onAction, onDismiss)
+    CallPhotoCard(call, "${call.message} · ${call.appName}", pulse, "call_card", modifier) {
+        PillButton(Icons.Default.CallEnd, buttons.declineLabel, WarningRed, Color.White, Modifier.weight(1f).height(64.dp), buttons.onDecline)
+        if (buttons.onOther != null) PillButton(Icons.Default.Call, buttons.otherLabel.orEmpty(), EcoGreen, Color.Black,
+            Modifier.weight(1f).height(64.dp), buttons.onOther)
+    }
+}
+
+/** The big call card: the contact's photo (or big initials), [status] and the name on top, [buttons] below. */
+@Composable
+private fun CallPhotoCard(
+    call: NotificationItem, status: String, border: Color, tag: String, modifier: Modifier,
+    buttons: @Composable RowScope.() -> Unit
+) {
     val shape = RoundedCornerShape(24.dp)
-    Box(modifier.clip(shape).background(CockpitSurface).border(3.dp, pulse, shape).testTag("call_card")) {
+    Box(modifier.clip(shape).background(CockpitSurface).border(3.dp, border, shape).testTag(tag)) {
         if (call.avatar != null) {
             Image(call.avatar.asImageBitmap(), call.senderName, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
             Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF2000000))))
@@ -108,28 +121,45 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.PhoneInTalk, null, tint = EcoGreen, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("${call.message} · ${call.appName}", color = Color(0xFFD0D7E0), fontSize = 13.sp, maxLines = 1)
+                Text(status, color = Color(0xFFD0D7E0), fontSize = 13.sp, maxLines = 1)
             }
             Text(call.senderName, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 32.sp)
             Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PillButton(Icons.Default.CallEnd, buttons.declineLabel, WarningRed, Color.White, Modifier.weight(1f).height(64.dp), buttons.onDecline)
-                if (buttons.onOther != null) PillButton(Icons.Default.Call, buttons.otherLabel.orEmpty(), EcoGreen, Color.Black,
-                    Modifier.weight(1f).height(64.dp), buttons.onOther)
-            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { buttons() }
         }
     }
 }
 
+/** Least height an answered call needs for the big card; below that it stays a row. */
+private val BigOngoingCallHeight = 240.dp
+
 /**
  * An answered call in the dashboard's card column (the map isn't full screen, so there is room for
- * it there instead of an icon over the map): the caller, and Hang up and Speaker as big buttons.
+ * it there instead of an icon over the map). [alone]: nothing else in the column wants the height
+ * (no message), so [modifier] gives the call the free height and it is as big as a ringing call,
+ * with Hang up and Speaker as big buttons; beside a message, or when there isn't the height, it is a
+ * one-row card.
  */
 @Composable
-fun OngoingCallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+fun OngoingCallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, alone: Boolean, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        if (alone && maxHeight >= BigOngoingCallHeight) {
+            val buttons = callButtons(call, onAction, onDismiss)
+            CallPhotoCard(call, stringResource(R.string.call_in_progress), EcoGreen, "call_card_ongoing", Modifier.fillMaxSize()) {
+                PillButton(Icons.Default.CallEnd, buttons.declineLabel, WarningRed, Color.White, Modifier.weight(1f).height(64.dp), buttons.onDecline)
+                if (buttons.onOther != null) PillButton(Icons.Default.VolumeUp, buttons.otherLabel.orEmpty(), CockpitSurfaceVariant, Color.White,
+                    Modifier.weight(1f).height(64.dp), buttons.onOther)
+            }
+        } else OngoingCallRow(call, onAction, onDismiss)
+    }
+}
+
+/** The answered call as one row: the caller, and Hang up and Speaker as round buttons. */
+@Composable
+private fun OngoingCallRow(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit) {
     val buttons = callButtons(call, onAction, onDismiss)
-    DashCard(modifier.fillMaxWidth().testTag("call_card_ongoing"), border = EcoGreen) {
+    DashCard(Modifier.fillMaxWidth().testTag("call_card_ongoing"), border = EcoGreen) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             CallAvatar(call, 56.dp)
             Column(Modifier.weight(1f)) {
