@@ -2,6 +2,7 @@
   {
     "version": "1.2.6",
     "en": [
+      "A trip planned on the web planner is now ridden exactly as you drew it there. Before, Curveon could cut short a little loop out to a via point, and ride out to it and back the same way instead",
       "Taking a profile picture now opens Curveon's own camera, on the selfie lens, and the picture comes out exactly as you saw it in the mirror view, whatever your phone's camera app is set to",
       "Change a trip on the web planner that is on both your phone and your tablet, and it is now updated on both. Before, one of them could get it as an extra trip beside the old one",
       "Connect to the web planner again after disconnecting there, and your phone or tablet now shows up on the page as soon as you have scanned the new code",
@@ -16,6 +17,7 @@
       "On a small phone, buttons with a long name, such as Ride reversed or Save to GPX, now make their text a little smaller instead of cutting it off, and an opened ride has room for Save beside its other buttons"
     ],
     "nb": [
+      "En tur du planlegger i nettplanleggeren, kjøres nå akkurat slik du tegnet den der. Før kunne Curveon kutte en liten sløyfe ut til et hjelpepunkt, og heller kjøre ut og tilbake samme vei",
       "Når du tar profilbilde, åpner Curveon nå sitt eget kamera på selfie-linsen, og bildet blir akkurat slik du så det i speilbildet, uansett hva kameraappen på telefonen er innstilt på",
       "Endrer du en tur i nettplanleggeren som ligger både på telefonen og nettbrettet, oppdateres den nå på begge. Før kunne den ene få den som en ekstra tur ved siden av den gamle",
       "Kobler du til nettplanleggeren igjen etter å ha koblet fra der, dukker telefonen eller nettbrettet nå opp på siden med en gang du har skannet den nye koden",

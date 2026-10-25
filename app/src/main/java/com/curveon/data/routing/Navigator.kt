@@ -853,8 +853,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private fun calculate(goal: NavigationGoal, from: LatLon, style: RoadStyle?, cancelled: () -> Boolean = { false }): Route = when (goal) {
         is NavigationGoal.Destination -> if (goal.fixedLine != null) {
             // A saved line is ridden from its start; the line of a trip someone shared is joined where the rider meets it.
-            if (goal.saved != null) TrackFollower(engine).route(from, goal.fixedLine, goal.options, fromStart = true)
-            else TrackFollower(engine).route(from, fromNearest(from, goal.fixedLine), goal.options, headingDeg = lastHeading.takeIf { from == lastPosition })
+            // Both were made by Curveon's own routing (here or on the web), so they are ridden exactly as they go.
+            if (goal.saved != null) TrackFollower(engine).route(from, goal.fixedLine, goal.options, fromStart = true, exact = true)
+            else TrackFollower(engine).route(from, fromNearest(from, goal.fixedLine), goal.options, headingDeg = lastHeading.takeIf { from == lastPosition }, exact = true)
         } else engine.route(
             listOf(from) + goal.stops.map { it.point } + goal.destination,
             goal.options.copy(roadStyle = style ?: goal.options.roadStyle),

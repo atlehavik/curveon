@@ -13,16 +13,18 @@ class TrackFollower(private val engine: BRouterEngine) {
      * [fromStart]: a track picked to ride (rather than one the rider is already riding) joins at its
      * first pass by the rider, so a loop from home is ridden whole even where it passes home again.
      * Otherwise (a trip a friend shared) it is joined where the rider meets it, the way it goes; [headingDeg]
-     * is the way the rider is riding, if known.
+     * is the way the rider is riding, if known. [exact]: the line was made by Curveon's own routing (a trip planned on
+     * the web, saved or shared), so it lies on the roads and is ridden just as it goes ([exactly]).
      */
-    fun route(from: LatLon, track: List<LatLon>, options: RouteOptions, fromStart: Boolean = false, headingDeg: Double? = null): Route {
+    fun route(from: LatLon, track: List<LatLon>, options: RouteOptions, fromStart: Boolean = false, headingDeg: Double? = null, exact: Boolean = false): Route {
         require(track.size >= 2) { "Track has no points" }
         val joinIndex = (if (fromStart) firstIndexWithin(from, track, ON_TRACK_M) else
             nearestIndex(from, track).takeIf { Geo.distance(from, track[it]) < ON_TRACK_M }) ?: 0
         val vias = sample(track.subList(joinIndex, track.size), VIA_SPACING_M)
         // Tight snapping keeps us on the track's roads; the approach leg uses normal snapping
         // because the rider may start far from any road the track uses.
-        val onTrack = engine.route(vias, options, viaCatchingRangeMeters = VIA_CATCHING_RANGE_M)
+        val onTrack = if (exact) exactly(track.subList(joinIndex, track.size), options)
+        else engine.route(vias, options, viaCatchingRangeMeters = VIA_CATCHING_RANGE_M)
         if (!fromStart) joinAlong(from, onTrack, options, headingDeg)?.let { return it }
         if (Geo.distance(from, vias.first()) < 50) return onTrack
         val approach = engine.route(listOf(from, vias.first()), options)
@@ -59,6 +61,83 @@ class TrackFollower(private val engine: BRouterEngine) {
             }.getOrNull()
         }
         return ways.minByOrNull { it.second }?.first
+    }
+
+    /**
+     * [line] as it goes, with turn instructions: routed through a point every [VIA_SPACING_M], then, wherever the route
+     * still leaves the line (a loop out to a via point and back another way, shorter than that spacing: Sandnes,
+     * 2026-10-25), through a point on the line there too, until it keeps to the line or [EXACT_ROUNDS] are done.
+     */
+    private fun exactly(line: List<LatLon>, options: RouteOptions): Route {
+        val pts = sample(line, EXACT_CHECK_M)
+        val along = DoubleArray(pts.size)
+        for (i in 1 until pts.size) along[i] = along[i - 1] + Geo.distance(pts[i - 1], pts[i])
+        val vias = sortedSetOf<Int>()
+        var next = VIA_SPACING_M
+        for (i in 1 until pts.size - 1) if (along[i] >= next) { vias += i; next = along[i] + VIA_SPACING_M }
+        var route = engine.route(pts.take(1) + vias.map { pts[it] } + pts.last(), options, viaCatchingRangeMeters = VIA_CATCHING_RANGE_M)
+        repeat(EXACT_ROUNDS) {
+            val near = Nearness(route.points.map { LatLon(it.lat, it.lon) })
+            val added = mutableListOf<Int>()
+            var i = 1
+            while (i < pts.size - 1) {
+                if (near.off(pts[i]) <= EXACT_DEVIATION_M) { i++; continue }
+                // One stretch the route misses: a point at its middle, and one for each [VIA_SPACING_M] of a long one.
+                val first = i
+                while (i < pts.size - 1 && near.off(pts[i]) > EXACT_DEVIATION_M) {
+                    if (along[i] - along[first] >= VIA_SPACING_M && (added.isEmpty() || along[i] - along[added.last()] >= VIA_SPACING_M)) added += i
+                    i++
+                }
+                added += (first + i - 1) / 2
+            }
+            val fresh = added.filter { it !in vias }
+            if (fresh.isEmpty()) return route
+            vias += fresh
+            // A point that cannot be routed through: the route as it was is still a good one.
+            route = try {
+                engine.route(pts.take(1) + vias.map { pts[it] } + pts.last(), options, viaCatchingRangeMeters = VIA_CATCHING_RANGE_M)
+            } catch (e: java.util.concurrent.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                return route
+            }
+        }
+        return route
+    }
+
+    /** How far points are from [line], in metres: its segments sorted into squares of [CELL_M], so a long trip is quick. */
+    private class Nearness(private val line: List<LatLon>) {
+        private val lat0 = line.first().lat
+        private val kx = Math.cos(Math.toRadians(lat0)) * 111_320.0
+        private val ky = 110_540.0
+        private val cells = HashMap<Long, MutableList<Int>>()
+
+        init {
+            for (j in 0 until line.size - 1) {
+                val (ax, ay) = xy(line[j]); val (bx, by) = xy(line[j + 1])
+                for (cx in cell(minOf(ax, bx))..cell(maxOf(ax, bx))) for (cy in cell(minOf(ay, by))..cell(maxOf(ay, by)))
+                    cells.getOrPut(key(cx, cy)) { mutableListOf() } += j
+            }
+        }
+
+        private fun xy(p: LatLon) = (p.lon * kx) to ((p.lat - lat0) * ky)
+        private fun cell(v: Double) = Math.floorDiv(v.toLong(), CELL_M.toLong())
+        private fun key(cx: Long, cy: Long) = (cx shl 32) xor (cy and 0xffffffffL)
+
+        /** Metres from [p] to the line; [CELL_M] or more when nothing of it is in [p]'s square or the ones round it. */
+        fun off(p: LatLon): Double {
+            val (px, py) = xy(p)
+            val cx = cell(px); val cy = cell(py)
+            var best = CELL_M
+            for (dx in -1L..1L) for (dy in -1L..1L) for (j in cells[key(cx + dx, cy + dy)].orEmpty()) {
+                val (ax, ay) = xy(line[j]); val (bx, by) = xy(line[j + 1])
+                val sx = bx - ax; val sy = by - ay
+                val len = sx * sx + sy * sy
+                val t = if (len == 0.0) 0.0 else (((px - ax) * sx + (py - ay) * sy) / len).coerceIn(0.0, 1.0)
+                best = minOf(best, Math.hypot(ax + t * sx - px, ay + t * sy - py))
+            }
+            return best
+        }
     }
 
     /** How far along [line] the point nearest [p] is, and how far [p] is from it, in metres. */
@@ -164,6 +243,12 @@ class TrackFollower(private val engine: BRouterEngine) {
         const val VIA_CATCHING_RANGE_M = 150.0
         /** Nearer the line than this, the rider is on it. */
         const val ON_LINE_M = 30.0
+        /** A line followed [exactly] is checked this often along it ... */
+        const val EXACT_CHECK_M = 25.0
+        /** ... and is left where it is further than this from the route (the road beside it is further away). */
+        const val EXACT_DEVIATION_M = 35.0
+        const val EXACT_ROUNDS = 4
+        const val CELL_M = 200.0
 
         fun nearestIndex(p: LatLon, track: List<LatLon>): Int =
             track.indices.minByOrNull { Geo.distance(p, track[it]) } ?: 0
