@@ -1,8 +1,13 @@
 package com.curveon
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.os.BatteryManager
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -14,9 +19,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -26,6 +36,9 @@ import com.curveon.ui.screens.DashboardScreen
 import com.curveon.ui.theme.CockpitBackground
 import com.curveon.ui.theme.CurveonTheme
 import com.curveon.ui.viewmodel.DashboardViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 class MainActivity : ComponentActivity() {
 
@@ -45,10 +58,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         hideSystemBars()
 
-        // Keep screen awake for motorcycle mounting
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
         setContent {
+            // Awake on the bike; parked on battery, Android may put it to sleep as usual.
+            val awake = keepScreenOn()
+            LaunchedEffect(awake) {
+                if (awake) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
             val orientation by dashboardViewModel.screenOrientation.collectAsState()
             LaunchedEffect(orientation) { if (requestedOrientation != orientation) requestedOrientation = orientation }
             val isFullScreenMap by dashboardViewModel.isFullScreenMap.collectAsState()
@@ -154,8 +170,40 @@ class MainActivity : ComponentActivity() {
     companion object {
         /** The screen, so "Close Curveon" in the notification can close it. */
         @Volatile var current: java.lang.ref.WeakReference<MainActivity>? = null
+
+        private const val MOVING_KMH = 10f
+        private const val STILL_MS = 10 * 60_000L
     }
 
     private fun hasLocationPermission() =
         ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    /**
+     * Whether the screen stays on: while navigating, on power (the bike's, or a charger), and until [STILL_MS] after the
+     * rider last moved. Only standing still on battery for a while lets Android turn it off.
+     */
+    @Composable
+    private fun keepScreenOn(): Boolean {
+        val navigating by remember { dashboardViewModel.navigation.map { it.isNavigating }.distinctUntilChanged() }.collectAsState(false)
+        val moving by remember { dashboardViewModel.telemetry.map { it.speedKmh >= MOVING_KMH }.distinctUntilChanged() }.collectAsState(false)
+        var stillLong by remember { mutableStateOf(false) }
+        LaunchedEffect(moving) {
+            stillLong = false
+            if (!moving) { delay(STILL_MS); stillLong = true }
+        }
+        val pluggedIn = remember { isPluggedIn() }
+        val charging by produceState(pluggedIn) {
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) { value = intent.action == Intent.ACTION_POWER_CONNECTED }
+            }
+            val filter = IntentFilter().apply { addAction(Intent.ACTION_POWER_CONNECTED); addAction(Intent.ACTION_POWER_DISCONNECTED) }
+            ContextCompat.registerReceiver(this@MainActivity, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+            awaitDispose { unregisterReceiver(receiver) }
+        }
+        return navigating || charging || !stillLong
+    }
+
+    private fun isPluggedIn(): Boolean =
+        ContextCompat.registerReceiver(this, null, IntentFilter(Intent.ACTION_BATTERY_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED)
+            ?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)?.let { it != 0 } ?: true
 }

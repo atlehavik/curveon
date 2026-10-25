@@ -14,11 +14,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 import kotlin.math.sin
 
 /** What the engine panel can show; the rider picks which in Settings → Engine. */
@@ -64,7 +68,7 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
     fun setFuelCalibration(c: FuelCalibration) {
         if (c.source != fuelCalibration.source) fuelSourceChanged = true
         fuelCalibration = c
-        if (c.source == null || c.tankLiters == null) _state.value = _state.value.copy(fuelLiters = null)
+        if (c.source == null || c.tankLiters == null) _state.update { it.copy(fuelLiters = null) }
     }
 
     private var pendingCapture: CompletableDeferred<Map<String, Int>?>? = null
@@ -111,7 +115,7 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
                 }
                 closeSocket()
                 if (!isActive) break
-                _state.value = _state.value.copy(status = ObdState.Status.FAILED)
+                _state.update { it.copy(status = ObdState.Status.FAILED) }
                 delay(RETRY_MS)
             }
         }
@@ -125,13 +129,12 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
             throw IOException("Bluetooth off or not allowed")
         }
         val device = adapter.getRemoteDevice(address)
-        _state.value = _state.value.copy(status = ObdState.Status.CONNECTING)
-        val s = runCatching { device.createRfcommSocketToServiceRecord(SPP).also { it.connect() } }
-            .getOrElse { device.createInsecureRfcommSocketToServiceRecord(SPP).also { s -> s.connect() } }
+        _state.update { it.copy(status = ObdState.Status.CONNECTING) }
+        val s = connect(device, address)
         socket = s
         val elm = Elm327(s.inputStream, s.outputStream)
         for (cmd in listOf("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0")) elm.send(cmd, if (cmd == "ATZ") 3_000 else 1_500)
-        _state.value = _state.value.copy(status = ObdState.Status.CONNECTED)
+        _state.update { it.copy(status = ObdState.Status.CONNECTED) }
         Log.i(TAG, "Connected to ${device.name}")
         // Once per app start: it holds the readings back for half a minute.
         if (surveyed == null) surveyed = runCatching { survey(elm, device.name ?: address) }.getOrElse { Log.w(TAG, "Survey failed", it); emptyList() }
@@ -141,16 +144,23 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         while (scope.isActive && job?.isActive == true) {
             val slow = round % SLOW_EVERY == 0
             var s2 = _state.value
+            // RPM is asked first: "NO DATA" to anything else only means the bike lacks it when the engine answered that
+            // (with the ignition off nothing answers), and RPM itself is never given up on, so it comes back with the ignition.
+            var engineAnswered = false
             fun ask(pid: String, parse: (List<Int>) -> Unit) {
                 if (pid in unsupported) return
-                val bytes = Elm327.parse(pid, elm.send(pid, 5_000))
-                if (bytes == null) unsupported += pid else parse(bytes)
+                val answer = elm.send(pid, 5_000)
+                val bytes = Elm327.parse(pid, answer)
+                if (bytes != null) {
+                    if (pid == RPM) engineAnswered = true
+                    parse(bytes)
+                } else if (pid != RPM && engineAnswered && Elm327.notReported(answer)) unsupported += pid
             }
             pendingCapture?.let { request ->
                 pendingCapture = null
                 request.complete(runCatching { capture(elm) }.getOrElse { if (it is IOException) throw it; Log.w(TAG, "Capture failed", it); null })
             }
-            ask("010C") { b -> if (b.size >= 2) s2 = s2.copy(rpm = (b[0] * 256 + b[1]) / 4) }
+            ask(RPM) { b -> if (b.size >= 2) s2 = s2.copy(rpm = (b[0] * 256 + b[1]) / 4) }
             val tankTable = fuelCalibration.takeIf { it.source != null && it.tankLiters != null }
             if (tankTable != null) readFuel(elm, tankTable)?.let { s2 = s2.copy(fuelLiters = it, fuelPercent = (it * 100 / tankTable.tankLiters!!).toInt().coerceIn(0, 100)) }
             if (slow) {
@@ -161,7 +171,12 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
                 for (pid in extra) com.curveon.data.location.NavTrace.event("obd $pid ${elm.send(pid, 2_000).trim().replace(Regex("\\s+"), " ")}")
                 s2.rpm?.let { com.curveon.data.location.NavTrace.event("obd rpm $it coolant ${s2.coolantC} volt ${s2.voltage}") }
             }
-            _state.value = s2
+            // Only the readings: the status, or a tank table removed meanwhile, may have changed during the round.
+            _state.update { cur ->
+                val table = fuelCalibration.let { it.source != null && it.tankLiters != null }
+                cur.copy(rpm = s2.rpm, fuelPercent = s2.fuelPercent, coolantC = s2.coolantC, voltage = s2.voltage,
+                    fuelLiters = if (table) s2.fuelLiters else null)
+            }
             round++
             delay(POLL_MS)
         }
@@ -196,7 +211,7 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
     private fun readFuel(elm: Elm327, c: FuelCalibration): Float? {
         val src = FuelSignal.parse(c.source ?: return null) ?: return null
         if (fuelSourceChanged) { fuelSourceChanged = false; fuelSamples.clear(); fuelReadAt = 0L }
-        val now = System.currentTimeMillis()
+        val now = android.os.SystemClock.elapsedRealtime()
         if (now - fuelReadAt >= if (src.isPid) FUEL_EVERY_MS else FUEL_BUS_EVERY_MS) {
             fuelReadAt = now
             val bytes = if (src.isPid) Elm327.parse(src.id, elm.send(src.id, 2_000)) else {
@@ -282,10 +297,30 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
             }
             val cal = fuelCalibration
             val litres = if (cal.source == "can:3F0:2") cal.liters((level * 2.55).toInt()) else null
-            _state.value = _state.value.copy(rpm = (4_500 + 3_000 * sin(t / 3)).toInt(), fuelPercent = level.toInt(),
-                fuelLiters = litres)
+            _state.update { it.copy(rpm = (4_500 + 3_000 * sin(t / 3)).toInt(), fuelPercent = level.toInt(), fuelLiters = litres) }
             delay(250)
         }
+    }
+
+    /**
+     * An encrypted link first. Many cheap adapters only take an unencrypted one, so that is tried next, but never
+     * for an adapter that has taken an encrypted link before: something else answering in its name would not have its key.
+     */
+    @SuppressLint("MissingPermission")
+    private fun connect(device: android.bluetooth.BluetoothDevice, address: String): BluetoothSocket {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val secureBefore = prefs.getBoolean(SECURE_KEY + address, false)
+        val secure = device.createRfcommSocketToServiceRecord(SPP)
+        try {
+            secure.connect()
+            if (!secureBefore) prefs.edit().putBoolean(SECURE_KEY + address, true).apply()
+            return secure
+        } catch (e: IOException) {
+            runCatching { secure.close() }
+            if (secureBefore) throw e
+            Log.i(TAG, "Encrypted link refused (${e.message}), trying without")
+        }
+        return device.createInsecureRfcommSocketToServiceRecord(SPP).also { it.connect() }
     }
 
     private fun closeSocket() {
@@ -297,6 +332,9 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         const val DEMO = "demo"
         private var surveyed: List<String>? = null
         private const val TAG = "CurveonObd"
+        private const val PREFS = "obd"
+        private const val SECURE_KEY = "secure_link:"
+        private const val RPM = "010C"
         private val SPP: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
         private const val POLL_MS = 200L
         private const val SLOW_EVERY = 25
@@ -317,53 +355,114 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
     }
 }
 
-/** Talks to an ELM327: a command per line, answers end with a '>' prompt. */
-internal class Elm327(private val input: java.io.InputStream, private val output: java.io.OutputStream) {
+/**
+ * Talks to an ELM327: a command per line, answers end with a '>' prompt. What the adapter sends is read by a thread
+ * of its own, so waiting for an answer sleeps until bytes come instead of looking every few milliseconds.
+ */
+internal class Elm327(input: java.io.InputStream, private val output: java.io.OutputStream) {
+
+    private val inbox = LinkedBlockingQueue<ByteArray>()
+    private var chunk = ByteArray(0)
+    private var at = 0
+
+    /** The last command got no prompt in time: its answer may still come, and must not be taken for the next one's. */
+    private var late = false
+
+    init {
+        thread(name = "curveon-obd-read", isDaemon = true) {
+            val buf = ByteArray(512)
+            try {
+                while (true) {
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    if (n > 0) inbox.put(buf.copyOf(n))
+                }
+            } catch (_: IOException) {
+            }
+            inbox.put(CLOSED)
+        }
+    }
 
     /** Sends [cmd] and returns the answer (without echo and prompt). */
     fun send(cmd: String, timeoutMs: Long): String {
+        skipStale()
         output.write("$cmd\r".toByteArray())
         output.flush()
         val sb = StringBuilder()
-        val until = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < until) {
-            if (input.available() > 0) {
-                val c = input.read()
-                if (c < 0) throw IOException("closed")
-                if (c.toChar() == '>') break
-                sb.append(c.toChar())
-            } else Thread.sleep(10)
+        val until = deadline(timeoutMs)
+        while (true) {
+            val c = next(until)
+            if (c < 0) { late = true; break }
+            if (c == PROMPT) break
+            sb.append(c.toChar())
         }
+        // A command sent while the adapter was still busy stops that one, and the answer to this one comes after.
+        if (sb.contains("STOPPED")) late = true
         return sb.toString()
     }
 
     /** Raw bus monitor (after "ATMA"): everything heard for [ms], then stops it and waits for the prompt. */
     fun monitor(ms: Long, stopWhen: ((String) -> Boolean)? = null): String {
+        skipStale()
         output.write("ATMA\r".toByteArray())
         output.flush()
         val sb = StringBuilder()
-        val until = System.currentTimeMillis() + ms
+        val until = deadline(ms)
         var lineStart = 0
-        while (System.currentTimeMillis() < until && sb.length < 2_000_000) {
-            if (input.available() > 0) {
-                val c = input.read().toChar()
-                sb.append(c)
-                if (c == '\r' || c == '\n') {
-                    if (stopWhen != null && stopWhen(sb.substring(lineStart))) break
-                    lineStart = sb.length
-                }
-            } else Thread.sleep(5)
+        while (sb.length < 2_000_000) {
+            val c = next(until)
+            if (c < 0) break
+            sb.append(c.toChar())
+            if (c == '\r'.code || c == '\n'.code) {
+                if (stopWhen != null && stopWhen(sb.substring(lineStart))) break
+                lineStart = sb.length
+            }
         }
         output.write("\r".toByteArray())
         output.flush()
-        val end = System.currentTimeMillis() + 2_000
-        while (System.currentTimeMillis() < end) {
-            if (input.available() > 0) { val c = input.read(); if (c < 0 || c.toChar() == '>') break; sb.append(c.toChar()) } else Thread.sleep(5)
+        val end = deadline(2_000)
+        while (true) {
+            val c = next(end)
+            if (c < 0) { late = true; break }
+            if (c == PROMPT) break
+            sb.append(c.toChar())
         }
         return sb.toString()
     }
 
+    /** Throws away what came unasked: after a timeout, the late answer up to its prompt (if it comes soon), then anything else waiting. */
+    private fun skipStale() {
+        if (late) {
+            val until = deadline(LATE_MS)
+            while (true) { val c = next(until); if (c < 0 || c == PROMPT) break }
+            late = false
+        }
+        while (next(System.nanoTime()) >= 0) Unit
+    }
+
+    private fun deadline(ms: Long) = System.nanoTime() + ms * 1_000_000
+
+    /** The next byte from the adapter, or -1 when none came by [untilNanos]; throws once the link is closed. */
+    private fun next(untilNanos: Long): Int {
+        while (at >= chunk.size) {
+            val wait = untilNanos - System.nanoTime()
+            val got = (if (wait > 0) inbox.poll(wait, TimeUnit.NANOSECONDS) else inbox.poll()) ?: return -1
+            if (got === CLOSED) { inbox.put(CLOSED); throw IOException("closed") }
+            chunk = got
+            at = 0
+        }
+        return chunk[at++].toInt() and 0xFF
+    }
+
     companion object {
+        private val CLOSED = ByteArray(0)
+        private const val PROMPT = '>'.code
+        /** How long a late answer is waited for before the next command goes anyway. */
+        private const val LATE_MS = 1_000L
+
+        /** Whether [answer] says the bike doesn't have this value ("NO DATA", or "?" for a command the adapter doesn't know). */
+        fun notReported(answer: String): Boolean = answer.uppercase().contains("NO DATA") || answer.trim() == "?"
+
         /**
          * The data bytes of a mode-01 answer to [pid] ("010C" → after "41 0C"), or null when the bike
          * doesn't report it ("NO DATA", "?", errors).

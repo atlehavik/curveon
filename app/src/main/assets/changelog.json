@@ -14,7 +14,13 @@
       "When a call comes in, the phone and notifications get the room on the dashboard and the music player shrinks to a single row, and once you answer, the call stays big with a clear Hang up button when there is nothing else to show. On a phone held upright, the call and the music share one row of icons when a message arrives, so the message keeps room for its text and buttons",
       "If a friend removes you, they now disappear from your list too, and if you are removed from a ride group it leaves your list by itself, with a short note saying what happened",
       "When you link your phone and tablet, a profile you have set up with a name or picture is no longer replaced by an empty one",
-      "On a small phone, buttons with a long name, such as Ride reversed or Save to GPX, now make their text a little smaller instead of cutting it off, and an opened ride has room for Save beside its other buttons"
+      "On a small phone, buttons with a long name, such as Ride reversed or Save to GPX, now make their text a little smaller instead of cutting it off, and an opened ride has room for Save beside its other buttons",
+      "Curveon now counts hairpin bends in full when it measures how curvy a road is, and turning at a junction in town no longer counts as a curve. The Curviness bar is fairer, and round trips and adventures go for roads with real bends",
+      "Engine readings from your OBD adapter no longer go blank after one slow answer, which could mix up the values for the rest of the ride. Waiting for the adapter uses less battery too, and once your adapter has connected over a protected link, Curveon never settles for an unprotected one",
+      "Press play, skip or other phone buttons quickly one after another, and they now reach your phone in the order you pressed them",
+      "Two rare glitches are gone: a new song's title could be replaced by the one before, and a route being worked out in the planner while you ride could get lost",
+      "The screen stays on while you ride, navigate or are plugged in, but a phone or tablet left parked on battery for ten minutes can now go to sleep as usual instead of running its battery flat",
+      "Downloading a map no longer says there isn't room when Android can make room by clearing other apps' temporary files"
     ],
     "nb": [
       "En tur du planlegger i nettplanleggeren, kjøres nå akkurat slik du tegnet den der. Før kunne Curveon kutte en liten sløyfe ut til et hjelpepunkt, og heller kjøre ut og tilbake samme vei",
@@ -29,7 +35,13 @@
       "Når det ringer, får telefonen og varslene plassen på dashbordet, og musikkspilleren krymper til én rad. Når du har tatt samtalen, blir den stående stor med en tydelig legg-på-knapp, så lenge det ikke er noe annet å vise. På en telefon som holdes stående, deler samtalen og musikken én rad med ikoner når det kommer en melding, så meldingen beholder plassen til teksten og knappene sine",
       "Fjerner en venn deg, forsvinner han nå også fra listen din, og blir du fjernet fra en turgruppe, forsvinner gruppa av seg selv, med en kort beskjed om hva som skjedde",
       "Når du kobler telefonen og nettbrettet, blir en profil du har satt opp med navn eller bilde ikke lenger byttet ut med en tom",
-      "På en liten telefon blir teksten på knapper med langt navn, som Kjør motsatt vei og Lagre i GPX, litt mindre i stedet for å bli kuttet, og en åpnet tur har plass til Lagre ved siden av de andre knappene"
+      "På en liten telefon blir teksten på knapper med langt navn, som Kjør motsatt vei og Lagre i GPX, litt mindre i stedet for å bli kuttet, og en åpnet tur har plass til Lagre ved siden av de andre knappene",
+      "Curveon teller nå hårnålssvinger fullt ut når den måler hvor svingete en vei er, og å svinge i et kryss i byen teller ikke lenger som en sving. Svingete-baren blir mer rettferdig, og rundturer og eventyr går for veier med ekte svinger",
+      "Motorverdiene fra OBD-adapteren forsvinner ikke lenger etter ett tregt svar, som kunne blande sammen verdiene resten av turen. Ventingen på adapteren bruker også mindre batteri, og har adapteren din først koblet til med en beskyttet forbindelse, nøyer Curveon seg aldri med en ubeskyttet",
+      "Trykker du play, hopp over eller andre telefonknapper raskt etter hverandre, kommer de nå fram til telefonen i den rekkefølgen du trykket",
+      "To sjeldne feil er borte: tittelen på en ny sang kunne bli byttet ut med den forrige, og en rute som ble regnet ut i planleggeren mens du kjører, kunne bli borte",
+      "Skjermen holder seg på mens du kjører, navigerer eller lader, men en telefon eller et nettbrett som står parkert på batteri i ti minutter, kan nå sovne som vanlig i stedet for å tømme batteriet",
+      "Laster du ned et kart, sier Curveon ikke lenger at det er for lite plass når Android kan lage plass ved å rydde bort midlertidige filer fra andre apper"
     ],
     "sv": [
       "När du tar en profilbild öppnas nu Curveons egen kamera på selfielinsen, och bilden blir precis som du såg den i spegelbilden, oavsett hur telefonens kameraapp är inställd",
@@ -39,7 +51,13 @@
       "Dela mer med gruppen: en tur du har kört, ett GPX-spår eller vilken planerad tur som helst har nu Dela med gruppen, inte bara turen på kartan",
       "Öppna en GPX-fil i webbplaneraren och skicka den till Curveon som ett spår som körs precis som det är, som en tur du kan ändra, eller båda. Och ett GPX-spår i appen kan läggas i Planerade, så att det syns i webbplaneraren också",
       "Tar en vän bort dig försvinner han nu också från din lista, och om du tas bort från en turgrupp försvinner gruppen av sig själv, med ett kort meddelande om vad som hände",
-      "När du länkar telefonen och surfplattan ersätts en profil du har satt upp med namn eller bild inte längre av en tom"
+      "När du länkar telefonen och surfplattan ersätts en profil du har satt upp med namn eller bild inte längre av en tom",
+      "Curveon räknar nu hårnålskurvor fullt ut när den mäter hur kurvig en väg är, och att svänga i en korsning i stan räknas inte längre som en kurva. Kurvighet-stapeln blir rättvisare, och rundturer och äventyr väljer vägar med riktiga kurvor",
+      "Motorvärdena från OBD-adaptern försvinner inte längre efter ett långsamt svar, som kunde blanda ihop värdena resten av turen. Väntan på adaptern drar också mindre batteri, och har din adapter en gång anslutit med en skyddad förbindelse nöjer sig Curveon aldrig med en oskyddad",
+      "Trycker du på play, hoppa över eller andra telefonknappar snabbt efter varandra kommer de nu fram till telefonen i den ordning du tryckte",
+      "Två sällsynta fel är borta: titeln på en ny låt kunde bytas ut mot den förra, och en rutt som räknades fram i planeraren medan du kör kunde försvinna",
+      "Skärmen håller sig på medan du kör, navigerar eller laddar, men en telefon eller surfplatta som står parkerad på batteri i tio minuter kan nu somna som vanligt i stället för att tömma batteriet",
+      "Laddar du ner en karta säger Curveon inte längre att det är för lite plats när Android kan frigöra plats genom att rensa bort tillfälliga filer från andra appar"
     ],
     "da": [
       "Når du tager et profilbillede, åbner Curveon nu sit eget kamera på selfie-linsen, og billedet bliver præcis, som du så det i spejlbilledet, uanset hvad kameraappen på telefonen er indstillet til",
@@ -49,7 +67,13 @@
       "Del mere med gruppen: en tur, du har kørt, et GPX-spor eller en hvilken som helst planlagt tur har nu Del med gruppen, ikke kun turen på kortet",
       "Åbn en GPX-fil i webplanlæggeren og send den til Curveon som et spor, der køres præcis som det er, som en tur du kan ændre, eller begge dele. Og et GPX-spor i appen kan lægges i Planlagte, så det også vises i webplanlæggeren",
       "Fjerner en ven dig, forsvinder han nu også fra din liste, og bliver du fjernet fra en turgruppe, forsvinder gruppen af sig selv, med en kort besked om, hvad der skete",
-      "Når du forbinder telefonen og tabletten, bliver en profil, du har sat op med navn eller billede, ikke længere erstattet af en tom"
+      "Når du forbinder telefonen og tabletten, bliver en profil, du har sat op med navn eller billede, ikke længere erstattet af en tom",
+      "Curveon tæller nu hårnålesving helt med, når den måler, hvor snoet en vej er, og at dreje i et kryds i byen tæller ikke længere som et sving. Sving-bjælken bliver mere retfærdig, og rundture og eventyr vælger veje med rigtige sving",
+      "Motorværdierne fra OBD-adapteren forsvinder ikke længere efter ét langsomt svar, som kunne blande værdierne sammen resten af turen. Ventetiden på adapteren bruger også mindre batteri, og har din adapter først forbundet med en beskyttet forbindelse, nøjes Curveon aldrig med en ubeskyttet",
+      "Trykker du på afspil, spring over eller andre telefonknapper hurtigt efter hinanden, når de nu frem til telefonen i den rækkefølge, du trykkede",
+      "To sjældne fejl er væk: titlen på en ny sang kunne blive skiftet ud med den forrige, og en rute, der blev regnet ud i planlæggeren, mens du kører, kunne forsvinde",
+      "Skærmen bliver ved med at være tændt, mens du kører, navigerer eller lader, men en telefon eller tablet, der står parkeret på batteri i ti minutter, kan nu gå i dvale som normalt i stedet for at tømme batteriet",
+      "Henter du et kort, siger Curveon ikke længere, at der ikke er plads, når Android kan skaffe plads ved at rydde midlertidige filer fra andre apps"
     ],
     "fi": [
       "Kun otat profiilikuvan, Curveon avaa nyt oman kameransa selfie-linssillä, ja kuva tulee täsmälleen sellaisena kuin näit sen peilikuvassa, vaikka puhelimen kamerasovelluksen asetukset olisivat mitkä",
@@ -59,7 +83,13 @@
       "Jaa ryhmälle enemmän: ajetulla reitillä, GPX-jäljellä ja millä tahansa suunnitellulla reitillä on nyt Jaa ryhmälle, ei vain kartalla olevalla reitillä",
       "Avaa GPX-tiedosto verkkosuunnittelijassa ja lähetä se Curveoniin jälkenä, joka ajetaan juuri sellaisena kuin se on, reittinä jota voit muuttaa, tai molempina. Ja sovelluksen GPX-jäljen voi lisätä suunniteltuihin, jolloin se näkyy myös verkkosuunnittelijassa",
       "Jos kaveri poistaa sinut, hän katoaa nyt myös sinun luettelostasi, ja jos sinut poistetaan ajoryhmästä, ryhmä poistuu luettelostasi itsestään lyhyen ilmoituksen kera",
-      "Kun yhdistät puhelimen ja tabletin, nimellä tai kuvalla täytetty profiili ei enää korvaudu tyhjällä"
+      "Kun yhdistät puhelimen ja tabletin, nimellä tai kuvalla täytetty profiili ei enää korvaudu tyhjällä",
+      "Curveon laskee nyt hiusneulamutkat täysimääräisesti, kun se mittaa tien mutkaisuutta, eikä kääntyminen kaupungin risteyksessä enää lasketa mutkaksi. Mutkaisuus-palkki on reilumpi, ja kierros- ja seikkailureitit hakeutuvat teille, joilla on oikeita mutkia",
+      "OBD-sovittimen moottorilukemat eivät enää katoa yhden hitaan vastauksen jälkeen, joka saattoi sekoittaa lukemat koko loppumatkaksi. Sovittimen odottaminen kuluttaa myös vähemmän akkua, ja kun sovittimesi on kerran yhdistänyt suojatulla yhteydellä, Curveon ei koskaan tyydy suojaamattomaan",
+      "Kun painat toista, seuraava tai muita puhelimen painikkeita nopeasti peräkkäin, ne menevät nyt puhelimelle siinä järjestyksessä, jossa painoit niitä",
+      "Kaksi harvinaista virhettä on poissa: uuden kappaleen nimi saattoi vaihtua edelliseen, ja suunnittelijassa ajon aikana laskettava reitti saattoi kadota",
+      "Näyttö pysyy päällä, kun ajat, navigoit tai lataat, mutta akulla kymmenen minuuttia pysäköitynä seissyt puhelin tai tabletti voi nyt mennä lepoon tavalliseen tapaan sen sijaan, että akku tyhjenisi",
+      "Kartan lataus ei enää väitä, ettei tilaa ole, kun Android voi tehdä tilaa poistamalla muiden sovellusten väliaikaisia tiedostoja"
     ],
     "is": [
       "Þegar þú tekur prófílmynd opnast nú eigin myndavél Curveon á selfie-linsunni og myndin verður nákvæmlega eins og þú sást hana í speglinum, sama hvernig myndavélaappið í símanum er stillt",
@@ -69,7 +99,13 @@
       "Deildu meiru með hópnum: ferð sem þú hefur ekið, GPX-slóð eða hvaða skipulögð ferð sem er hefur nú Deila með hópnum, ekki bara ferðin á kortinu",
       "Opnaðu GPX-skrá í vefskipuleggjandanum og sendu hana í Curveon sem slóð sem er ekin nákvæmlega eins og hún er, sem ferð sem þú getur breytt, eða hvort tveggja. Og GPX-slóð í appinu má setja í Skipulagt, svo hún sjáist líka í vefskipuleggjandanum",
       "Ef vinur fjarlægir þig hverfur hann nú líka af listanum þínum, og ef þú ert fjarlægð(ur) úr ferðahóp hverfur hópurinn sjálfkrafa með stuttri tilkynningu um hvað gerðist",
-      "Þegar þú tengir símann og spjaldtölvuna er prófíll með nafni eða mynd ekki lengur settur út fyrir tóman"
+      "Þegar þú tengir símann og spjaldtölvuna er prófíll með nafni eða mynd ekki lengur settur út fyrir tóman",
+      "Curveon telur nú hárnálabeygjur að fullu þegar hann mælir hversu hlykkjóttur vegur er, og það að beygja á gatnamótum í bænum telst ekki lengur sem beygja. Beygjur-stikan verður sanngjarnari og hringferðir og ævintýri velja vegi með alvöru beygjum",
+      "Vélargildin frá OBD-millistykkinu hverfa ekki lengur eftir eitt hægt svar, sem gat ruglað gildunum það sem eftir var ferðar. Biðin eftir millistykkinu notar líka minna rafhlöðu, og hafi millistykkið þitt einu sinni tengst með varinni tengingu sættir Curveon sig aldrei við óvarða",
+      "Ýtir þú hratt á spila, sleppa eða aðra símahnappa hvern á eftir öðrum berast þeir nú símanum í þeirri röð sem þú ýttir",
+      "Tvær sjaldgæfar villur eru horfnar: heiti nýs lags gat skipst út fyrir það fyrra, og leið sem var reiknuð í skipulaginu meðan þú ekur gat horfið",
+      "Skjárinn helst kveiktur meðan þú ekur, leiðsögn er í gangi eða tækið er í hleðslu, en sími eða spjaldtölva sem stendur kyrr á rafhlöðu í tíu mínútur getur nú farið í dvala eins og venjulega í stað þess að tæma rafhlöðuna",
+      "Þegar þú sækir kort segir Curveon ekki lengur að plássið sé of lítið þegar Android getur búið til pláss með því að hreinsa tímabundnar skrár annarra forrita"
     ],
     "de": [
       "Für das Profilbild öffnet Curveon jetzt seine eigene Kamera mit der Selfie-Linse, und das Bild wird genau so, wie du es im Spiegelbild gesehen hast, egal wie die Kamera-App deines Telefons eingestellt ist",
@@ -79,7 +115,13 @@
       "Teile mehr mit deiner Gruppe: Eine gefahrene Tour, ein GPX-Track oder jede geplante Tour hat jetzt Mit der Gruppe teilen, nicht nur die Tour auf der Karte",
       "Öffne im Web-Planer eine GPX-Datei und schick sie an Curveon als Track, der genau so gefahren wird, als Tour, die du ändern kannst, oder beides. Und ein GPX-Track in der App kann zu Geplant, damit er auch im Web-Planer erscheint",
       "Wenn dich ein Freund entfernt, verschwindet er jetzt auch aus deiner Liste, und wenn du aus einer Fahrgruppe entfernt wirst, verschwindet die Gruppe von selbst, mit einem kurzen Hinweis, was passiert ist",
-      "Beim Koppeln von Handy und Tablet wird ein eingerichtetes Profil mit Namen oder Bild nicht mehr durch ein leeres ersetzt"
+      "Beim Koppeln von Handy und Tablet wird ein eingerichtetes Profil mit Namen oder Bild nicht mehr durch ein leeres ersetzt",
+      "Curveon zählt Haarnadelkurven jetzt voll mit, wenn es misst, wie kurvig eine Straße ist, und Abbiegen an einer Kreuzung in der Stadt zählt nicht mehr als Kurve. Der Kurvigkeit-Balken wird gerechter, und Rundtouren und Abenteuer wählen Straßen mit echten Kurven",
+      "Die Motorwerte vom OBD-Adapter verschwinden nicht mehr nach einer langsamen Antwort, die die Werte für den Rest der Fahrt durcheinanderbringen konnte. Das Warten auf den Adapter braucht außerdem weniger Akku, und hat sich dein Adapter einmal über eine geschützte Verbindung verbunden, gibt sich Curveon nie mit einer ungeschützten zufrieden",
+      "Drückst du Wiedergabe, Überspringen oder andere Telefontasten schnell hintereinander, kommen sie jetzt in der Reihenfolge am Telefon an, in der du sie gedrückt hast",
+      "Zwei seltene Fehler sind weg: Der Titel eines neuen Songs konnte durch den vorherigen ersetzt werden, und eine Route, die während der Fahrt im Planer berechnet wurde, konnte verloren gehen",
+      "Der Bildschirm bleibt an, solange du fährst, navigierst oder lädst, aber ein Handy oder Tablet, das zehn Minuten im Akkubetrieb geparkt steht, darf jetzt wie gewohnt in den Ruhezustand gehen, statt den Akku leer zu saugen",
+      "Beim Herunterladen einer Karte sagt Curveon nicht mehr, dass kein Platz da ist, wenn Android Platz schaffen kann, indem es temporäre Dateien anderer Apps löscht"
     ],
     "es": [
       "Al hacer la foto de perfil, Curveon abre ahora su propia cámara con el objetivo de selfie, y la foto sale exactamente como la viste en la vista de espejo, sea cual sea el ajuste de la app de cámara del teléfono",
@@ -89,7 +131,13 @@
       "Comparte más con tu grupo: una ruta que ya hiciste, un track GPX o cualquier ruta planificada tiene ahora Compartir con el grupo, no solo la ruta del mapa",
       "Abre un archivo GPX en el planificador web y envíalo a Curveon como un track que se recorre tal cual, como una ruta que puedes cambiar, o las dos cosas. Y un track GPX de la app puede ir a Planificadas, para que también salga en el planificador web",
       "Si un amigo te quita, ahora también desaparece de tu lista, y si te sacan de un grupo de ruta, el grupo se va solo de tu lista con un aviso breve de lo ocurrido",
-      "Al enlazar el móvil y la tablet, un perfil que ya has configurado con nombre o foto ya no se sustituye por uno vacío"
+      "Al enlazar el móvil y la tablet, un perfil que ya has configurado con nombre o foto ya no se sustituye por uno vacío",
+      "Curveon ahora cuenta las curvas de horquilla completas al medir lo sinuosa que es una carretera, y girar en un cruce en la ciudad ya no cuenta como curva. La barra de Curvas es más justa, y las rutas circulares y las aventuras buscan carreteras con curvas de verdad",
+      "Los datos del motor del adaptador OBD ya no desaparecen tras una respuesta lenta, que podía mezclar los valores el resto del viaje. Esperar al adaptador también gasta menos batería, y una vez que tu adaptador se ha conectado con un enlace protegido, Curveon nunca se conforma con uno sin proteger",
+      "Si pulsas reproducir, saltar u otros botones del teléfono rápidamente uno tras otro, ahora llegan al teléfono en el orden en que los pulsaste",
+      "Dos fallos poco frecuentes han desaparecido: el título de una canción nueva podía cambiarse por el de la anterior, y una ruta que se calculaba en el planificador mientras conduces podía perderse",
+      "La pantalla sigue encendida mientras conduces, navegas o cargas, pero un teléfono o tableta aparcado con batería durante diez minutos ahora puede apagarse como siempre en lugar de agotar la batería",
+      "Al descargar un mapa, Curveon ya no dice que no hay espacio cuando Android puede liberarlo borrando archivos temporales de otras apps"
     ],
     "fr": [
       "Pour la photo de profil, Curveon ouvre maintenant sa propre caméra sur l'objectif selfie, et la photo est exactement celle que tu as vue dans le miroir, quel que soit le réglage de l'appli photo du téléphone",
@@ -99,7 +147,13 @@
       "Partage davantage avec ton groupe : une sortie déjà faite, une trace GPX ou n’importe quel trajet prévu a maintenant Partager avec le groupe, pas seulement le trajet sur la carte",
       "Ouvre un fichier GPX dans le planificateur web et envoie-le à Curveon comme une trace suivie telle quelle, comme un trajet que tu peux modifier, ou les deux. Et une trace GPX de l’app peut aller dans Prévus, pour apparaître aussi dans le planificateur web",
       "Si un ami te retire, il disparaît maintenant aussi de ta liste, et si tu es retiré d'un groupe de balade, le groupe quitte ta liste tout seul, avec un court message pour dire ce qui s'est passé",
-      "Quand tu associes le téléphone et la tablette, un profil déjà rempli avec un nom ou une photo n'est plus remplacé par un profil vide"
+      "Quand tu associes le téléphone et la tablette, un profil déjà rempli avec un nom ou une photo n'est plus remplacé par un profil vide",
+      "Curveon compte désormais les virages en épingle en entier quand il mesure à quel point une route est sinueuse, et tourner à un carrefour en ville ne compte plus comme un virage. La barre Virages est plus juste, et les boucles et les aventures choisissent des routes avec de vrais virages",
+      "Les valeurs moteur de l'adaptateur OBD ne disparaissent plus après une réponse lente, qui pouvait mélanger les valeurs pour le reste du trajet. Attendre l'adaptateur consomme aussi moins de batterie, et une fois que ton adaptateur s'est connecté par une liaison protégée, Curveon ne se contente jamais d'une liaison non protégée",
+      "Si tu appuies vite sur lecture, suivant ou d'autres boutons du téléphone l'un après l'autre, ils arrivent maintenant au téléphone dans l'ordre où tu les as pressés",
+      "Deux bugs rares ont disparu : le titre d'une nouvelle chanson pouvait être remplacé par le précédent, et un itinéraire calculé dans le planificateur pendant que tu roules pouvait se perdre",
+      "L'écran reste allumé quand tu roules, navigues ou charges, mais un téléphone ou une tablette garé sur batterie pendant dix minutes peut maintenant se mettre en veille comme d'habitude au lieu de vider sa batterie",
+      "En téléchargeant une carte, Curveon ne dit plus qu'il n'y a pas de place quand Android peut en libérer en effaçant les fichiers temporaires d'autres applis"
     ],
     "nl": [
       "Voor je profielfoto opent Curveon nu zijn eigen camera met de selfielens, en de foto wordt precies zoals je hem in de spiegelweergave zag, wat de camera-app van je telefoon ook heeft ingesteld",
@@ -109,7 +163,13 @@
       "Deel meer met je groep: een gereden rit, een GPX-track of elke geplande rit heeft nu Delen met de groep, niet alleen de rit op de kaart",
       "Open een GPX-bestand in de webplanner en stuur het naar Curveon als een track die precies zo gereden wordt, als een rit die je kunt aanpassen, of allebei. En een GPX-track in de app kan naar Gepland, zodat hij ook in de webplanner staat",
       "Als een vriend je verwijdert, verdwijnt hij nu ook uit jouw lijst, en word je uit een rittengroep gezet, dan verdwijnt de groep vanzelf, met een kort bericht over wat er gebeurde",
-      "Als je telefoon en tablet koppelt, wordt een profiel met naam of foto niet meer vervangen door een leeg profiel"
+      "Als je telefoon en tablet koppelt, wordt een profiel met naam of foto niet meer vervangen door een leeg profiel",
+      "Curveon telt haarspeldbochten nu volledig mee als het meet hoe bochtig een weg is, en afslaan op een kruispunt in de stad telt niet meer als bocht. De Bochtigheid-balk is eerlijker, en rondritten en avonturen kiezen wegen met echte bochten",
+      "De motorwaarden van de OBD-adapter verdwijnen niet meer na één traag antwoord, dat de waarden de rest van de rit door elkaar kon halen. Wachten op de adapter kost ook minder batterij, en heeft je adapter eenmaal verbinding gemaakt via een beveiligde verbinding, dan neemt Curveon nooit genoegen met een onbeveiligde",
+      "Druk je snel achter elkaar op afspelen, overslaan of andere telefoonknoppen, dan komen ze nu aan op je telefoon in de volgorde waarin je drukte",
+      "Twee zeldzame fouten zijn weg: de titel van een nieuw nummer kon worden vervangen door de vorige, en een route die tijdens het rijden in de planner werd berekend kon verloren gaan",
+      "Het scherm blijft aan terwijl je rijdt, navigeert of oplaadt, maar een telefoon of tablet die tien minuten op de batterij geparkeerd staat, mag nu gewoon in slaap vallen in plaats van de batterij leeg te trekken",
+      "Bij het downloaden van een kaart zegt Curveon niet meer dat er geen ruimte is als Android ruimte kan maken door tijdelijke bestanden van andere apps op te ruimen"
     ],
     "pl": [
       "Przy zdjęciu profilowym Curveon otwiera teraz własny aparat z obiektywem do selfie, a zdjęcie wychodzi dokładnie takie, jakie widziałeś w lustrzanym podglądzie, niezależnie od ustawień aplikacji aparatu w telefonie",
@@ -119,7 +179,13 @@
       "Udostępniaj grupie więcej: przejechana trasa, ślad GPX czy dowolna zaplanowana trasa mają teraz Udostępnij grupie, nie tylko trasa na mapie",
       "Otwórz plik GPX w planerze internetowym i wyślij go do Curveon jako ślad jechany dokładnie tak, jak jest, jako trasę, którą możesz zmienić, albo jedno i drugie. A ślad GPX w aplikacji można dodać do zaplanowanych, żeby pokazał się też w planerze internetowym",
       "Gdy znajomy Cię usunie, znika teraz także z Twojej listy, a gdy usuną Cię z grupy przejazdu, grupa sama znika z listy, z krótką informacją, co się stało",
-      "Po połączeniu telefonu i tabletu skonfigurowany profil z nazwą lub zdjęciem nie jest już zastępowany pustym"
+      "Po połączeniu telefonu i tabletu skonfigurowany profil z nazwą lub zdjęciem nie jest już zastępowany pustym",
+      "Curveon liczy teraz agrafki w całości, gdy mierzy, jak kręta jest droga, a skręt na skrzyżowaniu w mieście nie liczy się już jako zakręt. Pasek Krętość jest uczciwszy, a pętle i przygody wybierają drogi z prawdziwymi zakrętami",
+      "Dane silnika z adaptera OBD nie znikają już po jednej powolnej odpowiedzi, która mogła pomieszać wartości do końca jazdy. Czekanie na adapter zużywa też mniej baterii, a gdy twój adapter raz połączy się chronionym łączem, Curveon nigdy nie zadowoli się niechronionym",
+      "Gdy szybko naciskasz po kolei odtwarzanie, pomijanie lub inne przyciski telefonu, docierają one teraz do telefonu w kolejności, w jakiej je naciskałeś",
+      "Zniknęły dwa rzadkie błędy: tytuł nowej piosenki mógł zostać zastąpiony poprzednim, a trasa liczona w planerze podczas jazdy mogła zginąć",
+      "Ekran pozostaje włączony, gdy jedziesz, nawigujesz lub ładujesz, ale telefon lub tablet zaparkowany na baterii przez dziesięć minut może teraz zasnąć jak zwykle, zamiast rozładowywać baterię",
+      "Przy pobieraniu mapy Curveon nie mówi już, że brakuje miejsca, gdy Android może je zrobić, usuwając pliki tymczasowe innych aplikacji"
     ]
   },
   {

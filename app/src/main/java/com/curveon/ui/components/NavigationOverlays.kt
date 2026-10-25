@@ -636,8 +636,8 @@ fun WrongTurnCard(
     modifier: Modifier = Modifier
 ) {
     var askStops by remember(wrongTurn) { mutableStateOf(false) }
-    var now by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(wrongTurn) { while (true) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(500) } }
+    var now by remember { mutableStateOf(android.os.SystemClock.elapsedRealtime()) }
+    LaunchedEffect(wrongTurn) { while (true) { now = android.os.SystemClock.elapsedRealtime(); kotlinx.coroutines.delay(500) } }
     val secondsLeft = ((wrongTurn.autoAtMillis - now + 999) / 1000).coerceAtLeast(0).toInt()
     Column(
         modifier

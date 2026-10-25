@@ -6,6 +6,14 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — Kodegjennomgang del 2: OBD, skjerm på, telefonknapper, svingete
+
+- [ ] X7 med OBD-adapteren (tenning på): turtall, temperatur og spenning kommer som før etter tilkobling, og blir ikke borte utover turen. `adb -s <X7> logcat -s CurveonObd`: «Connected to …». Står det «Encrypted link refused …, trying without», tar adapteren bare ukryptert tilkobling; si fra hva den heter.
+- [ ] X7 med OBD-adapteren: slå tenningen av og på igjen uten å koble fra: turtallet kommer tilbake av seg selv (før kunne verdiene bli borte til appen ble startet på nytt).
+- [ ] Pixel, uten lader og uten navigering, stillestående: skjermen slukker etter Androids vanlige tid når det er gått 10 minutter siden du sist kjørte. Med lader i, mens du navigerer, eller i fart: skjermen holder seg på. X7 på motorsykkelstrøm: alltid på.
+- [ ] Pixel med Companion-telefon (eller X7 + Pixel): trykk play/pause og så neste raskt etter hverandre: telefonen gjør dem i den rekkefølgen.
+- [ ] Planlegg en Svingete tur over et fjell med hårnålssvinger (f.eks. Trollstigen): Svingete-baren står høyere enn før, og en tur gjennom en by står lavere.
+
 ## 2026-10-25 — GPX fra nettet havner under GPX; varmekart og språkknapp på nett
 
 - [ ] Pixel og X7 (ny bygg med dette): send en GPX fra nettplanleggeren som «Et GPX-spor». Den havner under GPX i appen (ikke Planlagte), og beskjeden sier «1 nytt GPX-spor fra nettet, under GPX». Velg «Begge»: turen ligger under Planlagte og sporet under GPX, med samme navn, uten «(spor)».

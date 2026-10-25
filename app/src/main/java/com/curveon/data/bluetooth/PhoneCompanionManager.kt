@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 enum class CompanionConnectionState {
     NO_PHONE_SELECTED,
@@ -94,12 +95,16 @@ class PhoneCompanionManager(
         if (viaPhone && !hasInternet()) relayTunnel.open(url, listener) else GroupHub.directTransports.open(url, listener)
     }
 
-    private val mirrorOut = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-group-mirror").apply { isDaemon = true } }
+    /** Everything written to the phone goes out from here, one at a time in the order it was given (play then skip, not skip then play). */
+    private val linkOut = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-link-out").apply { isDaemon = true } }
+
+    /** The same for commands to this device's own phone side, when Curveon is its own companion. */
+    private val localOut = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-local-out").apply { isDaemon = true } }
 
     /** The linked companion shows how the active group is doing and a friend code it asked for; in order, and off the group thread. */
     private val companionMirror: (Message) -> Unit = { m ->
         if (m is Message.GroupList || m is Message.GroupConnection || m is Message.FriendInvite || m is Message.GroupError) {
-            mirrorOut.execute { writer?.let { w -> runCatching { w.write(m) } } }
+            linkOut.execute { writer?.let { w -> runCatching { w.write(m) } } }
         }
     }
 
@@ -499,7 +504,7 @@ class PhoneCompanionManager(
     /** [fromPhone]: came over Bluetooth. The groups are Curveon's own, so what a phone says about groups is not heard. */
     private fun handle(msg: Message, fromPhone: Boolean = false) {
         when (msg) {
-            is Message.Hello -> _connectedDeviceName.value = _connectedDeviceName.value.ifEmpty { msg.deviceName }
+            is Message.Hello -> _connectedDeviceName.update { it.ifEmpty { msg.deviceName } }
             is Message.MediaState -> {
                 val target = switchingTo
                 if (target != null && System.currentTimeMillis() < switchingUntil && msg.app != target) return
@@ -546,15 +551,15 @@ class PhoneCompanionManager(
             is Message.NotificationRemoved -> {
                 if (_notifications.value.any { it.id == msg.key && it.isIncomingCall }) Log.i(TAG, "Phone removed call ${msg.key}")
                 hidden.remove(msg.key)
-                _notifications.value = _notifications.value.filterNot { it.id == msg.key }
+                _notifications.update { cur -> cur.filterNot { it.id == msg.key } }
             }
             is Message.VoiceReplyState -> if (msg.key == VOICE_SEARCH_KEY) {
                 val text = phoneErrorText(msg.code, msg.text)
-                _voiceSearch.value?.let { _voiceSearch.value = it.copy(state = msg.state, text = text.ifEmpty { it.text }) }
+                _voiceSearch.update { v -> v?.copy(state = msg.state, text = text.ifEmpty { v.text }) }
             } else {
-                val current = _voiceReply.value
-                if (current?.notificationKey == msg.key) {
-                    _voiceReply.value = current.copy(state = msg.state, text = phoneErrorText(msg.code, msg.text).ifEmpty { current.text })
+                if (_voiceReply.value?.notificationKey == msg.key) {
+                    val text = phoneErrorText(msg.code, msg.text)
+                    _voiceReply.update { v -> if (v?.notificationKey == msg.key) v.copy(state = msg.state, text = text.ifEmpty { v.text }) else v }
                     if (msg.state == Message.VoiceState.SENT) scope.launch { delay(2500); if (_voiceReply.value?.state == Message.VoiceState.SENT) _voiceReply.value = null }
                 }
             }
@@ -562,7 +567,7 @@ class PhoneCompanionManager(
             is Message.RecentCalls -> { _recentCalls.value = msg.calls; _callLogAllowed.value = msg.granted }
             is Message.ContactPhotos -> {
                 val decoded = msg.photos.mapNotNull { p -> p.jpegBase64?.let(::decode)?.let { p.key to it } }
-                if (decoded.isNotEmpty()) _photos.value = _photos.value + decoded
+                if (decoded.isNotEmpty()) _photos.update { it + decoded }
             }
             is Message.PhoneError -> _phoneErrors.tryEmit(phoneErrorText(msg.code, msg.text))
             is Message.RouteFromPhone -> _routesFromPhone.tryEmit(msg)
@@ -581,9 +586,8 @@ class PhoneCompanionManager(
         tickerJob = scope.launch {
             while (isActive) {
                 delay(1000)
-                val t = _currentTrack.value ?: continue
-                if (t.isPlaying && t.currentPositionSeconds < t.durationSeconds) {
-                    _currentTrack.value = t.copy(currentPositionSeconds = t.currentPositionSeconds + 1)
+                _currentTrack.update { t ->
+                    if (t != null && t.isPlaying && t.currentPositionSeconds < t.durationSeconds) t.copy(currentPositionSeconds = t.currentPositionSeconds + 1) else t
                 }
             }
         }
@@ -607,13 +611,18 @@ class PhoneCompanionManager(
     private fun send(message: Message) {
         if (_connectionState.value == CompanionConnectionState.DEMO) return demoCommand(message)
         if (GroupHub.accepts(message)) return GroupHub.handle(message) // friends and groups are here, whatever the phone does
-        if (isThisDevice) { scope.launch(Dispatchers.IO) { PhoneHub.handle(message) }; return }
+        if (isThisDevice) {
+            // The phone book and contact photos take a while to gather, and nothing waits on their order.
+            if (message is Message.RequestPhoneBook || message is Message.RequestContactPhotos) scope.launch(Dispatchers.IO) { PhoneHub.handle(message) }
+            else localOut.execute { runCatching { PhoneHub.handle(message) }.onFailure { Log.w(TAG, "Command failed", it) } }
+            return
+        }
         val w = writer ?: return
-        scope.launch(Dispatchers.IO) { runCatching { w.write(message) } }
+        linkOut.execute { runCatching { w.write(message) } }
     }
 
     fun togglePlayPause() {
-        _currentTrack.value?.let { _currentTrack.value = it.copy(isPlaying = !it.isPlaying) } // feels instant
+        _currentTrack.update { it?.copy(isPlaying = !it.isPlaying) } // feels instant
         send(Message.MediaCommand(Message.MediaAction.PLAY_PAUSE))
     }
 
@@ -737,12 +746,12 @@ class PhoneCompanionManager(
     /** Hides a message on the tablet only (swipe); it stays unread on the phone. */
     fun hideNotification(id: String) {
         _notifications.value.firstOrNull { it.id == id }?.let { hidden[id] = it.message }
-        _notifications.value = _notifications.value.filterNot { it.id == id }
+        _notifications.update { cur -> cur.filterNot { it.id == id } }
     }
 
     /** Clears the message on the phone too (the Dismiss button). */
     fun dismissNotification(id: String) {
-        _notifications.value = _notifications.value.filterNot { it.id == id }
+        _notifications.update { cur -> cur.filterNot { it.id == id } }
         send(Message.DismissNotification(id))
     }
 
@@ -869,25 +878,25 @@ class PhoneCompanionManager(
                 sessionApps = sessionApps.map { it.copy(playing = it.packageName == message.packageName) }
                 publishMediaApps()
                 val app = _mediaApps.value.firstOrNull { it.packageName == message.packageName }?.name.orEmpty()
-                _currentTrack.value = _currentTrack.value?.copy(sourceApp = app, isPlaying = true)
+                _currentTrack.update { it?.copy(sourceApp = app, isPlaying = true) }
             }
             is Message.MediaCommand -> if (message.command != Message.MediaAction.PLAY_PAUSE) {
-                _currentTrack.value = _currentTrack.value?.copy(currentPositionSeconds = 0)
+                _currentTrack.update { it?.copy(currentPositionSeconds = 0) }
             }
             is Message.StartVoiceReply -> if (message.key == VOICE_SEARCH_KEY) scope.launch {
                 delay(1200)
-                _voiceSearch.value = _voiceSearch.value?.copy(state = Message.VoiceState.PARTIAL, text = "Geir")
+                _voiceSearch.update { it?.copy(state = Message.VoiceState.PARTIAL, text = "Geir") }
                 delay(1200)
-                _voiceSearch.value = _voiceSearch.value?.copy(state = Message.VoiceState.RESULT, text = "Geiranger")
+                _voiceSearch.update { it?.copy(state = Message.VoiceState.RESULT, text = "Geiranger") }
             } else scope.launch {
                 delay(1500)
-                _voiceReply.value = _voiceReply.value?.copy(state = Message.VoiceState.PARTIAL, text = "Ja det passer")
+                _voiceReply.update { it?.copy(state = Message.VoiceState.PARTIAL, text = "Ja det passer") }
                 delay(1500)
-                _voiceReply.value = _voiceReply.value?.copy(state = Message.VoiceState.RESULT, text = "Ja det passer fint, sees der")
+                _voiceReply.update { it?.copy(state = Message.VoiceState.RESULT, text = "Ja det passer fint, sees der") }
             }
             is Message.SendReply -> scope.launch {
-                _voiceReply.value = _voiceReply.value?.copy(state = Message.VoiceState.SENT)
-                _notifications.value = _notifications.value.filterNot { it.id == message.key }
+                _voiceReply.update { it?.copy(state = Message.VoiceState.SENT) }
+                _notifications.update { cur -> cur.filterNot { it.id == message.key } }
                 delay(2500)
                 _voiceReply.value = null
             }
@@ -897,7 +906,7 @@ class PhoneCompanionManager(
                     actions = listOf("Hang up"))) + _notifications.value
             }
             is Message.InvokeAction -> if (message.key == "democall") {
-                _notifications.value = _notifications.value.filterNot { it.id == "democall" }
+                _notifications.update { cur -> cur.filterNot { it.id == "democall" } }
             }
             else -> Unit
         }
