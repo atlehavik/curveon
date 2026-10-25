@@ -32,6 +32,7 @@ import com.curveon.data.routing.Navigator
 import com.curveon.data.routing.RecentDestinations
 import com.curveon.data.routing.RouteHazards
 import com.curveon.data.routing.RoutePreview
+import com.curveon.data.routing.stopsReached
 import com.curveon.data.routing.RoutingStatus
 import com.curveon.data.routing.SavedRoutes
 import com.curveon.data.routing.Stop
@@ -1350,11 +1351,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 val route = s.route ?: return@collect run { navCues.reset(); announcedStops.clear() }
                 val p = s.progress ?: return@collect
                 // A stop on the way (not the destination: arriving has its own cue) is reached.
-                // Reached only when the rider is by the stop itself: a route that passes it at a distance has not been there.
-                s.stopsAlong.filter { !it.first.via && it.second - p.distanceAlongRoute < STOP_REACHED_M && !p.offRoute &&
-                    com.curveon.routing.Geo.distance(p.snapped.lat, p.snapped.lon, it.first.point.lat, it.first.point.lon) < STOP_REACHED_NEAR_M }.forEach { (stop, _) ->
-                    if (announcedStops.add(stop)) announceStop(stop.name)
-                }
+                stopsReached(s.stopsAlong, p).forEach { stop -> if (announcedStops.add(stop)) announceStop(stop.name) }
                 val cues = navCues.update(route, p, tripTracker.speedKmh / 3.6, s.wrongTurn != null, s.approach != null, System.currentTimeMillis())
                 if (cues.isEmpty()) return@collect
                 val idx = route.maneuvers.indexOf(p.nextManeuver)
@@ -2577,10 +2574,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         )
         /** How far along the route give way signs stand on the map. */
         private const val MAP_GIVE_WAY_M = 1_000.0
-        /** A stop on the way counts as reached this close to it. */
-        private const val STOP_REACHED_M = 30.0
-        /** The rider is at a stop when this near it (the stop may be off the road the route follows). */
-        private const val STOP_REACHED_NEAR_M = 120.0
         private const val MAP_SPEED_SIGN_M = 1_000.0
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
         /** Search data bigger than this (compressed) isn't offered on its own: it comes with the country's map. */

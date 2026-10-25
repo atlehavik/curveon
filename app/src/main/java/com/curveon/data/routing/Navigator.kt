@@ -58,6 +58,21 @@ fun alongDistances(stops: List<Stop>, route: Route): List<Double> {
     }
 }
 
+/** A stop on the way counts as reached from this far before the point where the route gets to it… */
+const val STOP_REACHED_BEFORE_M = 30.0
+/** …until this far past it (a fix every second at motorway speed can skip over a short window; Navigator drops the stop here). */
+const val STOP_REACHED_AFTER_M = 50.0
+
+/**
+ * The real stops (not via points) the rider has reached: riding on the route, at the place along it where
+ * the route gets to the stop. Nothing is measured from the stop's own spot: a road that merely passes
+ * near it is not the stop (McDonald's on Stord is 60 m from the E39 the route passes first, and reached from
+ * the other side after a turn-round), and a stop in a car park is reached where the route leaves the road for it.
+ */
+fun stopsReached(stopsAlong: List<Pair<Stop, Double>>, p: NavigationProgress): List<Stop> =
+    if (p.offRoute) emptyList()
+    else stopsAlong.filter { (stop, along) -> !stop.via && (along - p.distanceAlongRoute).let { it < STOP_REACHED_BEFORE_M && it > -STOP_REACHED_AFTER_M } }.map { it.first }
+
 /** How forgiving navigation is about leaving the route (Settings → Navigation). */
 data class OffRouteSettings(
     /** Further than this from the line counts as off route. */
@@ -956,7 +971,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
 
         // Drop stops we have ridden past, so a reroute doesn't send us back to them.
-        val passed = current.stopsAlong.filter { it.second < progress.distanceAlongRoute - 50 }
+        val passed = current.stopsAlong.filter { it.second < progress.distanceAlongRoute - STOP_REACHED_AFTER_M }
         if (passed.isNotEmpty()) {
             val g = current.goal as? NavigationGoal.Destination
             // A shared trip is told first, so passing a stop is not mistaken for the rider removing it.
