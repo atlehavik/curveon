@@ -3,32 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a0d12">
 <title>Curveon – personvern</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="site.css">
 <style>
-  :root { --bg:#0d1117; --card:#161b22; --text:#e6edf3; --muted:#9aa7b4; --cyan:#00e5ff; --line:#30363d; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.55; }
-  main { max-width:48rem; margin:0 auto; padding:2.5rem 16px 4rem; }
-  h1 { font-size:2rem; margin:0 0 .5rem; }
-  h2 { font-size:1.2rem; margin:2rem 0 .5rem; color:var(--cyan); }
-  a { color:var(--cyan); }
-  .lang { float:right; font-size:.9rem; }
-  .short { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.1rem; }
-  .tablewrap { overflow-x:auto; }
-  table { border-collapse:collapse; width:100%; min-width:34rem; font-size:.95rem; }
-  th, td { border-bottom:1px solid var(--line); padding:.55rem .6rem; text-align:left; vertical-align:top; }
-  th { color:var(--muted); font-weight:600; }
-  li { margin:.4rem 0; }
-  .muted { color:var(--muted); }
+  .policy { max-width:48rem; margin:0 auto; padding:3.5rem 24px 5rem; }
+  .policy h1 { font-size:clamp(2rem, 5vw, 2.8rem); line-height:1.08; letter-spacing:-.03em; margin:0 0 .8rem; text-align:left; }
+  .policy h2 { font-size:1.25rem; font-stretch:106%; letter-spacing:-.01em; margin:2.6rem 0 .6rem; color:var(--text); }
+  .policy p, .policy li { color:#c9d2db; }
+  .policy code { font-size:.88em; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:.05em .35em; }
+  .short { background:linear-gradient(160deg, rgba(240,123,34,.1), var(--surface) 55%); border:1px solid var(--border2); border-radius:16px; padding:1.1rem 1.3rem; }
+  .tablewrap { overflow-x:auto; border:1px solid var(--border); border-radius:14px; background:var(--surface); }
+  table { border-collapse:collapse; width:100%; min-width:34rem; font-size:.94rem; }
+  th, td { border-bottom:1px solid var(--border); padding:.7rem .8rem; text-align:left; vertical-align:top; }
+  tr:last-child td { border-bottom:0; }
+  th { color:var(--muted); font-weight:600; font-size:.82rem; letter-spacing:.05em; text-transform:uppercase; background:var(--bg2); }
+  li { margin:.45rem 0; }
+  .muted { color:var(--muted) !important; }
   [hidden] { display:none !important; }
+  @media (max-width: 640px) { .policy { padding:2.4rem 16px 4rem; } }
 </style>
 </head>
 <body>
-<main>
-  <div class="lang"><a href="index.html">Curveon</a> · <a href="#" data-set="nb">Norsk</a> · <a href="#" data-set="en">English</a></div>
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="index.html"><img src="icon-192.png" alt="" width="34" height="34">Curveon</a>
+    <div class="spacer"></div>
+    <div class="langs" role="group" aria-label="Språk / Language">
+      <button type="button" data-set="nb" aria-label="Norsk">NO</button><button type="button" data-set="en" aria-label="English">EN</button>
+    </div>
+    <a class="btn primary small" href="index.html#last-ned"><span lang="nb">Last ned</span><span lang="en">Download</span></a>
+  </div>
+</header>
+
+<main class="policy">
 
   <section lang="nb" data-lang="nb">
     <h1>Personvernerklæring for Curveon</h1>
@@ -158,11 +169,38 @@
     <p>If this changes, the new version replaces this page and the date at the top.</p>
   </section>
 </main>
+<footer>
+  <div class="wrap">
+    <div class="foot-brand">
+      <a class="logo" href="index.html"><img src="icon-192.png" alt="" width="30" height="30" loading="lazy">Curveon</a>
+      <p><span lang="nb">Motorsykkelnavigasjon som elsker svingete veier.</span><span lang="en">Motorcycle navigation that loves curvy roads.</span></p>
+    </div>
+    <nav class="foot-links">
+      <div>
+        <h4>Curveon</h4>
+        <a href="https://github.com/atlehavik/curveon/releases/latest"><span lang="nb">Last ned</span><span lang="en">Download</span></a>
+        <a href="/plan/"><span lang="nb">Planlegg på nett</span><span lang="en">Plan on the web</span></a>
+      </div>
+      <div>
+        <h4><span lang="nb">Om</span><span lang="en">About</span></h4>
+        <a href="index.html"><span lang="nb">Forsiden</span><span lang="en">Home</span></a>
+        <a href="https://github.com/atlehavik/curveon"><span lang="nb">Kildekode</span><span lang="en">Source code</span></a>
+      </div>
+    </nav>
+  </div>
+</footer>
+
 <script>
-  function show(l) { document.querySelectorAll("[data-lang]").forEach(function (s) { s.hidden = s.dataset.lang !== l; }); document.documentElement.lang = l; }
-  document.querySelectorAll("[data-set]").forEach(function (a) { a.addEventListener("click", function (e) { e.preventDefault(); show(a.dataset.set); }); });
+  // Both languages are in the page; the choice is shared with the front page.
+  function show(l) {
+    document.querySelectorAll("[data-lang]").forEach(function (s) { s.hidden = s.dataset.lang !== l; });
+    document.documentElement.lang = l;
+    try { localStorage.setItem("lang", l); } catch (e) {}
+  }
+  document.querySelectorAll("[data-set]").forEach(function (b) { b.addEventListener("click", function (e) { e.preventDefault(); show(b.dataset.set); }); });
+  var saved = null; try { saved = localStorage.getItem("lang"); } catch (e) {}
   var n = (navigator.language || "nb").toLowerCase();
-  show(n.indexOf("nb") === 0 || n.indexOf("no") === 0 || n.indexOf("nn") === 0 ? "nb" : "en");
+  show(saved || (n.indexOf("nb") === 0 || n.indexOf("no") === 0 || n.indexOf("nn") === 0 ? "nb" : "en"));
 </script>
 </body>
 </html>
