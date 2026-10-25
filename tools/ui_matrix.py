@@ -253,11 +253,60 @@ def scenario_webplanscan(d):
     return [["~^(Cancel|Avbryt)$"], ["~(code on the planner page|koden på planleggersiden)"]]
 
 
+KM = ["~^[\\d\\s,.]+km$"]  # a ride's or trip's distance at the end of its row ("133 km"; not "158 rides · 8 km")
+
+
+def reveal(d, labels):
+    """Scrolls the list up (as the rider would) until [labels] is wholly above the bottom bar's region of the screen."""
+    for _ in range(4):
+        n = d.find(labels)
+        w, h = d.screen()
+        if n is not None and n["bounds"][3] < h * 4 // 5:
+            return
+        d.sh("input", "swipe", str(w * 2 // 3), str(h * 3 // 4), str(w * 2 // 3), str(h * 2 // 5), "500")
+        time.sleep(1.5)
+
+
+def scenario_ridebuttons(d):
+    """GPX & rides -> Rides, one ride opened (needs a ride in the log): Save, Send to tablet, Share with the group and Delete in one row."""
+    go_home(d)
+    d.tap(["GPX & rides", "GPX og turer"])
+    d.tap(["Rides", "Turer"])
+    reveal(d, KM)
+    d.tap(KM)
+    reveal(d, ["Delete", "Slett"])
+    return [["Save…", "Lagre…"], ["Send to tablet", "Send til nettbrettet"], ["Share with the group", "Del med gruppa"],
+            ["Delete", "Slett"]]
+
+
+def scenario_gpxmenu(d):
+    """GPX & rides -> GPX, a track's menu (needs a track under GPX): Share with the group and Add to Planned."""
+    go_home(d)
+    d.tap(["GPX & rides", "GPX og turer"])
+    d.tap(["GPX"])
+    reveal(d, ["More", "Mer"])
+    d.tap(["More", "Mer"], wait=1.5)
+    return [["Share with the group", "Del med gruppa"], ["Add to Planned", "Legg i Planlagte"], ["Delete", "Slett"]]
+
+
+def scenario_plannedmenu(d):
+    """GPX & rides -> Planned, a trip opened and its menu (needs a planned trip): Send to tablet and Share with the group."""
+    go_home(d)
+    d.tap(["GPX & rides", "GPX og turer"])
+    d.tap(["Planned", "Planlagte"])
+    reveal(d, KM)
+    d.tap(KM)
+    reveal(d, ["More", "Mer"])
+    d.tap(["More", "Mer"], wait=1.5)
+    return [["Send to tablet", "Send til nettbrettet"], ["Share with the group", "Del med gruppa"]]
+
+
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
              "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
              "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge,
              "qrscan": scenario_qrscan, "friendrequest": scenario_friendrequest,
-             "webplan": scenario_webplan, "webplanscan": scenario_webplanscan}
+             "webplan": scenario_webplan, "webplanscan": scenario_webplanscan,
+             "ridebuttons": scenario_ridebuttons, "gpxmenu": scenario_gpxmenu, "plannedmenu": scenario_plannedmenu}
 
 
 def apply_variant(d, v, rotation):
