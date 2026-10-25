@@ -48,13 +48,14 @@ internal class OwnRoad(private val route: (List<LatLon>, Boolean) -> Route) {
     private fun head(r: Route, last: Int): Route {
         val points = r.points.subList(0, last + 1)
         val end = points.last()
+        val maneuvers = r.maneuvers.filter { it.pointIndex < last && it.type != ManeuverType.ARRIVE } + Maneuver(ManeuverType.ARRIVE, last, end.distanceFromStart)
         return Route(
             points = points,
-            maneuvers = r.maneuvers.filter { it.pointIndex < last && it.type != ManeuverType.ARRIVE } + Maneuver(ManeuverType.ARRIVE, last, end.distanceFromStart),
+            maneuvers = maneuvers,
             distanceMeters = end.distanceFromStart,
             durationSeconds = end.secondsFromStart,
             ascentMeters = 0.0,
-            curviness = Curviness.score(points.map { LatLon(it.lat, it.lon) }),
+            curviness = Curviness.score(points, maneuvers),
             unpavedMeters = points.zipWithNext().filter { it.second.unpaved }.sumOf { it.second.distanceFromStart - it.first.distanceFromStart },
             ferryCount = 0
         )

@@ -444,9 +444,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         previewHistory.clear()
         // The loop's road style stays picked.
         val style = RoadStyle.entries.indexOf(g.options.roadStyle)
-        preview(NavigationGoal.Destination(home.name, home.point, g.options, vias, g.start, loop = g), keepSelection = style, keepHistory = true)
-        // The loop stays on the map until its own style's route through the points is in.
-        updatePreview { p ->
+        val trip = NavigationGoal.Destination(home.name, home.point, g.options, vias, g.start, loop = g)
+        preview(trip, keepSelection = style, keepHistory = true)
+        // The loop stays on the map until its own style's route through the points is in (if the trip did open: it holds every style).
+        updatePreview({ it.goal == trip }) { p ->
             if (p.candidates[style].route != null || p.candidates[style].error != null) p
             else p.copy(candidates = p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) })
         }
@@ -535,7 +536,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             preview(trip, keepSelection = style, keepHistory = true)
             pruneVias(trip, style)
             // The track's line stays on the map until the route through the points is in.
-            if (shown != null) updatePreview { now ->
+            if (shown != null) updatePreview({ it.goal == trip }) { now ->
                 if (now.candidates[style].route != null || now.candidates[style].error != null) now
                 else now.copy(candidates = now.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, shown) })
             }
@@ -730,12 +731,13 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         // The adventure stays on the map until its own style's route through the points is in.
         val found = synchronized(this) { suggestions.toList() }
         val improving = adventureRunning
-        updatePreview { p ->
+        // Only if the trip did open (it holds every style): it may not, e.g. without routing data there.
+        updatePreview({ it.goal == trip }) { p ->
             val candidates = if (p.candidates[style].route == null && p.candidates[style].error == null)
                 p.candidates.toMutableList().also { it[style] = RouteCandidate(g.options.roadStyle, route) } else p.candidates
             p.copy(candidates = candidates, suggestions = found, suggestion = index, improving = improving)
         }
-        return trip
+        return trip.takeIf { _state.value.preview?.goal == trip }
     }
 
     /**

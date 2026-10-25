@@ -72,7 +72,7 @@ object Routes {
             distanceMeters = points.last().distanceFromStart,
             durationSeconds = points.last().secondsFromStart,
             ascentMeters = ascent,
-            curviness = Curviness.score(points.map { LatLon(it.lat, it.lon) }),
+            curviness = Curviness.score(points, maneuvers),
             unpavedMeters = unpaved,
             ferryCount = ferries
         )
@@ -118,7 +118,7 @@ object Routes {
                     .sortedBy { it.pointIndex })
             }
         }
-        return out.copy(curviness = Curviness.score(out.points.map { LatLon(it.lat, it.lon) }))
+        return out.copy(curviness = Curviness.score(out.points, out.maneuvers))
     }
 
     /** The turn from the end of [a] into the start of [b], or null when riding on (roughly) straight. */

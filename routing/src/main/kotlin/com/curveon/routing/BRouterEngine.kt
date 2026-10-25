@@ -231,7 +231,7 @@ class BRouterEngine(
             distanceMeters = dist,
             durationSeconds = secs,
             ascentMeters = ascent,
-            curviness = Curviness.score(points.map { LatLon(it.lat, it.lon) }),
+            curviness = Curviness.score(points, maneuvers),
             unpavedMeters = unpaved,
             ferryCount = ferries
         )

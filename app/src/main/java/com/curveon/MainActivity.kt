@@ -171,7 +171,6 @@ class MainActivity : ComponentActivity() {
         /** The screen, so "Close Curveon" in the notification can close it. */
         @Volatile var current: java.lang.ref.WeakReference<MainActivity>? = null
 
-        private const val MOVING_KMH = 10f
         private const val STILL_MS = 10 * 60_000L
     }
 
@@ -180,16 +179,18 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Whether the screen stays on: while navigating, on power (the bike's, or a charger), and until [STILL_MS] after the
-     * rider last moved. Only standing still on battery for a while lets Android turn it off.
+     * rider last moved on (see [DashboardViewModel.lastMovedAt]). Only staying put on battery for a while lets Android turn it off.
      */
     @Composable
     private fun keepScreenOn(): Boolean {
         val navigating by remember { dashboardViewModel.navigation.map { it.isNavigating }.distinctUntilChanged() }.collectAsState(false)
-        val moving by remember { dashboardViewModel.telemetry.map { it.speedKmh >= MOVING_KMH }.distinctUntilChanged() }.collectAsState(false)
+        // From how far the rider has gone, not how fast: a queue or a slow track is riding too.
+        val movedAt by dashboardViewModel.lastMovedAt.collectAsState()
         var stillLong by remember { mutableStateOf(false) }
-        LaunchedEffect(moving) {
+        LaunchedEffect(movedAt) {
             stillLong = false
-            if (!moving) { delay(STILL_MS); stillLong = true }
+            delay(movedAt + STILL_MS - android.os.SystemClock.elapsedRealtime())
+            stillLong = true
         }
         val pluggedIn = remember { isPluggedIn() }
         val charging by produceState(pluggedIn) {

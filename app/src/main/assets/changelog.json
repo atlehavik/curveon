@@ -1,5 +1,74 @@
 [
   {
+    "version": "1.2.7",
+    "en": [
+      "Round trips and adventures find the twisty roads even better: bends on small roads and gravel roads that are only roughly drawn on the map now count in full, and turning at junctions in town counts even less",
+      "The screen no longer goes to sleep while you ride slowly, in a queue or on a rough track: it now goes by how far you have moved, not how fast",
+      "The rev counter goes blank when you switch the engine off instead of showing the last revs, and engine data comes through more reliably with cheap OBD adapters",
+      "Plus a few minor bug fixes"
+    ],
+    "nb": [
+      "Rundturer og eventyr finner de svingete veiene enda bedre: svinger på småveier og grusveier som bare er grovt tegnet på kartet, teller nå fullt, og svinger i kryss i byen teller enda mindre",
+      "Skjermen slukker ikke lenger mens du kjører sakte, i kø eller på en humpete sti: den ser nå på hvor langt du har flyttet deg, ikke hvor fort",
+      "Turtelleren blir tom når du slår av motoren i stedet for å vise siste turtall, og motordataene kommer mer pålitelig fram med billige OBD-adaptere",
+      "Pluss noen mindre feilrettinger"
+    ],
+    "sv": [
+      "Rundturer och äventyr hittar de kurviga vägarna ännu bättre: kurvor på småvägar och grusvägar som bara är grovt ritade på kartan räknas nu fullt ut, och svängar i korsningar i stan räknas ännu mindre",
+      "Skärmen slocknar inte längre när du kör långsamt, i kö eller på en guppig stig: den utgår nu från hur långt du har förflyttat dig, inte hur fort",
+      "Varvräknaren blir tom när du stänger av motorn i stället för att visa det sista varvtalet, och motordata kommer fram säkrare med billiga OBD-adaptrar",
+      "Plus några mindre buggfixar"
+    ],
+    "da": [
+      "Rundture og eventyr finder de snoede veje endnu bedre: sving på små veje og grusveje, der kun er groft tegnet på kortet, tæller nu fuldt ud, og drej i kryds i byen tæller endnu mindre",
+      "Skærmen slukker ikke længere, mens du kører langsomt, i kø eller på et ujævnt spor: den ser nu på, hvor langt du har flyttet dig, ikke hvor hurtigt",
+      "Omdrejningstælleren bliver tom, når du slukker motoren, i stedet for at vise de sidste omdrejninger, og motordata kommer mere pålideligt igennem med billige OBD-adaptere",
+      "Plus et par mindre fejlrettelser"
+    ],
+    "fi": [
+      "Kierrokset ja seikkailut löytävät mutkaiset tiet vielä paremmin: kartalle vain karkeasti piirrettyjen pikkuteiden ja soratien mutkat lasketaan nyt täysin, ja kaupungin risteyksissä kääntyminen lasketaan vielä vähemmän",
+      "Näyttö ei enää sammu, kun ajat hitaasti, jonossa tai kuoppaisella polulla: se katsoo nyt, kuinka pitkälle olet liikkunut, ei kuinka lujaa",
+      "Kierroslukumittari tyhjenee, kun sammutat moottorin, eikä enää näytä viimeisiä kierroksia, ja moottorin tiedot tulevat halvoilta OBD-sovittimilta luotettavammin",
+      "Lisäksi muutama pieni korjaus"
+    ],
+    "is": [
+      "Hringferðir og ævintýri finna hlykkjóttu vegina enn betur: beygjur á litlum vegum og malarvegum sem eru aðeins gróflega teiknaðar á kortinu telja nú að fullu, og beygjur á gatnamótum í bænum telja enn minna",
+      "Skjárinn slokknar ekki lengur á meðan þú ekur hægt, í biðröð eða á grófum slóða: hann miðar nú við hve langt þú hefur farið, ekki hve hratt",
+      "Snúningsmælirinn tæmist þegar þú drepur á vélinni í stað þess að sýna síðasta snúningshraða, og vélargögnin berast áreiðanlegar með ódýrum OBD-millistykkjum",
+      "Auk nokkurra smærri lagfæringa"
+    ],
+    "de": [
+      "Rundtouren und Abenteuer finden die kurvigen Straßen noch besser: Kurven auf kleinen Straßen und Schotterwegen, die auf der Karte nur grob gezeichnet sind, zählen jetzt voll, und Abbiegen an Kreuzungen in der Stadt zählt noch weniger",
+      "Der Bildschirm geht nicht mehr aus, wenn du langsam fährst, im Stau oder auf einem holprigen Weg: Er richtet sich jetzt danach, wie weit du gekommen bist, nicht wie schnell",
+      "Der Drehzahlmesser wird leer, wenn du den Motor abstellst, statt die letzte Drehzahl zu zeigen, und die Motordaten kommen mit günstigen OBD-Adaptern zuverlässiger an",
+      "Dazu ein paar kleinere Fehlerbehebungen"
+    ],
+    "es": [
+      "Las rutas circulares y las aventuras encuentran aún mejor las carreteras con curvas: las curvas de carreteras pequeñas y pistas de tierra que en el mapa están dibujadas solo a grandes rasgos ahora cuentan del todo, y los giros en cruces de la ciudad cuentan todavía menos",
+      "La pantalla ya no se apaga mientras vas despacio, en un atasco o por una pista bacheada: ahora se fija en cuánto te has movido, no en lo rápido que vas",
+      "El cuentarrevoluciones se queda en blanco al apagar el motor en vez de mostrar las últimas revoluciones, y los datos del motor llegan con más fiabilidad con adaptadores OBD baratos",
+      "Y algunas correcciones menores"
+    ],
+    "fr": [
+      "Les boucles et les aventures trouvent encore mieux les routes sinueuses : les virages des petites routes et des chemins de gravier, dessinés seulement à grands traits sur la carte, comptent désormais en entier, et tourner aux carrefours en ville compte encore moins",
+      "L'écran ne s'éteint plus quand vous roulez lentement, dans un bouchon ou sur une piste cahoteuse : il se fie maintenant à la distance parcourue, pas à la vitesse",
+      "Le compte-tours se vide quand vous coupez le moteur au lieu d'afficher le dernier régime, et les données moteur arrivent plus sûrement avec les adaptateurs OBD bon marché",
+      "Et quelques petites corrections"
+    ],
+    "nl": [
+      "Rondritten en avonturen vinden de bochtige wegen nog beter: bochten op kleine wegen en gravelwegen die maar grof op de kaart staan, tellen nu volledig mee, en afslaan op kruispunten in de stad telt nog minder",
+      "Het scherm gaat niet meer uit terwijl je langzaam rijdt, in de file of op een hobbelig pad: het kijkt nu hoe ver je bent gekomen, niet hoe snel",
+      "De toerenteller wordt leeg als je de motor afzet, in plaats van het laatste toerental te tonen, en de motorgegevens komen betrouwbaarder door met goedkope OBD-adapters",
+      "Plus een paar kleine verbeteringen"
+    ],
+    "pl": [
+      "Pętle i przygody jeszcze lepiej znajdują kręte drogi: zakręty na małych drogach i szutrach, narysowane na mapie tylko z grubsza, liczą się teraz w pełni, a skręty na skrzyżowaniach w mieście liczą się jeszcze mniej",
+      "Ekran nie gaśnie już, gdy jedziesz powoli, w korku albo po wyboistej ścieżce: liczy się teraz, jak daleko się przemieściłeś, a nie jak szybko",
+      "Obrotomierz staje się pusty po wyłączeniu silnika, zamiast pokazywać ostatnie obroty, a dane z silnika docierają pewniej przez tanie adaptery OBD",
+      "Do tego kilka drobnych poprawek"
+    ]
+  },
+  {
     "version": "1.2.6",
     "en": [
       "Send GPX files from the web planner on curveon.no/plan straight to Curveon: as a track that is ridden just as it is, as a trip you can change, or both. And a GPX track in the app can be put in Planned, so it shows in the web planner too",

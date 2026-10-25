@@ -179,7 +179,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private var mapWorker: Job? = null
     private var mapFinisher: Job? = null
 
+    /** Room for maps, counting what Android would clear for them; may take seconds, so not on the main thread. */
     fun freeStorageBytes() = mapDownloads.freeBytes()
+    fun usableStorageBytes() = mapDownloads.usableBytes()
 
     /** Download size per area, given the routing tiles on the tablet right now. */
     fun mapDownloadSizer(): (com.curveon.data.map.CatalogArea) -> Long {
@@ -1481,6 +1483,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private var lastRealFixAt = 0L
 
+    private var movedFrom: LatLon? = null
+    private val _lastMovedAt = MutableStateFlow(android.os.SystemClock.elapsedRealtime())
+    /** When the rider last moved [MOVED_M] on (or the app started), on [android.os.SystemClock.elapsedRealtime]: the screen may sleep a while after. */
+    val lastMovedAt: StateFlow<Long> = _lastMovedAt.asStateFlow()
+
     private fun onGpsFix(fix: GpsFix) {
         lastRealFixAt = System.currentTimeMillis()
         handleFix(fix, estimated = false)
@@ -1532,6 +1539,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun handleFix(fix: GpsFix, estimated: Boolean) {
         NavTrace.fix(fix, locationSource.satellitesUsed, estimated)
+        // Moved on from where the rider last was, however slowly (a queue, a rough track); a poor fix indoors doesn't count.
+        if (estimated || (fix.accuracyMeters ?: 0f) <= MOVED_ACCURACY_M) {
+            val from = movedFrom
+            if (from == null || Geo.distance(from.lat, from.lon, fix.latitude, fix.longitude) > MOVED_M) {
+                movedFrom = LatLon(fix.latitude, fix.longitude)
+                _lastMovedAt.value = android.os.SystemClock.elapsedRealtime()
+            }
+        }
         tripTracker.onFix(fix)
         if (!estimated) phoneCompanion.groups.onFix(fix)
         navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble(),
@@ -2595,6 +2610,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         private const val DR_START_MS = 3_000L
         /** The GPS gives a fix every second, standing still too: this long without one, the signal is gone. */
         private const val GPS_LOST_MS = 8_000L
+        /** Further than this from where the rider last was is moving on, beyond a parked phone's GPS wander. */
+        private const val MOVED_M = 50.0
+        private const val MOVED_ACCURACY_M = 25f
         /** A single fix further from the route than this is shown as it is, even before off-route kicks in. */
         private const val SNAP_LEAVE_M = 20.0
         private const val SNAP_LEAVE_TURNING_M = 7.0

@@ -6,6 +6,13 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — Kodegjennomgang del 3 (1.2.7): turtall av, skjerm i sakte fart, grove svinger
+
+- [ ] X7 med OBD-adapteren: slå av motoren (tenningen gjerne på): turtallet blir tomt etter ca. 5 sekunder i stedet for å stå på siste verdi. Start igjen: det kommer tilbake.
+- [ ] Pixel uten lader og uten navigering: gå eller trill sakte (under 10 km/t) i over 10 minutter: skjermen holder seg på. Legg den så fra deg i 10 minutter: den slukker etter Androids vanlige tid.
+- [ ] Pixel og X7: Kart → last ned kart: lista åpnes uten stopp, og «… GB ledig» kan gå litt opp et øyeblikk etter (Android regner med hurtigbuffer den kan rydde).
+- [ ] Planlegg en Svingete rundtur der det er småveier eller grusveier med krappe svinger: den bør nå gå mer over dem enn før.
+
 ## 2026-10-25 — Kodegjennomgang del 2: OBD, skjerm på, telefonknapper, svingete
 
 - [ ] X7 med OBD-adapteren (tenning på): turtall, temperatur og spenning kommer som før etter tilkobling, og blir ikke borte utover turen. `adb -s <X7> logcat -s CurveonObd`: «Connected to …». Står det «Encrypted link refused …, trying without», tar adapteren bare ukryptert tilkobling; si fra hva den heter.

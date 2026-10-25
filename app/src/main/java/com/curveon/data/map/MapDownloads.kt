@@ -93,7 +93,11 @@ class MapDownloads(
         }
     }
 
-    /** Room for maps, counting other apps' cached files Android clears when it is asked for the space. */
+    /** Free room for maps right now, without what Android could clear; quick. */
+    fun usableBytes(): Long = maps.mapsDir.usableSpace
+
+    /** Room for maps, counting other apps' cached files Android clears when it is asked for the space. Can take seconds. */
+    @androidx.annotation.WorkerThread
     fun freeBytes(): Long {
         val dir = maps.mapsDir
         return runCatching {

@@ -1331,7 +1331,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             if (showMapCatalog) {
                 MapCatalogDialog(
                     catalog = viewModel.mapCatalog, installed = installedMaps, download = mapDownload, queue = mapQueue,
-                    freeBytes = remember(installedMaps, mapDownload is com.curveon.data.map.MapDownloadState.Running) { viewModel.freeStorageBytes() },
+                    // Asking Android how much it can clear may take seconds: the plain free space until it answers.
+                    freeBytes = androidx.compose.runtime.produceState(remember { viewModel.usableStorageBytes() },
+                        installedMaps, mapDownload is com.curveon.data.map.MapDownloadState.Running) {
+                        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { viewModel.freeStorageBytes() }
+                    }.value,
                     downloadBytes = remember(installedMaps) { viewModel.mapDownloadSizer() },
                     startContinent = remember { viewModel.currentContinent() },
                     onDownload = viewModel::downloadMap, onCancel = viewModel::cancelMapDownload,

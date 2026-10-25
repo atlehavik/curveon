@@ -130,7 +130,7 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         }
         val device = adapter.getRemoteDevice(address)
         _state.update { it.copy(status = ObdState.Status.CONNECTING) }
-        val s = connect(device, address)
+        val s = connect(device)
         socket = s
         val elm = Elm327(s.inputStream, s.outputStream)
         for (cmd in listOf("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0")) elm.send(cmd, if (cmd == "ATZ") 3_000 else 1_500)
@@ -141,6 +141,7 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         val extra = surveyed.orEmpty()
         val unsupported = mutableSetOf<String>()
         var round = 0
+        var rpmAt = android.os.SystemClock.elapsedRealtime()
         while (scope.isActive && job?.isActive == true) {
             val slow = round % SLOW_EVERY == 0
             var s2 = _state.value
@@ -161,6 +162,9 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
                 request.complete(runCatching { capture(elm) }.getOrElse { if (it is IOException) throw it; Log.w(TAG, "Capture failed", it); null })
             }
             ask(RPM) { b -> if (b.size >= 2) s2 = s2.copy(rpm = (b[0] * 256 + b[1]) / 4) }
+            // The engine stopped (or the ignition went off): no revs rather than the last ones, until it answers again.
+            if (engineAnswered) rpmAt = android.os.SystemClock.elapsedRealtime()
+            else if (android.os.SystemClock.elapsedRealtime() - rpmAt > RPM_GONE_MS) s2 = s2.copy(rpm = null)
             val tankTable = fuelCalibration.takeIf { it.source != null && it.tankLiters != null }
             if (tankTable != null) readFuel(elm, tankTable)?.let { s2 = s2.copy(fuelLiters = it, fuelPercent = (it * 100 / tankTable.tankLiters!!).toInt().coerceIn(0, 100)) }
             if (slow) {
@@ -303,21 +307,17 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
     }
 
     /**
-     * An encrypted link first. Many cheap adapters only take an unencrypted one, so that is tried next, but never
-     * for an adapter that has taken an encrypted link before: something else answering in its name would not have its key.
+     * An encrypted link first, then an unencrypted one: many cheap adapters take only that, some only now and then the
+     * encrypted one. Always trying both keeps the engine data coming; the link only carries engine readings.
      */
     @SuppressLint("MissingPermission")
-    private fun connect(device: android.bluetooth.BluetoothDevice, address: String): BluetoothSocket {
-        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val secureBefore = prefs.getBoolean(SECURE_KEY + address, false)
+    private fun connect(device: android.bluetooth.BluetoothDevice): BluetoothSocket {
         val secure = device.createRfcommSocketToServiceRecord(SPP)
         try {
             secure.connect()
-            if (!secureBefore) prefs.edit().putBoolean(SECURE_KEY + address, true).apply()
             return secure
         } catch (e: IOException) {
             runCatching { secure.close() }
-            if (secureBefore) throw e
             Log.i(TAG, "Encrypted link refused (${e.message}), trying without")
         }
         return device.createInsecureRfcommSocketToServiceRecord(SPP).also { it.connect() }
@@ -332,9 +332,9 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         const val DEMO = "demo"
         private var surveyed: List<String>? = null
         private const val TAG = "CurveonObd"
-        private const val PREFS = "obd"
-        private const val SECURE_KEY = "secure_link:"
         private const val RPM = "010C"
+        /** No answer to RPM for this long: the engine is off. */
+        private const val RPM_GONE_MS = 5_000L
         private val SPP: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
         private const val POLL_MS = 200L
         private const val SLOW_EVERY = 25
@@ -396,7 +396,8 @@ internal class Elm327(input: java.io.InputStream, private val output: java.io.Ou
             if (c == PROMPT) break
             sb.append(c.toChar())
         }
-        // A command sent while the adapter was still busy stops that one, and the answer to this one comes after.
+        // A command sent while the adapter was still busy only stopped that one; what is left of it may still be
+        // answered (often "?"), so that is skipped before the next command.
         if (sb.contains("STOPPED")) late = true
         return sb.toString()
     }
