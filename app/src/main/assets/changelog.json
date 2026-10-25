@@ -2,37 +2,48 @@
   {
     "version": "1.2.7",
     "en": [
-      "A stop on the way, like a burger on the road, is now only \"reached\" when you get to it. Before, Curveon could say you had arrived while you were still passing it on the main road, and the rest of the trip went wrong from there"
+      "A stop on the way, like a burger on the road, is now only \"reached\" when you get to it. Before, Curveon could say you had arrived while you were still passing it on the main road, and the rest of the trip went wrong from there",
+      "The speed limit signs on the map now show up when you just ride a road without navigating, too, so you see a limit change coming just like in the car"
     ],
     "nb": [
-      "Et stopp på veien, for eksempel en burger underveis, regnes nå som nådd først når du faktisk kommer til det. Før kunne Curveon si at du var fremme mens du bare kjørte forbi på hovedveien, og resten av turen gikk skeis derfra"
+      "Et stopp på veien, for eksempel en burger underveis, regnes nå som nådd først når du faktisk kommer til det. Før kunne Curveon si at du var fremme mens du bare kjørte forbi på hovedveien, og resten av turen gikk skeis derfra",
+      "Fartsgrenseskiltene på kartet dukker nå opp også når du bare kjører en vei uten navigasjon, så du ser en endring i fartsgrensen komme, akkurat som i bilen"
     ],
     "sv": [
-      "Ett stopp på vägen, till exempel en hamburgare på vägen, räknas nu som nått först när du verkligen kommer fram till det. Förut kunde Curveon säga att du var framme medan du bara körde förbi på huvudvägen, och resten av turen gick snett därifrån"
+      "Ett stopp på vägen, till exempel en hamburgare på vägen, räknas nu som nått först när du verkligen kommer fram till det. Förut kunde Curveon säga att du var framme medan du bara körde förbi på huvudvägen, och resten av turen gick snett därifrån",
+      "Hastighetsskyltarna på kartan visas nu också när du bara kör en väg utan navigering, så du ser en ändring av hastighetsgränsen komma, precis som i bilen"
     ],
     "da": [
-      "Et stop på vejen, for eksempel en burger undervejs, regnes nu først som nået, når du faktisk kommer frem til det. Før kunne Curveon sige, at du var fremme, mens du bare kørte forbi på hovedvejen, og resten af turen gik skævt derfra"
+      "Et stop på vejen, for eksempel en burger undervejs, regnes nu først som nået, når du faktisk kommer frem til det. Før kunne Curveon sige, at du var fremme, mens du bare kørte forbi på hovedvejen, og resten af turen gik skævt derfra",
+      "Fartgrænseskiltene på kortet dukker nu også op, når du bare kører en vej uden navigation, så du kan se en ændring i fartgrænsen komme, ligesom i bilen"
     ],
     "fi": [
-      "Pysähdys matkan varrella, vaikkapa hampurilainen tien päällä, katsotaan nyt saavutetuksi vasta kun todella pääset perille asti. Ennen Curveon saattoi sanoa, että olit perillä, vaikka ajoit vasta pääväylää ohi, ja loppumatka meni siitä sekaisin"
+      "Pysähdys matkan varrella, vaikkapa hampurilainen tien päällä, katsotaan nyt saavutetuksi vasta kun todella pääset perille asti. Ennen Curveon saattoi sanoa, että olit perillä, vaikka ajoit vasta pääväylää ohi, ja loppumatka meni siitä sekaisin",
+      "Nopeusrajoitusmerkit näkyvät nyt kartalla myös silloin, kun vain ajat tietä ilman navigointia, joten näet rajoituksen muutoksen tulevan aivan kuten autossa"
     ],
     "is": [
-      "Stoppistöð á leiðinni, til dæmis hamborgari á leiðinni, telst nú aðeins náð þegar þú ert í raun kominn þangað. Áður gat Curveon sagt að þú værir kominn á áfangastað meðan þú ókst bara fram hjá á aðalveginum, og restin af ferðinni fór úr skorðum eftir það"
+      "Stoppistöð á leiðinni, til dæmis hamborgari á leiðinni, telst nú aðeins náð þegar þú ert í raun kominn þangað. Áður gat Curveon sagt að þú værir kominn á áfangastað meðan þú ókst bara fram hjá á aðalveginum, og restin af ferðinni fór úr skorðum eftir það",
+      "Hraðatakmarkanaskiltin á kortinu birtast nú líka þegar þú ekur bara veg án leiðsagnar, svo þú sérð breytingu á hámarkshraða koma, alveg eins og í bílnum"
     ],
     "de": [
-      "Ein Zwischenstopp unterwegs, etwa ein Burger an der Strecke, gilt jetzt erst als erreicht, wenn du wirklich dort bist. Vorher konnte Curveon sagen, du seist angekommen, obwohl du erst auf der Hauptstraße daran vorbeigefahren bist, und der Rest der Tour lief von da an schief"
+      "Ein Zwischenstopp unterwegs, etwa ein Burger an der Strecke, gilt jetzt erst als erreicht, wenn du wirklich dort bist. Vorher konnte Curveon sagen, du seist angekommen, obwohl du erst auf der Hauptstraße daran vorbeigefahren bist, und der Rest der Tour lief von da an schief",
+      "Die Tempolimit-Schilder auf der Karte erscheinen jetzt auch, wenn du einfach eine Straße entlangfährst, ohne zu navigieren, sodass du eine Änderung des Limits kommen siehst wie im Auto"
     ],
     "es": [
-      "Una parada en el camino, como una hamburguesa por la carretera, ahora solo se da por alcanzada cuando llegas de verdad. Antes Curveon podía decir que habías llegado cuando solo pasabas de largo por la carretera principal, y el resto del viaje se torcía desde ahí"
+      "Una parada en el camino, como una hamburguesa por la carretera, ahora solo se da por alcanzada cuando llegas de verdad. Antes Curveon podía decir que habías llegado cuando solo pasabas de largo por la carretera principal, y el resto del viaje se torcía desde ahí",
+      "Las señales de límite de velocidad del mapa ahora también aparecen cuando solo circulas por una carretera sin navegar, así ves venir un cambio de límite como en el coche"
     ],
     "fr": [
-      "Un arrêt en chemin, comme un burger sur la route, n'est plus compté comme atteint que lorsque tu y arrives vraiment. Avant, Curveon pouvait dire que tu étais arrivé alors que tu ne faisais que passer sur la route principale, et le reste du trajet partait de travers"
+      "Un arrêt en chemin, comme un burger sur la route, n'est plus compté comme atteint que lorsque tu y arrives vraiment. Avant, Curveon pouvait dire que tu étais arrivé alors que tu ne faisais que passer sur la route principale, et le reste du trajet partait de travers",
+      "Les panneaux de limitation de vitesse sur la carte s'affichent maintenant aussi quand tu roules simplement sur une route sans navigation, pour voir venir un changement de limite comme en voiture"
     ],
     "nl": [
-      "Een stop onderweg, zoals een hamburger langs de weg, telt nu pas als bereikt wanneer je er echt bent. Eerder kon Curveon zeggen dat je er was terwijl je nog over de hoofdweg langsreed, en de rest van de rit ging daarna mis"
+      "Een stop onderweg, zoals een hamburger langs de weg, telt nu pas als bereikt wanneer je er echt bent. Eerder kon Curveon zeggen dat je er was terwijl je nog over de hoofdweg langsreed, en de rest van de rit ging daarna mis",
+      "De snelheidsborden op de kaart verschijnen nu ook als je gewoon over een weg rijdt zonder te navigeren, zodat je een wijziging van de limiet ziet aankomen, net als in de auto"
     ],
     "pl": [
-      "Przystanek po drodze, na przykład burger przy trasie, jest teraz zaliczany dopiero wtedy, gdy naprawdę do niego dojedziesz. Wcześniej Curveon mógł powiedzieć, że jesteś na miejscu, choć dopiero mijałeś go główną drogą, a reszta trasy szła od tego momentu źle"
+      "Przystanek po drodze, na przykład burger przy trasie, jest teraz zaliczany dopiero wtedy, gdy naprawdę do niego dojedziesz. Wcześniej Curveon mógł powiedzieć, że jesteś na miejscu, choć dopiero mijałeś go główną drogą, a reszta trasy szła od tego momentu źle",
+      "Znaki ograniczenia prędkości na mapie pojawiają się teraz także wtedy, gdy po prostu jedziesz drogą bez nawigacji, więc widzisz nadchodzącą zmianę limitu, tak jak w samochodzie"
     ]
   },
   {

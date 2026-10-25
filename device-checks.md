@@ -6,6 +6,11 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — Fartsgrenseskilt også uten navigasjon
+
+- [ ] Kjør E39 (eller en annen vei med skiftende fartsgrense) uten navigasjon, over 15 km/t, med kartdata for ruting lastet: fartsgrenseskilt dukker opp på kartet i god tid før grensen endrer seg, og forsvinner når du har passert dem. Svinger du av, byttes de til den nye veien. Kommer ingen skilt: sjekk først at ruting er lastet ned (Innstillinger); i skarpe svinger kan veien foran ikke leses, og da vises ingenting (aldri feil skilt). Ikke prøvd på skjermen i emulator (emulatoren krasjet), bare testet mot ekte rutedata i `RoadAheadTest`.
+- [ ] Sjekk at skiltene ikke overlapper kjørefeltkort, fartskortet eller musikk, i stående og liggende, på Pixel og X7.
+
 ## 2026-10-25 — Et stopp på veien er nådd først når ruten kommer til det
 
 - [ ] Når bygget med 1.2.7 er på enheten: naviger Bømlo → McDonald's (Horneland) → Elkjøp på Stord. På E39 forbi McDonald's skal det ikke sies «Du er fremme ved McDonald's»; det kommer først når ruten er ved McDonald's (etter rundkjøringen og tilbake), og turen går videre til Elkjøp. Mangler det eller kommer det feil: `adb logcat -s Curveon` og navtrace fra `Android/data/com.curveon.app/files/navtrace/`.

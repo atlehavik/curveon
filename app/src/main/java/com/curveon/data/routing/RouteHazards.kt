@@ -105,6 +105,9 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
     fun speedChangesAhead(along: Double, withinM: Double): List<SpeedChange> =
         speedChanges.filter { it.along > along - SPEED_SIGN_PAST_M && it.along - along < withinM }
 
+    /** Not navigating: where the limit changes along [probe], the road ahead of the rider ([Navigator.probeRoadAhead]), for signs on the map. */
+    suspend fun speedChangesFreeRide(probe: Route): List<SpeedChange> = withContext(Dispatchers.Default) { speedChangesOn(probe) }
+
     /**
      * The limit (the country's official one where there is one, else OpenStreetMap's) sampled along the
      * route; a change counts once it holds for two samples in a row, so a junction's other road or a

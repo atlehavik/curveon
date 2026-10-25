@@ -1293,6 +1293,12 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }.getOrNull()
     }
 
+    /** Not navigating: the road the rider is on for the next few hundred metres (see [com.curveon.routing.RoadAhead]), null when unknown. */
+    suspend fun probeRoadAhead(position: LatLon, headingDeg: Double): Route? = withContext(Dispatchers.Default) {
+        if (!routingData.isReady()) return@withContext null
+        com.curveon.routing.RoadAhead.probe(engine, position, headingDeg)
+    }
+
     suspend fun probeSpeedLimit(position: LatLon, headingDeg: Double): Int? = withContext(Dispatchers.Default) {
         if (!routingData.isReady()) return@withContext null
         val ahead = Geo.destination(position, headingDeg, 60.0)
