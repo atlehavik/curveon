@@ -508,7 +508,7 @@
     <string name="toast_saved_to_planned">Saved to planned trips</string>
     <string name="toast_saved">Saved</string>
     <string name="save_route_to_where_to">Where to?</string>
-    <string name="planned_empty">No planned trips yet. Save a route from the planner with the bookmark button, or save one of your rides.</string>
+    <string name="planned_empty">No planned trips yet. Save a route from the planner with the bookmark button, save one of the rides you have driven, or plan a trip in the browser at curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d trip</item>
         <item quantity="other">%d trips</item>

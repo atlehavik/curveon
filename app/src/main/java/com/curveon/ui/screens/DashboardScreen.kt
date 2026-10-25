@@ -925,12 +925,28 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 10.dp))
         }
     } }
+    // Portrait (a phone held upright): speed on top, then the map, the cards below it, the rail along the bottom.
+    val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    val showEngine = obdEnabled && obdValues.isNotEmpty()
     // Messages or music (one of them gets the free height), and engine data.
     val cards: @Composable ColumnScope.() -> Unit = {
-        if (callOngoing && !isFullScreenMap) ringing?.let { call ->
-            OngoingCallCard(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) })
-        }
         val messages = notifications.filterNot { it.isIncomingCall }
+        // A message needs height (text, Reply, Dismiss); the call and the music only need icons. In a
+        // phone held upright, with the column to itself, they share one row above the message; so they do
+        // on a low phone on its side, where three rows leave the message no room for its text.
+        val iconRow = (portrait || LocalConfiguration.current.screenHeightDp < LOW_LANDSCAPE_HEIGHT) && !showEngine && callOngoing && !isFullScreenMap && track != null && (voiceReply != null || messages.isNotEmpty())
+        if (iconRow) ringing?.let { call -> track?.let { t ->
+            Row(Modifier.fillMaxWidth().height(CallCardHeight), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OngoingCallIcons(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) }, Modifier.weight(1f).fillMaxHeight())
+                MiniMediaCard(t, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }, Modifier.weight(1f).fillMaxHeight(), compact = true)
+            }
+        } }
+        // Alone in the column (no message or voice reply) the call gets the room; with one it stays a row.
+        if (callOngoing && !isFullScreenMap && !iconRow) ringing?.let { call ->
+            val alone = voiceReply == null && messages.isEmpty()
+            OngoingCallCard(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) },
+                alone = alone, modifier = if (alone) Modifier.weight(1f, fill = false) else Modifier)
+        }
         // A call, like a message, gets the room: the player shrinks to one row.
         val attention = voiceReply != null || messages.isNotEmpty() || ringing != null
         when {
@@ -954,7 +970,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
 
         // A message shares the column with a one-row player.
         if (attention) {
-            if (ringing == null || callOngoing) track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
+            if ((ringing == null || callOngoing) && !iconRow) track?.let { MiniMediaCard(it, albumArt, { phone.togglePlayPause() }, { phone.skipNext() }) }
         } else {
             FullMediaCard(
                 track = track, art = albumArt, phoneState = phoneState, phoneName = phoneName, apps = mediaApps,
@@ -972,13 +988,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
     // The engine panel (Settings → Engine), where the speed used to be.
-    val showEngine = obdEnabled && obdValues.isNotEmpty()
     val enginePanel: @Composable (Modifier) -> Unit = { m ->
         EnginePanel(obdState, obdValues, onOpenSettings = { settingsOnEngine = true; showSettings = true }, modifier = m)
     }
-    // Portrait (a phone held upright): speed on top, then the map, the cards below it, the rail along the bottom.
-    val portrait = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
-    // Turning the phone: the view last used in that orientation (not while the map is taken over for picking).
+    // Portrait: see above. Turning the phone: the view last used in that orientation (not while the map is taken over for picking).
     LaunchedEffect(portrait) { viewModel.setOrientation(portrait, restore = !mapMode) }
     // The rail's screens: the open one is lit; pressing it again closes it (like its close button),
     // pressing another one swaps it in. A pick on the map or a drawing in progress ends first.
@@ -1398,8 +1411,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 // The map from the top (the speed is on it); music and the engine panel share the bottom.
                 mapArea(Modifier.weight(1f).fillMaxWidth())
                 // Planning a trip needs the map: the preview sheet covers much of it.
+                // A message (or voice reply) and the one-row player or call above it need more than the share
+                // on a small phone; the map gives up the difference, so the message keeps its text and buttons.
+                val message = voiceReply != null || notifications.any { !it.isIncomingCall }
                 if (!isFullScreenMap && preview == null) Row(
-                    Modifier.fillMaxWidth().fillMaxHeight(PORTRAIT_CARDS_SHARE).tourTarget(TourTarget.CARDS),
+                    Modifier.fillMaxWidth().heightIn(min = if (message) PORTRAIT_MESSAGE_CARDS_MIN else 0.dp)
+                        .fillMaxHeight(PORTRAIT_CARDS_SHARE).tourTarget(TourTarget.CARDS),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), content = cards)
@@ -1605,6 +1622,10 @@ private val MAP_BUTTONS_RESERVE = 14.dp + 52.dp + 8.dp
 
 /** Upright, the speed and music cards take this much of the height under the map. */
 private const val PORTRAIT_CARDS_SHARE = 0.34f
+/** On its side, a screen lower than this (dp) has no room for the call, a message and the player as three rows. */
+private const val LOW_LANDSCAPE_HEIGHT = 400
+/** Least height for the cards upright with a message: a 72 dp row (player or call) and the message's sender, a line and the buttons. */
+private val PORTRAIT_MESSAGE_CARDS_MIN = 270.dp
 
 /** Room for the full-map speed and limit sign in the top-right corner (about 66 dp tall). */
 private val FULL_MAP_SPEED_CLEARANCE = 80.dp

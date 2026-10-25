@@ -495,22 +495,36 @@ fun FullMediaCard(
 
 /** One-row player used when a notification or reply needs the space. */
 @Composable
-fun MiniMediaCard(track: MusicTrack, art: Bitmap?, onPlayPause: () -> Unit, onNext: () -> Unit, modifier: Modifier = Modifier, onCollapse: (() -> Unit)? = null) {
+fun MiniMediaCard(
+    track: MusicTrack, art: Bitmap?, onPlayPause: () -> Unit, onNext: () -> Unit, modifier: Modifier = Modifier,
+    onCollapse: (() -> Unit)? = null,
+    /** Only the cover and the two buttons, for half a row (beside the call). */
+    compact: Boolean = false
+) {
+    val size = if (compact) 44.dp else 52.dp
+    val button = if (compact) 44.dp else 48.dp
     DashCard(modifier.fillMaxWidth().testTag("media_card_mini")) {
-        Row(Modifier.fillMaxWidth().align(Alignment.Center).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(52.dp).clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant)
-                .then(if (onCollapse != null) Modifier.clickable(onClick = onCollapse) else Modifier), contentAlignment = Alignment.Center) {
-                if (art != null) Image(art.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
-                else Icon(Icons.Default.MusicNote, null, tint = TextMuted)
+        // Half a row too narrow for the cover and both buttons (a low phone on its side): the buttons stay, centred.
+        BoxWithConstraints(Modifier.fillMaxWidth().align(Alignment.Center)) {
+            val cover = !compact || maxWidth >= 154.dp
+            Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (cover) Arrangement.Start else Arrangement.Center) {
+                if (cover) Box(Modifier.size(size).clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant)
+                    .then(if (onCollapse != null) Modifier.clickable(onClick = onCollapse) else Modifier), contentAlignment = Alignment.Center) {
+                    if (art != null) Image(art.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
+                    else Icon(Icons.Default.MusicNote, null, tint = TextMuted)
+                }
+                if (compact) { if (cover) Spacer(Modifier.weight(1f)) } else {
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(track.title, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(track.artist, color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                RoundButton(if (track.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, stringResource(R.string.media_play_pause), button, ElectricCyan, OnCyan, onPlayPause)
+                Spacer(Modifier.width(6.dp))
+                RoundButton(Icons.Default.SkipNext, stringResource(R.string.media_next), button, CockpitSurfaceVariant, TextPrimary, onNext)
             }
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text(track.title, color = TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(track.artist, color = TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            RoundButton(if (track.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, stringResource(R.string.media_play_pause), 48.dp, ElectricCyan, OnCyan, onPlayPause)
-            Spacer(Modifier.width(6.dp))
-            RoundButton(Icons.Default.SkipNext, stringResource(R.string.media_next), 48.dp, CockpitSurfaceVariant, TextPrimary, onNext)
         }
     }
 }

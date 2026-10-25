@@ -515,7 +515,7 @@
     <string name="toast_saved_to_planned">Enregistré dans les trajets prévus</string>
     <string name="toast_saved">Enregistré</string>
     <string name="save_route_to_where_to">Où aller ?</string>
-    <string name="planned_empty">Pas encore de trajets prévus. Enregistre un itinéraire depuis le planificateur avec le bouton signet, ou enregistre une de tes balades.</string>
+    <string name="planned_empty">Pas encore de trajets prévus. Enregistre un itinéraire depuis le planificateur avec le bouton signet, enregistre une de tes balades ou planifie un trajet dans le navigateur sur curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d trajet</item>
         <item quantity="many">%d trajets</item>

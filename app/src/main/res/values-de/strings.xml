@@ -505,7 +505,7 @@
     <string name="toast_saved_to_planned">In geplanten Touren gespeichert</string>
     <string name="toast_saved">Gespeichert</string>
     <string name="save_route_to_where_to">Wohin?</string>
-    <string name="planned_empty">Noch keine geplanten Touren. Speichere eine Route im Planer mit dem Lesezeichen-Button oder speichere eine deiner Fahrten.</string>
+    <string name="planned_empty">Noch keine geplanten Touren. Speichere eine Route im Planer mit dem Lesezeichen-Button, speichere eine deiner gefahrenen Touren oder plane eine Tour im Browser unter curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d Tour</item>
         <item quantity="other">%d Touren</item>

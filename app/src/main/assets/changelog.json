@@ -11,7 +11,7 @@
       "Open a GPX file on the web planner and send it to Curveon as a track that is ridden just as it is, as a trip you can change, or both. And a GPX track in the app can go to Planned, so it shows on the web planner too",
       "A big speed limit sign may now stick out over the speed card's edge again instead of being cut off, which looks even better",
       "Tap the road card and the road's signs grow big, with the road name beside them, or under them when there is no room",
-      "When a call comes in, the phone and notifications get the room on the dashboard and the music player shrinks to a single row",
+      "When a call comes in, the phone and notifications get the room on the dashboard and the music player shrinks to a single row, and once you answer, the call stays big with a clear Hang up button when there is nothing else to show. On a phone held upright, the call and the music share one row of icons when a message arrives, so the message keeps room for its text and buttons",
       "If a friend removes you, they now disappear from your list too, and if you are removed from a ride group it leaves your list by itself, with a short note saying what happened",
       "When you link your phone and tablet, a profile you have set up with a name or picture is no longer replaced by an empty one",
       "On a small phone, buttons with a long name, such as Ride reversed or Save to GPX, now make their text a little smaller instead of cutting it off, and an opened ride has room for Save beside its other buttons"
@@ -26,7 +26,7 @@
       "Åpne en GPX-fil i nettplanleggeren og send den til Curveon som et spor som kjøres akkurat slik det er, som en tur du kan endre, eller begge deler. Og et GPX-spor i appen kan legges i Planlagte, så det vises i nettplanleggeren også",
       "Et stort fartsgrenseskilt får igjen stikke utenfor fartskortet i stedet for å bli klippet, og det ser faktisk litt kulere ut",
       "Trykk på veikortet, så blir veiskiltene store, med veinavnet ved siden av, eller under hvis det ikke er plass",
-      "Når det ringer, får telefonen og varslene plassen på dashbordet, og musikkspilleren krymper til én rad",
+      "Når det ringer, får telefonen og varslene plassen på dashbordet, og musikkspilleren krymper til én rad. Når du har tatt samtalen, blir den stående stor med en tydelig legg-på-knapp, så lenge det ikke er noe annet å vise. På en telefon som holdes stående, deler samtalen og musikken én rad med ikoner når det kommer en melding, så meldingen beholder plassen til teksten og knappene sine",
       "Fjerner en venn deg, forsvinner han nå også fra listen din, og blir du fjernet fra en turgruppe, forsvinner gruppa av seg selv, med en kort beskjed om hva som skjedde",
       "Når du kobler telefonen og nettbrettet, blir en profil du har satt opp med navn eller bilde ikke lenger byttet ut med en tom",
       "På en liten telefon blir teksten på knapper med langt navn, som Kjør motsatt vei og Lagre i GPX, litt mindre i stedet for å bli kuttet, og en åpnet tur har plass til Lagre ved siden av de andre knappene"

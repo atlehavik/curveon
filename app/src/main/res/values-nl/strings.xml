@@ -488,7 +488,7 @@
     <string name="toast_saved_to_planned">Opgeslagen in geplande ritten</string>
     <string name="toast_saved">Opgeslagen</string>
     <string name="save_route_to_where_to">Waarheen?</string>
-    <string name="planned_empty">Nog geen geplande ritten. Sla een route op in de planner met de bladwijzerknop, of sla een van je ritten op.</string>
+    <string name="planned_empty">Nog geen geplande ritten. Sla een route op in de planner met de bladwijzerknop, sla een van je ritten op of plan een rit in de browser op curveon.no/plan.</string>
     <plurals name="planned_trips_count">
         <item quantity="one">%d rit</item>
         <item quantity="other">%d ritten</item>

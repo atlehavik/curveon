@@ -92,15 +92,30 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
         EcoGreen, EcoGreen.copy(alpha = 0.25f), infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "border"
     )
     val buttons = callButtons(call, onAction, onDismiss)
+    CallPhotoCard(call, "${call.message} · ${call.appName}", pulse, "call_card", modifier) {
+        PillButton(Icons.Default.CallEnd, buttons.declineLabel, WarningRed, Color.White, Modifier.weight(1f).height(64.dp), buttons.onDecline)
+        if (buttons.onOther != null) PillButton(Icons.Default.Call, buttons.otherLabel.orEmpty(), EcoGreen, Color.Black,
+            Modifier.weight(1f).height(64.dp), buttons.onOther)
+    }
+}
+
+/** The big call card: the contact's photo (or big initials), [status] and the name on top, [buttons] below. */
+@Composable
+private fun CallPhotoCard(
+    call: NotificationItem, status: String, border: Color, tag: String, modifier: Modifier,
+    buttons: @Composable RowScope.() -> Unit
+) {
     val shape = RoundedCornerShape(24.dp)
-    Box(modifier.clip(shape).background(CockpitSurface).border(3.dp, pulse, shape).testTag("call_card")) {
+    Box(modifier.clip(shape).background(CockpitSurface).border(3.dp, border, shape).testTag(tag)) {
         if (call.avatar != null) {
             Image(call.avatar.asImageBitmap(), call.senderName, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
             Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF2000000))))
         } else {
-            Box(Modifier.matchParentSize().padding(bottom = 140.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.heightIn(max = 140.dp).fillMaxHeight(0.85f).aspectRatio(1f).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
-                    Text(call.initials, color = EcoGreen, fontSize = 52.sp, fontWeight = FontWeight.Black)
+            // The initials fill what the name and buttons below leave; on a low card they are left out.
+            BoxWithConstraints(Modifier.matchParentSize().padding(bottom = 176.dp), contentAlignment = Alignment.Center) {
+                val room = maxHeight
+                if (room >= 48.dp) Box(Modifier.heightIn(max = 140.dp).fillMaxHeight(0.85f).aspectRatio(1f).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
+                    Text(call.initials, color = EcoGreen, fontSize = ((room.value * 0.85f).coerceAtMost(140f) * 0.37f).sp, fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -108,28 +123,45 @@ fun CallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> U
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.PhoneInTalk, null, tint = EcoGreen, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("${call.message} · ${call.appName}", color = Color(0xFFD0D7E0), fontSize = 13.sp, maxLines = 1)
+                Text(status, color = Color(0xFFD0D7E0), fontSize = 13.sp, maxLines = 1)
             }
             Text(call.senderName, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Black,
                 maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 32.sp)
             Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PillButton(Icons.Default.CallEnd, buttons.declineLabel, WarningRed, Color.White, Modifier.weight(1f).height(64.dp), buttons.onDecline)
-                if (buttons.onOther != null) PillButton(Icons.Default.Call, buttons.otherLabel.orEmpty(), EcoGreen, Color.Black,
-                    Modifier.weight(1f).height(64.dp), buttons.onOther)
-            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { buttons() }
         }
     }
 }
 
+/** Least height an answered call needs for the big card (name, status and the buttons); below that it stays a row. */
+private val BigOngoingCallHeight = 170.dp
+
 /**
  * An answered call in the dashboard's card column (the map isn't full screen, so there is room for
- * it there instead of an icon over the map): the caller, and Hang up and Speaker as big buttons.
+ * it there instead of an icon over the map). [alone]: nothing else in the column wants the height
+ * (no message), so [modifier] gives the call the free height and it is as big as a ringing call,
+ * with Hang up and Speaker as big buttons; beside a message, or when there isn't the height, it is a
+ * one-row card.
  */
 @Composable
-fun OngoingCallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+fun OngoingCallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, alone: Boolean, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        if (alone && maxHeight >= BigOngoingCallHeight) {
+            val buttons = callButtons(call, onAction, onDismiss)
+            CallPhotoCard(call, stringResource(R.string.call_in_progress), EcoGreen, "call_card_ongoing", Modifier.fillMaxSize()) {
+                PillButton(Icons.Default.CallEnd, buttons.declineLabel, WarningRed, Color.White, Modifier.weight(1f).height(64.dp), buttons.onDecline)
+                if (buttons.onOther != null) PillButton(Icons.Default.VolumeUp, buttons.otherLabel.orEmpty(), CockpitSurfaceVariant, Color.White,
+                    Modifier.weight(1f).height(64.dp), buttons.onOther)
+            }
+        } else OngoingCallRow(call, onAction, onDismiss)
+    }
+}
+
+/** The answered call as one row: the caller, and Hang up and Speaker as round buttons. */
+@Composable
+private fun OngoingCallRow(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit) {
     val buttons = callButtons(call, onAction, onDismiss)
-    DashCard(modifier.fillMaxWidth().testTag("call_card_ongoing"), border = EcoGreen) {
+    DashCard(Modifier.fillMaxWidth().testTag("call_card_ongoing"), border = EcoGreen) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             CallAvatar(call, 56.dp)
             Column(Modifier.weight(1f)) {
@@ -141,6 +173,33 @@ fun OngoingCallCard(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: 
                 Text(call.senderName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             CallButtonsRow(call, buttons)
+        }
+    }
+}
+
+/**
+ * The answered call as only icons: the caller's picture, Hang up and Speaker. Half a row wide, beside
+ * the music, so a message below keeps the height it needs.
+ */
+@Composable
+fun OngoingCallIcons(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    val buttons = callButtons(call, onAction, onDismiss)
+    DashCard(modifier.testTag("call_card_ongoing"), border = EcoGreen) {
+        // Too narrow for the picture and both buttons (a low phone on its side): the buttons stay, centred.
+        BoxWithConstraints(Modifier.fillMaxWidth().align(Alignment.Center)) {
+            val avatar = maxWidth >= if (buttons.onOther != null) 154.dp else 104.dp
+            Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (avatar) Arrangement.Start else Arrangement.Center) {
+                if (avatar) {
+                    CallAvatar(call, 44.dp)
+                    Spacer(Modifier.weight(1f))
+                }
+                RoundButton(Icons.Default.CallEnd, buttons.declineLabel, 44.dp, WarningRed, Color.White, buttons.onDecline)
+                if (buttons.onOther != null) {
+                    Spacer(Modifier.width(6.dp))
+                    RoundButton(Icons.Default.VolumeUp, buttons.otherLabel.orEmpty(), 44.dp, CockpitSurfaceVariant, Color.White, buttons.onOther)
+                }
+            }
         }
     }
 }
