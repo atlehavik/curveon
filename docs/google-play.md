@@ -158,7 +158,14 @@ krasjrapport til reléet (`POST /feedback`), som gjør det om til en offentlig G
   delt (se `google-play-data-safety.md`), og personvernerklæringen nevner det (gjort).
 - **User Generated Content-regelen** gjelder apper der brukere ser hverandres innhold *i appen*. Her vises bare rytterens
   egne saker (tittel og status) i appen; innholdet ses på GitHub. Lav risiko, men si det slik i Console om de spør.
-- Reléet lagrer ingenting fra rapportene (Netcup-DPA-en trenger ikke endres for dette).
+- **Moderering (fra 2026-10-25):** bilder og tekst med grove ord eller fremmede lenker publiseres ikke med en gang.
+  Reléet holder dem i en privat kø (`data/feedback-pending/`), eieren godkjenner eller avviser på
+  relay.curveon.no/feedback/review (passord, bildene uskarpe til man trykker), og det som ikke er behandlet slettes
+  etter 14 dager uten å bli publisert. Issuet lages med en gang (med en plassholder), så appen får nummeret som før.
+  Varsel til eieren går via ntfy med bare antall, aldri innholdet. Dette er i tråd med Plays krav om moderering av
+  brukerinnhold, selv om innholdet ikke vises i appen.
+- Reléet lagrer altså rapportinnhold midlertidig (maks 14 dager) når noe holdes tilbake. Netcup-DPA-en dekker data
+  på serveren generelt; sjekk at den er signert. Personvernerklæringen sier det (oppdatert samme dag).
 
 ## Største risikoer hos Google
 
