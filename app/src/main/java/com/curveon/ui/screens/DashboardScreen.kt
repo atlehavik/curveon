@@ -928,8 +928,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val cards: @Composable ColumnScope.() -> Unit = {
         val messages = notifications.filterNot { it.isIncomingCall }
         // A message needs height (text, Reply, Dismiss); the call and the music only need icons. In a
-        // phone held upright, with the column to itself, they share one row above the message.
-        val iconRow = portrait && !showEngine && callOngoing && !isFullScreenMap && track != null && (voiceReply != null || messages.isNotEmpty())
+        // phone held upright, with the column to itself, they share one row above the message; so they do
+        // on a low phone on its side, where three rows leave the message no room for its text.
+        val iconRow = (portrait || LocalConfiguration.current.screenHeightDp < LOW_LANDSCAPE_HEIGHT) && !showEngine && callOngoing && !isFullScreenMap && track != null && (voiceReply != null || messages.isNotEmpty())
         if (iconRow) ringing?.let { call -> track?.let { t ->
             Row(Modifier.fillMaxWidth().height(CallCardHeight), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OngoingCallIcons(call, { i -> phone.invokeAction(call.id, i) }, { phone.hideNotification(call.id) }, Modifier.weight(1f).fillMaxHeight())
@@ -1400,8 +1401,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 // The map from the top (the speed is on it); music and the engine panel share the bottom.
                 mapArea(Modifier.weight(1f).fillMaxWidth())
                 // Planning a trip needs the map: the preview sheet covers much of it.
+                // A message (or voice reply) and the one-row player or call above it need more than the share
+                // on a small phone; the map gives up the difference, so the message keeps its text and buttons.
+                val message = voiceReply != null || notifications.any { !it.isIncomingCall }
                 if (!isFullScreenMap && preview == null) Row(
-                    Modifier.fillMaxWidth().fillMaxHeight(PORTRAIT_CARDS_SHARE).tourTarget(TourTarget.CARDS),
+                    Modifier.fillMaxWidth().heightIn(min = if (message) PORTRAIT_MESSAGE_CARDS_MIN else 0.dp)
+                        .fillMaxHeight(PORTRAIT_CARDS_SHARE).tourTarget(TourTarget.CARDS),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp), content = cards)
@@ -1607,6 +1612,10 @@ private val MAP_BUTTONS_RESERVE = 14.dp + 52.dp + 8.dp
 
 /** Upright, the speed and music cards take this much of the height under the map. */
 private const val PORTRAIT_CARDS_SHARE = 0.34f
+/** On its side, a screen lower than this (dp) has no room for the call, a message and the player as three rows. */
+private const val LOW_LANDSCAPE_HEIGHT = 400
+/** Least height for the cards upright with a message: a 72 dp row (player or call) and the message's sender, a line and the buttons. */
+private val PORTRAIT_MESSAGE_CARDS_MIN = 270.dp
 
 /** Room for the full-map speed and limit sign in the top-right corner (about 66 dp tall). */
 private val FULL_MAP_SPEED_CLEARANCE = 80.dp

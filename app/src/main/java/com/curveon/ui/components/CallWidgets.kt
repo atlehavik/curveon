@@ -185,13 +185,20 @@ private fun OngoingCallRow(call: NotificationItem, onAction: (Int) -> Unit, onDi
 fun OngoingCallIcons(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     val buttons = callButtons(call, onAction, onDismiss)
     DashCard(modifier.testTag("call_card_ongoing"), border = EcoGreen) {
-        Row(Modifier.fillMaxWidth().align(Alignment.Center).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            CallAvatar(call, 44.dp)
-            Spacer(Modifier.weight(1f))
-            RoundButton(Icons.Default.CallEnd, buttons.declineLabel, 44.dp, WarningRed, Color.White, buttons.onDecline)
-            if (buttons.onOther != null) {
-                Spacer(Modifier.width(6.dp))
-                RoundButton(Icons.Default.VolumeUp, buttons.otherLabel.orEmpty(), 44.dp, CockpitSurfaceVariant, Color.White, buttons.onOther)
+        // Too narrow for the picture and both buttons (a low phone on its side): the buttons stay, centred.
+        BoxWithConstraints(Modifier.fillMaxWidth().align(Alignment.Center)) {
+            val avatar = maxWidth >= if (buttons.onOther != null) 154.dp else 104.dp
+            Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (avatar) Arrangement.Start else Arrangement.Center) {
+                if (avatar) {
+                    CallAvatar(call, 44.dp)
+                    Spacer(Modifier.weight(1f))
+                }
+                RoundButton(Icons.Default.CallEnd, buttons.declineLabel, 44.dp, WarningRed, Color.White, buttons.onDecline)
+                if (buttons.onOther != null) {
+                    Spacer(Modifier.width(6.dp))
+                    RoundButton(Icons.Default.VolumeUp, buttons.otherLabel.orEmpty(), 44.dp, CockpitSurfaceVariant, Color.White, buttons.onOther)
+                }
             }
         }
     }
