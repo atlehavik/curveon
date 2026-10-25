@@ -6,6 +6,10 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — Et stopp på veien er nådd først når ruten kommer til det
+
+- [ ] Når bygget med 1.2.7 er på enheten: naviger Bømlo → McDonald's (Horneland) → Elkjøp på Stord. På E39 forbi McDonald's skal det ikke sies «Du er fremme ved McDonald's»; det kommer først når ruten er ved McDonald's (etter rundkjøringen og tilbake), og turen går videre til Elkjøp. Mangler det eller kommer det feil: `adb logcat -s Curveon` og navtrace fra `Android/data/com.curveon.app/files/navtrace/`.
+
 ## 2026-10-25 — En tur fra nettet kjøres slik den ble tegnet
 
 - [ ] Pixel (release-bygg 10:39, også på X7): send «Bømlo til Sandnes» fra nettplanleggeren på nytt (Oppdater på Pixel 9a). Åpne den under Planlagte: ved hjelpepunktet på Lura går ruten ut den ene veien og tilbake den andre, som på nettet, ikke ut og tilbake samme vei.

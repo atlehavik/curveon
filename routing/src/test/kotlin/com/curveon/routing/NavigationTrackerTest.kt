@@ -101,6 +101,35 @@ class NavigationTrackerTest {
         assertEquals(null, c.alongDistance(farAway.lat, farAway.lon, 100.0))
     }
 
+    /**
+     * A stop beside a road the route passes, then turns round at a roundabout and only reaches the stop
+     * on the way back (2026-10-25, McDonald's on Stord: announced as reached on the first pass, 750 m early).
+     */
+    @Test
+    fun `a stop is where the route comes nearest to it, not where it first passes`() {
+        val start = LatLon(60.0, 10.0)
+        val eastEnd = Geo.destination(start, 90.0, 1000.0)
+        val back = Geo.destination(eastEnd, 0.0, 60.0)
+        val geometry = (0..10).map { Geo.destination(start, 90.0, it * 100.0) } +
+            back + (1..10).map { Geo.destination(back, 270.0, it * 100.0) }
+        val pts = mutableListOf<RoutePoint>()
+        var d = 0.0
+        var prev: LatLon? = null
+        for (p in geometry) {
+            if (prev != null) d += Geo.distance(prev, p)
+            pts += RoutePoint(p.lat, p.lon, 0.0, d, d / 20.0, "primary", 80, unpaved = false, ferry = false)
+            prev = p
+        }
+        val route = Route(pts, listOf(Maneuver(ManeuverType.DEPART, 0, 0.0), Maneuver(ManeuverType.ARRIVE, pts.lastIndex, d)), d, d / 20.0, 0.0, 0, 0.0, 0)
+        val stop = Geo.destination(Geo.destination(start, 90.0, 500.0), 0.0, 60.0)
+        val c = RouteCorridor(route)
+        assertEquals(500.0, c.alongDistance(stop.lat, stop.lon, 2_000.0)!!, 60.0)
+        assertEquals(1560.0, c.alongClosest(stop.lat, stop.lon, 2_000.0)!!, 30.0)
+        // A place right on the first pass stays on the first pass.
+        val onFirstPass = Geo.destination(start, 90.0, 500.0)
+        assertEquals(500.0, c.alongClosest(onFirstPass.lat, onFirstPass.lon, 2_000.0)!!, 60.0)
+    }
+
     @Test
     fun `point at distance interpolates along the route`() {
         val route = lRoute()

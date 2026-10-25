@@ -54,7 +54,7 @@ fun alongDistances(stops: List<Stop>, route: Route): List<Double> {
     val corridor = RouteCorridor(route)
     var after = 0.0
     return stops.map { s ->
-        (corridor.alongDistance(s.point.lat, s.point.lon, 2_000.0, after) ?: after).also { after = it }
+        (corridor.alongClosest(s.point.lat, s.point.lon, 2_000.0, after) ?: after).also { after = it }
     }
 }
 
@@ -1016,7 +1016,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                         }
                         else -> {
                             val toStop = engine.route(listOf(pos, stop.point), goal.options)
-                            val along = RouteCorridor(route).alongDistance(stop.point.lat, stop.point.lon, 3_000.0,
+                            val along = RouteCorridor(route).alongClosest(stop.point.lat, stop.point.lon, 3_000.0,
                                 s.progress?.distanceAlongRoute ?: 0.0) ?: (s.progress?.distanceAlongRoute ?: 0.0)
                             val rest = rejoin(stop.point, route, along, goal.options)
                             val combined = Routes.concat(toStop, rest)

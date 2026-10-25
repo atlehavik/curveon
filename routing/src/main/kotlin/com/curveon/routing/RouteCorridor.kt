@@ -73,7 +73,36 @@ class RouteCorridor(route: Route, private val stepMeters: Double = 50.0) {
         return best
     }
 
+    /**
+     * Where the route is by (lat, lon), for a place the route was made to go to (a stop): the pass that
+     * comes nearest to it, the first one when passes are about equally near (a loop), after [afterAlong].
+     * [alongDistance] takes the first pass within its reach, which for a stop is the road it is
+     * beside when the route only gets to it after a turn-round further on (2026-10-25, McDonald's on
+     * Stord: "reached" 750 m before the route got there).
+     */
+    fun alongClosest(lat: Double, lon: Double, maxOffsetMeters: Double, afterAlong: Double = 0.0): Double? {
+        val found = ArrayList<Pair<Double, Double>>()
+        val cy = floor(lat / CELL_DEG).toLong()
+        val cx = floor(lon / (CELL_DEG * 2)).toLong()
+        for (dy in -1L..1L) for (dx in -1L..1L) {
+            val k = ((cy + dy) shl 32) xor ((cx + dx) and 0xffffffffL)
+            for (s in grid[k] ?: continue) {
+                if (s.along < afterAlong) continue
+                val ox = (s.lon - lon) * kx
+                val oy = (s.lat - lat) * 110_574.0
+                val off = Math.sqrt(ox * ox + oy * oy)
+                if (off <= maxOffsetMeters + stepMeters / 2) found += s.along to off
+            }
+        }
+        val nearest = found.minOfOrNull { it.second } ?: return null
+        val passes = found.filter { it.second <= nearest + SAME_PASS_M }
+        val first = passes.minOf { it.first }
+        return passes.filter { it.first <= first + 500 }.minBy { it.second }.first
+    }
+
     companion object {
         private const val CELL_DEG = 0.01 // ~1.1 km north-south
+        /** Passes this close to equally near (the route is sampled every 50 m) count as the same distance from a place. */
+        private const val SAME_PASS_M = 25.0
     }
 }
