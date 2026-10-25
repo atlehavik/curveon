@@ -28,7 +28,7 @@ applies, with these exceptions, which win:
    Norwegian, like the others), and commit it with the fixes.
 3. Look over the contact sheets (`sheet_<scenario>.png`) yourself too, not only the automatic checks: overlap,
    text cut off or running out of a card, buttons off screen. The item's note says what to look for.
-4. Fix what is wrong in the app (layouts, sizes, text that does not fit; follow CLAUDE.md: both languages,
+4. Fix what is wrong in the app (layouts, sizes, text that does not fit; follow CLAUDE.md: every language,
    `isNarrowScreen()`, `HideSystemBars()`, place names on top). A problem that is really the scenario's (a
    label that changed, a tap that misses) is fixed in the scenario. Run the build and the matrix again
    (`run2`, `run3`) until it passes or you have tried three times. `./gradlew test` must still pass.
