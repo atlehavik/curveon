@@ -127,8 +127,12 @@ class Device:
 
 
 # Scenarios: how to get to a screen, and what on it must be wholly on screen. Labels in English and Norwegian.
-def go_home(d):
+def go_home(d, demo=None):
+    """Curveon started afresh on the dashboard; demo=True/False first turns demo phone data on or off (debug build)."""
     d.sh("am", "force-stop", PKG)
+    if demo is not None:
+        old, new = ("false", "true") if demo else ("true", "false")
+        d.sh(f"run-as {PKG} sed -i 's/name=\"demo\" value=\"{old}\"/name=\"demo\" value=\"{new}\"/' shared_prefs/phone_link.xml")
     d.sh("am", "start", "-n", f"{PKG}/com.curveon.MainActivity")
     time.sleep(6)
 
@@ -145,7 +149,7 @@ def scenario_settings(d):
 
 
 def scenario_crop(d):
-    go_home(d)
+    go_home(d, demo=False)  # with demo phone data the profile can't be set
     d.tap(["Friends", "Venner"])
     d.tap(["Me", "Meg"])
     d.tap(["Choose from pictures", "Velg fra bilder"], wait=6)
@@ -157,7 +161,7 @@ def scenario_crop(d):
         d.tap(photo, wait=4)
     time.sleep(5)
     return [["Use this picture", "Bruk dette bildet"], ["Cancel", "Avbryt"],
-            ["Cut your picture", "Beskjær bildet"]]
+            ["Crop your picture", "Beskjær bildet"]]
 
 
 def scenario_mappoint(d):
@@ -179,7 +183,7 @@ def scenario_sendtablet(d):
 
 def scenario_groups(d):
     """The group list (with demo phone data on, Settings -> Phone: the demo group). The rest is reached by scrolling."""
-    go_home(d)
+    go_home(d, demo=True)
     d.tap(["Friends", "Venner"])
     d.tap(["Group ride", "Gruppetur"])
     return [["~(?i)^(your groups|gruppene dine)$"], ["Demo ride"]]
@@ -194,7 +198,7 @@ def scenario_groupdetail(d):
 
 def scenario_friends(d):
     """My friends (demo phone data: Ola shares his position, Anne does not). Look over the sheet for the rows and switches."""
-    go_home(d)
+    go_home(d, demo=True)
     d.tap(["Friends", "Venner"])
     d.tap(["My friends", "Mine venner"])
     return [["Show my code", "Vis koden min"], ["Scan a QR code", "Skann QR-kode"]]
@@ -211,7 +215,7 @@ def scenario_qrscan(d):
 def scenario_nudge(d):
     """"Get attention" on a friend (demo phone data): the demo friend sees it and tries to reach the rider back, whose alert must fit."""
     scenario_friends(d)
-    bell = ["Get attention", "Vil ha kontakt"]
+    bell = ["Get attention", "Be om kontakt"]
     for _ in range(3):  # the friends are below the fold on a low screen (landscape, large text)
         if d.find(bell) is not None:
             break
@@ -233,7 +237,55 @@ def scenario_friendrequest(d):
         d.sh("input", "swipe", str(w * 2 // 3), str(h * 3 // 4), str(w * 2 // 3), str(h // 4), "400")
         time.sleep(1.5)
     d.tap(add, wait=2)
-    return [["~^(Request sent|Forespørsel sendt)"], ["Get attention", "Vil ha kontakt"]]
+    return [["~^(Request sent|Forespørsel sendt)"], ["Get attention", "Be om kontakt"]]
+
+
+def scenario_selfie(d):
+    """Friends -> Me -> Take a picture (demo phone data off, This device): Curveon's own selfie camera, full screen.
+    The picture is black on the emulator; Close, Switch camera and the shutter must be wholly on screen."""
+    d.sh("pm", "grant", PKG, "android.permission.CAMERA")
+    go_home(d, demo=False)
+    d.tap(["Friends", "Venner"])
+    d.tap(["Me", "Meg"])
+    d.tap(["Take a picture", "Ta et bilde"], wait=4)
+    return [["Cancel", "Avbryt"], ["Switch camera", "Bytt kamera"], ["Take the picture", "Ta bildet"]]
+
+
+def start_demo_call(d):
+    """Phone -> Recents -> Kari Nordmann (the top row) -> Call (demo phone data): the demo phone answers at once."""
+    d.tap(["Phone", "Telefon"])
+    d.tap(["Recents", "Nylige"])
+    # The demo message from Kari is on the dashboard below the dialog too: tap the last one, the dialog's.
+    kari = [n for n in d.nodes() if n["text"] == "Kari Nordmann"]
+    if not kari:
+        raise LookupError("not on screen: ['Kari Nordmann']")
+    x1, y1, x2, y2 = kari[-1]["bounds"]
+    d.sh("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
+    time.sleep(2)
+    ring = [n for n in d.nodes() if n["text"] in ("Call", "Ring")]
+    if not ring:
+        raise LookupError("not on screen: ['Call', 'Ring']")
+    x1, y1, x2, y2 = ring[-1]["bounds"]
+    d.sh("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
+    time.sleep(4)
+
+
+def scenario_callbig(d):
+    """An answered call and no messages (demo phone data, both demo messages dismissed): the big call card fills the
+    card column with Hang up, above the music row; on a low screen it stays one row."""
+    go_home(d, demo=True)
+    for _ in range(2):
+        d.tap(["Dismiss", "Lukk"], wait=1.5)
+    start_demo_call(d)
+    return [["~^Hang up$"], ["~^(Play/pause|Spill av/pause)$"]]
+
+
+def scenario_callmsg(d):
+    """An answered call, music and a message at once (demo phone data): in portrait the call and the music share one
+    row of icons above the message, which keeps its text, Reply and Dismiss."""
+    go_home(d, demo=True)
+    start_demo_call(d)
+    return [["~^Hang up$"], ["Reply", "Svar"], ["Dismiss", "Lukk"], ["~^Er på Dombås"]]
 
 
 def scenario_webplan(d):
@@ -257,7 +309,8 @@ SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "cr
              "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
              "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge,
              "qrscan": scenario_qrscan, "friendrequest": scenario_friendrequest,
-             "webplan": scenario_webplan, "webplanscan": scenario_webplanscan}
+             "webplan": scenario_webplan, "webplanscan": scenario_webplanscan, "selfie": scenario_selfie,
+             "callbig": scenario_callbig, "callmsg": scenario_callmsg}
 
 
 def apply_variant(d, v, rotation):

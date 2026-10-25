@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -126,6 +128,7 @@ fun SelfieCameraDialog(file: File, onPicture: () -> Unit, onDismiss: () -> Unit)
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         HideBars()
+        val takeLabel = stringResource(R.string.selfie_take)
         Box(Modifier.fillMaxSize().background(Color.Black).testTag("selfie_camera")) {
             if (granted) AndroidView(modifier = Modifier.fillMaxSize(), factory = { previewView })
             Row(
@@ -145,6 +148,7 @@ fun SelfieCameraDialog(file: File, onPicture: () -> Unit, onDismiss: () -> Unit)
                     .border(4.dp, Color.White, CircleShape).padding(8.dp).clip(CircleShape)
                     .background(if (busy || capture == null) Color(0x88FFFFFF) else Color.White)
                     .clickable(enabled = capture != null && !busy) { shoot() }
+                    .semantics { contentDescription = takeLabel }
                     .testTag("selfie_shutter")
             )
         }
