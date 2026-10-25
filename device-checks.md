@@ -8,7 +8,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 ## 2026-10-25 — En tur fra nettet kjøres slik den ble tegnet
 
-- [ ] Pixel (når nytt bygg er på): send «Bømlo til Sandnes» fra nettplanleggeren på nytt (Oppdater på Pixel 9a). Åpne den under Planlagte: ved hjelpepunktet på Lura går ruten ut den ene veien og tilbake den andre, som på nettet, ikke ut og tilbake samme vei.
+- [ ] Pixel (release-bygg 10:39, også på X7): send «Bømlo til Sandnes» fra nettplanleggeren på nytt (Oppdater på Pixel 9a). Åpne den under Planlagte: ved hjelpepunktet på Lura går ruten ut den ene veien og tilbake den andre, som på nettet, ikke ut og tilbake samme vei.
 - [ ] PC: åpne en GPX med mange spor (TET Norge): hvert spor for seg på kartet, ingen streker mellom dem. Pek på et spor: navn og lengde. Klikk det: det åpnes. «Send alle 17 …» legger dem under Planlagte.
 
 ## 2026-10-25 — Grus, ferjer og rundtur på nett; GPX og beskjeden på telefonen igjen
