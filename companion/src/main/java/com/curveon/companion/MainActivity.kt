@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
         get() = getSharedPreferences("companion", MODE_PRIVATE).getBoolean("stopped", false)
         set(v) { getSharedPreferences("companion", MODE_PRIVATE).edit().putBoolean("stopped", v).apply() }
 
-    /** Whether the hidden test card was switched on (debug builds only). */
+    /** Whether the hidden test cards (battery test, and the fake-notification test in debug builds) were switched on. */
     private var testCardUnlocked: Boolean
         get() = getSharedPreferences("companion", MODE_PRIVATE).getBoolean("test_card", false)
         set(v) { getSharedPreferences("companion", MODE_PRIVATE).edit().putBoolean("test_card", v).apply() }
@@ -98,12 +98,13 @@ class MainActivity : ComponentActivity() {
             Modifier.fillMaxSize().background(Bg).safeDrawingPadding().padding(20.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Debug builds only: tapping the title 7 times shows or hides the test card (like Android's build number).
+            // Tapping the title 7 times shows or hides the battery test, and in debug builds the test card
+            // too (like Android's build number).
             var titleTaps by remember { mutableIntStateOf(0) }
-            var testCardShown by remember { mutableStateOf(BuildConfig.DEV && testCardUnlocked) }
+            var testCardShown by remember { mutableStateOf(testCardUnlocked) }
             Text(
                 stringResource(R.string.app_name), color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black,
-                modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, enabled = BuildConfig.DEV) {
+                modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {
                     if (++titleTaps >= 7) {
                         titleTaps = 0
                         testCardShown = !testCardShown
@@ -135,7 +136,7 @@ class MainActivity : ComponentActivity() {
 
             GroupCard()
 
-            BatteryTestCard(notificationAccess)
+            if (testCardShown) BatteryTestCard(notificationAccess)
 
             if (BuildConfig.DEV && testCardShown) Card("Test") {
                 Text("Send a fake message or call through the real chain to the tablet. " +
