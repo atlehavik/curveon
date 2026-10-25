@@ -1207,6 +1207,10 @@
         <item quantity="one">%d new trip from the web</item>
         <item quantity="other">%d new trips from the web</item>
     </plurals>
+    <plurals name="web_plan_tracks">
+        <item quantity="one">%d new GPX track from the web, under GPX</item>
+        <item quantity="other">%d new GPX tracks from the web, under GPX</item>
+    </plurals>
     <plurals name="web_plan_changed">
         <item quantity="one">%d trip changed on the web</item>
         <item quantity="other">%d trips changed on the web</item>

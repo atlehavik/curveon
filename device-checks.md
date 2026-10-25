@@ -6,14 +6,21 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-25 — GPX fra nettet havner under GPX; varmekart og språkknapp på nett
+
+- [ ] Pixel og X7 (ny bygg med dette): send en GPX fra nettplanleggeren som «Et GPX-spor». Den havner under GPX i appen (ikke Planlagte), og beskjeden sier «1 nytt GPX-spor fra nettet, under GPX». Velg «Begge»: turen ligger under Planlagte og sporet under GPX, med samme navn, uten «(spor)».
+- [ ] Pixel: åpne en GPX med mange spor (TET Norge) på nettet og «Send alle»: alle havner under GPX, samlet i én gruppe med filens navn.
+- [ ] PC: språkknappen øverst viser «Norsk» når siden er på norsk og «English» når den er på engelsk. Hold musa over den: «Bytt til engelsk».
+- [ ] PC: kartknappen med stedsnål → «Hvor grusen er (varmekart)»: varmekartet kommer med en gang (bare rett etter at tjenesten er startet på nytt kan det stå «Teller grusen her» noen sekunder). Ingen striper eller prikker mellom zoom 5 og 10, og stedsnavnene ligger over. Fra zoom 11 tones det ut mens grusstriplene kommer.
+
 ## 2026-10-25 — En tur fra nettet kjøres slik den ble tegnet
 
 - [ ] Pixel (release-bygg 10:39, også på X7): send «Bømlo til Sandnes» fra nettplanleggeren på nytt (Oppdater på Pixel 9a). Åpne den under Planlagte: ved hjelpepunktet på Lura går ruten ut den ene veien og tilbake den andre, som på nettet, ikke ut og tilbake samme vei.
-- [ ] PC: åpne en GPX med mange spor (TET Norge): hvert spor for seg på kartet, ingen streker mellom dem. Pek på et spor: navn og lengde. Klikk det: det åpnes. «Send alle 17 …» legger dem under Planlagte.
+- [ ] PC: åpne en GPX med mange spor (TET Norge): hvert spor for seg på kartet, ingen streker mellom dem. Pek på et spor: navn og lengde. Klikk det: det åpnes. «Send alle 17 …» legger dem under GPX i appen, samlet i én gruppe (med bygget som har GPX under GPX).
 
 ## 2026-10-25 — Grus, ferjer og rundtur på nett; GPX og beskjeden på telefonen igjen
 
-- [ ] Pixel og X7 (ny release-bygg 00:52): send en GPX fra nettplanleggeren som «Et GPX-spor». Den ligger under Planlagte. Sveip mellom Turer, GPX og Planlagte: beskjeden «1 ny tur fra nettet» kommer bare én gang.
+- [ ] Pixel og X7 (ny release-bygg 00:52): send en GPX fra nettplanleggeren som «Et GPX-spor». Den ligger under GPX (med bygget som har GPX under GPX). Sveip mellom Turer, GPX og Planlagte: beskjeden «1 ny tur fra nettet» kommer bare én gang.
 - [ ] Pixel og X7: det du fikk 23:14 (stort fartsskilt, veikort med navn, venner) er der fortsatt.
 - [ ] PC: Koble fra, så Vis QR-koden og skann med Pixelen: siden viser «Koblet til Pixel 9a» med en gang.
 - [ ] PC: Underlag Grus → «Omvei for grus» kommer. Ruten viser «X km grus» og «Y km traktorvei». Zoom inn til 11 og mer: grusveier er stiplet som i appen, og ferjeruter er stiplet i sjøen.

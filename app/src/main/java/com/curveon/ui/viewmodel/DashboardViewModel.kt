@@ -632,6 +632,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val browsers: Int = 0, val fetching: Boolean = false,
         /** Trips new or changed in the last fetch; null before one, or when the relay could not be reached ([offline]). */
         val added: Int? = null, val changed: Int = 0, val deleted: Int = 0, val offline: Boolean = false,
+        /** GPX tracks from the page in the last fetch: they went among the GPX tracks, not the planned trips. */
+        val tracks: Int = 0,
         /** Connected right now (the planned trips are open): what the page sends arrives at once. */
         val live: Boolean = false,
         /**
@@ -673,8 +675,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _webPlan.value = _webPlan.value.copy(fetching = true)
         viewModelScope.launch {
             val r = runCatching { webPlans.sync() }.getOrNull()
-            val news = r != null && r.added + r.changed + r.deleted > 0
-            _webPlan.value = _webPlan.value.copy(fetching = false, added = r?.added, changed = r?.changed ?: 0, deleted = r?.deleted ?: 0, offline = r == null,
+            val news = r != null && r.any
+            _webPlan.value = _webPlan.value.copy(fetching = false, added = r?.added, changed = r?.changed ?: 0, deleted = r?.deleted ?: 0, tracks = r?.tracks ?: 0, offline = r == null,
                 report = if (news) System.currentTimeMillis() else _webPlan.value.report)
         }
     }
@@ -694,7 +696,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (webPlanSession != null || webPlanWanted == 0 || webPlans.links().isEmpty()) return
         webPlanSession = webPlans.live(
             onResult = { r ->
-                if (r.added + r.changed + r.deleted > 0) _webPlan.value = _webPlan.value.copy(added = r.added, changed = r.changed, deleted = r.deleted, offline = false, report = System.currentTimeMillis())
+                if (r.any) _webPlan.value = _webPlan.value.copy(added = r.added, changed = r.changed, deleted = r.deleted, tracks = r.tracks, offline = false, report = System.currentTimeMillis())
             },
             onDropped = {
                 // Coverage gone or the relay restarted: try again in a while, as long as the trips are still open.

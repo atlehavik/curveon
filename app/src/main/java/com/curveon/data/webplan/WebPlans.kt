@@ -2,6 +2,9 @@ package com.curveon.data.webplan
 
 import android.content.Context
 import android.os.Build
+import com.curveon.data.model.GeoPoint
+import com.curveon.data.model.GpxTrack
+import com.curveon.data.osm.GpxParser
 import com.curveon.data.repository.CurveonRepository
 import com.curveon.data.routing.SavedRoutes
 import com.curveon.groups.GroupKeys
@@ -25,7 +28,8 @@ import java.util.Base64
  * A planning session with the web planner (relay.curveon.no/plan). Scanning the code the page shows ([add]) starts it:
  * from then on the page sees the planned trips on this device ([publish]: each trip, and their list) and can open and
  * change them, and what the page sends comes in among the planned trips: a new trip, a change of one of these (it
- * replaces the trip, which stays in its group under the rider's name for it), or a delete.
+ * replaces the trip, which stays in its group under the rider's name for it), or a delete. A GPX track from the page
+ * (a GPX file opened there) goes among the GPX tracks instead, as a file opened here would.
  *
  * Nothing stays connected in the background: [sync] is one short connection (app start, the planned trips opened, a
  * planned trip changed), and [live] keeps one open only while the rider has the planned trips on screen.
@@ -38,8 +42,13 @@ class WebPlans(
     private val prefs = context.getSharedPreferences("webplan", Context.MODE_PRIVATE)
     private val lock = Mutex()
 
-    /** What a fetch did here: trips new, changed or deleted from the page. Null from [sync]: no browser could be reached. */
-    data class Result(val added: Int, val changed: Int, val deleted: Int = 0)
+    /**
+     * What a fetch did here: trips new, changed or deleted from the page, and GPX tracks kept among the GPX tracks.
+     * Null from [sync]: no browser could be reached.
+     */
+    data class Result(val added: Int, val changed: Int, val deleted: Int = 0, val tracks: Int = 0) {
+        val any get() = added + changed + deleted + tracks > 0
+    }
 
     fun links(): List<WebPlanLink> = runCatching {
         val a = JSONArray(prefs.getString(KEY_LINKS, "[]"))
@@ -100,18 +109,18 @@ class WebPlans(
 
     // ---------------------------------------------------------------- Coming in
 
-    private operator fun Result.plus(o: Result) = Result(added + o.added, changed + o.changed, deleted + o.deleted)
+    private operator fun Result.plus(o: Result) = Result(added + o.added, changed + o.changed, deleted + o.deleted, tracks + o.tracks)
 
     /** Keeps what the page sent and deletes what it asked to; the answers for the page. Called under [lock]. */
     private suspend fun handle(link: WebPlanLink, inbound: WebPlanInbound): Pair<Result, List<String>> {
-        var added = 0; var changed = 0; var deleted = 0
+        var added = 0; var changed = 0; var deleted = 0; var tracks = 0
         val frames = mutableListOf<String>()
         for (trip in inbound.trips) {
             // A change of another device's trip (the page updates each copy on its own): not this one's, unless the page
             // sent it here before. Kept anyway, it came in as a new trip beside the copy already here.
             if (trip.ref != null && trip.ref?.rider != me() && seen().optJSONObject(trip.tripId) == null) continue
-            val (kept, id) = keep(trip)
-            when (kept) { Kept.NEW -> added++; Kept.CHANGED -> changed++; Kept.SAME -> Unit }
+            val (kept, id) = if (trip.destination == null) keepTrack(trip) else keep(trip)
+            when (kept) { Kept.NEW -> added++; Kept.CHANGED -> changed++; Kept.TRACK -> tracks++; Kept.SAME -> Unit }
             frames += WebPlan.gotFrame(link, riderId(), nextSeq(), trip.tripId, trip.rev, deviceName(), System.currentTimeMillis(), id)
         }
         for (ref in inbound.deletes) {
@@ -121,10 +130,10 @@ class WebPlans(
             repository.removeFromPlanned(route)
             deleted++
         }
-        return Result(added, changed, deleted) to frames
+        return Result(added, changed, deleted, tracks) to frames
     }
 
-    private enum class Kept { NEW, CHANGED, SAME }
+    private enum class Kept { NEW, CHANGED, TRACK, SAME }
 
     private suspend fun keep(trip: WebPlanTrip): Pair<Kept, Long?> {
         val seen = seen()
@@ -145,6 +154,39 @@ class WebPlans(
         seen.put(trip.tripId, JSONObject().put("rev", trip.rev).put("id", id).put("title", item.title))
         prefs.edit().putString(KEY_SEEN, seen.toString()).apply()
         return (if (old != null) Kept.CHANGED else Kept.NEW) to id
+    }
+
+    /**
+     * A GPX track from the page, among the GPX tracks: sent again (changed there), or one of the same name already here
+     * (the same file opened again), it replaces that one and keeps how the rider shows it. The tracks of one file go in
+     * its group. Not one of the planned trips, so the page gets no id for it.
+     */
+    private suspend fun keepTrack(trip: WebPlanTrip): Pair<Kept, Long?> {
+        val seen = seen()
+        val before = seen.optJSONObject(trip.tripId)
+        if (before != null && before.optLong("rev") >= trip.rev) return Kept.SAME to null
+        val points = SavedRoutes.decode(trip.line).map { GeoPoint(it.lat, it.lon) }
+        if (points.size < 2) return Kept.SAME to null
+        val name = trip.name.ifBlank { "GPX" }
+        val old = before?.optLong("gpx")?.takeIf { it > 0 }?.let { repository.gpxTrack(it) } ?: repository.findGpxTrack(name)
+        val id = repository.saveGpxTrack(
+            GpxTrack(
+                id = old?.id ?: 0,
+                showOnMap = old?.showOnMap ?: false, color = old?.color ?: 0, showPois = old?.showPois ?: true, reversed = old?.reversed ?: false,
+                groupId = old?.groupId ?: trip.group?.let { repository.gpxGroupNamed(it).id },
+                // Renamed here since the page sent it: the rider's name stays.
+                name = if (old != null && before != null && old.name != before.optString("title")) old.name else name,
+                totalDistanceKm = (trip.distanceMeters / 1000).toFloat(),
+                elevationGainMeters = trip.ascentMeters.toInt(),
+                maxElevationMeters = 0,
+                pointCount = points.size,
+                trackPointsJson = GpxParser.encodePoints(points),
+                category = "Track",
+            )
+        )
+        seen.put(trip.tripId, JSONObject().put("rev", trip.rev).put("gpx", id).put("title", name))
+        prefs.edit().putString(KEY_SEEN, seen.toString()).apply()
+        return Kept.TRACK to null
     }
 
     private fun seen(): JSONObject = runCatching { JSONObject(prefs.getString(KEY_SEEN, "{}")!!) }.getOrDefault(JSONObject())

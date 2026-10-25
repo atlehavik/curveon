@@ -12,6 +12,9 @@ Environment=SEGMENTS=/opt/curveon-planner/segments
 Environment=PORT=8788
 Environment=TRUST_PROXY=1
 Environment=POIS=/opt/curveon-planner/pois
+# The gravel heat map, counted once per segment file and kept here (writable: StateDirectory).
+Environment=HEAT=/var/lib/curveon-planner/heat
+StateDirectory=curveon-planner
 # Two searches at once (~660 MB) and Europe's places in memory (some tens of MB).
 ExecStart=/usr/bin/java -Xmx800m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -jar /opt/curveon-planner/webplanner-server.jar
 Restart=always

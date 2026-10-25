@@ -14,11 +14,12 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
- * Serves `/api/route`, `/api/adventure`, `/api/roundtrip`, `/api/pois` and `/api/surface` (and, for trying it on a PC, the page itself from WEB_DIR). On the VPS Caddy is in front: it
+ * Serves `/api/route`, `/api/adventure`, `/api/roundtrip`, `/api/pois`, `/api/surface` and `/api/heat` (and, for trying it on a PC, the page itself from WEB_DIR). On the VPS Caddy is in front: it
  * serves the page and the map from disk and hands only `/plan/api/…` to this. Nothing about riders is logged or kept.
  *
  * Environment: SEGMENTS (BRouter .rd5 files), PORT (8788), HOST (127.0.0.1), TRUST_PROXY=1 behind Caddy, WEB_DIR,
- * MAP_DIR (pmtiles, fonts and sprites; local trying only), POIS (the places' TSV files).
+ * MAP_DIR (pmtiles, fonts and sprites; local trying only), POIS (the places' TSV files), HEAT (where the gravel heat map
+ * is kept once counted; a temporary folder without it).
  */
 fun main() {
   val env = System.getenv()
@@ -32,6 +33,9 @@ fun main() {
   // 128 MB of decoded map data per search: two at once stay well inside the service's memory limit.
   // The roads, read from the segments, put an adventure's anchors on them (as in the app).
   val planner = Planner(BRouterEngine(segments, profiles, timeoutMillis = 45_000, memoryClassMb = 128), SurfaceReader(segments, File(profiles, "lookups.dat")), pois)
+  // The gravel heat map, counted in the background from the start (minutes, the first time on the VPS).
+  val heat = Heat(segments, env["HEAT"]?.let(::File) ?: Files.createTempDirectory("curveon-heat").toFile(), File(profiles, "lookups.dat"))
+  heat.warmAll()
   val limiter = RateLimiter(perWindow = 120, windowMillis = 10 * 60_000)
   // An adventure or a roundtrip is dozens of routes: fewer of them.
   val adventures = RateLimiter(perWindow = 12, windowMillis = 10 * 60_000)
@@ -67,6 +71,15 @@ fun main() {
           planner.stats.asked("surface")
           val q = ex.requestURI.rawQuery.orEmpty().split('&').associate { kv -> kv.substringBefore('=') to java.net.URLDecoder.decode(kv.substringAfter('=', ""), Charsets.UTF_8) }
           sendJson(ex, 200, planner.surfaceWays(q["b"]))
+        }
+        path == "/api/heat" && ex.requestMethod == "GET" -> {
+          allow(places)
+          planner.stats.asked("heat")
+          val tile = ex.requestURI.rawQuery.orEmpty().removePrefix("t=")
+          // Not counted yet: it is next, and the page asks again in a moment.
+          val body = heat.tile(tile)
+          if (body == null) sendJson(ex, 200, JSONObject().put("counting", true))
+          else send(ex, 200, "application/json", body, cache = "public, max-age=21600")
         }
         path == "/api/pois" && ex.requestMethod == "GET" -> {
           allow(places)
@@ -111,9 +124,9 @@ class RateLimiter(private val perWindow: Int, private val windowMillis: Long, pr
 private fun sendJson(ex: HttpExchange, status: Int, json: JSONObject) =
   send(ex, status, "application/json", json.toString().toByteArray())
 
-private fun send(ex: HttpExchange, status: Int, type: String, body: ByteArray) {
+private fun send(ex: HttpExchange, status: Int, type: String, body: ByteArray, cache: String = "no-store") {
   ex.responseHeaders.set("Content-Type", type)
-  ex.responseHeaders.set("Cache-Control", "no-store")
+  ex.responseHeaders.set("Cache-Control", cache)
   ex.sendResponseHeaders(status, if (body.isEmpty()) -1 else body.size.toLong())
   if (body.isNotEmpty()) ex.responseBody.use { it.write(body) }
 }

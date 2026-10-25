@@ -119,7 +119,7 @@ class GravelHeat(private val segmentDir: File, private val cacheDir: File, priva
         internal fun tileName(lon: Int, lat: Int) = (if (lon < 0) "W${-lon}" else "E$lon") + "_" + (if (lat < 0) "S${-lat}" else "N$lat")
 
         /** "E5_N60" → (5, 60). */
-        internal fun origin(tile: String): Pair<Int, Int>? {
+        fun origin(tile: String): Pair<Int, Int>? {
             val m = Regex("([EW])(\\d+)_([NS])(\\d+)").matchEntire(tile) ?: return null
             val lon = m.groupValues[2].toInt() * (if (m.groupValues[1] == "W") -1 else 1)
             val lat = m.groupValues[4].toInt() * (if (m.groupValues[3] == "S") -1 else 1)

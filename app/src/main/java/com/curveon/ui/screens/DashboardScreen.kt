@@ -282,8 +282,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         if (webPlan.report == 0L || webPlan.report == webPlanShownReport) return@LaunchedEffect
         webPlanShownReport = webPlan.report
         val added = webPlan.added ?: 0
-        if (added + webPlan.changed + webPlan.deleted > 0) toast = listOfNotNull(
+        if (added + webPlan.changed + webPlan.deleted + webPlan.tracks > 0) toast = listOfNotNull(
             added.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_new, it, it) },
+            webPlan.tracks.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_tracks, it, it) },
             webPlan.changed.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_changed, it, it) },
             webPlan.deleted.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.web_plan_deleted, it, it) },
         ).joinToString(" · ")

@@ -55,6 +55,10 @@ class WebPlanTest {
     assertNull(t.destination)
     assertTrue(t.stops.isEmpty())
     assertEquals("Fjellrunden", t.name)
+    assertNull(t.group)
+    // One of a file's tracks carries the file's name, for the GPX group they go in.
+    val inFile = WebPlanTrip("gpx-2", 1, "TET N-04", null, null, emptyList(), "{}", "60.0,6.0;60.1,6.1", 9_000.0, 600.0, 0.0, 0, 0, group = "TET Norway")
+    assertEquals("TET Norway", WebPlan.openPlan(l, WebPlan.planFrame(l, GroupKeys.newRiderId(), 2, inFile))!!.group)
     // Without `track` and without a destination: dropped, as before.
     val o = track.toJson().apply { remove("track") }
     assertNull(runCatching { WebPlanTrip.fromJson("x", 1, 0, o) }.getOrNull())
