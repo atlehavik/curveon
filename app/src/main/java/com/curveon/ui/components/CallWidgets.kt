@@ -111,9 +111,11 @@ private fun CallPhotoCard(
             Image(call.avatar.asImageBitmap(), call.senderName, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
             Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xF2000000))))
         } else {
-            Box(Modifier.matchParentSize().padding(bottom = 140.dp), contentAlignment = Alignment.Center) {
-                Box(Modifier.heightIn(max = 140.dp).fillMaxHeight(0.85f).aspectRatio(1f).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
-                    Text(call.initials, color = EcoGreen, fontSize = 52.sp, fontWeight = FontWeight.Black)
+            // The initials fill what the name and buttons below leave; on a low card they are left out.
+            BoxWithConstraints(Modifier.matchParentSize().padding(bottom = 176.dp), contentAlignment = Alignment.Center) {
+                val room = maxHeight
+                if (room >= 48.dp) Box(Modifier.heightIn(max = 140.dp).fillMaxHeight(0.85f).aspectRatio(1f).clip(CircleShape).background(CockpitSurfaceVariant), contentAlignment = Alignment.Center) {
+                    Text(call.initials, color = EcoGreen, fontSize = ((room.value * 0.85f).coerceAtMost(140f) * 0.37f).sp, fontWeight = FontWeight.Black)
                 }
             }
         }
@@ -131,8 +133,8 @@ private fun CallPhotoCard(
     }
 }
 
-/** Least height an answered call needs for the big card; below that it stays a row. */
-private val BigOngoingCallHeight = 240.dp
+/** Least height an answered call needs for the big card (name, status and the buttons); below that it stays a row. */
+private val BigOngoingCallHeight = 170.dp
 
 /**
  * An answered call in the dashboard's card column (the map isn't full screen, so there is room for
