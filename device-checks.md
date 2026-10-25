@@ -84,7 +84,6 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 ## 2026-10-24 — Feilmeldinger og forslag fra appen (1.2.4)
 
-- [ ] Pixel og X7: Innstillinger → Hjelp → «Meld fra om feil». Skriv tittel og tekst, legg ved et par skjermbilder (bildevelgeren skal åpne seg uten å spørre om tillatelse), og trykk Send. Det skal komme «Takk! Det er sak #…», og saken skal ligge på github.com/atlehavik/curveon/issues med bildene synlige og merket `bug`. (Krever at reléet har GitHub-nøkkelen.)
 - [ ] Etter sending: saken står under «Mine tilbakemeldinger» på Hjelp med «Åpen». Svar på saken på GitHub og lukk den som fullført; åpne Hjelp igjen: «Ferdig · 1 svar». Et trykk på raden åpner saken i nettleseren.
 - [ ] En sak du har slettet på GitHub (f.eks. #5) forsvinner fra «Mine tilbakemeldinger» når du åpner Hjelp (ev. lukk og åpne Hjelp en gang til). X-en på en linje fjerner den fra lista med en gang.
 - [ ] Uten nett (flymodus): Send gir «Fikk ikke sendt …» og knappen «Skriv det på GitHub i stedet», som åpner GitHub med tittel og tekst fylt inn.
@@ -93,7 +92,6 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 ## 2026-10-24 — Livligere SOS og nudge, melding over fullt kart, større profilbilde (1.2.4)
 
 - [ ] SOS fra kameraten (eller DEV-demo): det røde kortet skal pulsere og blinke i takt med sirenen, og det skal ikke komme noe utenfor skjermen på Pixelen.
-- [ ] Nytt ikon (V4, sirkel med brun ramme): Curveon på Pixelen og X7, og Companion på Pixelen, i app-skuffen og på hjemmeskjermen. Prøv også temaikon (Android 13+: Innstillinger → Bakgrunn og stil → Temaikoner): motorsykkelen skal vises i én farge, lysene som hull.
 - [ ] Pixel, Curveon som «Denne enheten»: Innstillinger → Telefon viser «mangler tillatelse» (SMS/mikrofon). Trykk Tillat og godta i Android: advarselen skal forsvinne med en gang, uten å gå ut av innstillingene. Skru en tillatelse av og på i Android-innstillingene og kom tilbake: advarselen følger med.
 - [ ] Hovedmenyen: trykk på hver knapp (telefon, venner, innstillinger, GPX). Den åpne knappen skal fylles med sin egen farge (grønn, oransje, hvit, fiolett), og ikonet blir mørkt.
 - [ ] Hovedmenyen: GPX-knappen er fiolett og de to siste knappene (GPX og motorsykkelen) har ulik farge. Sjekk også at «GPX og turer»-dialogen ser fin ut.
@@ -127,8 +125,6 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
   i vennelista. Prøv også «Nei takk»: X7 får ingen beskjed, og en ny forespørsel fra samme rytter i samme gruppe vises ikke.
   Knappen skal ikke vises ved en som allerede er venn.
 
-- [ ] X7 («Denne enheten», uten SIM): Telefon-knappen viser «Denne enheten kan ikke ringe eller sende SMS» med
-  hvorfor og hva du kan gjøre. Meldinger og musikk virker som før.
 - [ ] Telefon med SIM som aldri er koblet til en Companion (kameratens: det holder å oppdatere til 1.2.4):
   Innstillinger → Telefon står på «Denne enheten» uten at noe er valgt, telefonpanelet viser «Tillat», og
   etterpå kommer kontaktene. Ingenting om Companion.
@@ -152,9 +148,6 @@ Pixel og X7 begge med 1.2.3 (Companion også 1.2.3 hvis X7 går via Companion).
 - [ ] Gruppetur: slå av «Kjør med gruppa» på Pixelen. Pixelen forsvinner fra kartet på X7 med en gang, Pixelen ser ikke
       X7 lenger, gruppa sier «Pause» og forklarer, og SOS-knappen er borte. SOS fra X7 når ikke Pixelen. Slå på igjen:
       begge ser hverandre innen et halvt minutt.
-- [ ] Trykk «Vil ha kontakt» mange ganger fort: X7 får ett varsel, bjellen er grå i et halvt minutt.
-- [ ] Venner → Meg: endre navn, farge, ikon. «Lagret» vises, og X7 ser det nye uten noen lagre-knapp. Med bilde er
-      ikonene dempet; «Fjern» bildet, så kan et ikon velges.
 - [ ] Skann QR-kode på Pixelen (kamerahull), stående og liggende: «Avbryt» er helt på skjermen.
 - [ ] En venn som slår på deling: dukker opp på kartet uten at noen må slå av og på igjen (kan ta noen minutter
       hvis Venner ikke er åpen; åpne Venner for å få det med en gang).
@@ -163,13 +156,7 @@ Pixel og X7 begge med 1.2.3 (Companion også 1.2.3 hvis X7 går via Companion).
 
 Pixel og X7 som venner (ExSeven), begge med ny app.
 - [ ] Trykk på ExSeven på kartet på Pixelen: kortet viser fart eller «Stoppet i …», sist sett, avstand og batteri.
-- [ ] «Vil ha kontakt» på kortet: Pixelen sier «Sendt», X7 får varsel med lyd og vibrasjon. «OK, jeg ser det» på
-      X7: Pixelen sier «ExSeven har sett det» (grønt), innen få sekunder.
-- [ ] Samme fra vennelisten (bjellen), også når X7 ikke deler posisjon: varselet kommer når X7 ser etter
-      (åpne Venner på X7 for å få det med en gang).
 - [ ] I en gruppetur: bjellen i medlemslisten virker likt.
-- [ ] Står Pixel og X7 på samme sted (f.eks. hjemme), blir ExSeven og en annen rytter én runding med «2» og navnene
-      under; trykk gir lista «Her sammen», og et navn der gir kortet. Én alene står som før.
 
 ## 2026-10-22 — Ny relay (tåler nye funksjoner)
 
@@ -1092,12 +1079,7 @@ ingenting av dette er sett med en ekte samtale.
 - [ ] Trykk på kompassknappen under navigering (si til retning opp), stopp og start en annen tur:
   retning opp igjen. Valget gjort mens du blar i kartet huskes separat.
 
-## 2026-10-11 — Demomodus
 
-- [ ] Innstillinger → Navigasjon → Demotur: slå den på, planlegg en tur og trykk Kjør: turen
-  starter av seg selv som en simulering, fra turens eget startpunkt hvis du har satt ett (ikke fra
-  der nettbrettet er). Slå den av: tilbake til ekte GPS. Slått på under en tur: den turen simuleres
-  herfra.
 
 ## 2026-10-11 — Steder på kartet
 
@@ -1109,12 +1091,6 @@ ingenting av dette er sett med en ekte samtale.
 
 ## 2026-10-11 — Velkomstomvisning
 
-- [ ] Start Curveon på X7: velkomstomvisningen åpnes av seg selv (én gang). Gå gjennom den: den
-  lyse ringen skal sitte pent rundt hver skinneknapp, kartknappene, farten og kortene, og hvert
-  kort skal passe på skjermen (også det lange «Planlegg en tur»).
-- [ ] Første start (tøm appens data for å se den igjen): omvisningen åpnes med Language · Språk, og fortsetter på språket du
-  trykker på. Åtte små animasjoner (musikk og meldinger, motordata, nettbrett–telefon–intercom, bare en telefon, planlegg,
-  rediger i kartet, marker én del med tre-prikkers-knappen, tegn en rundtur) går i løkke uten tekst.
 - [ ] Innstillinger → Hjelp → Start omvisningen: den starter igjen; symbollista under leses godt.
 - [ ] Pixel holdt stående: språk og velkomst kommer stående; «Vis meg rundt» snur skjermen til liggende (den sier
   at telefonen kan snus tilbake etterpå), og den går tilbake til stående når omvisningen lukkes.
@@ -1134,7 +1110,6 @@ Fartsgrenser. Rundt Bømlo/Stord/Fitjar mangler OSM grense på 47 % av kommunal 
 navn/nummer, type (hovedvei, landevei, traktorvei…) og dekke, og om grensen er offisiell eller
 fra OpenStreetMap. Bare informasjon.
 
-- [ ] X7/Pixel på nett: etter en oppstart sier Innstillinger → Kart og data → Fartsgrenser «Norge: Statens vegvesen, NVDB …».
 - [ ] Kjøring på en kommunal vei som ikke viste skilt før: viser den ett nå, og er det riktig?
 - [ ] Hold en finger på noen veier (hovedvei, grusvei, traktorvei): er infoen riktig?
 
@@ -1200,7 +1175,6 @@ et tegnet område: den kan nås (ferje Sandvikvåg–Hufthamar) men bare den vei
 over den kjører ferja og Stord-veiene to ganger og taper mot runder som ikke gjør det. Sjekket i
 emulatoren; installert på X7 (Pixelen var ikke innen rekkevidde).
 
-- [ ] Tegn med Maks 80 km på X7: omtrent 80 km eller mindre?
 - [ ] Endre maks på arket, og Tegn på nytt.
 
 ## 2026-10-10 — Lukk Curveon fra varselet
@@ -1223,7 +1197,6 @@ andelen kjørt to ganger fra 12 % til 5 % i snitt; tegnede områder på Bømlo/S
 %. Sjekket i emulatoren.
 
 - [ ] Rundtur fra hjemmet: kjører den fortsatt strekninger to ganger? Hvor (skjermbilde)?
-- [ ] Hvor lang tid en tegnet runde tar på X7 nå (`adb logcat -s Curveon CurveonPlan` → «Routed Roundtrip in … s»; 1–15 s på PC-en).
 
 ## 2026-10-10 — Rutevalgene sier hva de gjør
 
@@ -1242,7 +1215,6 @@ ferjer; underlagsbrikken sier «Kun asfalt» (så Blandet, Grus, Offroad). Sjekk
 siden av stopp / mål / start. Favoritter kommer først i Hvor skal du? (Hjem øverst) for mål, et
 stopp eller starten; hold på en for å slette den. Sjekket i emulatoren; installert på X7 og Pixel.
 
-- [ ] Lagre Hjem på X7, så planlegger Hvor skal du? → Hjem veien hjem.
 - [ ] En navngitt favoritt som stopp under kjøring (trykk på ankomstboksen → Legg til stopp → favoritten).
 - [ ] Hold på en favoritt i Hvor skal du? → slett.
 
@@ -1270,7 +1242,6 @@ Oppdatering: en funnet runde *er* nå en slik tur med en gang – samme ark som 
 + Stopp, via-punktene, Raskest/Svingete/Supersvingete, rediger i kartet), med tittelen «Rundtur
   fra …», og Stokk for en annen runde; å endre starten planlegger en ny runde derfra. Sjekket i
   emulatoren (Haugesund, Leirvik); installert på X7 og Pixel.
-- [ ] Tegn et område med en finger på X7: streken følger fingeren, to fingrer panorerer/zoomer.
 - [ ] Tegn rundt Bømlo/Stord fra hjemmet: bruker runden området og holder den seg unna blindveier?
 - [ ] Arket til en runde ser ut som en planlagt tur; dra et punkt på kartet, resten av runden blir stående.
 - [ ] Stokk på en runde (også etter å ha endret veistil) gir en annen runde.
@@ -1303,9 +1274,6 @@ dager).
 
 - [ ] Kjør en rute, med et kryss der du med vilje tar feil vei, i retning opp og i 3D. Glir
   pila, holder den følge med motorsykkelen i kryss, forlater den linja med en gang?
-- [ ] Hent så sporene og fortell omtrent når/hvor (tid på dagen, hvilket kryss): `adb -s <X7> pull
-  /sdcard/Android/data/com.curveon.app/files/navtrace/ ~/develop/Curveon-data/navtrace/` (Pixel: samme sti
-  med eget serienummer).
 
 ## 2026-10-10 — Fart på kartet, motorpanel (OBD2)
 
@@ -1348,9 +1316,6 @@ trykket «Stopp på veien, eller nytt mål?». På veien: det punktet og de nest
 stopp der de passer langs ruten; Nytt mål: turen kjører videre til dem (det gamle målet blir et
 stopp). Spørres én gang per runde med valg. Sjekket i emulatoren. Installert på begge enhetene.
 
-- [ ] X7: ruteforhåndsvisning → Juster ruten → Legg til stopp → Velg i kartet → trykk et punkt ved
-  siden av ruten: linja spør «Stopp på veien, eller nytt mål?» med Hjelpepunkt / På veien / Nytt mål →
-  På veien.
 
 ## 2026-10-10 — Hold på et punkt på kartet for å fjerne det
 
@@ -1413,7 +1378,6 @@ fullskjermkartet), så skinneknappene får plassen. Sjekket i emulatoren på X7 
 og telefon stående. Installert på begge enhetene.
 
 - [ ] Pixel stående: de seks knappene langs bunnen har plass nå.
-- [ ] Kjøring med fartsgrenseskilt synlig: fart, skilt og klokke passer alle på X7 og Pixel.
 
 ## 2026-10-10 — KJØR mister ordet når det er trangt
 
@@ -1421,7 +1385,6 @@ KJØR-knappen i ruteforhåndsvisningen viser pil og «GO»/«KJØR» når den ha
 når det er trangt (den rant ut av knappen på Pixel liggende). Installert på begge enhetene.
 
 - [ ] Pixel liggende (dashbord): planlegg en tur; knappen viser bare pila, inni pillen sin.
-- [ ] X7 og Pixel stående: knappen sier fortsatt KJØR/GO.
 
 ## 2026-10-10 — Ruting på nett uten å laste ned landet
 
@@ -1439,8 +1402,6 @@ Innstillinger → Skjerm → Skjermretning: Snur seg / Liggende / Stående. Lås
 slik den ble holdt da du valgte (ikke engang opp-ned), uansett hva Androids autorotering sier.
 Prøvd i emulatoren.
 
-- [ ] X7: Innstillinger → Skjerm → Skjermretning → Liggende mens den sitter i holderen; kjør så
-  over støt (eller vipp den stående for hånd): skjermen snur seg ikke.
 
 ## 2026-10-09 — Stående: fart øverst, dialoger som passer
 
@@ -1451,8 +1412,6 @@ ruteforhåndsvisningen gir KJØR en rad i full bredde. Sjekket i Pixel 9a-størr
 (søk, ruteforhåndsvisning, stedsmeny, lagring, navigering, hver skinnedialog); X7 liggende ser ut
 som før.
 
-- [ ] Pixel stående: gå gjennom Innstillinger, GPX og turer, Telefon, Venner, Hvor skal du? →
-  Rundtur og en ruteforhåndsvisning; er noe kuttet?
 
 ## 2026-10-09 — Stående
 
@@ -1461,7 +1420,6 @@ musikk/meldinger under det, og skinnen er en rad langs bunnen; under planlegging
 også kortenes plass. Liggende er som før. Prøvd i emulatoren (dashbord, fullt kart, søk,
 ruteforhåndsvisning).
 
-- [ ] Pixel stående: den 411 dp brede skjermen har fortsatt plass til ruteforhåndsvisningens tre valg og KJØR.
 
 ## 2026-10-09 — Curveon på en telefon: kamerahull, skinne, hint
 
@@ -1481,11 +1439,6 @@ musikk fra appene på samme enhet, uten companion og uten Bluetooth (for ryttere
 telefon). Companion-appen virker som før og er fortsatt installert for seg. Koden flyttet til en
 delt `:phone`-modul. Prøvd i emulatoren (musikkapper funnet, en testmelding vistes på dashbordet).
 
-- [ ] Pixel (companion installert på nytt 2026-10-09, musikk når allerede X7): en melding, en samtale og et talt
-  svar kommer fortsatt gjennom. Etter denne oppdateringen måtte companionens varseltilgang slås på igjen (lytteren
-  flyttet til `com.curveon.phone`; gjort med `adb shell cmd notification allow_listener
-  com.curveon.companion/com.curveon.phone.CurveonNotificationListener`).
-- [ ] X7: Innstillinger → Telefon → *Bruk* på Pixelen igjen etter å ha prøvd «Denne enheten» (å bytte tilbake virker).
 - [ ] Valgfritt, med Curveon på Pixelen: *Denne enheten* → gi tilgang; en WhatsApp-melding vises på
   Curveons meldingskort, og musikkortet styrer Spotify.
 
@@ -1507,9 +1460,6 @@ Den holder seg fortsatt til veier og traktorveier en motorsykkel har lov til å 
 stier). Rutelinja er lilla. Hamar–Lillehammer i testene: Grus 19 km uasfaltert og ingen
 traktorveier, Offroad 33 km og 9 km traktorveier.
 
-- [ ] Planlegg en tur med Offroad nær hjemmet: traktorveiene den velger er noen
-  X7-motorsykkelen faktisk kan kjøre (hvis grad 4–5-veier viser seg å være for ulendte, si fra
-  så koster de mer).
 
 ## 2026-10-09 — Advarsel når en asfaltrute tvinger inn grus
 
