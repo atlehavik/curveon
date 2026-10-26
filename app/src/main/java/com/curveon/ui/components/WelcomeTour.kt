@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -64,15 +65,21 @@ enum class TourTarget {
 /** Where each [TourTarget] is on screen right now; parts that aren't shown (e.g. the cards in full map) are missing. */
 class TourTargets {
     internal val bounds = mutableStateMapOf<TourTarget, Rect>()
+    /** The part the tour lights up now: brought wholly into view if it sits in a row that scrolls (the trip card's chips). */
+    internal var current by mutableStateOf<TourTarget?>(null)
 }
 
 val LocalTourTargets = staticCompositionLocalOf<TourTargets?> { null }
 
 /** Marks this element as [target], so the welcome tour can light it up. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 fun Modifier.tourTarget(target: TourTarget): Modifier = composed {
     val targets = LocalTourTargets.current ?: return@composed Modifier
     DisposableEffect(targets, target) { onDispose { targets.bounds.remove(target) } }
-    Modifier.onGloballyPositioned { c ->
+    val requester = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    val lit = targets.current == target
+    LaunchedEffect(lit) { if (lit) requester.bringIntoView() }
+    Modifier.bringIntoViewRequester(requester).onGloballyPositioned { c ->
         val r = c.boundsInRoot()
         if (targets.bounds[target] != r) targets.bounds[target] = r
     }
@@ -208,6 +215,7 @@ private val TRIP_STEPS = listOf(
  * out. Shown once on the first start, and again from Settings → Help. With [tripCard] it is the short walk
  * over the trip card instead, the first time a trip is planned.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit, tripCard: Boolean = false) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -241,9 +249,12 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit,
     // Turning for the tour: the card waits until the dashboard is laid out lying down.
     var turning by remember { mutableStateOf(false) }
     LaunchedEffect(turning, landscapeNow) { if (turning && landscapeNow) { kotlinx.coroutines.delay(700); look(); turning = false } }
+    // A large screen may stay upright whatever the app asks (Android 16 on tablets and foldables): carry on as it is.
+    LaunchedEffect(turning) { if (turning) { kotlinx.coroutines.delay(3000); if (turning) { look(); turning = false } } }
     val steps = found ?: return
     var index by rememberSaveable { mutableIntStateOf(0) }
     val step = steps[index.coerceIn(steps.indices)]
+    DisposableEffect(step.target) { targets.current = step.target; onDispose { targets.current = null } }
     val last = index == steps.lastIndex
     // Steps before the first numbered one: the language, and the welcome.
     val lead = steps.indexOfFirst { !it.welcome && !it.language }.coerceAtLeast(0)
@@ -305,7 +316,16 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit,
         val lowScreen = with(density) { screen.height.toDp() } < 480.dp
         val maxCard = with(density) { (if (step.art != null && lowScreen) 700.dp else if (step.welcome || step.language || step.art != null) 460.dp else if (step.symbols.size > 4) 660.dp else 400.dp).toPx() }
         val maxHeight = with(density) { (screen.height - 2 * margin).coerceAtLeast(0f).toDp() }
-        val cardWidth = with(density) { minOf(maxCard, screen.width - 2 * margin).coerceAtLeast(0f).toDp() }
+        val wanted = minOf(maxCard, screen.width - 2 * margin).coerceAtLeast(0f)
+        // A low screen held sideways may have room beside the lit part only for a narrower card (the trip card's
+        // parts): narrower beside it, rather than in the middle on top of it.
+        val beside = targetRect?.let { t ->
+            val room = maxOf(screen.width - t.right - gap - margin, t.left - gap - margin)
+            val fitsOver = cardSize.height > 0 && maxOf(screen.height - t.bottom, t.top) - gap - margin >= cardSize.height
+            room.takeIf { it < wanted && !fitsOver && it >= with(density) { 260.dp.toPx() } && t.width < screen.width / 2 }
+        }
+        val cardWidth = with(density) { (beside?.minus(2f) ?: wanted).toDp() }
+        val narrowCard = cardWidth < 360.dp
         val place = cardPlacement(targetRect, screen, cardSize, margin, gap)
         val offset by animateIntOffsetAsState(place, spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessLow), label = "tourCard")
 
@@ -353,16 +373,29 @@ fun WelcomeTour(targets: TourTargets, firstStart: Boolean, onFinish: () -> Unit,
                     TourTextButton(stringResource(R.string.tour_not_now), TextMuted, onFinish)
                     Spacer(Modifier.weight(1f))
                     TourPrimaryButton(stringResource(R.string.tour_start), start)
-                } else {
+                } else if (!narrowCard) {
                     StepDots(steps.size - lead, index - lead + 1, Modifier.weight(1f))
-                    if (!last) TourTextButton(stringResource(R.string.tour_skip), TextMuted, onFinish)
-                    if (index > lead) TourTextButton(stringResource(R.string.tour_back), TextSecondary) { index-- }
-                    Spacer(Modifier.width(6.dp))
-                    TourPrimaryButton(stringResource(if (!last) R.string.tour_next else if (tripCard) R.string.ok else R.string.tour_done), next)
+                    StepButtons(last, index > lead, tripCard, onFinish, { index-- }, next)
+                }
+            }
+            // A narrow card: the dots on their own line, and the buttons wrap rather than squeeze.
+            if (narrowCard && !step.language && !step.welcome) {
+                StepDots(steps.size - lead, index - lead + 1, Modifier.fillMaxWidth())
+                Spacer(Modifier.height(10.dp))
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalArrangement = Arrangement.Center) {
+                    StepButtons(last, index > lead, tripCard, onFinish, { index-- }, next)
                 }
             }
         }
     }
+}
+
+@Composable
+private fun StepButtons(last: Boolean, back: Boolean, tripCard: Boolean, onSkip: () -> Unit, onBack: () -> Unit, onNext: () -> Unit) {
+    if (!last) TourTextButton(stringResource(R.string.tour_skip), TextMuted, onSkip)
+    if (back) TourTextButton(stringResource(R.string.tour_back), TextSecondary, onBack)
+    Spacer(Modifier.width(6.dp))
+    TourPrimaryButton(stringResource(if (!last) R.string.tour_next else if (tripCard) R.string.ok else R.string.tour_done), onNext)
 }
 
 /**
