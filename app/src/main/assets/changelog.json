@@ -8,6 +8,7 @@
       "A stop on the way, like a burger on the road, is now only \"reached\" when you get to it. Before, Curveon could say you had arrived while you were still passing it on the main road, and the rest of the trip went wrong from there",
       "The speed limit signs on the map now show up when you just ride a road without navigating, too, so you see a limit change coming just like in the car",
       "The welcome tour is fresh and shorter: it now explains what is behind every main button, how to build a trip point by point on the map, and how adventures work. The first time you plan a trip, a quick walk-through shows what the symbols and buttons on the trip card do",
+      "The speed limit goes away by itself when you have been parked for a minute, at work or at home, and comes back as soon as you ride again",
       "Plus a few minor bug fixes"
     ],
     "nb": [
@@ -17,6 +18,7 @@
       "Et stopp på veien, for eksempel en burger underveis, regnes nå som nådd først når du faktisk kommer til det. Før kunne Curveon si at du var fremme mens du bare kjørte forbi på hovedveien, og resten av turen gikk skeis derfra",
       "Fartsgrenseskiltene på kartet dukker nå opp også når du bare kjører en vei uten navigasjon, så du ser en endring i fartsgrensen komme, akkurat som i bilen",
       "Velkomstomvisningen er frisket opp og kortere: den forklarer nå hva som ligger bak hver hovedknapp, hvordan du bygger en tur punkt for punkt i kartet, og hvordan eventyr fungerer. Første gang du planlegger en tur, viser en rask gjennomgang hva symbolene og knappene på turkortet gjør",
+      "Fartsgrensen forsvinner av seg selv når du har stått parkert i et minutt, på jobb eller hjemme, og kommer tilbake så snart du kjører igjen",
       "Pluss noen mindre feilrettinger"
     ],
     "sv": [
@@ -26,6 +28,7 @@
       "Ett stopp på vägen, till exempel en hamburgare på vägen, räknas nu som nått först när du verkligen kommer fram till det. Förut kunde Curveon säga att du var framme medan du bara körde förbi på huvudvägen, och resten av turen gick snett därifrån",
       "Hastighetsskyltarna på kartan visas nu också när du bara kör en väg utan navigering, så du ser en ändring av hastighetsgränsen komma, precis som i bilen",
       "Välkomstgenomgången är fräschare och kortare: den förklarar nu vad som finns bakom varje huvudknapp, hur du bygger en tur punkt för punkt på kartan och hur äventyr fungerar. Första gången du planerar en tur visar en snabb genomgång vad symbolerna och knapparna på turkortet gör",
+      "Hastighetsgränsen försvinner av sig själv när du har stått parkerad i en minut, på jobbet eller hemma, och kommer tillbaka så fort du kör igen",
       "Plus några mindre buggfixar"
     ],
     "da": [
@@ -35,6 +38,7 @@
       "Et stop på vejen, for eksempel en burger undervejs, regnes nu først som nået, når du faktisk kommer frem til det. Før kunne Curveon sige, at du var fremme, mens du bare kørte forbi på hovedvejen, og resten af turen gik skævt derfra",
       "Fartgrænseskiltene på kortet dukker nu også op, når du bare kører en vej uden navigation, så du kan se en ændring i fartgrænsen komme, ligesom i bilen",
       "Velkomstrundvisningen er frisket op og kortere: den forklarer nu, hvad der gemmer sig bag hver hovedknap, hvordan du bygger en tur punkt for punkt på kortet, og hvordan eventyr virker. Første gang du planlægger en tur, viser en hurtig gennemgang, hvad symbolerne og knapperne på turkortet gør",
+      "Fartgrænsen forsvinder af sig selv, når du har stået parkeret i et minut, på arbejde eller hjemme, og kommer tilbage, så snart du kører igen",
       "Plus et par mindre fejlrettelser"
     ],
     "fi": [
@@ -44,6 +48,7 @@
       "Pysähdys matkan varrella, vaikkapa hampurilainen tien päällä, katsotaan nyt saavutetuksi vasta kun todella pääset perille asti. Ennen Curveon saattoi sanoa, että olit perillä, vaikka ajoit vasta pääväylää ohi, ja loppumatka meni siitä sekaisin",
       "Nopeusrajoitusmerkit näkyvät nyt kartalla myös silloin, kun vain ajat tietä ilman navigointia, joten näet rajoituksen muutoksen tulevan aivan kuten autossa",
       "Tervetuloesittely on uudistettu ja lyhyempi: se kertoo nyt, mitä kunkin päänäppäimen takana on, miten matkan rakentaa piste pisteeltä kartalla ja miten seikkailut toimivat. Kun suunnittelet matkan ensimmäistä kertaa, nopea läpikäynti näyttää, mitä matkakortin symbolit ja painikkeet tekevät",
+      "Nopeusrajoitus katoaa itsestään, kun olet ollut pysäköitynä minuutin, töissä tai kotona, ja palaa heti kun ajat taas",
       "Lisäksi muutama pieni korjaus"
     ],
     "is": [
@@ -53,6 +58,7 @@
       "Stoppistöð á leiðinni, til dæmis hamborgari á leiðinni, telst nú aðeins náð þegar þú ert í raun kominn þangað. Áður gat Curveon sagt að þú værir kominn á áfangastað meðan þú ókst bara fram hjá á aðalveginum, og restin af ferðinni fór úr skorðum eftir það",
       "Hraðatakmarkanaskiltin á kortinu birtast nú líka þegar þú ekur bara veg án leiðsagnar, svo þú sérð breytingu á hámarkshraða koma, alveg eins og í bílnum",
       "Kynningin er endurnýjuð og styttri: hún útskýrir nú hvað leynist á bak við hvern aðalhnapp, hvernig þú byggir ferð punkt fyrir punkt á kortinu og hvernig ævintýri virka. Þegar þú skipuleggur ferð í fyrsta sinn sýnir stutt yfirferð hvað táknin og hnapparnir á ferðaspjaldinu gera",
+      "Hámarkshraðinn hverfur af sjálfu sér þegar þú hefur staðið kyrr í mínútu, í vinnunni eða heima, og kemur aftur um leið og þú ekur af stað",
       "Auk nokkurra smærri lagfæringa"
     ],
     "de": [
@@ -62,6 +68,7 @@
       "Ein Zwischenstopp unterwegs, etwa ein Burger an der Strecke, gilt jetzt erst als erreicht, wenn du wirklich dort bist. Vorher konnte Curveon sagen, du seist angekommen, obwohl du erst auf der Hauptstraße daran vorbeigefahren bist, und der Rest der Tour lief von da an schief",
       "Die Tempolimit-Schilder auf der Karte erscheinen jetzt auch, wenn du einfach eine Straße entlangfährst, ohne zu navigieren, sodass du eine Änderung des Limits kommen siehst wie im Auto",
       "Die Willkommenstour ist aufgefrischt und kürzer: Sie erklärt jetzt, was hinter jedem Hauptbutton steckt, wie du eine Fahrt Punkt für Punkt auf der Karte baust und wie Abenteuer funktionieren. Beim ersten Planen einer Fahrt zeigt ein kurzer Rundgang, was die Symbole und Buttons auf der Fahrtkarte tun",
+      "Das Tempolimit verschwindet von selbst, wenn du eine Minute geparkt hast, bei der Arbeit oder zu Hause, und kommt zurück, sobald du wieder fährst",
       "Dazu ein paar kleinere Fehlerbehebungen"
     ],
     "es": [
@@ -71,6 +78,7 @@
       "Una parada en el camino, como una hamburguesa por la carretera, ahora solo se da por alcanzada cuando llegas de verdad. Antes Curveon podía decir que habías llegado cuando solo pasabas de largo por la carretera principal, y el resto del viaje se torcía desde ahí",
       "Las señales de límite de velocidad del mapa ahora también aparecen cuando solo circulas por una carretera sin navegar, así ves venir un cambio de límite como en el coche",
       "El recorrido de bienvenida está renovado y es más corto: ahora explica qué hay detrás de cada botón principal, cómo montar un viaje punto a punto en el mapa y cómo funcionan las aventuras. La primera vez que planificas un viaje, un repaso rápido muestra qué hacen los símbolos y botones de la tarjeta del viaje",
+      "El límite de velocidad desaparece solo cuando llevas un minuto aparcado, en el trabajo o en casa, y vuelve en cuanto circulas otra vez",
       "Y algunas correcciones menores"
     ],
     "fr": [
@@ -80,6 +88,7 @@
       "Un arrêt en chemin, comme un burger sur la route, n'est plus compté comme atteint que lorsque tu y arrives vraiment. Avant, Curveon pouvait dire que tu étais arrivé alors que tu ne faisais que passer sur la route principale, et le reste du trajet partait de travers",
       "Les panneaux de limitation de vitesse sur la carte s'affichent maintenant aussi quand tu roules simplement sur une route sans navigation, pour voir venir un changement de limite comme en voiture",
       "La visite de bienvenue est rafraîchie et plus courte : elle explique maintenant ce qui se cache derrière chaque bouton principal, comment construire un trajet point par point sur la carte et comment fonctionnent les aventures. La première fois que tu planifies un trajet, un tour rapide montre ce que font les symboles et les boutons de la carte du trajet",
+      "La limite de vitesse disparaît toute seule quand tu es garé depuis une minute, au travail ou chez toi, et revient dès que tu roules à nouveau",
       "Et quelques petites corrections"
     ],
     "nl": [
@@ -89,6 +98,7 @@
       "Een stop onderweg, zoals een hamburger langs de weg, telt nu pas als bereikt wanneer je er echt bent. Eerder kon Curveon zeggen dat je er was terwijl je nog over de hoofdweg langsreed, en de rest van de rit ging daarna mis",
       "De snelheidsborden op de kaart verschijnen nu ook als je gewoon over een weg rijdt zonder te navigeren, zodat je een wijziging van de limiet ziet aankomen, net als in de auto",
       "De rondleiding is opgefrist en korter: hij legt nu uit wat er achter elke hoofdknop zit, hoe je een rit punt voor punt op de kaart bouwt en hoe avonturen werken. De eerste keer dat je een rit plant, laat een korte doorloop zien wat de symbolen en knoppen op de ritkaart doen",
+      "De maximumsnelheid verdwijnt vanzelf als je een minuut geparkeerd staat, op het werk of thuis, en komt terug zodra je weer rijdt",
       "Plus een paar kleine verbeteringen"
     ],
     "pl": [
@@ -98,6 +108,7 @@
       "Przystanek po drodze, na przykład burger przy trasie, jest teraz zaliczany dopiero wtedy, gdy naprawdę do niego dojedziesz. Wcześniej Curveon mógł powiedzieć, że jesteś na miejscu, choć dopiero mijałeś go główną drogą, a reszta trasy szła od tego momentu źle",
       "Znaki ograniczenia prędkości na mapie pojawiają się teraz także wtedy, gdy po prostu jedziesz drogą bez nawigacji, więc widzisz nadchodzącą zmianę limitu, tak jak w samochodzie",
       "Wycieczka powitalna jest odświeżona i krótsza: wyjaśnia teraz, co kryje się za każdym głównym przyciskiem, jak zbudować trasę punkt po punkcie na mapie i jak działają przygody. Przy pierwszym planowaniu trasy krótki przewodnik pokazuje, co robią symbole i przyciski na karcie trasy",
+      "Ograniczenie prędkości znika samo, gdy stoisz zaparkowany przez minutę, w pracy lub w domu, i wraca, gdy tylko znów ruszysz",
       "Do tego kilka drobnych poprawek"
     ]
   },
