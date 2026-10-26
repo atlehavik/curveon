@@ -48,6 +48,7 @@ CUTOUTS = {"hole", "corner", "tall", "double", "waterfall"}
 class Device:
     def __init__(self, serial):
         self.serial = serial
+        self.rotation = 0  # how the variant holds the screen: 0 portrait, 1 landscape
         self.extra = []  # problems a scenario found on the screens it passed on the way (a tour's steps)
 
     def sh(self, *args, check=False):
@@ -131,8 +132,10 @@ class Device:
 
 # Scenarios: how to get to a screen, and what on it must be wholly on screen. Labels in English and Norwegian.
 def forget_plan(d):
-    """No trip left planned from a scenario before (the trip card would come back on the next start)."""
+    """No trip left planned from a scenario before (the trip card would come back on the next start), and the screen
+    turned back the way the variant holds it (the welcome tour turns it sideways, and Android keeps it so)."""
     d.sh(f"run-as {PKG} rm -f files/plan-draft.json")
+    d.sh("settings", "put", "system", "user_rotation", str(d.rotation))
 
 
 def go_home(d, demo=None):
@@ -466,6 +469,7 @@ def apply_variant(d, v, rotation):
         for c in CUTOUTS:
             d.sh("cmd", "overlay", "disable", f"com.android.internal.display.cutout.emulation.{c}")
     d.sh("cmd", "overlay", "enable-exclusive", "--category", f"com.android.internal.systemui.navbar.{nav}")
+    d.rotation = rotation
     d.sh("settings", "put", "system", "user_rotation", str(rotation))
     time.sleep(4)
 
