@@ -48,6 +48,7 @@ CUTOUTS = {"hole", "corner", "tall", "double", "waterfall"}
 class Device:
     def __init__(self, serial):
         self.serial = serial
+        self.extra = []  # problems a scenario found on the screens it passed on the way (a tour's steps)
 
     def sh(self, *args, check=False):
         r = subprocess.run(["adb", "-s", self.serial, "shell", *args], capture_output=True, text=True)
@@ -96,11 +97,13 @@ class Device:
         return out
 
     def find(self, labels, nodes=None):
-        """The first node whose text or description is one of [labels] (or matches a regex starting with ~)."""
+        """The first node whose text or description is one of [labels] (or matches a regex starting with ~; a label
+        starting with = matches the text only, not a description: the tour's "Next" button, not the music's)."""
         for n in nodes if nodes is not None else self.nodes():
             for label in labels:
                 hay = (n["text"], n["desc"])
-                if (label.startswith("~") and any(re.search(label[1:], h) for h in hay)) or label in hay:
+                if (label.startswith("~") and any(re.search(label[1:], h) for h in hay)) or label in hay \
+                        or (label.startswith("=") and n["text"] == label[1:]):
                     return n
         return None
 
@@ -127,9 +130,18 @@ class Device:
 
 
 # Scenarios: how to get to a screen, and what on it must be wholly on screen. Labels in English and Norwegian.
+def forget_plan(d):
+    """No trip left planned from a scenario before (the trip card would come back on the next start)."""
+    d.sh(f"run-as {PKG} rm -f files/plan-draft.json")
+
+
 def go_home(d, demo=None):
     """Curveon started afresh on the dashboard; demo=True/False first turns demo phone data on or off (debug build)."""
     d.sh("am", "force-stop", PKG)
+    forget_plan(d)
+    # The tour scenarios leave the welcome tour or the trip card's walk-through unseen: not over the other screens.
+    d.sh(f"run-as {PKG} sed -i -e 's/name=\"tourSeen\" value=\"false\"/name=\"tourSeen\" value=\"true\"/' "
+         f"-e 's/name=\"tripHelpSeen\" value=\"false\"/name=\"tripHelpSeen\" value=\"true\"/' shared_prefs/settings.xml")
     if demo is not None:
         old, new = ("false", "true") if demo else ("true", "false")
         d.sh(f"run-as {PKG} sed -i 's/name=\"demo\" value=\"{old}\"/name=\"demo\" value=\"{new}\"/' shared_prefs/phone_link.xml")
@@ -305,6 +317,86 @@ def scenario_webplanscan(d):
     return [["~^(Cancel|Avbryt)$"], ["~(code on the planner page|koden på planleggersiden)"]]
 
 
+TOUR_NEXT = ["=Next", "=Neste"]
+TOUR_BUTTONS = [["Skip", "Hopp over"], ["Back", "Tilbake"], TOUR_NEXT]
+
+
+def scenario_tour(d):
+    """The welcome tour from the first start (tourSeen reset, Norsk picked, "Show me around"), stepped to its steps with
+    a drawing: every one of them is checked on the way (title and Skip/Back/Next wholly on screen), the last is shown.
+    The tour turns the phone sideways after the welcome, so portrait only differs up to there."""
+    d.sh("am", "force-stop", PKG)
+    forget_plan(d)
+    d.sh(f"run-as {PKG} sed -i 's/name=\"tourSeen\" value=\"true\"/name=\"tourSeen\" value=\"false\"/' shared_prefs/settings.xml")
+    d.sh("am", "start", "-n", f"{PKG}/com.curveon.MainActivity")
+    time.sleep(6)
+    if d.find(["~^(What's new|Nytt i Curveon)"]) is not None:
+        d.tap(["Close", "Lukk"])
+    for _ in range(4):  # the tour opens a moment after the dashboard
+        if d.find(["Norsk"]) is not None or d.find(["Vis meg rundt", "Show me around"]) is not None:
+            break
+        time.sleep(2)
+    if d.find(["Norsk"]) is not None:
+        d.tap(["Norsk"], wait=5)  # the screen restarts in Norwegian
+    d.tap(["Vis meg rundt", "Show me around"], wait=5)
+    drawn = [["Planlegg en tur", "Plan a trip"], ["Bygg den i kartet", "Build it on the map"],
+             ["Endre i kartet", "Edit on the map"], ["Endre bare en del", "Change just one part"],
+             ["Lag en rundtur", "Make a roundtrip"], ["Eventyr", "Adventure"]]
+    last = None
+    for _ in range(24):
+        nodes = d.nodes()
+        step = next((t for t in drawn if d.find(["=" + x for x in t], nodes) is not None), None)
+        if step is not None:
+            must = [["=" + x for x in step]] + TOUR_BUTTONS
+            d.extra += [f"step '{step[0]}': {p}" for p in check(d, must)]
+            last = must
+            if step is drawn[-1]:
+                return must
+        if d.find(TOUR_NEXT, nodes) is None:
+            break
+        d.tap(TOUR_NEXT, wait=2)
+    if last is None:
+        raise LookupError("no step with a drawing in the tour")
+    return last
+
+
+def scenario_triphelp(d):
+    """The first trip planned (tripHelpSeen reset; hold the map near Drammen -> Go here, as the emulator has no search
+    data): the walk over the trip card, all five steps checked on the way (title and Skip/Back/Next/OK wholly on
+    screen), the last one shown. Look over the sheet for the card covering the lit part."""
+    d.sh("am", "force-stop", PKG)
+    forget_plan(d)
+    d.sh(f"run-as {PKG} sed -i -e 's/name=\"tripHelpSeen\" value=\"true\"/name=\"tripHelpSeen\" value=\"false\"/' "
+         f"-e 's/name=\"tourSeen\" value=\"false\"/name=\"tourSeen\" value=\"true\"/' shared_prefs/settings.xml")
+    subprocess.run(["adb", "-s", d.serial, "emu", "geo", "fix", "10.20", "59.74"], capture_output=True)
+    d.sh("am", "start", "-n", f"{PKG}/com.curveon.MainActivity")
+    time.sleep(6)
+    w, h = d.screen()
+    d.sh("input", "swipe", str(w // 2), str(h // 4), str(w // 2), str(h // 4), "1000")
+    time.sleep(3)
+    d.tap(["Go here", "Kjør hit"], wait=12)
+    steps = [["Symbolene øverst", "The symbols up here"], ["Hvor turen starter", "Where it starts"],
+             ["Endre ruten", "Change the route"], ["Eventyr", "Adventure"], ["Velg veien", "Choose the road"]]
+    must = None
+    for i, step in enumerate(steps):
+        # Known by its counter ("4 AV 5"): the chip under the card is called Adventure too.
+        counter = [f"~^{i + 1} (AV|OF) {len(steps)}$"]
+        for _ in range(4):  # the walk opens a moment after the routes are in
+            if d.find(counter) is not None:
+                break
+            time.sleep(2)
+        last = i == len(steps) - 1
+        title = [] if step[0] == "Eventyr" else [["=" + x for x in step]]
+        must = [counter] + title + [["Skip", "Hopp over"] if not last else ["=OK"]] + \
+            ([["Back", "Tilbake"]] if i > 0 else []) + ([TOUR_NEXT] if not last else [])
+        if d.find(must[0]) is None:
+            raise LookupError(f"not on screen: {step}")
+        if not last:
+            d.extra += [f"step '{step[0]}': {p}" for p in check(d, must)]
+            d.tap(TOUR_NEXT, wait=2)
+    return must
+
+
 KM = ["~^[\\d\\s,.]+km$"]  # a ride's or trip's distance at the end of its row ("133 km"; not "158 rides · 8 km")
 
 
@@ -358,7 +450,7 @@ SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "cr
              "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge,
              "qrscan": scenario_qrscan, "friendrequest": scenario_friendrequest,
              "webplan": scenario_webplan, "webplanscan": scenario_webplanscan, "selfie": scenario_selfie,
-             "callbig": scenario_callbig, "callmsg": scenario_callmsg,
+             "callbig": scenario_callbig, "callmsg": scenario_callmsg, "tour": scenario_tour, "triphelp": scenario_triphelp,
              "ridebuttons": scenario_ridebuttons, "gpxmenu": scenario_gpxmenu, "plannedmenu": scenario_plannedmenu}
 
 
@@ -459,8 +551,9 @@ def main():
                 for s in shots:
                     tag = f"{v[0]}-{'land' if rot else 'port'}"
                     try:
+                        d.extra = []
                         must = SCENARIOS[s](d)
-                        problems = check(d, must)
+                        problems = d.extra + check(d, must)
                     except LookupError as e:
                         problems = [f"could not get there: {e}"]
                     path = os.path.join(a.out, f"{s}_{tag}.png")
