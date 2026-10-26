@@ -1199,7 +1199,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val roadCardSize: StateFlow<RoadCardSize> = _roadCardSize.asStateFlow()
     fun setRoadCardSize(size: RoadCardSize) { _roadCardSize.value = size; settings.edit().putString("roadCardSize", size.name).apply() }
 
-    private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.NORMAL)
+    private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.HUGE)
     val speedSign: StateFlow<SpeedSignSize> = _speedSign.asStateFlow()
     fun setSpeedSign(size: SpeedSignSize) { _speedSign.value = size; settings.edit().putString("speedSign", size.name).apply() }
 
