@@ -1295,6 +1295,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 if (navigator.state.value.isNavigating) _telemetry.update { it.copy(speedLimitKmh = limit) }
             }
         }
+        // DEV aid: a fixed limit (settings "devSpeedLimit") so the screen matrix sees the sign on an emulator without map data.
+        if (com.curveon.BuildConfig.DEV) settings.getInt("devSpeedLimit", 0).takeIf { it > 0 }?.let { fixed ->
+            viewModelScope.launch { _telemetry.collect { if (it.speedLimitKmh != fixed) _telemetry.update { t -> t.copy(speedLimitKmh = fixed) } } }
+        }
         // Speed limits of the countries we have maps of and the one we are in (maps or not), as soon
         // as we are online; new versions are looked for every few hours.
         viewModelScope.launch {

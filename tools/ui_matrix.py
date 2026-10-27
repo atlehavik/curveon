@@ -138,13 +138,17 @@ def forget_plan(d):
     d.sh("settings", "put", "system", "user_rotation", str(d.rotation))
 
 
-def go_home(d, demo=None):
-    """Curveon started afresh on the dashboard; demo=True/False first turns demo phone data on or off (debug build)."""
+def go_home(d, demo=None, limit=0):
+    """Curveon started afresh on the dashboard; demo=True/False first turns demo phone data on or off (debug build);
+    limit > 0 shows that speed limit in the speed card (the emulator has no map data to read one from)."""
     d.sh("am", "force-stop", PKG)
     forget_plan(d)
     # The tour scenarios leave the welcome tour or the trip card's walk-through unseen: not over the other screens.
     d.sh(f"run-as {PKG} sed -i -e 's/name=\"tourSeen\" value=\"false\"/name=\"tourSeen\" value=\"true\"/' "
          f"-e 's/name=\"tripHelpSeen\" value=\"false\"/name=\"tripHelpSeen\" value=\"true\"/' shared_prefs/settings.xml")
+    d.sh(f"run-as {PKG} sed -i 's| *<int name=\"devSpeedLimit\"[^>]*/>||' shared_prefs/settings.xml")
+    if limit:
+        d.sh(f"run-as {PKG} sed -i 's|</map>|    <int name=\"devSpeedLimit\" value=\"{limit}\" /></map>|' shared_prefs/settings.xml")
     if demo is not None:
         old, new = ("false", "true") if demo else ("true", "false")
         d.sh(f"run-as {PKG} sed -i 's/name=\"demo\" value=\"{old}\"/name=\"demo\" value=\"{new}\"/' shared_prefs/phone_link.xml")
@@ -153,8 +157,9 @@ def go_home(d, demo=None):
 
 
 def scenario_dashboard(d):
-    go_home(d)
-    return [["Settings", "Innstillinger"], ["Friends", "Venner"]]
+    """The dashboard with a speed limit: the big sign sticks out over the speed card's top-right corner."""
+    go_home(d, limit=80)
+    return [["Settings", "Innstillinger"], ["Friends", "Venner"], ["80"]]
 
 
 def scenario_settings(d):
