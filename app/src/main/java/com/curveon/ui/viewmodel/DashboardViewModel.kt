@@ -1199,7 +1199,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val roadCardSize: StateFlow<RoadCardSize> = _roadCardSize.asStateFlow()
     fun setRoadCardSize(size: RoadCardSize) { _roadCardSize.value = size; settings.edit().putString("roadCardSize", size.name).apply() }
 
-    private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.NORMAL)
+    private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.HUGE)
     val speedSign: StateFlow<SpeedSignSize> = _speedSign.asStateFlow()
     fun setSpeedSign(size: SpeedSignSize) { _speedSign.value = size; settings.edit().putString("speedSign", size.name).apply() }
 
@@ -1318,6 +1318,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
         // Free riding: probe the road we're on for its limit and look for cameras ahead.
         viewModelScope.launch {
+            var stillReads = 0
             while (true) {
                 delay(4_000)
                 untilAwake()
@@ -1325,6 +1326,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 if (navigator.state.value.isNavigating || !t.hasGpsFix) {
                     freeSignsFrom = null; freeSigns = emptyList()
                     if (!navigator.state.value.isNavigating && _mapSpeedSigns.value.isNotEmpty()) _mapSpeedSigns.value = emptyList()
+                    stillReads = 0
+                    continue
+                }
+                // Parked (at work, at home): the limit of the road last ridden and its signs go; they come back once on the move.
+                stillReads = if (t.speedKmh < 3f) stillReads + 1 else 0
+                if (stillReads >= STILL_BEFORE_HIDING_LIMIT) {
+                    freeSignsFrom = null; freeSigns = emptyList()
+                    if (_mapSpeedSigns.value.isNotEmpty()) _mapSpeedSigns.value = emptyList()
+                    if (t.speedLimitKmh != 0) _telemetry.update { it.copy(speedLimitKmh = 0) }
+                    _cameraAlert.value = null
                     continue
                 }
                 val here = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
@@ -2623,6 +2634,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         private const val FREE_SIGNS_TURN_DEG = 30.0
         /** A sign this far behind the rider has been passed. */
         private const val FREE_SIGNS_PAST_M = 10.0
+        /** Not navigating and standing still (under 3 km/h) for this many reads, about a minute: parked, no road limit to show. */
+        private const val STILL_BEFORE_HIDING_LIMIT = 15
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
         /** Search data bigger than this (compressed) isn't offered on its own: it comes with the country's map. */
         private const val SEARCH_OFFER_MAX_BYTES = 120_000_000L

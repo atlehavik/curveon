@@ -76,7 +76,7 @@ data class SettingsState(
     val showPhoneBattery: Boolean = false,
     /** A companion phone is linked: Curveon on a phone of its own has no other phone to show the battery of. */
     val phoneBatteryOffered: Boolean = true,
-    val speedSign: com.curveon.ui.viewmodel.SpeedSignSize = com.curveon.ui.viewmodel.SpeedSignSize.NORMAL,
+    val speedSign: com.curveon.ui.viewmodel.SpeedSignSize = com.curveon.ui.viewmodel.SpeedSignSize.HUGE,
     val showRoadInfo: Boolean = true,
     val roadCardSize: com.curveon.ui.viewmodel.RoadCardSize = com.curveon.ui.viewmodel.RoadCardSize.NORMAL,
     val showMapMedia: Boolean = true,
