@@ -199,13 +199,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Search data for where the rider is that can be fetched without downloading the map (see [checkSearchOffer]). */
     val searchOffer: StateFlow<com.curveon.data.search.SearchOffer?> = _searchOffer.asStateFlow()
     private var searchOfferJob: Job? = null
+    private var searchChecked = false
     /** Countries already fetched by themselves this time the app runs: once, so a failure doesn't make a loop. */
     private val autoSearchTried = mutableSetOf<String>()
 
     /**
      * Is there a search index for where the rider is that isn't on the tablet but is small enough to
-     * offer? Called when Where to? opens (and a little after start). A very small one on an unmetered
-     * connection is fetched by itself.
+     * offer? Called when Where to? opens and at the first GPS fix. It is fetched by itself (once per run, so a
+     * failure doesn't make a loop); the card in Where to? shows how far it is, or lets the rider try again.
      */
     fun checkSearchOffer() {
         if (searchOfferJob?.isActive == true) return
@@ -218,8 +219,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val bytes = mapDownloads.searchBytes(area.id)
             if (bytes == null || bytes > SEARCH_OFFER_MAX_BYTES) { _searchOffer.value = null; return@launch }
             if (_searchOffer.value?.areaId != area.id) _searchOffer.value = com.curveon.data.search.SearchOffer(area.id, area.displayName(java.util.Locale.getDefault()), bytes)
-            val cm = getApplication<Application>().getSystemService(android.net.ConnectivityManager::class.java)
-            if (bytes <= SEARCH_AUTO_MAX_BYTES && cm?.isActiveNetworkMetered == false && autoSearchTried.add(area.id)) downloadSearchIndex()
+            if (autoSearchTried.add(area.id)) downloadSearchIndex()
         }
     }
 
@@ -1522,6 +1522,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun onGpsFix(fix: GpsFix) {
         lastRealFixAt = System.currentTimeMillis()
         handleFix(fix, estimated = false)
+        if (!searchChecked) { searchChecked = true; checkSearchOffer() }
     }
 
     /**
@@ -2637,10 +2638,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         /** Not navigating and standing still (under 3 km/h) for this many reads, about a minute: parked, no road limit to show. */
         private const val STILL_BEFORE_HIDING_LIMIT = 15
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
-        /** Search data bigger than this (compressed) isn't offered on its own: it comes with the country's map. */
+        /** Search data bigger than this (compressed) isn't fetched on its own: it comes with the country's map. */
         private const val SEARCH_OFFER_MAX_BYTES = 120_000_000L
-        /** Search data this small is fetched by itself on an unmetered connection. */
-        private const val SEARCH_AUTO_MAX_BYTES = 8_000_000L
         private const val DR_START_MS = 3_000L
         /** The GPS gives a fix every second, standing still too: this long without one, the signal is gone. */
         private const val GPS_LOST_MS = 8_000L

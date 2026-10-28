@@ -36,7 +36,10 @@ phone, with an optional companion app on the phone when a tablet is used.
   to the roads only through one (the map is wrong, or the place is on a path): then the first/last leg
   uses as little path as there is no road way around, however long that is. Never in the middle.
   Online with no country downloaded, just the routing tiles a trip needs are fetched as it is planned
-  (and kept).
+  (and kept). The same goes for the country's search data (fuel, camping, places) when it is up to
+  120 MB: it is fetched in the background at the first GPS fix and when Where to? opens, on any
+  connection, once per run (a failure shows a Try again card in Where to?). Bigger ones (Germany)
+  come with the country's map.
 - **Roundtrip** (from "Where to?" when no trip is planned): draw the area to ride in on the map with a finger; the loop avoids riding the same road twice. Can start elsewhere than where you are, and "Edit on map" turns the loop into an ordinary trip through via points.
 - **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first. Tracks live in
   groups (a multi-track file becomes one) that can show/hide, colour and invert all their tracks at once
