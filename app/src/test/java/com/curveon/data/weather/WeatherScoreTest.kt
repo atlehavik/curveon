@@ -63,3 +63,28 @@ class WeatherScoreTest {
         assertEquals(WeatherService.Cell(-33.95, 18.5), WeatherService.cellOf(-33.92, 18.42))
     }
 }
+
+class WeatherMapGridTest {
+    @Test fun samePlacesWhenTheMapMovesALittle() {
+        val a = WeatherController.mapGrid(59.0, 61.0, 4.0, 8.0).toSet()
+        val b = WeatherController.mapGrid(59.02, 61.02, 4.03, 8.03).toSet()
+        assertTrue((a intersect b).size >= a.size * 0.8)
+    }
+
+    @Test fun coversTheWholeViewAlsoUpright() {
+        // A phone held upright: tall and narrow (southern Norway).
+        val south = 57.8; val north = 62.2; val west = 4.5; val east = 9.5
+        val g = WeatherController.mapGrid(south, north, west, east)
+        val lats = g.map { it.lat }.filter { it in south..north }
+        assertTrue("top ${lats.max()}", lats.max() > north - (north - south) / 4)
+        assertTrue("bottom ${lats.min()}", lats.min() < south + (north - south) / 4)
+        assertTrue(g.size <= 120)
+    }
+
+    @Test fun wideAndZoomedOutStaysWithinTheLimit() {
+        assertTrue(WeatherController.mapGrid(55.0, 65.0, -5.0, 30.0).size <= 120)
+        // Zoomed in closer than one cell: still one in view.
+        val g = WeatherController.mapGrid(59.7701, 59.7801, 5.2001, 5.2201)
+        assertTrue(g.any { it.lat in 59.7701..59.7801 && it.lon in 5.2001..5.2201 })
+    }
+}

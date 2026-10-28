@@ -188,7 +188,7 @@ class WeatherController(
                 listOf(WeatherPoint(p, at, 0.0), WeatherPoint(p, at + 3_600_000L, 0.0))
             }
             val hours = runCatching { service.hours(points, now) }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it; emptyList() }
-            _sketch.value = places.mapIndexedNotNull { i, (p, _) -> mapWeather(p, hours.getOrNull(2 * i), hours.getOrNull(2 * i + 1)) }
+            _sketch.value = onRoads(places.mapIndexedNotNull { i, (p, _) -> mapWeather(p, hours.getOrNull(2 * i), hours.getOrNull(2 * i + 1)) })
         }
     }
 
@@ -212,28 +212,45 @@ class WeatherController(
     val map: StateFlow<List<MapWeather>> = _map.asStateFlow()
     private var mapJob: Job? = null
 
-    /** One symbol per forecast cell (about 10 km) in view, at most [MAX_MAP_CELLS]: a few across, as many down as fit. */
+    /** The places last asked for, so a view that moved but shows the same places asks nothing again. */
+    private var mapPlaces: List<LatLon> = emptyList()
+
+    /**
+     * The weather on a fixed grid of places over the part of the map in view (and a row round it, for panning): the same
+     * places however the map is moved, so moving it only adds the new ones at the edge. The grid is as fine as the
+     * forecast (about 10 km) when zoomed in and coarser further out, about [MAP_ROWS] along the screen's shorter side.
+     */
     fun showMapWeather(south: Double, north: Double, west: Double, east: Double) {
+        if (!_enabled.value) { clearMapWeather(); return }
+        val places = mapGrid(south, north, west, east)
+        if (places == mapPlaces && _map.value.isNotEmpty()) return
+        mapPlaces = places
         mapJob?.cancel()
-        if (!_enabled.value) { _map.value = emptyList(); return }
         val now = System.currentTimeMillis()
-        val midLat = (south + north) / 2
-        val widthKm = Geo.distance(midLat, west, midLat, east) / 1000
-        val heightKm = Geo.distance(south, west, north, west) / 1000
-        val cols = 5
-        val rows = (cols * heightKm / widthKm.coerceAtLeast(0.1)).roundToInt().coerceIn(2, 8)
-        // A place in view for each cell (its middle may be off the screen when zoomed in): the first one of the grid in it.
-        val places = (0 until rows).flatMap { r -> (0 until cols).map { c ->
-            LatLon(south + (north - south) * (r + 0.5) / rows, west + (east - west) * (c + 0.5) / cols)
-        } }.distinctBy { WeatherService.cellOf(it.lat, it.lon) }.take(MAX_MAP_CELLS)
         mapJob = scope.launch {
             val points = places.flatMap { listOf(WeatherPoint(it, now, 0.0), WeatherPoint(it, now + 3_600_000L, 0.0)) }
             val hours = runCatching { service.hours(points, now) }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it; emptyList() }
-            _map.value = places.mapIndexedNotNull { i, p -> mapWeather(p, hours.getOrNull(2 * i), hours.getOrNull(2 * i + 1)) }
+            val shown = places.mapIndexedNotNull { i, p -> mapWeather(p, hours.getOrNull(2 * i), hours.getOrNull(2 * i + 1)) }
+            _map.value = onRoads(shown)
         }
     }
 
-    fun clearMapWeather() { mapJob?.cancel(); _map.value = emptyList() }
+    /** Where each place's weather is put on the map: on the nearest road within 6 km, so never at sea (null = no road near). */
+    private val roadSpots = object : LinkedHashMap<LatLon, LatLon?>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<LatLon, LatLon?>?) = size > 3000
+    }
+
+    private suspend fun onRoads(spots: List<MapWeather>): List<MapWeather> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+        spots.mapNotNull { w ->
+            val known = synchronized(roadSpots) { roadSpots.containsKey(w.point) }
+            val at = if (known) synchronized(roadSpots) { roadSpots[w.point] }
+                else runCatching { navigator.nearestRoad(w.point, LAND_SNAP_M) }.getOrDefault(w.point)
+                    .also { r -> synchronized(roadSpots) { roadSpots[w.point] = r } }
+            at?.let { w.copy(point = it) }
+        }
+    }
+
+    fun clearMapWeather() { mapJob?.cancel(); mapPlaces = emptyList(); _map.value = emptyList() }
 
     fun clearSketchWeather() { sketchJob?.cancel(); _sketch.value = emptyList() }
 
@@ -258,6 +275,35 @@ class WeatherController(
         const val DEFAULT_LOOP_KM = 150
         /** Weather on the map this far out (for a 150 km loop), eight places on each ring. */
         private val RINGS_KM = listOf(20.0, 40.0, 65.0)
-        private const val MAX_MAP_CELLS = 30
+        /** About this many places of weather along the map's shorter side (more along the longer one). */
+        private const val MAP_ROWS = 6
+        /** A place's weather goes on a road this near it, or is left out (at sea, or with no road at all). */
+        private const val LAND_SNAP_M = 6_000.0
+        /** With the row round the view: a wide tablet zoomed out stays within this, by a coarser grid. */
+        private const val MAX_MAP_PLACES = 120
+
+        /**
+         * Places on a grid fixed to the earth, [step] apart (a forecast cell, 0.1° north–south and twice that east–west, or
+         * a doubling of it), covering the view and a row round it. Zoomed in closer than one step, the one nearest the middle.
+         */
+        internal fun mapGrid(south: Double, north: Double, west: Double, east: Double): List<LatLon> {
+            // East–west steps are twice the degrees, about as many km in the north: so the shorter side, in north–south degrees.
+            val shorter = minOf(north - south, (east - west) / 2)
+            var step = 0.1
+            while (step < shorter / MAP_ROWS && step < 12.8) step *= 2
+            fun grid(step: Double): List<LatLon> {
+                val lonStep = step * 2
+                val rows = (kotlin.math.floor(south / step).toInt() - 1)..(kotlin.math.floor(north / step).toInt() + 1)
+                val cols = (kotlin.math.floor(west / lonStep).toInt() - 1)..(kotlin.math.floor(east / lonStep).toInt() + 1)
+                return rows.flatMap { r -> cols.map { c -> LatLon(round4((r + 0.5) * step), round4((c + 0.5) * lonStep)) } }
+            }
+            var places = grid(step)
+            while (places.size > MAX_MAP_PLACES) { step *= 2; places = grid(step) }
+            val inView = places.any { it.lat in south..north && it.lon in west..east }
+            if (!inView) places = places + LatLon(round4((south + north) / 2), round4((west + east) / 2))
+            return places
+        }
+
+        private fun round4(v: Double) = Math.round(v * 10000) / 10000.0
     }
 }

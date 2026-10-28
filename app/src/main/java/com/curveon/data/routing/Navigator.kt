@@ -272,6 +272,17 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private val offRoute by lazy { OffRoutePlanner(engine) }
     private val surfaces by lazy { com.curveon.routing.SurfaceReader(routingData.segmentsDir, java.io.File(ProfileInstaller.install(profileDir), "lookups.dat")) }
 
+    /**
+     * The nearest point on an ordinary road within [maxMeters] of [point] (no routing, only the cells round it), for
+     * putting the weather where the roads are: null = no road that near (at sea, high in the mountains); [point] itself
+     * when there is no routing data there to tell. Blocking.
+     */
+    fun nearestRoad(point: LatLon, maxMeters: Double): LatLon? {
+        val tile = RoutingData.tilesFor(point.lat, point.lon, point.lat, point.lon, marginDeg = 0.0).firstOrNull()
+        if (tile == null || !File(routingData.segmentsDir, "$tile.rd5").exists()) return point
+        return surfaces.nearestRoad(point.lat, point.lon, maxMeters)
+    }
+
     /** Gravel and softer roads in the area, from the routing data (the map tiles don't know surfaces). Blocking. */
     fun surfaceWays(south: Double, west: Double, north: Double, east: Double) = surfaces.ways(south, west, north, east)
 

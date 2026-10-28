@@ -22,8 +22,12 @@ nettbrettet ikke har nett (`weather_get` / `weather_data`), og en bryter i Innst
 Værkart-knappen (sol) i knappekolonnen til høyre på kartet i fullskjerm, når rytteren ikke navigerer og står
 stille (den skjules fra 10 km/t, som grusknappen) og vær kan hentes: av/på huskes, og den viser ett symbol per værrute
 (ca. 10 km) i den delen av kartet som vises, for nå og timen etter; det hentes bare mens knappen vises og er på.
-Værsymbolene står bare på land: et symbol over sjøen flyttes til land innen 6 km (kartets eget vannlag avgjør), ellers
-utelates det.
+Værsymbolene står på nærmeste vei innen 6 km (fra rutedataene, `SurfaceReader.nearestRoad`, beregnet utenfor
+hovedtråden og husket per punkt), så aldri i sjøen; uten vei så nær utelates de. (Først ble kartets vannlag spurt med
+`queryRenderedFeatures`; det ga hele vannflaten som geometri på hovedtråden og frøs kartet i over et sekund, ANR på X7.)
+Rutenettet er festet til faste punkter (0,1° × 0,2° eller en dobling, cirka seks langs skjermens korte side, maks 120 med
+en rad rundt), så panorering gir de samme punktene; kartet tegnes bare på nytt når symbolene faktisk endrer seg.
+Målt på X7, zoomet ut og panorert: 1 % tregeste bilder 1150 ms før, 48 ms etter (40 ms med værkartet av).
 **Ikke med ennå:** varsel underveis, Nowcast og MetAlerts-farevarsler; «Godt vær» for eventyr.
 Kode: `data/weather/` (WeatherService, WeatherScore, WeatherController), `:phone` MetWeather og WeatherTunnel.
 
