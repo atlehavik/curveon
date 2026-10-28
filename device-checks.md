@@ -6,6 +6,10 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-26 — Søkedata hentes av seg selv
+
+- [ ] På en enhet uten søkedata for landet du er i (Innstillinger → Kart og data viser ingen søkeindeks, f.eks. etter å ha slettet `Android/data/com.curveon.app/files/search/norway.sqlite`): start Curveon med nett og GPS-fiks. Åpne «Hvor skal du?» etter litt: kortet «Nærmeste drivstoff, camping og mer» viser at nedlastingen går (Norge er ca. 74 MB), og forsvinner når den er ferdig. Etterpå skal «Nærmeste drivstoff» virke uten nett. Skru av nett midt i: kortet skal da vise «Prøv igjen».
+
 ## 2026-10-25 — Frisket opp velkomstomvisning og førstegangshjelp for turkortet
 
 - [ ] Når bygget med 1.2.7 er på enheten: Innstillinger → Hjelp → Start omvisningen. Steg 2–6 forklarer hovedknappene (Hvor skal du?, GPX og turer, Telefon, Venner, Innstillinger), og «Bygg den i kartet» og «Eventyr» har egne tegninger. Sjekk at ingen knapp eller tekst er avkuttet på Pixel (stående og liggende) og X7.

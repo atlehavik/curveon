@@ -22,21 +22,43 @@ du er der, og ruten viser hvor og når du kan få regn.
   kommer fram, med klokkeslett, for eksempel «Regn ved Odda ca. 14:40». Er en annen veistil
   (rask, svingete) mye tørrere, står det på den brikken. Ruten byttes aldri uten at du ber om det.
 - **Underveis:** Endrer prognosen seg kraftig mens du kjører (nytt regn på strekningen foran),
-  kommer det et rolig kort på samme måte som andre varsler. Ingen lyd og ingen ny knapp.
+  kommer det et rolig kort på samme måte som andre varsler. Ingen lyd og ingen ny knapp. Det
+  samme gjelder et farevarsel fra MET på strekningen foran, for eksempel «Farevarsel: sterk
+  vind over Hardangervidda fra kl. 16».
 - **Ingen data:** Er du offline og prognosen er for gammel, er valget gråtonet og sier hvorfor:
   «Trenger nett for værvarsel». Det samme gjelder utenfor området værdataene dekker.
 
-### Hvor dataene kommer fra
+### Hvor dataene kommer fra: met.no
 
-- **MET Norway Locationforecast 2.0** (`api.met.no/weatherapi/locationforecast/2.0/compact`):
-  timesvarsel i ni dager, gratis og uten nøkkel, og dekker hele Norden (grovere i resten av
-  Europa). Lisensen er CC BY 4.0 og NLOD, så appen må kreditere «Værdata fra MET Norway» der
-  været vises og i THIRD_PARTY_LICENSES.md.
-- **Vilkår fra MET:** egen `User-Agent` med appnavn og kontakt, maks 4 desimaler i koordinatene,
-  respekt for `Expires`/`If-Modified-Since` (ingen henting før svaret er utløpt), og ingen
-  unødvendig trafikk.
-- **Senere, valgfritt:** MET Nowcast (radar, 0–2 timer, bare Norge) gir mer presise varsler om
-  regn den nærmeste timen underveis.
+Alle værdata kommer fra **MET Norway** (Meteorologisk institutt) på `api.met.no`. Det er det
+samme varselet som Yr viser: Yr har ikke noe eget API, så vi henter direkte fra MET. API-et er
+åpent, uten nøkkel og uten konto, og det koster ingenting å bruke.
+
+- **Locationforecast 2.0** (`api.met.no/weatherapi/locationforecast/2.0/compact`): timesvarsel i
+  ni dager (time for time de første dagene, så hver sjette time). Det dekker hele verden, med
+  høy oppløsning i Norden og grovere ellers. Det er grunnlaget for rundtur, A→B og varselet
+  underveis.
+- **Nowcast 2.0** (`api.met.no/weatherapi/nowcast/2.0/complete`): radarbasert nedbør hvert femte
+  minutt de neste to timene, bare i Norden. Brukes underveis for «regn foran deg om 20 min», der
+  Locationforecast er for grovt. Kommer etter Locationforecast.
+- **MetAlerts 2.0** (`api.met.no/weatherapi/metalerts/2.0/current.json?lat=…&lon=…`):
+  farevarsler fra MET (sterk vind, styrtregn, snø, glatte veier, flom og skred), med område og
+  tidsrom. Et gult, oransje eller rødt farevarsel på strekningen er nyttig for en motorsyklist.
+  Det vises som et merke på ruten og som et rolig kort underveis, på samme måte som regn.
+- **Lisens:** CC BY 4.0 og NLOD. **Kommersiell bruk er lov**, noe som betyr noe fordi Curveon
+  skal på Google Play. Kravet er kreditering: «Værdata fra MET Norway» der været vises, og i
+  THIRD_PARTY_LICENSES.md. Yr-navnet og Yr-logoen brukes ikke (de er NRK og MET sine, og det må
+  ikke se ut som Yr står bak appen).
+- **Vilkår fra MET** (api.met.no/doc/TermsOfService): egen `User-Agent` med appnavn, versjon og
+  kontakt (for eksempel `Curveon/1.2.6 github.com/atlehavik/curveon`), ellers svarer MET 403.
+  Koordinatene sendes med maks 4 desimaler (vi runder uansett til ~0,1°). Appen respekterer
+  `Expires` og `If-Modified-Since`, henter ikke før svaret har gått ut og bruker 304-svar. Det
+  blir ingen unødvendig trafikk og ingen henting i bakgrunnen. Over cirka 20 forespørsler i
+  sekundet totalt for appen trengs en egen avtale med MET. Med cache og rutenett er Curveon
+  langt under det.
+- **Hvorfor ikke andre kilder:** Open-Meteo er bare uten kostnad for ikke-kommersiell bruk, og
+  OpenWeatherMap krever nøkkel og har en grense i gratisplanen. MET har det beste varselet for
+  Norge og lov til kommersiell bruk, uten nøkkel.
 
 ### Hvordan det virker (teknisk skisse)
 
@@ -91,6 +113,9 @@ korte nok til kortene i cockpiten.
 - Skal været også vises på kartet (et lag med nedbør), eller bare på ruten? Minimal UI tilsier
   bare på ruten.
 - Utenfor Norden er MET grovere. Holder det, eller trengs en annen kilde?
+- Skal farevarsler fra MetAlerts vises også når «Godt vær» er av? De gjelder sikkerhet, ikke
+  bare komfort.
+- Skal Nowcast med i første versjon, eller komme etter Locationforecast?
 
 ### Testes på
 

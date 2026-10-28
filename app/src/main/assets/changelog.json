@@ -10,6 +10,7 @@
       "The welcome tour is fresh and shorter: it now explains what is behind every main button, how to build a trip point by point on the map, and how adventures work. The first time you plan a trip, a quick walk-through shows what the symbols and buttons on the trip card do",
       "The speed limit goes away by itself when you have been parked for a minute, at work or at home, and comes back as soon as you ride again",
       "The speed limit sign is now the big one from the start, so it is easy to read at a glance (you can still change the size in Settings → Display)",
+      "Search for fuel, camping and other places now works offline by itself: the first time you start Curveon in a country, its search data is fetched in the background, so you no longer have to download it before you can find things nearby",
       "Plus a few minor bug fixes"
     ],
     "nb": [
@@ -21,6 +22,7 @@
       "Velkomstomvisningen er frisket opp og kortere: den forklarer nå hva som ligger bak hver hovedknapp, hvordan du bygger en tur punkt for punkt i kartet, og hvordan eventyr fungerer. Første gang du planlegger en tur, viser en rask gjennomgang hva symbolene og knappene på turkortet gjør",
       "Fartsgrensen forsvinner av seg selv når du har stått parkert i et minutt, på jobb eller hjemme, og kommer tilbake så snart du kjører igjen",
       "Fartsgrenseskiltet er nå det store fra start, så det er lett å lese med et blikk (du kan fortsatt endre størrelsen i Innstillinger → Skjerm)",
+      "Søk etter drivstoff, camping og andre steder fungerer nå offline av seg selv: første gang du starter Curveon i et land, hentes søkedataene i bakgrunnen, så du slipper å laste dem ned selv før du finner ting i nærheten",
       "Pluss noen mindre feilrettinger"
     ],
     "sv": [
@@ -32,6 +34,7 @@
       "Välkomstgenomgången är fräschare och kortare: den förklarar nu vad som finns bakom varje huvudknapp, hur du bygger en tur punkt för punkt på kartan och hur äventyr fungerar. Första gången du planerar en tur visar en snabb genomgång vad symbolerna och knapparna på turkortet gör",
       "Hastighetsgränsen försvinner av sig själv när du har stått parkerad i en minut, på jobbet eller hemma, och kommer tillbaka så fort du kör igen",
       "Hastighetsskylten är nu den stora från början, så den är lätt att läsa med en blick (du kan fortfarande ändra storleken i Inställningar → Skärm)",
+      "Sökning efter bensin, camping och andra platser fungerar nu offline av sig själv: första gången du startar Curveon i ett land hämtas sökdatan i bakgrunden, så du slipper ladda ner den själv innan du hittar saker i närheten",
       "Plus några mindre buggfixar"
     ],
     "da": [
@@ -43,6 +46,7 @@
       "Velkomstrundvisningen er frisket op og kortere: den forklarer nu, hvad der gemmer sig bag hver hovedknap, hvordan du bygger en tur punkt for punkt på kortet, og hvordan eventyr virker. Første gang du planlægger en tur, viser en hurtig gennemgang, hvad symbolerne og knapperne på turkortet gør",
       "Fartgrænsen forsvinder af sig selv, når du har stået parkeret i et minut, på arbejde eller hjemme, og kommer tilbage, så snart du kører igen",
       "Fartgrænseskiltet er nu det store fra start, så det er let at læse med et blik (du kan stadig ændre størrelsen i Indstillinger → Skærm)",
+      "Søgning efter brændstof, camping og andre steder virker nu offline af sig selv: første gang du starter Curveon i et land, hentes søgedataene i baggrunden, så du slipper for selv at downloade dem, før du kan finde ting i nærheden",
       "Plus et par mindre fejlrettelser"
     ],
     "fi": [
@@ -54,6 +58,7 @@
       "Tervetuloesittely on uudistettu ja lyhyempi: se kertoo nyt, mitä kunkin päänäppäimen takana on, miten matkan rakentaa piste pisteeltä kartalla ja miten seikkailut toimivat. Kun suunnittelet matkan ensimmäistä kertaa, nopea läpikäynti näyttää, mitä matkakortin symbolit ja painikkeet tekevät",
       "Nopeusrajoitus katoaa itsestään, kun olet ollut pysäköitynä minuutin, töissä tai kotona, ja palaa heti kun ajat taas",
       "Nopeusrajoitusmerkki on nyt alusta asti suuri, joten sen lukee yhdellä silmäyksellä (kokoa voi yhä muuttaa kohdassa Asetukset → Näyttö)",
+      "Polttoaineen, leirintäalueiden ja muiden paikkojen haku toimii nyt offline-tilassa itsestään: kun käynnistät Curveonin maassa ensimmäistä kertaa, sen hakutiedot haetaan taustalla, joten niitä ei tarvitse ladata itse ennen kuin löydät lähellä olevia paikkoja",
       "Lisäksi muutama pieni korjaus"
     ],
     "is": [
@@ -65,6 +70,7 @@
       "Kynningin er endurnýjuð og styttri: hún útskýrir nú hvað leynist á bak við hvern aðalhnapp, hvernig þú byggir ferð punkt fyrir punkt á kortinu og hvernig ævintýri virka. Þegar þú skipuleggur ferð í fyrsta sinn sýnir stutt yfirferð hvað táknin og hnapparnir á ferðaspjaldinu gera",
       "Hámarkshraðinn hverfur af sjálfu sér þegar þú hefur staðið kyrr í mínútu, í vinnunni eða heima, og kemur aftur um leið og þú ekur af stað",
       "Hámarkshraðaskiltið er nú það stóra frá upphafi, svo auðvelt er að lesa það í fljótu bragði (þú getur enn breytt stærðinni í Stillingar → Skjár)",
+      "Leit að eldsneyti, tjaldsvæðum og öðrum stöðum virkar nú án nets af sjálfu sér: í fyrsta sinn sem þú ræsir Curveon í landi eru leitargögnin sótt í bakgrunni, svo þú þarft ekki að sækja þau sjálf(ur) áður en þú finnur hluti í nágrenninu",
       "Auk nokkurra smærri lagfæringa"
     ],
     "de": [
@@ -76,6 +82,7 @@
       "Die Willkommenstour ist aufgefrischt und kürzer: Sie erklärt jetzt, was hinter jedem Hauptbutton steckt, wie du eine Fahrt Punkt für Punkt auf der Karte baust und wie Abenteuer funktionieren. Beim ersten Planen einer Fahrt zeigt ein kurzer Rundgang, was die Symbole und Buttons auf der Fahrtkarte tun",
       "Das Tempolimit verschwindet von selbst, wenn du eine Minute geparkt hast, bei der Arbeit oder zu Hause, und kommt zurück, sobald du wieder fährst",
       "Das Tempolimit-Schild ist jetzt von Anfang an das große und lässt sich mit einem Blick lesen (die Größe kannst du weiter unter Einstellungen → Anzeige ändern)",
+      "Die Suche nach Tankstellen, Campingplätzen und anderen Orten funktioniert jetzt von selbst offline: Beim ersten Start von Curveon in einem Land werden die Suchdaten im Hintergrund geladen, du musst sie also nicht erst selbst herunterladen, um Orte in der Nähe zu finden",
       "Dazu ein paar kleinere Fehlerbehebungen"
     ],
     "es": [
@@ -87,6 +94,7 @@
       "El recorrido de bienvenida está renovado y es más corto: ahora explica qué hay detrás de cada botón principal, cómo montar un viaje punto a punto en el mapa y cómo funcionan las aventuras. La primera vez que planificas un viaje, un repaso rápido muestra qué hacen los símbolos y botones de la tarjeta del viaje",
       "El límite de velocidad desaparece solo cuando llevas un minuto aparcado, en el trabajo o en casa, y vuelve en cuanto circulas otra vez",
       "La señal del límite de velocidad ahora es la grande desde el principio, y se lee de un vistazo (puedes seguir cambiando el tamaño en Ajustes → Pantalla)",
+      "La búsqueda de gasolineras, campings y otros lugares ya funciona sin conexión por sí sola: la primera vez que abres Curveon en un país, sus datos de búsqueda se descargan en segundo plano, así que no tienes que descargarlos tú para encontrar cosas cerca",
       "Y algunas correcciones menores"
     ],
     "fr": [
@@ -98,6 +106,7 @@
       "La visite de bienvenue est rafraîchie et plus courte : elle explique maintenant ce qui se cache derrière chaque bouton principal, comment construire un trajet point par point sur la carte et comment fonctionnent les aventures. La première fois que tu planifies un trajet, un tour rapide montre ce que font les symboles et les boutons de la carte du trajet",
       "La limite de vitesse disparaît toute seule quand tu es garé depuis une minute, au travail ou chez toi, et revient dès que tu roules à nouveau",
       "Le panneau de limite de vitesse est désormais le grand dès le départ, pour le lire d’un coup d’œil (tu peux toujours changer la taille dans Réglages → Affichage)",
+      "La recherche de stations-service, de campings et d'autres lieux marche maintenant hors ligne toute seule : au premier lancement de Curveon dans un pays, ses données de recherche sont récupérées en arrière-plan, plus besoin de les télécharger soi-même pour trouver des adresses à proximité",
       "Et quelques petites corrections"
     ],
     "nl": [
@@ -109,6 +118,7 @@
       "De rondleiding is opgefrist en korter: hij legt nu uit wat er achter elke hoofdknop zit, hoe je een rit punt voor punt op de kaart bouwt en hoe avonturen werken. De eerste keer dat je een rit plant, laat een korte doorloop zien wat de symbolen en knoppen op de ritkaart doen",
       "De maximumsnelheid verdwijnt vanzelf als je een minuut geparkeerd staat, op het werk of thuis, en komt terug zodra je weer rijdt",
       "Het maximumsnelheidsbord is nu vanaf het begin het grote, zodat je het in één oogopslag leest (de grootte kun je nog steeds wijzigen bij Instellingen → Weergave)",
+      "Zoeken naar tankstations, campings en andere plekken werkt nu vanzelf offline: de eerste keer dat je Curveon in een land start, worden de zoekgegevens op de achtergrond opgehaald, dus je hoeft ze niet eerst zelf te downloaden om iets in de buurt te vinden",
       "Plus een paar kleine verbeteringen"
     ],
     "pl": [
@@ -120,6 +130,7 @@
       "Wycieczka powitalna jest odświeżona i krótsza: wyjaśnia teraz, co kryje się za każdym głównym przyciskiem, jak zbudować trasę punkt po punkcie na mapie i jak działają przygody. Przy pierwszym planowaniu trasy krótki przewodnik pokazuje, co robią symbole i przyciski na karcie trasy",
       "Ograniczenie prędkości znika samo, gdy stoisz zaparkowany przez minutę, w pracy lub w domu, i wraca, gdy tylko znów ruszysz",
       "Znak ograniczenia prędkości jest teraz od początku ten duży, więc łatwo go odczytać jednym spojrzeniem (rozmiar nadal zmienisz w Ustawienia → Wyświetlanie)",
+      "Wyszukiwanie stacji paliw, kempingów i innych miejsc działa teraz offline samo z siebie: przy pierwszym uruchomieniu Curveon w danym kraju dane wyszukiwania pobierają się w tle, więc nie musisz ich pobierać ręcznie, żeby znaleźć coś w pobliżu",
       "Do tego kilka drobnych poprawek"
     ]
   },
