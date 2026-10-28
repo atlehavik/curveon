@@ -1231,14 +1231,9 @@
     <string name="tripcoach_roads_title">Veldu veginn</string>
     <string name="tripcoach_roads_body">Fljótlegast, Hlykkjótt eða Mjög hlykkjótt, með tíma og vegalengd. Ýttu á eitt til að sjá það á kortinu.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Gott veður í dag</string>
-    <string name="weather_hours">%d klst</string>
-    <string name="weather_whole_day">Allan daginn</string>
-    <string name="weather_directions">Norður,Norðaustur,Austur,Suðaustur,Suður,Suðvestur,Vestur,Norðvestur</string>
     <string name="weather_dry_temps">Þurrt alla leið · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Rigning frá um %s</string>
-    <string name="weather_some_rain">Skúrir hér og þar</string>
-    <string name="weather_gusts">Sterkar vindhviður</string>
+    <string name="map_weather">Veðurkort</string>
+    <string name="weather_pick_for_me">Gott veður – veldu fyrir mig</string>
     <string name="weather_looking">Athuga veðurspána…</string>
     <string name="weather_none">Engin spá núna</string>
     <string name="weather_credit">Veðurgögn frá MET Norway</string>

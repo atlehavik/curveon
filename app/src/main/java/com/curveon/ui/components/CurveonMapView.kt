@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.SatelliteAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -96,6 +97,8 @@ private const val GPX_POIS = "curveon-gpx-pois"
 private const val GIVE_WAY = "curveon-give-way"
 private const val GIVE_WAY_IMAGE = "curveon-give-way-sign"
 private const val SPEED_SIGNS = "curveon-speed-signs"
+/** The weather round the rider while a loop is drawn. */
+private const val WEATHER = "curveon-weather"
 private const val STOP_SIGN_IMAGE = "curveon-stop-sign"
 private const val HINT = "curveon-track-hint"
 private const val SKETCH = "curveon-sketch"
@@ -222,6 +225,13 @@ fun CurveonMapView(
     giveWaySigns: List<com.curveon.data.routing.GiveWayAlert> = emptyList(),
     /** Where the speed limit changes ahead on the route: a sign on the right of the road. */
     speedSigns: List<com.curveon.data.routing.SpeedChange> = emptyList(),
+    /** Drawing a loop: the weather round where it starts (sun, cloud, rain, wind and how warm), to draw where it is dry. */
+    weatherSpots: List<com.curveon.data.weather.MapWeather> = emptyList(),
+    /** The weather map button (full-screen map, not navigating, standing still): on or off, and switching it; null = no button. */
+    weatherMapOn: Boolean = false,
+    onWeatherMap: ((Boolean) -> Unit)? = null,
+    /** Whether the weather button can be seen now, so the weather is only fetched then. */
+    onWeatherButtonShown: (Boolean) -> Unit = {},
     trackHint: com.curveon.data.gpx.TrackHint? = null,
     onPoiClick: (com.curveon.data.gpx.GpxPoi) -> Unit = {},
     /** A tap on another rider or a friend on the map: their [MapGroupRider.id], or several where they stand together. */
@@ -1144,6 +1154,24 @@ fun CurveonMapView(
     val onHeatButtonShownState = rememberUpdatedState(onHeatButtonShown)
     LaunchedEffect(heatButton) { onHeatButtonShownState.value(heatButton) }
     val heatOn = showGravelHeat && heatButton
+    // The weather: while drawing a loop as given; on the ordinary map only with its button shown and on.
+    val weatherButton = onWeatherMap != null && !planning && !navigating && !moving
+    val onWeatherButtonShownState = rememberUpdatedState(onWeatherButtonShown)
+    LaunchedEffect(weatherButton) { onWeatherButtonShownState.value(weatherButton) }
+    val shownWeather = if (onWeatherMap == null || (weatherButton && weatherMapOn)) weatherSpots else emptyList()
+    LaunchedEffect(style, shownWeather) {
+        val s = style ?: return@LaunchedEffect
+        val density = context.resources.displayMetrics.density
+        com.curveon.data.weather.MapWeather.Kind.entries.forEach { k ->
+            if (s.getImage(weatherImageName(k)) == null) s.addImage(weatherImageName(k), weatherImage(k, density))
+        }
+        s.getSourceAs<GeoJsonSource>(WEATHER)?.setGeoJson(FeatureCollection.fromFeatures(shownWeather.map { w ->
+            Feature.fromGeometry(Point.fromLngLat(w.point.lon, w.point.lat)).also {
+                it.addStringProperty("icon", weatherImageName(w.kind))
+                it.addStringProperty("temp", "${w.tempC}°")
+            }
+        }))
+    }
     val heatCells = remember { mutableStateMapOf<String, List<com.curveon.routing.HeatCell>>() }
     val heatCounting = remember { mutableStateListOf<String>() }
     var heatTiles by remember { mutableStateOf<List<String>?>(null) }
@@ -1268,6 +1296,11 @@ fun CurveonMapView(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.End
         ) {
+            // The weather map on and off, standing still on the full-screen map (top left is the give way sign's).
+            if (weatherButton) MapButton(onClick = { onWeatherMap?.invoke(!weatherMapOn) }, highlighted = weatherMapOn, tag = "map_weather_btn") {
+                Icon(Icons.Default.WbSunny, stringResource(R.string.map_weather),
+                    tint = if (weatherMapOn) Color(0xFF00363D) else TextPrimary, modifier = Modifier.size(24.dp))
+            }
             // Tap: north up → heading up → 3D; arriving in 3D shows two arrows beside it for the angle of the view
             // for a few seconds (held down shows them again).
             fun chooseOrientation(o: Orientation) {
@@ -1452,6 +1485,51 @@ private fun roadSignImages(density: Float): Map<String, android.graphics.Bitmap>
         drawText("STOP", w / 2f, w / 2f + p.textSize * 0.36f, p)
     }
     return mapOf(GIVE_WAY_IMAGE to giveWay, STOP_SIGN_IMAGE to stop)
+}
+
+private fun weatherImageName(kind: com.curveon.data.weather.MapWeather.Kind) = "curveon-weather-${kind.name.lowercase()}"
+
+/** A small weather symbol on a dark disc: a sun, a cloud, a cloud with rain, or wind lines. */
+private fun weatherImage(kind: com.curveon.data.weather.MapWeather.Kind, density: Float): android.graphics.Bitmap {
+    val d = (34 * density).toInt()
+    val bmp = android.graphics.Bitmap.createBitmap(d, d, android.graphics.Bitmap.Config.ARGB_8888)
+    val c = android.graphics.Canvas(bmp)
+    val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    val r = d / 2f
+    p.color = android.graphics.Color.argb(215, 0x12, 0x18, 0x20); c.drawCircle(r, r, r, p)
+    p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = 1.5f * density
+    p.color = android.graphics.Color.argb(160, 0xFF, 0xFF, 0xFF); c.drawCircle(r, r, r - p.strokeWidth, p)
+    p.style = android.graphics.Paint.Style.FILL
+    fun cloud(color: Int, cy: Float) {
+        p.color = color
+        c.drawCircle(r - d * 0.12f, cy, d * 0.13f, p)
+        c.drawCircle(r + d * 0.05f, cy - d * 0.06f, d * 0.16f, p)
+        c.drawRoundRect(r - d * 0.27f, cy - d * 0.02f, r + d * 0.27f, cy + d * 0.12f, d * 0.07f, d * 0.07f, p)
+    }
+    when (kind) {
+        com.curveon.data.weather.MapWeather.Kind.SUN -> {
+            p.color = android.graphics.Color.rgb(0xFF, 0xC1, 0x07)
+            c.drawCircle(r, r, d * 0.15f, p)
+            p.strokeWidth = 2f * density; p.strokeCap = android.graphics.Paint.Cap.ROUND
+            for (i in 0 until 8) {
+                val a = Math.toRadians(i * 45.0)
+                c.drawLine(r + (d * 0.22f * kotlin.math.cos(a)).toFloat(), r + (d * 0.22f * kotlin.math.sin(a)).toFloat(),
+                    r + (d * 0.31f * kotlin.math.cos(a)).toFloat(), r + (d * 0.31f * kotlin.math.sin(a)).toFloat(), p)
+            }
+        }
+        com.curveon.data.weather.MapWeather.Kind.CLOUD -> cloud(android.graphics.Color.rgb(0xB8, 0xC2, 0xCC), r + d * 0.02f)
+        com.curveon.data.weather.MapWeather.Kind.RAIN -> {
+            cloud(android.graphics.Color.rgb(0x9A, 0xA6, 0xB2), r - d * 0.08f)
+            p.color = android.graphics.Color.rgb(0x40, 0xA9, 0xFF); p.strokeWidth = 2f * density; p.strokeCap = android.graphics.Paint.Cap.ROUND
+            for (x in listOf(-0.14f, 0f, 0.14f)) c.drawLine(r + d * x, r + d * 0.12f, r + d * (x - 0.05f), r + d * 0.27f, p)
+        }
+        com.curveon.data.weather.MapWeather.Kind.WIND -> {
+            p.color = android.graphics.Color.rgb(0xFF, 0x91, 0x00); p.style = android.graphics.Paint.Style.STROKE
+            p.strokeWidth = 2.2f * density; p.strokeCap = android.graphics.Paint.Cap.ROUND
+            for ((y, len) in listOf(-0.12f to 0.5f, 0f to 0.36f, 0.12f to 0.44f)) c.drawLine(r - d * 0.25f, r + d * y, r - d * 0.25f + d * len, r + d * y, p)
+        }
+    }
+    return bmp
 }
 
 private fun speedSignImageName(limit: Int) = "curveon-speed-sign-$limit"
@@ -1705,6 +1783,17 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
         )
     )
     addSurfaceOverLayers(s, dark)
+    // The weather while drawing a loop: under the place names (raised next) and the drawn line, there to draw by.
+    s.addSource(GeoJsonSource(WEATHER))
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$WEATHER-icons", WEATHER).withProperties(
+            iconImage(org.maplibre.android.style.expressions.Expression.get("icon")), iconAllowOverlap(true), iconIgnorePlacement(true),
+            textField(org.maplibre.android.style.expressions.Expression.get("temp")), textFont(arrayOf("Noto Sans Medium")), textSize(13f),
+            textColor(if (dark) "#E8EEF5" else "#1B2430"), textHaloColor(if (dark) "#0B0F14" else "#FFFFFF"), textHaloWidth(1.5f),
+            // The temperature gives way to a place name it would cover (the names are placed first, being above).
+            textAnchor(Property.TEXT_ANCHOR_TOP), textOffset(arrayOf(0f, 1.4f)), textOptional(true)
+        )
+    )
     raisePlaceNames(s)
     // Zoomed out: small dots in the category colour (many waypoints stay readable). Zoomed in:
     // a badge with an icon per kind, and the name.

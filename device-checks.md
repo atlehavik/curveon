@@ -6,12 +6,13 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
-## 2026-10-28 — Godt vær i dag og vær på turen
+## 2026-10-28 — Vær når du tegner rundtur, og vær på turen
 
-- [ ] Pixel (med nett): åpne «Hvor skal du?». Under Rundtur kommer kortet «Godt vær i dag» med 2 t / 3 t / 5 t / Hel dag og tre retninger med vær («Tørt hele veien · 9–13°», «Regn fra ca. 14:00»). Bytt antall timer: listen oppdateres. Trykk en retning: en rundtur i den retningen planlegges.
+- [ ] Pixel (med nett): «Hvor skal du?» → Rundtur. Mens du tegner, ligger små værsymboler (sol, sky, regn, vind) med temperatur rundt deg på kartet, under stedsnavnene. Bytt «Maks km»: symbolene sprer seg lenger ut. Trykk «Godt vær – velg for meg»: brikken viser «Sjekker værvarselet…», så planlegges en rundtur i den tørreste retningen.
+- [ ] Pixel og X7, kartet i fullskjerm, stå stille: en solknapp over kompasset til høyre. Trykk den: værsymboler kommer i kartet (ett per ca. 10 km), flere når du zoomer ut, og temperaturen viker for stedsnavn. Kjør over 10 km/t: knappen og symbolene forsvinner, og kommer tilbake når du stopper (knappen er fortsatt på).
 - [ ] Planlegg en tur A→B: under de tre alternativene står en linje med været («Tørt hele veien …» eller «Regn ved <sted> ca. 14:40») og «Værdata fra MET Norway». Er det regn, kommer «Kjør kl. …, så holder det seg tørt» eller «Tørt via <sted>, +N min [Bruk]». Bruk legger stedet inn som stopp. Skiller alternativene seg (ett tørt, ett med regn), står «Tørt»/«Regn» på kortene.
-- [ ] **X7 uten eget nett, med Companion på telefonen** (det kan ikke prøves i emulatoren): det samme kortet og linjen skal komme, hentet gjennom telefonen. `adb -s <x7> logcat -s CurveonWeather` viser feil hvis noe går galt.
-- [ ] Innstillinger → Navigasjon → Vær av: kortet og linjen forsvinner, og ingenting hentes.
+- [ ] **X7 uten eget nett, med Companion på telefonen** (det kan ikke prøves i emulatoren): værsymbolene og linjen skal komme, hentet gjennom telefonen. `adb -s <x7> logcat -s CurveonWeather` viser feil hvis noe går galt.
+- [ ] Innstillinger → Navigasjon → Vær av: symbolene, brikken og linjen forsvinner, og ingenting hentes.
 - [ ] Flymodus etter å ha planlagt med nett: linjen kommer fortsatt (fra lagret varsel), med «Varsel fra HH:MM» når det er gått ut.
 
 ## 2026-10-26 — Søkedata hentes av seg selv

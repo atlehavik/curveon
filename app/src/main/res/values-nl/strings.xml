@@ -1204,14 +1204,9 @@
     <string name="tripcoach_roads_title">Kies de weg</string>
     <string name="tripcoach_roads_body">Snelste, Bochtig of Superbochtig, met tijd en afstand. Tik op een om hem op de kaart te zien.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Mooi weer vandaag</string>
-    <string name="weather_hours">%d u</string>
-    <string name="weather_whole_day">Hele dag</string>
-    <string name="weather_directions">Noord,Noordoost,Oost,Zuidoost,Zuid,Zuidwest,West,Noordwest</string>
     <string name="weather_dry_temps">Droog de hele weg · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Regen vanaf ongeveer %s</string>
-    <string name="weather_some_rain">Hier en daar buien</string>
-    <string name="weather_gusts">Harde windstoten</string>
+    <string name="map_weather">Weerkaart</string>
+    <string name="weather_pick_for_me">Mooi weer – kies voor mij</string>
     <string name="weather_looking">Weerbericht controleren…</string>
     <string name="weather_none">Nu geen weerbericht</string>
     <string name="weather_credit">Weergegevens van MET Norway</string>

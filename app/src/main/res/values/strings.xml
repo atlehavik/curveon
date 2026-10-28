@@ -1235,14 +1235,9 @@
     <string name="tripcoach_roads_title">Choose the road</string>
     <string name="tripcoach_roads_body">Fastest, Curvy or Super curvy, with time and distance. Tap one to see it on the map.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Good weather today</string>
-    <string name="weather_hours">%d h</string>
-    <string name="weather_whole_day">All day</string>
-    <string name="weather_directions">North,North-east,East,South-east,South,South-west,West,North-west</string>
     <string name="weather_dry_temps">Dry all the way · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Rain from about %s</string>
-    <string name="weather_some_rain">Showers here and there</string>
-    <string name="weather_gusts">Strong gusts</string>
+    <string name="map_weather">Weather map</string>
+    <string name="weather_pick_for_me">Good weather – pick for me</string>
     <string name="weather_looking">Checking the forecast…</string>
     <string name="weather_none">No forecast right now</string>
     <string name="weather_credit">Weather from MET Norway</string>

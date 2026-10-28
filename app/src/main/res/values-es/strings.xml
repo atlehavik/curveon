@@ -1250,14 +1250,9 @@
     <string name="tripcoach_roads_title">Elige la carretera</string>
     <string name="tripcoach_roads_body">Más rápida, Con curvas o Muchas curvas, con tiempo y distancia. Toca una para verla en el mapa.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Buen tiempo hoy</string>
-    <string name="weather_hours">%d h</string>
-    <string name="weather_whole_day">Todo el día</string>
-    <string name="weather_directions">Norte,Noreste,Este,Sureste,Sur,Suroeste,Oeste,Noroeste</string>
     <string name="weather_dry_temps">Seco todo el camino · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Lluvia desde las %s aprox.</string>
-    <string name="weather_some_rain">Chubascos aquí y allá</string>
-    <string name="weather_gusts">Rachas fuertes</string>
+    <string name="map_weather">Mapa del tiempo</string>
+    <string name="weather_pick_for_me">Buen tiempo – elige por mí</string>
     <string name="weather_looking">Mirando la previsión…</string>
     <string name="weather_none">Sin previsión ahora mismo</string>
     <string name="weather_credit">Datos del tiempo de MET Norway</string>

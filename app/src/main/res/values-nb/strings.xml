@@ -1233,14 +1233,9 @@
     <string name="tripcoach_roads_title">Velg veien</string>
     <string name="tripcoach_roads_body">Raskest, Svingete eller Supersvingete, med tid og avstand. Trykk på en for å se den i kartet.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Godt vær i dag</string>
-    <string name="weather_hours">%d t</string>
-    <string name="weather_whole_day">Hel dag</string>
-    <string name="weather_directions">Nordover,Nordøst,Østover,Sørøst,Sørover,Sørvest,Vestover,Nordvest</string>
     <string name="weather_dry_temps">Tørt hele veien · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Regn fra ca. %s</string>
-    <string name="weather_some_rain">Byger her og der</string>
-    <string name="weather_gusts">Kraftige vindkast</string>
+    <string name="map_weather">Værkart</string>
+    <string name="weather_pick_for_me">Godt vær – velg for meg</string>
     <string name="weather_looking">Sjekker værvarselet…</string>
     <string name="weather_none">Fikk ikke værvarsel nå</string>
     <string name="weather_credit">Værdata fra MET Norway</string>

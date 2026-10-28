@@ -1232,14 +1232,9 @@
     <string name="tripcoach_roads_title">Välj vägen</string>
     <string name="tripcoach_roads_body">Snabbast, Kurvigt eller Superkurvigt, med tid och avstånd. Tryck på en för att se den på kartan.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Fint väder i dag</string>
-    <string name="weather_hours">%d h</string>
-    <string name="weather_whole_day">Hela dagen</string>
-    <string name="weather_directions">Norrut,Nordost,Österut,Sydost,Söderut,Sydväst,Västerut,Nordväst</string>
     <string name="weather_dry_temps">Torrt hela vägen · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Regn från cirka %s</string>
-    <string name="weather_some_rain">Skurar här och där</string>
-    <string name="weather_gusts">Kraftiga vindbyar</string>
+    <string name="map_weather">Väderkarta</string>
+    <string name="weather_pick_for_me">Fint väder – välj åt mig</string>
     <string name="weather_looking">Kollar väderprognosen…</string>
     <string name="weather_none">Ingen prognos just nu</string>
     <string name="weather_credit">Väderdata från MET Norway</string>

@@ -1250,14 +1250,9 @@
     <string name="tripcoach_roads_title">Choisis la route</string>
     <string name="tripcoach_roads_body">Le plus rapide, Sinueux ou Très sinueux, avec durée et distance. Touches-en un pour le voir sur la carte.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Beau temps aujourd’hui</string>
-    <string name="weather_hours">%d h</string>
-    <string name="weather_whole_day">Toute la journée</string>
-    <string name="weather_directions">Nord,Nord-est,Est,Sud-est,Sud,Sud-ouest,Ouest,Nord-ouest</string>
     <string name="weather_dry_temps">Sec tout le trajet · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Pluie vers %s</string>
-    <string name="weather_some_rain">Averses par endroits</string>
-    <string name="weather_gusts">Fortes rafales</string>
+    <string name="map_weather">Carte météo</string>
+    <string name="weather_pick_for_me">Beau temps – choisis pour moi</string>
     <string name="weather_looking">Vérification de la météo…</string>
     <string name="weather_none">Pas de prévision pour l’instant</string>
     <string name="weather_credit">Météo de MET Norway</string>

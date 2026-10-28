@@ -863,7 +863,11 @@ fun SketchBar(
     /** Drawing the area for an adventure to a destination: how long it may take, null = no limit (instead of the loop's max length). */
     adventure: Boolean = false,
     adventureMinutes: Int? = null,
-    onAdventureMinutes: (Int?) -> Unit = {}
+    onAdventureMinutes: (Int?) -> Unit = {},
+    /** "Good weather – pick for me": Curveon plans the loop where the forecast is best (null: no forecast, or an adventure). */
+    onGoodWeather: (() -> Unit)? = null,
+    goodWeatherBusy: Boolean = false,
+    goodWeatherFailed: Boolean = false
 ) {
     Column(
         modifier
@@ -892,6 +896,15 @@ fun SketchBar(
         if (adventure) AdventureTimeChip(adventureMinutes, onAdventureMinutes) else LoopMaxChip(maxKm, onMaxKm)
         SurfaceChip(surface, onSurface)
         if (surface >= com.curveon.routing.SurfacePreference.GRAVEL) GravelReachChip(gravelReachKm, onGravelReach)
+        if (onGoodWeather != null) Box(Modifier.testTag("sketch_good_weather")) {
+            OptionChip(
+                stringResource(when { goodWeatherBusy -> R.string.weather_looking; goodWeatherFailed -> R.string.weather_none; else -> R.string.weather_pick_for_me }),
+                active = true, onClick = onGoodWeather
+            ) {
+                if (goodWeatherBusy) CircularProgressIndicator(color = EcoGreen, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                else Icon(Icons.Default.WbSunny, null, tint = NeonAmber)
+            }
+        }
     }
     }
 }

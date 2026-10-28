@@ -169,7 +169,10 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val routeGroups by viewModel.routeGroups.collectAsStateWithLifecycle()
     val searchOffer by viewModel.searchOffer.collectAsStateWithLifecycle()
     val previewWeather by viewModel.weather.preview.collectAsStateWithLifecycle()
-    val goodWeather by viewModel.weather.goodWeather.collectAsStateWithLifecycle()
+    val sketchWeather by viewModel.weather.sketch.collectAsStateWithLifecycle()
+    val weatherOn by viewModel.weather.enabled.collectAsStateWithLifecycle()
+    val mapWeather by viewModel.weather.map.collectAsStateWithLifecycle()
+    val weatherMapOn by viewModel.weatherMap.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
     val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
@@ -239,6 +242,15 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     /** Drawing the area for an adventure to this place instead of a loop's. */
     var adventure by remember { mutableStateOf<AdventureDraft?>(null) }
     LaunchedEffect(sketching) { if (sketching) sketchKm = null else adventure = null }
+    /** "Good weather – pick for me" is working out the direction, or found no forecast to go by. */
+    var weatherPicking by remember { mutableStateOf(false) }
+    var weatherPickFailed by remember { mutableStateOf(false) }
+    // While drawing: the weather round where the loop starts, on the map, for a loop about as long as chosen.
+    LaunchedEffect(sketching, sketchMaxKm, roundtripStart, weatherOn) {
+        weatherPickFailed = false
+        if (sketching && weatherOn) viewModel.weather.showSketchWeather(sketchMaxKm, roundtripStart?.first?.let { com.curveon.routing.LatLon(it.latitude, it.longitude) })
+        else viewModel.weather.clearSketchWeather()
+    }
     var showGpx by remember { mutableStateOf(false) }
     /** After saving a route or a ride: the rail buttons where it was put blink (the set, and a count so that the same one can blink again). */
     var railFlash by remember { mutableStateOf<Pair<Set<RailPanel>, Int>>(emptySet<RailPanel>() to 0) }
@@ -605,6 +617,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 maxKm = sketchMaxKm, onMaxKm = { sketchMaxKm = it }, surface = sketchSurface, onSurface = { sketchSurface = it },
                 gravelReachKm = sketchGravelReach, onGravelReach = { sketchGravelReach = it },
                 adventure = adventure != null, adventureMinutes = adventure?.minutes, onAdventureMinutes = { m -> adventure = adventure?.copy(minutes = m) },
+                // Only for a loop, and only with a forecast here to go by.
+                onGoodWeather = if (adventure == null && weatherOn && sketchWeather.isNotEmpty()) ({
+                    if (!weatherPicking) scope.launch {
+                        weatherPicking = true
+                        val planned = viewModel.previewWeatherLoop(sketchMaxKm, roundtripStart?.first, roundtripStart?.second ?: "", sketchSurface, sketchGravelReach)
+                        weatherPicking = false
+                        if (planned) sketching = false else weatherPickFailed = true
+                    }
+                }) else null,
+                goodWeatherBusy = weatherPicking, goodWeatherFailed = weatherPickFailed,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
         } else if (pickPurpose != null) {
             MapPickBar(
@@ -891,6 +913,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 if (trip != null) viewModel.previewAdventure(trip.name, trip.destination, stroke, trip.minutes, roundtripStart?.first, roundtripStart?.second ?: "", sketchSurface, sketchGravelReach)
                 else viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "", sketchMaxKm, sketchSurface, sketchGravelReach)
             }) else null,
+            weatherSpots = if (sketching) sketchWeather else mapWeather,
+            // On the full-screen map, with weather to be had (internet here, or the phone): the map hides it while riding.
+            weatherMapOn = weatherMapOn,
+            onWeatherMap = if (isFullScreenMap && weatherOn && !sketching && viewModel.phoneCompanion.canFetchWeather) viewModel::setWeatherMap else null,
+            onWeatherButtonShown = viewModel::setWeatherMapShown,
             gpxTracks = overlayTracks,
             gpxPois = overlayPois,
             trackHint = trackHint.takeIf { preview == null && !isNavigating },
@@ -1124,10 +1151,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onNearest = { viewModel.nearest(it) },
                 nearestEmpty = stringResource(if (telemetryState.value.hasGpsFix) R.string.search_nearest_none else R.string.search_nearest_no_position),
                 searchOffer = searchOffer, onDownloadSearch = viewModel::downloadSearchIndex,
-                onShown = { viewModel.checkSearchOffer(); if (purpose == SearchPurpose.DESTINATION && !isNavigating && preview == null) viewModel.weather.checkGoodWeather() },
-                goodWeather = goodWeather.takeIf { purpose == SearchPurpose.DESTINATION && !isNavigating && preview == null },
-                onGoodWeatherHours = { viewModel.weather.checkGoodWeather(it) },
-                onGoodWeatherPick = { d -> goodWeather?.let { g -> closeSearch(); viewModel.previewWeatherLoop(g.hours, d.directionDeg) } },
+                onShown = viewModel::checkSearchOffer,
                 purpose = purpose,
                 onPickOnMap = { startMapPick(purpose) },
                 growIn = searchGrowIn,

@@ -1232,14 +1232,9 @@
     <string name="tripcoach_roads_title">Vælg vejen</string>
     <string name="tripcoach_roads_body">Hurtigst, Snoet eller Supersnoet, med tid og afstand. Tryk på en for at se den på kortet.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Godt vejr i dag</string>
-    <string name="weather_hours">%d t</string>
-    <string name="weather_whole_day">Hele dagen</string>
-    <string name="weather_directions">Nordpå,Nordøst,Østpå,Sydøst,Sydpå,Sydvest,Vestpå,Nordvest</string>
     <string name="weather_dry_temps">Tørt hele vejen · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Regn fra ca. %s</string>
-    <string name="weather_some_rain">Byger hist og her</string>
-    <string name="weather_gusts">Kraftige vindstød</string>
+    <string name="map_weather">Vejrkort</string>
+    <string name="weather_pick_for_me">Godt vejr – vælg for mig</string>
     <string name="weather_looking">Tjekker vejrudsigten…</string>
     <string name="weather_none">Ingen vejrudsigt lige nu</string>
     <string name="weather_credit">Vejrdata fra MET Norway</string>

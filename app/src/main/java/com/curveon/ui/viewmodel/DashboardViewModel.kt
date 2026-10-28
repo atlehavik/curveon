@@ -134,11 +134,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         position = { _currentLocation.value.takeIf { it != DEFAULT_LOCATION }?.let { LatLon(it.latitude, it.longitude) } }
     )
 
-    /** A loop of about [hours] in [directionDeg], from "Good weather today": planned like any loop. */
-    fun previewWeatherLoop(hours: Int, directionDeg: Double) = navigator.previewRoundtrip(
-        weather.kmFor(hours), directionDeg,
-        lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle)
-    )
+    /**
+     * "Good weather – pick for me" while drawing a loop: about [km] long (null = the usual length) in the direction the
+     * forecast is best, from [start] or here, on the surface picked for the drawing. False when there is no forecast to go by.
+     */
+    suspend fun previewWeatherLoop(
+        km: Int?, start: GeoPoint? = null, startName: String = "",
+        surface: SurfacePreference = lastOptions.surface, gravelReachKm: Int? = lastOptions.gravelReachKm
+    ): Boolean {
+        val from = start?.let { LatLon(it.latitude, it.longitude) }
+        val direction = weather.bestDirection(km, from) ?: return false
+        navigator.previewRoundtrip(
+            (km ?: com.curveon.data.weather.WeatherController.DEFAULT_LOOP_KM).toDouble(), direction,
+            lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle,
+                surface = surface, gravelReachKm = gravelReachKm),
+            from?.let { Stop(startName, it) }
+        )
+        return true
+    }
 
     /** "Dry via X": the place goes into the trip as a stop. */
     fun addWeatherVia(via: com.curveon.data.weather.WeatherVia) = navigator.addStop(via.stop)
@@ -805,6 +818,29 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _viewport = MutableStateFlow<Viewport?>(null)
     fun setViewport(south: Double, north: Double, west: Double, east: Double, zoom: Double, widthKm: Double, centerLat: Double, centerLon: Double) {
         _viewport.value = Viewport(south, north, west, east, zoom, widthKm, centerLat, centerLon)
+    }
+
+    private val _weatherMap = MutableStateFlow(app.getSharedPreferences("settings", Context.MODE_PRIVATE).getBoolean("weatherMap", false))
+    /** The weather map button on the full-screen map is on (remembered). */
+    val weatherMap: StateFlow<Boolean> = _weatherMap.asStateFlow()
+    private val weatherMapShown = MutableStateFlow(false)
+
+    fun setWeatherMap(on: Boolean) {
+        _weatherMap.value = on
+        app.getSharedPreferences("settings", Context.MODE_PRIVATE).edit().putBoolean("weatherMap", on).apply()
+    }
+
+    /** The map says whether the weather button can be seen (full screen, standing still): weather is fetched only then. */
+    fun setWeatherMapShown(shown: Boolean) { weatherMapShown.value = shown }
+
+    init {
+        // The weather in view while the button is on and shown; again a moment after the map stops moving.
+        @OptIn(kotlinx.coroutines.FlowPreview::class)
+        viewModelScope.launch {
+            combine(_weatherMap, weatherMapShown, _viewport) { on, shown, v -> v.takeIf { on && shown } }
+                .debounce(400)
+                .collectLatest { v -> if (v == null) weather.clearMapWeather() else weather.showMapWeather(v.south, v.north, v.west, v.east) }
+        }
     }
 
     /** The chosen kinds of place in the part of the map in view, from the offline search of the downloaded countries. */

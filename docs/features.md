@@ -11,12 +11,17 @@ nærmest å bli bygget. En feature som blir bygget, flyttes ut herfra og inn i R
 **Kort sagt:** Curveon velger retning og vei etter været. En rundtur går dit det er oppholdsvær når
 du er der, og ruten viser hvor og når du kan få regn.
 
-**Status (2026-10-28, gren `weather`):** første versjon er bygd. *Godt vær i dag* i det tomme «Hvor skal du?»
-(2/3/5 timer eller hel dag, de tre beste av åtte retninger, trykk = rundtur dit), værlinjen i forhåndsvisningen
-(regn eller kraftige vindkast med sted og klokkeslett, ellers «Tørt hele veien»), «Tørt»/«Regn» på alternativene når
-de skiller seg, forslag om senere start og «Tørt via <sted> [Bruk]» (prøver 30 og 60 km til siden for der regnet
-begynner, høyst +20 min eller +25 %). Henting via Companion når nettbrettet ikke har nett (`weather_get` /
-`weather_data`), og en bryter i Innstillinger → Navigasjon → Vær. Rundturen tegnet med fingeren er uendret.
+**Status (2026-10-28, gren `weather`):** første versjon er bygd. Når rytteren tegner en rundtur, vises været rundt
+startpunktet på kartet (sol, sky, regn, vind og temperatur på 25 steder ut til ca. 65 km for en tur på 150 km, for
+omtrent når rytteren er der), og brikken *Godt vær – velg for meg* i tegnelinjen legger turen i den tørreste av åtte
+retninger med lengden og underlaget som er valgt. (Et eget kort «Godt vær i dag» i «Hvor skal du?» ble prøvd og fjernet:
+det tok for mye plass.) I forhåndsvisningen: værlinjen (regn eller kraftige vindkast med sted og klokkeslett, ellers
+«Tørt hele veien»), «Tørt»/«Regn» på alternativene når de skiller seg, forslag om senere start og «Tørt via <sted>
+[Bruk]» (prøver 30 og 60 km til siden for der regnet begynner, høyst +20 min eller +25 %). Henting via Companion når
+nettbrettet ikke har nett (`weather_get` / `weather_data`), og en bryter i Innstillinger → Navigasjon → Vær.
+Værkart-knappen (sol) i knappekolonnen til høyre på kartet i fullskjerm, når rytteren ikke navigerer og står
+stille (den skjules fra 10 km/t, som grusknappen) og vær kan hentes: av/på huskes, og den viser ett symbol per værrute
+(ca. 10 km) i den delen av kartet som vises, for nå og timen etter; det hentes bare mens knappen vises og er på.
 **Ikke med ennå:** varsel underveis, Nowcast og MetAlerts-farevarsler; «Godt vær» for eventyr.
 Kode: `data/weather/` (WeatherService, WeatherScore, WeatherController), `:phone` MetWeather og WeatherTunnel.
 

@@ -11,7 +11,7 @@
       "The speed limit goes away by itself when you have been parked for a minute, at work or at home, and comes back as soon as you ride again",
       "The speed limit sign is now the big one from the start, so it is easy to read at a glance (you can still change the size in Settings → Display)",
       "Search for fuel, camping and other places now works offline by itself: the first time you start Curveon in a country, its search data is fetched in the background, so you no longer have to download it before you can find things nearby",
-      "Ride where the weather is good! Where to? now shows Good weather today: pick 2, 3 or 5 hours or a whole day, and Curveon suggests the directions where it stays dry, with a loop ready at one tap. Every trip you plan also shows where and when you may get rain, and if a small detour or leaving a bit later keeps you dry, Curveon offers it right there",
+      "Ride where the weather is good! When you draw a round trip, the weather around you now shows on the map, so you can draw where it stays dry, or tap Good weather – pick for me and Curveon lays the loop the driest way. Every trip you plan also shows where and when you may get rain, and if a small detour or leaving a bit later keeps you dry, Curveon offers it right there. And when you stand still with the map in full screen, the sun button shows the weather on the map wherever you look",
       "Plus a few minor bug fixes"
     ],
     "nb": [
@@ -24,7 +24,7 @@
       "Fartsgrensen forsvinner av seg selv når du har stått parkert i et minutt, på jobb eller hjemme, og kommer tilbake så snart du kjører igjen",
       "Fartsgrenseskiltet er nå det store fra start, så det er lett å lese med et blikk (du kan fortsatt endre størrelsen i Innstillinger → Skjerm)",
       "Søk etter drivstoff, camping og andre steder fungerer nå offline av seg selv: første gang du starter Curveon i et land, hentes søkedataene i bakgrunnen, så du slipper å laste dem ned selv før du finner ting i nærheten",
-      "Kjør dit været er godt! «Hvor skal du?» viser nå Godt vær i dag: velg 2, 3 eller 5 timer eller hel dag, så foreslår Curveon retningene der det holder seg tørt, med en rundtur klar med ett trykk. Hver tur du planlegger viser også hvor og når du kan få regn, og holder en liten omvei eller litt senere start deg tørr, foreslår Curveon det med en gang",
+      "Kjør dit været er godt! Når du tegner en rundtur, vises nå været rundt deg på kartet, så du kan tegne der det holder seg tørt, eller trykke Godt vær – velg for meg, så legger Curveon turen dit det er tørrest. Hver tur du planlegger viser også hvor og når du kan få regn, og holder en liten omvei eller litt senere start deg tørr, foreslår Curveon det med en gang. Og når du står stille med kartet i fullskjerm, viser solknappen været på kartet der du ser",
       "Pluss noen mindre feilrettinger"
     ],
     "sv": [
@@ -37,7 +37,7 @@
       "Hastighetsgränsen försvinner av sig själv när du har stått parkerad i en minut, på jobbet eller hemma, och kommer tillbaka så fort du kör igen",
       "Hastighetsskylten är nu den stora från början, så den är lätt att läsa med en blick (du kan fortfarande ändra storleken i Inställningar → Skärm)",
       "Sökning efter bensin, camping och andra platser fungerar nu offline av sig själv: första gången du startar Curveon i ett land hämtas sökdatan i bakgrunden, så du slipper ladda ner den själv innan du hittar saker i närheten",
-      "Kör dit vädret är fint! Vart ska du? visar nu Fint väder i dag: välj 2, 3 eller 5 timmar eller hela dagen, så föreslår Curveon riktningarna där det håller sig torrt, med en rundtur klar med ett tryck. Varje tur du planerar visar också var och när du kan få regn, och om en liten omväg eller en lite senare start håller dig torr föreslår Curveon det direkt",
+      "Kör dit vädret är fint! När du ritar en rundtur visas nu vädret runt dig på kartan, så att du kan rita där det håller sig torrt, eller trycka på Fint väder – välj åt mig så lägger Curveon turen där det är torrast. Varje tur du planerar visar också var och när du kan få regn, och om en liten omväg eller en lite senare start håller dig torr föreslår Curveon det direkt. Och när du står still med kartan i helskärm visar solknappen vädret på kartan där du tittar",
       "Plus några mindre buggfixar"
     ],
     "da": [
@@ -50,7 +50,7 @@
       "Fartgrænsen forsvinder af sig selv, når du har stået parkeret i et minut, på arbejde eller hjemme, og kommer tilbage, så snart du kører igen",
       "Fartgrænseskiltet er nu det store fra start, så det er let at læse med et blik (du kan stadig ændre størrelsen i Indstillinger → Skærm)",
       "Søgning efter brændstof, camping og andre steder virker nu offline af sig selv: første gang du starter Curveon i et land, hentes søgedataene i baggrunden, så du slipper for selv at downloade dem, før du kan finde ting i nærheden",
-      "Kør derhen, hvor vejret er godt! Hvor skal du hen? viser nu Godt vejr i dag: vælg 2, 3 eller 5 timer eller hele dagen, så foreslår Curveon retningerne, hvor det holder tørt, med en rundtur klar med ét tryk. Hver tur du planlægger viser også, hvor og hvornår du kan få regn, og holder en lille omvej eller lidt senere start dig tør, foreslår Curveon det med det samme",
+      "Kør derhen, hvor vejret er godt! Når du tegner en rundtur, vises vejret omkring dig nu på kortet, så du kan tegne, hvor det holder tørt, eller trykke på Godt vejr – vælg for mig, så lægger Curveon turen, hvor det er tørrest. Hver tur du planlægger viser også, hvor og hvornår du kan få regn, og holder en lille omvej eller lidt senere start dig tør, foreslår Curveon det med det samme. Og når du holder stille med kortet i fuld skærm, viser solknappen vejret på kortet, hvor du kigger",
       "Plus et par mindre fejlrettelser"
     ],
     "fi": [
@@ -63,7 +63,7 @@
       "Nopeusrajoitus katoaa itsestään, kun olet ollut pysäköitynä minuutin, töissä tai kotona, ja palaa heti kun ajat taas",
       "Nopeusrajoitusmerkki on nyt alusta asti suuri, joten sen lukee yhdellä silmäyksellä (kokoa voi yhä muuttaa kohdassa Asetukset → Näyttö)",
       "Polttoaineen, leirintäalueiden ja muiden paikkojen haku toimii nyt offline-tilassa itsestään: kun käynnistät Curveonin maassa ensimmäistä kertaa, sen hakutiedot haetaan taustalla, joten niitä ei tarvitse ladata itse ennen kuin löydät lähellä olevia paikkoja",
-      "Aja sinne, missä sää on hyvä! Minne mennään? näyttää nyt kohdan Hyvä sää tänään: valitse 2, 3 tai 5 tuntia tai koko päivä, niin Curveon ehdottaa suuntia, joissa pysyy kuivana, ja lenkki on valmiina yhdellä napautuksella. Jokainen suunnittelemasi matka näyttää myös, missä ja milloin voi sataa, ja jos pieni kiertotie tai hieman myöhempi lähtö pitää sinut kuivana, Curveon ehdottaa sitä heti",
+      "Aja sinne, missä sää on hyvä! Kun piirrät lenkin, ympäristösi sää näkyy nyt kartalla, joten voit piirtää sinne, missä pysyy kuivana, tai napauttaa Hyvä sää – valitse puolestani, niin Curveon vie lenkin kuivimpaan suuntaan. Jokainen suunnittelemasi matka näyttää myös, missä ja milloin voi sataa, ja jos pieni kiertotie tai hieman myöhempi lähtö pitää sinut kuivana, Curveon ehdottaa sitä heti. Ja kun seisot paikallasi kartta koko näytöllä, aurinkopainike näyttää sään kartalla siellä, minne katsot",
       "Lisäksi muutama pieni korjaus"
     ],
     "is": [
@@ -76,7 +76,7 @@
       "Hámarkshraðinn hverfur af sjálfu sér þegar þú hefur staðið kyrr í mínútu, í vinnunni eða heima, og kemur aftur um leið og þú ekur af stað",
       "Hámarkshraðaskiltið er nú það stóra frá upphafi, svo auðvelt er að lesa það í fljótu bragði (þú getur enn breytt stærðinni í Stillingar → Skjár)",
       "Leit að eldsneyti, tjaldsvæðum og öðrum stöðum virkar nú án nets af sjálfu sér: í fyrsta sinn sem þú ræsir Curveon í landi eru leitargögnin sótt í bakgrunni, svo þú þarft ekki að sækja þau sjálf(ur) áður en þú finnur hluti í nágrenninu",
-      "Aktu þangað sem veðrið er gott! Hvert ætlarðu? sýnir nú Gott veður í dag: veldu 2, 3 eða 5 klukkustundir eða allan daginn og Curveon stingur upp á áttum þar sem helst þurrt, með hringferð tilbúna með einni snertingu. Hver ferð sem þú skipuleggur sýnir líka hvar og hvenær gæti rignt, og ef smá krókur eða aðeins seinni brottför heldur þér þurrum býður Curveon það strax",
+      "Aktu þangað sem veðrið er gott! Þegar þú teiknar hringferð sést veðrið í kringum þig nú á kortinu, svo þú getur teiknað þar sem helst þurrt, eða ýtt á Gott veður – veldu fyrir mig og Curveon leggur ferðina þar sem er þurrast. Hver ferð sem þú skipuleggur sýnir líka hvar og hvenær gæti rignt, og ef smá krókur eða aðeins seinni brottför heldur þér þurrum býður Curveon það strax. Og þegar þú stendur kyrr með kortið á öllum skjánum sýnir sólarhnappurinn veðrið á kortinu þar sem þú horfir",
       "Auk nokkurra smærri lagfæringa"
     ],
     "de": [
@@ -89,7 +89,7 @@
       "Das Tempolimit verschwindet von selbst, wenn du eine Minute geparkt hast, bei der Arbeit oder zu Hause, und kommt zurück, sobald du wieder fährst",
       "Das Tempolimit-Schild ist jetzt von Anfang an das große und lässt sich mit einem Blick lesen (die Größe kannst du weiter unter Einstellungen → Anzeige ändern)",
       "Die Suche nach Tankstellen, Campingplätzen und anderen Orten funktioniert jetzt von selbst offline: Beim ersten Start von Curveon in einem Land werden die Suchdaten im Hintergrund geladen, du musst sie also nicht erst selbst herunterladen, um Orte in der Nähe zu finden",
-      "Fahr dorthin, wo das Wetter gut ist! Wohin? zeigt jetzt Gutes Wetter heute: Wähle 2, 3 oder 5 Stunden oder den ganzen Tag, und Curveon schlägt die Richtungen vor, in denen es trocken bleibt, mit einer Runde, die mit einem Tipp bereitsteht. Jede geplante Fahrt zeigt außerdem, wo und wann du Regen abbekommen könntest, und wenn ein kleiner Umweg oder eine etwas spätere Abfahrt dich trocken hält, schlägt Curveon das gleich vor",
+      "Fahr dorthin, wo das Wetter gut ist! Wenn du eine Runde zeichnest, zeigt die Karte jetzt das Wetter um dich herum, damit du dort zeichnen kannst, wo es trocken bleibt, oder tippe auf Gutes Wetter – such für mich aus, und Curveon legt die Runde dorthin, wo es am trockensten ist. Jede geplante Fahrt zeigt außerdem, wo und wann du Regen abbekommen könntest, und wenn ein kleiner Umweg oder eine etwas spätere Abfahrt dich trocken hält, schlägt Curveon das gleich vor. Und wenn du mit der Karte im Vollbild stehst, zeigt der Sonnenknopf das Wetter auf der Karte, wo immer du hinschaust",
       "Dazu ein paar kleinere Fehlerbehebungen"
     ],
     "es": [
@@ -102,7 +102,7 @@
       "El límite de velocidad desaparece solo cuando llevas un minuto aparcado, en el trabajo o en casa, y vuelve en cuanto circulas otra vez",
       "La señal del límite de velocidad ahora es la grande desde el principio, y se lee de un vistazo (puedes seguir cambiando el tamaño en Ajustes → Pantalla)",
       "La búsqueda de gasolineras, campings y otros lugares ya funciona sin conexión por sí sola: la primera vez que abres Curveon en un país, sus datos de búsqueda se descargan en segundo plano, así que no tienes que descargarlos tú para encontrar cosas cerca",
-      "¡Ve donde hace buen tiempo! ¿A dónde vas? ahora muestra Buen tiempo hoy: elige 2, 3 o 5 horas o todo el día y Curveon te propone las direcciones donde no llueve, con una ruta circular lista con un toque. Cada viaje que planificas también muestra dónde y cuándo puede llover, y si un pequeño desvío o salir un poco más tarde te mantiene seco, Curveon te lo propone ahí mismo",
+      "¡Ve donde hace buen tiempo! Cuando dibujas una ruta circular, el mapa ahora muestra el tiempo a tu alrededor para que dibujes donde no llueve, o toca Buen tiempo – elige por mí y Curveon traza la ruta por donde está más seco. Cada viaje que planificas también muestra dónde y cuándo puede llover, y si un pequeño desvío o salir un poco más tarde te mantiene seco, Curveon te lo propone ahí mismo. Y cuando estás parado con el mapa a pantalla completa, el botón del sol muestra el tiempo en el mapa allí donde mires",
       "Y algunas correcciones menores"
     ],
     "fr": [
@@ -115,7 +115,7 @@
       "La limite de vitesse disparaît toute seule quand tu es garé depuis une minute, au travail ou chez toi, et revient dès que tu roules à nouveau",
       "Le panneau de limite de vitesse est désormais le grand dès le départ, pour le lire d’un coup d’œil (tu peux toujours changer la taille dans Réglages → Affichage)",
       "La recherche de stations-service, de campings et d'autres lieux marche maintenant hors ligne toute seule : au premier lancement de Curveon dans un pays, ses données de recherche sont récupérées en arrière-plan, plus besoin de les télécharger soi-même pour trouver des adresses à proximité",
-      "Roule là où il fait beau ! Où vas-tu ? affiche maintenant Beau temps aujourd’hui : choisis 2, 3 ou 5 heures ou toute la journée, et Curveon propose les directions où il reste sec, avec une boucle prête en un geste. Chaque trajet que tu planifies montre aussi où et quand tu risques la pluie, et si un petit détour ou un départ un peu plus tard te garde au sec, Curveon te le propose tout de suite",
+      "Roule là où il fait beau ! Quand tu dessines une boucle, la carte montre maintenant la météo autour de toi pour que tu dessines là où il reste sec, ou touche Beau temps – choisis pour moi et Curveon trace la boucle du côté le plus sec. Chaque trajet que tu planifies montre aussi où et quand tu risques la pluie, et si un petit détour ou un départ un peu plus tard te garde au sec, Curveon te le propose tout de suite. Et quand tu es à l’arrêt avec la carte en plein écran, le bouton soleil affiche la météo sur la carte là où tu regardes",
       "Et quelques petites corrections"
     ],
     "nl": [
@@ -128,7 +128,7 @@
       "De maximumsnelheid verdwijnt vanzelf als je een minuut geparkeerd staat, op het werk of thuis, en komt terug zodra je weer rijdt",
       "Het maximumsnelheidsbord is nu vanaf het begin het grote, zodat je het in één oogopslag leest (de grootte kun je nog steeds wijzigen bij Instellingen → Weergave)",
       "Zoeken naar tankstations, campings en andere plekken werkt nu vanzelf offline: de eerste keer dat je Curveon in een land start, worden de zoekgegevens op de achtergrond opgehaald, dus je hoeft ze niet eerst zelf te downloaden om iets in de buurt te vinden",
-      "Rij naar waar het weer goed is! Waarheen? toont nu Mooi weer vandaag: kies 2, 3 of 5 uur of een hele dag, en Curveon stelt de richtingen voor waar het droog blijft, met een rondrit klaar met één tik. Elke rit die je plant laat ook zien waar en wanneer je regen kunt krijgen, en als een kleine omweg of iets later vertrekken je droog houdt, stelt Curveon dat meteen voor",
+      "Rij naar waar het weer goed is! Als je een rondrit tekent, staat het weer om je heen nu op de kaart, zodat je kunt tekenen waar het droog blijft, of tik op Mooi weer – kies voor mij en Curveon legt de rit waar het het droogst is. Elke rit die je plant laat ook zien waar en wanneer je regen kunt krijgen, en als een kleine omweg of iets later vertrekken je droog houdt, stelt Curveon dat meteen voor. En als je stilstaat met de kaart op volledig scherm, toont de zonknop het weer op de kaart waar je ook kijkt",
       "Plus een paar kleine verbeteringen"
     ],
     "pl": [
@@ -141,7 +141,7 @@
       "Ograniczenie prędkości znika samo, gdy stoisz zaparkowany przez minutę, w pracy lub w domu, i wraca, gdy tylko znów ruszysz",
       "Znak ograniczenia prędkości jest teraz od początku ten duży, więc łatwo go odczytać jednym spojrzeniem (rozmiar nadal zmienisz w Ustawienia → Wyświetlanie)",
       "Wyszukiwanie stacji paliw, kempingów i innych miejsc działa teraz offline samo z siebie: przy pierwszym uruchomieniu Curveon w danym kraju dane wyszukiwania pobierają się w tle, więc nie musisz ich pobierać ręcznie, żeby znaleźć coś w pobliżu",
-      "Jedź tam, gdzie jest dobra pogoda! Dokąd jedziesz? pokazuje teraz Dobra pogoda dziś: wybierz 2, 3 lub 5 godzin albo cały dzień, a Curveon zaproponuje kierunki, w których będzie sucho, z pętlą gotową jednym dotknięciem. Każda zaplanowana trasa pokazuje też, gdzie i kiedy może padać, a jeśli mały objazd lub nieco późniejszy wyjazd pozwoli ci zostać suchym, Curveon od razu to zaproponuje",
+      "Jedź tam, gdzie jest dobra pogoda! Gdy rysujesz pętlę, mapa pokazuje teraz pogodę wokół ciebie, więc możesz rysować tam, gdzie będzie sucho, albo dotknąć Dobra pogoda – wybierz za mnie, a Curveon poprowadzi pętlę tam, gdzie jest najsuchej. Każda zaplanowana trasa pokazuje też, gdzie i kiedy może padać, a jeśli mały objazd lub nieco późniejszy wyjazd pozwoli ci zostać suchym, Curveon od razu to zaproponuje. A gdy stoisz z mapą na pełnym ekranie, przycisk słońca pokazuje pogodę na mapie tam, gdzie patrzysz",
       "Do tego kilka drobnych poprawek"
     ]
   },

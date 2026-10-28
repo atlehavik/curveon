@@ -1183,14 +1183,9 @@
     <string name="tripcoach_roads_title">Valitse tie</string>
     <string name="tripcoach_roads_body">Nopein, Mutkainen tai Supermutkainen, aikoineen ja matkoineen. Napauta yhtä nähdäksesi sen kartalla.</string>
     <!-- Weather for planning (MET Norway) -->
-    <string name="weather_good_today">Hyvä sää tänään</string>
-    <string name="weather_hours">%d h</string>
-    <string name="weather_whole_day">Koko päivä</string>
-    <string name="weather_directions">Pohjoiseen,Koilliseen,Itään,Kaakkoon,Etelään,Lounaaseen,Länteen,Luoteeseen</string>
     <string name="weather_dry_temps">Kuivaa koko matkan · %1$d–%2$d°</string>
-    <string name="weather_rain_from">Sadetta noin %s alkaen</string>
-    <string name="weather_some_rain">Sadekuuroja siellä täällä</string>
-    <string name="weather_gusts">Voimakkaita puuskia</string>
+    <string name="map_weather">Sääkartta</string>
+    <string name="weather_pick_for_me">Hyvä sää – valitse puolestani</string>
     <string name="weather_looking">Tarkistetaan sääennustetta…</string>
     <string name="weather_none">Ei ennustetta juuri nyt</string>
     <string name="weather_credit">Säätiedot: MET Norway</string>
