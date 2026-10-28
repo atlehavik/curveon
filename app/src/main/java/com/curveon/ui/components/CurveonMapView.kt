@@ -1159,18 +1159,35 @@ fun CurveonMapView(
     val onWeatherButtonShownState = rememberUpdatedState(onWeatherButtonShown)
     LaunchedEffect(weatherButton) { onWeatherButtonShownState.value(weatherButton) }
     val shownWeather = if (onWeatherMap == null || (weatherButton && weatherMapOn)) weatherSpots else emptyList()
-    LaunchedEffect(style, shownWeather) {
+    // Only on land: a symbol over the sea moves to land close by (in the same forecast cell, within 6 km), else it is left
+    // out. The map's own water tells which is which, so it is looked at again when the view has moved.
+    LaunchedEffect(style, map, shownWeather) {
         val s = style ?: return@LaunchedEffect
+        val m = map ?: return@LaunchedEffect
         val density = context.resources.displayMetrics.density
         com.curveon.data.weather.MapWeather.Kind.entries.forEach { k ->
             if (s.getImage(weatherImageName(k)) == null) s.addImage(weatherImageName(k), weatherImage(k, density))
         }
-        s.getSourceAs<GeoJsonSource>(WEATHER)?.setGeoJson(FeatureCollection.fromFeatures(shownWeather.map { w ->
-            Feature.fromGeometry(Point.fromLngLat(w.point.lon, w.point.lat)).also {
-                it.addStringProperty("icon", weatherImageName(w.kind))
-                it.addStringProperty("temp", "${w.tempC}°")
+        var lastCamera: org.maplibre.android.camera.CameraPosition? = null
+        var looks = 0
+        while (true) {
+            val camera = m.cameraPosition
+            // Also the first few seconds: until the map's tiles are drawn, all of it looks like land.
+            if (camera != lastCamera || looks++ < 4) {
+                lastCamera = camera
+                val water = s.layers.map { it.id }.filter { it.substringBefore('~').removePrefix("online-") == "water" }.toTypedArray()
+                s.getSourceAs<GeoJsonSource>(WEATHER)?.setGeoJson(FeatureCollection.fromFeatures(shownWeather.mapNotNull { w ->
+                    val at = onLand(m, mapView, water, w.point) ?: return@mapNotNull null
+                    Feature.fromGeometry(Point.fromLngLat(at.lon, at.lat)).also {
+                        it.addStringProperty("icon", weatherImageName(w.kind))
+                        it.addStringProperty("temp", "${w.tempC}°")
+                    }
+                }))
             }
-        }))
+            if (shownWeather.isEmpty()) break
+            kotlinx.coroutines.delay(1000)
+            lifecycleOwner.lifecycle.untilStarted()
+        }
     }
     val heatCells = remember { mutableStateMapOf<String, List<com.curveon.routing.HeatCell>>() }
     val heatCounting = remember { mutableStateListOf<String>() }
@@ -1485,6 +1502,23 @@ private fun roadSignImages(density: Float): Map<String, android.graphics.Bitmap>
         drawText("STOP", w / 2f, w / 2f + p.textSize * 0.36f, p)
     }
     return mapOf(GIVE_WAY_IMAGE to giveWay, STOP_SIGN_IMAGE to stop)
+}
+
+/**
+ * [p], or the first place near it on land: rings of 3 and 6 km round it. Water is what the map draws as water there (the
+ * [water] layers); a place off the screen can't be told, so it stays where it is (it isn't seen anyway). Null: all water.
+ */
+private fun onLand(m: MapLibreMap, view: android.view.View, water: Array<String>, p: com.curveon.routing.LatLon): com.curveon.routing.LatLon? {
+    if (water.isEmpty()) return p
+    val tries = listOf(p) + listOf(3_000.0, 6_000.0).flatMap { r -> (0 until 8).map { com.curveon.routing.Geo.destination(p, it * 45.0, r) } }
+    var anyOnScreen = false
+    for (t in tries) {
+        val at = m.projection.toScreenLocation(LatLng(t.lat, t.lon))
+        if (at.x < 0 || at.y < 0 || at.x > view.width || at.y > view.height) continue
+        anyOnScreen = true
+        if (m.queryRenderedFeatures(at, *water).isEmpty()) return t
+    }
+    return if (anyOnScreen) null else p
 }
 
 private fun weatherImageName(kind: com.curveon.data.weather.MapWeather.Kind) = "curveon-weather-${kind.name.lowercase()}"

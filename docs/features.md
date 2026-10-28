@@ -22,6 +22,8 @@ nettbrettet ikke har nett (`weather_get` / `weather_data`), og en bryter i Innst
 Værkart-knappen (sol) i knappekolonnen til høyre på kartet i fullskjerm, når rytteren ikke navigerer og står
 stille (den skjules fra 10 km/t, som grusknappen) og vær kan hentes: av/på huskes, og den viser ett symbol per værrute
 (ca. 10 km) i den delen av kartet som vises, for nå og timen etter; det hentes bare mens knappen vises og er på.
+Værsymbolene står bare på land: et symbol over sjøen flyttes til land innen 6 km (kartets eget vannlag avgjør), ellers
+utelates det.
 **Ikke med ennå:** varsel underveis, Nowcast og MetAlerts-farevarsler; «Godt vær» for eventyr.
 Kode: `data/weather/` (WeatherService, WeatherScore, WeatherController), `:phone` MetWeather og WeatherTunnel.
 
