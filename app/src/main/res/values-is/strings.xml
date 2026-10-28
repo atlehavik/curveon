@@ -1230,4 +1230,30 @@
     <string name="tripcoach_adventure_body">Ekki fljótlegasta leiðin, heldur lengri ferð um svæði sem þú teiknar á kortið.</string>
     <string name="tripcoach_roads_title">Veldu veginn</string>
     <string name="tripcoach_roads_body">Fljótlegast, Hlykkjótt eða Mjög hlykkjótt, með tíma og vegalengd. Ýttu á eitt til að sjá það á kortinu.</string>
+    <!-- Weather for planning (MET Norway) -->
+    <string name="weather_good_today">Gott veður í dag</string>
+    <string name="weather_hours">%d klst</string>
+    <string name="weather_whole_day">Allan daginn</string>
+    <string name="weather_directions">Norður,Norðaustur,Austur,Suðaustur,Suður,Suðvestur,Vestur,Norðvestur</string>
+    <string name="weather_dry_temps">Þurrt alla leið · %1$d–%2$d°</string>
+    <string name="weather_rain_from">Rigning frá um %s</string>
+    <string name="weather_some_rain">Skúrir hér og þar</string>
+    <string name="weather_gusts">Sterkar vindhviður</string>
+    <string name="weather_looking">Athuga veðurspána…</string>
+    <string name="weather_none">Engin spá núna</string>
+    <string name="weather_credit">Veðurgögn frá MET Norway</string>
+    <string name="weather_rain_at">Rigning við %1$s um %2$s</string>
+    <string name="weather_rain_after">Rigning eftir %1$s, um %2$s</string>
+    <string name="weather_wind_at">Sterkar hviður við %1$s um %2$s</string>
+    <string name="weather_wind_after">Sterkar hviður eftir %1$s, um %2$s</string>
+    <string name="weather_via_dry">Þurrt um %1$s, +%2$d mín</string>
+    <string name="weather_via_drier">Þurrara um %1$s, +%2$d mín</string>
+    <string name="weather_use">Nota</string>
+    <string name="weather_start_later">Farðu kl. %s og þá helst þurrt</string>
+    <string name="weather_searching">Leita að þurrari leið…</string>
+    <string name="weather_forecast_from">Spá frá %s</string>
+    <string name="weather_note_dry">Þurrt</string>
+    <string name="weather_note_rain">Rigning</string>
+    <string name="settings_weather">Veður</string>
+    <string name="settings_weather_hint">Sýnir veðrið á leiðinni og stingur upp á þurrum ferðum. Þegar þú skipuleggur er gróf staðsetning (um 10 km) send til MET Norway.</string>
 </resources>

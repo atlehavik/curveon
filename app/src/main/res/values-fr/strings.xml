@@ -1249,4 +1249,30 @@
     <string name="tripcoach_adventure_body">Pas le chemin le plus rapide, mais un trajet plus long à travers une zone que tu dessines sur la carte.</string>
     <string name="tripcoach_roads_title">Choisis la route</string>
     <string name="tripcoach_roads_body">Le plus rapide, Sinueux ou Très sinueux, avec durée et distance. Touches-en un pour le voir sur la carte.</string>
+    <!-- Weather for planning (MET Norway) -->
+    <string name="weather_good_today">Beau temps aujourd’hui</string>
+    <string name="weather_hours">%d h</string>
+    <string name="weather_whole_day">Toute la journée</string>
+    <string name="weather_directions">Nord,Nord-est,Est,Sud-est,Sud,Sud-ouest,Ouest,Nord-ouest</string>
+    <string name="weather_dry_temps">Sec tout le trajet · %1$d–%2$d°</string>
+    <string name="weather_rain_from">Pluie vers %s</string>
+    <string name="weather_some_rain">Averses par endroits</string>
+    <string name="weather_gusts">Fortes rafales</string>
+    <string name="weather_looking">Vérification de la météo…</string>
+    <string name="weather_none">Pas de prévision pour l’instant</string>
+    <string name="weather_credit">Météo de MET Norway</string>
+    <string name="weather_rain_at">Pluie près de %1$s vers %2$s</string>
+    <string name="weather_rain_after">Pluie après %1$s, vers %2$s</string>
+    <string name="weather_wind_at">Fortes rafales près de %1$s vers %2$s</string>
+    <string name="weather_wind_after">Fortes rafales après %1$s, vers %2$s</string>
+    <string name="weather_via_dry">Sec par %1$s, +%2$d min</string>
+    <string name="weather_via_drier">Plus sec par %1$s, +%2$d min</string>
+    <string name="weather_use">Prendre</string>
+    <string name="weather_start_later">Pars à %s et ça reste sec</string>
+    <string name="weather_searching">Recherche d’un trajet plus sec…</string>
+    <string name="weather_forecast_from">Prévision de %s</string>
+    <string name="weather_note_dry">Sec</string>
+    <string name="weather_note_rain">Pluie</string>
+    <string name="settings_weather">Météo</string>
+    <string name="settings_weather_hint">Affiche la météo le long du trajet et propose des trajets au sec. Quand tu planifies, une position approximative (environ 10 km) est envoyée à MET Norway.</string>
 </resources>

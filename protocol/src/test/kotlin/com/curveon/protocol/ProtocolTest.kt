@@ -100,6 +100,12 @@ class ProtocolTest {
         Message.RelayOpened(1),
         Message.RelayText(2, "{\"é\":1}"),
         Message.RelayClosed(2, -1),
+        Message.WeatherGet(3, 60.4, 5.3),
+        Message.WeatherData(3, WeatherForecast(60.4, 5.3, 1_800_000_000_000L, listOf(
+            WeatherHour(1_799_996_400_000L, 12.5, 0.4, 35.0, 4.2, 9.1, "lightrain"),
+            WeatherHour(1_800_000_000_000L, -1.0, 0.0, null, 1.0, null, null)
+        ))),
+        Message.WeatherData(4, null),
         Message.TripShare("t1", 3, "Dagstur", """{"stops":[{"name":"Kafé","lat":59.1,"lon":5.2}]}"""),
         Message.TripToFriends("t2", "Kveldstur", """{"stops":[]}""", listOf("f1", "f2")),
         Message.NudgeSend("f1", null),

@@ -11,6 +11,15 @@ nærmest å bli bygget. En feature som blir bygget, flyttes ut herfra og inn i R
 **Kort sagt:** Curveon velger retning og vei etter været. En rundtur går dit det er oppholdsvær når
 du er der, og ruten viser hvor og når du kan få regn.
 
+**Status (2026-10-28, gren `weather`):** første versjon er bygd. *Godt vær i dag* i det tomme «Hvor skal du?»
+(2/3/5 timer eller hel dag, de tre beste av åtte retninger, trykk = rundtur dit), værlinjen i forhåndsvisningen
+(regn eller kraftige vindkast med sted og klokkeslett, ellers «Tørt hele veien»), «Tørt»/«Regn» på alternativene når
+de skiller seg, forslag om senere start og «Tørt via <sted> [Bruk]» (prøver 30 og 60 km til siden for der regnet
+begynner, høyst +20 min eller +25 %). Henting via Companion når nettbrettet ikke har nett (`weather_get` /
+`weather_data`), og en bryter i Innstillinger → Navigasjon → Vær. Rundturen tegnet med fingeren er uendret.
+**Ikke med ennå:** varsel underveis, Nowcast og MetAlerts-farevarsler; «Godt vær» for eventyr.
+Kode: `data/weather/` (WeatherService, WeatherScore, WeatherController), `:phone` MetWeather og WeatherTunnel.
+
 ### Hva rytteren får
 
 - **Rundtur og eventyr:** Et valg «Godt vær» i arket for rundtur og eventyr, ved siden av

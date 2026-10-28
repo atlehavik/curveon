@@ -84,6 +84,8 @@ data class SettingsState(
     val offRoute: com.curveon.data.routing.OffRouteSettings,
     val navAlerts: com.curveon.data.routing.NavAlerts = com.curveon.data.routing.NavAlerts.SOUNDS,
     val offRouteAlerts: Boolean = true,
+    /** Weather along the trip and "Good weather today" (sends a rough position to MET Norway when planning). */
+    val weather: Boolean = true,
     val voiceHeadsUp: Boolean = true,
     /** The voice where speech plays, when it is not downloaded there: Settings suggests getting it. */
     val voiceMissing: com.curveon.data.bluetooth.PhoneCompanionManager.VoiceStatus? = null,
@@ -129,6 +131,7 @@ class SettingsActions(
     val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
     val onNavAlerts: (com.curveon.data.routing.NavAlerts) -> Unit = {},
     val onOffRouteAlerts: (Boolean) -> Unit = {},
+    val onWeather: (Boolean) -> Unit = {},
     val onVoiceHeadsUp: (Boolean) -> Unit = {},
     /** Opens the text-to-speech engine's voice download on this device. */
     val onInstallVoice: () -> Unit = {},
@@ -251,6 +254,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         }
                         Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
                             CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
+                        }
+                        Setting(stringResource(R.string.settings_weather), stringResource(R.string.settings_weather_hint)) {
+                            CockpitSwitch(state.weather, actions.onWeather)
                         }
                         SectionTitle(stringResource(R.string.settings_sound_title))
                         val voice = state.navAlerts == com.curveon.data.routing.NavAlerts.VOICE

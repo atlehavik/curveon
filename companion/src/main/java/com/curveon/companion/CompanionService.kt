@@ -130,6 +130,11 @@ class CompanionService : Service() {
         }
     }
 
+    private val metWeather by lazy {
+        val version = runCatching { packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull().orEmpty()
+        com.curveon.phone.MetWeather("CurveonCompanion/$version github.com/atlehavik/curveon")
+    }
+
     @SuppressLint("MissingPermission")
     private fun serve(socket: BluetoothSocket) {
         clientSocket = socket
@@ -139,6 +144,8 @@ class CompanionService : Service() {
         val sink: (Message) -> Unit = writer::write
         // The tablet may have no internet: its groups reach the relay over this phone's.
         val relay = RelayTunnelServer(relayTransports) { m -> runCatching { writer.write(m) } }
+        // And its weather planning gets MET's forecast the same way.
+        val weather = com.curveon.phone.WeatherTunnelServer(metWeather::fetch) { m -> runCatching { writer.write(m) } }
         try {
             writer.write(Message.Hello(Build.MODEL))
             PhoneHub.addTablet(sink, name)
@@ -154,6 +161,7 @@ class CompanionService : Service() {
                     is Message.Ping -> writer.write(Message.Ping)
                     is Message.Hello -> Unit
                     is Message.RelayOpen, is Message.RelaySend, is Message.RelayClose -> relay.handle(msg)
+                    is Message.WeatherGet -> weather.handle(msg)
                     else -> if (!GroupMirror.onMessage(msg)) PhoneHub.handle(msg) // how the tablet's groups are doing, or a command
                 }
             }

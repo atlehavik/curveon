@@ -1203,4 +1203,30 @@
     <string name="tripcoach_adventure_body">Niet de snelste weg, maar een langere rit door een gebied dat je op de kaart tekent.</string>
     <string name="tripcoach_roads_title">Kies de weg</string>
     <string name="tripcoach_roads_body">Snelste, Bochtig of Superbochtig, met tijd en afstand. Tik op een om hem op de kaart te zien.</string>
+    <!-- Weather for planning (MET Norway) -->
+    <string name="weather_good_today">Mooi weer vandaag</string>
+    <string name="weather_hours">%d u</string>
+    <string name="weather_whole_day">Hele dag</string>
+    <string name="weather_directions">Noord,Noordoost,Oost,Zuidoost,Zuid,Zuidwest,West,Noordwest</string>
+    <string name="weather_dry_temps">Droog de hele weg · %1$d–%2$d°</string>
+    <string name="weather_rain_from">Regen vanaf ongeveer %s</string>
+    <string name="weather_some_rain">Hier en daar buien</string>
+    <string name="weather_gusts">Harde windstoten</string>
+    <string name="weather_looking">Weerbericht controleren…</string>
+    <string name="weather_none">Nu geen weerbericht</string>
+    <string name="weather_credit">Weergegevens van MET Norway</string>
+    <string name="weather_rain_at">Regen bij %1$s rond %2$s</string>
+    <string name="weather_rain_after">Regen na %1$s, rond %2$s</string>
+    <string name="weather_wind_at">Harde windstoten bij %1$s rond %2$s</string>
+    <string name="weather_wind_after">Harde windstoten na %1$s, rond %2$s</string>
+    <string name="weather_via_dry">Droog via %1$s, +%2$d min</string>
+    <string name="weather_via_drier">Droger via %1$s, +%2$d min</string>
+    <string name="weather_use">Gebruiken</string>
+    <string name="weather_start_later">Vertrek om %s, dan blijft het droog</string>
+    <string name="weather_searching">Zoeken naar een drogere weg…</string>
+    <string name="weather_forecast_from">Weerbericht van %s</string>
+    <string name="weather_note_dry">Droog</string>
+    <string name="weather_note_rain">Regen</string>
+    <string name="settings_weather">Weer</string>
+    <string name="settings_weather_hint">Toont het weer langs de rit en stelt droge ritten voor. Bij het plannen wordt een globale positie (ongeveer 10 km) naar MET Norway gestuurd.</string>
 </resources>

@@ -1182,4 +1182,30 @@
     <string name="tripcoach_adventure_body">Ei nopein tie perille vaan pidempi ajo kartalle piirtämäsi alueen läpi.</string>
     <string name="tripcoach_roads_title">Valitse tie</string>
     <string name="tripcoach_roads_body">Nopein, Mutkainen tai Supermutkainen, aikoineen ja matkoineen. Napauta yhtä nähdäksesi sen kartalla.</string>
+    <!-- Weather for planning (MET Norway) -->
+    <string name="weather_good_today">Hyvä sää tänään</string>
+    <string name="weather_hours">%d h</string>
+    <string name="weather_whole_day">Koko päivä</string>
+    <string name="weather_directions">Pohjoiseen,Koilliseen,Itään,Kaakkoon,Etelään,Lounaaseen,Länteen,Luoteeseen</string>
+    <string name="weather_dry_temps">Kuivaa koko matkan · %1$d–%2$d°</string>
+    <string name="weather_rain_from">Sadetta noin %s alkaen</string>
+    <string name="weather_some_rain">Sadekuuroja siellä täällä</string>
+    <string name="weather_gusts">Voimakkaita puuskia</string>
+    <string name="weather_looking">Tarkistetaan sääennustetta…</string>
+    <string name="weather_none">Ei ennustetta juuri nyt</string>
+    <string name="weather_credit">Säätiedot: MET Norway</string>
+    <string name="weather_rain_at">Sadetta lähellä paikkaa %1$s noin %2$s</string>
+    <string name="weather_rain_after">Sadetta %1$s jälkeen, noin %2$s</string>
+    <string name="weather_wind_at">Voimakkaita puuskia lähellä paikkaa %1$s noin %2$s</string>
+    <string name="weather_wind_after">Voimakkaita puuskia %1$s jälkeen, noin %2$s</string>
+    <string name="weather_via_dry">Kuivaa kautta %1$s, +%2$d min</string>
+    <string name="weather_via_drier">Kuivempaa kautta %1$s, +%2$d min</string>
+    <string name="weather_use">Käytä</string>
+    <string name="weather_start_later">Lähde klo %s, niin pysyy kuivana</string>
+    <string name="weather_searching">Etsitään kuivempaa reittiä…</string>
+    <string name="weather_forecast_from">Ennuste klo %s</string>
+    <string name="weather_note_dry">Kuivaa</string>
+    <string name="weather_note_rain">Sadetta</string>
+    <string name="settings_weather">Sää</string>
+    <string name="settings_weather_hint">Näyttää sään matkan varrella ja ehdottaa kuivia ajoja. Suunnitellessa likimääräinen sijainti (noin 10 km) lähetetään MET Norwaylle.</string>
 </resources>

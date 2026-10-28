@@ -160,6 +160,19 @@ krasjrapport til reléet (`POST /feedback`), som gjør det om til en offentlig G
   egne saker (tittel og status) i appen; innholdet ses på GitHub. Lav risiko, men si det slik i Console om de spør.
 - Reléet lagrer ingenting fra rapportene (Netcup-DPA-en trenger ikke endres for dette).
 
+## Værvarsel fra MET Norway (2026-10-28)
+
+- Ingen ny tillatelse: `INTERNET` finnes fra før. Ingen bakgrunnsjobb: varselet hentes bare når rytteren
+  planlegger (forhåndsvisning av en tur, eller «Hvor skal du?» åpnes).
+- Midten av en rute på ca. 10 km sendes til api.met.no. Det er **omtrentlig posisjon** delt med en tjeneste for
+  appens funksjon, og står i `google-play-data-safety.md` og i personvernerklæringen. Kan slås av i Innstillinger →
+  Navigasjon → Vær (på som standard).
+- MET-lisensen (NLOD 2.0 / CC BY 4.0) tillater kommersiell bruk; kravet er kreditering, som vises under alt vær i
+  appen og står i THIRD_PARTY_LICENSES.md. Yr-navnet og -logoen brukes ikke.
+- Companion henter også varsel for nettbrettet når det ikke har nett (`weather_get`): companion sender da også
+  omtrentlig posisjon til MET. Companions svar i datasikkerhetsskjemaet («no data collected or shared») må
+  oppdateres før den legges på Play.
+
 ## Største risikoer hos Google
 
 1. **`READ_CALL_LOG`** og **`SEND_SMS`**, se over. Største risiko.

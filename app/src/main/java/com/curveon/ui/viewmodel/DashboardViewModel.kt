@@ -122,6 +122,26 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Trips shared with the rider's group: kept in step with the others', and shown under "Shared routes". */
     val sharedTrips = com.curveon.data.groups.SharedTripsController(application, viewModelScope, navigator, phoneCompanion.groups)
     private val placeSearch = PlaceSearch(application)
+
+    private val metWeather = com.curveon.phone.MetWeather("Curveon/${com.curveon.BuildConfig.VERSION_NAME} github.com/atlehavik/curveon")
+    /** Weather for planning: the trip in the preview and "Good weather today" in Where to? (see docs/features.md). */
+    val weather = com.curveon.data.weather.WeatherController(
+        application, viewModelScope, navigator,
+        fetch = { lat, lon -> phoneCompanion.weather(lat, lon, metWeather::fetch) },
+        canFetch = { phoneCompanion.canFetchWeather },
+        placeName = { lat, lon -> placeName(lat, lon) },
+        // The last known position will do (indoors, before a fix): the weather is the same a few hundred metres away.
+        position = { _currentLocation.value.takeIf { it != DEFAULT_LOCATION }?.let { LatLon(it.latitude, it.longitude) } }
+    )
+
+    /** A loop of about [hours] in [directionDeg], from "Good weather today": planned like any loop. */
+    fun previewWeatherLoop(hours: Int, directionDeg: Double) = navigator.previewRoundtrip(
+        weather.kmFor(hours), directionDeg,
+        lastOptions.copy(roadStyle = if (lastOptions.roadStyle == RoadStyle.FASTEST) RoadStyle.CURVY else lastOptions.roadStyle)
+    )
+
+    /** "Dry via X": the place goes into the trip as a stop. */
+    fun addWeatherVia(via: com.curveon.data.weather.WeatherVia) = navigator.addStop(via.stop)
     private val hazards by lazy { RouteHazards(placeSearch, speedLimits) }
     private val recentDestinations = RecentDestinations(application)
     private val favoritePlaces = com.curveon.data.routing.FavoritePlaces(application)

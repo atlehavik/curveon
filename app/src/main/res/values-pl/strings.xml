@@ -1275,4 +1275,30 @@
     <string name="tripcoach_adventure_body">Nie najszybsza droga, lecz dłuższa jazda przez obszar, który rysujesz na mapie.</string>
     <string name="tripcoach_roads_title">Wybierz drogę</string>
     <string name="tripcoach_roads_body">Najszybsza, Kręta lub Bardzo kręta, z czasem i dystansem. Dotknij jednej, by zobaczyć ją na mapie.</string>
+    <!-- Weather for planning (MET Norway) -->
+    <string name="weather_good_today">Dobra pogoda dziś</string>
+    <string name="weather_hours">%d h</string>
+    <string name="weather_whole_day">Cały dzień</string>
+    <string name="weather_directions">Na północ,Na północny wschód,Na wschód,Na południowy wschód,Na południe,Na południowy zachód,Na zachód,Na północny zachód</string>
+    <string name="weather_dry_temps">Sucho całą drogę · %1$d–%2$d°</string>
+    <string name="weather_rain_from">Deszcz od ok. %s</string>
+    <string name="weather_some_rain">Przelotne opady tu i tam</string>
+    <string name="weather_gusts">Silne porywy wiatru</string>
+    <string name="weather_looking">Sprawdzam prognozę…</string>
+    <string name="weather_none">Brak prognozy w tej chwili</string>
+    <string name="weather_credit">Dane pogodowe z MET Norway</string>
+    <string name="weather_rain_at">Deszcz koło %1$s ok. %2$s</string>
+    <string name="weather_rain_after">Deszcz po %1$s, ok. %2$s</string>
+    <string name="weather_wind_at">Silne porywy koło %1$s ok. %2$s</string>
+    <string name="weather_wind_after">Silne porywy po %1$s, ok. %2$s</string>
+    <string name="weather_via_dry">Sucho przez %1$s, +%2$d min</string>
+    <string name="weather_via_drier">Bardziej sucho przez %1$s, +%2$d min</string>
+    <string name="weather_use">Użyj</string>
+    <string name="weather_start_later">Wyjedź o %s, a będzie sucho</string>
+    <string name="weather_searching">Szukam suchszej drogi…</string>
+    <string name="weather_forecast_from">Prognoza z %s</string>
+    <string name="weather_note_dry">Sucho</string>
+    <string name="weather_note_rain">Deszcz</string>
+    <string name="settings_weather">Pogoda</string>
+    <string name="settings_weather_hint">Pokazuje pogodę na trasie i proponuje suche trasy. Podczas planowania przybliżona pozycja (ok. 10 km) jest wysyłana do MET Norway.</string>
 </resources>

@@ -1234,4 +1234,30 @@
     <string name="tripcoach_adventure_body">Not the quickest way there, but a longer ride through an area you draw on the map.</string>
     <string name="tripcoach_roads_title">Choose the road</string>
     <string name="tripcoach_roads_body">Fastest, Curvy or Super curvy, with time and distance. Tap one to see it on the map.</string>
+    <!-- Weather for planning (MET Norway) -->
+    <string name="weather_good_today">Good weather today</string>
+    <string name="weather_hours">%d h</string>
+    <string name="weather_whole_day">All day</string>
+    <string name="weather_directions">North,North-east,East,South-east,South,South-west,West,North-west</string>
+    <string name="weather_dry_temps">Dry all the way · %1$d–%2$d°</string>
+    <string name="weather_rain_from">Rain from about %s</string>
+    <string name="weather_some_rain">Showers here and there</string>
+    <string name="weather_gusts">Strong gusts</string>
+    <string name="weather_looking">Checking the forecast…</string>
+    <string name="weather_none">No forecast right now</string>
+    <string name="weather_credit">Weather from MET Norway</string>
+    <string name="weather_rain_at">Rain near %1$s about %2$s</string>
+    <string name="weather_rain_after">Rain after %1$s, about %2$s</string>
+    <string name="weather_wind_at">Strong gusts near %1$s about %2$s</string>
+    <string name="weather_wind_after">Strong gusts after %1$s, about %2$s</string>
+    <string name="weather_via_dry">Dry via %1$s, +%2$d min</string>
+    <string name="weather_via_drier">Drier via %1$s, +%2$d min</string>
+    <string name="weather_use">Use</string>
+    <string name="weather_start_later">Leave at %s and it stays dry</string>
+    <string name="weather_searching">Looking for a drier way…</string>
+    <string name="weather_forecast_from">Forecast from %s</string>
+    <string name="weather_note_dry">Dry</string>
+    <string name="weather_note_rain">Rain</string>
+    <string name="settings_weather">Weather</string>
+    <string name="settings_weather_hint">Shows the weather along the trip and suggests dry trips. When you plan, a rough position (about 10 km) is sent to MET Norway.</string>
 </resources>

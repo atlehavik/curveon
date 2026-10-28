@@ -30,6 +30,10 @@ Bare når du bruker disse funksjonene, og bare over kryptert forbindelse (HTTPS)
 - **Stedssøk.** Det du skriver og omtrentlig posisjon (så de nærmeste treffene kommer først) går til Photon
   (photon.komoot.io, Komoot) og, for norske stedsnavn og adresser, det du skriver til Kartverket (ws.geonorge.no).
   Tjenestene ser IP-adressen din, og Curveon rår ikke over hva de lagrer.
+- **Værvarsel.** Når du planlegger en tur eller åpner «Hvor skal du?», spør Curveon MET Norway (api.met.no,
+  Meteorologisk institutt) om varselet for stedene turen går gjennom. Det som sendes, er midten av en rute på
+  omtrent 10 × 10 km, aldri din eksakte posisjon. Har nettbrettet ikke nett, gjør telefonen med Curveon Companion
+  det samme for det. MET ser IP-adressen. Du kan slå det av i Innstillinger → Navigasjon → Vær.
 - **Nettkart.** Kartflisene kommer fra OpenFreeMap (tiles.openfreemap.org). De ser hvilket område du ser på og
   IP-adressen din.
 - **Nedlasting av kart og veidata** (Innstillinger): kartfiler fra Protomaps (build.protomaps.com) og rutedata fra

@@ -1053,6 +1053,17 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
+    /**
+     * A trip through [points] in order, worked out without showing it: to see whether a way round the rain is drier
+     * (see [com.curveon.data.weather.WeatherController]). Null when it can't be routed.
+     */
+    suspend fun tryRoute(points: List<LatLon>, options: RouteOptions): Route? = withContext(Dispatchers.Default) {
+        runCatching { engine.route(points, options, visitEveryVia = true) }.getOrNull()
+    }
+
+    /** Where [stop] would go among [stops] on the way from [from] to [destination] (see [addStop]). */
+    fun withStop(from: LatLon?, stops: List<Stop>, destination: LatLon, stop: Stop) = insertStop(from, stops, destination, stop)
+
     /** Insert where the straight-line detour is smallest. Good enough for a handful of stops. */
     private fun insertStop(from: LatLon?, stops: List<Stop>, destination: LatLon, stop: Stop): List<Stop> {
         val chain = listOfNotNull(from) + stops.map { it.point } + destination

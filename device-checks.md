@@ -6,6 +6,14 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-10-28 — Godt vær i dag og vær på turen
+
+- [ ] Pixel (med nett): åpne «Hvor skal du?». Under Rundtur kommer kortet «Godt vær i dag» med 2 t / 3 t / 5 t / Hel dag og tre retninger med vær («Tørt hele veien · 9–13°», «Regn fra ca. 14:00»). Bytt antall timer: listen oppdateres. Trykk en retning: en rundtur i den retningen planlegges.
+- [ ] Planlegg en tur A→B: under de tre alternativene står en linje med været («Tørt hele veien …» eller «Regn ved <sted> ca. 14:40») og «Værdata fra MET Norway». Er det regn, kommer «Kjør kl. …, så holder det seg tørt» eller «Tørt via <sted>, +N min [Bruk]». Bruk legger stedet inn som stopp. Skiller alternativene seg (ett tørt, ett med regn), står «Tørt»/«Regn» på kortene.
+- [ ] **X7 uten eget nett, med Companion på telefonen** (det kan ikke prøves i emulatoren): det samme kortet og linjen skal komme, hentet gjennom telefonen. `adb -s <x7> logcat -s CurveonWeather` viser feil hvis noe går galt.
+- [ ] Innstillinger → Navigasjon → Vær av: kortet og linjen forsvinner, og ingenting hentes.
+- [ ] Flymodus etter å ha planlagt med nett: linjen kommer fortsatt (fra lagret varsel), med «Varsel fra HH:MM» når det er gått ut.
+
 ## 2026-10-26 — Søkedata hentes av seg selv
 
 - [ ] På en enhet uten søkedata for landet du er i (Innstillinger → Kart og data viser ingen søkeindeks, f.eks. etter å ha slettet `Android/data/com.curveon.app/files/search/norway.sqlite`): start Curveon med nett og GPS-fiks. Åpne «Hvor skal du?» etter litt: kortet «Nærmeste drivstoff, camping og mer» viser at nedlastingen går (Norge er ca. 74 MB), og forsvinner når den er ferdig. Etterpå skal «Nærmeste drivstoff» virke uten nett. Skru av nett midt i: kortet skal da vise «Prøv igjen».

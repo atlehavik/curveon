@@ -117,3 +117,10 @@ Speed limit data sources by country:
 Business/POI data for offline search includes data from **Overture Maps Foundation** under the
 Community Data License Agreement – Permissive, Version 2.0 (CDLA-Permissive-2.0).  
 <https://overturemaps.org>
+
+## Weather data
+
+Weather forecasts are from **MET Norway** (the Norwegian Meteorological Institute), Locationforecast 2.0 on
+<https://api.met.no>, under the Norwegian Licence for Open Government Data (NLOD) 2.0 and Creative Commons 4.0 BY.
+Credited in the app as "Weather from MET Norway" wherever the weather shows.  
+<https://api.met.no/doc/License>

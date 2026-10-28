@@ -1231,4 +1231,30 @@
     <string name="tripcoach_adventure_body">Ikke den hurtigste vej derhen, men en længere tur gennem et område, du tegner på kortet.</string>
     <string name="tripcoach_roads_title">Vælg vejen</string>
     <string name="tripcoach_roads_body">Hurtigst, Snoet eller Supersnoet, med tid og afstand. Tryk på en for at se den på kortet.</string>
+    <!-- Weather for planning (MET Norway) -->
+    <string name="weather_good_today">Godt vejr i dag</string>
+    <string name="weather_hours">%d t</string>
+    <string name="weather_whole_day">Hele dagen</string>
+    <string name="weather_directions">Nordpå,Nordøst,Østpå,Sydøst,Sydpå,Sydvest,Vestpå,Nordvest</string>
+    <string name="weather_dry_temps">Tørt hele vejen · %1$d–%2$d°</string>
+    <string name="weather_rain_from">Regn fra ca. %s</string>
+    <string name="weather_some_rain">Byger hist og her</string>
+    <string name="weather_gusts">Kraftige vindstød</string>
+    <string name="weather_looking">Tjekker vejrudsigten…</string>
+    <string name="weather_none">Ingen vejrudsigt lige nu</string>
+    <string name="weather_credit">Vejrdata fra MET Norway</string>
+    <string name="weather_rain_at">Regn ved %1$s ca. %2$s</string>
+    <string name="weather_rain_after">Regn efter %1$s, ca. %2$s</string>
+    <string name="weather_wind_at">Kraftige vindstød ved %1$s ca. %2$s</string>
+    <string name="weather_wind_after">Kraftige vindstød efter %1$s, ca. %2$s</string>
+    <string name="weather_via_dry">Tørt via %1$s, +%2$d min</string>
+    <string name="weather_via_drier">Tørrere via %1$s, +%2$d min</string>
+    <string name="weather_use">Brug</string>
+    <string name="weather_start_later">Kør kl. %s, så holder det tørt</string>
+    <string name="weather_searching">Leder efter en tørrere vej…</string>
+    <string name="weather_forecast_from">Udsigt fra %s</string>
+    <string name="weather_note_dry">Tørt</string>
+    <string name="weather_note_rain">Regn</string>
+    <string name="settings_weather">Vejr</string>
+    <string name="settings_weather_hint">Viser vejret langs turen og foreslår tørre ture. Når du planlægger, sendes en omtrentlig position (ca. 10 km) til MET Norway.</string>
 </resources>

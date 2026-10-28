@@ -16,13 +16,14 @@ online-kartstilene; ingen analyse, reklame, Firebase eller Play Services-bibliot
 | Kan brukere be om sletting? | Ikke aktuelt: ingen kontoer, utvikler har ingen data (avinstallering fjerner alt) | Ikke aktuelt |
 | Følger «Families»-policyen? | Nei, ikke rettet mot barn | Nei |
 
-For companion svares «no data collected or shared»: den har ikke internett, og alt den leser går over Bluetooth til brukerens egen skjerm.
+For companion: alt den leser går over Bluetooth til brukerens egen skjerm. Den bruker internett bare på vegne av et nettbrett uten nett: reléet for grupper (kryptert, som i hovedappen) og værvarsel fra MET Norway (midten av en rute på ca. 10 km, når rytteren planlegger). Det siste er **Location > Approximate location**, samlet for App functionality, ikke delt (MET er tjenesteleverandør), valgfritt (Vær av i Curveon). Før companion legges på Play må svaret derfor ikke lenger være «no data collected or shared».
 
 ## Hovedappen: data som sendes fra enheten
 
 | Kategori / type | Samlet? | Delt? | Formål | Valgfri? |
 |---|---|---|---|---|
 | **Location > Precise location** (posisjon sendt til Photon ved stedssøk) | Ja | Nei **(skjønn)** | App functionality | Ja (brukeren velger å søke på nett) |
+| **Location > Approximate location** (midten av en rute på ca. 10 km sendt til MET Norway for værvarsel når rytteren planlegger; av i Innstillinger → Navigasjon → Vær) | Ja | Nei **(skjønn: MET er tjenesteleverandør for funksjonen)** | App functionality | Ja |
 | **App activity > In-app search history** (søketekst til Photon og Kartverket) | Ja | Nei **(skjønn)** | App functionality | Ja |
 | **Photos and videos > Photos** (bilder rytteren legger ved en feilmelding/et forslag) | Ja | Ja **(skjønn)** | App functionality (support) | Ja |
 | **App activity > Other user-generated content** (tittel og tekst i feilmelding/forslag) | Ja | Ja **(skjønn)** | App functionality (support) | Ja |

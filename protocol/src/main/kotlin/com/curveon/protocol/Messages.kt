@@ -588,6 +588,18 @@ sealed interface Message {
         override fun toJson() = obj("relay_closed").put("sock", id).put("code", code)
     }
 
+    // ---- the weather through the phone: a tablet with no internet of its own gets MET's forecast over the link ----
+
+    /** Tablet -> phone: fetch the forecast for the grid cell at [lat], [lon] (already rounded) and answer [WeatherData] with [id]. */
+    data class WeatherGet(val id: Int, val lat: Double, val lon: Double) : Message {
+        override fun toJson() = obj("weather_get").put("req", id).put("lat", lat).put("lon", lon)
+    }
+
+    /** Phone -> tablet: the forecast asked for with [id]; null when it could not be fetched. */
+    data class WeatherData(val id: Int, val forecast: WeatherForecast?) : Message {
+        override fun toJson() = obj("weather_data").put("req", id).put("forecast", forecast?.toJson() ?: JSONObject.NULL)
+    }
+
     // ---- groups, phone -> tablet ----
 
     /** Every group on the phone, and which one is active. [sharing] is false while paused. */
@@ -764,6 +776,8 @@ sealed interface Message {
             "relay_opened" -> RelayOpened(o.getInt("sock"))
             "relay_text" -> RelayText(o.getInt("sock"), o.getString("text"))
             "relay_closed" -> RelayClosed(o.getInt("sock"), o.optInt("code", -1))
+            "weather_get" -> WeatherGet(o.getInt("req"), o.getDouble("lat"), o.getDouble("lon"))
+            "weather_data" -> WeatherData(o.getInt("req"), o.optJSONObject("forecast")?.let(WeatherForecast::fromJson))
             // groups
             "request_groups" -> RequestGroups
             "group_create" -> GroupCreate(o.nullableString("name"))

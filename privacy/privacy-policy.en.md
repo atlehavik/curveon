@@ -29,6 +29,10 @@ Only when you use these functions, and only over an encrypted connection (HTTPS)
 - **Place search.** What you type, and your approximate position (so the nearest results come first), go to
   Photon (photon.komoot.io, Komoot) and, for Norwegian place names and addresses, what you type goes to Kartverket
   (ws.geonorge.no). These services see your IP address, and Curveon does not control what they keep.
+- **Weather forecast.** When you plan a trip or open Where to?, Curveon asks MET Norway (api.met.no, the Norwegian
+  Meteorological Institute) for the forecast for the places the trip goes through. What is sent is the middle of a
+  square of about 10 × 10 km, never your exact position. If the tablet has no internet, the phone with Curveon
+  Companion does the same for it. MET sees the IP address. You can switch it off in Settings → Navigation → Weather.
 - **Online map.** The map tiles come from OpenFreeMap (tiles.openfreemap.org). They see which area you look at
   and your IP address.
 - **Downloads of maps and road data** (Settings): map files from Protomaps (build.protomaps.com) and routing data

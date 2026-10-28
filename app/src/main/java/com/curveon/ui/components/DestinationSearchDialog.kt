@@ -77,6 +77,10 @@ fun DestinationSearchDialog(
     onDownloadSearch: () -> Unit = {},
     /** Called when the dialog opens, so an offer can be looked for. */
     onShown: () -> Unit = {},
+    /** "Good weather today": the best directions for a loop, picking how long it takes (null: no forecast, or not a new trip). */
+    goodWeather: com.curveon.data.weather.GoodWeather? = null,
+    onGoodWeatherHours: (Int) -> Unit = {},
+    onGoodWeatherPick: (com.curveon.data.weather.DirectionWeather) -> Unit = {},
     /** A place name being spoken (heard by the phone through the headset); its text goes into the field as it comes. */
     voice: com.curveon.data.bluetooth.VoiceReply? = null,
     /** Start listening; null when there is no phone to listen with (no microphone shown). */
@@ -235,6 +239,10 @@ fun DestinationSearchDialog(
                 Box(Modifier.testTag("search_roundtrip")) {
                     ListRow(Icons.Default.Explore, stringResource(R.string.roundtrip), stringResource(R.string.roundtrip_search_subtitle), null, onClick = onRoundtrip)
                 }
+            }
+            // Where the weather is good for a loop of a few hours: one card, only when there is a forecast to show.
+            if (goodWeather != null && query.isEmpty() && nearest == null) item {
+                GoodWeatherCard(goodWeather, onGoodWeatherHours, onGoodWeatherPick)
             }
             // Nothing typed: what you are most likely to want, without typing on the bike.
             if (query.isEmpty() && nearest == null) {

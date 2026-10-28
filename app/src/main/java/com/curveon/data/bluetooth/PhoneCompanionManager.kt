@@ -90,6 +90,23 @@ class PhoneCompanionManager(
         w != null && runCatching { w.write(m) }.isSuccess
     }
 
+    /** MET's forecast through the phone, for weather planning when this tablet has no internet itself. */
+    private val weatherTunnel = com.curveon.phone.WeatherTunnelClient { m ->
+        val w = writer
+        w != null && runCatching { w.write(m) }.isSuccess
+    }
+
+    /**
+     * The forecast for one grid cell: from MET straight away when there is internet here, else through the linked
+     * phone; null when neither works. [direct] does the fetching here.
+     */
+    suspend fun weather(lat: Double, lon: Double, direct: (Double, Double) -> com.curveon.protocol.WeatherForecast?): com.curveon.protocol.WeatherForecast? =
+        if (hasInternet()) kotlinx.coroutines.withContext(Dispatchers.IO) { direct(lat, lon) }
+        else if (viaPhone) weatherTunnel.get(lat, lon) else null
+
+    /** A forecast can be fetched now: internet here, or a linked phone to fetch it. */
+    val canFetchWeather: Boolean get() = hasInternet() || viaPhone
+
     /** Straight to the relay when there is internet here, else through the phone if it is linked; the group never knows which. */
     private val relayTransports = com.curveon.groups.TransportFactory { url, listener ->
         if (viaPhone && !hasInternet()) relayTunnel.open(url, listener) else GroupHub.directTransports.open(url, listener)
@@ -496,6 +513,7 @@ class PhoneCompanionManager(
             writer = null
             PhoneHub.removeGroupListener(companionMirror)
             relayTunnel.linkLost()
+            weatherTunnel.linkLost()
             tickerJob?.cancel()
             runCatching { s.close() }
         }
@@ -572,6 +590,7 @@ class PhoneCompanionManager(
             is Message.PhoneError -> _phoneErrors.tryEmit(phoneErrorText(msg.code, msg.text))
             is Message.RouteFromPhone -> _routesFromPhone.tryEmit(msg)
             is Message.RelayOpened, is Message.RelayText, is Message.RelayClosed -> relayTunnel.onMessage(msg)
+            is Message.WeatherData -> weatherTunnel.onMessage(msg)
             // What the companion scanned, or a friend code it wants to show: the groups are here, so they are answered here.
             is Message.GroupJoin, is Message.RequestFriendInvite -> if (fromPhone) GroupHub.handle(msg)
             // Curveon as its own companion speaks on this device too.

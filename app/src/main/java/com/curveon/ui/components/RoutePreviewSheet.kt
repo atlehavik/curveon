@@ -98,6 +98,9 @@ fun RoutePreviewSheet(
     onShareFriends: (() -> Unit)? = null,
     onGo: () -> Unit,
     onClose: () -> Unit,
+    /** The weather on the trip (null: none to show, or switched off), and taking its way round the rain. */
+    weather: com.curveon.data.weather.PreviewWeather? = null,
+    onWeatherVia: (com.curveon.data.weather.WeatherVia) -> Unit = {},
     /** Folded down to one line (name, time, GO) so more of the route shows on the map. */
     minimized: Boolean = false,
     onMinimizedChange: (Boolean) -> Unit = {},
@@ -299,9 +302,13 @@ fun RoutePreviewSheet(
             Row(Modifier.tourTarget(TourTarget.PLAN_ROADS), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 preview.candidates.forEachIndexed { i, c ->
                     CandidateCard(c, selected = i == preview.selected, single = preview.candidates.size == 1,
-                        showArrival = (goal as? NavigationGoal.Destination)?.start == null, modifier = Modifier.weight(1f)) { onSelect(i) }
+                        showArrival = (goal as? NavigationGoal.Destination)?.start == null, modifier = Modifier.weight(1f),
+                        weatherNote = weather?.let { candidateWeatherNote(it.candidates, i) }) { onSelect(i) }
                 }
             }
+
+            // Where it rains on the way and when, or that it stays dry: only with a forecast for the trip shown.
+            weather?.takeIf { it.route === preview.selectedRoute }?.let { PreviewWeatherLine(it, onWeatherVia) }
 
             // Ferries switched off but the route still has one: say so plainly, and why.
             val ferries = preview.selectedRoute?.ferryCount ?: 0
@@ -465,7 +472,10 @@ private fun GoButton(ready: Boolean, onGo: () -> Unit, modifier: Modifier = Modi
 }
 
 @Composable
-private fun CandidateCard(c: RouteCandidate, selected: Boolean, single: Boolean, showArrival: Boolean, modifier: Modifier, onClick: () -> Unit) {
+private fun CandidateCard(
+    c: RouteCandidate, selected: Boolean, single: Boolean, showArrival: Boolean, modifier: Modifier,
+    weatherNote: Pair<String, Color>? = null, onClick: () -> Unit
+) {
     val route = c.route
     Column(
         modifier
@@ -504,6 +514,7 @@ private fun CandidateCard(c: RouteCandidate, selected: Boolean, single: Boolean,
                     if (route.ferryCount > 0) add(ferries)
                 }
                 if (notes.isNotEmpty()) Text(notes.joinToString(" · "), color = NeonAmber, fontSize = 11.sp, maxLines = 1)
+                weatherNote?.let { (text, color) -> Text(text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
             }
             c.error != null -> Text(c.error, color = WarningRed, fontSize = 12.sp, maxLines = 3)
             else -> Box(Modifier.fillMaxWidth().height(64.dp), contentAlignment = Alignment.Center) {

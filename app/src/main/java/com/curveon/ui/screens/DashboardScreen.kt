@@ -168,6 +168,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val savedRoutes by viewModel.savedRoutes.collectAsStateWithLifecycle()
     val routeGroups by viewModel.routeGroups.collectAsStateWithLifecycle()
     val searchOffer by viewModel.searchOffer.collectAsStateWithLifecycle()
+    val previewWeather by viewModel.weather.preview.collectAsStateWithLifecycle()
+    val goodWeather by viewModel.weather.goodWeather.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
     val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
@@ -723,6 +725,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onClose = viewModel::cancelPreview,
                     minimized = previewMinimized,
                     onMinimizedChange = { previewMinimized = it },
+                    weather = previewWeather,
+                    onWeatherVia = viewModel::addWeatherVia,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp).widthIn(max = 640.dp).fillMaxWidth()
                 )
             }
@@ -1119,7 +1123,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onDeleteSaved = { viewModel.deleteSavedRoute(it) },
                 onNearest = { viewModel.nearest(it) },
                 nearestEmpty = stringResource(if (telemetryState.value.hasGpsFix) R.string.search_nearest_none else R.string.search_nearest_no_position),
-                searchOffer = searchOffer, onDownloadSearch = viewModel::downloadSearchIndex, onShown = viewModel::checkSearchOffer,
+                searchOffer = searchOffer, onDownloadSearch = viewModel::downloadSearchIndex,
+                onShown = { viewModel.checkSearchOffer(); if (purpose == SearchPurpose.DESTINATION && !isNavigating && preview == null) viewModel.weather.checkGoodWeather() },
+                goodWeather = goodWeather.takeIf { purpose == SearchPurpose.DESTINATION && !isNavigating && preview == null },
+                onGoodWeatherHours = { viewModel.weather.checkGoodWeather(it) },
+                onGoodWeatherPick = { d -> goodWeather?.let { g -> closeSearch(); viewModel.previewWeatherLoop(g.hours, d.directionDeg) } },
                 purpose = purpose,
                 onPickOnMap = { startMapPick(purpose) },
                 growIn = searchGrowIn,
@@ -1260,6 +1268,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     navAlerts = viewModel.navAlerts.collectAsStateWithLifecycle().value,
                     offRouteAlerts = viewModel.offRouteAlerts.collectAsStateWithLifecycle().value,
+                    weather = viewModel.weather.enabled.collectAsStateWithLifecycle().value,
                     voiceHeadsUp = viewModel.voiceHeadsUp.collectAsStateWithLifecycle().value,
                     voiceMissing = viewModel.speechVoice.collectAsStateWithLifecycle().value?.takeIf {
                         it.availability != com.curveon.protocol.Message.VoiceAvailability.OFFLINE && it.language == viewModel.speechLanguage()
@@ -1298,6 +1307,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onOffRoute = viewModel::setOffRouteSettings,
                     onNavAlerts = viewModel::setNavAlerts,
                     onOffRouteAlerts = viewModel::setOffRouteAlerts,
+                    onWeather = viewModel.weather::setEnabled,
                     onVoiceHeadsUp = viewModel::setVoiceHeadsUp,
                     onInstallVoice = {
                         runCatching { context.startActivity(android.content.Intent(android.speech.tts.TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) }
