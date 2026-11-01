@@ -235,10 +235,10 @@ private fun LinkedPhoneCard(manager: PhoneCompanionManager, onForget: () -> Unit
     }
 }
 
-/** What "This device" needs to read contacts and calls, dial, send spoken text messages, and hear spoken replies. */
+/** What "This device" needs to read contacts and calls, dial and answer, send spoken text messages, and hear spoken replies. */
 internal val THIS_DEVICE_PERMISSIONS = arrayOf(
-    Manifest.permission.READ_CONTACTS, Manifest.permission.READ_CALL_LOG, Manifest.permission.CALL_PHONE, Manifest.permission.SEND_SMS,
-    Manifest.permission.RECORD_AUDIO
+    Manifest.permission.READ_CONTACTS, Manifest.permission.READ_CALL_LOG, Manifest.permission.CALL_PHONE, Manifest.permission.ANSWER_PHONE_CALLS,
+    Manifest.permission.SEND_SMS, Manifest.permission.RECORD_AUDIO
 )
 
 /** Something this device isn't allowed yet, with a button to allow it. */

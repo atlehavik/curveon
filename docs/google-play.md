@@ -56,6 +56,10 @@ Kilde: https://support.google.com/googleplay/android-developer/answer/10208820 (
   («connected device companion» og «in-vehicle hands-free»). Den må med i samme erklæring og søknad. Uten
   tillatelsen finnes ingen håndfri vei: `ACTION_SENDTO` åpner SMS-appen og krever et trykk på telefonen. Avslås den,
   fjernes SMS-knappen i Play-varianten (stemmesvar på varsler bruker varselets egen svarhandling og trenger den ikke).
+- **`ANSWER_PHONE_CALLS`** (lagt til 2026-11-01, «Svar» i Curveon på telefonen): Telefonappens egen Svar-knapp åpner
+  samtaleskjermen over kartet, og Android nekter Curveon å komme tilbake (målt: «Background activity launch blocked»).
+  `TelecomManager.acceptRingingCall` svarer uten at skjermen skiftes. Tillatelsen er ikke i SMS- eller anropsloggruppen
+  (sjekkes i erklæringsskjemaet i Play Console). Avslås den, virker knappen som før. Ikke brukt til annet.
 - **`CALL_PHONE`**: Googles policyside om SMS og anropslogg nevner bare SMS- og anropsloggtillatelsene, ikke
   `CALL_PHONE`. Den er altså trolig ikke begrenset (sjekkes i erklæringsskjemaet i Play Console).
   Vi bruker den i `PhoneBook.placeCall` (`TelecomManager.placeCall`). **Ikke bytt til `ACTION_DIAL`:** den må

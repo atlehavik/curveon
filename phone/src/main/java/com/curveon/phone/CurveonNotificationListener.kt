@@ -148,6 +148,7 @@ class CurveonNotificationListener : NotificationListenerService() {
         val failed = { PhoneHub.broadcast(Message.PhoneError("Couldn't do that on the phone", PhoneErrorCode.CALL_ACTION_FAILED)) }
         val sbn = synchronized(active) { active[key] } ?: return failed()
         val intent = sbn.notification.actions?.getOrNull(index)?.actionIntent ?: return failed()
+        if (answerDirectly(sbn, index)) return
         // Android 14+ lets the dialer's Answer / Decline start its call screen only if the one sending
         // it says so: without this the button did nothing when Curveon ran on the phone itself.
         val options = if (Build.VERSION.SDK_INT >= 34) android.app.ActivityOptions.makeBasic()
@@ -158,6 +159,21 @@ class CurveonNotificationListener : NotificationListenerService() {
             Log.w(TAG, "Call action $index of $key failed", e)
             failed()
         }
+    }
+
+    /**
+     * Answers the phone's own ringing call without the dialer's Answer button, which opens its call screen
+     * over the map, where Android then won't let Curveon back ("Background activity launch blocked"). False
+     * when it isn't that, or isn't allowed: then the button it is. Calling apps have only their own button.
+     */
+    private fun answerDirectly(sbn: StatusBarNotification, index: Int): Boolean {
+        val n = sbn.notification
+        val telecom = getSystemService(android.telecom.TelecomManager::class.java) ?: return false
+        if (Build.VERSION.SDK_INT < 31 || n.extras.getInt(Notification.EXTRA_CALL_TYPE, 0) != Notification.CallStyle.CALL_TYPE_INCOMING) return false
+        // A ringing call's style puts Decline first and Answer last.
+        if (sbn.packageName != telecom.defaultDialerPackage || n.actions.size < 2 || index != n.actions.lastIndex) return false
+        if (checkSelfPermission(android.Manifest.permission.ANSWER_PHONE_CALLS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return false
+        return runCatching { telecom.acceptRingingCall() }.onFailure { Log.w(TAG, "Couldn't answer directly", it) }.isSuccess
     }
 
     /** Sends [text] through the notification's own reply action (works for SMS, WhatsApp, Signal, …). */

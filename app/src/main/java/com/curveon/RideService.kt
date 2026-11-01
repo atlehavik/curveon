@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.os.Process
 
 /**
@@ -21,11 +22,13 @@ import android.os.Process
  *
  * It runs while Curveon is awake: on screen, navigating or downloading maps. Out of sight
  * otherwise, Curveon sleeps and the service stops, so nothing uses the battery. Its notification
- * offers to close Curveon.
+ * offers to close Curveon. On a call while navigating it keeps the screen on, also when the phone's
+ * own call screen covers Curveon and with it the window flag that does this otherwise.
  */
 class RideService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
+    private var screenLock: PowerManager.WakeLock? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -37,13 +40,28 @@ class RideService : Service() {
 
     override fun onDestroy() {
         running = false
+        screenLock?.takeIf { it.isHeld }?.release()
         super.onDestroy()
+    }
+
+    /** Only for as long as both last, so it costs battery only on a call during a trip. */
+    @Suppress("DEPRECATION") // Not to be replaced: the flag that took its place only works from a window of one's own.
+    private fun updateScreenLock() {
+        val wanted = navigating && onCall
+        val lock = screenLock ?: getSystemService(PowerManager::class.java)
+            .newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE, "curveon:call")
+            .apply { setReferenceCounted(false); screenLock = this }
+        if (wanted && !lock.isHeld) lock.acquire(SCREEN_LOCK_MAX_MS) else if (!wanted && lock.isHeld) lock.release()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_QUIT -> { quit(); return START_NOT_STICKY }
-            ACTION_NAV -> getSystemService(NotificationManager::class.java).notify(ID, notification())
+            ACTION_NAV -> {
+                getSystemService(NotificationManager::class.java).notify(ID, notification())
+                updateScreenLock()
+            }
+            ACTION_CALL -> updateScreenLock()
             else -> if (!startForeground()) { stopSelf(); return START_NOT_STICKY }
         }
         // Not sticky: brought back by Android after the process died, there is no screen or ViewModel for it to keep
@@ -100,15 +118,26 @@ class RideService : Service() {
         private const val ID = 1
         private const val ACTION_QUIT = "com.curveon.QUIT"
         private const val ACTION_NAV = "com.curveon.NAV"
+        private const val ACTION_CALL = "com.curveon.CALL"
+        /** Should the end of a call ever go unnoticed. */
+        private const val SCREEN_LOCK_MAX_MS = 2 * 60 * 60 * 1000L
 
         @Volatile private var running = false
         @Volatile private var navigating = false
+        @Volatile private var onCall = false
 
         /** A trip is (or isn't) being navigated: shown in the notification. */
         fun navigation(context: Context, navigating: Boolean) {
             if (navigating == this.navigating) return
             this.navigating = navigating
             tell(context, Intent(context, RideService::class.java).setAction(ACTION_NAV))
+        }
+
+        /** A call has been answered (or has ended). */
+        fun call(context: Context, ongoing: Boolean) {
+            if (ongoing == onCall) return
+            onCall = ongoing
+            tell(context, Intent(context, RideService::class.java).setAction(ACTION_CALL))
         }
 
         fun start(context: Context) = runCatching {

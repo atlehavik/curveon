@@ -6,6 +6,16 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-01 — Svar på telefonen uten å miste kartet
+
+Prøvd med simulert anrop på emulator (Android 16). Pixelen har Android 17 og ekte samtaler, så det må kjennes der.
+
+- [ ] Pixel, Curveon som «Denne enheten»: Innstillinger → Telefon ber om tillatelse til å svare. Trykk Tillat.
+- [ ] Ring Pixelen mens Curveon er åpen, trykk Svar **i Curveon**: samtalen kobles og kartet blir liggende, telefonappen kommer ikke fram.
+- [ ] Under samtalen: Legg på og Høyttaler i Curveon. Blir kartet liggende? (Ikke målt ennå.)
+- [ ] Navigering og samtale besvart med **telefonappens** knapp: telefonappen tar over (det kan ikke Android la oss hindre), men skjermen holder seg på. Gå tilbake til Curveon med appveksleren.
+- [ ] WhatsApp-samtale: Svar i Curveon virker som før (kan åpne WhatsApp).
+
 ## 2026-11-01 — Ingen ulovlig snuing, og vikeplikt bare der du faktisk har det
 
 - [ ] Planlegg Valevåg → Bømlo: rett etter Bømlafjordtunnelen tar ruten reduksjonsfeltet til høyre og krysser E39 på broa, og fortsetter ikke mot Stord for å snu. Kjør den gjerne; samme motsatt vei ved Valevåg-krysset.

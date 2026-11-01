@@ -1341,6 +1341,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
         // The service's notification says when a trip is navigated (the companion's battery test reads it).
         viewModelScope.launch { isNavigating.collect { com.curveon.RideService.navigation(application, it) } }
+        viewModelScope.launch { phoneCompanion.notifications.collect { n -> com.curveon.RideService.call(application, n.any { it.isOngoingCall }) } }
 
         // Speed limit while navigating: the official one of the road the route is on, else the route's (OSM).
         viewModelScope.launch {
