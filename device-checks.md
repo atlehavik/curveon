@@ -239,7 +239,6 @@ Pixel og X7 begge med 1.2.3 (Companion også 1.2.3 hvis X7 går via Companion).
 ## 2026-10-23 — Trykk på en venn på kartet, og «Vil ha kontakt»
 
 Pixel og X7 som venner (ExSeven), begge med ny app.
-- [ ] Trykk på ExSeven på kartet på Pixelen: kortet viser fart eller «Stoppet i …», sist sett, avstand og batteri.
 - [ ] I en gruppetur: bjellen i medlemslisten virker likt.
 
 ## 2026-10-22 — Ny relay (tåler nye funksjoner)
