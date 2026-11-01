@@ -39,7 +39,8 @@ object GiveWay {
         if (pts.size < 2) return emptyList()
         val kx = 111_320.0 * cos(Math.toRadians(pts[0].lat))
         val found = ArrayList<GiveWayOnRoute>()
-        if (priorityRoad != null) found += priorityEntries(route, kx, priorityRoad)
+        val roundabouts = route.maneuvers.filter { it.type == ManeuverType.ROUNDABOUT }.map { it.distanceFromStart }
+        if (priorityRoad != null) found += priorityEntries(route, kx, roundabouts, priorityRoad)
         // The route's segments by grid square, to find those near a sign quickly.
         val grid = HashMap<Long, MutableList<Int>>()
         for (i in 0 until pts.size - 1) {
@@ -89,16 +90,21 @@ object GiveWay {
                         else -> true
                     }
                 }
-                if (applies && !(priorityRoad != null && offPriorityRoad(route, along, dx / dLen, dy / dLen, kx, priorityRoad)))
+                if (applies && !(priorityRoad != null && (offPriorityRoad(route, along, dx / dLen, dy / dLen, kx, priorityRoad) ||
+                        ridesThrough(route, along, kx, roundabouts, priorityRoad))))
                     found += GiveWayOnRoute(along, s.stop)
             }
         }
-        // One per junction (a sign on each side, or give way under stop): stop wins.
+        // Going into a roundabout is giving way, whether or not the register has the sign (and where it
+        // has none of them, it's not a place to say so: another country's file).
+        if (signs.isNotEmpty()) for (at in roundabouts) found += GiveWayOnRoute(at, stop = false)
+        // One per junction (a sign on each side, or give way under stop), and per roundabout: stop wins.
         found.sortBy { it.along }
         val out = ArrayList<GiveWayOnRoute>()
         for (g in found) {
             val last = out.lastOrNull()
-            if (last != null && g.along - last.along < 30) {
+            val sameRoundabout = last != null && roundabouts.any { abs(it - g.along) < ROUNDABOUT_M && abs(it - last.along) < ROUNDABOUT_M }
+            if (last != null && (g.along - last.along < 30 || sameRoundabout)) {
                 if (g.stop && !last.stop) out[out.size - 1] = last.copy(stop = true)
             } else out += g
         }
@@ -114,9 +120,10 @@ object GiveWay {
      * Where [route] comes onto a priority road out of another road and rides on along it. (Straight
      * across one is left out: from the geometry alone it can't be told from a bridge over it.)
      */
-    private fun priorityEntries(route: Route, kx: Double, priorityRoad: (Double, Double) -> RoadPiece?): List<GiveWayOnRoute> {
+    private fun priorityEntries(route: Route, kx: Double, roundabouts: List<Double>, priorityRoad: (Double, Double) -> RoadPiece?): List<GiveWayOnRoute> {
         val out = ArrayList<GiveWayOnRoute>()
         var wasOn = true // the start counts as on it: setting off from beside one is no junction
+        var lastOn = 0.0
         var along = 0.0
         val end = route.distanceMeters
         while (along <= end) {
@@ -124,7 +131,9 @@ object GiveWay {
             val piece = priorityRoad(p.lat, p.lon)
             val d = piece?.let { offset(it, p, kx, line = false) }
             val on = d != null && d < ON_PRIORITY_M
-            if (on && !wasOn && piece != null) {
+            // Back on it after a moment away is the same road: a gap in the register, an island between
+            // the lanes. A slip lane flows into the road; without a sign of its own nobody gives way.
+            if (on && !wasOn && piece != null && along - lastOn > PRIORITY_GAP_M && !mergesInto(route, along, piece, kx)) {
                 // Coming from off its line: not riding along it (through a gap in the register) nor
                 // turning off it and back.
                 val before = pointAt(route, along - SIDE_BACK_M)
@@ -137,20 +146,50 @@ object GiveWay {
                     val at = (0..(ON_PRIORITY_M * 2 / PRIORITY_STEP_M).toInt()).map { along + it * PRIORITY_STEP_M }.firstOrNull { a ->
                         pointAt(route, minOf(end, a))?.let { abs(offset(piece, it, kx, line = true)) < AT_LINE_M } == true
                     } ?: along
-                    out += GiveWayOnRoute(at, stop = false)
+                    if (roundabouts.none { abs(it - at) < ROUNDABOUT_M }) out += GiveWayOnRoute(at, stop = false)
                 }
             }
+            if (on) lastOn = along
             wasOn = on
             along += PRIORITY_STEP_M
         }
         return out
     }
 
+    /** Whether the route comes onto [piece] by a slip lane, or at so shallow an angle that it flows into it. */
+    private fun mergesInto(route: Route, along: Double, piece: RoadPiece, kx: Double): Boolean {
+        val at = route.points.firstOrNull { it.distanceFromStart >= along }
+        if (at?.highway?.endsWith("_link") == true) return true
+        val a = pointAt(route, along - SIDE_BACK_M) ?: return false
+        val b = pointAt(route, along) ?: return false
+        return acrossDeg((b.lon - a.lon) * kx, (b.lat - a.lat) * KY, (piece.lon2 - piece.lon1) * kx, (piece.lat2 - piece.lat1) * KY) < MERGE_DEG
+    }
+
     /**
-     * Whether the route reaches a sign [along] metres on just after turning off a priority road
-     * across the sign's road (direction ([ux], [uy])): the rider on a priority road has right of way,
-     * and the register now and then has such a sign facing the wrong way. A sign along the priority
-     * road itself (where it ends, a roundabout) still counts.
+     * Whether the route rides straight on along a priority road past the place [along] metres on.
+     * Riding along a priority road nobody gives way, whatever sign the register has beside it: for a
+     * side road or a ramp close by, or one saying "Stop 300 m" ahead. Only a roundabout on it counts.
+     */
+    private fun ridesThrough(route: Route, along: Double, kx: Double, roundabouts: List<Double>, priorityRoad: (Double, Double) -> RoadPiece?): Boolean {
+        if (roundabouts.any { abs(it - along) < ROUNDABOUT_M }) return false
+        val a = pointAt(route, along - THROUGH_M) ?: return false
+        val b = pointAt(route, along)!!
+        val c = pointAt(route, minOf(route.distanceMeters, along + THROUGH_M)) ?: return false
+        val inX = (b.lon - a.lon) * kx; val inY = (b.lat - a.lat) * KY
+        val outX = (c.lon - b.lon) * kx; val outY = (c.lat - b.lat) * KY
+        if (hypot(outX, outY) < 1.0 || angleDeg(inX, inY, outX, outY) > MAX_ANGLE_DEG) return false
+        val before = priorityRoad(a.lat, a.lon) ?: return false
+        val after = priorityRoad(c.lat, c.lon) ?: return false
+        return acrossDeg(inX, inY, (before.lon2 - before.lon1) * kx, (before.lat2 - before.lat1) * KY) < MAX_ANGLE_DEG &&
+            acrossDeg(outX, outY, (after.lon2 - after.lon1) * kx, (after.lat2 - after.lat1) * KY) < MAX_ANGLE_DEG
+    }
+
+    /**
+     * Whether the route reaches a sign [along] metres on just after turning off a priority road that
+     * goes on past the junction, across the sign's road (direction ([ux], [uy])): the rider on a
+     * priority road has right of way, and the register now and then has such a sign facing the wrong
+     * way. Where the priority road ends at the junction, its sign is the rider's (as FV47 at Haukås, with
+     * its stop onto E39), and so is a sign along the priority road itself (a roundabout).
      */
     private fun offPriorityRoad(route: Route, along: Double, ux: Double, uy: Double, kx: Double, priorityRoad: (Double, Double) -> RoadPiece?): Boolean =
         TURNED_OFF_BACK_M.any { back ->
@@ -159,8 +198,23 @@ object GiveWay {
             if (offset(piece, p, kx, line = false) >= ON_PRIORITY_M) return@any false
             val px = (piece.lon2 - piece.lon1) * kx; val py = (piece.lat2 - piece.lat1) * KY
             val pLen = hypot(px, py)
-            pLen > 0.0 && abs(px * ux + py * uy) / pLen < cos(Math.toRadians(MAX_ANGLE_DEG))
+            if (pLen <= 0.0 || abs(px * ux + py * uy) / pLen >= cos(Math.toRadians(MAX_ANGLE_DEG))) return@any false
+            // The priority road, past the junction: straight on from where the route still was on it.
+            val at = pointAt(route, along) ?: return@any false
+            val fx = (at.lon - p.lon) * kx; val fy = (at.lat - p.lat) * KY
+            val sign = if (px * fx + py * fy < 0) -1.0 else 1.0
+            val ahead = (back + GOES_ON_M) / pLen * sign
+            val q = priorityRoad(p.lat + py * ahead / KY, p.lon + px * ahead / kx) ?: return@any false
+            acrossDeg(px, py, (q.lon2 - q.lon1) * kx, (q.lat2 - q.lat1) * KY) < MAX_ANGLE_DEG
         }
+
+    private fun angleDeg(ax: Double, ay: Double, bx: Double, by: Double): Double {
+        val len = hypot(ax, ay) * hypot(bx, by)
+        return if (len <= 0.0) 0.0 else Math.toDegrees(kotlin.math.acos(((ax * bx + ay * by) / len).coerceIn(-1.0, 1.0)))
+    }
+
+    /** The angle between a direction and a road that runs both ways, 0-90 degrees. */
+    private fun acrossDeg(ax: Double, ay: Double, bx: Double, by: Double): Double = angleDeg(ax, ay, bx, by).let { minOf(it, 180 - it) }
 
     /** How far [p] is from [piece] (metres); with [line], signed (> 0 left) from the line through it. */
     private fun offset(piece: RoadPiece, p: LatLon, kx: Double, line: Boolean): Double {
@@ -208,4 +262,14 @@ object GiveWay {
     private val TURNED_OFF_BACK_M = listOf(10.0, 20.0)
     /** How far the route must carry on along the priority road. */
     private const val STAYS_M = 25.0
+    /** Off a priority road for no longer than this is still the same road. */
+    private const val PRIORITY_GAP_M = 100.0
+    /** Coming onto a priority road this shallowly is flowing into it. */
+    private const val MERGE_DEG = 35.0
+    /** How far before and after a place the route is looked at to see that it rides straight through. */
+    private const val THROUGH_M = 25.0
+    /** How far past the junction a priority road is looked for to see that it goes on. */
+    private const val GOES_ON_M = 30.0
+    /** A sign this close to where the route goes round a roundabout belongs to that roundabout. */
+    private const val ROUNDABOUT_M = 60.0
 }

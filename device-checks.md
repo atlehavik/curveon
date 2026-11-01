@@ -6,6 +6,15 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-01 — Ingen ulovlig snuing, og vikeplikt bare der du faktisk har det
+
+- [ ] Planlegg Valevåg → Bømlo: rett etter Bømlafjordtunnelen tar ruten reduksjonsfeltet til høyre og krysser E39 på broa, og fortsetter ikke mot Stord for å snu. Kjør den gjerne; samme motsatt vei ved Valevåg-krysset.
+- [ ] Planlegg E39 sørover forbi Haukås → FV47 mot Haugesund (59.5613, 5.4146): ruten følger reduksjonsfeltet (din blå pil), ikke gjennomgående felt og så til høyre.
+- [ ] Kjør FV47 fra Haugesund mot E39 ved Haukås: **ikke** noe vikepliktskilt ved «Stopp 300 m»-skiltet, men **stoppskilt** i selve krysset, på kartet og i veikortet.
+- [ ] Kjør E39 gjennom Sveio og Stord: forkjørsveiskiltet vises ved fartsgrensen, og ingen vikepliktskilt langs veien.
+- [ ] Rundkjøringer på ruten: ett vikepliktskilt ved innkjøringen, ikke to.
+- [ ] Rundtur fra Bremnes østover: ingen U-sving noe sted på turen.
+
 ## 2026-10-28 — Vær når du tegner rundtur, og vær på turen
 
 - [ ] Pixel (med nett): «Hvor skal du?» → Rundtur. Mens du tegner, ligger små værsymboler (sol, sky, regn, vind) med temperatur rundt deg på kartet, under stedsnavnene. Bytt «Maks km»: symbolene sprer seg lenger ut. Trykk «Godt vær – velg for meg»: brikken viser «Sjekker værvarselet…», så planlegges en rundtur i den tørreste retningen.

@@ -18,9 +18,10 @@ class BremnesRoundtripTest {
             if (r == null) { println("dir=$dir km=$km  no route"); continue }
             val spurs = Spurs.find(r)
             // Inland directions have real loops available; out to sea (S/W of Bømlo) there may be none.
-            if (dir == 0.0 || dir == 90.0) org.junit.Assert.assertTrue("spur at dir=$dir km=$km", spurs.none { it.halfLength > 500 })
             println("dir=%3.0f km=%3.0f -> %5.1f km curvy=%d spurs=%s".format(dir, km, r.distanceMeters / 1000, r.curviness,
                 spurs.joinToString { "%.0fm@%.4f,%.4f".format(it.halfLength, it.turnaround.lat, it.turnaround.lon) }))
+            if (dir == 0.0 || dir == 90.0) org.junit.Assert.assertTrue("spur at dir=$dir km=$km", spurs.none { it.halfLength > 500 })
+            if (dir == 0.0 || dir == 90.0) org.junit.Assert.assertTrue("U-turn at dir=$dir km=$km", r.maneuvers.none { it.type == ManeuverType.U_TURN })
         }
     }
 }

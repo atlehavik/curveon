@@ -52,7 +52,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
 
     private fun good(route: Route, targetM: Double, options: RouteOptions) =
         abs(route.distanceMeters / targetM - 1.0) <= LENGTH_TOLERANCE &&
-            (!options.avoidFerries || route.ferryCount == 0) && Spurs.wastedMeters(route) < 1000
+            (!options.avoidFerries || route.ferryCount == 0) && Spurs.wastedMeters(route) < 1000 && uTurns(route) == 0
 
     fun plan(
         start: LatLon,
@@ -417,8 +417,13 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
         // Ferries switched off: loops with one only compete when nothing on land fits (see plan),
         // and even then each ferry weighs as much as a loop 27% off the asked length.
         val ferryPenalty = if (options.avoidFerries) route.ferryCount * 60.0 else 0.0
-        return curveBonus - overlapPenalty - gravelPenalty - spurPenalty - ferryPenalty
+        // A leg starts in any direction, so a via on the road can turn the loop round right there. The
+        // search can't forbid that, as it can on a leg: such a loop loses to any other, even one twice too long.
+        val uTurnPenalty = uTurns(route) * 200.0
+        return curveBonus - overlapPenalty - gravelPenalty - spurPenalty - ferryPenalty - uTurnPenalty
     }
+
+    private fun uTurns(route: Route) = route.maneuvers.count { it.type == ManeuverType.U_TURN }
 
     private fun Route.unpavedShare() = if (distanceMeters > 0) unpavedMeters / distanceMeters else 0.0
 

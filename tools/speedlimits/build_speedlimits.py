@@ -20,9 +20,12 @@ maxspeed where there is none (other countries, private roads).
 Norway's file also carries, from the same NVDB:
   refs      the road number of each stretch of public road (vegnett, E/R/F/K), for the route
             number signs in the next-turn card
-  priority  priority roads (object type 596 "Forkjørsveg"), for the priority road sign
+  priority  priority roads (object type 596 "Forkjørsveg"), for the priority road sign; where the
+            register has no such object (E39 S85-S89 through Stord and Sveio), from the road's signs:
+            206 Forkjørsveg on to 208 Slutt på forkjørsveg
   giveway   give way and stop signs (object type 96 "Skiltplate", 202 Vikeplikt and 204 Stopp), for
-            the give way sign while navigating
+            the give way sign while navigating; not one with a distance plate under it (802 Avstand,
+            "Stopp 300 m"): that only warns of the junction ahead, where the sign itself stands
 
 Format (read by app/.../SpeedLimits.kt):
   meta(key TEXT PRIMARY KEY, value TEXT)  source, licence, built
@@ -120,10 +123,50 @@ CATEGORIES = {"E": 1, "R": 2, "F": 3, "K": 4}
 
 
 SIGNS = {7642: 202, 7643: 204}  # NVDB Skiltnummer enum id -> sign: 202 Vikeplikt, 204 Stopp
+PRIORITY_SIGNS = {7644: 206, 7645: 208}  # 206 Forkjørsveg, 208 Slutt på forkjørsveg
+DISTANCE_PLATE = 7781  # 802 Avstand
 # Where a sign's face points (Ansiktsside, rettet mot) -> mode in the yield table: traffic along
 # the road the sign is registered on, or traffic coming out of a side road onto it.
 FACING = {"Trafikk i metreringsretning": "along", "Trafikk mot metreringsretning": "against",
           "Parallelt fra veg": "side", "Parallelt mot veg": "side"}
+
+
+def county_plates(enum_ids, include):
+    """Every sign plate (object type 96) with one of these sign numbers, a county at a time."""
+    fylker = [f["nummer"] for f in get("https://nvdbapiles.atlas.vegvesen.no/omrader/api/v4/fylker")]
+    if os.environ.get("FYLKER"):
+        fylker = [f for f in fylker if str(f) in os.environ["FYLKER"].split(",")]
+
+    def county(nr):
+        url = (f"{NVDB.rsplit('/', 1)[0]}/96?egenskap=({'%20OR%20'.join(f'5530={s}' for s in enum_ids)})"
+               f"&fylke={nr}&inkluder={include}&srid=4326&antall=1000")
+        out = []
+        while url:
+            page = get(url)
+            out += page["objekter"]
+            url = page["metadata"].get("neste", {}).get("href") if page["metadata"]["returnert"] > 0 else None
+            if os.environ.get("SAMPLE"):
+                break
+        return out
+
+    with ThreadPoolExecutor(6) as pool:
+        return [o for part in pool.map(county, fylker) for o in part]
+
+
+def sign_posts(plate):
+    """The ids of the posts (object type 95 "Skiltpunkt") a sign plate is on."""
+    return {i for r in plate.get("relasjoner", {}).get("foreldre", []) if r.get("type", {}).get("id") == 95
+            for i in r.get("vegobjekter", [])}
+
+
+@functools.cache
+def distance_posts():
+    """The posts with a distance plate on them: their give way or stop sign is a warning of one ahead."""
+    posts = set()
+    for plate in county_plates([DISTANCE_PLATE], "relasjoner"):
+        posts |= sign_posts(plate)
+    print(f"  {len(posts)} posts with a distance plate", file=sys.stderr)
+    return posts
 
 
 @functools.cache
@@ -131,17 +174,20 @@ def norway_signs():
     """Every give way and stop sign on a public road: (sign, mode, veglenkesekvens id, relative
     position, +1/-1 metering direction along the veglenkesekvens, side "H"/"V"/None in metering
     direction)."""
+    distance_posts()  # fetched here, before the counties below all want it at once
     fylker = [f["nummer"] for f in get("https://nvdbapiles.atlas.vegvesen.no/omrader/api/v4/fylker")]
     if os.environ.get("FYLKER"):
         fylker = [f for f in fylker if str(f) in os.environ["FYLKER"].split(",")]
 
     def county(nr):
         url = (f"{NVDB.rsplit('/', 1)[0]}/96?egenskap=({'%20OR%20'.join(f'5530={s}' for s in SIGNS)})"
-               f"&fylke={nr}&inkluder=egenskaper,lokasjon&srid=4326&antall=1000")
+               f"&fylke={nr}&inkluder=egenskaper,lokasjon,relasjoner&srid=4326&antall=1000")
         out = []
         while url:
             page = get(url)
             for o in page["objekter"]:
+                if sign_posts(o) & distance_posts():
+                    continue
                 props = {e.get("id"): e for e in o["egenskaper"]}
                 sign = SIGNS.get(props.get(5530, {}).get("enum_id"))
                 mode = FACING.get(props.get(1894, {}).get("verdi"))
@@ -167,6 +213,95 @@ def norway_signs():
 # veglenkesekvens id -> [(startposisjon, sluttposisjon, [(lat, lon), …])] for those with a sign,
 # kept by norway_refs while it reads the road network.
 SEQUENCES = defaultdict(list)
+# (road, section, part) -> [(from metre, to metre, [(lat, lon), …])] of those with a priority road sign,
+# kept the same way.
+PRIORITY_STRETCHES = defaultdict(list)
+
+
+def road_part(ref):
+    """Which part of which road a NVDB road reference is on; None for a ramp or a side area."""
+    if ref.get("kryssystem") or ref.get("sideanlegg"):
+        return None
+    vs, st = ref.get("vegsystem", {}), ref.get("strekning", {})
+    if not vs.get("nummer") or st.get("strekning") is None:
+        return None
+    return vs.get("vegkategori"), vs["nummer"], st["strekning"], st.get("delstrekning")
+
+
+@functools.cache
+def priority_signs():
+    """(road, section, part) -> [(metre, sign 206/208, True for traffic in the metering direction)]."""
+    signs = defaultdict(list)
+    for o in county_plates(list(PRIORITY_SIGNS), "egenskaper,lokasjon"):
+        props = {e.get("id"): e for e in o["egenskaper"]}
+        sign = PRIORITY_SIGNS.get(props.get(5530, {}).get("enum_id"))
+        facing = props.get(1894, {}).get("verdi")
+        ref = (o.get("lokasjon", {}).get("vegsystemreferanser") or [{}])[0]
+        part = road_part(ref)
+        metre = ref.get("strekning", {}).get("meter")
+        if part and sign and metre is not None and facing in ("Trafikk i metreringsretning", "Trafikk mot metreringsretning"):
+            signs[part].append((metre, sign, facing == "Trafikk i metreringsretning"))
+    print(f"  {sum(map(len, signs.values()))} priority road signs on {len(signs)} parts of roads", file=sys.stderr)
+    return signs
+
+
+def priority_spans(signs):
+    """The stretches of a part of a road (from, to metres; None for its end) that are priority road by
+    [signs]: past a 206 for the traffic it faces, up to its next 208 or the end of the part."""
+    spans = []
+    for forward in (True, False):
+        facing = sorted((m, s) for m, s, f in signs if f == forward)
+        if not forward:  # in the order that traffic meets them
+            facing.reverse()
+        start, on = None, False
+        for metre, sign in facing:
+            if sign == 206 and not on:
+                start, on = metre, True
+            elif sign == 208 and on:
+                spans.append((min(start, metre), max(start, metre)))
+                on = False
+        if on:
+            spans.append((start, None) if forward else (None, start))
+    return spans
+
+
+def slice_line(pts, frm, to):
+    """The part of the line [pts] from fraction [frm] to fraction [to] of its length."""
+    kx = math.cos(math.radians(pts[0][0])) * 111_320.0
+    lens = [math.hypot((q[1] - p[1]) * kx, (q[0] - p[0]) * 110_574.0) for p, q in zip(pts, pts[1:])]
+    total = sum(lens)
+    if total <= 0 or to <= frm:
+        return []
+
+    def at(d):
+        for (p, q), l in zip(zip(pts, pts[1:]), lens):
+            if d <= l and l > 0:
+                return p[0] + d / l * (q[0] - p[0]), p[1] + d / l * (q[1] - p[1])
+            d -= l
+        return pts[-1]
+
+    a, b = frm * total, to * total
+    out, walked = [at(a)], 0.0
+    for p, l in zip(pts[1:], lens):
+        walked += l
+        if a < walked < b:
+            out.append(p)
+    out.append(at(b))
+    return out
+
+
+def priority_from_signs():
+    """(1, [(lat, lon), …]) for the stretches of road that are priority road by their signs."""
+    for part, signs in priority_signs().items():
+        spans = priority_spans(signs)
+        for frm, to, pts in PRIORITY_STRETCHES.get(part, []):
+            for a, b in spans:
+                lo = max(frm, a if a is not None else frm)
+                hi = min(to, b if b is not None else to)
+                if hi > lo:
+                    line = slice_line(pts, (lo - frm) / (to - frm), (hi - frm) / (to - frm))
+                    if len(line) >= 2:
+                        yield 1, simplify(line)
 
 
 def norway_yield():
@@ -230,6 +365,16 @@ def norway_refs():
         vs = ref.get("vegsystem", {})
         if vs.get("fase") != "V" or ref.get("strekning", {}).get("trafikantgruppe") != "K":
             return None
+        part = road_part(ref)
+        if part in priority_signs():
+            st = ref["strekning"]
+            m = re.search(r"\(([^()]+)\)", o.get("geometri", {}).get("wkt", ""))
+            if m and st.get("fra_meter") is not None and st.get("til_meter") is not None:
+                line = [tuple(map(float, p.split()[:2])) for p in m.group(1).split(",")]
+                # The line runs the way of the road link; the metres, the way of the road.
+                if st.get("retning") == "MOT":
+                    line.reverse()
+                PRIORITY_STRETCHES[part].append((st["fra_meter"], st["til_meter"], line))
         cat = CATEGORIES.get(vs.get("vegkategori"))
         return cat * 1000000 + vs["nummer"] if cat and vs.get("nummer") else None
     return nvdb_counties(
@@ -239,11 +384,12 @@ def norway_refs():
 
 
 def norway_priority():
-    """(1, [(lat, lon), …]) for every priority road (Forkjørsveg)."""
-    return nvdb_counties(
+    """(1, [(lat, lon), …]) for every priority road (Forkjørsveg), by the register and by the signs."""
+    yield from nvdb_counties(
         lambda nr: f"https://nvdbapiles.atlas.vegvesen.no/vegobjekter/api/v4/vegobjekter/596"
                    f"?fylke={nr}&inkluder=geometri&srid=4326&antall=1000",
         lambda o: 1, "priority roads")
+    yield from priority_from_signs()
 
 
 def wfs(base, layer, value, crs=None, page=10000, sort=None, workers=6):

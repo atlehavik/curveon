@@ -110,8 +110,62 @@ class GiveWayTest {
         val wrongWay = sign(202, 0, at = fiveEast, on = fifteenEast)
         assertEquals(1, GiveWay.alongRoute(intoSideRoad, listOf(wrongWay)).size)
         assertTrue(GiveWay.alongRoute(intoSideRoad, listOf(wrongWay), priority).isEmpty())
-        // A sign along the priority road itself (it ends, a roundabout) still counts.
-        assertEquals(1, GiveWay.alongRoute(route(south, north), listOf(sign(202, 0)), priority).size)
+    }
+
+    @Test
+    fun ridingStraightAlongAPriorityRoadGivesWayToNobody() {
+        // A sign saying "Stop 300 m" ahead (FV47 at Haukås), a ramp's sign beside the road (E39 at Valevåg).
+        assertTrue(GiveWay.alongRoute(route(south, north), listOf(sign(202, 0)), priority).isEmpty())
+        // Without a priority road to go by, the sign is all there is.
+        assertEquals(1, GiveWay.alongRoute(route(south, north), listOf(sign(202, 0))).size)
+    }
+
+    @Test
+    fun aRoundaboutOnAPriorityRoadIsAGiveWayOnce() {
+        val r = route(south, north).let { it.copy(maneuvers = listOf(Maneuver(ManeuverType.ROUNDABOUT, 0, Geo.distance(south, junction) + 20, 2))) }
+        val onTheWayOut = LatLon(60.005 + 40 / 110_574.0, 5.0)
+        val found = GiveWay.alongRoute(r, listOf(sign(202, 0), sign(202, 0, at = onTheWayOut, on = LatLon(onTheWayOut.lat + 10 / 110_574.0, 5.0))), priority)
+        assertEquals(1, found.size)
+        assertEquals(Geo.distance(south, junction), found[0].along, 3.0)
+    }
+
+    @Test
+    fun aRoundaboutWithoutASignInTheRegisterIsStillAGiveWay() {
+        val elsewhere = LatLon(60.5, 5.0)
+        val r = route(south, north).let { it.copy(maneuvers = listOf(Maneuver(ManeuverType.ROUNDABOUT, 0, 500.0, 2))) }
+        val found = GiveWay.alongRoute(r, listOf(sign(202, 0, at = elsewhere, on = LatLon(60.5001, 5.0))))
+        assertEquals(1, found.size)
+        assertEquals(500.0, found[0].along, 1.0)
+        // A country's file without signs says nothing about give way at all.
+        assertTrue(GiveWay.alongRoute(r, emptyList()).isEmpty())
+    }
+
+    /** A priority road that comes from the east and ends at the main road, at [junction]. */
+    private val endsAtJunction: (Double, Double) -> RoadPiece? = { lat, lon ->
+        if (lon in 5.0..5.0031 && Geo.distance(lat, lon, 60.005, lon) < 20) RoadPiece(junction.lat, junction.lon, east.lat, east.lon) else null
+    }
+
+    @Test
+    fun aPriorityRoadThatEndsAtTheJunctionHasItsSignThere() {
+        // FV47 at Haukås: a priority road to its end, then the stop signs for E39. They were dropped as a wrong way round sign.
+        val found = GiveWay.alongRoute(route(east, junction, north), listOf(sign(204, 1)), endsAtJunction)
+        assertEquals(1, found.size)
+        assertTrue(found[0].stop)
+    }
+
+    @Test
+    fun aSlipLaneFlowingOntoAPriorityRoadGivesWayToNobody() {
+        // Coming in at a shallow angle from the south-east, then north along the priority road.
+        val slipStart = LatLon(60.0045, 5.0006)
+        assertTrue(GiveWay.alongRoute(route(slipStart, junction, north), emptyList(), priority).isEmpty())
+    }
+
+    @Test
+    fun backOnAPriorityRoadAfterAMomentAwayIsTheSameRoad() {
+        // Round an island between the lanes: off the register's line for a few metres, and back.
+        val island = LatLon(60.005, 5.0 + 30 / (111_320.0 * kotlin.math.cos(Math.toRadians(60.005))))
+        val back = LatLon(60.0053, 5.0)
+        assertTrue(GiveWay.alongRoute(route(south, junction, island, back, north), emptyList(), priority).isEmpty())
     }
 
     @Test
