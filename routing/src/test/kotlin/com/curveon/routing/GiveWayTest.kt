@@ -113,11 +113,32 @@ class GiveWayTest {
     }
 
     @Test
-    fun ridingStraightAlongAPriorityRoadGivesWayToNobody() {
-        // A sign saying "Stop 300 m" ahead (FV47 at Haukås), a ramp's sign beside the road (E39 at Valevåg).
-        assertTrue(GiveWay.alongRoute(route(south, north), listOf(sign(202, 0)), priority).isEmpty())
-        // Without a priority road to go by, the sign is all there is.
-        assertEquals(1, GiveWay.alongRoute(route(south, north), listOf(sign(202, 0))).size)
+    fun aSignOnTheRidersOwnRoadCountsAlsoOnAPriorityRoad() {
+        // Those that contradict the road's priority signs are left out when the file is built. Hiding the
+        // rest by the road being a priority road hid real give ways: OSM has one on them as often as anywhere.
+        assertEquals(1, GiveWay.alongRoute(route(south, north), listOf(sign(202, 0)), priority).size)
+    }
+
+    @Test
+    fun aSignOnARampBesideTheRoadDoesNotCount() {
+        val beside = LatLon(60.005, 5.0 + 12 / (111_320.0 * kotlin.math.cos(Math.toRadians(60.005))))
+        val on = LatLon(beside.lat + 10 / 110_574.0, beside.lon)
+        assertTrue(GiveWay.alongRoute(route(south, north), listOf(sign(202, 0, at = beside, on = on)), priority).isEmpty())
+    }
+
+    @Test
+    fun aStopSignIsNeverArguedAway() {
+        // Facing the rider along what the register calls a priority road.
+        assertEquals(1, GiveWay.alongRoute(route(south, north), listOf(sign(204, 0)), priority).size)
+        // A side road's, riding out of it and turning off a priority road (the slip from FV47 to E39 south at Haukås).
+        val fiveEast = LatLon(60.005, 5.0 + 5 / (111_320.0 * kotlin.math.cos(Math.toRadians(60.005))))
+        val fifteenEast = LatLon(60.005, 5.0 + 15 / (111_320.0 * kotlin.math.cos(Math.toRadians(60.005))))
+        assertEquals(1, GiveWay.alongRoute(route(south, junction, east), listOf(sign(204, 0, at = fiveEast, on = fifteenEast)), priority).size)
+    }
+
+    @Test
+    fun aSideRoadsStopDoesNotCountRidingAlongTheRoad() {
+        assertTrue(GiveWay.alongRoute(route(south, north), listOf(sign(204, 1)), priority).isEmpty())
     }
 
     @Test

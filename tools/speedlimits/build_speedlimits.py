@@ -161,11 +161,13 @@ def sign_posts(plate):
 
 @functools.cache
 def distance_posts():
-    """The posts with a distance plate on them: their give way or stop sign is a warning of one ahead."""
+    """(post, the way it faces) of every distance plate: a give way or stop sign above one is a warning
+    of one ahead. Only one facing the same way: a post can carry signs for both directions."""
     posts = set()
-    for plate in county_plates([DISTANCE_PLATE], "relasjoner"):
-        posts |= sign_posts(plate)
-    print(f"  {len(posts)} posts with a distance plate", file=sys.stderr)
+    for plate in county_plates([DISTANCE_PLATE], "egenskaper,relasjoner"):
+        facing = next((e.get("verdi") for e in plate["egenskaper"] if e.get("id") == 1894), None)
+        posts |= {(post, facing) for post in sign_posts(plate)}
+    print(f"  {len(posts)} distance plates on posts", file=sys.stderr)
     return posts
 
 
@@ -186,11 +188,13 @@ def norway_signs():
         while url:
             page = get(url)
             for o in page["objekter"]:
-                if sign_posts(o) & distance_posts():
-                    continue
                 props = {e.get("id"): e for e in o["egenskaper"]}
+                facing = props.get(1894, {}).get("verdi")
+                if {(post, facing) for post in sign_posts(o)} & distance_posts():
+                    continue
                 sign = SIGNS.get(props.get(5530, {}).get("enum_id"))
-                mode = FACING.get(props.get(1894, {}).get("verdi"))
+                # Not said which way it faces: for a side road, the sign is then checked from the road.
+                mode = FACING.get(facing, "side" if facing is None else None)
                 loc = o.get("lokasjon", {})
                 st = (loc.get("stedfestinger") or [{}])[0]
                 ref = (loc.get("vegsystemreferanser") or [{}])[0]

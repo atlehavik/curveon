@@ -22,7 +22,9 @@ class BRouterEngine(
      * Memory BRouter may fill with decoded map data before it starts throwing data away (and
      * decoding it again later). Its default of 64 MB is sized for old phones.
      */
-    private val memoryClassMb: Int = 64
+    private val memoryClassMb: Int = 64,
+    /** Off only to measure what the router does without the check on its result ([Reversals]). */
+    private val checkReversals: Boolean = true
 ) {
 
     /**
@@ -72,9 +74,31 @@ class BRouterEngine(
         if (visitEveryVia && waypoints.size > 2) {
             return Routes.joinLegs(legs(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, null, noGo, tracksAsLastResort, maxMillis))
         }
-        val r = routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, noGo, tracksAsLastResort, lookPastPaths = false, maxMillis = maxMillis)
+        val r = withoutReversals(waypoints, noGo) { blocked ->
+            routeOnce(waypoints, options, viaCatchingRangeMeters, avoidedFerryCost, startHeadingDeg, blocked, tracksAsLastResort, lookPastPaths = false, maxMillis = maxMillis)
+        }
         // Start and end on the rider's own road even where the map doesn't join it to the network.
         return OwnRoad { pts, look -> routeOnce(pts, options, null, avoidedFerryCost, null, emptyList(), tracksAsLastResort, look, maxMillis) }.join(waypoints, r)
+    }
+
+    /**
+     * The check on the finished route, whatever the search did: where it turns back on itself on a road,
+     * that place is closed and the route found again. CurveonPath forbids the plain turn in the search;
+     * this also stops it over a stub or a connector across the lanes, which the search sees as ordinary
+     * turns. Via points may lie anywhere, even past such a place, so only a ride from A to B is held to it.
+     * Only if closing the place leaves no way at all does the route stay as it was.
+     */
+    private fun withoutReversals(waypoints: List<LatLon>, noGo: List<NoGo>, route: (List<NoGo>) -> Route): Route {
+        var r = route(noGo)
+        if (!checkReversals || waypoints.size != 2) return r
+        var blocked = noGo
+        repeat(MAX_REVERSAL_FIXES) {
+            val places = Reversals.places(r)
+            if (places.isEmpty()) return r
+            blocked = blocked + places.map { NoGo(it.at, it.radiusMeters) }
+            r = runCatching { route(blocked) }.getOrElse { return r }
+        }
+        return r
     }
 
     /**
@@ -286,6 +310,7 @@ class BRouterEngine(
 
     companion object {
         const val PROFILE_FILE = "curveon-moto.brf"
+        private const val MAX_REVERSAL_FIXES = 12
         /** The message of a search given up with [Cancel]. */
         const val CANCELLED = "cancelled"
         private val CANCEL = ThreadLocal<Cancel?>()

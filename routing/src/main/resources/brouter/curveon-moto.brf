@@ -43,7 +43,9 @@ assign processUnusedTags            = true   # export maxspeed etc. for the spee
 # skips anything that cannot beat it. pass2coefficient is the A* estimate of remaining cost per
 # metre of straight-line distance; it must not exceed the cheapest costfactor (1.0 for tarmac,
 # 0.85 for gravel when gravel is preferred, 0.55 for a rough track with offroad) or the result is no
-# longer the best route.
+# longer the best route. Exactly 1.0 is not enough: with costs in whole numbers it overlooked a ride by
+# the Bastø ferry that cost 6% less than the 28 km longer one it found, so a margin. (Costs 30-50% more
+# search on Bergen-Tromsø, nothing to speak of on shorter rides.)
 assign pass1coefficient = 1.5
 
 assign fastest    = equal road_style 0
@@ -60,7 +62,7 @@ assign no_tracks    = and paved_only ( equal tracks_last_resort 0 )
 # cheaper) or above 1 (tarmac dearer) moves towards 1 as the pull weakens.
 assign pull = multiply gravel_pull 0.01
 
-assign pass2coefficient = if offroad then 0.55 else if gravel_lover then max 0.55 add 1.0 multiply -0.4 pull else 1.0
+assign pass2coefficient = if offroad then 0.55 else if gravel_lover then max 0.55 add 1.0 multiply -0.4 pull else 0.95
 
 ---context:way
 

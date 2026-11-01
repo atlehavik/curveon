@@ -13,7 +13,7 @@
       "Search for fuel, camping and other places now works offline by itself: the first time you start Curveon in a country, its search data is fetched in the background, so you no longer have to download it before you can find things nearby",
       "Ride where the weather is good! When you draw a round trip, the weather around you now shows on the map, so you can draw where it stays dry, or tap Good weather – pick for me and Curveon lays the loop the driest way. Every trip you plan also shows where and when you may get rain, and if a small detour or leaving a bit later keeps you dry, Curveon offers it right there. And when you stand still with the map in full screen, the sun button shows the weather on the map wherever you look",
       "Routes no longer turn back on themselves on a main road: no U-turn from one carriageway onto the other or onto a ramp from the wrong side, and slip lanes and ramps are used the way they are meant to be",
-      "Give way and stop signs now show only where you really have to give way: the stop at the junction itself, not a sign that only warns of one ahead (\"Stop 300 m\"), and nothing while you ride along a priority road. E39 through Stord and Sveio now counts as the priority road it is",
+      "Give way and stop signs now show only where you really have to give way: the stop at the junction itself, not a sign that only warns of one ahead (\"Stop 300 m\"). E39 through Stord and Sveio now counts as the priority road it is",
       "Plus a few minor bug fixes"
     ],
     "nb": [
@@ -28,7 +28,7 @@
       "Søk etter drivstoff, camping og andre steder fungerer nå offline av seg selv: første gang du starter Curveon i et land, hentes søkedataene i bakgrunnen, så du slipper å laste dem ned selv før du finner ting i nærheten",
       "Kjør dit været er godt! Når du tegner en rundtur, vises nå været rundt deg på kartet, så du kan tegne der det holder seg tørt, eller trykke Godt vær – velg for meg, så legger Curveon turen dit det er tørrest. Hver tur du planlegger viser også hvor og når du kan få regn, og holder en liten omvei eller litt senere start deg tørr, foreslår Curveon det med en gang. Og når du står stille med kartet i fullskjerm, viser solknappen været på kartet der du ser",
       "Ruter snur ikke lenger på en hovedvei: ingen U-sving fra ett kjørefelt til det andre eller inn på en rampe fra feil side, og reduksjonsfelt og ramper brukes slik de er ment",
-      "Vikeplikt- og stoppskilt vises nå bare der du faktisk har vikeplikt: stoppskiltet i selve krysset, ikke et skilt som bare varsler om det lenger fram («Stopp 300 m»), og ingenting mens du kjører langs en forkjørsvei. E39 gjennom Stord og Sveio regnes nå som den forkjørsveien den er",
+      "Vikeplikt- og stoppskilt vises nå bare der du faktisk har vikeplikt: stoppskiltet i selve krysset, ikke et skilt som bare varsler om det lenger fram («Stopp 300 m»). E39 gjennom Stord og Sveio regnes nå som den forkjørsveien den er",
       "Pluss noen mindre feilrettinger"
     ],
     "sv": [
@@ -43,7 +43,7 @@
       "Sökning efter bensin, camping och andra platser fungerar nu offline av sig själv: första gången du startar Curveon i ett land hämtas sökdatan i bakgrunden, så du slipper ladda ner den själv innan du hittar saker i närheten",
       "Kör dit vädret är fint! När du ritar en rundtur visas nu vädret runt dig på kartan, så att du kan rita där det håller sig torrt, eller trycka på Fint väder – välj åt mig så lägger Curveon turen där det är torrast. Varje tur du planerar visar också var och när du kan få regn, och om en liten omväg eller en lite senare start håller dig torr föreslår Curveon det direkt. Och när du står still med kartan i helskärm visar solknappen vädret på kartan där du tittar",
       "Rutter vänder inte längre på en huvudväg: ingen U-sväng från ett körfält till det andra eller in på en ramp från fel håll, och av- och påfarter används som det är tänkt",
-      "Väjningspliktsmärken och stoppskyltar visas nu bara där du verkligen har väjningsplikt: stoppet i själva korsningen, inte en skylt som bara varnar för det längre fram (\"Stopp 300 m\"), och ingenting medan du kör längs en huvudled. E39 genom Stord och Sveio räknas nu som den huvudled den är",
+      "Väjningspliktsmärken och stoppskyltar visas nu bara där du verkligen har väjningsplikt: stoppet i själva korsningen, inte en skylt som bara varnar för det längre fram (\"Stopp 300 m\"). E39 genom Stord och Sveio räknas nu som den huvudled den är",
       "Plus några mindre buggfixar"
     ],
     "da": [
@@ -58,7 +58,7 @@
       "Søgning efter brændstof, camping og andre steder virker nu offline af sig selv: første gang du starter Curveon i et land, hentes søgedataene i baggrunden, så du slipper for selv at downloade dem, før du kan finde ting i nærheden",
       "Kør derhen, hvor vejret er godt! Når du tegner en rundtur, vises vejret omkring dig nu på kortet, så du kan tegne, hvor det holder tørt, eller trykke på Godt vejr – vælg for mig, så lægger Curveon turen, hvor det er tørrest. Hver tur du planlægger viser også, hvor og hvornår du kan få regn, og holder en lille omvej eller lidt senere start dig tør, foreslår Curveon det med det samme. Og når du holder stille med kortet i fuld skærm, viser solknappen vejret på kortet, hvor du kigger",
       "Ruter vender ikke længere på en hovedvej: ingen U-vending fra den ene vejbane til den anden eller ind på en rampe fra den forkerte side, og af- og tilkørsler bruges, som de er tænkt",
-      "Vigepligts- og stopskilte vises nu kun, hvor du faktisk har vigepligt: stoppet i selve krydset, ikke et skilt der blot varsler om det længere fremme (\"Stop 300 m\"), og intet mens du kører langs en forkørselsvej. E39 gennem Stord og Sveio regnes nu som den forkørselsvej, den er",
+      "Vigepligts- og stopskilte vises nu kun, hvor du faktisk har vigepligt: stoppet i selve krydset, ikke et skilt der blot varsler om det længere fremme (\"Stop 300 m\"). E39 gennem Stord og Sveio regnes nu som den forkørselsvej, den er",
       "Plus et par mindre fejlrettelser"
     ],
     "fi": [
@@ -73,7 +73,7 @@
       "Polttoaineen, leirintäalueiden ja muiden paikkojen haku toimii nyt offline-tilassa itsestään: kun käynnistät Curveonin maassa ensimmäistä kertaa, sen hakutiedot haetaan taustalla, joten niitä ei tarvitse ladata itse ennen kuin löydät lähellä olevia paikkoja",
       "Aja sinne, missä sää on hyvä! Kun piirrät lenkin, ympäristösi sää näkyy nyt kartalla, joten voit piirtää sinne, missä pysyy kuivana, tai napauttaa Hyvä sää – valitse puolestani, niin Curveon vie lenkin kuivimpaan suuntaan. Jokainen suunnittelemasi matka näyttää myös, missä ja milloin voi sataa, ja jos pieni kiertotie tai hieman myöhempi lähtö pitää sinut kuivana, Curveon ehdottaa sitä heti. Ja kun seisot paikallasi kartta koko näytöllä, aurinkopainike näyttää sään kartalla siellä, minne katsot",
       "Reitit eivät enää käänny takaisin päätiellä: ei U-käännöstä ajoradalta toiselle eikä väärältä puolelta rampille, ja liittymiskaistoja ja ramppeja käytetään niin kuin on tarkoitettu",
-      "Väistämis- ja pysähtymismerkit näkyvät nyt vain siellä, missä todella on väistettävä: pysähtyminen itse risteyksessä, ei merkkiä, joka vain varoittaa siitä edempänä (\"Stop 300 m\"), eikä mitään ajettaessa etuajo-oikeutettua tietä pitkin. E39 Stordin ja Sveion läpi lasketaan nyt etuajo-oikeutetuksi tieksi, joka se onkin",
+      "Väistämis- ja pysähtymismerkit näkyvät nyt vain siellä, missä todella on väistettävä: pysähtyminen itse risteyksessä, ei merkkiä, joka vain varoittaa siitä edempänä (\"Stop 300 m\"). E39 Stordin ja Sveion läpi lasketaan nyt etuajo-oikeutetuksi tieksi, joka se onkin",
       "Lisäksi muutama pieni korjaus"
     ],
     "is": [
@@ -88,7 +88,7 @@
       "Leit að eldsneyti, tjaldsvæðum og öðrum stöðum virkar nú án nets af sjálfu sér: í fyrsta sinn sem þú ræsir Curveon í landi eru leitargögnin sótt í bakgrunni, svo þú þarft ekki að sækja þau sjálf(ur) áður en þú finnur hluti í nágrenninu",
       "Aktu þangað sem veðrið er gott! Þegar þú teiknar hringferð sést veðrið í kringum þig nú á kortinu, svo þú getur teiknað þar sem helst þurrt, eða ýtt á Gott veður – veldu fyrir mig og Curveon leggur ferðina þar sem er þurrast. Hver ferð sem þú skipuleggur sýnir líka hvar og hvenær gæti rignt, og ef smá krókur eða aðeins seinni brottför heldur þér þurrum býður Curveon það strax. Og þegar þú stendur kyrr með kortið á öllum skjánum sýnir sólarhnappurinn veðrið á kortinu þar sem þú horfir",
       "Leiðir snúa ekki lengur við á aðalvegi: engin U-beygja af einni akbraut yfir á aðra eða inn á aðrein frá röngum enda, og afreinar og aðreinar eru notaðar eins og til er ætlast",
-      "Biðskylduskilti og stöðvunarskilti sjást nú aðeins þar sem þú átt raunverulega að víkja: stöðvunin á gatnamótunum sjálfum, ekki skilti sem aðeins varar við henni framundan (\"Stopp 300 m\"), og ekkert meðan þú ekur eftir aðalbraut. E39 um Stord og Sveio telst nú sú aðalbraut sem hún er",
+      "Biðskylduskilti og stöðvunarskilti sjást nú aðeins þar sem þú átt raunverulega að víkja: stöðvunin á gatnamótunum sjálfum, ekki skilti sem aðeins varar við henni framundan (\"Stopp 300 m\"). E39 um Stord og Sveio telst nú sú aðalbraut sem hún er",
       "Auk nokkurra smærri lagfæringa"
     ],
     "de": [
@@ -103,7 +103,7 @@
       "Die Suche nach Tankstellen, Campingplätzen und anderen Orten funktioniert jetzt von selbst offline: Beim ersten Start von Curveon in einem Land werden die Suchdaten im Hintergrund geladen, du musst sie also nicht erst selbst herunterladen, um Orte in der Nähe zu finden",
       "Fahr dorthin, wo das Wetter gut ist! Wenn du eine Runde zeichnest, zeigt die Karte jetzt das Wetter um dich herum, damit du dort zeichnen kannst, wo es trocken bleibt, oder tippe auf Gutes Wetter – such für mich aus, und Curveon legt die Runde dorthin, wo es am trockensten ist. Jede geplante Fahrt zeigt außerdem, wo und wann du Regen abbekommen könntest, und wenn ein kleiner Umweg oder eine etwas spätere Abfahrt dich trocken hält, schlägt Curveon das gleich vor. Und wenn du mit der Karte im Vollbild stehst, zeigt der Sonnenknopf das Wetter auf der Karte, wo immer du hinschaust",
       "Routen wenden nicht mehr auf einer Hauptstraße: kein Wenden von einer Fahrbahn auf die andere oder von der falschen Seite auf eine Rampe, und Abbiegespuren und Rampen werden so genutzt, wie sie gedacht sind",
-      "Vorfahrt-achten- und Stoppschilder erscheinen jetzt nur dort, wo du wirklich warten musst: das Stopp an der Kreuzung selbst, kein Schild, das nur davor warnt (\"Stopp 300 m\"), und nichts, solange du auf einer Vorfahrtstraße fährst. Die E39 durch Stord und Sveio zählt jetzt als die Vorfahrtstraße, die sie ist",
+      "Vorfahrt-achten- und Stoppschilder erscheinen jetzt nur dort, wo du wirklich warten musst: das Stopp an der Kreuzung selbst, kein Schild, das nur davor warnt (\"Stopp 300 m\"). Die E39 durch Stord und Sveio zählt jetzt als die Vorfahrtstraße, die sie ist",
       "Dazu ein paar kleinere Fehlerbehebungen"
     ],
     "es": [
@@ -118,7 +118,7 @@
       "La búsqueda de gasolineras, campings y otros lugares ya funciona sin conexión por sí sola: la primera vez que abres Curveon en un país, sus datos de búsqueda se descargan en segundo plano, así que no tienes que descargarlos tú para encontrar cosas cerca",
       "¡Ve donde hace buen tiempo! Cuando dibujas una ruta circular, el mapa ahora muestra el tiempo a tu alrededor para que dibujes donde no llueve, o toca Buen tiempo – elige por mí y Curveon traza la ruta por donde está más seco. Cada viaje que planificas también muestra dónde y cuándo puede llover, y si un pequeño desvío o salir un poco más tarde te mantiene seco, Curveon te lo propone ahí mismo. Y cuando estás parado con el mapa a pantalla completa, el botón del sol muestra el tiempo en el mapa allí donde mires",
       "Las rutas ya no dan media vuelta en una carretera principal: ningún cambio de sentido de una calzada a la otra ni a una rampa por el lado equivocado, y los carriles de giro y las rampas se usan como es debido",
-      "Las señales de ceda el paso y stop ahora solo aparecen donde de verdad debes ceder: el stop en el propio cruce, no una señal que solo avisa de él más adelante (\"Stop 300 m\"), y nada mientras circulas por una vía con prioridad. La E39 por Stord y Sveio cuenta ahora como la vía con prioridad que es",
+      "Las señales de ceda el paso y stop ahora solo aparecen donde de verdad debes ceder: el stop en el propio cruce, no una señal que solo avisa de él más adelante (\"Stop 300 m\"). La E39 por Stord y Sveio cuenta ahora como la vía con prioridad que es",
       "Y algunas correcciones menores"
     ],
     "fr": [
@@ -133,7 +133,7 @@
       "La recherche de stations-service, de campings et d'autres lieux marche maintenant hors ligne toute seule : au premier lancement de Curveon dans un pays, ses données de recherche sont récupérées en arrière-plan, plus besoin de les télécharger soi-même pour trouver des adresses à proximité",
       "Roule là où il fait beau ! Quand tu dessines une boucle, la carte montre maintenant la météo autour de toi pour que tu dessines là où il reste sec, ou touche Beau temps – choisis pour moi et Curveon trace la boucle du côté le plus sec. Chaque trajet que tu planifies montre aussi où et quand tu risques la pluie, et si un petit détour ou un départ un peu plus tard te garde au sec, Curveon te le propose tout de suite. Et quand tu es à l’arrêt avec la carte en plein écran, le bouton soleil affiche la météo sur la carte là où tu regardes",
       "Les itinéraires ne font plus demi-tour sur une route principale : plus de demi-tour d'une chaussée à l'autre ni sur une bretelle prise du mauvais côté, et les voies de sortie et les bretelles sont utilisées comme prévu",
-      "Les panneaux cédez-le-passage et stop n'apparaissent plus que là où vous devez vraiment céder : le stop au carrefour même, pas un panneau qui ne fait qu'annoncer celui-ci (« Stop 300 m »), et rien tant que vous suivez une route prioritaire. La E39 à travers Stord et Sveio compte désormais comme la route prioritaire qu'elle est",
+      "Les panneaux cédez-le-passage et stop n'apparaissent plus que là où vous devez vraiment céder : le stop au carrefour même, pas un panneau qui ne fait qu'annoncer celui-ci (« Stop 300 m »). La E39 à travers Stord et Sveio compte désormais comme la route prioritaire qu'elle est",
       "Et quelques petites corrections"
     ],
     "nl": [
@@ -148,7 +148,7 @@
       "Zoeken naar tankstations, campings en andere plekken werkt nu vanzelf offline: de eerste keer dat je Curveon in een land start, worden de zoekgegevens op de achtergrond opgehaald, dus je hoeft ze niet eerst zelf te downloaden om iets in de buurt te vinden",
       "Rij naar waar het weer goed is! Als je een rondrit tekent, staat het weer om je heen nu op de kaart, zodat je kunt tekenen waar het droog blijft, of tik op Mooi weer – kies voor mij en Curveon legt de rit waar het het droogst is. Elke rit die je plant laat ook zien waar en wanneer je regen kunt krijgen, en als een kleine omweg of iets later vertrekken je droog houdt, stelt Curveon dat meteen voor. En als je stilstaat met de kaart op volledig scherm, toont de zonknop het weer op de kaart waar je ook kijkt",
       "Routes keren niet meer om op een hoofdweg: geen U-bocht van de ene rijbaan naar de andere of de verkeerde kant op een oprit in, en invoegstroken en op- en afritten worden gebruikt zoals bedoeld",
-      "Voorrangs- en stopborden staan er nu alleen waar je echt voorrang moet geven: de stop op de kruising zelf, niet een bord dat er alleen voor waarschuwt (\"Stop 300 m\"), en niets zolang je over een voorrangsweg rijdt. De E39 door Stord en Sveio telt nu als de voorrangsweg die ze is",
+      "Voorrangs- en stopborden staan er nu alleen waar je echt voorrang moet geven: de stop op de kruising zelf, niet een bord dat er alleen voor waarschuwt (\"Stop 300 m\"). De E39 door Stord en Sveio telt nu als de voorrangsweg die ze is",
       "Plus een paar kleine verbeteringen"
     ],
     "pl": [
@@ -163,7 +163,7 @@
       "Wyszukiwanie stacji paliw, kempingów i innych miejsc działa teraz offline samo z siebie: przy pierwszym uruchomieniu Curveon w danym kraju dane wyszukiwania pobierają się w tle, więc nie musisz ich pobierać ręcznie, żeby znaleźć coś w pobliżu",
       "Jedź tam, gdzie jest dobra pogoda! Gdy rysujesz pętlę, mapa pokazuje teraz pogodę wokół ciebie, więc możesz rysować tam, gdzie będzie sucho, albo dotknąć Dobra pogoda – wybierz za mnie, a Curveon poprowadzi pętlę tam, gdzie jest najsuchej. Każda zaplanowana trasa pokazuje też, gdzie i kiedy może padać, a jeśli mały objazd lub nieco późniejszy wyjazd pozwoli ci zostać suchym, Curveon od razu to zaproponuje. A gdy stoisz z mapą na pełnym ekranie, przycisk słońca pokazuje pogodę na mapie tam, gdzie patrzysz",
       "Trasy nie zawracają już na drodze głównej: żadnego zawracania z jednej jezdni na drugą ani wjazdu na rampę od złej strony, a pasy włączania i rampy są używane zgodnie z przeznaczeniem",
-      "Znaki ustąp pierwszeństwa i stop pojawiają się teraz tylko tam, gdzie naprawdę musisz ustąpić: stop na samym skrzyżowaniu, a nie znak, który tylko o nim uprzedza (\"Stop 300 m\"), i nic, gdy jedziesz drogą z pierwszeństwem. E39 przez Stord i Sveio liczy się teraz jako droga z pierwszeństwem, którą jest",
+      "Znaki ustąp pierwszeństwa i stop pojawiają się teraz tylko tam, gdzie naprawdę musisz ustąpić: stop na samym skrzyżowaniu, a nie znak, który tylko o nim uprzedza (\"Stop 300 m\"). E39 przez Stord i Sveio liczy się teraz jako droga z pierwszeństwem, którą jest",
       "Do tego kilka drobnych poprawek"
     ]
   },

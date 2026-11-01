@@ -62,6 +62,12 @@ class GiveWayRealRoadsTest {
     }
 
     @Test
+    fun `FV47 to E39 south by its own slip has the stop at the end of the slip`() {
+        val found = giveWays(fv47, LatLon(59.5487, 5.4207))
+        assertTrue(found.toString(), found.any { it.stop && Geo.distance(it.lat, it.lon, 59.5612, 5.4157) < 40 })
+    }
+
+    @Test
     fun `E39 by the slip lane onto FV47 gives way to nobody`() {
         assertEquals(emptyList<GiveWayOnRoute>(), giveWays(e39North, fv47))
     }
@@ -74,8 +80,12 @@ class GiveWayRealRoadsTest {
 
     @Test
     fun `riding E39 through Sveio nothing gives way`() {
-        // The plates close by that used to count: ramps at Valevåg, side roads, one on E39 itself at 59.627.
-        assertEquals(emptyList<GiveWayOnRoute>(), giveWays(e39North, e39AtForde))
-        assertEquals(emptyList<GiveWayOnRoute>(), giveWays(e39AtForde, e39North))
+        // The plates close by that used to count: a ramp's at Valevåg, side roads'. Only one is left: NVDB
+        // has a give way sign on E39 itself, EV39 S88D1 m1652, facing traffic going south-east. It looks
+        // wrong, but nothing tells it from a real one: hiding such signs hid 4538 of them, as real as the rest.
+        val south = giveWays(e39North, e39AtForde)
+        assertTrue(south.toString(), south.isEmpty() || south.size == 1 && Geo.distance(south[0].lat, south[0].lon, 59.62710, 5.49302) < 40)
+        val north = giveWays(e39AtForde, e39North)
+        assertTrue(north.toString(), north.isEmpty() || north.size == 1 && Geo.distance(north[0].lat, north[0].lon, 59.62710, 5.49302) < 40)
     }
 }

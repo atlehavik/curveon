@@ -85,6 +85,54 @@ class LegalTurnsTest {
     }
 
     @Test
+    fun `E39 at 59_0643 is not turned on over the short connector across the lanes`() {
+        // Trunk, 10 m of secondary, and trunk the other way: each turn too slight for the search to see it as turning back.
+        val r = engine.route(listOf(LatLon(59.33202, 5.48975), LatLon(59.10611, 5.70154)), RouteOptions(RoadStyle.FASTEST))
+        assertEquals(emptyList<LatLon>(), Reversals.find(r))
+    }
+
+    @Test
+    fun `E134 at 59_2888 is not turned on over a ramp and the side road`() {
+        val r = engine.route(listOf(LatLon(58.99549, 9.87901), LatLon(59.28289, 9.27151)), RouteOptions(RoadStyle.FASTEST))
+        assertEquals(emptyList<LatLon>(), Reversals.find(r))
+    }
+
+    @Test
+    fun `a ferry quay is not turning back, and stays open`() {
+        // Flakk-Rørvik: closing the quay as a place that turns back cost 129 km of detour round the fjord.
+        val r = engine.route(listOf(LatLon(63.42759, 10.36362), LatLon(63.59388, 10.01226)), RouteOptions(RoadStyle.FASTEST))
+        assertTrue("${r.distanceMeters / 1000} km", r.distanceMeters < 60_000)
+        assertTrue(r.ferryCount > 0)
+    }
+
+    @Test
+    fun `E134 with gaps in the barrier rides on to a proper place to turn`() {
+        // Trunk, 6 m of service road through the barrier, and the other carriageway; and the next one along.
+        val r = engine.route(listOf(LatLon(59.6215, 9.60762), LatLon(59.77804, 9.91823)), RouteOptions(RoadStyle.FASTEST))
+        assertEquals(emptyList<LatLon>(), Reversals.find(r))
+    }
+
+    @Test
+    fun `the cheapest ride is found, here over the Basto ferry`() {
+        val r = engine.route(listOf(LatLon(59.4234, 10.36629), LatLon(59.79096, 10.88189)), RouteOptions(RoadStyle.FASTEST))
+        assertEquals(1, r.ferryCount)
+        assertTrue("${r.distanceMeters / 1000} km", r.distanceMeters < 75_000)
+    }
+
+    @Test
+    fun `a hairpin bend is not turning back`() {
+        // Trollstigen, Røldal, Dalen: real roads that do come round on themselves.
+        for ((a, b) in listOf(
+            LatLon(62.4900, 7.7000) to LatLon(62.4300, 7.6800),
+            LatLon(59.8200, 6.7800) to LatLon(59.7500, 6.7300),
+            LatLon(59.4500, 8.0300) to LatLon(59.4200, 8.0000)
+        )) {
+            val r = engine.route(listOf(a, b), RouteOptions(RoadStyle.FASTEST))
+            assertEquals("$a -> $b", emptyList<LatLon>(), Reversals.find(r))
+        }
+    }
+
+    @Test
     fun `reversal check finds the U-turn at Foyno in a route forced through it`() {
         // The route as it was: on past the exit to the merge at the north end of the junction, and back.
         fun p(lat: Double, lon: Double, along: Double) = RoutePoint(lat, lon, 0.0, along, 0.0, "trunk", null, false, false)

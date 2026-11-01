@@ -11,9 +11,11 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 - [ ] Planlegg Valevåg → Bømlo: rett etter Bømlafjordtunnelen tar ruten reduksjonsfeltet til høyre og krysser E39 på broa, og fortsetter ikke mot Stord for å snu. Kjør den gjerne; samme motsatt vei ved Valevåg-krysset.
 - [ ] Planlegg E39 sørover forbi Haukås → FV47 mot Haugesund (59.5613, 5.4146): ruten følger reduksjonsfeltet (din blå pil), ikke gjennomgående felt og så til høyre.
 - [ ] Kjør FV47 fra Haugesund mot E39 ved Haukås: **ikke** noe vikepliktskilt ved «Stopp 300 m»-skiltet, men **stoppskilt** i selve krysset, på kartet og i veikortet.
-- [ ] Kjør E39 gjennom Sveio og Stord: forkjørsveiskiltet vises ved fartsgrensen, og ingen vikepliktskilt langs veien.
+- [ ] Kjør E39 gjennom Sveio og Stord: forkjørsveiskiltet vises ved fartsgrensen, og ingen vikepliktskilt langs veien, med ett mulig unntak: NVDB har et vikepliktskilt på selve E39 ved 59.6271, 5.4930 (EV39 S88D1 m1652). Står det et slikt skilt der på Street View, eller er registeret feil?
+- [ ] FV47 fra Haugesund mot E39 **sør** (Stavanger) ved Haukås: stoppskilt også i enden av feltet til høyre.
 - [ ] Rundkjøringer på ruten: ett vikepliktskilt ved innkjøringen, ikke to.
 - [ ] Rundtur fra Bremnes østover: ingen U-sving noe sted på turen.
+- [ ] Bastø-fergen: tur Horten-siden → Moss foreslår fergen, ikke rundt fjorden.
 
 ## 2026-10-28 — Vær når du tegner rundtur, og vær på turen
 
