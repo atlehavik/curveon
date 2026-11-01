@@ -6,6 +6,17 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-01 — Været på kartet: spredt, på land og ett og ett
+
+Prøvd på X7-emulatoren og Pixel 9a-oppsettet. Hvor lett kartet går, kan bare kjennes på de ekte enhetene, og henting gjennom telefonen kan ikke prøves i emulatoren.
+
+- [ ] X7 og Pixel, kartet i fullskjerm, soltasten på: zoom ut fra nærbilde til hele Sør-Norge. Symbolene skal komme ett og ett utover fra midten, kartet skal gå like lett som med soltasten av, og det skal aldri ligge igjen en klump etter at zoomen stopper.
+- [ ] Zoom ut over Skagerrak, Nordsjøen og gjerne Danmark og Sverige: ingen symboler ute i havet. Shetland og øyene ved kysten kan ha symbol, det er land.
+- [ ] Symbolene skal se tilfeldig spredt ut, ikke stå på rekke og rad. Si fra om de står for tett eller for glissent.
+- [ ] Zoom og dra raskt fram og tilbake noen ganger, og la kartet stå: etter et par sekunder skal det stemme uten at du må røre mer.
+- [ ] Innstillinger → Navigasjon → Vær av: soltasten, symbolene, værlinjen på turen og «Godt vær – velg for meg» skal være borte. På igjen: alt kommer tilbake.
+- [ ] **X7 uten eget nett, med Companion på telefonen:** symbolene skal komme ett og ett, hentet gjennom telefonen. `adb -s <x7> logcat -s CurveonWeather` viser feil hvis noe går galt.
+
 ## 2026-11-01 — Svar på telefonen uten å miste kartet
 
 Prøvd med simulert anrop på emulator (Android 16). Pixelen har Android 17 og ekte samtaler, så det må kjennes der.

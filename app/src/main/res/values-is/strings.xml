@@ -1250,5 +1250,5 @@
     <string name="weather_note_dry">Þurrt</string>
     <string name="weather_note_rain">Rigning</string>
     <string name="settings_weather">Veður</string>
-    <string name="settings_weather_hint">Sýnir veðrið á leiðinni og stingur upp á þurrum ferðum. Þegar þú skipuleggur er gróf staðsetning (um 10 km) send til MET Norway.</string>
+    <string name="settings_weather_hint">Sólarhnappur, veður á leiðinni og þurrar ferðir. Af: ekkert birtist né sendist. Á: MET Norway fær grófa staðsetningu (10 km).</string>
 </resources>

@@ -837,9 +837,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         // The weather in view while the button is on and shown; again a moment after the map stops moving.
         @OptIn(kotlinx.coroutines.FlowPreview::class)
         viewModelScope.launch {
-            combine(_weatherMap, weatherMapShown, _viewport) { on, shown, v -> v.takeIf { on && shown } }
-                .debounce(400)
-                .collectLatest { v -> if (v == null) weather.clearMapWeather() else weather.showMapWeather(v.south, v.north, v.west, v.east) }
+            weather.followMap(combine(_weatherMap, weatherMapShown, weather.enabled, _viewport) { on, shown, enabled, v ->
+                v?.takeIf { on && shown && enabled }?.let { com.curveon.data.weather.MapBounds(it.south, it.north, it.west, it.east) }
+            }.debounce(250))
         }
     }
 

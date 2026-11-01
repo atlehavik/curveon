@@ -1202,5 +1202,5 @@
     <string name="weather_note_dry">Kuivaa</string>
     <string name="weather_note_rain">Sadetta</string>
     <string name="settings_weather">Sää</string>
-    <string name="settings_weather_hint">Näyttää sään matkan varrella ja ehdottaa kuivia ajoja. Suunnitellessa likimääräinen sijainti (noin 10 km) lähetetään MET Norwaylle.</string>
+    <string name="settings_weather_hint">Aurinkopainike, matkan sää ja kuivat ajot. Pois: mitään ei näy eikä lähetetä. Päällä: MET Norway saa karkean sijainnin (10 km).</string>
 </resources>

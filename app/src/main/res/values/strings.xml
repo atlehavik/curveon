@@ -1254,5 +1254,5 @@
     <string name="weather_note_dry">Dry</string>
     <string name="weather_note_rain">Rain</string>
     <string name="settings_weather">Weather</string>
-    <string name="settings_weather_hint">Shows the weather along the trip and suggests dry trips. When you plan, a rough position (about 10 km) is sent to MET Norway.</string>
+    <string name="settings_weather_hint">Sun button, trip weather and dry trips. Off: nothing shows and nothing is sent. On: MET Norway gets a rough position (10 km).</string>
 </resources>

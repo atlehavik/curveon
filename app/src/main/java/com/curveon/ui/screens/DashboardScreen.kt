@@ -913,7 +913,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 if (trip != null) viewModel.previewAdventure(trip.name, trip.destination, stroke, trip.minutes, roundtripStart?.first, roundtripStart?.second ?: "", sketchSurface, sketchGravelReach)
                 else viewModel.previewAreaRoundtrip(stroke, roundtripStart?.first, roundtripStart?.second ?: "", sketchMaxKm, sketchSurface, sketchGravelReach)
             }) else null,
-            weatherSpots = if (sketching) sketchWeather else mapWeather,
+            weatherSpots = { if (sketching) sketchWeather else mapWeather },
             // On the full-screen map, with weather to be had (internet here, or the phone): the map hides it while riding.
             weatherMapOn = weatherMapOn,
             onWeatherMap = if (isFullScreenMap && weatherOn && !sketching && viewModel.phoneCompanion.canFetchWeather) viewModel::setWeatherMap else null,

@@ -18,18 +18,28 @@ retninger med lengden og underlaget som er valgt. (Et eget kort «Godt vær i da
 det tok for mye plass.) I forhåndsvisningen: værlinjen (regn eller kraftige vindkast med sted og klokkeslett, ellers
 «Tørt hele veien»), «Tørt»/«Regn» på alternativene når de skiller seg, forslag om senere start og «Tørt via <sted>
 [Bruk]» (prøver 30 og 60 km til siden for der regnet begynner, høyst +20 min eller +25 %). Henting via Companion når
-nettbrettet ikke har nett (`weather_get` / `weather_data`), og en bryter i Innstillinger → Navigasjon → Vær.
+nettbrettet ikke har nett (`weather_get` / `weather_data`), og en bryter i Innstillinger → Navigasjon → Vær som slår av alt om vær (soltasten, symbolene, værlinjen og «Godt vær») og all henting.
 Værkart-knappen (sol) i knappekolonnen til høyre på kartet i fullskjerm, når rytteren ikke navigerer og står
 stille (den skjules fra 10 km/t, som grusknappen) og vær kan hentes: av/på huskes, og den viser ett symbol per værrute
 (ca. 10 km) i den delen av kartet som vises, for nå og timen etter; det hentes bare mens knappen vises og er på.
-Værsymbolene står på nærmeste vei innen 6 km (fra rutedataene, `SurfaceReader.nearestRoad`, beregnet utenfor
-hovedtråden og husket per punkt), så aldri i sjøen; uten vei så nær utelates de. (Først ble kartets vannlag spurt med
-`queryRenderedFeatures`; det ga hele vannflaten som geometri på hovedtråden og frøs kartet i over et sekund, ANR på X7.)
-Rutenettet er festet til faste punkter (0,1° × 0,2° eller en dobling, cirka seks langs skjermens korte side, maks 120 med
-en rad rundt), så panorering gir de samme punktene; kartet tegnes bare på nytt når symbolene faktisk endrer seg.
-Målt på X7, zoomet ut og panorert: 1 % tregeste bilder 1150 ms før, 48 ms etter (40 ms med værkartet av).
+Værsymbolene holder seg på land: en innebygd land/hav-maske (`LandMask`, `assets/land-mask.dat`, 0,05° per rute, 124 kB,
+laget fra Natural Earth av `tools/build_land_mask.py`) virker i alle land, uten nett og uten landets kart og rutedata, og
+sparer MET for spørsmål om havet. (Heter ikke `.gz`: AssetManager pakker slike ut selv, og bare på en enhet.) Der det finnes
+rutedata, står symbolet på nærmeste vei innen 6 km (`SurfaceReader.nearestRoad`), ellers utelates det. (Først ble kartets
+vannlag spurt med `queryRenderedFeatures`; det ga hele vannflaten som geometri på hovedtråden og frøs kartet i over et
+sekund, ANR på X7.)
+Plasseringen (`WeatherController.mapGrid`): verden deles i ruter (0,1° × 0,2° eller en dobling, cirka seks langs skjermens
+korte side, maks 120 med en rad rundt), og hver rute velger ett sted tilfeldig, alltid det samme, fra en av sine fire
+fjerdedeler. Så danner stedene ikke et rutenett, panorering gir de samme, og stedene på et grovere nivå er blant dem på det
+finere, så zoom beholder det som allerede vises.
+Lastingen (`WeatherController.fill`): det som ikke hører til det nye utsnittet forsvinner med en gang (ellers ligger symboler
+fra forrige zoomnivå i en klump), så kommer resten ett og ett, nærmest midten først, høyst ett per 50 ms og uten at skjermen
+komponeres på nytt (kartet leser dem med `snapshotFlow`). En prognose som er på vei, hentes ferdig selv om kartet flyttes;
+før tok en avbrutt lasting også neste lasting med seg, og gamle symboler ble liggende til kartet ble flyttet igjen. En
+prognose som ikke kunne hentes, prøves igjen hvert 30. sekund så lenge utsnittet står.
+Målt på X7-emulatoren, zoomet langt ut fra tomt hurtiglager: 99 % av bildene under 19 ms, ingen klump etter 1 s.
 **Ikke med ennå:** varsel underveis, Nowcast og MetAlerts-farevarsler; «Godt vær» for eventyr.
-Kode: `data/weather/` (WeatherService, WeatherScore, WeatherController), `:phone` MetWeather og WeatherTunnel.
+Kode: `data/weather/` (WeatherService, WeatherScore, WeatherController, LandMask), `:phone` MetWeather og WeatherTunnel.
 
 ### Hva rytteren får
 

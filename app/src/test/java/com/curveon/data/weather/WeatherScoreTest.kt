@@ -65,16 +65,18 @@ class WeatherScoreTest {
 }
 
 class WeatherMapGridTest {
+    private val land = java.io.File("src/main/assets/land-mask.dat").inputStream().let { LandMask.read(it)!! }
+
     @Test fun samePlacesWhenTheMapMovesALittle() {
-        val a = WeatherController.mapGrid(59.0, 61.0, 4.0, 8.0).toSet()
-        val b = WeatherController.mapGrid(59.02, 61.02, 4.03, 8.03).toSet()
+        val a = WeatherController.mapGrid(59.0, 61.0, 4.0, 8.0).places.toSet()
+        val b = WeatherController.mapGrid(59.02, 61.02, 4.03, 8.03).places.toSet()
         assertTrue((a intersect b).size >= a.size * 0.8)
     }
 
     @Test fun coversTheWholeViewAlsoUpright() {
         // A phone held upright: tall and narrow (southern Norway).
         val south = 57.8; val north = 62.2; val west = 4.5; val east = 9.5
-        val g = WeatherController.mapGrid(south, north, west, east)
+        val g = WeatherController.mapGrid(south, north, west, east).places
         val lats = g.map { it.lat }.filter { it in south..north }
         assertTrue("top ${lats.max()}", lats.max() > north - (north - south) / 4)
         assertTrue("bottom ${lats.min()}", lats.min() < south + (north - south) / 4)
@@ -82,9 +84,48 @@ class WeatherMapGridTest {
     }
 
     @Test fun wideAndZoomedOutStaysWithinTheLimit() {
-        assertTrue(WeatherController.mapGrid(55.0, 65.0, -5.0, 30.0).size <= 120)
+        assertTrue(WeatherController.mapGrid(55.0, 65.0, -5.0, 30.0).places.size <= 120)
         // Zoomed in closer than one cell: still one in view.
-        val g = WeatherController.mapGrid(59.7701, 59.7801, 5.2001, 5.2201)
+        val g = WeatherController.mapGrid(59.7701, 59.7801, 5.2001, 5.2201).places
         assertTrue(g.any { it.lat in 59.7701..59.7801 && it.lon in 5.2001..5.2201 })
+    }
+
+    @Test fun notInRowsAndColumns() {
+        val g = WeatherController.mapGrid(59.0, 61.0, 6.0, 10.0)
+        // On a grid these would be a handful of different values, one per row or column.
+        assertTrue(g.places.map { it.lat }.distinct().size > g.places.size * 0.9)
+        assertTrue(g.places.map { it.lon }.distinct().size > g.places.size * 0.9)
+    }
+
+    @Test fun zoomingOutKeepsAPartOfWhatWasThere() {
+        val close = WeatherController.mapGrid(59.0, 61.0, 4.0, 8.0).places.toSet()
+        val far = WeatherController.mapGrid(58.0, 62.0, 2.0, 10.0).places.filter { it.lat in 59.0..61.0 && it.lon in 4.0..8.0 }
+        assertTrue(far.isNotEmpty())
+        assertTrue(far.filterNot { it in close }.toString(), far.all { it in close })
+    }
+
+    @Test fun noneOnTheOpenSeaButPlentyOnLand() {
+        // Southern Norway zoomed well out: most of the view west and south of the coast is sea, in no routing data at all.
+        val g = WeatherController.mapGrid(56.0, 63.0, -2.0, 12.0, land).places
+        assertTrue(g.all { land.isLand(it.lat, it.lon) })
+        assertTrue(g.none { it.lon in 0.5..4.0 && it.lat in 56.0..59.5 })
+        assertTrue("${g.size} on land", g.size >= 25)
+    }
+
+    @Test fun theCoastKeepsItsWeatherWhenZoomedOut() {
+        // A coarse cell mostly sea, with land in one corner, still has a place.
+        val g = WeatherController.mapGrid(56.0, 72.0, -4.0, 32.0, land).places
+        assertTrue(g.any { it.lon < 7.0 && it.lat in 58.5..62.5 })
+    }
+
+    @Test fun nothingAtAllInTheMiddleOfTheOcean() {
+        assertTrue(WeatherController.mapGrid(40.0, 42.0, -40.0, -36.0, land).places.isEmpty())
+    }
+
+    @Test fun knowsLandFromSeaInEveryCountry() {
+        listOf(59.91 to 10.75, 60.39 to 5.32, 59.28 to 5.28, 63.43 to 10.39, 59.33 to 18.07, 55.68 to 12.57, 52.5 to 13.4, 40.4 to -3.7)
+            .forEach { (lat, lon) -> assertTrue("$lat $lon", land.isLand(lat, lon)) }
+        listOf(57.9 to 8.5, 58.5 to 3.0, 65.0 to 5.0, 57.0 to 19.0, 45.5 to -4.0, 58.9 to 13.3)
+            .forEach { (lat, lon) -> assertFalse("$lat $lon", land.isLand(lat, lon)) }
     }
 }

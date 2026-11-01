@@ -1269,5 +1269,5 @@
     <string name="weather_note_dry">Seco</string>
     <string name="weather_note_rain">Lluvia</string>
     <string name="settings_weather">Tiempo</string>
-    <string name="settings_weather_hint">Muestra el tiempo a lo largo del viaje y propone viajes secos. Al planificar se envía una posición aproximada (unos 10 km) a MET Norway.</string>
+    <string name="settings_weather_hint">Botón del sol, tiempo del viaje y viajes secos. No: nada se muestra ni se envía. Sí: MET Norway recibe una posición aproximada (10 km).</string>
 </resources>

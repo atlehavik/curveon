@@ -1295,5 +1295,5 @@
     <string name="weather_note_dry">Sucho</string>
     <string name="weather_note_rain">Deszcz</string>
     <string name="settings_weather">Pogoda</string>
-    <string name="settings_weather_hint">Pokazuje pogodę na trasie i proponuje suche trasy. Podczas planowania przybliżona pozycja (ok. 10 km) jest wysyłana do MET Norway.</string>
+    <string name="settings_weather_hint">Przycisk słońca, pogoda na trasie, suche trasy. Wył.: nic nie widać ani nie jest wysyłane. Wł.: MET Norway zna przybliżoną pozycję (10 km).</string>
 </resources>

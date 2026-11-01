@@ -3,7 +3,10 @@ package com.curveon.data.weather
 import android.content.Context
 import com.curveon.protocol.WeatherForecast
 import com.curveon.protocol.WeatherHour
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -27,6 +30,7 @@ class WeatherService(context: Context, private val fetch: suspend (Double, Doubl
     private val dir = File(context.filesDir, "weather").apply { mkdirs() }
     private val memory = ConcurrentHashMap<String, WeatherForecast>()
     private val inFlight = ConcurrentHashMap<String, Deferred<WeatherForecast?>>()
+    private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     /** MET asks for few requests at a time from one app; four is plenty for a trip's cells. */
     private val gate = Semaphore(4)
 
@@ -45,18 +49,20 @@ class WeatherService(context: Context, private val fetch: suspend (Double, Doubl
     private suspend fun forecast(cell: Cell, now: Long): WeatherForecast? {
         val kept = memory[cell.key] ?: read(cell)?.also { memory[cell.key] = it }
         if (kept != null && kept.expires > now) return kept
-        val fresh = coroutineScope {
-            inFlight.getOrPut(cell.key) {
-                async { try { gate.withPermit { fetch(cell.lat, cell.lon) } } finally { inFlight.remove(cell.key) } }
-            }.await()
-        }
-        if (fresh != null) {
-            memory[cell.key] = fresh
-            withContext(Dispatchers.IO) { runCatching { File(dir, "${cell.key}.json").writeText(fresh.toJson().toString()) } }
-            return fresh
-        }
+        // On its own, not the asker's: someone else may wait for the same one when the asker is cancelled (the map moved),
+        // and once it is on its way it may as well be kept.
+        val fresh = inFlight.computeIfAbsent(cell.key) {
+            background.async(start = CoroutineStart.LAZY) {
+                try {
+                    runCatching { gate.withPermit { fetch(cell.lat, cell.lon) } }.getOrNull()?.also { f ->
+                        memory[cell.key] = f
+                        runCatching { File(dir, "${cell.key}.json").writeText(f.toJson().toString()) }
+                    }
+                } finally { inFlight.remove(cell.key) }
+            }
+        }.await()
         // No way to fetch it now: an older forecast is still better than none for a few hours.
-        return kept?.takeIf { now - it.expires < USE_STALE_MS }
+        return fresh ?: kept?.takeIf { now - it.expires < USE_STALE_MS }
     }
 
     private suspend fun read(cell: Cell): WeatherForecast? = withContext(Dispatchers.IO) {

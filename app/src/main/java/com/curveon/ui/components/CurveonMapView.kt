@@ -225,8 +225,8 @@ fun CurveonMapView(
     giveWaySigns: List<com.curveon.data.routing.GiveWayAlert> = emptyList(),
     /** Where the speed limit changes ahead on the route: a sign on the right of the road. */
     speedSigns: List<com.curveon.data.routing.SpeedChange> = emptyList(),
-    /** Drawing a loop: the weather round where it starts (sun, cloud, rain, wind and how warm), to draw where it is dry. */
-    weatherSpots: List<com.curveon.data.weather.MapWeather> = emptyList(),
+    /** The weather to show (sun, cloud, rain, wind and how warm): round where a loop starts while drawing it, or from the button. */
+    weatherSpots: () -> List<com.curveon.data.weather.MapWeather> = { emptyList() },
     /** The weather map button (full-screen map, not navigating, standing still): on or off, and switching it; null = no button. */
     weatherMapOn: Boolean = false,
     onWeatherMap: ((Boolean) -> Unit)? = null,
@@ -330,6 +330,8 @@ fun CurveonMapView(
     var cameraIdleTick by remember { mutableIntStateOf(0) }
     /** Nudged when what the rider loop below draws may change (a fix, the camera, the layout), to wake it. */
     val wake = remember { kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED) }
+    /** The rider stopped moving the map by hand: look at where it now shows at once, not at the next look. */
+    val viewportWake = remember { kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED) }
     /** Where and how to draw the rider arrow this frame. */
     var puck by remember { mutableStateOf<Puck?>(null) }
 
@@ -422,7 +424,7 @@ fun CurveonMapView(
             var lastIdleTick = 0L
             val idleTick = Runnable { lastIdleTick = android.os.SystemClock.uptimeMillis(); cameraIdleTick++ }
             m.addOnCameraIdleListener {
-                if (!following) trackRider()
+                if (!following) { trackRider(); viewportWake.trySend(Unit) }
                 mapView.removeCallbacks(idleTick)
                 val wait = lastIdleTick + IDLE_TICK_MS - android.os.SystemClock.uptimeMillis()
                 if (wait <= 0) idleTick.run() else mapView.postDelayed(idleTick, wait)
@@ -741,7 +743,7 @@ fun CurveonMapView(
                 onViewportState.value(b.latitudeSouth, b.latitudeNorth, b.longitudeWest, b.longitudeEast, m.cameraPosition.zoom,
                     midKm, at?.latitude ?: b.center.latitude, at?.longitude ?: b.center.longitude)
             }
-            kotlinx.coroutines.delay(800)
+            kotlinx.coroutines.withTimeoutOrNull(800) { viewportWake.receive() }
             lifecycleOwner.lifecycle.untilStarted()
         }
     }
@@ -1158,31 +1160,31 @@ fun CurveonMapView(
     val weatherButton = onWeatherMap != null && !planning && !navigating && !moving
     val onWeatherButtonShownState = rememberUpdatedState(onWeatherButtonShown)
     LaunchedEffect(weatherButton) { onWeatherButtonShownState.value(weatherButton) }
-    val shownWeather = if (onWeatherMap == null || (weatherButton && weatherMapOn)) weatherSpots else emptyList()
-    // The weather symbols (put on roads, so never at sea, by WeatherController). Set on the map only when they changed.
-    // Per style: a new style starts with an empty source.
-    var weatherShown by remember(style) { mutableStateOf<List<com.curveon.data.weather.MapWeather>?>(null) }
-    LaunchedEffect(style, shownWeather) {
+    val weatherShownNow = rememberUpdatedState(onWeatherMap == null || (weatherButton && weatherMapOn))
+    val weatherSpotsNow = rememberUpdatedState(weatherSpots)
+    // The weather symbols (on land, and on roads where there are any, by WeatherController). They come one at a time: set on
+    // the map as they do, without composing the screen again for each. Per style: a new style starts with an empty source.
+    LaunchedEffect(style) {
         val s = style ?: return@LaunchedEffect
-        if (shownWeather.isEmpty()) {
-            if (weatherShown?.isNotEmpty() == true) s.getSourceAs<GeoJsonSource>(WEATHER)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
-            weatherShown = emptyList()
-            return@LaunchedEffect
-        }
         val density = context.resources.displayMetrics.density
-        com.curveon.data.weather.MapWeather.Kind.entries.forEach { k ->
-            if (s.getImage(weatherImageName(k)) == null) s.addImage(weatherImageName(k), weatherImage(k, density))
-        }
-        // Drawn again only when something changed: the same symbols at the same places are left alone.
-        if (shownWeather != weatherShown) {
-            val features = shownWeather.map { w ->
+        var imagesAdded = false
+        var onMap = emptyList<com.curveon.data.weather.MapWeather>()
+        androidx.compose.runtime.snapshotFlow { if (weatherShownNow.value) weatherSpotsNow.value() else emptyList() }.collect { spots ->
+            if (spots == onMap) return@collect
+            if (!imagesAdded) {
+                imagesAdded = true
+                com.curveon.data.weather.MapWeather.Kind.entries.forEach { k ->
+                    if (s.getImage(weatherImageName(k)) == null) s.addImage(weatherImageName(k), weatherImage(k, density))
+                }
+            }
+            val features = spots.map { w ->
                 Feature.fromGeometry(Point.fromLngLat(w.point.lon, w.point.lat)).also {
                     it.addStringProperty("icon", weatherImageName(w.kind))
                     it.addStringProperty("temp", "${w.tempC}°")
                 }
             }
             s.getSourceAs<GeoJsonSource>(WEATHER)?.setGeoJson(FeatureCollection.fromFeatures(features))
-            weatherShown = shownWeather
+            onMap = spots
         }
     }
     val heatCells = remember { mutableStateMapOf<String, List<com.curveon.routing.HeatCell>>() }

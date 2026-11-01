@@ -1223,5 +1223,5 @@
     <string name="weather_note_dry">Droog</string>
     <string name="weather_note_rain">Regen</string>
     <string name="settings_weather">Weer</string>
-    <string name="settings_weather_hint">Toont het weer langs de rit en stelt droge ritten voor. Bij het plannen wordt een globale positie (ongeveer 10 km) naar MET Norway gestuurd.</string>
+    <string name="settings_weather_hint">Zonknop, weer op de rit en droge ritten. Uit: niets getoond of verstuurd. Aan: MET Norway krijgt een globale positie (10 km).</string>
 </resources>

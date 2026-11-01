@@ -1250,5 +1250,5 @@
     <string name="weather_note_dry">Trocken</string>
     <string name="weather_note_rain">Regen</string>
     <string name="settings_weather">Wetter</string>
-    <string name="settings_weather_hint">Zeigt das Wetter entlang der Fahrt und schlägt trockene Fahrten vor. Beim Planen wird eine ungefähre Position (etwa 10 km) an MET Norway gesendet.</string>
+    <string name="settings_weather_hint">Sonnentaste, Fahrtwetter und trockene Fahrten. Aus: nichts wird gezeigt oder gesendet. An: MET Norway erhält grobe Position (10 km).</string>
 </resources>

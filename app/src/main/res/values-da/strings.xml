@@ -1251,5 +1251,5 @@
     <string name="weather_note_dry">Tørt</string>
     <string name="weather_note_rain">Regn</string>
     <string name="settings_weather">Vejr</string>
-    <string name="settings_weather_hint">Viser vejret langs turen og foreslår tørre ture. Når du planlægger, sendes en omtrentlig position (ca. 10 km) til MET Norway.</string>
+    <string name="settings_weather_hint">Solknappen, vejret på turen og tørre ture. Fra: intet vises eller sendes. Til: MET Norway får omtrentlig position (10 km).</string>
 </resources>

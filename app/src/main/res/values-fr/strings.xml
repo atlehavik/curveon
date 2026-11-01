@@ -1269,5 +1269,5 @@
     <string name="weather_note_dry">Sec</string>
     <string name="weather_note_rain">Pluie</string>
     <string name="settings_weather">Météo</string>
-    <string name="settings_weather_hint">Affiche la météo le long du trajet et propose des trajets au sec. Quand tu planifies, une position approximative (environ 10 km) est envoyée à MET Norway.</string>
+    <string name="settings_weather_hint">Bouton soleil, météo du trajet, trajets au sec. Arrêt : rien affiché ni envoyé. Marche : MET Norway reçoit une position approx. (10 km).</string>
 </resources>
