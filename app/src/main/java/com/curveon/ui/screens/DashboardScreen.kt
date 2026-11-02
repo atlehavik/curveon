@@ -1702,8 +1702,7 @@ private fun Rail(
     onPress: (RailPanel) -> Unit,
     onToggleMap: () -> Unit
 ) {
-    // A phone held sideways is lower than the X7 (about 410 dp against 540): smaller buttons, so
-    // the map toggle at the bottom still fits.
+    // A phone held sideways is lower than the X7 (about 410 dp against 540): less room round the buttons.
     val compact = vertical && LocalConfiguration.current.screenHeightDp < 480
     val search: @Composable () -> Unit = {
         RailButton(Icons.Default.TwoWheeler, stringResource(R.string.where_to), ElectricCyan, ElectricCyan, filled = active == RailPanel.SEARCH, flashKey = if (RailPanel.SEARCH in flash.first) flash.second else 0, tag = "rail_search", target = TourTarget.SEARCH, onClick = { onPress(RailPanel.SEARCH) })
@@ -1753,11 +1752,9 @@ private fun Rail(
     if (vertical) Column(
         Modifier.width(72.dp).fillMaxHeight().background(CockpitSurface).padding(vertical = if (compact) 6.dp else 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)
+        verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        search(); gpx(); phone(); group(); settings()
-        Spacer(Modifier.weight(1f))
-        mapToggle()
+        search(); gpx(); phone(); group(); settings(); mapToggle()
     } else Row(
         Modifier.fillMaxWidth().height(68.dp).background(CockpitSurface).padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
