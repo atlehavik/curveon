@@ -4,57 +4,68 @@
     "en": [
       "The weather on the map looks so much better! The symbols now lie naturally scattered instead of in neat rows, they stay on land instead of out at sea, and they pop up one by one as soon as they are ready, so the map stays silky smooth. Zoom out and they tidy themselves up right away, instead of lying in a clump until you fiddle with the map.",
       "Don't care for the weather? Weather in Settings → Navigation turns everything about it on or off in one go: the sun button, the weather along the trip and the dry trip suggestions.",
-      "The main menu buttons are now evenly spread along the bar whichever way you hold the screen, so it looks the same upright and sideways."
+      "The main menu buttons are now evenly spread along the bar whichever way you hold the screen, so it looks the same upright and sideways.",
+      "On a clear night the weather map now shows a moon and stars instead of a blazing sun: the sun only shines on the map when it is actually day where you are looking."
     ],
     "nb": [
       "Været på kartet ser mye bedre ut! Symbolene ligger nå naturlig spredt i stedet for på rekke og rad, de holder seg på land i stedet for ute i havet, og de dukker opp ett og ett så snart de er klare, så kartet går like lett hele tiden. Zoomer du ut, rydder de seg med en gang, i stedet for å ligge i en klump til du tukler med kartet.",
       "Bryr du deg ikke om været? Vær under Innstillinger → Navigasjon slår alt om vær av eller på i ett grep: solknappen, været langs turen og forslagene om tørre turer.",
-      "Knappene i hovedmenyen er nå jevnt fordelt langs linja uansett hvordan du holder skjermen, så det ser likt ut stående og liggende."
+      "Knappene i hovedmenyen er nå jevnt fordelt langs linja uansett hvordan du holder skjermen, så det ser likt ut stående og liggende.",
+      "En klar kveld viser værkartet nå måne og stjerner i stedet for strålende sol: solen skinner bare på kartet når det faktisk er dag der du ser."
     ],
     "sv": [
       "Vädret på kartan ser mycket bättre ut! Symbolerna ligger nu naturligt utspridda i stället för på rad, de håller sig på land i stället för ute till havs, och de dyker upp en och en så snart de är klara, så att kartan går lika lätt hela tiden. Zoomar du ut städar de upp sig direkt, i stället för att ligga i en klump tills du pillar med kartan.",
       "Bryr du dig inte om vädret? Väder under Inställningar → Navigering slår av eller på allt om väder i ett svep: solknappen, vädret längs turen och förslagen på torra turer.",
-      "Knapparna i huvudmenyn är nu jämnt fördelade längs raden hur du än håller skärmen, så det ser likadant ut stående och liggande."
+      "Knapparna i huvudmenyn är nu jämnt fördelade längs raden hur du än håller skärmen, så det ser likadant ut stående och liggande.",
+      "En klar kväll visar väderkartan nu måne och stjärnor i stället för strålande sol: solen skiner bara på kartan när det faktiskt är dag där du tittar."
     ],
     "da": [
       "Vejret på kortet ser meget bedre ud! Symbolerne ligger nu naturligt spredt i stedet for på rad og række, de holder sig på land i stedet for ude på havet, og de dukker op ét ad gangen, så snart de er klar, så kortet kører lige let hele tiden. Zoomer du ud, rydder de op med det samme, i stedet for at ligge i en klump, til du roder med kortet.",
       "Er du ligeglad med vejret? Vejr under Indstillinger → Navigation slår alt om vejr til eller fra i ét greb: solknappen, vejret langs turen og forslagene om tørre ture.",
-      "Knapperne i hovedmenuen er nu jævnt fordelt langs linjen, uanset hvordan du holder skærmen, så det ser ens ud på højkant og på tværs."
+      "Knapperne i hovedmenuen er nu jævnt fordelt langs linjen, uanset hvordan du holder skærmen, så det ser ens ud på højkant og på tværs.",
+      "En klar aften viser vejrkortet nu måne og stjerner i stedet for strålende sol: solen skinner kun på kortet, når det faktisk er dag der, hvor du kigger."
     ],
     "fi": [
       "Sää näyttää kartalla paljon paremmalta! Symbolit ovat nyt luonnollisesti hajallaan eivätkä siisteissä riveissä, ne pysyvät maalla eivätkä merellä, ja ne ilmestyvät yksi kerrallaan heti valmistuttuaan, joten kartta pysyy koko ajan sujuvana. Kun loitonnat, ne järjestyvät heti eivätkä jää rykelmäksi, kunnes näpräät karttaa.",
       "Eikö sää kiinnosta? Sää-valinta kohdassa Asetukset → Navigointi kytkee kaiken säähän liittyvän päälle tai pois kerralla: aurinkopainikkeen, sään matkan varrella ja kuivien ajojen ehdotukset.",
-      "Päävalikon painikkeet ovat nyt tasaisesti palkin mittaisesti, piti näyttöä miten päin tahansa, joten se näyttää samalta pysty- ja vaaka-asennossa."
+      "Päävalikon painikkeet ovat nyt tasaisesti palkin mittaisesti, piti näyttöä miten päin tahansa, joten se näyttää samalta pysty- ja vaaka-asennossa.",
+      "Selkeänä yönä sääkartta näyttää nyt kuun ja tähdet eikä paahtavaa aurinkoa: aurinko paistaa kartalla vain, kun katsomassasi paikassa todella on päivä."
     ],
     "is": [
       "Veðrið á kortinu lítur miklu betur út! Táknin liggja nú eðlilega dreifð í stað þess að vera í beinum röðum, þau halda sig á landi í stað þess að vera úti á sjó og þau birtast eitt af öðru um leið og þau eru tilbúin, svo kortið gengur jafn létt allan tímann. Þegar þú minnkar kortið raða þau sér strax, í stað þess að liggja í hrúgu þar til þú átt við kortið.",
       "Er þér sama um veðrið? Veður undir Stillingar → Leiðsögn kveikir eða slekkur á öllu sem tengist veðri í einu: sólarhnappinum, veðrinu á leiðinni og tillögum um þurrar ferðir.",
-      "Hnapparnir í aðalvalmyndinni dreifast nú jafnt eftir stikunni hvernig sem þú heldur á skjánum, svo þetta lítur eins út á langveginn og þverveginn."
+      "Hnapparnir í aðalvalmyndinni dreifast nú jafnt eftir stikunni hvernig sem þú heldur á skjánum, svo þetta lítur eins út á langveginn og þverveginn.",
+      "Á heiðskírri nóttu sýnir veðurkortið nú tungl og stjörnur í stað glampandi sólar: sólin skín aðeins á kortinu þegar það er í raun dagur þar sem þú horfir."
     ],
     "de": [
       "Das Wetter auf der Karte sieht jetzt viel besser aus! Die Symbole liegen natürlich verstreut statt in Reih und Glied, bleiben an Land statt draußen auf dem Meer und erscheinen eines nach dem anderen, sobald sie fertig sind, sodass die Karte immer flüssig läuft. Zoomst du heraus, räumen sie sich sofort auf, statt als Klumpen liegen zu bleiben, bis du an der Karte herumspielst.",
       "Das Wetter ist dir egal? Wetter unter Einstellungen → Navigation schaltet alles rund ums Wetter auf einmal ein oder aus: die Sonnentaste, das Wetter entlang der Fahrt und die Vorschläge für trockene Fahrten.",
-      "Die Tasten im Hauptmenü sind jetzt gleichmäßig über die Leiste verteilt, egal wie du den Bildschirm hältst, und sehen hochkant und quer gleich aus."
+      "Die Tasten im Hauptmenü sind jetzt gleichmäßig über die Leiste verteilt, egal wie du den Bildschirm hältst, und sehen hochkant und quer gleich aus.",
+      "In einer klaren Nacht zeigt die Wetterkarte jetzt Mond und Sterne statt strahlender Sonne: Die Sonne scheint auf der Karte nur, wenn dort, wo du hinschaust, wirklich Tag ist."
     ],
     "es": [
       "¡El tiempo en el mapa se ve mucho mejor! Los símbolos aparecen ahora repartidos de forma natural en lugar de en filas, se quedan en tierra en lugar de en el mar y salen uno a uno en cuanto están listos, así que el mapa sigue siempre fluido. Al alejar el mapa se ordenan al instante, en lugar de quedarse amontonados hasta que tocas el mapa.",
       "¿No te interesa el tiempo? Tiempo en Ajustes → Navegación activa o desactiva todo lo relacionado de una sola vez: el botón del sol, el tiempo a lo largo del viaje y las propuestas de viajes secos.",
-      "Los botones del menú principal se reparten ahora por igual a lo largo de la barra sea cual sea la posición de la pantalla, así que se ve igual en vertical y en horizontal."
+      "Los botones del menú principal se reparten ahora por igual a lo largo de la barra sea cual sea la posición de la pantalla, así que se ve igual en vertical y en horizontal.",
+      "En una noche despejada, el mapa del tiempo muestra ahora la luna y las estrellas en lugar de un sol radiante: el sol solo brilla en el mapa cuando de verdad es de día donde estás mirando."
     ],
     "fr": [
       "La météo sur la carte est bien plus belle ! Les symboles sont maintenant dispersés naturellement au lieu d'être alignés, ils restent sur terre au lieu d'être en mer et apparaissent un par un dès qu'ils sont prêts, si bien que la carte reste toujours fluide. Quand tu dézoomes, ils se rangent aussitôt au lieu de rester en tas jusqu'à ce que tu touches à la carte.",
       "La météo ne t'intéresse pas ? Météo dans Réglages → Navigation active ou désactive tout d'un seul geste : le bouton soleil, la météo le long du trajet et les propositions de trajets au sec.",
-      "Les boutons du menu principal sont maintenant répartis régulièrement le long de la barre quel que soit le sens de l'écran : c'est pareil en portrait et en paysage."
+      "Les boutons du menu principal sont maintenant répartis régulièrement le long de la barre quel que soit le sens de l'écran : c'est pareil en portrait et en paysage.",
+      "Par nuit claire, la carte météo affiche maintenant la lune et les étoiles au lieu d'un soleil radieux : le soleil ne brille sur la carte que lorsqu'il fait vraiment jour là où tu regardes."
     ],
     "nl": [
       "Het weer op de kaart ziet er veel beter uit! De symbolen liggen nu natuurlijk verspreid in plaats van in nette rijen, ze blijven op het land in plaats van op zee en ze verschijnen een voor een zodra ze klaar zijn, zodat de kaart altijd soepel blijft. Zoom je uit, dan ruimen ze zichzelf meteen op, in plaats van op een kluitje te blijven liggen tot je aan de kaart zit te frunniken.",
       "Geef je niet om het weer? Weer onder Instellingen → Navigatie zet alles over het weer in één keer aan of uit: de zonknop, het weer langs de rit en de voorstellen voor droge ritten.",
-      "De knoppen van het hoofdmenu staan nu gelijkmatig verdeeld over de balk, hoe je het scherm ook houdt, dus staand en liggend ziet het er hetzelfde uit."
+      "De knoppen van het hoofdmenu staan nu gelijkmatig verdeeld over de balk, hoe je het scherm ook houdt, dus staand en liggend ziet het er hetzelfde uit.",
+      "Op een heldere avond toont de weerkaart nu de maan en sterren in plaats van een stralende zon: de zon schijnt alleen op de kaart als het echt dag is op de plek waar je kijkt."
     ],
     "pl": [
       "Pogoda na mapie wygląda teraz o wiele lepiej! Symbole są naturalnie rozrzucone zamiast w równych rzędach, trzymają się lądu zamiast morza i pojawiają się jeden po drugim, gdy tylko są gotowe, więc mapa przez cały czas działa płynnie. Po oddaleniu porządkują się od razu, zamiast leżeć w kupce, dopóki nie poruszysz mapą.",
       "Pogoda cię nie interesuje? Pogoda w Ustawienia → Nawigacja włącza lub wyłącza wszystko naraz: przycisk słońca, pogodę na trasie i propozycje suchych tras.",
-      "Przyciski menu głównego są teraz równo rozłożone na pasku, niezależnie od położenia ekranu, więc w pionie i w poziomie wygląda to tak samo."
+      "Przyciski menu głównego są teraz równo rozłożone na pasku, niezależnie od położenia ekranu, więc w pionie i w poziomie wygląda to tak samo.",
+      "W pogodną noc mapa pogody pokazuje teraz księżyc i gwiazdy zamiast pełnego słońca: słońce świeci na mapie tylko wtedy, gdy tam, gdzie patrzysz, naprawdę jest dzień."
     ]
   },
   {

@@ -11,6 +11,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 Prøvd på X7-emulatoren og Pixel 9a-oppsettet. Hvor lett kartet går, kan bare kjennes på de ekte enhetene, og henting gjennom telefonen kan ikke prøves i emulatoren.
 
 - [ ] X7 og Pixel, kartet i fullskjerm, soltasten på: zoom ut fra nærbilde til hele Sør-Norge. Symbolene skal komme ett og ett utover fra midten, kartet skal gå like lett som med soltasten av, og det skal aldri ligge igjen en klump etter at zoomen stopper.
+- [ ] Værkart på en klar kveld: måne og stjerner der det er oppholdsvær og mørkt, sol igjen når det er dag. I solnedgangen kan begge ligge på kartet samtidig (solen går ned tidligere i øst). Si fra om månen er tydelig nok på lyst og mørkt kart.
 - [ ] Zoom ut over Skagerrak, Nordsjøen og gjerne Danmark og Sverige: ingen symboler ute i havet. Shetland og øyene ved kysten kan ha symbol, det er land.
 - [ ] Symbolene skal se tilfeldig spredt ut, ikke stå på rekke og rad, og det skal være omtrent like mange på skjermen uansett zoom og om telefonen står eller ligger (omtrent 20 der det før var 45). Si fra om de står for tett eller for glissent.
 - [ ] Zoom og dra raskt fram og tilbake noen ganger, og la kartet stå: etter et par sekunder skal det stemme uten at du må røre mer.

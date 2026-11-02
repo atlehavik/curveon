@@ -64,6 +64,30 @@ class WeatherScoreTest {
     }
 }
 
+class WeatherMapKindTest {
+    private fun hour(symbol: String?, mm: Double = 0.0, gust: Double? = null) = WeatherHour(0L, 5.0, mm, 90.0, 3.0, gust, symbol)
+    private fun kind(symbol: String?, mm: Double = 0.0, gust: Double? = null) = WeatherController.mapKind(hour(symbol, mm, gust), null)
+
+    @Test fun theSunByDayAndTheMoonWhenItIsDark() {
+        assertEquals(MapWeather.Kind.SUN, kind("clearsky_day"))
+        assertEquals(MapWeather.Kind.SUN, kind("fair_day"))
+        assertEquals(MapWeather.Kind.MOON, kind("clearsky_night"))
+        assertEquals(MapWeather.Kind.MOON, kind("fair_night"))
+    }
+
+    @Test fun noonInTheFarNorthInWinterIsDay() {
+        assertEquals(MapWeather.Kind.SUN, kind("clearsky_polartwilight"))
+    }
+
+    @Test fun cloudRainAndWindLookTheSameDayAndNight() {
+        assertEquals(MapWeather.Kind.CLOUD, kind("cloudy"))
+        assertEquals(MapWeather.Kind.CLOUD, kind("partlycloudy_night"))
+        assertEquals(MapWeather.Kind.CLOUD, kind(null))
+        assertEquals(MapWeather.Kind.RAIN, kind("clearsky_night", mm = 2.0))
+        assertEquals(MapWeather.Kind.WIND, kind("clearsky_night", gust = 18.0))
+    }
+}
+
 class WeatherMapGridTest {
     private val land = java.io.File("src/main/assets/land-mask.dat").inputStream().let { LandMask.read(it)!! }
 

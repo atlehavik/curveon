@@ -48,7 +48,7 @@ data class WeatherVia(val stop: Stop, val extraSeconds: Double, val dry: Boolean
 
 /** The weather on the map: where its symbol is put (on a road near the [place] it was asked for), what kind, and how warm. */
 data class MapWeather(val point: LatLon, val kind: Kind, val tempC: Int, val place: LatLon = point) {
-    enum class Kind { SUN, CLOUD, RAIN, WIND }
+    enum class Kind { SUN, MOON, CLOUD, RAIN, WIND }
 }
 
 /** The part of the map in view. */
@@ -207,17 +207,10 @@ class WeatherController(
         }
     }
 
-    /** Sun, cloud, rain or wind at [p] from the hour the rider is there and the one after. */
+    /** The weather's symbol at [p] from the hour the rider is there and the one after. */
     private fun mapWeather(p: LatLon, first: com.curveon.protocol.WeatherHour?, next: com.curveon.protocol.WeatherHour?): MapWeather? {
         first ?: return null
-        val both = listOfNotNull(first, next)
-        val kind = when {
-            both.any(WeatherScore::wet) -> MapWeather.Kind.RAIN
-            both.any(WeatherScore::windy) -> MapWeather.Kind.WIND
-            first.symbol?.let { it.startsWith("clearsky") || it.startsWith("fair") } == true -> MapWeather.Kind.SUN
-            else -> MapWeather.Kind.CLOUD
-        }
-        return MapWeather(p, kind, first.tempC.roundToInt())
+        return MapWeather(p, mapKind(first, next), first.tempC.roundToInt())
     }
 
     // ------------------------------------------------------------------ the weather map button
@@ -340,6 +333,22 @@ class WeatherController(
         /** The map is given a new symbol at most this often, however fast they are ready. */
         private const val SYMBOL_GAP_MS = 50L
         private const val RETRY_MS = 30_000L
+
+        /**
+         * Sun, moon, cloud, rain or wind. MET's symbol says clear or fair, and whether the sun is up there and then: _night when
+         * it is dark, in every country; _polartwilight (noon in the far north in winter) is the day there is, so the sun.
+         */
+        internal fun mapKind(first: com.curveon.protocol.WeatherHour, next: com.curveon.protocol.WeatherHour?): MapWeather.Kind {
+            val both = listOfNotNull(first, next)
+            val symbol = first.symbol
+            return when {
+                both.any(WeatherScore::wet) -> MapWeather.Kind.RAIN
+                both.any(WeatherScore::windy) -> MapWeather.Kind.WIND
+                symbol == null || !(symbol.startsWith("clearsky") || symbol.startsWith("fair")) -> MapWeather.Kind.CLOUD
+                symbol.endsWith("_night") -> MapWeather.Kind.MOON
+                else -> MapWeather.Kind.SUN
+            }
+        }
 
         internal data class MapGrid(val places: List<LatLon>, val apartM: Double, val middle: LatLon)
 

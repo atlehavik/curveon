@@ -28,6 +28,8 @@ sparer MET for spørsmål om havet. (Heter ikke `.gz`: AssetManager pakker slike
 rutedata, står symbolet på nærmeste vei innen 6 km (`SurfaceReader.nearestRoad`), ellers utelates det. (Først ble kartets
 vannlag spurt med `queryRenderedFeatures`; det ga hele vannflaten som geometri på hovedtråden og frøs kartet i over et
 sekund, ANR på X7.)
+Symbolet følger MET: oppholdsvær vises som sol, eller måne og stjerner når symbolkoden ender på `_night` (for det stedet og den
+timen, så i alle land); `_polartwilight` regnes som dag. Skyer, regn og vind ser like ut dag og natt.
 Plasseringen (`WeatherController.mapGrid`): verden deles i ruter (0,1° × 0,2° eller en dobling, høyst en tidel av utsnittets
 størrelse, altså roten av flaten, og maks 240 med en rad rundt), og hver rute velger ett sted tilfeldig, alltid det samme, fra en av sine fire
 fjerdedeler. Så danner stedene ikke et rutenett, panorering gir de samme, og stedene på et grovere nivå er blant dem på det

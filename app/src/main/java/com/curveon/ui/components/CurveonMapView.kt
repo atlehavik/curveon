@@ -1504,7 +1504,7 @@ private fun roadSignImages(density: Float): Map<String, android.graphics.Bitmap>
 
 private fun weatherImageName(kind: com.curveon.data.weather.MapWeather.Kind) = "curveon-weather-${kind.name.lowercase()}"
 
-/** A small weather symbol on a dark disc: a sun, a cloud, a cloud with rain, or wind lines. */
+/** A small weather symbol on a dark disc: a sun, a moon and stars, a cloud, a cloud with rain, or wind lines. */
 private fun weatherImage(kind: com.curveon.data.weather.MapWeather.Kind, density: Float): android.graphics.Bitmap {
     val d = (34 * density).toInt()
     val bmp = android.graphics.Bitmap.createBitmap(d, d, android.graphics.Bitmap.Config.ARGB_8888)
@@ -1531,6 +1531,15 @@ private fun weatherImage(kind: com.curveon.data.weather.MapWeather.Kind, density
                 c.drawLine(r + (d * 0.22f * kotlin.math.cos(a)).toFloat(), r + (d * 0.22f * kotlin.math.sin(a)).toFloat(),
                     r + (d * 0.31f * kotlin.math.cos(a)).toFloat(), r + (d * 0.31f * kotlin.math.sin(a)).toFloat(), p)
             }
+        }
+        com.curveon.data.weather.MapWeather.Kind.MOON -> {
+            p.color = android.graphics.Color.rgb(0xFF, 0xE9, 0xA8)
+            val moon = android.graphics.Path().apply { addCircle(r - d * 0.05f, r + d * 0.03f, d * 0.24f, android.graphics.Path.Direction.CW) }
+            val bite = android.graphics.Path().apply { addCircle(r + d * 0.06f, r - d * 0.04f, d * 0.2f, android.graphics.Path.Direction.CW) }
+            moon.op(bite, android.graphics.Path.Op.DIFFERENCE)
+            c.drawPath(moon, p)
+            c.drawCircle(r + d * 0.2f, r - d * 0.17f, d * 0.035f, p)
+            c.drawCircle(r + d * 0.08f, r + d * 0.03f, d * 0.025f, p)
         }
         com.curveon.data.weather.MapWeather.Kind.CLOUD -> cloud(android.graphics.Color.rgb(0xB8, 0xC2, 0xCC), r + d * 0.02f)
         com.curveon.data.weather.MapWeather.Kind.RAIN -> {
