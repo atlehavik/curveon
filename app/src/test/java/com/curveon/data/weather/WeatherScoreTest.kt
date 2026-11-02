@@ -90,6 +90,18 @@ class WeatherMapGridTest {
         assertTrue(g.any { it.lat in 59.7701..59.7801 && it.lon in 5.2001..5.2201 })
     }
 
+    @Test fun equallyFullAtEveryZoomUprightAndSideways() {
+        // A phone's view at 60 north, from a few counties to half of Scandinavia; twice the degrees east-west is about square.
+        val counts = listOf(1.5, 1.8, 2.2, 2.7, 3.2, 3.9, 4.7, 5.6, 6.8, 8.0).flatMap { tall ->
+            val wide = tall / 1.9 * 2
+            listOf(tall to wide, tall / 1.9 to tall * 2).map { (dLat, dLon) ->
+                val south = 60.0 - dLat / 2; val north = 60.0 + dLat / 2; val west = 12.0 - dLon / 2; val east = 12.0 + dLon / 2
+                WeatherController.mapGrid(south, north, west, east).places.count { it.lat in south..north && it.lon in west..east }
+            }
+        }
+        assertTrue("$counts", counts.all { it in 15..30 })
+    }
+
     @Test fun notInRowsAndColumns() {
         val g = WeatherController.mapGrid(59.0, 61.0, 6.0, 10.0)
         // On a grid these would be a handful of different values, one per row or column.
@@ -98,10 +110,14 @@ class WeatherMapGridTest {
     }
 
     @Test fun zoomingOutKeepsAPartOfWhatWasThere() {
-        val close = WeatherController.mapGrid(59.0, 61.0, 4.0, 8.0).places.toSet()
-        val far = WeatherController.mapGrid(58.0, 62.0, 2.0, 10.0).places.filter { it.lat in 59.0..61.0 && it.lon in 4.0..8.0 }
-        assertTrue(far.isNotEmpty())
-        assertTrue(far.filterNot { it in close }.toString(), far.all { it in close })
+        // Each zoomed out to twice the size: of the symbols then shown where the closer view looked, most were there already.
+        var kept = 0; var all = 0
+        for (lat in listOf(50.0, 54.0, 59.0, 62.0, 66.0)) for (lon in listOf(6.0, 10.0, 14.0, 18.0)) {
+            val close = WeatherController.mapGrid(lat - 1, lat + 1, lon - 2, lon + 2).places.toSet()
+            val far = WeatherController.mapGrid(lat - 2, lat + 2, lon - 4, lon + 4).places.filter { it.lat in (lat - 1)..(lat + 1) && it.lon in (lon - 2)..(lon + 2) }
+            kept += far.count { it in close }; all += far.size
+        }
+        assertTrue("$kept of $all", kept >= all * 0.7)
     }
 
     @Test fun noneOnTheOpenSeaButPlentyOnLand() {
@@ -109,7 +125,7 @@ class WeatherMapGridTest {
         val g = WeatherController.mapGrid(56.0, 63.0, -2.0, 12.0, land).places
         assertTrue(g.all { land.isLand(it.lat, it.lon) })
         assertTrue(g.none { it.lon in 0.5..4.0 && it.lat in 56.0..59.5 })
-        assertTrue("${g.size} on land", g.size >= 25)
+        assertTrue("${g.size} on land", g.size >= 12)
     }
 
     @Test fun theCoastKeepsItsWeatherWhenZoomedOut() {

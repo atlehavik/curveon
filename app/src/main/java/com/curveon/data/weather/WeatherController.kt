@@ -239,7 +239,7 @@ class WeatherController(
                 if (grid == null) { _map.value = emptyList(); return@collectLatest }
                 val now = System.currentTimeMillis()
                 withContext(kotlinx.coroutines.Dispatchers.Default) {
-                    fill(_map, grid.places.sortedBy { Geo.distance(it, grid.middle) }.map { Place(it, now) }, grid.stepM * MAP_APART_STEPS)
+                    fill(_map, grid.places.sortedBy { Geo.distance(it, grid.middle) }.map { Place(it, now) }, grid.apartM * ON_ROADS_APART)
                 }
             }
     }
@@ -319,18 +319,21 @@ class WeatherController(
         const val DEFAULT_LOOP_KM = 150
         /** Weather on the map this far out (for a 150 km loop), eight places on each ring. */
         private val RINGS_KM = listOf(20.0, 40.0, 65.0)
-        /** About this many places of weather along the map's shorter side (more along the longer one). */
-        private const val MAP_ROWS = 6
+        /** Places to choose from: cells at most this share of the view's size (the root of its area, so upright and sideways alike). */
+        private const val MAP_CELL_SHARE = 0.1
+        /** Symbols are kept this share of the view's size apart: how dense the weather map is, at every zoom. */
+        private const val MAP_APART_SHARE = 0.15
+        /** Going on roads may bring two nearer: this much of that is still let through. */
+        private const val ON_ROADS_APART = 0.75
         /** A place's weather goes on a road this near it, or is left out (with no road at all). */
         private const val LAND_SNAP_M = 6_000.0
-        /** With the row round the view: a wide tablet zoomed out stays within this, by a coarser grid. */
-        private const val MAX_MAP_PLACES = 120
+        /** With the row round the view: a wide tablet zoomed out stays within this, by coarser cells. */
+        private const val MAX_MAP_CELLS = 240
         /** The finest cells' side, north-south (a forecast cell); east-west twice the degrees, about as many km in the north. */
         private const val FINEST_STEP = 0.1
+        private const val M_PER_DEGREE = 111_000.0
         /** Each coarser level doubles the step. */
         private const val MAX_LEVEL = 7
-        /** Symbols are kept this many steps apart, so a road shared by two places can't put them on top of each other. */
-        private const val MAP_APART_STEPS = 0.55
         private const val SKETCH_APART_M = 8_000.0
         /** No more than [WeatherService] lets through, so what is no longer wanted is not queued up. */
         private const val FETCHES_AT_ONCE = 4
@@ -338,27 +341,40 @@ class WeatherController(
         private const val SYMBOL_GAP_MS = 50L
         private const val RETRY_MS = 30_000L
 
-        internal data class MapGrid(val places: List<LatLon>, val stepM: Double, val middle: LatLon)
+        internal data class MapGrid(val places: List<LatLon>, val apartM: Double, val middle: LatLon)
 
         /**
          * The places to show weather at in the view and a row round it. The world is cut in cells, [FINEST_STEP] a side
          * or a doubling of it, with one place in each. A cell picks its place from one of its four quarters at random, and
          * always the same one, so the places don't form a grid, stay the same however the map is moved, and those of a coarser
-         * level are among those of the finer: zooming keeps what is there. A cell with only sea has none. Zoomed in closer
-         * than one step, the one in the middle.
+         * level are among those of the finer: zooming keeps what is there. A cell with only sea has none. Places too near each
+         * other for the view's size give way, always in the same order, so the map is equally full at every zoom (the cells alone
+         * would make it four times fuller or emptier at each doubling) and only those shown are asked for. Zoomed in closer than
+         * one step, the one in the middle.
          */
         internal fun mapGrid(south: Double, north: Double, west: Double, east: Double, land: LandMask? = null): MapGrid {
-            // East-west steps are twice the degrees, about as many km in the north: so the shorter side, in north-south degrees.
-            val shorter = minOf(north - south, (east - west) / 2)
+            val size = kotlin.math.sqrt((north - south) * (east - west) * kotlin.math.cos(Math.toRadians((south + north) / 2))) * M_PER_DEGREE
             var level = 0
-            while (FINEST_STEP * (1 shl level) < shorter / MAP_ROWS && level < MAX_LEVEL) level++
+            while (FINEST_STEP * (1 shl level) * M_PER_DEGREE < size * MAP_CELL_SHARE && level < MAX_LEVEL) level++
             fun rows(l: Int): IntRange { val s = FINEST_STEP * (1 shl l); return (kotlin.math.floor(south / s).toInt() - 1)..(kotlin.math.floor(north / s).toInt() + 1) }
             fun cols(l: Int): IntRange { val s = FINEST_STEP * (1 shl l) * 2; return (kotlin.math.floor(west / s).toInt() - 1)..(kotlin.math.floor(east / s).toInt() + 1) }
-            while (rows(level).count() * cols(level).count() > MAX_MAP_PLACES) level++
-            var places = rows(level).flatMap { r -> cols(level).mapNotNull { c -> placeIn(level, r, c, land) } }
+            while (rows(level).count() * cols(level).count() > MAX_MAP_CELLS) level++
+            val apartM = size * MAP_APART_SHARE
+            val kept = ArrayList<LatLon>()
+            // Those a coarser level has too go first: zooming out, they are the ones left, so what is on the map stays.
+            rows(level).flatMap { r -> cols(level).mapNotNull { c -> placeIn(level, r, c, land)?.let { p -> Triple(p, levelsUp(level, r, c, p, land), mix((p.lat * 10000).toInt(), (p.lon * 10000).toInt(), 7)) } } }
+                .sortedWith(compareBy({ -it.second }, { it.third }))
+                .forEach { (p, _, _) -> if (kept.none { Geo.distance(it, p) < apartM }) kept += p }
             val middle = LatLon(round4((south + north) / 2), round4((west + east) / 2))
-            if (places.none { it.lat in south..north && it.lon in west..east } && (land == null || land.isLand(middle.lat, middle.lon))) places = places + middle
-            return MapGrid(places, FINEST_STEP * (1 shl level) * 111_000, middle)
+            if (kept.none { it.lat in south..north && it.lon in west..east } && (land == null || land.isLand(middle.lat, middle.lon))) kept += middle
+            return MapGrid(kept, apartM, middle)
+        }
+
+        /** How many levels above its own cell's the place [p] is still the one chosen. */
+        private fun levelsUp(level: Int, row: Int, col: Int, p: LatLon, land: LandMask?): Int {
+            var up = 0
+            while (level + up < MAX_LEVEL + 2 && placeIn(level + up + 1, row shr (up + 1), col shr (up + 1), land) == p) up++
+            return up
         }
 
         /** The place of a cell; null = only sea. */

@@ -28,10 +28,12 @@ sparer MET for spørsmål om havet. (Heter ikke `.gz`: AssetManager pakker slike
 rutedata, står symbolet på nærmeste vei innen 6 km (`SurfaceReader.nearestRoad`), ellers utelates det. (Først ble kartets
 vannlag spurt med `queryRenderedFeatures`; det ga hele vannflaten som geometri på hovedtråden og frøs kartet i over et
 sekund, ANR på X7.)
-Plasseringen (`WeatherController.mapGrid`): verden deles i ruter (0,1° × 0,2° eller en dobling, cirka seks langs skjermens
-korte side, maks 120 med en rad rundt), og hver rute velger ett sted tilfeldig, alltid det samme, fra en av sine fire
+Plasseringen (`WeatherController.mapGrid`): verden deles i ruter (0,1° × 0,2° eller en dobling, høyst en tidel av utsnittets
+størrelse, altså roten av flaten, og maks 240 med en rad rundt), og hver rute velger ett sted tilfeldig, alltid det samme, fra en av sine fire
 fjerdedeler. Så danner stedene ikke et rutenett, panorering gir de samme, og stedene på et grovere nivå er blant dem på det
-finere, så zoom beholder det som allerede vises.
+finere, så zoom beholder det meste av det som allerede vises. Så viker steder som står nærmere enn 15 % av utsnittets størrelse
+(alltid i samme rekkefølge): dobling av rutene alene ga opptil fire ganger så mange ikoner fra ett zoomnivå til et annet, og
+den korte siden alene ga en høy telefon langt flere enn et bredt nettbrett. Bare de som blir igjen, hentes.
 Lastingen (`WeatherController.fill`): det som ikke hører til det nye utsnittet forsvinner med en gang (ellers ligger symboler
 fra forrige zoomnivå i en klump), så kommer resten ett og ett, nærmest midten først, høyst ett per 50 ms og uten at skjermen
 komponeres på nytt (kartet leser dem med `snapshotFlow`). En prognose som er på vei, hentes ferdig selv om kartet flyttes;
