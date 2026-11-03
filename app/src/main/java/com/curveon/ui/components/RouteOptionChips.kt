@@ -114,7 +114,7 @@ fun LoopMaxChip(maxKm: Int?, onPick: (Int?) -> Unit) {
         ) {
             Icon(Icons.Default.Straighten, null, tint = if (maxKm != null) NeonAmber else TextSecondary)
         }
-        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.remotePopup().background(CockpitSurface)) {
             LOOP_MAX_KM.forEach { km ->
                 androidx.compose.material3.DropdownMenuItem(
                     text = {
@@ -154,7 +154,7 @@ fun AdventureTimeChip(minutes: Int?, onPick: (Int?) -> Unit) {
         OptionChip(adventureLimitLabel(minutes), active = minutes != null, onClick = { open = true }) {
             Icon(Icons.Default.Schedule, null, tint = if (minutes != null) NeonAmber else TextSecondary)
         }
-        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.remotePopup().background(CockpitSurface)) {
             // What the time means: a ceiling, not a target.
             Text(
                 stringResource(R.string.adventure_time_explain), color = TextSecondary, fontSize = 13.sp,
@@ -184,7 +184,7 @@ fun SurfaceChip(surface: SurfacePreference, onSurface: (SurfacePreference) -> Un
         OptionChip(label(surface), active = surface != SurfacePreference.PAVED, onClick = { open = true }) {
             Icon(Icons.Default.Landscape, null, tint = if (surface != SurfacePreference.PAVED) NeonAmber else TextSecondary)
         }
-        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.remotePopup().background(CockpitSurface)) {
             SurfacePreference.entries.forEach { s ->
                 androidx.compose.material3.DropdownMenuItem(
                     text = { Text(label(s), color = if (s == surface) NeonAmber else TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
@@ -211,7 +211,7 @@ fun GravelReachChip(reachKm: Int?, onPick: (Int?) -> Unit) {
         OptionChip(label(reachKm), active = true, onClick = { open = true }) {
             Icon(Icons.Default.AltRoute, null, tint = NeonAmber)
         }
-        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.remotePopup().background(CockpitSurface)) {
             // The question first, so the distances make sense on their own.
             Text(stringResource(R.string.gravel_reach_title), color = TextSecondary, fontSize = 14.sp,
                 modifier = Modifier.widthIn(max = 280.dp).padding(horizontal = 12.dp, vertical = 8.dp))
@@ -242,7 +242,7 @@ fun MotorwayChip(avoidMotorways: Boolean, avoidTrunk: Boolean, onPick: (Boolean,
         Image(painterResource(if (c.second) com.curveon.R.drawable.ic_eroad else com.curveon.R.drawable.ic_motorway), null, modifier = Modifier.size(22.dp))
     Box {
         OptionChip(label(current), active = avoidMotorways, avoid = true, onClick = { open = true }) { sign(current) }
-        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.background(CockpitSurface)) {
+        androidx.compose.material3.DropdownMenu(open, onDismissRequest = { open = false }, modifier = Modifier.remotePopup().background(CockpitSurface)) {
             choices.forEach { c ->
                 androidx.compose.material3.DropdownMenuItem(
                     leadingIcon = { CrossedIcon(c.first) { sign(c) } },

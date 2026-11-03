@@ -52,6 +52,17 @@ phone, with an optional companion app on the phone when a tablet is used.
   Norway Kartverket's place names (farms, bays, lakes, …) and addresses are mixed in.
 - **Route preview**: Fastest / Curvy / Super curvy side by side (time, km, curviness, gravel and
   ferries) before you ride; surface and avoid options adjust them in place.
+- **Handlebar remote** (`data/remote/RemoteKeys.kt`, `ui/components/RemoteControl.kt`, Settings → Remote):
+  remotes are Bluetooth keyboards, so no permission or accessibility service is needed. `DEFAULT_KEYS`
+  knows the keys of the common ones (arrows, Enter, Esc, F6/F7, +/−, and the letters used for MyRoute-app,
+  Kurviger and OsmAnd) and riders can change any of them; `remoteCommand` holds the whole behaviour and is
+  unit tested. On the map: arrows pan (crosshair, back by itself after 12 s while riding), +/− zoom, OK opens
+  the menu or asks what is at the crosshair, Back comes back, hold OK speaks a destination, hold Back swaps
+  map and dashboard. With a button chosen: arrows move, OK presses, Back leaves. What is "chosen" is
+  tracked in `RemoteWindow.chosen`, not Android's focus: outside touch mode Android focuses a button by
+  itself. Every dialog joins through `HideSystemBars`, a rail screen or card through `rememberRemoteSheet`
+  or `remoteSheet`, a dropdown through `remotePopup`. New modal UI needs one of those. Touch-only for now:
+  drawing a roundtrip area (Good weather picks one) and dragging a route.
 - **Stops**: pick a place while riding → *Add stop* (inserted where it adds least detour) or *Go here*.
 - **Editing a planned trip**: tap a stop chip to move it earlier/later, *Change place* (search or pick
   on map), *Add stop before*, or remove it. **Edit on map** (long-press the route line, or the squiggle in

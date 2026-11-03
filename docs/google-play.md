@@ -231,3 +231,8 @@ krasjrapport til reléet (`POST /feedback`), som gjør det om til en offentlig G
   vennekanalen er forseglet til mottakeren, så andre i gruppen kan ikke lese den. Ingen nye tillatelser, og ingenting nytt i Data safety.
 - **Helningsvinkel fjernet (2026-10-22):** gyro og akselerometer brukes ikke lenger (`LeanSensor` er slettet).
 - Lisens og tredjepartsnotiser finnes (MIT, `THIRD_PARTY_LICENSES.md`). Sjekk at OSM/Overture-kreditering vises i appen.
+
+## Handlebar remote
+
+Reads a remote's keys as ordinary key events while Curveon is on screen: no new permission, no accessibility
+service (some other riding apps use one for this, which Play restricts) and nothing in the background.

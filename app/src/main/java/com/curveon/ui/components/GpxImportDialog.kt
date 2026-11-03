@@ -365,7 +365,7 @@ private fun TrackRow(
                     Modifier.padding(start = 4.dp).size(44.dp).clip(CircleShape).background(ElectricCyan).clickable { rideMenu = true },
                     contentAlignment = Alignment.Center
                 ) { Icon(Icons.Default.Navigation, stringResource(R.string.ride), tint = Color(0xFF00363D)) }
-                DropdownMenu(expanded = rideMenu, onDismissRequest = { rideMenu = false }, containerColor = CockpitSurface) {
+                DropdownMenu(expanded = rideMenu, onDismissRequest = { rideMenu = false }, modifier = Modifier.remotePopup(), containerColor = CockpitSurface) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.gpx_ride_from_here), color = TextPrimary) },
                         leadingIcon = { Icon(Icons.Default.Navigation, null, tint = TextSecondary) },
@@ -415,7 +415,7 @@ internal fun RowMenu(items: List<MenuItem>) {
     var open by remember { mutableStateOf(false) }
     Box {
         RowIcon(Icons.Default.MoreVert, stringResource(R.string.more), TextSecondary) { open = true }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CockpitSurface) {
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.remotePopup(), containerColor = CockpitSurface) {
             items.forEach { m ->
                 DropdownMenuItem(
                     text = { Text(m.label, color = if (m.icon == Icons.Default.DeleteOutline) WarningRed else TextPrimary) },

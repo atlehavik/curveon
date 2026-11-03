@@ -20,6 +20,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,10 +29,15 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.curveon.ui.components.LocalRemote
+import com.curveon.ui.components.RemoteControl
+import com.curveon.ui.components.RemoteHints
+import com.curveon.ui.components.RemoteWindow
 import com.curveon.ui.screens.DashboardScreen
 import com.curveon.ui.theme.CockpitBackground
 import com.curveon.ui.theme.CurveonTheme
@@ -43,6 +49,8 @@ import kotlinx.coroutines.flow.map
 class MainActivity : ComponentActivity() {
 
     private val dashboardViewModel: DashboardViewModel by viewModels()
+    private val remote by lazy { RemoteControl(applicationContext) }
+    private var remoteWindow: RemoteWindow? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -97,12 +105,22 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            val focusManager = LocalFocusManager.current
+            LaunchedEffect(Unit) {
+                remoteWindow = RemoteWindow(remote, window, focusManager, main = true,
+                    dispatch = { super.dispatchKeyEvent(it) }, backDispatcher = onBackPressedDispatcher).also(remote::attachMain)
+                remoteWindow?.holdViewFocus()
+            }
+
             CurveonTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = CockpitBackground
-                ) {
-                    DashboardScreen(viewModel = dashboardViewModel)
+                CompositionLocalProvider(LocalRemote provides remote) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = CockpitBackground
+                    ) {
+                        DashboardScreen(viewModel = dashboardViewModel)
+                        RemoteHints(remote)
+                    }
                 }
             }
         }
@@ -119,6 +137,15 @@ class MainActivity : ComponentActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
+    }
+
+    /** A handlebar remote is a Bluetooth keyboard: its keys go through [RemoteControl]. */
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean =
+        remoteWindow?.let { remote.onKey(event, it) } ?: super.dispatchKeyEvent(event)
+
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) remoteWindow?.let { remote.onTouch(it) }
+        return super.dispatchTouchEvent(event)
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -164,7 +191,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemBars()
+        if (hasFocus) { hideSystemBars(); remoteWindow?.holdViewFocus() }
     }
 
     companion object {

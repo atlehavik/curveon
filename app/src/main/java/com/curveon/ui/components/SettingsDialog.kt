@@ -44,6 +44,7 @@ private enum class SettingsTab(val label: Int, val icon: ImageVector) {
     NAVIGATION(R.string.settings_navigation, Icons.Default.Navigation),
     ENGINE(R.string.settings_engine, Icons.Default.Speed),
     PHONE(R.string.phone, Icons.Default.PhoneAndroid),
+    REMOTE(R.string.settings_remote, Icons.Default.SportsEsports),
     DATA(R.string.settings_maps_data, Icons.Default.Map),
     HELP(R.string.settings_help, Icons.Default.HelpOutline)
 }
@@ -188,6 +189,7 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
     ) { current ->
         val pageFor: @Composable (SettingsTab) -> Unit = { which ->
                 when (which) {
+                    SettingsTab.REMOTE -> Page { LocalRemote.current?.let { RemoteSettingsPage(it) } }
                     SettingsTab.DISPLAY -> Page {
                         if (AppLanguage.canChoose) Setting(stringResource(R.string.settings_language), stringResource(R.string.settings_language_hint)) {
                             Choice(AppLanguage.entries, state.language, { it.label }, actions.onLanguage)
@@ -599,6 +601,16 @@ private fun Page(content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(18.dp), content = content)
 }
 
+/** For the pages kept in files of their own. */
+@Composable
+internal fun SettingTitle(text: String) = SectionTitle(text)
+
+@Composable
+internal fun SettingRow(title: String, hint: String? = null, control: @Composable () -> Unit) = Setting(title, hint, control = control)
+
+@Composable
+internal fun <T> SettingChoice(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) = Choice(options, selected, label, onSelect)
+
 @Composable
 private fun SectionTitle(text: String) {
     Text(text.uppercase(), color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
@@ -649,7 +661,7 @@ private fun <T> Choice(options: List<T>, selected: T, label: @Composable (T) -> 
             }
             Icon(Icons.Default.ArrowDropDown, null, tint = TextSecondary, modifier = Modifier.padding(start = 4.dp))
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = CockpitSurface) {
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.remotePopup(), containerColor = CockpitSurface) {
             options.forEach { o ->
                 val on = o == selected
                 DropdownMenuItem(

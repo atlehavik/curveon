@@ -18,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -109,6 +110,8 @@ fun RoutePreviewSheet(
     val goal = preview.goal
     val options = goal.options
     var askDiscard by remember { mutableStateOf(false) }
+    /** The cross, and Back on a remote. */
+    val closeSheet = { if (preview.selectedRoute != null && askBeforeClosing) askDiscard = true else onClose() }
     // Like "Pick on map": the sheet shrinks into the bar, the bar springs up, and the sheet grows back out of it.
     val scope = rememberCoroutineScope()
     var growIn by remember { mutableStateOf(false) }
@@ -167,7 +170,7 @@ fun RoutePreviewSheet(
                 if (preview.selectedRoute != null) ShareIcon(onShare, onSendToTablet, onShareFriends)
                 SmallIcon(Icons.Default.ExpandMore, stringResource(R.string.collapse), minimize)
                 // A trip on the map may be half an hour of planning: ask before throwing it away.
-                SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { if (preview.selectedRoute != null && askBeforeClosing) askDiscard = true else onClose() }
+                SmallIcon(Icons.Default.Close, stringResource(R.string.cancel)) { closeSheet() }
             }
         }
         if (askDiscard) DiscardTripDialog(
@@ -264,7 +267,7 @@ fun RoutePreviewSheet(
                         var adjust by remember { mutableStateOf(false) }
                         PlanChip(Icons.Default.Tune, stringResource(R.string.adjust_route), NeonAmber, "preview_adjust_route", { adjust = true }, outlined = true,
                             modifier = Modifier.tourTarget(TourTarget.PLAN_ADJUST))
-                        DropdownMenu(adjust, onDismissRequest = { adjust = false }, modifier = Modifier.background(CockpitSurface)) {
+                        DropdownMenu(adjust, onDismissRequest = { adjust = false }, modifier = Modifier.remotePopup().background(CockpitSurface)) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.add_stop), color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold) },
                                 leadingIcon = { Icon(Icons.Default.AddLocationAlt, null, tint = NeonAmber) },
@@ -347,10 +350,10 @@ fun RoutePreviewSheet(
         }
         if (isNarrowScreen()) {
             chips(Modifier.horizontalScroll(rememberScrollState()))
-            GoButton(ready = preview.selectedRoute != null, onGo = onGo, modifier = Modifier.fillMaxWidth())
+            GoButton(ready = preview.selectedRoute != null, onGo = onGo, onBack = closeSheet, modifier = Modifier.fillMaxWidth())
         } else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             chips(Modifier.weight(1f).horizontalScroll(rememberScrollState()))
-            GoButton(ready = preview.selectedRoute != null, onGo = onGo)
+            GoButton(ready = preview.selectedRoute != null, onGo = onGo, onBack = closeSheet)
         }
     }
 }
@@ -451,14 +454,19 @@ private fun MinimizedPreview(preview: RoutePreview, onRestore: () -> Unit, onGo:
 
 /** Starts the ride on the chosen route: arrow and "GO" when there's room, just the arrow when squeezed. */
 @Composable
-private fun GoButton(ready: Boolean, onGo: () -> Unit, modifier: Modifier = Modifier) {
+private fun GoButton(ready: Boolean, onGo: () -> Unit, modifier: Modifier = Modifier, onBack: (() -> Unit)? = null) {
     val label = stringResource(R.string.preview_go)
     val labelStyle = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Black)
     val labelWidth = rememberTextMeasurer().measure(label, labelStyle, maxLines = 1).size.width
     val tint = if (ready) OnCyan else TextMuted
+    // A remote: the arrows go to this sheet and not the map, starting on Go as soon as there is a trip to go on.
+    val remote = LocalRemote.current
+    val first = rememberRemoteSheet(onBack)
+    LaunchedEffect(ready) { if (ready) remote?.offerFocus(first) }
     BoxWithConstraints(
         modifier.height(56.dp).widthIn(min = 96.dp).clip(RoundedCornerShape(28.dp))
             .background(if (ready) ElectricCyan else CockpitSurfaceVariant)
+            .focusRequester(first)
             .clickable(enabled = ready, onClick = onGo).padding(horizontal = 22.dp).testTag("preview_go_btn"),
         contentAlignment = Alignment.Center
     ) {
@@ -549,7 +557,7 @@ private fun ShareIcon(onGroup: (() -> Unit)?, onTablet: (() -> Unit)?, onFriends
         ways > 1 -> Box {
             var open by remember { mutableStateOf(false) }
             SmallIcon(Icons.Default.Share, stringResource(R.string.share_trip)) { open = true }
-            DropdownMenu(open, { open = false }, containerColor = CockpitSurfaceVariant) {
+            DropdownMenu(open, { open = false }, modifier = Modifier.remotePopup(), containerColor = CockpitSurfaceVariant) {
                 if (onGroup != null) DropdownMenuItem({ Text(stringResource(R.string.share_trip_with_group), color = TextPrimary) }, { open = false; onGroup() },
                     leadingIcon = { Icon(Icons.Default.Groups, null, tint = TextSecondary) })
                 if (onFriends != null) DropdownMenuItem({ Text(stringResource(R.string.share_trip_with_friends), color = TextPrimary) }, { open = false; onFriends() },

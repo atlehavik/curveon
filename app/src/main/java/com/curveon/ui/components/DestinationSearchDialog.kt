@@ -8,6 +8,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -79,6 +86,9 @@ fun DestinationSearchDialog(
     onShown: () -> Unit = {},
     /** A place name being spoken (heard by the phone through the headset); its text goes into the field as it comes. */
     voice: com.curveon.data.bluetooth.VoiceReply? = null,
+    /** Opened by holding OK on the remote: listen at once, and choose the first place found. */
+    listenAtOnce: Boolean = false,
+    onListened: () -> Unit = {},
     /** Start listening; null when there is no phone to listen with (no microphone shown). */
     onVoice: (() -> Unit)? = null,
     onVoiceCancel: () -> Unit = {},
@@ -89,17 +99,28 @@ fun DestinationSearchDialog(
 ) {
     var query by remember { mutableStateOf("") }
     var voiceError by remember { mutableStateOf<String?>(null) }
+    var chooseFirstResult by remember { mutableStateOf(false) }
     val listening = voice?.state == com.curveon.protocol.Message.VoiceState.LISTENING || voice?.state == com.curveon.protocol.Message.VoiceState.PARTIAL
     LaunchedEffect(voice?.state, voice?.text) {
         val v = voice ?: return@LaunchedEffect
         when (v.state) {
             com.curveon.protocol.Message.VoiceState.PARTIAL -> if (v.text.isNotBlank()) query = v.text
             com.curveon.protocol.Message.VoiceState.RESULT -> { query = v.text; onVoiceCancel() }
-            com.curveon.protocol.Message.VoiceState.ERROR -> { voiceError = v.text; onVoiceCancel() }
+            com.curveon.protocol.Message.VoiceState.ERROR -> { voiceError = v.text; onVoiceCancel(); chooseFirstResult = false }
             else -> Unit
         }
     }
     DisposableEffect(Unit) { onDispose { onVoiceCancel() } }
+    val firstResult = remember { FocusRequester() }
+    val listenNow = rememberUpdatedState(onVoice)
+    val cannotListen = rememberUpdatedState(voiceUnavailable)
+    LaunchedEffect(listenAtOnce) {
+        if (!listenAtOnce) return@LaunchedEffect
+        onListened()
+        chooseFirstResult = true
+        val listen = listenNow.value
+        if (listen != null) { voiceError = null; query = ""; listen() } else voiceError = cannotListen.value
+    }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     var nearest by remember { mutableStateOf<NearestCategory?>(null) }
@@ -115,6 +136,23 @@ fun DestinationSearchDialog(
         searching = true
         onSearch(query).collect { results = it }
         searching = false
+    }
+    // Spoken with the remote: the first place found is chosen, so one more OK is all it takes.
+    val remote = LocalRemote.current
+    LaunchedEffect(results, listening) {
+        if (chooseFirstResult && !listening && results.isNotEmpty()) {
+            chooseFirstResult = false
+            delay(60)
+            remote?.offerFocus(firstResult)
+        }
+    }
+    var fieldFocused by remember { mutableStateOf(false) }
+    val fingerMode = androidx.compose.ui.platform.LocalInputModeManager.current.inputMode == androidx.compose.ui.input.InputMode.Touch
+    val fingerOnField = remember { booleanArrayOf(false) }
+    // With the remote, where the rider most likely wants to go is chosen first: the first favourite, or else the last place.
+    val firstPlace = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        if (favorites.isNotEmpty() || recents.isNotEmpty()) { delay(PLACE_FOCUS_DELAY_MS); remote?.offerFocus(firstPlace) }
     }
     // The keyboard comes only when the rider taps the field.
     LaunchedEffect(Unit) { onShown() }
@@ -182,10 +220,17 @@ fun DestinationSearchDialog(
                     focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary,
                     focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder, cursorColor = ElectricCyan
                 ),
-                modifier = Modifier.weight(1f).focusRequester(focus).testTag("destination_search_field")
+                // The remote's ring goes past the field to the microphone, or the keyboard would pop up over the
+                // list on the way. A finger on it works as ever, and typing on a real keyboard goes on once there.
+                modifier = Modifier.weight(1f).focusRequester(focus)
+                    // Read when the focus is asked for: the finger comes before Android has left the remote's mode.
+                    .pointerInput(Unit) { awaitEachGesture { awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial); fingerOnField[0] = true } }
+                    .onFocusChanged { fieldFocused = it.isFocused; if (!it.isFocused) fingerOnField[0] = false }
+                    .focusProperties { canFocus = fingerMode || fieldFocused || fingerOnField[0] }.testTag("destination_search_field")
             )
         }
     ) {
+        if (fieldFocused) ScreenKeyboardNote()
         // The window's dim fades with the frame, so the map shows through as it shrinks.
         val window = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
         LaunchedEffect(window) {
@@ -200,6 +245,7 @@ fun DestinationSearchDialog(
                     Shortcut(cat.icon, stringResource(cat.label), cat.tint, selected = nearest == cat) {
                         query = ""
                         nearest = cat
+                        chooseFirstResult = true // with the remote: on to the nearest one
                         scope.launch { searching = true; results = onNearest(cat.kinds); searching = false }
                     }
                 }
@@ -247,6 +293,7 @@ fun DestinationSearchDialog(
                 items(favorites, key = { "fav${it.name}${it.point.lat}${it.point.lon}" }) { fav ->
                     val home = stringResource(R.string.favorite_home)
                     ListRow(
+                        rowModifier = if (fav === favorites.first()) Modifier.focusRequester(firstPlace) else Modifier,
                         icon = if (fav.home) Icons.Default.Home else Icons.Default.Star,
                         title = if (fav.home) home else fav.name,
                         subtitle = if (fav.home) fav.name else "",
@@ -272,17 +319,18 @@ fun DestinationSearchDialog(
                 val recents = recents.filterNot { r -> favorites.any { com.curveon.routing.Geo.distance(it.point, r.point) < 100 } }
                 if (recents.isNotEmpty()) item { SectionLabel(stringResource(R.string.search_recent)) }
                 items(recents, key = { "recent${it.name}${it.point.lat}" }) { stop ->
-                    ListRow(Icons.Default.History, stop.name, "", null, onClick = {
+                    ListRow(Icons.Default.History, stop.name, "", null, rowModifier = if (favorites.isEmpty() && stop === recents.first()) Modifier.focusRequester(firstPlace) else Modifier, onClick = {
                         onPick(SearchResult(stop.name, "", "recent", stop.point.lat, stop.point.lon, 0.0))
                     })
                 }
             }
-            items(results) { r ->
+            itemsIndexed(results) { i, r ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(CockpitSurfaceVariant)
+                        .then(if (i == 0) Modifier.focusRequester(firstResult) else Modifier)
                         .clickable { onPick(r) }
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -356,14 +404,17 @@ private fun SectionLabel(text: String) {
     Text(text.uppercase(), color = TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp, start = 4.dp))
 }
 
+private const val PLACE_FOCUS_DELAY_MS = 160L
+
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-private fun ListRow(icon: ImageVector, title: String, subtitle: String, trailing: String?, onClick: () -> Unit, onLongClick: (() -> Unit)? = null) {
+private fun ListRow(icon: ImageVector, title: String, subtitle: String, trailing: String?, rowModifier: Modifier = Modifier, onClick: () -> Unit, onLongClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(CockpitSurfaceVariant)
+            .then(rowModifier)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically

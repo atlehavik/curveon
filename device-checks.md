@@ -6,6 +6,19 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-04 — Fjernkontroll på styret
+
+Alt er prøvd i emulatoren med piltaster, Enter, Esc, + og F-taster, men ingen ekte fjernkontroll: hvilke taster de faktisk sender er hentet fra dokumentasjon og forum. Du har ingen ennå; ta disse når du får en.
+
+- [ ] Koble til fjernkontrollen i Bluetooth-innstillingene mens Curveon kjører: appen skal ikke starte på nytt eller miste turen.
+- [ ] Innstillinger → Fjernkontroll: viser den navnet på fjernkontrollen, og sier «Prøv en knapp» riktig navn og oppgave for hver knapp? Si fra om knapper som viser «ingen oppgave ennå», og hvilken tast de sender.
+- [ ] Trykk OK, så Tilbake, så piler: første trykk teller alltid, også rett etter at du har tatt på skjermen.
+- [ ] Hold OK, si et sted, trykk OK og OK igjen: ruten er i gang uten berøring. Virker holdet? Si fra hvis fjernkontrollen sender en egen tast for langt trykk.
+- [ ] Få en samtale: OK svarer og Tilbake avviser. Spør noen om å ringe; dette kan ikke prøves i emulatoren.
+- [ ] Trykk i Hvor skal du?-feltet med fjernkontrollen tilkoblet: kommer skjermtastaturet? Kommer det ikke, skal en gul linje forklare hvorfor og åpne Android-innstillingen.
+- [ ] Kjør en tur og dytt borti spaken: kartet skal komme tilbake til deg av seg selv etter 12 sekunder.
+- [ ] Prøv en helt vanlig tur med fjernkontrollen i hanske: er ringen tydelig nok i sollys? Er noe tungvint?
+
 ## 2026-11-03 — Fartsskilt der de faktisk står, og som blir stående
 
 Målt mot ekte veidata og NVDBs ekte skilt på åtte turer på Bømlo og Stord. Hvordan det ser ut mens du kjører, kan bare prøves på ekte.
