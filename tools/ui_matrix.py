@@ -138,14 +138,25 @@ def forget_plan(d):
     d.sh("settings", "put", "system", "user_rotation", str(d.rotation))
 
 
+def set_seen(d, *names):
+    """Marks these first-time walk-throughs as seen, also when the app has never noted them: on a freshly installed
+    app the settings file (and so the key) is not there yet, and the welcome tour would lie over every screen."""
+    if "</map>" not in d.sh(f"run-as {PKG} cat shared_prefs/settings.xml"):
+        d.sh("am", "start", "-n", f"{PKG}/com.curveon.MainActivity")  # the first start writes the file
+        time.sleep(6)
+        d.sh("am", "force-stop", PKG)
+    for name in names:
+        d.sh(f"run-as {PKG} sed -i -e 's| *<boolean name=\"{name}\"[^>]*/>||' "
+             f"-e 's|</map>|    <boolean name=\"{name}\" value=\"true\" /></map>|' shared_prefs/settings.xml")
+
+
 def go_home(d, demo=None, limit=0):
     """Curveon started afresh on the dashboard; demo=True/False first turns demo phone data on or off (debug build);
     limit > 0 shows that speed limit in the speed card (the emulator has no map data to read one from)."""
     d.sh("am", "force-stop", PKG)
     forget_plan(d)
     # The tour scenarios leave the welcome tour or the trip card's walk-through unseen: not over the other screens.
-    d.sh(f"run-as {PKG} sed -i -e 's/name=\"tourSeen\" value=\"false\"/name=\"tourSeen\" value=\"true\"/' "
-         f"-e 's/name=\"tripHelpSeen\" value=\"false\"/name=\"tripHelpSeen\" value=\"true\"/' shared_prefs/settings.xml")
+    set_seen(d, "tourSeen", "tripHelpSeen")
     d.sh(f"run-as {PKG} sed -i 's| *<int name=\"devSpeedLimit\"[^>]*/>||' shared_prefs/settings.xml")
     if limit:
         d.sh(f"run-as {PKG} sed -i 's|</map>|    <int name=\"devSpeedLimit\" value=\"{limit}\" /></map>|' shared_prefs/settings.xml")
@@ -157,9 +168,11 @@ def go_home(d, demo=None, limit=0):
 
 
 def scenario_dashboard(d):
-    """The dashboard with a speed limit: the big sign sticks out over the speed card's top-right corner."""
+    """The dashboard with a speed limit: the big sign sticks out over the speed card's top-right corner. All six
+    buttons of the main menu must be whole, also sideways on the lowest screens, where it is spread over the height."""
     go_home(d, limit=80)
-    return [["Settings", "Innstillinger"], ["Friends", "Venner"], ["80"]]
+    return [["Where to?", "Hvor skal du?"], ["GPX & rides", "GPX og turer"], ["Phone", "Telefon"], ["Friends", "Venner"],
+            ["Settings", "Innstillinger"], ["Full map", "Fullt kart"], ["80"]]
 
 
 def scenario_settings(d):
@@ -374,8 +387,8 @@ def scenario_triphelp(d):
     screen), the last one shown. Look over the sheet for the card covering the lit part."""
     d.sh("am", "force-stop", PKG)
     forget_plan(d)
-    d.sh(f"run-as {PKG} sed -i -e 's/name=\"tripHelpSeen\" value=\"true\"/name=\"tripHelpSeen\" value=\"false\"/' "
-         f"-e 's/name=\"tourSeen\" value=\"false\"/name=\"tourSeen\" value=\"true\"/' shared_prefs/settings.xml")
+    set_seen(d, "tourSeen")
+    d.sh(f"run-as {PKG} sed -i 's/name=\"tripHelpSeen\" value=\"true\"/name=\"tripHelpSeen\" value=\"false\"/' shared_prefs/settings.xml")
     subprocess.run(["adb", "-s", d.serial, "emu", "geo", "fix", "10.20", "59.74"], capture_output=True)
     d.sh("am", "start", "-n", f"{PKG}/com.curveon.MainActivity")
     time.sleep(6)
