@@ -145,11 +145,12 @@ fun DestinationSearchDialog(
                     when {
                         listening -> Text(stringResource(R.string.speak_now), color = ElectricCyan)
                         voiceError != null -> Text(voiceError!!.ifEmpty { stringResource(R.string.something_went_wrong) }, color = NeonAmber)
+                        // One line like the text typed here (singleLine doesn't reach the placeholder), or the field grows.
                         else -> Text(when (purpose) {
                             SearchPurpose.DESTINATION -> stringResource(R.string.search_placeholder)
                             SearchPurpose.STOP -> stringResource(R.string.search_add_stop)
                             SearchPurpose.START -> stringResource(R.string.search_start_from)
-                        })
+                        }, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 leadingIcon = {

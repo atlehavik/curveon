@@ -7,7 +7,8 @@
       "The main menu buttons are now evenly spread along the bar whichever way you hold the screen, so it looks the same upright and sideways.",
       "On a clear night the weather map now shows a moon and stars instead of a blazing sun: the sun only shines on the map when it is actually day where you are looking.",
       "Reply to a message by voice and you are done with it: as soon as the reply is sent, the message disappears from your notifications, just as if you had pressed Dismiss.",
-      "Speed signs on the map now stand where they really stand, usually just a few metres from the real sign, instead of sometimes more than a hundred metres further on. Riding without navigation, speed and give way signs stay put from the moment they appear until you have passed them, instead of blinking on and off. And a limit that only applies if you turn off now stands a little way into that side road, not along the road you are riding."
+      "Speed signs on the map now stand where they really stand, usually just a few metres from the real sign, instead of sometimes more than a hundred metres further on. Riding without navigation, speed and give way signs stay put from the moment they appear until you have passed them, instead of blinking on and off. And a limit that only applies if you turn off now stands a little way into that side road, not along the road you are riding.",
+      "The search field in Where to? is now one tidy line from the moment you open it, instead of standing extra tall until you started typing or pressed the microphone."
     ],
     "nb": [
       "Været på kartet ser mye bedre ut! Symbolene ligger nå naturlig spredt i stedet for på rekke og rad, de holder seg på land i stedet for ute i havet, og de dukker opp ett og ett så snart de er klare, så kartet går like lett hele tiden. Zoomer du ut, rydder de seg med en gang, i stedet for å ligge i en klump til du tukler med kartet.",
@@ -15,7 +16,8 @@
       "Knappene i hovedmenyen er nå jevnt fordelt langs linja uansett hvordan du holder skjermen, så det ser likt ut stående og liggende.",
       "En klar kveld viser værkartet nå måne og stjerner i stedet for strålende sol: solen skinner bare på kartet når det faktisk er dag der du ser.",
       "Svarer du på en melding med stemmen, er du ferdig med den: så snart svaret er sendt, forsvinner meldingen fra varslene, akkurat som om du hadde trykket Lukk.",
-      "Fartsskiltene på kartet står nå der de virkelig står, som regel bare noen få meter fra det ekte skiltet, og ikke av og til over hundre meter lenger fram. Uten navigering blir fartsskilt og vikepliktskilt stående fra de dukker opp til du har passert dem, i stedet for å blinke av og på. Og en fartsgrense som bare gjelder hvis du svinger av, står nå et stykke inn på sideveien, ikke langs veien du kjører."
+      "Fartsskiltene på kartet står nå der de virkelig står, som regel bare noen få meter fra det ekte skiltet, og ikke av og til over hundre meter lenger fram. Uten navigering blir fartsskilt og vikepliktskilt stående fra de dukker opp til du har passert dem, i stedet for å blinke av og på. Og en fartsgrense som bare gjelder hvis du svinger av, står nå et stykke inn på sideveien, ikke langs veien du kjører.",
+      "Søkefeltet i Hvor skal du? er nå én ryddig linje fra du åpner det, i stedet for å stå ekstra høyt helt til du begynte å skrive eller trykket på mikrofonen."
     ],
     "sv": [
       "Vädret på kartan ser mycket bättre ut! Symbolerna ligger nu naturligt utspridda i stället för på rad, de håller sig på land i stället för ute till havs, och de dyker upp en och en så snart de är klara, så att kartan går lika lätt hela tiden. Zoomar du ut städar de upp sig direkt, i stället för att ligga i en klump tills du pillar med kartan.",
@@ -23,7 +25,8 @@
       "Knapparna i huvudmenyn är nu jämnt fördelade längs raden hur du än håller skärmen, så det ser likadant ut stående och liggande.",
       "En klar kväll visar väderkartan nu måne och stjärnor i stället för strålande sol: solen skiner bara på kartan när det faktiskt är dag där du tittar.",
       "Svarar du på ett meddelande med rösten är du klar med det: så snart svaret är skickat försvinner meddelandet från aviseringarna, precis som om du hade tryckt på Stäng.",
-      "Hastighetsskyltarna på kartan står nu där de verkligen står, oftast bara några meter från den riktiga skylten och inte ibland över hundra meter längre fram. Utan navigering står hastighets- och väjningsskyltar kvar från att de dyker upp tills du har passerat dem, i stället för att blinka av och på. Och en hastighetsgräns som bara gäller om du svänger av står nu en bit in på sidovägen, inte längs vägen du kör på."
+      "Hastighetsskyltarna på kartan står nu där de verkligen står, oftast bara några meter från den riktiga skylten och inte ibland över hundra meter längre fram. Utan navigering står hastighets- och väjningsskyltar kvar från att de dyker upp tills du har passerat dem, i stället för att blinka av och på. Och en hastighetsgräns som bara gäller om du svänger av står nu en bit in på sidovägen, inte längs vägen du kör på.",
+      "Sökfältet i Vart? är nu en prydlig rad från det att du öppnar det, i stället för att vara extra högt tills du började skriva eller tryckte på mikrofonen."
     ],
     "da": [
       "Vejret på kortet ser meget bedre ud! Symbolerne ligger nu naturligt spredt i stedet for på rad og række, de holder sig på land i stedet for ude på havet, og de dukker op ét ad gangen, så snart de er klar, så kortet kører lige let hele tiden. Zoomer du ud, rydder de op med det samme, i stedet for at ligge i en klump, til du roder med kortet.",
@@ -31,7 +34,8 @@
       "Knapperne i hovedmenuen er nu jævnt fordelt langs linjen, uanset hvordan du holder skærmen, så det ser ens ud på højkant og på tværs.",
       "En klar aften viser vejrkortet nu måne og stjerner i stedet for strålende sol: solen skinner kun på kortet, når det faktisk er dag der, hvor du kigger.",
       "Svarer du på en besked med stemmen, er du færdig med den: så snart svaret er sendt, forsvinder beskeden fra notifikationerne, præcis som hvis du havde trykket Afvis.",
-      "Fartskiltene på kortet står nu der, hvor de virkelig står, som regel kun få meter fra det rigtige skilt og ikke til tider over hundrede meter længere fremme. Uden navigation bliver fart- og vigepligtskilte stående, fra de dukker op, til du har passeret dem, i stedet for at blinke af og på. Og en fartgrænse, der kun gælder, hvis du drejer af, står nu et stykke inde på sidevejen og ikke langs den vej, du kører på."
+      "Fartskiltene på kortet står nu der, hvor de virkelig står, som regel kun få meter fra det rigtige skilt og ikke til tider over hundrede meter længere fremme. Uden navigation bliver fart- og vigepligtskilte stående, fra de dukker op, til du har passeret dem, i stedet for at blinke af og på. Og en fartgrænse, der kun gælder, hvis du drejer af, står nu et stykke inde på sidevejen og ikke langs den vej, du kører på.",
+      "Søgefeltet i Hvor skal du hen? er nu én pæn linje, fra du åbner det, i stedet for at være ekstra højt, indtil du begyndte at skrive eller trykkede på mikrofonen."
     ],
     "fi": [
       "Sää näyttää kartalla paljon paremmalta! Symbolit ovat nyt luonnollisesti hajallaan eivätkä siisteissä riveissä, ne pysyvät maalla eivätkä merellä, ja ne ilmestyvät yksi kerrallaan heti valmistuttuaan, joten kartta pysyy koko ajan sujuvana. Kun loitonnat, ne järjestyvät heti eivätkä jää rykelmäksi, kunnes näpräät karttaa.",
@@ -39,7 +43,8 @@
       "Päävalikon painikkeet ovat nyt tasaisesti palkin mittaisesti, piti näyttöä miten päin tahansa, joten se näyttää samalta pysty- ja vaaka-asennossa.",
       "Selkeänä yönä sääkartta näyttää nyt kuun ja tähdet eikä paahtavaa aurinkoa: aurinko paistaa kartalla vain, kun katsomassasi paikassa todella on päivä.",
       "Kun vastaat viestiin äänellä, se on sillä selvä: heti kun vastaus on lähetetty, viesti katoaa ilmoituksista aivan kuin olisit painanut Ohita.",
-      "Nopeusrajoitusmerkit ovat nyt kartalla siellä, missä ne oikeasti ovat, yleensä vain muutaman metrin päässä oikeasta merkistä eivätkä joskus yli sataa metriä edempänä. Ilman navigointia nopeusrajoitus- ja väistämismerkit pysyvät paikoillaan ilmestymisestä siihen asti, kun olet ohittanut ne, eivätkä enää vilku. Ja rajoitus, joka koskee vain sivutielle kääntyviä, näkyy nyt vähän matkaa sivutien puolella eikä ajamasi tien varrella."
+      "Nopeusrajoitusmerkit ovat nyt kartalla siellä, missä ne oikeasti ovat, yleensä vain muutaman metrin päässä oikeasta merkistä eivätkä joskus yli sataa metriä edempänä. Ilman navigointia nopeusrajoitus- ja väistämismerkit pysyvät paikoillaan ilmestymisestä siihen asti, kun olet ohittanut ne, eivätkä enää vilku. Ja rajoitus, joka koskee vain sivutielle kääntyviä, näkyy nyt vähän matkaa sivutien puolella eikä ajamasi tien varrella.",
+      "Minne?-näkymän hakukenttä on nyt siisti yksi rivi heti avattaessa, eikä se enää ole ylimääräisen korkea ennen kuin aloitat kirjoittamisen tai painat mikrofonia."
     ],
     "is": [
       "Veðrið á kortinu lítur miklu betur út! Táknin liggja nú eðlilega dreifð í stað þess að vera í beinum röðum, þau halda sig á landi í stað þess að vera úti á sjó og þau birtast eitt af öðru um leið og þau eru tilbúin, svo kortið gengur jafn létt allan tímann. Þegar þú minnkar kortið raða þau sér strax, í stað þess að liggja í hrúgu þar til þú átt við kortið.",
@@ -47,7 +52,8 @@
       "Hnapparnir í aðalvalmyndinni dreifast nú jafnt eftir stikunni hvernig sem þú heldur á skjánum, svo þetta lítur eins út á langveginn og þverveginn.",
       "Á heiðskírri nóttu sýnir veðurkortið nú tungl og stjörnur í stað glampandi sólar: sólin skín aðeins á kortinu þegar það er í raun dagur þar sem þú horfir.",
       "Þegar þú svarar skilaboðum með röddinni er málið afgreitt: um leið og svarið er sent hverfa skilaboðin úr tilkynningunum, alveg eins og ef þú hefðir ýtt á Hunsa.",
-      "Hraðamerkin á kortinu standa nú þar sem þau standa í raun, yfirleitt aðeins nokkra metra frá raunverulega merkinu en ekki stundum yfir hundrað metrum lengra. Án leiðsagnar standa hraða- og biðskyldumerki kyrr frá því þau birtast og þar til þú ert komin(n) fram hjá þeim, í stað þess að blikka af og á. Og hámarkshraði sem gildir aðeins ef þú beygir út af stendur nú spölkorn inni á hliðarveginum, ekki meðfram veginum sem þú ekur."
+      "Hraðamerkin á kortinu standa nú þar sem þau standa í raun, yfirleitt aðeins nokkra metra frá raunverulega merkinu en ekki stundum yfir hundrað metrum lengra. Án leiðsagnar standa hraða- og biðskyldumerki kyrr frá því þau birtast og þar til þú ert komin(n) fram hjá þeim, í stað þess að blikka af og á. Og hámarkshraði sem gildir aðeins ef þú beygir út af stendur nú spölkorn inni á hliðarveginum, ekki meðfram veginum sem þú ekur.",
+      "Leitarreiturinn í Hvert? er nú ein snyrtileg lína um leið og þú opnar hann, í stað þess að vera óþarflega hár þar til þú byrjaðir að skrifa eða ýttir á hljóðnemann."
     ],
     "de": [
       "Das Wetter auf der Karte sieht jetzt viel besser aus! Die Symbole liegen natürlich verstreut statt in Reih und Glied, bleiben an Land statt draußen auf dem Meer und erscheinen eines nach dem anderen, sobald sie fertig sind, sodass die Karte immer flüssig läuft. Zoomst du heraus, räumen sie sich sofort auf, statt als Klumpen liegen zu bleiben, bis du an der Karte herumspielst.",
@@ -55,7 +61,8 @@
       "Die Tasten im Hauptmenü sind jetzt gleichmäßig über die Leiste verteilt, egal wie du den Bildschirm hältst, und sehen hochkant und quer gleich aus.",
       "In einer klaren Nacht zeigt die Wetterkarte jetzt Mond und Sterne statt strahlender Sonne: Die Sonne scheint auf der Karte nur, wenn dort, wo du hinschaust, wirklich Tag ist.",
       "Antwortest du per Stimme auf eine Nachricht, ist sie erledigt: Sobald die Antwort gesendet ist, verschwindet die Nachricht aus den Benachrichtigungen, genau als hättest du auf Schließen getippt.",
-      "Die Tempolimit-Schilder auf der Karte stehen jetzt dort, wo sie wirklich stehen, meist nur wenige Meter vom echten Schild entfernt und nicht mehr manchmal über hundert Meter weiter vorn. Ohne Navigation bleiben Tempo- und Vorfahrtsschilder stehen, von ihrem Erscheinen, bis du an ihnen vorbei bist, statt an und aus zu blinken. Und ein Tempolimit, das nur gilt, wenn du abbiegst, steht jetzt ein Stück in der Seitenstraße und nicht an deiner eigenen Straße."
+      "Die Tempolimit-Schilder auf der Karte stehen jetzt dort, wo sie wirklich stehen, meist nur wenige Meter vom echten Schild entfernt und nicht mehr manchmal über hundert Meter weiter vorn. Ohne Navigation bleiben Tempo- und Vorfahrtsschilder stehen, von ihrem Erscheinen, bis du an ihnen vorbei bist, statt an und aus zu blinken. Und ein Tempolimit, das nur gilt, wenn du abbiegst, steht jetzt ein Stück in der Seitenstraße und nicht an deiner eigenen Straße.",
+      "Das Suchfeld unter Wohin? ist jetzt von Anfang an eine saubere Zeile, statt besonders hoch zu sein, bis du zu tippen begonnen oder das Mikrofon gedrückt hast."
     ],
     "es": [
       "¡El tiempo en el mapa se ve mucho mejor! Los símbolos aparecen ahora repartidos de forma natural en lugar de en filas, se quedan en tierra en lugar de en el mar y salen uno a uno en cuanto están listos, así que el mapa sigue siempre fluido. Al alejar el mapa se ordenan al instante, en lugar de quedarse amontonados hasta que tocas el mapa.",
@@ -63,7 +70,8 @@
       "Los botones del menú principal se reparten ahora por igual a lo largo de la barra sea cual sea la posición de la pantalla, así que se ve igual en vertical y en horizontal.",
       "En una noche despejada, el mapa del tiempo muestra ahora la luna y las estrellas en lugar de un sol radiante: el sol solo brilla en el mapa cuando de verdad es de día donde estás mirando.",
       "Si respondes a un mensaje con la voz, ya está: en cuanto se envía la respuesta, el mensaje desaparece de las notificaciones, igual que si hubieras pulsado Descartar.",
-      "Las señales de velocidad del mapa ahora están donde están de verdad, normalmente a pocos metros de la señal real, y no a veces más de cien metros más adelante. Sin navegación, las señales de velocidad y de ceda el paso se quedan desde que aparecen hasta que las pasas, en lugar de parpadear. Y un límite que solo vale si te desvías ahora aparece un poco dentro de esa carretera lateral, no a lo largo de la tuya."
+      "Las señales de velocidad del mapa ahora están donde están de verdad, normalmente a pocos metros de la señal real, y no a veces más de cien metros más adelante. Sin navegación, las señales de velocidad y de ceda el paso se quedan desde que aparecen hasta que las pasas, en lugar de parpadear. Y un límite que solo vale si te desvías ahora aparece un poco dentro de esa carretera lateral, no a lo largo de la tuya.",
+      "El campo de búsqueda de ¿Adónde vamos? ahora es una sola línea bien ordenada desde que lo abres, en lugar de quedar más alto hasta que empezabas a escribir o pulsabas el micrófono."
     ],
     "fr": [
       "La météo sur la carte est bien plus belle ! Les symboles sont maintenant dispersés naturellement au lieu d'être alignés, ils restent sur terre au lieu d'être en mer et apparaissent un par un dès qu'ils sont prêts, si bien que la carte reste toujours fluide. Quand tu dézoomes, ils se rangent aussitôt au lieu de rester en tas jusqu'à ce que tu touches à la carte.",
@@ -71,7 +79,8 @@
       "Les boutons du menu principal sont maintenant répartis régulièrement le long de la barre quel que soit le sens de l'écran : c'est pareil en portrait et en paysage.",
       "Par nuit claire, la carte météo affiche maintenant la lune et les étoiles au lieu d'un soleil radieux : le soleil ne brille sur la carte que lorsqu'il fait vraiment jour là où tu regardes.",
       "Réponds à un message à la voix et c'est réglé : dès que la réponse est envoyée, le message disparaît des notifications, exactement comme si tu avais appuyé sur Ignorer.",
-      "Les panneaux de vitesse sur la carte se trouvent désormais là où ils sont vraiment, le plus souvent à quelques mètres du vrai panneau, et non parfois plus de cent mètres plus loin. Sans navigation, les panneaux de vitesse et de cédez-le-passage restent en place dès leur apparition jusqu'à ce que vous les ayez dépassés, au lieu de clignoter. Et une limite qui ne vaut que si vous tournez apparaît maintenant un peu à l'intérieur de la route latérale, et non le long de la vôtre."
+      "Les panneaux de vitesse sur la carte se trouvent désormais là où ils sont vraiment, le plus souvent à quelques mètres du vrai panneau, et non parfois plus de cent mètres plus loin. Sans navigation, les panneaux de vitesse et de cédez-le-passage restent en place dès leur apparition jusqu'à ce que vous les ayez dépassés, au lieu de clignoter. Et une limite qui ne vaut que si vous tournez apparaît maintenant un peu à l'intérieur de la route latérale, et non le long de la vôtre.",
+      "Le champ de recherche de Où aller ? tient maintenant sur une seule ligne bien nette dès l'ouverture, au lieu de rester plus haut jusqu'à ce que vous commenciez à écrire ou touchiez le micro."
     ],
     "nl": [
       "Het weer op de kaart ziet er veel beter uit! De symbolen liggen nu natuurlijk verspreid in plaats van in nette rijen, ze blijven op het land in plaats van op zee en ze verschijnen een voor een zodra ze klaar zijn, zodat de kaart altijd soepel blijft. Zoom je uit, dan ruimen ze zichzelf meteen op, in plaats van op een kluitje te blijven liggen tot je aan de kaart zit te frunniken.",
@@ -79,7 +88,8 @@
       "De knoppen van het hoofdmenu staan nu gelijkmatig verdeeld over de balk, hoe je het scherm ook houdt, dus staand en liggend ziet het er hetzelfde uit.",
       "Op een heldere avond toont de weerkaart nu de maan en sterren in plaats van een stralende zon: de zon schijnt alleen op de kaart als het echt dag is op de plek waar je kijkt.",
       "Beantwoord je een bericht met je stem, dan ben je er klaar mee: zodra het antwoord is verzonden, verdwijnt het bericht uit je meldingen, net alsof je op Sluiten had gedrukt.",
-      "De snelheidsborden op de kaart staan nu waar ze echt staan, meestal maar een paar meter van het echte bord en niet soms meer dan honderd meter verderop. Zonder navigatie blijven snelheids- en voorrangsborden staan vanaf het moment dat ze verschijnen tot je ze voorbij bent, in plaats van aan en uit te knipperen. En een limiet die alleen geldt als je afslaat, staat nu een stukje in die zijweg en niet langs de weg waarop je rijdt."
+      "De snelheidsborden op de kaart staan nu waar ze echt staan, meestal maar een paar meter van het echte bord en niet soms meer dan honderd meter verderop. Zonder navigatie blijven snelheids- en voorrangsborden staan vanaf het moment dat ze verschijnen tot je ze voorbij bent, in plaats van aan en uit te knipperen. En een limiet die alleen geldt als je afslaat, staat nu een stukje in die zijweg en niet langs de weg waarop je rijdt.",
+      "Het zoekveld bij Waarheen? is nu meteen bij het openen één nette regel, in plaats van extra hoog te zijn totdat je begon te typen of op de microfoon drukte."
     ],
     "pl": [
       "Pogoda na mapie wygląda teraz o wiele lepiej! Symbole są naturalnie rozrzucone zamiast w równych rzędach, trzymają się lądu zamiast morza i pojawiają się jeden po drugim, gdy tylko są gotowe, więc mapa przez cały czas działa płynnie. Po oddaleniu porządkują się od razu, zamiast leżeć w kupce, dopóki nie poruszysz mapą.",
@@ -87,7 +97,8 @@
       "Przyciski menu głównego są teraz równo rozłożone na pasku, niezależnie od położenia ekranu, więc w pionie i w poziomie wygląda to tak samo.",
       "W pogodną noc mapa pogody pokazuje teraz księżyc i gwiazdy zamiast pełnego słońca: słońce świeci na mapie tylko wtedy, gdy tam, gdzie patrzysz, naprawdę jest dzień.",
       "Odpowiadasz na wiadomość głosem i sprawa załatwiona: gdy tylko odpowiedź zostanie wysłana, wiadomość znika z powiadomień, tak samo jak po naciśnięciu Zamknij.",
-      "Znaki ograniczenia prędkości na mapie stoją teraz tam, gdzie naprawdę stoją, zwykle zaledwie kilka metrów od prawdziwego znaku, a nie czasem ponad sto metrów dalej. Bez nawigacji znaki prędkości i ustąp pierwszeństwa zostają na miejscu od pojawienia się aż do ich minięcia, zamiast migać. A ograniczenie, które obowiązuje tylko po skręcie, stoi teraz kawałek w głąb bocznej drogi, a nie wzdłuż drogi, którą jedziesz."
+      "Znaki ograniczenia prędkości na mapie stoją teraz tam, gdzie naprawdę stoją, zwykle zaledwie kilka metrów od prawdziwego znaku, a nie czasem ponad sto metrów dalej. Bez nawigacji znaki prędkości i ustąp pierwszeństwa zostają na miejscu od pojawienia się aż do ich minięcia, zamiast migać. A ograniczenie, które obowiązuje tylko po skręcie, stoi teraz kawałek w głąb bocznej drogi, a nie wzdłuż drogi, którą jedziesz.",
+      "Pole wyszukiwania w Dokąd? ma teraz od razu po otwarciu jedną schludną linię, zamiast być wyjątkowo wysokie, dopóki nie zaczniesz pisać albo nie naciśniesz mikrofonu."
     ]
   },
   {
