@@ -6,6 +6,17 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-03 — Fartsskilt der de faktisk står, og som blir stående
+
+Målt mot ekte veidata og NVDBs ekte skilt på åtte turer på Bømlo og Stord. Hvordan det ser ut mens du kjører, kan bare prøves på ekte.
+
+- [ ] Kjør Fv542 østover fra rundkjøringen ved Extra Bremnes uten navigering: 80-skiltet står ved det ekte skiltet (59.79877, 5.21000), og ikke over hundre meter lenger fram.
+- [ ] Kjør en vei med skiftende fartsgrense uten navigering: et skilt som har dukket opp, blir stående til du har passert det, og flytter seg ikke. Si fra hvis noe fortsatt blinker, og helst hvor.
+- [ ] Der et fartsskilt bare gjelder hvis du svinger av: det står et stykke inn på sideveien, ikke langs veien du kjører.
+- [ ] Vikepliktskilt uten navigering (på kartet og i veikortet): det blir stående til du har passert det.
+- [ ] Sving av før et skilt du ser foran deg: det skal bli borte etter ca. 100 m. Si fra hvis det blir hengende.
+- [ ] Mangler et ekte fartsskilt på kartet i tett trafikkert område med mange kryss? Noen få kan vises sent eller ikke i det hele tatt (målt: 6 av 42, mot 3 av 42 før), si fra hvor hvis det plager.
+
 ## 2026-11-03 — Meldingen forsvinner når du har svart
 
 Prøvd med Google Messages på emulatoren. Stemmen gjennom hodesettet og de andre meldingsappene kan bare prøves på ekte.

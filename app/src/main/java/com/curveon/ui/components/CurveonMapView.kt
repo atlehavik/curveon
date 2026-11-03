@@ -224,7 +224,7 @@ fun CurveonMapView(
     /** Give way and stop signs that apply to the rider, stood beside the road before their junctions. */
     giveWaySigns: List<com.curveon.data.routing.GiveWayAlert> = emptyList(),
     /** Where the speed limit changes ahead on the route: a sign on the right of the road. */
-    speedSigns: List<com.curveon.data.routing.SpeedChange> = emptyList(),
+    speedSigns: List<com.curveon.routing.SpeedChange> = emptyList(),
     /** The weather to show (sun, cloud, rain, wind and how warm): round where a loop starts while drawing it, or from the button. */
     weatherSpots: () -> List<com.curveon.data.weather.MapWeather> = { emptyList() },
     /** The weather map button (full-screen map, not navigating, standing still): on or off, and switching it; null = no button. */

@@ -72,6 +72,9 @@ phone, with an optional companion app on the phone when a tablet is used.
 - **Speed limit sign**, while navigating and while free riding: the official limit where a country
   publishes them freely (Norway: Statens vegvesen NVDB; Finland: Digiroad; the Netherlands: NDW/RWS;
   Flanders: AWV), built monthly by the curveon-data repo (`tools/speedlimits/`); OSM's maxspeed elsewhere.
+  **Signs on the map** stand where that limit changes along the route or the road ahead (`SpeedSigns`), not at the
+  real signs' positions, which only some countries publish: in Norway the two are usually a few metres apart.
+  Not navigating, `SignsAhead` keeps them until ridden past, since each look at the road ahead is a guess.
 - **Places on the map** (Settings → Display → On the map; only fuel until the rider chooses): fuel, speed cameras, viewpoints, mountain
   passes, camping, food and coffee, ferries, motorcycle shops and workshops can be kept on the map at all
   times, from the offline search index of the downloaded countries; each appears when the map is zoomed in
