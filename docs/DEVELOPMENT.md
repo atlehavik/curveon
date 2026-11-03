@@ -85,7 +85,8 @@ phone, with an optional companion app on the phone when a tablet is used.
   litres from the pump, two readings 15 s apart to drop counters; a candidate must read the same on every full tank
   and move by a similar amount in every refuelling); in Demo, give the pump 75 / 50 / 87.5 / 25 % of the tank. Above the music on the tablet; beside it, bottom right, on a phone held upright.
 - **Spoken replies**: Reply → the phone listens through the headset → the tablet shows what was
-  heard → Send.
+  heard → Send. Once sent the message clears on the phone too, as with Dismiss; if the app posts it
+  again with the reply in it (Google Messages does), the listener clears that as well.
 - **Navigation sounds and voice** (Settings → Navigation → Sound): soft tones before and at each turn
   (left or right ear by direction), a sound when off the route, or spoken turns with Android's own
   text-to-speech; played through the phone when a companion is linked. Notes in [audio.md](audio.md).

@@ -6,6 +6,16 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-03 — Meldingen forsvinner når du har svart
+
+Prøvd med Google Messages på emulatoren. Stemmen gjennom hodesettet og de andre meldingsappene kan bare prøves på ekte.
+
+- [ ] Få en SMS, trykk mikrofonen, les inn et svar og trykk Send: kortet viser at det er sendt, og etterpå er meldingen borte både i Curveon og fra varslene på telefonen. Den skal ikke komme tilbake med ditt eget svar i.
+- [ ] Det samme med WhatsApp, Messenger eller Signal, det du bruker. Si fra hvis noen app oppfører seg annerledes.
+- [ ] Be noen svare deg rett etterpå: den nye meldingen skal komme fram som vanlig.
+- [ ] Svar uten dekning, slik at sendingen feiler: si fra hva som skjer med meldingen.
+- [ ] Trykk Lukk på en melding som er den eneste fra appen: det skal ikke ligge igjen et tomt kort med appens navn i varslene.
+
 ## 2026-11-01 — Været på kartet: spredt, på land og ett og ett
 
 Prøvd på X7-emulatoren og Pixel 9a-oppsettet. Hvor lett kartet går, kan bare kjennes på de ekte enhetene, og henting gjennom telefonen kan ikke prøves i emulatoren.
