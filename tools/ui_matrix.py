@@ -50,6 +50,7 @@ class Device:
         self.serial = serial
         self.rotation = 0  # how the variant holds the screen: 0 portrait, 1 landscape
         self.extra = []  # problems a scenario found on the screens it passed on the way (a tour's steps)
+        self.scrolling_row_ok = False  # a scenario's screen has a row meant to scroll sideways: a cut button shows there is more
 
     def sh(self, *args, check=False):
         r = subprocess.run(["adb", "-s", self.serial, "shell", *args], capture_output=True, text=True)
@@ -84,6 +85,7 @@ class Device:
             if m:
                 node = {
                     "text": n.get("text", ""), "desc": n.get("content-desc", ""), "pkg": n.get("package", ""),
+                    "cls": n.get("class", ""),
                     "clickable": n.get("clickable") == "true", "bounds": tuple(int(v) for v in m.groups()),
                     "scroller": scroller,  # bounds of the nearest scrolling container round it
                 }
@@ -466,13 +468,132 @@ def scenario_plannedmenu(d):
     return [["Send to tablet", "Send til nettbrettet"], ["Share with the group", "Del med gruppa"]]
 
 
+# The Where to? button, the dialog's Close and its microphone in Norwegian and in the languages with the longest
+# placeholder in the search field; the scenario ends in Norwegian, as the emulator is set up.
+WHERE_TO_LANGUAGES = [("da", "Hvor skal du hen?", "Luk", "Søg med stemmen"), ("is", "Hvert?", "Loka", "Leita með rödd"),
+                      ("nb", "Hvor skal du?", "Lukk", "Søk med stemmen")]
+
+
+def search_field(d):
+    return next((n for n in d.nodes() if n["cls"].endswith("EditText")), None)
+
+
+def field_height(d):
+    n = search_field(d)
+    if n is None:
+        raise LookupError("not on screen: the search field")
+    return n["bounds"][3] - n["bounds"][1]
+
+
+def scenario_whereto(d):
+    """Dashboard -> the motorcycle button (Where to?) with an empty field, in Norwegian and the longest languages: the
+    placeholder on one line (look over the sheet for its ellipsis), the field as high as with text typed or the
+    microphone listening, the microphone and Close wholly on screen. Upright, the shortcuts under the field (pick on
+    map, nearest fuel, camping...) are a row made to scroll sideways, with the next one showing at the edge."""
+    d.scrolling_row_ok = True
+    d.sh("cmd", "locale", "set-app-locales", PKG, "--locales", "nb")
+    go_home(d)
+    d.tap(["Hvor skal du?", "Where to?"])
+    empty = field_height(d)
+    mic = ["Søk med stemmen", "Search by voice"]
+    d.tap(mic, wait=1)
+    listening = field_height(d)
+    if d.find(["Snakk nå…", "Speak now…"]) is not None and listening != empty:
+        d.extra.append(f"the field is {listening} px high with Speak now showing, {empty} px when empty")
+    d.tap(mic, wait=1)
+    field = search_field(d)
+    if field is None:
+        raise LookupError("not on screen: the search field")
+    x1, y1, x2, y2 = field["bounds"]
+    d.sh("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
+    time.sleep(2)
+    d.sh("input", "text", "Oslo")
+    time.sleep(2)
+    if "mInputShown=true" in d.sh("dumpsys", "input_method"):  # sideways on a low screen the keyboard squeezes the dialog
+        d.sh("input", "keyevent", "KEYCODE_BACK")
+        time.sleep(1.5)
+    typed = field_height(d)
+    if typed != empty:
+        d.extra.append(f"the field is {typed} px high with text typed, {empty} px when empty")
+    must = None
+    for lang, where_to, close, voice in WHERE_TO_LANGUAGES:
+        d.sh("cmd", "locale", "set-app-locales", PKG, "--locales", lang)
+        go_home(d)
+        d.tap([where_to])
+        must = [[where_to], [close], [voice]]
+        height = field_height(d)
+        if height != typed:
+            d.extra.append(f"{lang}: the empty field is {height} px high, {typed} px with text typed")
+        if lang != "nb":
+            d.extra += [f"{lang}: {p}" for p in check(d, must)]
+    return must
+
+
+REMOTE_ROWS = [["=Opp", "=Up"], ["=Ned", "=Down"], ["=Venstre", "=Left"], ["=Høyre", "=Right"], ["=OK"], ["=Tilbake", "=Back"],
+               ["=Zoom inn", "=Zoom in"], ["=Zoom ut", "=Zoom out"], ["=Meny", "=Menu"], ["=Følg meg", "=Follow me"],
+               ["=Hvor skal du?", "=Where to?"], ["=Si hvor du vil", "=Say where to go"], ["=Kartretning", "=Map direction"],
+               ["=Kart eller dashbord", "=Map or dashboard"], ["=Neste sang", "=Next song"], ["=Forrige sang", "=Previous song"],
+               ["=Spill av eller pause", "=Play or pause"], ["=Svar eller legg på", "=Answer or hang up"]]
+SETTINGS_TABS = [["Skjerm", "Display"], ["Navigasjon", "Navigation"], ["Motor", "Engine"], ["Telefon", "Phone"],
+                 ["Fjernkontroll", "Remote"], ["Kart og data", "Maps & data"], ["Hjelp", "Help"]]
+
+
+def scenario_remote(d):
+    """Settings -> Remote (no remote on the emulator, so the Bluetooth button shows): every row is scrolled to and must
+    lie wholly on screen, as must the open tab and the Bluetooth button. Choosing a job opens its "press the button"
+    question, which must fit too. Look over the sheet for hints cut off and for the tabs."""
+    d.sh("cmd", "locale", "set-app-locales", PKG, "--locales", "nb")
+    go_home(d)
+    d.tap(["Settings", "Innstillinger"])
+    w, h = d.screen()
+    nodes = d.nodes()
+    for tab in SETTINGS_TABS:
+        if d.find(tab, nodes) is None:
+            d.extra.append(f"the tab '{tab[0]}' is not on screen when Settings opens")
+    d.tap(["Fjernkontroll", "Remote"], wait=3)
+    tab_row = [["Fjernkontroll", "Remote"]]
+    top = [["Ingen fjernkontroll tilkoblet", "No remote connected"], ["Bluetooth"], ["Lukk", "Close"]]
+    d.extra += [f"top of the page: {p}" for p in check(d, tab_row + top)]
+    unseen = list(REMOTE_ROWS)
+    line = 15 * density(d)
+    for _ in range(30):  # large text on a low screen: many swipes down the page
+        nodes = d.nodes()
+        for row in list(unseen):
+            n = d.find(row, nodes)
+            if n is not None and n["bounds"][3] - n["bounds"][1] >= line:  # a whole line of text, not cut by the page's edge
+                x1, y1, x2, y2 = n["bounds"]
+                if x1 < 0 or x2 > w:
+                    d.extra.append(f"row '{row[0]}' sticks out of the screen: {n['bounds']} on {w}x{h}")
+                unseen.remove(row)
+        if not unseen:
+            break
+        d.sh("input", "swipe", str(w * 2 // 3), str(h * 3 // 4), str(w * 2 // 3), str(h * 2 // 5), "500")
+        time.sleep(1)
+    for row in unseen:
+        d.extra.append(f"row '{row[0]}' could not be scrolled to")
+    d.tap(["=Svar eller legg på", "=Answer or hang up"], wait=2)
+    d.extra += [f"the question for a button: {p}" for p in check(d, [["Avbryt", "Cancel"]])]
+    d.tap(["Avbryt", "Cancel"], wait=2)
+    for _ in range(30):
+        n = d.find(top[0])
+        if n is not None and n["bounds"][3] - n["bounds"][1] >= line and d.find(["Bluetooth"]) is not None:
+            break
+        d.sh("input", "swipe", str(w * 2 // 3), str(h * 2 // 5), str(w * 2 // 3), str(h * 3 // 4), "300")
+        time.sleep(0.7)
+    # Once more: the title just in view can still have the page's top edge over its first line.
+    d.sh("input", "swipe", str(w * 2 // 3), str(h * 2 // 5), str(w * 2 // 3), str(h * 3 // 4), "300")
+    time.sleep(1.5)
+    return tab_row + top
+
+
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
              "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
              "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge,
              "qrscan": scenario_qrscan, "friendrequest": scenario_friendrequest,
              "webplan": scenario_webplan, "webplanscan": scenario_webplanscan, "selfie": scenario_selfie,
              "callbig": scenario_callbig, "callmsg": scenario_callmsg, "tour": scenario_tour, "triphelp": scenario_triphelp,
-             "ridebuttons": scenario_ridebuttons, "gpxmenu": scenario_gpxmenu, "plannedmenu": scenario_plannedmenu}
+             "ridebuttons": scenario_ridebuttons, "gpxmenu": scenario_gpxmenu, "plannedmenu": scenario_plannedmenu,
+             "whereto": scenario_whereto, "remote": scenario_remote}
 
 
 def apply_variant(d, v, rotation):
@@ -529,7 +650,7 @@ def check(d, must):
                 problems.append(f"clickable '{name}' sticks out: {n['bounds']} on {w}x{h}")
             sc = n["scroller"]
             # In a row that scrolls sideways, a button cut by the row's edge looks like the end of the screen.
-            if sc and (sc[2] - sc[0]) > 3 * (sc[3] - sc[1]) and x2 > x1 and (abs(x2 - sc[2]) <= 2 or abs(x1 - sc[0]) <= 2):
+            if not d.scrolling_row_ok and sc and (sc[2] - sc[0]) > 3 * (sc[3] - sc[1]) and x2 > x1 and (abs(x2 - sc[2]) <= 2 or abs(x1 - sc[0]) <= 2):
                 problems.append(f"button '{name}' is partly hidden at the edge of a sideways-scrolling row")
     return problems
 
@@ -574,6 +695,7 @@ def main():
                     tag = f"{v[0]}-{'land' if rot else 'port'}"
                     try:
                         d.extra = []
+                        d.scrolling_row_ok = False
                         must = SCENARIOS[s](d)
                         problems = d.extra + check(d, must)
                     except LookupError as e:
