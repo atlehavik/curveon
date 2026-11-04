@@ -100,6 +100,8 @@
     <string name="settings_road_size_hint">Road number, priority road and give way signs</string>
     <string name="settings_speed_sign">Speed limit sign</string>
     <string name="settings_speed_sign_hint">How big the sign is on the map; a bigger one sticks out of the speed card</string>
+    <string name="settings_side_road_signs">Speed signs on side roads</string>
+    <string name="settings_side_road_signs_hint">Without a route: also show the limit of a road you would have to turn onto</string>
     <string name="speed_sign_normal">Normal</string>
     <string name="speed_sign_large">Large</string>
     <string name="speed_sign_huge">Extra large</string>

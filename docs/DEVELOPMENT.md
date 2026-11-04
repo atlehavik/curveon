@@ -87,7 +87,10 @@ phone, with an optional companion app on the phone when a tablet is used.
   Flanders: AWV), built monthly by the curveon-data repo (`tools/speedlimits/`); OSM's maxspeed elsewhere.
   **Signs on the map** stand where that limit changes along the route or the road ahead (`SpeedSigns`), not at the
   real signs' positions, which only some countries publish: in Norway the two are usually a few metres apart.
-  Not navigating, `SignsAhead` keeps them until ridden past, since each look at the road ahead is a guess.
+  Not navigating, `SignsAhead` keeps them until ridden past, since each look at the road ahead is a guess; only those
+  straight ahead show, those on side roads with Settings → Display → Speed signs on side roads (off by default).
+  **The limit in the speed card** says the same as the signs (`RouteLimits`, `FreeRideSigns`): it changes as the rider
+  passes a sign, also one the map leaves out. Only where the road ahead isn't known is it read at the rider's position.
 - **Places on the map** (Settings → Display → On the map; only fuel until the rider chooses): fuel, speed cameras, viewpoints, mountain
   passes, camping, food and coffee, ferries, motorcycle shops and workshops can be kept on the map at all
   times, from the offline search index of the downloaded countries; each appears when the map is zoomed in

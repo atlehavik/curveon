@@ -99,6 +99,8 @@
     <string name="settings_road_size_hint">Numer drogi, znaki drogi z pierwszeństwem i ustąp pierwszeństwa</string>
     <string name="settings_speed_sign">Znak ograniczenia prędkości</string>
     <string name="settings_speed_sign_hint">Wielkość znaku na mapie; większy wystaje poza kartę prędkości</string>
+    <string name="settings_side_road_signs">Znaki na bocznych drogach</string>
+    <string name="settings_side_road_signs_hint">Bez trasy: pokazuj też limit dróg, w które trzeba by skręcić</string>
     <string name="speed_sign_normal">Normalny</string>
     <string name="speed_sign_large">Duży</string>
     <string name="speed_sign_huge">Bardzo duży</string>

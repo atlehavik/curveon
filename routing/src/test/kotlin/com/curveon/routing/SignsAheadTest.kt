@@ -78,4 +78,97 @@ class SignsAheadTest {
         s.clear()
         assertEquals(0, s.ahead(at(0.0)).size)
     }
+
+    @Test
+    fun theLimitChangesAsTheRiderPassesTheSign() {
+        val free = FreeRideSigns()
+        free.look(RouteLimits(60, listOf(sign(300.0, 80))), at(0.0))
+        assertEquals(60, free.limit)
+        free.ride(at(290.0))
+        assertEquals(60, free.limit)
+        free.ride(at(305.0))
+        assertEquals(80, free.limit)
+    }
+
+    @Test
+    fun aSignStaysALittleAfterTheLimitHasChanged() {
+        val free = FreeRideSigns()
+        free.look(RouteLimits(60, listOf(sign(300.0, 80))), at(0.0))
+        assertEquals(1, free.ride(at(305.0)).size)
+        assertEquals(0, free.ride(at(330.0)).size)
+    }
+
+    @Test
+    fun aLookThatStartsJustBeforeASignWaitsForTheSign() {
+        val free = FreeRideSigns()
+        free.look(RouteLimits(60, listOf(sign(300.0, 80))), at(0.0))
+        // Its first sample lies past the place where the limit begins, so this look says 80 from the start.
+        free.look(RouteLimits(80, emptyList()), at(280.0))
+        assertEquals(60, free.limit)
+        free.ride(at(305.0))
+        assertEquals(80, free.limit)
+    }
+
+    @Test
+    fun aLookPutsRightWhatNoSignSaid() {
+        val free = FreeRideSigns()
+        free.look(RouteLimits(60, emptyList()), at(0.0))
+        free.look(RouteLimits(50, emptyList()), at(150.0))
+        assertEquals(50, free.limit)
+    }
+
+    @Test
+    fun aSignOnARoadNotTakenDoesNotChangeTheLimit() {
+        val free = FreeRideSigns()
+        // 40 m down a side road, which leaves at 300 m: the rider rides straight on.
+        val side = at(300.0, 40.0).let { SpeedChange(340.0, it.lat, it.lon, 0.0, 30) }
+        free.look(RouteLimits(60, listOf(side)), at(0.0))
+        for (m in 0..500 step 20) free.ride(at(m.toDouble()))
+        assertEquals(60, free.limit)
+    }
+
+    @Test
+    fun aSignCloseByOnARoadGoingAnotherWayDoesNotChangeTheLimit() {
+        val free = FreeRideSigns()
+        // On a roundabout's way out to the north: the rider rides on east, passing 15 m from it.
+        val side = at(300.0, 15.0).let { SpeedChange(340.0, it.lat, it.lon, 0.0, 50) }
+        free.look(RouteLimits(60, listOf(side)), at(0.0))
+        for (m in 0..500 step 20) free.ride(at(m.toDouble()))
+        assertEquals(60, free.limit)
+    }
+
+    @Test
+    fun aSideRoadsSignShowsButNeverChangesTheLimit() {
+        val free = FreeRideSigns()
+        // Right beside the road the rider is on, going nearly the same way.
+        val side = at(300.0, 15.0).let { SpeedChange(340.0, it.lat, it.lon, 60.0, 50) }
+        free.look(RouteLimits(60, emptyList(), sideRoad = side), at(0.0))
+        assertEquals(listOf(50), free.ride(at(100.0)).map { it.limit })
+        for (m in 100..500 step 20) free.ride(at(m.toDouble()))
+        assertEquals(60, free.limit)
+    }
+
+    @Test
+    fun aFailedLookLeavesTheLimitToBeReadAnotherWay() {
+        val free = FreeRideSigns()
+        free.look(RouteLimits(60, emptyList()), at(0.0))
+        free.look(null, at(150.0))
+        assertEquals(null, free.limit)
+    }
+
+    @Test
+    fun aLimitFirstReadFurtherOnSaysNothingOfTheRidersPlace() {
+        val free = FreeRideSigns()
+        free.look(RouteLimits(80, emptyList(), listOf(100.0..400.0)), at(0.0))
+        assertEquals(null, free.limit)
+    }
+
+    @Test
+    fun aSignSoonSaysToWaitOnlyForItsOwnLimit() {
+        val free = FreeRideSigns()
+        free.look(RouteLimits(60, listOf(sign(300.0, 80))), at(0.0))
+        assertEquals(false, free.signSoon(80, at(0.0)))
+        assertEquals(true, free.signSoon(80, at(250.0)))
+        assertEquals(false, free.signSoon(50, at(250.0)))
+    }
 }

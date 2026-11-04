@@ -1239,12 +1239,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Where the speed limit changes in the next stretch of the route (or, not navigating, of the road ahead), for signs on the map. */
     private val _mapSpeedSigns = MutableStateFlow<List<com.curveon.routing.SpeedChange>>(emptyList())
-    /** Not navigating: the changes found on the road ahead, last read at [freeSignsFrom] (heading [freeSignsHeading] there). */
-    private val freeSigns = com.curveon.routing.SignsAhead<com.curveon.routing.SpeedChange>({ it.lat }, { it.lon }, { it.bearingDeg }) { a, b ->
-        a.limit == b.limit && Geo.distance(a.lat, a.lon, b.lat, b.lon) < SAME_SPEED_SIGN_M
-    }
+    /** Not navigating: the signs found on the road ahead and what they make the limit, last read at [freeSignsFrom] (heading [freeSignsHeading] there). */
+    private val freeSigns = com.curveon.routing.FreeRideSigns()
     private var freeSignsFrom: LatLon? = null
     private var freeSignsHeading = 0.0
+    private var freeSignsAt = 0L
     val mapSpeedSigns: StateFlow<List<com.curveon.routing.SpeedChange>> = _mapSpeedSigns.asStateFlow()
 
     /** A stop on the way was just reached (its name). */
@@ -1264,6 +1263,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _speedSign = MutableStateFlow(SpeedSignSize.entries.firstOrNull { it.name == settings.getString("speedSign", null) } ?: SpeedSignSize.HUGE)
     val speedSign: StateFlow<SpeedSignSize> = _speedSign.asStateFlow()
     fun setSpeedSign(size: SpeedSignSize) { _speedSign.value = size; settings.edit().putString("speedSign", size.name).apply() }
+
+    /** Not navigating: also the signs of a road the rider would have to turn onto (Settings → Display). */
+    private val _speedSignsSideRoads = MutableStateFlow(settings.getBoolean("speedSignsSideRoads", false))
+    val speedSignsSideRoads: StateFlow<Boolean> = _speedSignsSideRoads.asStateFlow()
+    fun setSpeedSignsSideRoads(on: Boolean) {
+        _speedSignsSideRoads.value = on
+        settings.edit().putBoolean("speedSignsSideRoads", on).apply()
+        freeSignsFrom = null; freeSigns.clear()
+    }
 
     private val _roadContrast = MutableStateFlow(
         // GREY and DARK_GREY are what the day map's choice was called before it also applied at night.
@@ -1349,11 +1357,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch { isNavigating.collect { com.curveon.RideService.navigation(application, it) } }
         viewModelScope.launch { phoneCompanion.notifications.collect { n -> com.curveon.RideService.call(application, n.any { it.isOngoingCall }) } }
 
-        // Speed limit while navigating: the official one of the road the route is on, else the route's (OSM).
+        // Speed limit while navigating: what the signs along the route say, so it changes as the rider passes one. Until
+        // they are read and off the route: the official one of the road the route is on, else the route's (OSM).
         viewModelScope.launch {
             navigator.state.map { s ->
                 val p = s.progress ?: return@map 0
-                withContext(Dispatchers.IO) { speedLimits.at(p.snapped.lat, p.snapped.lon, p.routeBearingDeg) } ?: p.speedLimitKmh ?: 0
+                val limits = s.route?.let { hazards.limitsOn(it) }?.takeUnless { p.offRoute }
+                if (limits != null) limits.at(p.distanceAlongRoute) ?: 0
+                else withContext(Dispatchers.IO) { speedLimits.at(p.snapped.lat, p.snapped.lon, p.routeBearingDeg) } ?: p.speedLimitKmh ?: 0
             }.distinctUntilChanged().collect { limit ->
                 if (navigator.state.value.isNavigating) _telemetry.update { it.copy(speedLimitKmh = limit) }
             }
@@ -1383,7 +1394,31 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 delay(60_000)
             }
         }
-        // Free riding: probe the road we're on for its limit and look for cameras ahead.
+        // Free riding: signs where the limit changes on the road ahead, as when navigating, and the limit where the rider
+        // is, which changes as they pass one. The road is read about every 150 m, and again after a turn.
+        viewModelScope.launch {
+            while (true) {
+                delay(1_000)
+                untilAwake()
+                val t = _telemetry.value
+                if (navigator.state.value.isNavigating || !t.hasGpsFix) continue
+                val at = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
+                val heading = t.headingDeg.toDouble()
+                val from = freeSignsFrom
+                val now = android.os.SystemClock.elapsedRealtime()
+                if (t.speedKmh >= 15f && now - freeSignsAt >= FREE_SIGNS_LOOK_MS &&
+                    (from == null || Geo.distance(from, at) > FREE_SIGNS_EVERY_M || Math.abs(Geo.angleDiff(freeSignsHeading, heading)) > FREE_SIGNS_TURN_DEG)) {
+                    val road = navigator.probeRoadAhead(at, heading)?.let { hazards.limitsFreeRide(it, _speedSignsSideRoads.value) }
+                    freeSigns.look(road, at)
+                    freeSignsAt = now
+                    // A look that found no road (a bend, just past a roundabout) is tried again soon, not 150 m on: a sign could be missed.
+                    if (road != null) { freeSignsFrom = at; freeSignsHeading = heading }
+                } else if (t.speedKmh < 15f && from != null && Geo.distance(from, at) > FREE_SIGNS_EVERY_M) freeSigns.forgetLimit()
+                _mapSpeedSigns.value = freeSigns.ride(LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude))
+                freeSigns.limit?.let { limit -> _telemetry.update { it.copy(speedLimitKmh = limit) } }
+            }
+        }
+        // Free riding: read the limit where the signs on the road ahead don't know it, and look for cameras ahead.
         viewModelScope.launch {
             var stillReads = 0
             while (true) {
@@ -1406,20 +1441,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     continue
                 }
                 val here = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
-                // Signs where the limit changes on the road ahead, as when navigating: the road is read about every 150 m, and again after a turn.
-                if (t.speedKmh >= 15f) {
-                    val heading = t.headingDeg.toDouble()
-                    val from = freeSignsFrom
-                    if (from == null || Geo.distance(from, here) > FREE_SIGNS_EVERY_M || Math.abs(Geo.angleDiff(freeSignsHeading, heading)) > FREE_SIGNS_TURN_DEG) {
-                        navigator.probeRoadAhead(here, heading)?.let { freeSigns.add(hazards.speedChangesFreeRide(it), here) }
-                        freeSignsFrom = here; freeSignsHeading = heading
-                    }
+                if (freeSigns.limit == null && t.speedKmh >= 8f) { // standing still: heading is unreliable, keep last
+                    val limit = withContext(Dispatchers.IO) { speedLimits.at(here.lat, here.lon, t.headingDeg.toDouble()) }
+                        ?: navigator.probeSpeedLimit(here, t.headingDeg.toDouble()) ?: 0
+                    if (freeSigns.limit == null && !freeSigns.signSoon(limit, here)) _telemetry.update { it.copy(speedLimitKmh = limit) }
                 }
-                _mapSpeedSigns.value = freeSigns.ahead(here)
-                val limit = if (t.speedKmh < 8f) t.speedLimitKmh // standing still: heading is unreliable, keep last
-                else withContext(Dispatchers.IO) { speedLimits.at(here.lat, here.lon, t.headingDeg.toDouble()) }
-                    ?: navigator.probeSpeedLimit(here, t.headingDeg.toDouble()) ?: 0
-                _telemetry.update { it.copy(speedLimitKmh = limit) }
                 _cameraAlert.value = if (t.speedKmh < 15f) null else hazards.cameraAheadFreeRide(here, t.headingDeg.toDouble())
             }
         }
@@ -2700,8 +2726,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         /** Not navigating: the road ahead is read again after this far, or after turning this much. */
         private const val FREE_SIGNS_EVERY_M = 150.0
         private const val FREE_SIGNS_TURN_DEG = 30.0
-        /** Signs this close with the same limit, seen on two looks at the road, are one sign. */
-        private const val SAME_SPEED_SIGN_M = 60.0
+        /** At most one look at the road in this long: each is a route to work out, and a winding road turns all the time. */
+        private const val FREE_SIGNS_LOOK_MS = 4_000L
         private const val SAME_GIVE_WAY_M = 40.0
         /** Not navigating and standing still (under 3 km/h) for this many reads, about a minute: parked, no road limit to show. */
         private const val STILL_BEFORE_HIDING_LIMIT = 15

@@ -99,6 +99,8 @@
     <string name="settings_road_size_hint">Veinummer, forkjørsvei- og vikepliktskilt</string>
     <string name="settings_speed_sign">Fartsgrenseskilt</string>
     <string name="settings_speed_sign_hint">Hvor stort skiltet er på kartet; et større stikker ut av fartskortet</string>
+    <string name="settings_side_road_signs">Fartsskilt på sideveier</string>
+    <string name="settings_side_road_signs_hint">Uten rute: vis også grensen på veier du må svinge inn på</string>
     <string name="speed_sign_normal">Normal</string>
     <string name="speed_sign_large">Stor</string>
     <string name="speed_sign_huge">Ekstra stor</string>

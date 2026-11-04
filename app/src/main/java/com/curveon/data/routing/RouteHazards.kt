@@ -8,6 +8,7 @@ import com.curveon.routing.Geo
 import com.curveon.routing.LatLon
 import com.curveon.routing.Route
 import com.curveon.routing.RouteCorridor
+import com.curveon.routing.RouteLimits
 import com.curveon.routing.SpeedChange
 import com.curveon.routing.SpeedSigns
 import kotlinx.coroutines.Dispatchers
@@ -40,8 +41,10 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
     var giveWays: List<GiveWayOnRoute> = emptyList()
         private set
 
-    var speedChanges: List<SpeedChange> = emptyList()
-        private set
+    /** The limits along the route just loaded; null while they are read. */
+    @Volatile private var routeLimits: Pair<Route, RouteLimits>? = null
+
+    val speedChanges: List<SpeedChange> get() = routeLimits?.second?.changes.orEmpty()
 
     /** False while a new route's fuel/cameras are loading, so we don't claim "no fuel ahead". */
     @Volatile private var ready = false
@@ -52,7 +55,7 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
     suspend fun load(route: Route?) = withContext(Dispatchers.Default) {
         ready = false
         if (route == null) {
-            fuel = emptyList(); cameras = emptyList(); giveWays = emptyList(); speedChanges = emptyList(); return@withContext
+            fuel = emptyList(); cameras = emptyList(); giveWays = emptyList(); routeLimits = null; return@withContext
         }
         val corridor = RouteCorridor(route)
         val pad = 0.02
@@ -64,10 +67,10 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
             .mapNotNull { p -> corridor.alongDistance(p.lat, p.lon, CAMERA_MAX_OFFSET_M)?.let { AlongPoi(p, it) } }
             .sortedBy { it.along }
         giveWays = giveWaysOn(route)
-        speedChanges = emptyList()
+        routeLimits = null
         ready = true
         // Last, so fuel and cameras don't wait for it: a long route is thousands of lookups.
-        speedChanges = speedChangesOn(route)
+        routeLimits = runCatching { SpeedSigns.limits(route) { lat, lon, heading -> speedLimits.at(lat, lon, heading) } }.getOrNull()?.let { route to it }
     }
 
     /** Next fuel on the route; flagged when the gap after it (or to it) is long for a motorcycle tank. */
@@ -104,13 +107,13 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
     fun speedChangesAhead(along: Double, withinM: Double): List<SpeedChange> =
         speedChanges.filter { it.along > along - SPEED_SIGN_PAST_M && it.along - along < withinM }
 
-    /** Not navigating: where the limit changes along [probe], the road ahead of the rider ([Navigator.probeRoadAhead]), for signs on the map. */
-    suspend fun speedChangesFreeRide(probe: Route): List<SpeedChange> = withContext(Dispatchers.Default) {
-        runCatching { SpeedSigns.onRoadAhead(probe) { lat, lon, heading -> speedLimits.at(lat, lon, heading) } }.getOrDefault(emptyList())
-    }
+    /** What the signs along [route] say of the limit there; null until they have been read. */
+    fun limitsOn(route: Route): RouteLimits? = routeLimits?.takeIf { it.first == route }?.second
 
-    private fun speedChangesOn(route: Route): List<SpeedChange> =
-        runCatching { SpeedSigns.along(route) { lat, lon, heading -> speedLimits.at(lat, lon, heading) } }.getOrDefault(emptyList())
+    /** Not navigating: the limits along [probe], the road ahead of the rider ([Navigator.probeRoadAhead]), for signs on the map and the speed card. */
+    suspend fun limitsFreeRide(probe: Route, sideRoads: Boolean): RouteLimits? = withContext(Dispatchers.Default) {
+        runCatching { SpeedSigns.onRoadAhead(probe, sideRoads) { lat, lon, heading -> speedLimits.at(lat, lon, heading) } }.getOrNull()
+    }
 
     private fun giveWaysOn(route: Route): List<GiveWayOnRoute> = runCatching {
         GiveWay.alongRoute(route, speedLimits.giveWaySigns(route.points.map { LatLon(it.lat, it.lon) }), speedLimits::priorityRoadNear)

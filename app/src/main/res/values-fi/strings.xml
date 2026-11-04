@@ -90,6 +90,8 @@
     <string name="settings_road_size_hint">Tienumero sekä etuajo-oikeutetun tien ja väistämisvelvollisuuden merkit</string>
     <string name="settings_speed_sign">Nopeusrajoitusmerkki</string>
     <string name="settings_speed_sign_hint">Merkin koko kartalla; isompi ulottuu nopeuskortin ulkopuolelle</string>
+    <string name="settings_side_road_signs">Nopeusmerkit sivuteillä</string>
+    <string name="settings_side_road_signs_hint">Ilman reittiä: näytä myös rajoitus teillä, joille pitäisi kääntyä</string>
     <string name="speed_sign_normal">Normaali</string>
     <string name="speed_sign_large">Suuri</string>
     <string name="speed_sign_huge">Erittäin suuri</string>

@@ -94,6 +94,8 @@
     <string name="settings_road_size_hint">Wegnummer, voorrangsweg- en voorrangsborden</string>
     <string name="settings_speed_sign">Snelheidsbord</string>
     <string name="settings_speed_sign_hint">Hoe groot het bord op de kaart is; een groter bord steekt uit de snelheidskaart</string>
+    <string name="settings_side_road_signs">Snelheidsborden op zijwegen</string>
+    <string name="settings_side_road_signs_hint">Zonder route: toon ook de limiet van wegen waar je zou moeten afslaan</string>
     <string name="speed_sign_normal">Normaal</string>
     <string name="speed_sign_large">Groot</string>
     <string name="speed_sign_huge">Extra groot</string>

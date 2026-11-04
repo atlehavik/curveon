@@ -98,6 +98,8 @@
     <string name="settings_road_size_hint">Straßennummer, Vorfahrtstraße und Vorfahrt-achten-Schilder</string>
     <string name="settings_speed_sign">Tempolimit-Schild</string>
     <string name="settings_speed_sign_hint">Wie groß das Schild auf der Karte ist; ein größeres ragt aus der Tempokarte heraus</string>
+    <string name="settings_side_road_signs">Tempolimits auf Seitenstraßen</string>
+    <string name="settings_side_road_signs_hint">Ohne Route: auch das Limit von Straßen zeigen, in die du abbiegen müsstest</string>
     <string name="speed_sign_normal">Normal</string>
     <string name="speed_sign_large">Groß</string>
     <string name="speed_sign_huge">Extra groß</string>

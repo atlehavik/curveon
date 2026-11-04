@@ -133,6 +133,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val phoneStatusNow by phone.phoneStatus.collectAsStateWithLifecycle()
     val thisDeviceIsPhone by phone.thisDevice.collectAsStateWithLifecycle()
     val speedSign by viewModel.speedSign.collectAsStateWithLifecycle()
+    val speedSignsSideRoads by viewModel.speedSignsSideRoads.collectAsStateWithLifecycle()
     val roadCardSize by viewModel.roadCardSize.collectAsStateWithLifecycle()
     val showRoadInfo by viewModel.showRoadInfo.collectAsStateWithLifecycle()
     val showMapMedia by viewModel.showMapMedia.collectAsStateWithLifecycle()
@@ -1328,7 +1329,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     obd = obdState, obdDevice = viewModel.obdDevice.collectAsStateWithLifecycle().value, obdValues = obdValues,
                     pairedDevices = viewModel.obd::pairedDevices,
                     autoZoom = autoZoom, arrowLead = arrowLead, surfaceMode = surfaceMode,
-                    mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, showPhoneBattery = showPhoneBattery, phoneBatteryOffered = !thisDeviceIsPhone, speedSign = speedSign, roadCardSize = roadCardSize, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
+                    mapDark = mapDark, gravelHeatButton = gravelHeatButton, showAltitude = showAltitude, showClock = showClock, showBattery = showBattery, showPhoneBattery = showPhoneBattery, phoneBatteryOffered = !thisDeviceIsPhone, speedSign = speedSign, speedSignsSideRoads = speedSignsSideRoads, roadCardSize = roadCardSize, showRoadInfo = showRoadInfo, showMapMedia = showMapMedia, autoFollowTracks = autoFollow,
                     offRoute = viewModel.offRouteSettings.collectAsStateWithLifecycle().value,
                     navAlerts = viewModel.navAlerts.collectAsStateWithLifecycle().value,
                     offRouteAlerts = viewModel.offRouteAlerts.collectAsStateWithLifecycle().value,
@@ -1364,6 +1365,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onShowBattery = viewModel::setShowBattery,
                     onShowPhoneBattery = viewModel::setShowPhoneBattery,
                     onSpeedSign = viewModel::setSpeedSign,
+                    onSpeedSignsSideRoads = viewModel::setSpeedSignsSideRoads,
                     onRoadCardSize = viewModel::setRoadCardSize,
                     onShowRoadInfo = viewModel::setShowRoadInfo,
                     onShowMapMedia = viewModel::setShowMapMedia,

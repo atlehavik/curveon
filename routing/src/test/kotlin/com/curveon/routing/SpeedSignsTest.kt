@@ -94,28 +94,96 @@ class SpeedSignsTest {
         assertEquals(370.0, changes[0].along, 0.5)
     }
 
-    @Test
-    fun onTheRoadAheadOnlyTheLimitJustPastTheFirstTurn() {
-        val turn = Maneuver(ManeuverType.RIGHT, 1, 300.0)
-        val limits: (Double, Double, Double) -> Int? = { _, lon, _ ->
-            when (metresAt(lon)) { in 0.0..100.0 -> 80; in 100.0..310.0 -> 60; in 310.0..600.0 -> 50; else -> 40 }
-        }
-        val changes = SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(turn)), limits)
-        assertEquals(listOf(60, 50), changes.map { it.limit })
+    private val limitsPastATurn: (Double, Double, Double) -> Int? = { _, lon, _ ->
+        when (metresAt(lon)) { in 0.0..100.0 -> 80; in 100.0..310.0 -> 60; in 310.0..600.0 -> 50; else -> 40 }
     }
 
     @Test
-    fun onTheRoadAheadNothingFarDownASideRoad() {
+    fun onTheRoadAheadNoSignPastTheFirstTurn() {
         val turn = Maneuver(ManeuverType.RIGHT, 1, 300.0)
-        val changes = SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(turn)), limit(600.0, 80, 50))
-        assertEquals(emptyList<SpeedChange>(), changes)
+        val road = SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(turn)), sideRoads = false, limitsPastATurn)
+        assertEquals(listOf(60), road.changes.map { it.limit })
+    }
+
+    @Test
+    fun onTheRoadAheadASlightBendIsStillStraightOn() {
+        for (type in listOf(ManeuverType.SLIGHT_LEFT, ManeuverType.KEEP_RIGHT)) {
+            val bend = Maneuver(type, 1, 300.0)
+            val road = SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(bend)), sideRoads = false, limit(600.0, 80, 50))
+            assertEquals(listOf(50), road.changes.map { it.limit })
+        }
+    }
+
+    @Test
+    fun withSideRoadsOnlyTheLimitJustPastTheFirstTurn() {
+        val turn = Maneuver(ManeuverType.RIGHT, 1, 300.0)
+        val road = SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(turn)), sideRoads = true, limitsPastATurn)
+        assertEquals(listOf(60), road.changes.map { it.limit })
+        assertEquals(50, road.sideRoad?.limit)
+    }
+
+    @Test
+    fun withSideRoadsNothingFarDownASideRoad() {
+        val turn = Maneuver(ManeuverType.RIGHT, 1, 300.0)
+        val road = SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(turn)), sideRoads = true, limit(600.0, 80, 50))
+        assertEquals(emptyList<SpeedChange>(), road.changes)
+        assertEquals(null, road.sideRoad)
     }
 
     @Test
     fun onTheRoadAheadARoundaboutIsNotATurn() {
         val ring = Maneuver(ManeuverType.ROUNDABOUT, 1, 300.0, exitNumber = 2)
-        val changes = SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(ring)), limit(600.0, 80, 50))
-        assertEquals(listOf(50), changes.map { it.limit })
+        val road = SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(ring)), sideRoads = false, limit(600.0, 80, 50))
+        assertEquals(listOf(50), road.changes.map { it.limit })
+    }
+
+    @Test
+    fun onTheRoadAheadARoundaboutsWayOutToOneSideLeavesTheRoad() {
+        // East to the ring at 300 m, then north.
+        val north = { m: Double -> 60.0 + (m - 300.0) / 110_574.0 }
+        val pts = listOf(0.0, 300.0).map { m -> RoutePoint(60.0, lonAt(m), 0.0, m, 0.0, null, null, false, false) } +
+            listOf(500.0, 900.0).map { m -> RoutePoint(north(m), lonAt(300.0), 0.0, m, 0.0, null, null, false, false) }
+        val ring = Maneuver(ManeuverType.ROUNDABOUT, 1, 300.0, exitNumber = 1)
+        val probe = Route(pts, listOf(ring), 900.0, 0.0, 0.0, 0, 0.0, 0)
+        val limits: (Double, Double, Double) -> Int? = { lat, _, _ -> if (lat > north(400.0)) 50 else 80 }
+        assertEquals(emptyList<SpeedChange>(), SpeedSigns.onRoadAhead(probe, sideRoads = false, limits).changes)
+        assertEquals(50, SpeedSigns.onRoadAhead(probe, sideRoads = true, limits).sideRoad?.limit)
+    }
+
+    @Test
+    fun theLimitAlongARouteChangesAtItsSign() {
+        val limits = SpeedSigns.limits(east(0.0, 130.0, 270.0, 600.0), limit(135.0, 60, 80))
+        val sign = limits.changes.single().along
+        assertEquals(60, limits.start)
+        assertEquals(60, limits.at(0.0))
+        assertEquals(60, limits.at(sign - 1.0))
+        assertEquals(80, limits.at(sign + 1.0))
+    }
+
+    @Test
+    fun theLimitStaysOnTheOldRoadUntilItsSignIntoTheRoadTurnedOnto() {
+        val turn = Maneuver(ManeuverType.LEFT, 1, 300.0)
+        val limits = SpeedSigns.limits(east(0.0, 300.0, 800.0, maneuvers = listOf(turn)), limit(305.0, 80, 50))
+        assertEquals(80, limits.at(320.0))
+        assertEquals(50, limits.at(345.0))
+    }
+
+    @Test
+    fun aShortHoleInTheRegisterKeepsTheLimit() {
+        val hole: (Double, Double, Double) -> Int? = { _, lon, _ -> if (metresAt(lon) in 200.0..260.0) null else 80 }
+        val limits = SpeedSigns.limits(east(0.0, 500.0), hole)
+        assertEquals(80, limits.at(230.0))
+    }
+
+    @Test
+    fun whereNoLimitIsKnownForLongTheCardGetsNone() {
+        // E.g. abroad, off a main road onto one without a limit in OpenStreetMap: the old limit must not follow along.
+        val pts = listOf(0.0 to 80, 400.0 to 80, 900.0 to null, 1200.0 to 80).map { (m, l) -> RoutePoint(60.0, lonAt(m), 0.0, m, 0.0, null, l, false, false) }
+        val limits = SpeedSigns.limits(Route(pts, emptyList(), 1200.0, 0.0, 0.0, 0, 0.0, 0)) { _, _, _ -> null }
+        assertEquals(80, limits.at(350.0))
+        assertEquals(null, limits.at(700.0))
+        assertEquals(80, limits.at(1000.0))
+        assertEquals(emptyList<SpeedChange>(), limits.changes)
     }
 
     /**

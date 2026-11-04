@@ -98,6 +98,8 @@
     <string name="settings_road_size_hint">Vegnúmer, aðalbrautar- og biðskyldumerki</string>
     <string name="settings_speed_sign">Hraðamerki</string>
     <string name="settings_speed_sign_hint">Stærð merkisins á kortinu; stærra merki stendur út úr hraðaspjaldinu</string>
+    <string name="settings_side_road_signs">Hraðamerki á hliðarvegum</string>
+    <string name="settings_side_road_signs_hint">Án leiðar: sýna líka hámarkshraða á vegum sem þarf að beygja inn á</string>
     <string name="speed_sign_normal">Venjulegt</string>
     <string name="speed_sign_large">Stórt</string>
     <string name="speed_sign_huge">Mjög stórt</string>

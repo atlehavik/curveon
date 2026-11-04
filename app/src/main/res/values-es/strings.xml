@@ -99,6 +99,8 @@
     <string name="settings_road_size_hint">Número de carretera y señales de prioridad y ceda el paso</string>
     <string name="settings_speed_sign">Señal de límite de velocidad</string>
     <string name="settings_speed_sign_hint">Tamaño de la señal en el mapa; una más grande sobresale de la tarjeta de velocidad</string>
+    <string name="settings_side_road_signs">Señales en vías laterales</string>
+    <string name="settings_side_road_signs_hint">Sin ruta: muestra también el límite de las vías a las que tendrías que girar</string>
     <string name="speed_sign_normal">Normal</string>
     <string name="speed_sign_large">Grande</string>
     <string name="speed_sign_huge">Muy grande</string>

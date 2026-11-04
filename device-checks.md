@@ -6,6 +6,16 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-04 — Fartsgrensen i ruta følger skiltene
+
+Målt med simulert kjøring på ekte veidata og NVDB på åtte turer på Bømlo, Stord og Haugalandet. Hvordan det oppleves mens du kjører, kan bare prøves på ekte.
+
+- [ ] Kjør en vei med skiftende fartsgrense med og uten navigering: tallet oppe til høyre bytter akkurat idet du passerer skiltet på kartet, ikke før og ikke mange meter etter.
+- [ ] Uten navigering, forbi kryss: det kommer ikke lenger fartsskilt inne på sideveiene, bare rett fram.
+- [ ] Sving av inn på en vei med annen grense uten navigering: tallet skal bytte få sekunder etter svingen.
+- [ ] Slå på Innstillinger → Skjerm → Fartsskilt på sideveier: skiltene på sideveiene kommer tilbake, et stykke inn på veien.
+- [ ] Si fra hvis tallet flakker frem og tilbake et sted, og helst hvor (særlig tett på parallelle veier og i byer).
+
 ## 2026-11-04 — Fjernkontroll på styret
 
 Alt er prøvd i emulatoren, også med en simulert Bluetooth-enhet (`tools/fake_remote.py`), men ingen ekte fjernkontroll: hvilke taster de faktisk sender er hentet fra dokumentasjon og forum. Du har ingen ennå; ta disse når du får en.

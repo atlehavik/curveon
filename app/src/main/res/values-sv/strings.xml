@@ -99,6 +99,8 @@
     <string name="settings_road_size_hint">Vägnummer, huvudled och väjningsplikt</string>
     <string name="settings_speed_sign">Hastighetsskylt</string>
     <string name="settings_speed_sign_hint">Hur stor skylten är på kartan; en större sticker ut från hastighetskortet</string>
+    <string name="settings_side_road_signs">Hastighetsskyltar på sidovägar</string>
+    <string name="settings_side_road_signs_hint">Utan rutt: visa även gränsen på vägar du måste svänga in på</string>
     <string name="speed_sign_normal">Normal</string>
     <string name="speed_sign_large">Stor</string>
     <string name="speed_sign_huge">Extra stor</string>

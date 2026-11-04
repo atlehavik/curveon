@@ -99,6 +99,8 @@
     <string name="settings_road_size_hint">Numéro de route, panneaux route prioritaire et cédez le passage</string>
     <string name="settings_speed_sign">Panneau de limitation</string>
     <string name="settings_speed_sign_hint">La taille du panneau sur la carte ; un plus grand dépasse de la carte de vitesse</string>
+    <string name="settings_side_road_signs">Panneaux sur routes latérales</string>
+    <string name="settings_side_road_signs_hint">Sans itinéraire : affiche aussi la limite des routes où il faudrait tourner</string>
     <string name="speed_sign_normal">Normal</string>
     <string name="speed_sign_large">Grand</string>
     <string name="speed_sign_huge">Très grand</string>
