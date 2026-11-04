@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
 import com.curveon.ui.components.remoteSheet
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -1743,8 +1744,12 @@ private fun Rail(
 ) {
     // A phone held sideways is lower than the X7 (about 410 dp against 540): less room round the buttons.
     val compact = vertical && LocalConfiguration.current.screenHeightDp < 480
+    // With a remote the rail goes round: past its end is its other end, not whatever is furthest across the screen.
+    val searchFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val toggleFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val search: @Composable () -> Unit = {
-        RailButton(Icons.Default.TwoWheeler, stringResource(R.string.where_to), ElectricCyan, ElectricCyan, filled = active == RailPanel.SEARCH, flashKey = if (RailPanel.SEARCH in flash.first) flash.second else 0, tag = "rail_search", target = TourTarget.SEARCH, onClick = { onPress(RailPanel.SEARCH) })
+        RailButton(Icons.Default.TwoWheeler, stringResource(R.string.where_to), ElectricCyan, ElectricCyan, filled = active == RailPanel.SEARCH, flashKey = if (RailPanel.SEARCH in flash.first) flash.second else 0, tag = "rail_search", target = TourTarget.SEARCH, focus = searchFocus,
+            wrap = { if (vertical) up = toggleFocus else right = toggleFocus }, onClick = { onPress(RailPanel.SEARCH) })
     }
     val gpx: @Composable () -> Unit = {
         Box {
@@ -1778,7 +1783,8 @@ private fun Rail(
                 if (isFullScreenMap) Icons.Default.Dashboard else Icons.Default.Map,
                 stringResource(if (isFullScreenMap) R.string.dashboard else R.string.full_map),
                 ElectricCyan, ElectricCyan,
-                tag = "rail_toggle_map", target = TourTarget.MAP_TOGGLE, onClick = onToggleMap
+                tag = "rail_toggle_map", target = TourTarget.MAP_TOGGLE, focus = toggleFocus,
+                wrap = { if (vertical) down = searchFocus else left = searchFocus }, onClick = onToggleMap
             )
             if (isFullScreenMap && unread > 0) {
                 Box(
@@ -1816,6 +1822,9 @@ private fun RailButton(
     tag: String,
     /** What the welcome tour lights up; null for a button the tour does not mention. */
     target: TourTarget?,
+    focus: androidx.compose.ui.focus.FocusRequester = remember { androidx.compose.ui.focus.FocusRequester() },
+    /** Where the remote's arrows go past this button, at an end of the rail. */
+    wrap: (androidx.compose.ui.focus.FocusProperties.() -> Unit)? = null,
     onClick: () -> Unit
 ) {
     // Smaller on a phone: sideways it is low, upright it is narrow.
@@ -1830,7 +1839,6 @@ private fun RailButton(
     }
     val base = if (filled) accent else CockpitSurfaceVariant
     val remote = com.curveon.ui.components.LocalRemote.current
-    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
     if (tag == "rail_search") LaunchedEffect(remote) { if (remote?.lastRail == null) remote?.lastRail = focus }
     Box(
         Modifier
@@ -1840,6 +1848,7 @@ private fun RailButton(
             .clip(RoundedCornerShape(16.dp))
             .background(androidx.compose.ui.graphics.lerp(base, NeonAmber, blink.value))
             .focusRequester(focus)
+            .focusProperties { wrap?.invoke(this) }
             // The menu opens on the button the remote was last on (first of all on Where to?).
             .onFocusChanged { if (it.isFocused) remote?.lastRail = focus }
             .clickable(onClick = onClick)

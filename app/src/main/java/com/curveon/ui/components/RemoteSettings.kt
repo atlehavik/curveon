@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -105,7 +106,6 @@ internal fun ColumnScope.RemoteSettingsPage(remote: RemoteControl) {
             openSettings(context, Settings.ACTION_BLUETOOTH_SETTINGS)
         }
     }
-    ScreenKeyboardNote()
 
     val press = remote.lastPress
     SettingRow(
@@ -166,15 +166,21 @@ internal fun ColumnScope.RemoteSettingsPage(remote: RemoteControl) {
 }
 
 private const val CAPTURE_MS = 12_000L
+private const val KEYBOARD_WAIT_MS = 1_200L
 
 /**
- * A remote that passes for a whole keyboard makes Android hide the keyboard on the screen, and then there is no
- * typing in the search. The rider can't guess why, and only Android's settings can turn that off.
+ * For a field the rider has just tapped. A remote that passes for a whole keyboard can make Android hide the
+ * keyboard on the screen, and then there is no typing. The rider can't guess why, and only Android's settings
+ * can turn that off. Whether it happens is up to the keyboard app too (Gboard may show itself regardless), so
+ * this waits to see that it really hasn't come.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ScreenKeyboardNote(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    if (!RemoteControl.hidesScreenKeyboard(context)) return
+    var waited by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { delay(KEYBOARD_WAIT_MS); waited = true }
+    if (!waited || androidx.compose.foundation.layout.WindowInsets.isImeVisible || !RemoteControl.hidesScreenKeyboard(context)) return
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant).border(1.dp, NeonAmber, RoundedCornerShape(12.dp))
             .clickable { openSettings(context, Settings.ACTION_HARD_KEYBOARD_SETTINGS) }
@@ -200,10 +206,11 @@ fun RemoteHints(remote: RemoteControl) {
         delay(if (hint == RemoteHint.FIRST_PRESS) INTRODUCTION_MS else UNKNOWN_BUTTON_MS)
         remote.hint = null
     }
-    // Under the speed and road cards, as the question about resuming a ride.
-    Box(Modifier.fillMaxSize().safeDrawingPadding().padding(top = 92.dp, start = 12.dp, end = 12.dp)) {
+    // Low on the screen: the middle is the crosshair's, and the first press may well bring that up. Upright the menu is at the bottom.
+    val upright = androidx.compose.ui.platform.LocalConfiguration.current.let { it.screenHeightDp > it.screenWidthDp }
+    Box(Modifier.fillMaxSize().safeDrawingPadding().padding(bottom = if (upright) 84.dp else 12.dp, start = 12.dp, end = 12.dp)) {
         Column(
-            Modifier.align(Alignment.TopCenter).widthIn(max = 420.dp).clip(RoundedCornerShape(16.dp)).background(CockpitSurface)
+            Modifier.align(Alignment.BottomCenter).widthIn(max = 420.dp).clip(RoundedCornerShape(16.dp)).background(CockpitSurface)
                 .border(1.dp, ElectricCyan, RoundedCornerShape(16.dp)).padding(horizontal = 18.dp, vertical = 14.dp).testTag("remote_hint"),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {

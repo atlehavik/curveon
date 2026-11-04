@@ -185,6 +185,8 @@ class RemoteControl(context: Context) {
     private var swallowUp: Int? = null
     private var lastRepeat = 0L
     private var downAction: RemoteAction? = null
+    private var lastUpCode = KeyEvent.KEYCODE_UNKNOWN
+    private var lastUpTime = 0L
 
     fun attachMain(w: RemoteWindow) { main = w }
 
@@ -227,7 +229,11 @@ class RemoteControl(context: Context) {
         // Someone typing on a real keyboard: the letters are letters.
         if (focused?.isTextField == true && event.isPrintingKey) return w.passOn(event)
 
-        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) noticeUse(action, device)
+        // A bump on a rough road can make a button bounce: the same key again at once isn't another press.
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+            if (code == lastUpCode && event.eventTime - lastUpTime < BOUNCE_MS) { swallowUp = code; return true }
+            noticeUse(action, device)
+        } else if (up) { lastUpCode = code; lastUpTime = event.eventTime }
         val level = when {
             !w.main -> RemoteLevel.DIALOG
             sheets.isNotEmpty() -> RemoteLevel.SHEET
@@ -397,6 +403,7 @@ class RemoteControl(context: Context) {
         private const val KEY_HAS_OK = "hasOk"
         private const val KEY_INTRODUCED = "introduced"
         private const val HOLD_MS = 600L
+        private const val BOUNCE_MS = 60L
         private const val PRESSES_TO_HIDE_HINT = 4
         private const val MOVE_REPEAT_MS = 140L
         private const val ZOOM_REPEAT_MS = 350L
@@ -468,8 +475,10 @@ class RemoteWindow(
 
     fun choose() {
         chosen = true
+        choseAt = SystemClock.uptimeMillis()
         ringSoon()
     }
+    private var choseAt = 0L
 
     /** Nothing is chosen any more: the ring goes, and the anchor (below) takes the focus again. */
     fun letGo() {
@@ -518,7 +527,8 @@ class RemoteWindow(
         if (anchor.parent == null) window.addContentView(anchor, ViewGroup.LayoutParams(1, 1))
         if (chosen || anchor.isFocused || focused()?.isTextField == true) return
         // Only once it has been laid out; a view with no size can't hold the focus.
-        if (anchor.width > 0) anchor.requestFocus() else handler.post { if (!chosen && anchor.width > 0) anchor.requestFocus() }
+        if (anchor.width > 0) anchor.requestFocus()
+        else handler.post { if (!chosen && anchor.width > 0 && focused()?.isTextField != true) anchor.requestFocus() }
     }
 
     /**
@@ -546,15 +556,22 @@ class RemoteWindow(
     private val refresh = object : Runnable {
         override fun run() {
             val f = if (chosen) focused() else null
-            // The button is gone (its screen closed): nothing is chosen any more.
-            if (chosen && f == null) chosen = false
+            val now = SystemClock.uptimeMillis()
+            // The focus takes a moment to arrive; if it still isn't there the button is gone (its screen closed),
+            // and nothing is chosen any more.
+            val waiting = chosen && f == null && now - choseAt < FOCUS_ARRIVES_MS
+            if (chosen && f == null && !waiting) chosen = false
+            if (waiting) { handler.postDelayed(this, RING_FIRST_MS); return }
             holdViewFocus()
             if (f == null) ring.hide() else {
                 if (!ringAdded) { window.decorView.overlay.add(ring); ringAdded = true }
                 ring.show(f.bounds)
             }
             // Lists scroll and cards come and go under the ring: it follows for as long as the rider is at it.
-            if (f != null && SystemClock.uptimeMillis() < keepUntil) handler.postDelayed(this, RING_FOLLOW_MS)
+            // Left alone it goes, so it can't stay behind where a button used to be; the next press brings it back.
+            if (f != null) {
+                if (SystemClock.uptimeMillis() < keepUntil) handler.postDelayed(this, RING_FOLLOW_MS) else ring.hide()
+            }
         }
     }
 
@@ -575,6 +592,7 @@ class RemoteWindow(
         const val RING_FOLLOW_MS = 250L
         const val RING_KEEP_MS = 60_000L
         const val FOCUS_FALLBACK_MS = 250L
+        const val FOCUS_ARRIVES_MS = 400L
     }
 }
 

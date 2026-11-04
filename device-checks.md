@@ -8,7 +8,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 
 ## 2026-11-04 — Fjernkontroll på styret
 
-Alt er prøvd i emulatoren med piltaster, Enter, Esc, + og F-taster, men ingen ekte fjernkontroll: hvilke taster de faktisk sender er hentet fra dokumentasjon og forum. Du har ingen ennå; ta disse når du får en.
+Alt er prøvd i emulatoren, også med en simulert Bluetooth-enhet (`tools/fake_remote.py`), men ingen ekte fjernkontroll: hvilke taster de faktisk sender er hentet fra dokumentasjon og forum. Du har ingen ennå; ta disse når du får en.
 
 - [ ] Koble til fjernkontrollen i Bluetooth-innstillingene mens Curveon kjører: appen skal ikke starte på nytt eller miste turen.
 - [ ] Innstillinger → Fjernkontroll: viser den navnet på fjernkontrollen, og sier «Prøv en knapp» riktig navn og oppgave for hver knapp? Si fra om knapper som viser «ingen oppgave ennå», og hvilken tast de sender.

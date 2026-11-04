@@ -62,7 +62,9 @@ phone, with an optional companion app on the phone when a tablet is used.
   tracked in `RemoteWindow.chosen`, not Android's focus: outside touch mode Android focuses a button by
   itself. Every dialog joins through `HideSystemBars`, a rail screen or card through `rememberRemoteSheet`
   or `remoteSheet`, a dropdown through `remotePopup`. New modal UI needs one of those. Touch-only for now:
-  drawing a roundtrip area (Good weather picks one) and dragging a route.
+  drawing a roundtrip area (Good weather picks one) and dragging a route. `tools/fake_remote.py` is a pretend
+  Bluetooth remote for the emulator; prefer it to `adb shell input`, which never goes the way a real remote's
+  keys do (it isn't an external device).
 - **Stops**: pick a place while riding → *Add stop* (inserted where it adds least detour) or *Go here*.
 - **Editing a planned trip**: tap a stop chip to move it earlier/later, *Change place* (search or pick
   on map), *Add stop before*, or remove it. **Edit on map** (long-press the route line, or the squiggle in
