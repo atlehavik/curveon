@@ -606,7 +606,7 @@ private fun Page(content: @Composable ColumnScope.() -> Unit) {
 internal fun SettingTitle(text: String) = SectionTitle(text)
 
 @Composable
-internal fun SettingRow(title: String, hint: String? = null, control: @Composable () -> Unit) = Setting(title, hint, control = control)
+internal fun SettingRow(title: String, hint: String? = null, control: @Composable () -> Unit) = Setting(title, hint, hintLines = Int.MAX_VALUE, control = control)
 
 @Composable
 internal fun <T> SettingChoice(options: List<T>, selected: T, label: @Composable (T) -> String, onSelect: (T) -> Unit) = Choice(options, selected, label, onSelect)
@@ -621,11 +621,11 @@ private fun SectionTitle(text: String) {
  * the right, on the phone as on the tablet.
  */
 @Composable
-private fun Setting(title: String, hint: String? = null, below: (@Composable () -> Unit)? = null, control: @Composable () -> Unit) {
+private fun Setting(title: String, hint: String? = null, below: (@Composable () -> Unit)? = null, hintLines: Int = if (isNarrowScreen()) 3 else 2, control: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end = 16.dp)) {
             Text(title, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp, maxLines = if (isNarrowScreen()) 3 else 2)
+            if (hint != null) Text(hint, color = TextMuted, fontSize = 13.sp, maxLines = hintLines)
             below?.invoke()
         }
         control()
