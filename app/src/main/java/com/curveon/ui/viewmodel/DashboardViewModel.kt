@@ -1218,6 +1218,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val giveWayAlert: StateFlow<com.curveon.data.routing.GiveWayAlert?> = _giveWayAlert.asStateFlow()
     /** Not navigating: the junction just ahead where the rider gives way, as last found ([freeGiveWay] keeps its distance current). */
     private val freeGiveWayAt = MutableStateFlow<com.curveon.data.routing.GiveWayAlert?>(null)
+    /** Not navigating: the junctions just ahead where the rider gives way, kept from one look at the road to the next. */
+    private val freeGiveWays = com.curveon.routing.SignsAhead<com.curveon.data.routing.GiveWayAlert>({ it.lat }, { it.lon }, { it.bearingDeg }) { a, b ->
+        a.stop == b.stop && Geo.distance(a.lat, a.lon, b.lat, b.lon) < SAME_GIVE_WAY_M
+    }
     /** Not navigating: a junction just ahead where the rider gives way, for the road card. */
     val freeGiveWay: StateFlow<com.curveon.data.routing.GiveWayAlert?> = combine(freeGiveWayAt, _currentLocation) { g, here ->
         g ?: return@combine null
@@ -1234,12 +1238,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Where the speed limit changes in the next stretch of the route (or, not navigating, of the road ahead), for signs on the map. */
-    private val _mapSpeedSigns = MutableStateFlow<List<com.curveon.data.routing.SpeedChange>>(emptyList())
-    /** Not navigating: the changes found on the road ahead, [freeSigns] measured from [freeSignsFrom] (heading [freeSignsHeading] there). */
-    private var freeSigns: List<com.curveon.data.routing.SpeedChange> = emptyList()
+    private val _mapSpeedSigns = MutableStateFlow<List<com.curveon.routing.SpeedChange>>(emptyList())
+    /** Not navigating: the changes found on the road ahead, last read at [freeSignsFrom] (heading [freeSignsHeading] there). */
+    private val freeSigns = com.curveon.routing.SignsAhead<com.curveon.routing.SpeedChange>({ it.lat }, { it.lon }, { it.bearingDeg }) { a, b ->
+        a.limit == b.limit && Geo.distance(a.lat, a.lon, b.lat, b.lon) < SAME_SPEED_SIGN_M
+    }
     private var freeSignsFrom: LatLon? = null
     private var freeSignsHeading = 0.0
-    val mapSpeedSigns: StateFlow<List<com.curveon.data.routing.SpeedChange>> = _mapSpeedSigns.asStateFlow()
+    val mapSpeedSigns: StateFlow<List<com.curveon.routing.SpeedChange>> = _mapSpeedSigns.asStateFlow()
 
     /** A stop on the way was just reached (its name). */
     private val _stopReached = MutableSharedFlow<String>(extraBufferCapacity = 1)
@@ -1385,7 +1391,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 untilAwake()
                 val t = _telemetry.value
                 if (navigator.state.value.isNavigating || !t.hasGpsFix) {
-                    freeSignsFrom = null; freeSigns = emptyList()
+                    freeSignsFrom = null; freeSigns.clear()
                     if (!navigator.state.value.isNavigating && _mapSpeedSigns.value.isNotEmpty()) _mapSpeedSigns.value = emptyList()
                     stillReads = 0
                     continue
@@ -1393,7 +1399,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 // Parked (at work, at home): the limit of the road last ridden and its signs go; they come back once on the move.
                 stillReads = if (t.speedKmh < 3f) stillReads + 1 else 0
                 if (stillReads >= STILL_BEFORE_HIDING_LIMIT) {
-                    freeSignsFrom = null; freeSigns = emptyList()
+                    freeSignsFrom = null; freeSigns.clear()
                     if (_mapSpeedSigns.value.isNotEmpty()) _mapSpeedSigns.value = emptyList()
                     if (t.speedLimitKmh != 0) _telemetry.update { it.copy(speedLimitKmh = 0) }
                     _cameraAlert.value = null
@@ -1405,12 +1411,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     val heading = t.headingDeg.toDouble()
                     val from = freeSignsFrom
                     if (from == null || Geo.distance(from, here) > FREE_SIGNS_EVERY_M || Math.abs(Geo.angleDiff(freeSignsHeading, heading)) > FREE_SIGNS_TURN_DEG) {
-                        freeSigns = navigator.probeRoadAhead(here, heading)?.let { hazards.speedChangesFreeRide(it) }.orEmpty()
+                        navigator.probeRoadAhead(here, heading)?.let { freeSigns.add(hazards.speedChangesFreeRide(it), here) }
                         freeSignsFrom = here; freeSignsHeading = heading
                     }
-                    val ridden = freeSignsFrom?.let { Geo.distance(it, here) } ?: 0.0
-                    _mapSpeedSigns.value = freeSigns.filter { it.along > ridden - FREE_SIGNS_PAST_M && it.along - ridden < MAP_SPEED_SIGN_M }
                 }
+                _mapSpeedSigns.value = freeSigns.ahead(here)
                 val limit = if (t.speedKmh < 8f) t.speedLimitKmh // standing still: heading is unreliable, keep last
                 else withContext(Dispatchers.IO) { speedLimits.at(here.lat, here.lon, t.headingDeg.toDouble()) }
                     ?: navigator.probeSpeedLimit(here, t.headingDeg.toDouble()) ?: 0
@@ -1424,10 +1429,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 delay(2_000)
                 untilAwake()
                 val t = _telemetry.value
-                if (navigator.state.value.isNavigating || !t.hasGpsFix) { freeGiveWayAt.value = null; continue }
+                if (navigator.state.value.isNavigating || !t.hasGpsFix) { freeGiveWayAt.value = null; freeGiveWays.clear(); continue }
                 if (t.speedKmh < 10f) continue // waiting at the junction (or heading unknown): keep it
                 val here = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
-                freeGiveWayAt.value = navigator.probeAhead(here, t.headingDeg.toDouble())?.let { hazards.giveWayFreeRide(it) }
+                navigator.probeAhead(here, t.headingDeg.toDouble())?.let { hazards.giveWayFreeRide(it) }?.let { freeGiveWays.add(listOf(it), here) }
+                freeGiveWayAt.value = freeGiveWays.ahead(here).minByOrNull { Geo.distance(here.lat, here.lon, it.lat, it.lon) }
             }
         }
         // New route: load fuel, cameras and give way signs along it; forget road names of the old one.
@@ -2694,8 +2700,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         /** Not navigating: the road ahead is read again after this far, or after turning this much. */
         private const val FREE_SIGNS_EVERY_M = 150.0
         private const val FREE_SIGNS_TURN_DEG = 30.0
-        /** A sign this far behind the rider has been passed. */
-        private const val FREE_SIGNS_PAST_M = 10.0
+        /** Signs this close with the same limit, seen on two looks at the road, are one sign. */
+        private const val SAME_SPEED_SIGN_M = 60.0
+        private const val SAME_GIVE_WAY_M = 40.0
         /** Not navigating and standing still (under 3 km/h) for this many reads, about a minute: parked, no road limit to show. */
         private const val STILL_BEFORE_HIDING_LIMIT = 15
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)

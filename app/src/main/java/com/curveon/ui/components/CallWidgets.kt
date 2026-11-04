@@ -49,10 +49,16 @@ private fun isDecline(title: String) = listOf("decline", "avvis", "hang", "legg 
 /** A call's two buttons: the one that ends or declines it, and the other one (answer, or speaker). */
 private class CallButtons(val declineLabel: String, val onDecline: () -> Unit, val otherLabel: String?, val onOther: (() -> Unit)?)
 
+/** Which of a call's actions declines or ends it. */
+internal fun callDeclineIndex(call: NotificationItem) = call.actions.indexOfFirst { isDecline(it) }.takeIf { it >= 0 }
+
+/** The other action: answer, or the speaker once it is answered. */
+internal fun callOtherIndex(call: NotificationItem) = call.actions.indices.firstOrNull { it != callDeclineIndex(call) }
+
 @Composable
 private fun callButtons(call: NotificationItem, onAction: (Int) -> Unit, onDismiss: () -> Unit): CallButtons {
-    val declineIndex = call.actions.indexOfFirst { isDecline(it) }.takeIf { it >= 0 }
-    val otherIndex = call.actions.indices.firstOrNull { it != declineIndex }
+    val declineIndex = callDeclineIndex(call)
+    val otherIndex = callOtherIndex(call)
     return CallButtons(
         declineLabel = call.actions.getOrNull(declineIndex ?: -1) ?: stringResource(R.string.decline),
         onDecline = { if (declineIndex != null) onAction(declineIndex) else onDismiss() },

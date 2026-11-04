@@ -348,7 +348,7 @@ fun PlaceActionDialog(
                     var asking by remember { mutableStateOf(false) }
                     PillButton(Icons.Default.Timeline, stringResource(R.string.plan_point_by_point), CockpitSurfaceVariant, ElectricCyan,
                         Modifier.testTag("point_by_point_btn")) { asking = true }
-                    androidx.compose.material3.DropdownMenu(expanded = asking, onDismissRequest = { asking = false }, containerColor = CockpitSurface) {
+                    androidx.compose.material3.DropdownMenu(expanded = asking, onDismissRequest = { asking = false }, modifier = Modifier.remotePopup(), containerColor = CockpitSurface) {
                         androidx.compose.material3.DropdownMenuItem(
                             text = { Column {
                                 Text(stringResource(R.string.point_by_point_start_here), color = TextPrimary, fontWeight = FontWeight.Bold)
@@ -608,7 +608,7 @@ private fun ShareChoice(modifier: Modifier, shared: Boolean, onGroup: (() -> Uni
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
         PillButton(Icons.Default.Share, stringResource(R.string.share_trip_short), CockpitSurfaceVariant, TextPrimary, Modifier.fillMaxWidth().testTag("menu_share")) { open = true }
-        DropdownMenu(open, { open = false }, containerColor = CockpitSurfaceVariant) {
+        DropdownMenu(open, { open = false }, modifier = Modifier.remotePopup(), containerColor = CockpitSurfaceVariant) {
             when {
                 shared -> DropdownMenuItem({ Text(stringResource(R.string.share_trip_done_group), color = EcoGreen) }, {}, enabled = false,
                     leadingIcon = { Icon(Icons.Default.Check, null, tint = EcoGreen) })

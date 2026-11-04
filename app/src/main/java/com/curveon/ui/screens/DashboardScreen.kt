@@ -5,6 +5,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
+import com.curveon.ui.components.remoteSheet
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -613,6 +617,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             "%d:%02d · ".format(min / 60, min % 60) + stringResource(R.string.distance_km_whole, r.distanceMeters / 1000)
         }
         if (sketching) {
+            // Drawing takes a finger; with a remote, OK goes to the bar and its "good weather" choice.
+            val sketchBarFocus = com.curveon.ui.components.rememberRemoteMenuTarget()
             SketchBar(onCancel = { sketching = false }, km = sketchKm?.let { k -> sketchMaxKm?.let { minOf(it, k) } ?: k }, startName = roundtripStart?.second,
                 maxKm = sketchMaxKm, onMaxKm = { sketchMaxKm = it }, surface = sketchSurface, onSurface = { sketchSurface = it },
                 gravelReachKm = sketchGravelReach, onGravelReach = { sketchGravelReach = it },
@@ -627,8 +633,9 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     }
                 }) else null,
                 goodWeatherBusy = weatherPicking, goodWeatherFailed = weatherPickFailed,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp))
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp, start = 12.dp, end = 12.dp).focusRequester(sketchBarFocus).focusGroup())
         } else if (pickPurpose != null) {
+            val pickBarFocus = com.curveon.ui.components.rememberRemoteMenuTarget()
             MapPickBar(
                 purpose = pickPurpose,
                 picked = picked?.let { it.second ?: "…" },
@@ -661,7 +668,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                         }
                     }
                 } },
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp)
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 18.dp).focusRequester(pickBarFocus).focusGroup()
             )
             // How it works, the first times: over the bar, until "Don't show again".
             if (chaining && planGoal != null && showPbpHelp) PointByPointHelp(
@@ -688,7 +695,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                     onTurnBack = viewModel::turnBack,
                     onCarryOn = { keep -> if (wt.isTrip) viewModel.newRouteFromHere(keep) else viewModel.rejoinAhead() },
                     // Below the turn banner, over the middle of the map.
-                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp)
+                    modifier = Modifier.align(Alignment.Center).padding(horizontal = 12.dp).remoteSheet()
                 )
             }
             preview?.let { p ->
@@ -929,11 +936,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             overlays = mapOverlays
         )
         resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp)) }
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp).remoteSheet(viewModel::startNewRide)) }
         // Waits while the ride's question is up (it goes by itself once riding on), and is not asked over a trip.
         navResumeOffer?.takeIf { resumeOffer == null && preview == null && !isNavigating }?.let {
             RideResumeCard(it.title, onResume = viewModel::resumeNavigation, onNew = viewModel::declineNavigationResume,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp),
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp).remoteSheet(viewModel::declineNavigationResume),
                 heading = stringResource(R.string.nav_resume_title), resumeLabel = stringResource(R.string.nav_resume_yes), newLabel = stringResource(R.string.nav_resume_no), tag = "nav_resume")
         }
         reachedStop?.let { StopReachedBanner(it, onDismiss = { reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
@@ -987,7 +994,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                 onSend = { phone.confirmVoiceReply() },
                 onRetry = { phone.startVoiceReply(voiceReply!!.notificationKey) },
                 onCancel = { phone.cancelVoiceReply() },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).remoteSheet(phone::cancelVoiceReply)
             )
             messages.isNotEmpty() -> NotificationCard(
                 notifications = messages,
@@ -1050,6 +1057,36 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             RailPanel.GROUP -> showGroup = true
             RailPanel.SETTINGS -> { settingsOnHelp = appUpdate is com.curveon.data.update.UpdateState.Available; showSettings = true }
         }
+    }
+    // The handlebar remote: what it asks of this screen, and the call its OK and Back then answer.
+    val remote = com.curveon.ui.components.LocalRemote.current
+    var speakOnOpen by remember { mutableStateOf(false) }
+    val latestPressRail by rememberUpdatedState(pressRail)
+    val latestActivePanel by rememberUpdatedState(activePanel)
+    DisposableEffect(remote) {
+        val actions = object : com.curveon.ui.components.RemoteDashboard {
+            override fun whereTo(speak: Boolean) {
+                speakOnOpen = speak
+                if (latestActivePanel != RailPanel.SEARCH) latestPressRail(RailPanel.SEARCH)
+            }
+            override fun mapOrDashboard() { latestActivePanel?.let(latestPressRail); viewModel.toggleFullScreenMap() }
+            override fun nextTrack() = phone.skipNext()
+            override fun previousTrack() = phone.skipPrevious()
+            override fun playPause() = phone.togglePlayPause()
+            override val mapCovered get() = latestActivePanel != null
+        }
+        remote?.dashboard = actions
+        onDispose { if (remote?.dashboard === actions) remote.dashboard = null }
+    }
+    DisposableEffect(remote, ringing, callOngoing) {
+        remote?.call = ringing?.let { call ->
+            com.curveon.ui.components.RemoteCall(
+                ringing = !callOngoing,
+                answer = { com.curveon.ui.components.callOtherIndex(call)?.let { phone.invokeAction(call.id, it) } },
+                decline = { com.curveon.ui.components.callDeclineIndex(call)?.let { phone.invokeAction(call.id, it) } ?: phone.hideNotification(call.id) }
+            )
+        }
+        onDispose { remote?.call = null }
     }
     // A GPX file opened from another app: straight to its list.
     val showGpxPanel by viewModel.showGpxPanel.collectAsStateWithLifecycle()
@@ -1129,6 +1166,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             DestinationSearchDialog(
                 searchStatus = remember { viewModel.searchStatus() },
                 voice = voiceSearch,
+                listenAtOnce = speakOnOpen,
+                onListened = { speakOnOpen = false },
                 onVoice = if (phoneState == CompanionConnectionState.CONNECTED || phoneState == CompanionConnectionState.DEMO) ({ phone.startVoiceSearch() }) else null,
                 onVoiceCancel = phone::cancelVoiceSearch,
                 voiceUnavailable = stringResource(R.string.voice_needs_phone),
@@ -1790,6 +1829,9 @@ private fun RailButton(
         }
     }
     val base = if (filled) accent else CockpitSurfaceVariant
+    val remote = com.curveon.ui.components.LocalRemote.current
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    if (tag == "rail_search") LaunchedEffect(remote) { if (remote?.lastRail == null) remote?.lastRail = focus }
     Box(
         Modifier
             .size(if (compact) 48.dp else 56.dp)
@@ -1797,6 +1839,9 @@ private fun RailButton(
             .graphicsLayer { scaleX = 1f + 0.25f * blink.value; scaleY = 1f + 0.25f * blink.value }
             .clip(RoundedCornerShape(16.dp))
             .background(androidx.compose.ui.graphics.lerp(base, NeonAmber, blink.value))
+            .focusRequester(focus)
+            // The menu opens on the button the remote was last on (first of all on Where to?).
+            .onFocusChanged { if (it.isFocused) remote?.lastRail = focus }
             .clickable(onClick = onClick)
             .testTag(tag),
         contentAlignment = Alignment.Center

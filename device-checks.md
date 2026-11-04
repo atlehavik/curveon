@@ -6,6 +6,40 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-04 — Fjernkontroll på styret
+
+Alt er prøvd i emulatoren med piltaster, Enter, Esc, + og F-taster, men ingen ekte fjernkontroll: hvilke taster de faktisk sender er hentet fra dokumentasjon og forum. Du har ingen ennå; ta disse når du får en.
+
+- [ ] Koble til fjernkontrollen i Bluetooth-innstillingene mens Curveon kjører: appen skal ikke starte på nytt eller miste turen.
+- [ ] Innstillinger → Fjernkontroll: viser den navnet på fjernkontrollen, og sier «Prøv en knapp» riktig navn og oppgave for hver knapp? Si fra om knapper som viser «ingen oppgave ennå», og hvilken tast de sender.
+- [ ] Trykk OK, så Tilbake, så piler: første trykk teller alltid, også rett etter at du har tatt på skjermen.
+- [ ] Hold OK, si et sted, trykk OK og OK igjen: ruten er i gang uten berøring. Virker holdet? Si fra hvis fjernkontrollen sender en egen tast for langt trykk.
+- [ ] Få en samtale: OK svarer og Tilbake avviser. Spør noen om å ringe; dette kan ikke prøves i emulatoren.
+- [ ] Trykk i Hvor skal du?-feltet med fjernkontrollen tilkoblet: kommer skjermtastaturet? Kommer det ikke, skal en gul linje forklare hvorfor og åpne Android-innstillingen.
+- [ ] Kjør en tur og dytt borti spaken: kartet skal komme tilbake til deg av seg selv etter 12 sekunder.
+- [ ] Prøv en helt vanlig tur med fjernkontrollen i hanske: er ringen tydelig nok i sollys? Er noe tungvint?
+
+## 2026-11-03 — Fartsskilt der de faktisk står, og som blir stående
+
+Målt mot ekte veidata og NVDBs ekte skilt på åtte turer på Bømlo og Stord. Hvordan det ser ut mens du kjører, kan bare prøves på ekte.
+
+- [ ] Kjør Fv542 østover fra rundkjøringen ved Extra Bremnes uten navigering: 80-skiltet står ved det ekte skiltet (59.79877, 5.21000), og ikke over hundre meter lenger fram.
+- [ ] Kjør en vei med skiftende fartsgrense uten navigering: et skilt som har dukket opp, blir stående til du har passert det, og flytter seg ikke. Si fra hvis noe fortsatt blinker, og helst hvor.
+- [ ] Der et fartsskilt bare gjelder hvis du svinger av: det står et stykke inn på sideveien, ikke langs veien du kjører.
+- [ ] Vikepliktskilt uten navigering (på kartet og i veikortet): det blir stående til du har passert det.
+- [ ] Sving av før et skilt du ser foran deg: det skal bli borte etter ca. 100 m. Si fra hvis det blir hengende.
+- [ ] Mangler et ekte fartsskilt på kartet i tett trafikkert område med mange kryss? Noen få kan vises sent eller ikke i det hele tatt (målt: 6 av 42, mot 3 av 42 før), si fra hvor hvis det plager.
+
+## 2026-11-03 — Meldingen forsvinner når du har svart
+
+Prøvd med Google Messages på emulatoren. Stemmen gjennom hodesettet og de andre meldingsappene kan bare prøves på ekte.
+
+- [ ] Få en SMS, trykk mikrofonen, les inn et svar og trykk Send: kortet viser at det er sendt, og etterpå er meldingen borte både i Curveon og fra varslene på telefonen. Den skal ikke komme tilbake med ditt eget svar i.
+- [ ] Det samme med WhatsApp, Messenger eller Signal, det du bruker. Si fra hvis noen app oppfører seg annerledes.
+- [ ] Be noen svare deg rett etterpå: den nye meldingen skal komme fram som vanlig.
+- [ ] Svar uten dekning, slik at sendingen feiler: si fra hva som skjer med meldingen.
+- [ ] Trykk Lukk på en melding som er den eneste fra appen: det skal ikke ligge igjen et tomt kort med appens navn i varslene.
+
 ## 2026-11-01 — Været på kartet: spredt, på land og ett og ett
 
 Prøvd på X7-emulatoren og Pixel 9a-oppsettet. Hvor lett kartet går, kan bare kjennes på de ekte enhetene, og henting gjennom telefonen kan ikke prøves i emulatoren.

@@ -73,6 +73,11 @@ import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 
+/** One press of the remote moves the map by this share of its shorter side. */
+private const val REMOTE_PAN_SHARE = 0.18f
+private const val REMOTE_PAN_MS = 160L
+private const val REMOTE_PAN_RETURN_MS = 12_000L
+
 private const val ROUTE = "curveon-route"
 private const val ALT = "curveon-alternatives"
 private const val MARKERS = "curveon-markers"
@@ -224,7 +229,7 @@ fun CurveonMapView(
     /** Give way and stop signs that apply to the rider, stood beside the road before their junctions. */
     giveWaySigns: List<com.curveon.data.routing.GiveWayAlert> = emptyList(),
     /** Where the speed limit changes ahead on the route: a sign on the right of the road. */
-    speedSigns: List<com.curveon.data.routing.SpeedChange> = emptyList(),
+    speedSigns: List<com.curveon.routing.SpeedChange> = emptyList(),
     /** The weather to show (sun, cloud, rain, wind and how warm): round where a loop starts while drawing it, or from the button. */
     weatherSpots: () -> List<com.curveon.data.weather.MapWeather> = { emptyList() },
     /** The weather map button (full-screen map, not navigating, standing still): on or off, and switching it; null = no button. */
@@ -322,6 +327,11 @@ fun CurveonMapView(
         tiltControls = false
     }
     var following by remember { mutableStateOf(true) }
+    /** The map has been moved with the handlebar remote: the crosshair shows. */
+    var remotePanned by remember { mutableStateOf(false) }
+    var panPressedAt by remember { androidx.compose.runtime.mutableLongStateOf(0L) }
+    /** A long press at this point, as the finger would give it. */
+    val longPressAt = remember { mutableStateOf<((LatLng) -> Unit)?>(null) }
     /** Where the rider is on screen (px), to hint at them from the edge once they're out of view. */
     var riderScreen by remember { mutableStateOf<androidx.compose.ui.geometry.Offset?>(null) }
     /** +/- while following nudges the speed-based zoom by this many levels. */
@@ -362,7 +372,14 @@ fun CurveonMapView(
         // battery (one more copy a frame). The X7 (Android 13) has never shown it and keeps the SurfaceView.
         val options = org.maplibre.android.maps.MapLibreMapOptions.createFromAttributes(context)
             .textureMode(android.os.Build.VERSION.SDK_INT >= 34)
-        MapView(context, options).apply { onCreate(null) }
+        MapView(context, options).apply {
+            onCreate(null)
+            // Keys are for the remote (RemoteControl): on its own the view would turn grey with focus and pan by itself.
+            isFocusable = false
+            isFocusableInTouchMode = false
+            descendantFocusability = android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
+            defaultFocusHighlightEnabled = false
+        }
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -451,7 +468,7 @@ fun CurveonMapView(
                 if (poi != null) onPoiClickState.value(poi)
                 poi != null
             }
-            m.addOnMapLongClickListener { p ->
+            val pressAt: (LatLng) -> Unit = { p ->
                 val at = GeoPoint(p.latitude, p.longitude)
                 val editRoute = onEditRouteState.value
                 val line = previewRoutesState.value.firstOrNull { it.selected }?.points.orEmpty()
@@ -475,8 +492,9 @@ fun CurveonMapView(
                         onLongPressState.value(at, roadLabel(roads), mapRoad(roads), tracks)
                     }
                 }
-                true
             }
+            longPressAt.value = pressAt
+            m.addOnMapLongClickListener { p -> pressAt(p); true }
             // Editing a route: a finger on a handle or on the line drags it (the map doesn't pan);
             // anywhere else the map moves as usual.
             val slop = android.view.ViewConfiguration.get(context).scaledTouchSlop
@@ -1303,6 +1321,76 @@ fun CurveonMapView(
         }
         if (!following && !inPreview && hasGpsFix) riderScreen?.let { RiderEdgeGlow(it, dark, riderColor, Modifier.matchParentSize()) }
 
+        // Tap: north up → heading up → 3D; arriving in 3D shows two arrows beside it for the angle of the view
+        // for a few seconds (held down shows them again).
+        fun chooseOrientation(o: Orientation) {
+            orientation = o
+            tiltControls = o == Orientation.THREE_D
+            tiltPresses++
+            prefs.edit().putString(if (navigating) "orientationNav" else "orientationBrowse", orientation.name).apply()
+            // Not following: turn the map where it is; following picks it up by itself.
+            if (!following) map?.let { m ->
+                m.animateCamera(CameraUpdateFactory.newCameraPosition(
+                    CameraPosition.Builder(m.cameraPosition)
+                        .bearing(if (orientation == Orientation.NORTH_UP) 0.0 else headingDeg.toDouble())
+                        .tilt(if (orientation == Orientation.THREE_D) tilt3d else 0.0)
+                        .build()
+                ), 600)
+            }
+        }
+        fun tiltBy(delta: Double) {
+            tilt3d = (tilt3d + delta).coerceIn(TILT_MIN, TILT_MAX)
+            prefs.edit().putFloat("tilt3d", tilt3d.toFloat()).apply()
+            tiltPresses++
+            if (!following) map?.let { m -> m.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder(m.cameraPosition).tilt(tilt3d).build()), 300) }
+        }
+        // The handlebar remote: the same zoom as the buttons below, and the map moved in steps. What the
+        // crosshair is on is what a long press there would give.
+        val latestChoose by rememberUpdatedState<(Orientation) -> Unit> { chooseOrientation(it) }
+        val latestOrientation by rememberUpdatedState(orientation)
+        val latestAutoZoom by rememberUpdatedState(autoZoom)
+        val latestSketch by rememberUpdatedState(onSketch)
+        val remote = LocalRemote.current
+        DisposableEffect(remote) {
+            val actions = object : RemoteMap {
+                override fun pan(dx: Int, dy: Int) {
+                    val m = map ?: return
+                    following = false
+                    remotePanned = true
+                    panPressedAt = android.os.SystemClock.elapsedRealtime()
+                    val step = minOf(mapView.width, mapView.height) * REMOTE_PAN_SHARE
+                    m.scrollBy(-dx * step, -dy * step, REMOTE_PAN_MS)
+                }
+                override fun zoomIn() { if (following && latestAutoZoom) zoomBias = (zoomBias + 1).coerceAtMost(3.0) else map?.animateCamera(CameraUpdateFactory.zoomIn()); panPressedAt = android.os.SystemClock.elapsedRealtime() }
+                override fun zoomOut() { if (following && latestAutoZoom) zoomBias = (zoomBias - 1).coerceAtLeast(-4.0) else map?.animateCamera(CameraUpdateFactory.zoomOut()); panPressedAt = android.os.SystemClock.elapsedRealtime() }
+                override fun recenter() { following = true }
+                override fun whatsHere() {
+                    val m = map ?: return
+                    longPressAt.value?.invoke(m.projection.fromScreenLocation(android.graphics.PointF(mapView.width / 2f, mapView.height / 2f)))
+                }
+                override fun nextOrientation() = latestChoose(Orientation.entries[(latestOrientation.ordinal + 1) % Orientation.entries.size])
+                override val panned get() = !following
+                override val canPoint get() = latestSketch == null
+            }
+            remote?.map = actions
+            onDispose { if (remote?.map === actions) remote.map = null }
+        }
+        LaunchedEffect(following) { if (following) remotePanned = false }
+        // Moved aside with the remote while riding, and then left alone: back to the rider by itself,
+        // so a bump on the joystick never leaves the map somewhere else. Standing still it stays.
+        LaunchedEffect(remotePanned) {
+            while (remotePanned) {
+                kotlinx.coroutines.delay(1_000)
+                if (speedState.value >= 5f && android.os.SystemClock.elapsedRealtime() - panPressedAt > REMOTE_PAN_RETURN_MS) following = true
+            }
+        }
+        if (remotePanned && !following && !inPreview) {
+            RemoteCrosshair(Modifier.align(Alignment.Center))
+            Text(stringResource(R.string.remote_crosshair_hint), color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.Center).padding(bottom = 96.dp).clip(RoundedCornerShape(10.dp))
+                    .background(CockpitSurface.copy(alpha = 0.9f)).padding(horizontal = 10.dp, vertical = 5.dp))
+        }
+
         // Compass button: north up → heading up → 3D. Once the rider pans the map away, a second
         // button brings the camera back to them; it hides again while following. +/- are always
         // there: while following with auto-zoom they nudge the speed-based zoom, otherwise they zoom.
@@ -1315,29 +1403,6 @@ fun CurveonMapView(
             if (weatherButton) MapButton(onClick = { onWeatherMap?.invoke(!weatherMapOn) }, highlighted = weatherMapOn, tag = "map_weather_btn") {
                 Icon(Icons.Default.WbSunny, stringResource(R.string.map_weather),
                     tint = if (weatherMapOn) Color(0xFF00363D) else TextPrimary, modifier = Modifier.size(24.dp))
-            }
-            // Tap: north up → heading up → 3D; arriving in 3D shows two arrows beside it for the angle of the view
-            // for a few seconds (held down shows them again).
-            fun chooseOrientation(o: Orientation) {
-                orientation = o
-                tiltControls = o == Orientation.THREE_D
-                tiltPresses++
-                prefs.edit().putString(if (navigating) "orientationNav" else "orientationBrowse", orientation.name).apply()
-                // Not following: turn the map where it is; following picks it up by itself.
-                if (!following) map?.let { m ->
-                    m.animateCamera(CameraUpdateFactory.newCameraPosition(
-                        CameraPosition.Builder(m.cameraPosition)
-                            .bearing(if (orientation == Orientation.NORTH_UP) 0.0 else headingDeg.toDouble())
-                            .tilt(if (orientation == Orientation.THREE_D) tilt3d else 0.0)
-                            .build()
-                    ), 600)
-                }
-            }
-            fun tiltBy(delta: Double) {
-                tilt3d = (tilt3d + delta).coerceIn(TILT_MIN, TILT_MAX)
-                prefs.edit().putFloat("tilt3d", tilt3d.toFloat()).apply()
-                tiltPresses++
-                if (!following) map?.let { m -> m.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.Builder(m.cameraPosition).tilt(tilt3d).build()), 300) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (tiltControls && orientation == Orientation.THREE_D) {
@@ -2140,6 +2205,22 @@ private fun RiderArrow(orange: Boolean, ghost: Boolean = false, puck: () -> Puck
             }
             .graphicsLayer { rotationZ = puck()?.rotation ?: 0f }
     )
+}
+
+/** Where the remote is pointing while it moves the map: white in a dark edge, for the day map and the night map. */
+@Composable
+private fun RemoteCrosshair(modifier: Modifier) {
+    androidx.compose.foundation.Canvas(modifier.size(44.dp).testTag("map_remote_crosshair")) {
+        val c = center
+        val arm = size.minDimension / 2
+        val gap = arm * 0.3f
+        listOf(Color.Black.copy(alpha = 0.75f) to 5.dp.toPx(), Color.White to 2.5.dp.toPx()).forEach { (color, width) ->
+            drawLine(color, c.copy(x = c.x - arm), c.copy(x = c.x - gap), width)
+            drawLine(color, c.copy(x = c.x + gap), c.copy(x = c.x + arm), width)
+            drawLine(color, c.copy(y = c.y - arm), c.copy(y = c.y - gap), width)
+            drawLine(color, c.copy(y = c.y + gap), c.copy(y = c.y + arm), width)
+        }
+    }
 }
 
 @Composable

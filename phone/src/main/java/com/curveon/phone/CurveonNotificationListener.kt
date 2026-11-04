@@ -31,6 +31,7 @@ class CurveonNotificationListener : NotificationListenerService() {
 
     private val main = Handler(Looper.getMainLooper())
     private val active = HashMap<String, StatusBarNotification>()
+    private val replied = HashMap<String, Replied>()
     private var controller: MediaController? = null
     private var sessionManager: MediaSessionManager? = null
     private val sessionsListener = MediaSessionManager.OnActiveSessionsChangedListener { onSessionsChanged(it.orEmpty()) }
@@ -58,6 +59,7 @@ class CurveonNotificationListener : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         NavWatch.onPosted(sbn)
+        if (isEchoOfReply(sbn)) { dismiss(sbn.key); return }
         val message = runCatching { toMessage(sbn) }.onFailure { Log.w(TAG, "Skipping ${sbn.key}", it) }.getOrNull() ?: return
         synchronized(active) { active[sbn.key] = sbn }
         PhoneHub.postNotification(message)
@@ -82,17 +84,12 @@ class CurveonNotificationListener : NotificationListenerService() {
         if (sbn.isOngoing && !isCall) return null
 
         val extras = n.extras
-        @Suppress("DEPRECATION")
-        val messages = Notification.MessagingStyle.Message.getMessagesFromBundleArray(extras.getParcelableArray(Notification.EXTRA_MESSAGES))
-        val last = messages.lastOrNull()
+        val last = lastMessage(n)
         val conversation = extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()
         val sender = last?.senderPerson?.name?.toString()
             ?: extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
             ?: appLabel(sbn.packageName)
-        val text = last?.text?.toString()
-            ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
-            ?: extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-            ?: return null
+        val text = messageText(n) ?: return null
 
         // Calls get a big photo (the tablet shows it full-card), preferably the phone-book original,
         // since dialer notifications often carry only a small thumbnail.
@@ -114,6 +111,28 @@ class CurveonNotificationListener : NotificationListenerService() {
             actions = if (isCall) n.actions?.map { it.title.toString() }.orEmpty() else emptyList(),
             callOngoing = isCall && callAnswered(n)
         )
+    }
+
+    private fun lastMessage(n: Notification): Notification.MessagingStyle.Message? {
+        @Suppress("DEPRECATION")
+        return Notification.MessagingStyle.Message.getMessagesFromBundleArray(n.extras.getParcelableArray(Notification.EXTRA_MESSAGES)).lastOrNull()
+    }
+
+    private fun messageText(n: Notification): String? = lastMessage(n)?.text?.toString()
+        ?: n.extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
+        ?: n.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
+
+    /**
+     * The app posting a message again because the rider just replied to it: Google Messages does so about
+     * 1.5 s after a reply, with the reply as its last message. Anything else in the chat counts as new.
+     */
+    private fun isEchoOfReply(sbn: StatusBarNotification): Boolean {
+        val r = synchronized(active) { replied[sbn.key] } ?: return false
+        val last = lastMessage(sbn.notification)
+        val echo = System.currentTimeMillis() < r.untilMs &&
+            isReplyEcho(last != null && last.senderPerson == null, messageText(sbn.notification), r.original, r.reply)
+        if (!echo) synchronized(active) { replied.remove(sbn.key) }
+        return echo
     }
 
     /** An answered call: the notification's call type says so (Android 12+), else it counts up the call time. */
@@ -141,7 +160,21 @@ class CurveonNotificationListener : NotificationListenerService() {
         }.getOrNull()?.let { PhoneHub.encodeJpeg(it, px, if (px > AVATAR_PX) 85 else 80) }
     }
 
-    fun dismiss(key: String) = main.post { runCatching { cancelNotification(key) } }
+    fun dismiss(key: String) = main.post {
+        runCatching {
+            val summary = summaryLeftEmptyBy(key)
+            cancelNotification(key)
+            if (summary != null) cancelNotification(summary)
+        }
+    }
+
+    /** The app's group summary, if [key] is the last message under it: on its own it stays as an empty card. */
+    private fun summaryLeftEmptyBy(key: String): String? {
+        val all = activeNotifications ?: return null
+        val group = all.firstOrNull { it.key == key }?.groupKey ?: return null
+        return all.filter { it.groupKey == group && it.key != key }.singleOrNull()
+            ?.takeIf { it.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0 }?.key
+    }
 
     fun invokeAction(key: String, index: Int) {
         // The call (or its button) is gone already, e.g. answered on the headset: say so rather than do nothing.
@@ -188,10 +221,12 @@ class CurveonNotificationListener : NotificationListenerService() {
         val results = Bundle()
         action.remoteInputs.filter { it.allowFreeFormInput }.forEach { results.putCharSequence(it.resultKey, text) }
         RemoteInput.addResultsToIntent(action.remoteInputs, intent, results)
+        synchronized(active) { replied[key] = Replied(messageText(sbn.notification), text, System.currentTimeMillis() + REPLY_ECHO_MS) }
         try {
             action.actionIntent.send(this, 0, intent)
             PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.SENT, text))
         } catch (e: PendingIntent.CanceledException) {
+            synchronized(active) { replied.remove(key) }
             PhoneHub.broadcast(Message.VoiceReplyState(key, Message.VoiceState.ERROR, "Reply failed", PhoneErrorCode.REPLY_FAILED))
         }
     }
@@ -346,5 +381,15 @@ class CurveonNotificationListener : NotificationListenerService() {
         private const val CALL_PX = 512
         private const val ART_PX = 360
         private const val ICON_PX = 96
+        private const val REPLY_ECHO_MS = 30_000L
     }
+
+    private class Replied(val original: String?, val reply: String, val untilMs: Long)
+}
+
+/** Whether a message posted again after a reply only shows what was there or the reply itself ("You: …" in some apps). */
+internal fun isReplyEcho(lastIsOwn: Boolean, text: String?, original: String?, reply: String): Boolean {
+    if (lastIsOwn) return true
+    val t = text?.trim() ?: return false
+    return t == original?.trim() || t == reply.trim() || t.endsWith(": ${reply.trim()}")
 }

@@ -20,6 +20,10 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +62,7 @@ val LocalInPanel = compositionLocalOf { false }
  *
  * [header] replaces the title (e.g. the search field); [actions] sit just left of the close button.
  */
+@OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 @Composable
 fun CockpitDialog(
     title: String,
@@ -76,10 +81,16 @@ fun CockpitDialog(
 ) {
     val toast = LocalToast.current
     val inPanel = LocalInPanel.current
+    // With a remote the first thing chosen is in the page, not the close button above it (Back closes). In the
+    // panel the arrows stay inside this frame: the map's buttons are still there underneath, out of sight.
+    val remote = LocalRemote.current
+    val firstChoice = if (inPanel) rememberRemoteSheet() else androidx.compose.runtime.remember { androidx.compose.ui.focus.FocusRequester() }
+    if (!inPanel) LaunchedEffect(Unit) { if (remote?.recentlyUsed == true) { kotlinx.coroutines.delay(80); runCatching { firstChoice.requestFocus() } } }
     val frame = @Composable {
         Box(
             frameModifier.then(if (inPanel) Modifier.fillMaxSize() else Modifier.fillMaxWidth(0.94f).fillMaxHeight(0.94f)).clip(DialogShape).background(CockpitSurface)
                 .border(1.dp, CockpitBorder, DialogShape).testTag(tag)
+                .focusProperties { exit = { androidx.compose.ui.focus.FocusRequester.Cancel } }.focusGroup()
         ) {
             Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -95,14 +106,14 @@ fun CockpitDialog(
                         RoundButton(Icons.Default.Close, stringResource(R.string.close), 48.dp, CockpitSurfaceVariant, TextPrimary, onDismiss)
                     }
                 }
-                if (sideBar == null) content()
+                if (sideBar == null) Column(Modifier.weight(1f).fillMaxWidth().focusRequester(firstChoice).focusGroup(), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
                 // Narrow (a phone held upright): the page menu becomes a row of tabs on top.
                 else if (isNarrowScreen()) Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    sideBar()
+                    Box(Modifier.focusRequester(firstChoice).focusGroup()) { sideBar() }
                     Column(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
                 }
                 else Row(Modifier.fillMaxSize()) {
-                    sideBar()
+                    Box(Modifier.focusRequester(firstChoice).focusGroup()) { sideBar() }
                     Column(Modifier.weight(1f).fillMaxHeight().padding(start = 18.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
                 }
             }
@@ -130,6 +141,7 @@ fun CockpitDialog(
 fun HideSystemBars() {
     val view = LocalView.current
     val window = (view.parent as? DialogWindowProvider)?.window ?: return
+    RemoteInDialog(window)
     LaunchedEffect(window) {
         // A phone with a camera hole (the Pixel): Android otherwise puts the dialog's window below the hole but
         // keeps it the screen's full height, so its bottom (with the buttons) ends up below the screen.
@@ -275,6 +287,7 @@ fun <T> DialogTabs(
                 Row(
                     Modifier.bringIntoViewRequester(inView)
                         .clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                        .onFocusChanged { if (it.isFocused && !on) onSelect(t) } // the remote goes through the pages by moving over them
                         .clickable { onSelect(t) }.padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -301,6 +314,7 @@ fun <T> DialogTabs(
             val on = t == selected
             Row(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                    .onFocusChanged { if (it.isFocused && !on) onSelect(t) } // the remote goes through the pages by moving over them
                     .clickable { onSelect(t) }.padding(horizontal = 14.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

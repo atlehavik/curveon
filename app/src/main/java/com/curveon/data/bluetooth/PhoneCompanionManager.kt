@@ -575,6 +575,8 @@ class PhoneCompanionManager(
                 val text = phoneErrorText(msg.code, msg.text)
                 _voiceSearch.update { v -> v?.copy(state = msg.state, text = text.ifEmpty { v.text }) }
             } else {
+                // Answered: the message is done with, as with the Dismiss button. A new SMS has no message to clear.
+                if (msg.state == Message.VoiceState.SENT && !msg.key.startsWith(Message.SMS_KEY_PREFIX)) dismissNotification(msg.key)
                 if (_voiceReply.value?.notificationKey == msg.key) {
                     val text = phoneErrorText(msg.code, msg.text)
                     _voiceReply.update { v -> if (v?.notificationKey == msg.key) v.copy(state = msg.state, text = text.ifEmpty { v.text }) else v }

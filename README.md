@@ -121,6 +121,9 @@ there and along it.
   spoken directions in your language, through your helmet. Your music just dips for a moment.
 - **Ride together:** add friends, start a group and see each other on the map. Share a trip and
   everyone gets the changes at once. Everything is end-to-end encrypted.
+- **Handlebar remote:** connect a DMD, Thork, Carpe Iter, BarButtons or similar over Bluetooth and it
+  just works, gloves on: move the map, zoom, go through every menu, answer calls, and hold OK to say
+  where you want to go. Any button can be changed in Settings → Remote.
 - **Welcome tour** the first time you start, and a list of every symbol under Settings → Help.
 
 ---

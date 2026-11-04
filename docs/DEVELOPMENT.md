@@ -52,6 +52,17 @@ phone, with an optional companion app on the phone when a tablet is used.
   Norway Kartverket's place names (farms, bays, lakes, …) and addresses are mixed in.
 - **Route preview**: Fastest / Curvy / Super curvy side by side (time, km, curviness, gravel and
   ferries) before you ride; surface and avoid options adjust them in place.
+- **Handlebar remote** (`data/remote/RemoteKeys.kt`, `ui/components/RemoteControl.kt`, Settings → Remote):
+  remotes are Bluetooth keyboards, so no permission or accessibility service is needed. `DEFAULT_KEYS`
+  knows the keys of the common ones (arrows, Enter, Esc, F6/F7, +/−, and the letters used for MyRoute-app,
+  Kurviger and OsmAnd) and riders can change any of them; `remoteCommand` holds the whole behaviour and is
+  unit tested. On the map: arrows pan (crosshair, back by itself after 12 s while riding), +/− zoom, OK opens
+  the menu or asks what is at the crosshair, Back comes back, hold OK speaks a destination, hold Back swaps
+  map and dashboard. With a button chosen: arrows move, OK presses, Back leaves. What is "chosen" is
+  tracked in `RemoteWindow.chosen`, not Android's focus: outside touch mode Android focuses a button by
+  itself. Every dialog joins through `HideSystemBars`, a rail screen or card through `rememberRemoteSheet`
+  or `remoteSheet`, a dropdown through `remotePopup`. New modal UI needs one of those. Touch-only for now:
+  drawing a roundtrip area (Good weather picks one) and dragging a route.
 - **Stops**: pick a place while riding → *Add stop* (inserted where it adds least detour) or *Go here*.
 - **Editing a planned trip**: tap a stop chip to move it earlier/later, *Change place* (search or pick
   on map), *Add stop before*, or remove it. **Edit on map** (long-press the route line, or the squiggle in
@@ -72,6 +83,9 @@ phone, with an optional companion app on the phone when a tablet is used.
 - **Speed limit sign**, while navigating and while free riding: the official limit where a country
   publishes them freely (Norway: Statens vegvesen NVDB; Finland: Digiroad; the Netherlands: NDW/RWS;
   Flanders: AWV), built monthly by the curveon-data repo (`tools/speedlimits/`); OSM's maxspeed elsewhere.
+  **Signs on the map** stand where that limit changes along the route or the road ahead (`SpeedSigns`), not at the
+  real signs' positions, which only some countries publish: in Norway the two are usually a few metres apart.
+  Not navigating, `SignsAhead` keeps them until ridden past, since each look at the road ahead is a guess.
 - **Places on the map** (Settings → Display → On the map; only fuel until the rider chooses): fuel, speed cameras, viewpoints, mountain
   passes, camping, food and coffee, ferries, motorcycle shops and workshops can be kept on the map at all
   times, from the offline search index of the downloaded countries; each appears when the map is zoomed in
@@ -85,7 +99,8 @@ phone, with an optional companion app on the phone when a tablet is used.
   litres from the pump, two readings 15 s apart to drop counters; a candidate must read the same on every full tank
   and move by a similar amount in every refuelling); in Demo, give the pump 75 / 50 / 87.5 / 25 % of the tank. Above the music on the tablet; beside it, bottom right, on a phone held upright.
 - **Spoken replies**: Reply → the phone listens through the headset → the tablet shows what was
-  heard → Send.
+  heard → Send. Once sent the message clears on the phone too, as with Dismiss; if the app posts it
+  again with the reply in it (Google Messages does), the listener clears that as well.
 - **Navigation sounds and voice** (Settings → Navigation → Sound): soft tones before and at each turn
   (left or right ear by direction), a sound when off the route, or spoken turns with Android's own
   text-to-speech; played through the phone when a companion is linked. Notes in [audio.md](audio.md).

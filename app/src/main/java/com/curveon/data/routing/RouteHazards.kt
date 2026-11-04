@@ -8,6 +8,8 @@ import com.curveon.routing.Geo
 import com.curveon.routing.LatLon
 import com.curveon.routing.Route
 import com.curveon.routing.RouteCorridor
+import com.curveon.routing.SpeedChange
+import com.curveon.routing.SpeedSigns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
@@ -24,9 +26,6 @@ data class CameraAlert(val distanceMeters: Double, val maxSpeedKmh: Int?)
  * [lon], approached heading [bearingDeg].
  */
 data class GiveWayAlert(val distanceMeters: Double, val stop: Boolean, val lat: Double = 0.0, val lon: Double = 0.0, val bearingDeg: Double = 0.0)
-
-/** Where the speed limit along the route changes to [limit] (km/h): [along] metres from the start, at [lat], [lon], heading [bearingDeg]. */
-data class SpeedChange(val along: Double, val lat: Double, val lon: Double, val bearingDeg: Double, val limit: Int)
 
 /**
  * Fuel stations, speed cameras and give way signs for the active route, and cameras ahead when free
@@ -106,44 +105,12 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
         speedChanges.filter { it.along > along - SPEED_SIGN_PAST_M && it.along - along < withinM }
 
     /** Not navigating: where the limit changes along [probe], the road ahead of the rider ([Navigator.probeRoadAhead]), for signs on the map. */
-    suspend fun speedChangesFreeRide(probe: Route): List<SpeedChange> = withContext(Dispatchers.Default) { speedChangesOn(probe) }
+    suspend fun speedChangesFreeRide(probe: Route): List<SpeedChange> = withContext(Dispatchers.Default) {
+        runCatching { SpeedSigns.onRoadAhead(probe) { lat, lon, heading -> speedLimits.at(lat, lon, heading) } }.getOrDefault(emptyList())
+    }
 
-    /**
-     * The limit (the country's official one where there is one, else OpenStreetMap's) sampled along the
-     * route; a change counts once it holds for two samples in a row, so a junction's other road or a
-     * missing stretch doesn't make signs. No sign at the start: it is the limit the rider begins with.
-     */
-    private fun speedChangesOn(route: Route): List<SpeedChange> = runCatching {
-        val pts = route.points
-        val out = ArrayList<SpeedChange>()
-        var stable: Int? = null
-        var candidate: Int? = null
-        var candidateCount = 0
-        var candidateAt = 0
-        var nextSample = 0.0
-        for (i in 0 until pts.size - 1) {
-            val pt = pts[i]
-            if (pt.distanceFromStart < nextSample) continue
-            nextSample = pt.distanceFromStart + SPEED_SAMPLE_M
-            val next = pts[i + 1]
-            val bearing = Geo.bearing(pt.lat, pt.lon, next.lat, next.lon)
-            val limit = speedLimits.at(pt.lat, pt.lon, bearing) ?: pt.maxSpeedKmh ?: continue
-            when {
-                stable == null -> stable = limit
-                limit == stable -> candidate = null
-                limit == candidate -> {
-                    if (++candidateCount >= 2) {
-                        val at = pts[candidateAt]
-                        val after = pts.getOrElse(candidateAt + 1) { at }
-                        out += SpeedChange(at.distanceFromStart, at.lat, at.lon, Geo.bearing(at.lat, at.lon, after.lat, after.lon), limit)
-                        stable = limit; candidate = null
-                    }
-                }
-                else -> { candidate = limit; candidateCount = 1; candidateAt = i }
-            }
-        }
-        out
-    }.getOrDefault(emptyList())
+    private fun speedChangesOn(route: Route): List<SpeedChange> =
+        runCatching { SpeedSigns.along(route) { lat, lon, heading -> speedLimits.at(lat, lon, heading) } }.getOrDefault(emptyList())
 
     private fun giveWaysOn(route: Route): List<GiveWayOnRoute> = runCatching {
         GiveWay.alongRoute(route, speedLimits.giveWaySigns(route.points.map { LatLon(it.lat, it.lon) }), speedLimits::priorityRoadNear)
@@ -175,7 +142,6 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
         /** A sign stands a little before the junction: keep showing it until the rider is there. */
         private const val GIVE_WAY_PAST_M = 10.0
         private const val SPEED_SIGN_PAST_M = 10.0
-        private const val SPEED_SAMPLE_M = 25.0
         /** Many bikes have 250–350 km range; warn when the next pump is more than 120 km away. */
         const val LONG_GAP_M = 120_000.0
     }
