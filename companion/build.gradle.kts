@@ -12,8 +12,8 @@ android {
     applicationId = "com.curveon.companion"
     minSdk = 29
     targetSdk = 36
-    versionCode = 9
-    versionName = "1.2.7"
+    versionCode = 10
+    versionName = "1.2.9"
   }
 
   signingConfigs {
