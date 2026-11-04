@@ -89,7 +89,7 @@ object GiveWay {
                         1 -> side < 0
                         2 -> side > 0
                         else -> true
-                    }
+                    } && (s.stop || priorityRoad == null || !staysOnPriorityRoad(route, along, kx, priorityRoad))
                 }
                 // A stop sign is never argued away: a stop too many costs a glance, one too few can kill.
                 if (applies && (s.stop || priorityRoad == null || !offPriorityRoad(route, along, dx / dLen, dy / dLen, kx, priorityRoad)))
@@ -115,6 +115,16 @@ object GiveWay {
             val from = pointAt(route, maxOf(0.0, g.along - 15)) ?: at
             g.copy(lat = at.lat, lon = at.lon, bearingDeg = if (from == at) 0.0 else Geo.bearing(from.lat, from.lon, at.lat, at.lon))
         }
+    }
+
+    /**
+     * Not navigating: as [alongRoute], for [probe], the road ahead ([RoadAhead]), which is a guess past where it leaves the
+     * road going straight on: none further than the junction there, where the road may simply end. Nor one the rider is
+     * in or at already (a look from inside a roundabout), which an earlier look has told them of.
+     */
+    fun onRoadAhead(probe: Route, signs: List<GiveWaySign>, priorityRoad: ((Double, Double) -> RoadPiece?)? = null): List<GiveWayOnRoute> {
+        val leaves = SpeedSigns.leavesRoadAt(probe) ?: Double.MAX_VALUE
+        return alongRoute(probe, signs, priorityRoad).filter { it.along >= ALREADY_THERE_M && it.along <= leaves + AT_JUNCTION_M }
     }
 
     /**
@@ -174,6 +184,16 @@ object GiveWay {
         val b = pointAt(route, along) ?: return false
         return acrossDeg((b.lon - a.lon) * kx, (b.lat - a.lat) * KY, (piece.lon2 - piece.lon1) * kx, (piece.lat2 - piece.lat1) * KY) < MERGE_DEG
     }
+
+    /**
+     * Whether the route is on a priority road both before and after [along]: then a sign for traffic out of a side road
+     * there is not the rider's, even where the road bends so that the route seems to come from the side.
+     */
+    private fun staysOnPriorityRoad(route: Route, along: Double, kx: Double, priorityRoad: (Double, Double) -> RoadPiece?): Boolean =
+        listOf(along - SIDE_BACK_M, along + STAYS_M).all { d ->
+            val p = pointAt(route, minOf(d, route.distanceMeters)) ?: return@all false
+            priorityRoad(p.lat, p.lon)?.let { offset(it, p, kx, line = false) < ON_PRIORITY_M } == true
+        }
 
     /**
      * Whether the route reaches a sign [along] metres on just after turning off a priority road that
@@ -264,6 +284,10 @@ object GiveWay {
     private const val MERGE_DEG = 35.0
     /** How far past the junction a priority road is looked for to see that it goes on. */
     private const val GOES_ON_M = 30.0
+    /** Not navigating: this close, the rider is at it already. */
+    private const val ALREADY_THERE_M = 20.0
+    /** A sign is at the junction where the road ahead turns when it is this close to it. */
+    private const val AT_JUNCTION_M = 15.0
     /** A sign this close to where the route goes round a roundabout belongs to that roundabout. */
     private const val ROUNDABOUT_M = 60.0
 }

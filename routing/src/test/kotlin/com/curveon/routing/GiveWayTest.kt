@@ -193,4 +193,53 @@ class GiveWayTest {
     fun aPriorityRoadAndItsOwnSignAreOneJunction() {
         assertEquals(1, GiveWay.alongRoute(route(east, junction, north), listOf(sign(202, 1)), priority).size)
     }
+
+    /** A road going north, bending hard east at 300 m, as metres from a start. */
+    private fun bendingRoad(): Route {
+        val kx = 111_320.0 * kotlin.math.cos(Math.toRadians(60.0))
+        val pts = listOf(0.0 to 0.0, 0.0 to 300.0, 200.0 to 300.0).let { c ->
+            var along = 0.0
+            c.mapIndexed { i, (x, y) ->
+                if (i > 0) along += kotlin.math.hypot(x - c[i - 1].first, y - c[i - 1].second)
+                RoutePoint(60.0 + y / 110_574.0, 5.0 + x / kx, 0.0, along, 0.0, null, null, false, false)
+            }
+        }
+        return Route(pts, emptyList(), pts.last().distanceFromStart, 0.0, 0.0, 0, 0.0, 0)
+    }
+
+    private fun bendSign(sign: Int): GiveWaySign {
+        // On the bend, for traffic out of a side road: its road's direction is east, and the rider comes from the south of it, on its right.
+        val lat = 60.0 + 300.0 / 110_574.0
+        return GiveWaySign(lat, 5.0, lat, 5.0 + 10.0 / (111_320.0 * kotlin.math.cos(Math.toRadians(60.0))), sign * 10 + 1)
+    }
+
+    private val wholeRoadIsPriority: (Double, Double) -> RoadPiece? = { lat, lon ->
+        val corner = 60.0 + 300.0 / 110_574.0
+        if (lat < corner - 1e-6) RoadPiece(60.0, 5.0, corner, 5.0) else RoadPiece(corner, 5.0, corner, lon + 0.001)
+    }
+
+    @Test
+    fun aSideRoadsSignIsNotForARiderStayingOnThePriorityRoadThroughABend() {
+        assertEquals(emptyList<GiveWayOnRoute>(), GiveWay.alongRoute(bendingRoad(), listOf(bendSign(202)), wholeRoadIsPriority))
+    }
+
+    @Test
+    fun theSameSignIsForARiderComingFromAnOrdinaryRoad() {
+        assertEquals(1, GiveWay.alongRoute(bendingRoad(), listOf(bendSign(202))) { _, _ -> null }.size)
+    }
+
+    @Test
+    fun aStopSignOutOfASideRoadIsNeverArguedAwayOnAPriorityRoad() {
+        assertEquals(1, GiveWay.alongRoute(bendingRoad(), listOf(bendSign(204)), wholeRoadIsPriority).size)
+    }
+
+    @Test
+    fun onTheRoadAheadNoneThatTheRiderIsAtAlreadyNorPastWhereItTurnsOff() {
+        val pts = listOf(0.0, 100.0, 400.0, 800.0).map { m -> RoutePoint(60.0, 5.0 + m / (111_320.0 * kotlin.math.cos(Math.toRadians(60.0))), 0.0, m, 0.0, null, null, false, false) }
+        val sign = pts.last().let { GiveWaySign(60.0, 5.0, 60.0, 5.0, 0) }
+        val turnOff = Maneuver(ManeuverType.LEFT, 2, 400.0)
+        val rings = listOf(Maneuver(ManeuverType.ROUNDABOUT, 0, 5.0, exitNumber = 1), Maneuver(ManeuverType.ROUNDABOUT, 1, 100.0, exitNumber = 1), turnOff, Maneuver(ManeuverType.ROUNDABOUT, 3, 700.0, exitNumber = 1))
+        val found = GiveWay.onRoadAhead(Route(pts, rings, 800.0, 0.0, 0.0, 0, 0.0, 0), listOf(sign))
+        assertEquals(listOf(100), found.map { it.along.toInt() })
+    }
 }

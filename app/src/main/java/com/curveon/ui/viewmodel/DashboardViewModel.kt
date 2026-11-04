@@ -1219,7 +1219,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Not navigating: the junction just ahead where the rider gives way, as last found ([freeGiveWay] keeps its distance current). */
     private val freeGiveWayAt = MutableStateFlow<com.curveon.data.routing.GiveWayAlert?>(null)
     /** Not navigating: the junctions just ahead where the rider gives way, kept from one look at the road to the next. */
-    private val freeGiveWays = com.curveon.routing.SignsAhead<com.curveon.data.routing.GiveWayAlert>({ it.lat }, { it.lon }, { it.bearingDeg }) { a, b ->
+    private val freeGiveWays = com.curveon.routing.SignsAhead<com.curveon.data.routing.GiveWayAlert>({ it.lat }, { it.lon }, { it.bearingDeg }, FREE_GIVE_WAY_AWAY_M) { a, b ->
         a.stop == b.stop && Geo.distance(a.lat, a.lon, b.lat, b.lon) < SAME_GIVE_WAY_M
     }
     /** Not navigating: a junction just ahead where the rider gives way, for the road card. */
@@ -1394,27 +1394,33 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 delay(60_000)
             }
         }
-        // Free riding: signs where the limit changes on the road ahead, as when navigating, and the limit where the rider
-        // is, which changes as they pass one. The road is read about every 150 m, and again after a turn.
+        // Free riding: signs where the limit changes on the road ahead, as when navigating, the limit where the rider
+        // is, which changes as they pass one, and the junctions where they give way. The road is read about every 150 m,
+        // and again after a turn.
         viewModelScope.launch {
             while (true) {
                 delay(1_000)
                 untilAwake()
                 val t = _telemetry.value
-                if (navigator.state.value.isNavigating || !t.hasGpsFix) continue
+                if (navigator.state.value.isNavigating || !t.hasGpsFix) { freeGiveWayAt.value = null; freeGiveWays.clear(); continue }
                 val at = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
                 val heading = t.headingDeg.toDouble()
                 val from = freeSignsFrom
                 val now = android.os.SystemClock.elapsedRealtime()
                 if (t.speedKmh >= 15f && now - freeSignsAt >= FREE_SIGNS_LOOK_MS &&
                     (from == null || Geo.distance(from, at) > FREE_SIGNS_EVERY_M || Math.abs(Geo.angleDiff(freeSignsHeading, heading)) > FREE_SIGNS_TURN_DEG)) {
-                    val road = navigator.probeRoadAhead(at, heading)?.let { hazards.limitsFreeRide(it, _speedSignsSideRoads.value) }
+                    val probe = navigator.probeRoadAhead(at, heading)
+                    val road = probe?.let { hazards.limitsFreeRide(it, _speedSignsSideRoads.value) }
                     freeSigns.look(road, at)
+                    probe?.let { freeGiveWays.add(hazards.giveWaysFreeRide(it), at) }
                     freeSignsAt = now
                     // A look that found no road (a bend, just past a roundabout) is tried again soon, not 150 m on: a sign could be missed.
                     if (road != null) { freeSignsFrom = at; freeSignsHeading = heading }
                 } else if (t.speedKmh < 15f && from != null && Geo.distance(from, at) > FREE_SIGNS_EVERY_M) freeSigns.forgetLimit()
-                _mapSpeedSigns.value = freeSigns.ride(LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude))
+                val here = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
+                _mapSpeedSigns.value = freeSigns.ride(here)
+                freeGiveWayAt.value = freeGiveWays.ahead(here).map { it to Geo.distance(here.lat, here.lon, it.lat, it.lon) }
+                    .filter { it.second < FREE_GIVE_WAY_M }.minByOrNull { it.second }?.first
                 freeSigns.limit?.let { limit -> _telemetry.update { it.copy(speedLimitKmh = limit) } }
             }
         }
@@ -1447,19 +1453,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                     if (freeSigns.limit == null && !freeSigns.signSoon(limit, here)) _telemetry.update { it.copy(speedLimitKmh = limit) }
                 }
                 _cameraAlert.value = if (t.speedKmh < 15f) null else hazards.cameraAheadFreeRide(here, t.headingDeg.toDouble())
-            }
-        }
-        // Not navigating: a junction just ahead on the road the rider is on where they give way.
-        viewModelScope.launch {
-            while (true) {
-                delay(2_000)
-                untilAwake()
-                val t = _telemetry.value
-                if (navigator.state.value.isNavigating || !t.hasGpsFix) { freeGiveWayAt.value = null; freeGiveWays.clear(); continue }
-                if (t.speedKmh < 10f) continue // waiting at the junction (or heading unknown): keep it
-                val here = LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude)
-                navigator.probeAhead(here, t.headingDeg.toDouble())?.let { hazards.giveWayFreeRide(it) }?.let { freeGiveWays.add(listOf(it), here) }
-                freeGiveWayAt.value = freeGiveWays.ahead(here).minByOrNull { Geo.distance(here.lat, here.lon, it.lat, it.lon) }
             }
         }
         // New route: load fuel, cameras and give way signs along it; forget road names of the old one.
@@ -2780,6 +2773,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         /** How far along the route give way signs stand on the map. */
         private const val MAP_GIVE_WAY_M = 1_000.0
         private const val MAP_SPEED_SIGN_M = 1_000.0
+        /** Not navigating: a junction where the rider gives way shows when this close. */
+        private const val FREE_GIVE_WAY_M = 120.0
+        /** And goes when the rider is this much further from it than they have been: they took another road, and its distance must not count up. */
+        private const val FREE_GIVE_WAY_AWAY_M = 40.0
         /** Not navigating: the road ahead is read again after this far, or after turning this much. */
         private const val FREE_SIGNS_EVERY_M = 150.0
         private const val FREE_SIGNS_TURN_DEG = 30.0

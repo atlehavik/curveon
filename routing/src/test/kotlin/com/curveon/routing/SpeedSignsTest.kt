@@ -106,6 +106,26 @@ class SpeedSignsTest {
     }
 
     @Test
+    fun aSlightTurnOntoALesserRoadLeavesTheRoadAhead() {
+        fun road(after: String): Route {
+            val pts = listOf(0.0 to "trunk", 300.0 to "trunk", 900.0 to after).map { (m, h) -> RoutePoint(60.0, lonAt(m), 0.0, m, 0.0, h, null, false, false) }
+            return Route(pts, listOf(Maneuver(ManeuverType.SLIGHT_RIGHT, 1, 300.0)), 900.0, 0.0, 0.0, 0, 0.0, 0)
+        }
+        assertEquals(300.0, SpeedSigns.leavesRoadAt(road("residential"))!!, 0.1)
+        assertEquals(300.0, SpeedSigns.leavesRoadAt(road("trunk_link"))!!, 0.1)
+        assertEquals(null, SpeedSigns.leavesRoadAt(road("trunk")))
+        assertEquals(null, SpeedSigns.leavesRoadAt(road("motorway")))
+    }
+
+    @Test
+    fun aRoadAheadThatTurnsOffAtOnceIsNotSureOfItsStart() {
+        val soon = Maneuver(ManeuverType.LEFT, 1, 30.0)
+        assertEquals(false, SpeedSigns.onRoadAhead(east(0.0, 30.0, 900.0, maneuvers = listOf(soon)), sideRoads = false, limit(600.0, 80, 50)).startSure)
+        val later = Maneuver(ManeuverType.LEFT, 1, 300.0)
+        assertEquals(true, SpeedSigns.onRoadAhead(east(0.0, 300.0, 900.0, maneuvers = listOf(later)), sideRoads = false, limit(600.0, 80, 50)).startSure)
+    }
+
+    @Test
     fun onTheRoadAheadASlightBendIsStillStraightOn() {
         for (type in listOf(ManeuverType.SLIGHT_LEFT, ManeuverType.KEEP_RIGHT)) {
             val bend = Maneuver(type, 1, 300.0)

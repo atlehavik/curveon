@@ -6,6 +6,16 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-05 — Fartsskilt ved tunnel og vikeplikt uten navigering
+
+Målt med simulert kjøring på ekte veidata og NVDB på åtte turer, og avspilt forbi Raunhildetunnelen på emulator (med GPS også inne i tunnelen). Ekte kjøring med GPS-bortfall i tunnelen kan bare prøves på ekte. Uten navigering.
+
+- [ ] Kjør Rubbestadneset mot Bremnes: 60-skiltet ved Raunhildetunnelen vises i god tid, og tallet oppe til høyre bytter fra 40 til 60 ved skiltet. Si fra hvor det byttet hvis det var langt unna.
+- [ ] Står det et 50-skilt like ved 60-skiltet? Det ser ut til å gjelde en sidevei og kom i avspillingen. Si fra hvis det plager deg, så fjerner jeg det.
+- [ ] Forbi kryss der sideveien har vikeplikt mot veien du kjører på: det skal ikke komme vikepliktvarsel. Si fra hvor hvis det kommer.
+- [ ] Der du selv har vikeplikt, også i rundkjøringer: varselet kommer. Si fra hvis et mangler, det er viktigst av alt.
+- [ ] Når du har passert et vikepliktskilt: meterne teller ikke oppover, varselet forsvinner med en gang.
+
 ## 2026-11-04 — Del GPX-grupper og spor, og velg annet navn
 
 Overføringen er prøvd gjennom det ekte relayet, og skjermene på emulator. Mellom to ekte enheter, og med telefonen som tunnel for nettbrettet, kan det bare prøves på ekte. Dere må være i samme gruppe.

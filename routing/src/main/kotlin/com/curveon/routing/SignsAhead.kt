@@ -12,6 +12,8 @@ class SignsAhead<T>(
     private val lonOf: (T) -> Double,
     /** Which way the road comes to the sign. */
     private val bearingOf: (T) -> Double,
+    /** This much further away than the rider has been: they have left that road. */
+    private val awayM: Double = AWAY_M,
     /** Whether two are the same sign, seen on two looks. */
     private val same: (T, T) -> Boolean
 ) {
@@ -42,9 +44,11 @@ class SignsAhead<T>(
             val way = abs(Geo.angleDiff(Geo.bearing(here.lat, here.lon, latOf(s.sign), lonOf(s.sign)), bearingOf(s.sign)))
             // Also on the way from it: in a roundabout, the way the road goes at the sign says little.
             val behind = d > PAST_M && d > s.closest + PAST_M && way > BEHIND_DEG
+            // Been at it and on the way from it: in a roundabout or round a bend, it needn't lie behind by the road's direction.
+            val left = s.closest <= REACHED_M && d > s.closest + LEFT_M
             val along = going?.let { abs(Geo.angleDiff(it, bearingOf(s.sign))) <= ALONG_DEG } == true
             if (!s.passed && s.closest <= REACHED_M && way > ABREAST_DEG && along) { s.passed = true; onPassed(s.sign) }
-            behind || d > s.closest + AWAY_M
+            behind || left || d > s.closest + awayM
         }
         return seen.map { it.sign }
     }
@@ -58,12 +62,13 @@ class SignsAhead<T>(
         const val PAST_M = 10.0
         /** Further from the way the road comes to the sign than this, it is behind the rider. */
         const val BEHIND_DEG = 100.0
-        /** This much further away than the rider has been: they have left that road. */
         const val AWAY_M = 100.0
         /** The rider has been this close to a sign: they rode by it (GPS error plus a wide road), not past the road it stands on. */
         const val REACHED_M = 30.0
         /** Further from the way the road comes to the sign than this, the rider is level with it or past it. */
         const val ABREAST_DEG = 90.0
+        /** This much further away than the rider has been, having been at the sign. */
+        const val LEFT_M = 15.0
         /** The rider going this close to the way the sign's road goes is on that road. */
         const val ALONG_DEG = 60.0
         /** This far between two places says which way the rider is going. */
@@ -92,6 +97,7 @@ class FreeRideSigns {
     fun look(road: RouteLimits?, here: LatLon) {
         if (road != null) { signs.add(road.changes, here); sideRoadSigns.add(listOfNotNull(road.sideRoad), here) }
         ride(here)
+        if (road?.startSure == false && limit != null) return
         val start = road?.startHere
         // A look reads a limit that begins just ahead as the one it starts with: wait for the sign.
         if (start == null || !signSoon(start, here)) limit = start

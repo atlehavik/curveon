@@ -80,6 +80,26 @@ class SignsAheadTest {
     }
 
     @Test
+    fun aSignGoesOnceRiddenByAlsoWhereTheRoadBendsAway() {
+        val s = signs()
+        // Its road's direction says little (a roundabout, a bend): it is still ahead by that, but the rider has been at it.
+        val sign = sign(300.0, bearing = 0.0)
+        s.add(listOf(sign), at(0.0))
+        assertEquals(1, s.ahead(at(295.0)).size)
+        assertEquals(1, s.ahead(at(305.0)).size)
+        assertEquals(0, s.ahead(at(325.0)).size)
+    }
+
+    @Test
+    fun aGiveWayGoesSoonerOnceRiddenAwayFrom() {
+        val s = SignsAhead<SpeedChange>({ it.lat }, { it.lon }, { it.bearingDeg }, 40.0) { a, b -> a.along == b.along }
+        s.add(listOf(sign(300.0)), at(0.0))
+        assertEquals(1, s.ahead(at(100.0)).size)
+        assertEquals(1, s.ahead(at(70.0)).size)
+        assertEquals(0, s.ahead(at(50.0)).size)
+    }
+
+    @Test
     fun theLimitChangesAsTheRiderPassesTheSign() {
         val free = FreeRideSigns()
         free.look(RouteLimits(60, listOf(sign(300.0, 80))), at(0.0))
@@ -146,6 +166,14 @@ class SignsAheadTest {
         assertEquals(listOf(50), free.ride(at(100.0)).map { it.limit })
         for (m in 100..500 step 20) free.ride(at(m.toDouble()))
         assertEquals(60, free.limit)
+    }
+
+    @Test
+    fun aLookThatTurnsOffAtOnceDoesNotChangeTheLimit() {
+        val free = FreeRideSigns()
+        free.look(RouteLimits(40, emptyList()), at(0.0))
+        free.look(RouteLimits(50, emptyList(), startSure = false), at(150.0))
+        assertEquals(40, free.limit)
     }
 
     @Test

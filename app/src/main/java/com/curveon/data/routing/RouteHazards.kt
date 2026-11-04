@@ -95,12 +95,11 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
     fun giveWaysAhead(along: Double, withinM: Double): List<GiveWayAlert> =
         giveWays.filter { it.along > along - GIVE_WAY_PAST_M && it.along - along < withinM }.map { it.alert(along) }
 
-    /**
-     * Not navigating: the first junction where the rider gives way along [probe] (the next stretch
-     * of the road they are on, starting where they are), if it is close.
-     */
-    suspend fun giveWayFreeRide(probe: Route): GiveWayAlert? = withContext(Dispatchers.Default) {
-        giveWaysOn(probe).firstOrNull { it.along < GIVE_WAY_FREE_M }?.alert(0.0)
+    /** Not navigating: where the rider gives way along [probe], the road ahead of them ([Navigator.probeRoadAhead]). */
+    suspend fun giveWaysFreeRide(probe: Route): List<GiveWayAlert> = withContext(Dispatchers.Default) {
+        runCatching {
+            GiveWay.onRoadAhead(probe, speedLimits.giveWaySigns(probe.points.map { LatLon(it.lat, it.lon) }), speedLimits::priorityRoadNear).map { it.alert(0.0) }
+        }.getOrDefault(emptyList())
     }
 
     /** Where the speed limits changes along the route in the next [withinM] metres, for signs on the map. */
@@ -141,7 +140,6 @@ class RouteHazards(private val search: PlaceSearch, private val speedLimits: Spe
         private const val CAMERA_WARN_M = 600.0
         private const val GIVE_WAY_WARN_M = 200.0
         /** Not navigating, only what is close: further on, where the rider goes is a guess. */
-        private const val GIVE_WAY_FREE_M = 120.0
         /** A sign stands a little before the junction: keep showing it until the rider is there. */
         private const val GIVE_WAY_PAST_M = 10.0
         private const val SPEED_SIGN_PAST_M = 10.0

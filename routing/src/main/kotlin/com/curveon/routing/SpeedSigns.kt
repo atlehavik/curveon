@@ -8,12 +8,14 @@ data class SpeedChange(val along: Double, val lat: Double, val lon: Double, val 
 /**
  * The limit along a route, as its signs show it: what it begins with, where a sign changes it, and the stretches where
  * none is known. [sideRoad]: not navigating, the sign of a road the rider would have to turn onto, which says nothing of their own road.
+ * [startSure] false: not navigating, the road ahead turns off so soon that [start] may be read from another road than the rider's.
  */
 data class RouteLimits(
     val start: Int?,
     val changes: List<SpeedChange>,
     val unknown: List<ClosedRange<Double>> = emptyList(),
-    val sideRoad: SpeedChange? = null
+    val sideRoad: SpeedChange? = null,
+    val startSure: Boolean = true
 ) {
     /** The limit [along] metres from the start: it changes as the rider passes a sign. Null where none is known. */
     fun at(along: Double): Int? =
@@ -50,9 +52,14 @@ object SpeedSigns {
         ManeuverType.U_TURN, ManeuverType.ROUNDABOUT
     )
 
+    /** Turning off this soon, the road ahead says little of the limit where the rider is. */
+    private const val START_SURE_M = 75.0
     /** A roundabout's way out this close to the way in is the road going straight on. */
     private const val STRAIGHT_THROUGH_DEG = 45.0
     private const val WAY_IN_M = 25.0
+
+    private val SLIGHT = setOf(ManeuverType.SLIGHT_LEFT, ManeuverType.SLIGHT_RIGHT, ManeuverType.KEEP_LEFT, ManeuverType.KEEP_RIGHT)
+    private val ROAD_CLASSES = listOf("motorway", "trunk", "primary", "secondary", "tertiary", "unclassified", "residential", "living_street", "service", "track")
 
     /** Where the rider leaves the road that goes straight on. A slight bend or keeping left or right is still straight on. */
     private val LEAVES_ROAD = setOf(
@@ -140,10 +147,9 @@ object SpeedSigns {
      */
     fun onRoadAhead(probe: Route, sideRoads: Boolean, limitAt: (Double, Double, Double) -> Int?): RouteLimits {
         val limits = limits(probe, limitAt)
-        val leaves = probe.maneuvers.firstOrNull { it.type in LEAVES_ROAD || it.type == ManeuverType.ROUNDABOUT && outToOneSide(probe, it.distanceFromStart) }
-            ?.distanceFromStart ?: return limits
+        val leaves = leavesRoadAt(probe) ?: return limits
         val side = limits.changes.firstOrNull { it.along > leaves }?.takeIf { sideRoads && it.along < leaves + SIDE_ROAD_M }
-        return limits.copy(changes = limits.changes.filter { it.along <= leaves }, sideRoad = side)
+        return limits.copy(changes = limits.changes.filter { it.along <= leaves }, sideRoad = side, startSure = leaves >= START_SURE_M)
     }
 
     /**
@@ -170,6 +176,24 @@ object SpeedSigns {
         val len = b.distanceFromStart - a.distanceFromStart
         val t = if (len > 0) ((d - a.distanceFromStart) / len).coerceIn(0.0, 1.0) else 0.0
         return LatLon(a.lat + (b.lat - a.lat) * t, a.lon + (b.lon - a.lon) * t)
+    }
+
+    /** Where [probe] leaves the road that goes straight on, in metres from its start; null when it never does. */
+    fun leavesRoadAt(probe: Route): Double? =
+        probe.maneuvers.firstOrNull { it.type in LEAVES_ROAD || it.type == ManeuverType.ROUNDABOUT && outToOneSide(probe, it.distanceFromStart) || slipsOff(probe, it) }?.distanceFromStart
+
+    /** A slight turn is the road bending, unless it goes onto a lesser road: then it is a slip road off this one. */
+    private fun slipsOff(route: Route, m: Maneuver): Boolean {
+        if (m.type !in SLIGHT) return false
+        val before = route.points.getOrNull(m.pointIndex)?.highway ?: return false
+        val after = route.points.asSequence().drop(m.pointIndex + 1).mapNotNull { it.highway }.firstOrNull() ?: return false
+        return rank(after) > rank(before)
+    }
+
+    /** Bigger roads first; a road's own slip road counts as a lesser road. */
+    private fun rank(highway: String): Int {
+        val i = ROAD_CLASSES.indexOf(highway.removeSuffix("_link"))
+        return if (i < 0) ROAD_CLASSES.size else i * 2 + if (highway.endsWith("_link")) 1 else 0
     }
 
     /** The place between [from] (the old limit) and [to] (already [limit]) where the limit becomes [limit]. */

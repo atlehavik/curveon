@@ -3,47 +3,58 @@
     "version": "1.2.10",
     "en": [
       "You can now share a whole GPX group with your riding group! Open the menu on the group and choose Share with the group: everyone gets it among their own GPX tracks with all its tracks, colours and settings, just as you have it. A single GPX track can now be shared as a GPX track too, not only as a trip.",
-      "No more mix-ups when a name is already in use: if someone shares a trip, a GPX track or a GPX group and you already have one with that name, you are told so and can save the new one under another name. Nothing of yours is overwritten."
+      "No more mix-ups when a name is already in use: if someone shares a trip, a GPX track or a GPX group and you already have one with that name, you are told so and can save the new one under another name. Nothing of yours is overwritten.",
+      "Riding without navigation is much surer of the road ahead. Speed signs now come also where the road bends, as at a tunnel, and the limit changes just as you pass them. Give way warnings are for you only, not for a side road coming into your road, and the metres stop counting as soon as you have passed the sign."
     ],
     "nb": [
       "Nå kan du dele en hel GPX-gruppe med turgruppen din! Åpne menyen på gruppen og velg Del med gruppa: alle får den blant sine egne GPX-spor med alle sporene, fargene og innstillingene, akkurat slik du har den. Et enkelt GPX-spor kan nå også deles som GPX-spor, ikke bare som tur.",
-      "Slutt på forvirring når et navn allerede er i bruk: deler noen en tur, et GPX-spor eller en GPX-gruppe og du allerede har en med samme navn, får du beskjed og kan lagre den nye under et annet navn. Ingenting av ditt blir overskrevet."
+      "Slutt på forvirring når et navn allerede er i bruk: deler noen en tur, et GPX-spor eller en GPX-gruppe og du allerede har en med samme navn, får du beskjed og kan lagre den nye under et annet navn. Ingenting av ditt blir overskrevet.",
+      "Uten navigering er appen mye sikrere på veien foran deg. Fartsskilt kommer nå også der veien svinger, som ved en tunnel, og fartsgrensen bytter idet du passerer dem. Vikepliktvarsler gjelder bare deg, ikke en sidevei som kommer inn på veien din, og meterne slutter å telle så snart du har passert skiltet."
     ],
     "sv": [
       "Nu kan du dela en hel GPX-grupp med din turgrupp! Öppna menyn på gruppen och välj Dela med gruppen: alla får den bland sina egna GPX-spår med alla spår, färger och inställningar, precis som du har den. Ett enskilt GPX-spår kan nu också delas som GPX-spår, inte bara som tur.",
-      "Slut på förvirring när ett namn redan används: delar någon en tur, ett GPX-spår eller en GPX-grupp och du redan har en med samma namn, får du veta det och kan spara den nya under ett annat namn. Inget av ditt skrivs över."
+      "Slut på förvirring när ett namn redan används: delar någon en tur, ett GPX-spår eller en GPX-grupp och du redan har en med samma namn, får du veta det och kan spara den nya under ett annat namn. Inget av ditt skrivs över.",
+      "Utan navigering är appen mycket säkrare på vägen framför dig. Hastighetsskyltar kommer nu även där vägen svänger, som vid en tunnel, och gränsen byts när du passerar dem. Väjningsvarningar gäller bara dig, inte en sidoväg som kommer in på din väg, och metrarna slutar räkna så snart du har passerat skylten."
     ],
     "da": [
       "Nu kan du dele en hel GPX-gruppe med din turgruppe! Åbn menuen på gruppen og vælg Del med gruppen: alle får den blandt deres egne GPX-spor med alle spor, farver og indstillinger, præcis som du har den. Et enkelt GPX-spor kan nu også deles som GPX-spor, ikke kun som tur.",
-      "Slut med forvirring, når et navn allerede er i brug: deler nogen en tur, et GPX-spor eller en GPX-gruppe, og du allerede har en med samme navn, får du besked og kan gemme den nye under et andet navn. Intet af dit bliver overskrevet."
+      "Slut med forvirring, når et navn allerede er i brug: deler nogen en tur, et GPX-spor eller en GPX-gruppe, og du allerede har en med samme navn, får du besked og kan gemme den nye under et andet navn. Intet af dit bliver overskrevet.",
+      "Uden navigation er appen meget sikrere på vejen foran dig. Fartskilte kommer nu også, hvor vejen drejer, som ved en tunnel, og grænsen skifter, når du passerer dem. Vigepligtsvarsler gælder kun dig, ikke en sidevej, der kommer ind på din vej, og meterne stopper med at tælle, så snart du har passeret skiltet."
     ],
     "fi": [
       "Nyt voit jakaa kokonaisen GPX-ryhmän ajoryhmällesi! Avaa ryhmän valikko ja valitse Jaa ryhmälle: kaikki saavat sen omien GPX-reittiensä joukkoon kaikkine reitteineen, väreineen ja asetuksineen, juuri sellaisena kuin sinulla. Yksittäisen GPX-reitin voi nyt jakaa myös GPX-reittinä eikä vain ajona.",
-      "Ei enää sekaannuksia, kun nimi on jo käytössä: jos joku jakaa ajon, GPX-reitin tai GPX-ryhmän ja sinulla on jo saman niminen, saat siitä tiedon ja voit tallentaa uuden toisella nimellä. Mitään omaasi ei korvata."
+      "Ei enää sekaannuksia, kun nimi on jo käytössä: jos joku jakaa ajon, GPX-reitin tai GPX-ryhmän ja sinulla on jo saman niminen, saat siitä tiedon ja voit tallentaa uuden toisella nimellä. Mitään omaasi ei korvata.",
+      "Ilman navigointia sovellus tuntee edessä olevan tien paljon varmemmin. Nopeusmerkit näkyvät nyt myös siellä, missä tie kaartaa, kuten tunnelilla, ja rajoitus vaihtuu, kun ohitat ne. Väistämisvaroitukset koskevat vain sinua, eivät tiellesi tulevaa sivutietä, ja metrit lakkaavat laskemasta heti, kun olet ohittanut merkin."
     ],
     "is": [
       "Nú geturðu deilt heilum GPX-hópi með ferðahópnum þínum! Opnaðu valmynd hópsins og veldu Deila með hópnum: allir fá hann á meðal sinna eigin GPX-leiða með öllum leiðum, litum og stillingum, alveg eins og þú hefur hann. Einnig má nú deila stakri GPX-leið sem GPX-leið, ekki bara sem ferð.",
-      "Enginn ruglingur lengur þegar nafn er þegar í notkun: ef einhver deilir ferð, GPX-leið eða GPX-hópi og þú átt þegar eitthvað með sama nafni færðu að vita það og getur vistað það nýja undir öðru nafni. Ekkert af þínu er yfirskrifað."
+      "Enginn ruglingur lengur þegar nafn er þegar í notkun: ef einhver deilir ferð, GPX-leið eða GPX-hópi og þú átt þegar eitthvað með sama nafni færðu að vita það og getur vistað það nýja undir öðru nafni. Ekkert af þínu er yfirskrifað.",
+      "Án leiðsagnar er forritið mun öruggara á veginum fram undan. Hraðamerki birtast nú líka þar sem vegurinn beygir, eins og við göng, og hámarkshraðinn breytist um leið og þú ferð fram hjá þeim. Biðskylduviðvaranir gilda aðeins um þig, ekki hliðarveg sem kemur inn á veginn þinn, og metrarnir hætta að telja um leið og þú ert komin(n) fram hjá merkinu."
     ],
     "de": [
       "Jetzt kannst du eine ganze GPX-Gruppe mit deiner Fahrgruppe teilen! Öffne das Menü der Gruppe und wähle Mit der Gruppe teilen: Alle bekommen sie zu ihren eigenen GPX-Tracks, mit allen Tracks, Farben und Einstellungen, genau wie bei dir. Ein einzelner GPX-Track lässt sich jetzt auch als GPX-Track teilen, nicht nur als Tour.",
-      "Schluss mit dem Durcheinander bei gleichen Namen: Teilt jemand eine Tour, einen GPX-Track oder eine GPX-Gruppe und du hast schon etwas mit diesem Namen, erfährst du es und kannst das Neue unter einem anderen Namen speichern. Nichts von dir wird überschrieben."
+      "Schluss mit dem Durcheinander bei gleichen Namen: Teilt jemand eine Tour, einen GPX-Track oder eine GPX-Gruppe und du hast schon etwas mit diesem Namen, erfährst du es und kannst das Neue unter einem anderen Namen speichern. Nichts von dir wird überschrieben.",
+      "Ohne Navigation kennt die App die Straße vor dir jetzt viel sicherer. Tempolimit-Schilder erscheinen nun auch dort, wo die Straße eine Kurve macht, etwa an einem Tunnel, und das Limit wechselt genau beim Vorbeifahren. Vorfahrtswarnungen gelten nur noch dir, nicht einer Seitenstraße, die auf deine Straße trifft, und die Meter zählen nicht weiter, sobald du am Schild vorbei bist."
     ],
     "es": [
       "¡Ya puedes compartir un grupo GPX entero con tu grupo de ruta! Abre el menú del grupo y elige Compartir con el grupo: todos lo reciben entre sus propios tracks GPX con todos los tracks, colores y ajustes, tal como lo tienes tú. Un track GPX suelto ahora también se puede compartir como track GPX, no solo como ruta.",
-      "Se acabaron las confusiones cuando un nombre ya está en uso: si alguien comparte una ruta, un track GPX o un grupo GPX y ya tienes uno con ese nombre, te lo decimos y puedes guardar el nuevo con otro nombre. No se sobrescribe nada tuyo."
+      "Se acabaron las confusiones cuando un nombre ya está en uso: si alguien comparte una ruta, un track GPX o un grupo GPX y ya tienes uno con ese nombre, te lo decimos y puedes guardar el nuevo con otro nombre. No se sobrescribe nada tuyo.",
+      "Sin navegación, la app conoce mucho mejor la carretera que tienes delante. Las señales de velocidad aparecen ahora también donde la carretera gira, como en un túnel, y el límite cambia justo al pasarlas. Los avisos de ceda el paso son solo para ti, no para una vía lateral que entra en la tuya, y los metros dejan de contar en cuanto has pasado la señal."
     ],
     "fr": [
       "Vous pouvez maintenant partager tout un groupe GPX avec votre groupe de balade ! Ouvrez le menu du groupe et choisissez Partager avec le groupe : chacun le reçoit parmi ses propres traces GPX avec toutes les traces, couleurs et réglages, exactement comme chez vous. Une trace GPX seule peut aussi être partagée comme trace GPX, plus seulement comme itinéraire.",
-      "Fini la confusion quand un nom est déjà pris : si quelqu'un partage un itinéraire, une trace GPX ou un groupe GPX et que vous avez déjà ce nom, vous en êtes averti et pouvez enregistrer le nouveau sous un autre nom. Rien de ce qui est à vous n'est écrasé."
+      "Fini la confusion quand un nom est déjà pris : si quelqu'un partage un itinéraire, une trace GPX ou un groupe GPX et que vous avez déjà ce nom, vous en êtes averti et pouvez enregistrer le nouveau sous un autre nom. Rien de ce qui est à vous n'est écrasé.",
+      "Sans navigation, l'application connaît bien mieux la route devant vous. Les panneaux de vitesse apparaissent désormais aussi là où la route tourne, comme à un tunnel, et la limite change au moment où vous les passez. Les alertes de cédez-le-passage ne concernent que vous, pas une route latérale qui rejoint la vôtre, et les mètres cessent de compter dès que le panneau est dépassé."
     ],
     "nl": [
       "Je kunt nu een hele GPX-groep delen met je rijgroep! Open het menu van de groep en kies Delen met de groep: iedereen krijgt hem bij zijn eigen GPX-tracks, met alle tracks, kleuren en instellingen, precies zoals jij hem hebt. Een losse GPX-track kun je nu ook delen als GPX-track, niet alleen als rit.",
-      "Geen verwarring meer als een naam al in gebruik is: deelt iemand een rit, GPX-track of GPX-groep en heb je die naam al, dan hoor je dat en kun je de nieuwe onder een andere naam bewaren. Niets van jou wordt overschreven."
+      "Geen verwarring meer als een naam al in gebruik is: deelt iemand een rit, GPX-track of GPX-groep en heb je die naam al, dan hoor je dat en kun je de nieuwe onder een andere naam bewaren. Niets van jou wordt overschreven.",
+      "Zonder navigatie kent de app de weg voor je nu veel beter. Snelheidsborden verschijnen nu ook waar de weg afbuigt, zoals bij een tunnel, en de limiet wisselt precies als je ze passeert. Voorrangswaarschuwingen gelden alleen voor jou, niet voor een zijweg die op jouw weg uitkomt, en de meters tellen niet verder zodra je het bord voorbij bent."
     ],
     "pl": [
       "Teraz możesz udostępnić całą grupę GPX swojej grupie jazdy! Otwórz menu grupy i wybierz Udostępnij grupie: każdy dostanie ją wśród swoich śladów GPX ze wszystkimi śladami, kolorami i ustawieniami, dokładnie tak jak u Ciebie. Pojedynczy ślad GPX można teraz udostępnić także jako ślad GPX, nie tylko jako trasę.",
-      "Koniec z pomyłkami, gdy nazwa jest już zajęta: gdy ktoś udostępni trasę, ślad GPX lub grupę GPX, a Ty masz już coś o tej nazwie, dostaniesz o tym informację i zapiszesz nowe pod inną nazwą. Nic Twojego nie zostanie nadpisane."
+      "Koniec z pomyłkami, gdy nazwa jest już zajęta: gdy ktoś udostępni trasę, ślad GPX lub grupę GPX, a Ty masz już coś o tej nazwie, dostaniesz o tym informację i zapiszesz nowe pod inną nazwą. Nic Twojego nie zostanie nadpisane.",
+      "Bez nawigacji aplikacja znacznie pewniej zna drogę przed Tobą. Znaki prędkości pojawiają się teraz także tam, gdzie droga skręca, na przykład przy tunelu, a limit zmienia się w chwili ich mijania. Ostrzeżenia o ustąpieniu pierwszeństwa dotyczą tylko Ciebie, a nie bocznej drogi wjeżdżającej na Twoją, a metry przestają się liczyć, gdy tylko miniesz znak."
     ]
   },
   {
