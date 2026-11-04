@@ -273,6 +273,33 @@ fun <T> DialogTabs(
     /** Pages that show a red dot on their icon. */
     badge: (T) -> Boolean = { false }
 ) {
+    // Too many pages for a label beside the open one (Settings): every page gets an equal share of the row, so all of
+    // them show on the narrowest phone whatever the language, and the open page's name goes on a line of its own.
+    if (isNarrowScreen() && items.size > MOST_TABS_WITH_LABEL) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f)).padding(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                items.forEach { t ->
+                    val on = t == selected
+                    Box(
+                        Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                            .onFocusChanged { if (it.isFocused && !on) onSelect(t) } // the remote goes through the pages by moving over them
+                            .clickable { onSelect(t) }.padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box {
+                            Icon(icon(t), label(t), tint = if (on) OnCyanText else TextSecondary, modifier = Modifier.size(22.dp))
+                            if (badge(t)) RecordingDot(Modifier.align(Alignment.TopEnd))
+                        }
+                    }
+                }
+            }
+            Text(label(selected), color = ElectricCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+        }
+        return
+    }
     if (isNarrowScreen()) {
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f))
@@ -305,6 +332,39 @@ fun <T> DialogTabs(
         }
         return
     }
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxHeight()) {
+    // Too low for all the rows with a label (Settings on a phone held sideways): the pages in two columns of icons, all of
+    // them in sight, with the open page's name above.
+    val rowHeight = TAB_ROW_HEIGHT * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
+    if (items.size > MOST_TABS_WITH_LABEL && maxHeight < rowHeight * items.size + 16.dp) {
+        Column(
+            Modifier.width(TAB_GRID_WIDTH).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f))
+                .verticalScroll(rememberScrollState()).padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(label(selected), color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            items.chunked(2).forEach { pair ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    pair.forEach { t ->
+                        val on = t == selected
+                        Box(
+                            Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
+                                .onFocusChanged { if (it.isFocused && !on) onSelect(t) } // the remote goes through the pages by moving over them
+                                .clickable { onSelect(t) }.padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box {
+                                Icon(icon(t), label(t), tint = if (on) OnCyanText else TextSecondary, modifier = Modifier.size(22.dp))
+                                if (badge(t)) RecordingDot(Modifier.align(Alignment.TopEnd))
+                            }
+                        }
+                    }
+                    if (pair.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+        }
+        return@BoxWithConstraints
+    }
     Column(
         Modifier.width(width).fillMaxHeight().clip(RoundedCornerShape(16.dp)).background(CockpitBackground.copy(alpha = 0.6f))
             .verticalScroll(rememberScrollState()).padding(8.dp),
@@ -327,9 +387,13 @@ fun <T> DialogTabs(
             }
         }
     }
+    }
 }
 
 private val OnCyanText = Color(0xFF00363D)
+private const val MOST_TABS_WITH_LABEL = 5
+private val TAB_ROW_HEIGHT = 58.dp // icon 24 + padding 28 + the gap 6
+private val TAB_GRID_WIDTH = 136.dp // the longest page name on one line
 
 /** The small red dot of a recording under way, with a light edge so it reads on both cyan and dark. */
 @Composable
