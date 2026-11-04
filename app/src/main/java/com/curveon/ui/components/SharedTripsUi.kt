@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,7 +32,7 @@ fun ColumnScope.SharedTripsPage(trips: List<SharedTrip>, onRide: (SharedTrip) ->
         if (trips.isEmpty()) Text(stringResource(R.string.shared_trips_none), color = TextMuted, fontSize = 14.sp)
         trips.forEach { t ->
             Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(t.doc.name.ifBlank { t.doc.destination.name }, color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(t.title, color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                 Text(sharedTripInfo(t), color = TextSecondary, fontSize = 13.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     PillButton(Icons.Default.Navigation, stringResource(R.string.ride_now), ElectricCyan, Color(0xFF00363D), Modifier.weight(1f)) { onRide(t) }
@@ -49,23 +50,86 @@ private fun sharedTripInfo(t: SharedTrip): String {
     return listOfNotNull(t.groupName, who, if (stops > 0) stringResource(R.string.shared_trip_stops, stops) else null).joinToString(" · ")
 }
 
-/** A friend shared a trip: ride it now, keep it under "Shared routes", or ignore it (and it is not offered again). */
+/**
+ * What is shared is called [original], and the rider has [taken]: a field for the name to save it under, with a free one
+ * in it. Nothing is overwritten.
+ */
 @Composable
-fun SharedTripOfferDialog(trip: SharedTrip, onRideNow: () -> Unit, onSave: () -> Unit, onIgnore: () -> Unit, fromFriend: Boolean = false) {
-    Dialog(onDismissRequest = onSave, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+private fun SaveAsField(original: String, taken: Collection<String>, name: String, onName: (String) -> Unit) {
+    Text(stringResource(R.string.share_name_taken, original), color = NeonAmber, fontSize = 14.sp)
+    OutlinedTextField(
+        value = name, onValueChange = onName, singleLine = true, label = { Text(stringResource(R.string.share_save_as)) },
+        isError = !com.curveon.data.groups.ShareNames.usable(name, taken),
+        supportingText = if (com.curveon.data.groups.ShareNames.taken(name, taken)) { { Text(stringResource(R.string.share_name_still_taken)) } } else null,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary, focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder,
+            cursorColor = ElectricCyan, focusedLabelColor = ElectricCyan, unfocusedLabelColor = TextSecondary
+        ),
+        modifier = Modifier.fillMaxWidth().testTag("share_save_as")
+    )
+}
+
+/**
+ * A friend shared a trip: ride it now, keep it under "Shared routes", or ignore it (and it is not offered again). When the
+ * rider already has a trip or track of that name ([taken]), they choose another; the callbacks get it, or null when the name is free.
+ */
+@Composable
+fun SharedTripOfferDialog(
+    trip: SharedTrip, onRideNow: (String?) -> Unit, onSave: (String?) -> Unit, onIgnore: () -> Unit,
+    fromFriend: Boolean = false, taken: Collection<String> = emptyList()
+) {
+    val conflict = com.curveon.data.groups.ShareNames.taken(trip.title, taken)
+    var name by remember(trip.tripId, taken) { mutableStateOf(com.curveon.data.groups.ShareNames.free(trip.title, taken)) }
+    val ok = !conflict || com.curveon.data.groups.ShareNames.usable(name, taken)
+    val chosen = name.trim().takeIf { conflict }
+    Dialog(onDismissRequest = { if (!conflict) onSave(null) }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
         HideSystemBars()
         Column(
-            Modifier.clip(RoundedCornerShape(20.dp)).background(CockpitSurface).padding(20.dp).widthIn(max = 520.dp).testTag("shared_trip_offer"),
+            Modifier.imePadding().padding(16.dp).clip(RoundedCornerShape(20.dp)).background(CockpitSurface).widthIn(max = 520.dp)
+                .verticalScroll(rememberScrollState()).padding(20.dp).testTag("shared_trip_offer"),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(stringResource(R.string.shared_trip_offer_title, trip.fromNickname ?: ""), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
-            Text(trip.doc.name.ifBlank { trip.doc.destination.name }, color = NeonAmber, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(trip.title, color = NeonAmber, fontSize = 17.sp, fontWeight = FontWeight.Bold)
             Text(sharedTripInfo(trip), color = TextSecondary, fontSize = 13.sp)
-            Text(stringResource(if (fromFriend) R.string.shared_trip_offer_hint_friend else R.string.shared_trip_offer_hint), color = TextMuted, fontSize = 13.sp)
-            PillButton(Icons.Default.Navigation, stringResource(R.string.ride_now), ElectricCyan, Color(0xFF00363D), Modifier.fillMaxWidth().testTag("shared_offer_ride"), onRideNow)
+            // With a name to choose there is no room for the hint on a phone held sideways, and the name matters more.
+            if (conflict) SaveAsField(trip.title, taken, name) { name = it }
+            else Text(stringResource(if (fromFriend) R.string.shared_trip_offer_hint_friend else R.string.shared_trip_offer_hint), color = TextMuted, fontSize = 13.sp)
+            PillButton(Icons.Default.Navigation, stringResource(R.string.ride_now), if (ok) ElectricCyan else CockpitSurfaceVariant, if (ok) Color(0xFF00363D) else TextMuted,
+                Modifier.fillMaxWidth().testTag("shared_offer_ride")) { if (ok) onRideNow(chosen) }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.shared_trip_save), CockpitSurfaceVariant, TextPrimary, Modifier.weight(1f).testTag("shared_offer_save"), onSave)
+                PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.shared_trip_save), CockpitSurfaceVariant, if (ok) TextPrimary else TextMuted,
+                    Modifier.weight(1f).testTag("shared_offer_save")) { if (ok) onSave(chosen) }
                 PillButton(Icons.Default.Close, stringResource(R.string.shared_trip_ignore), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("shared_offer_ignore"), onIgnore)
+            }
+        }
+    }
+}
+
+/** Someone shared a GPX group or track: keep it among the rider's GPX tracks, just as they have it, or ignore it. A name the rider already has takes another. */
+@Composable
+fun SharedGpxOfferDialog(offer: com.curveon.data.groups.SharedGpxOffer, taken: Collection<String>, onSave: (String) -> Unit, onIgnore: () -> Unit) {
+    val conflict = com.curveon.data.groups.ShareNames.taken(offer.name, taken)
+    var name by remember(offer.shareId, taken) { mutableStateOf(com.curveon.data.groups.ShareNames.free(offer.name, taken)) }
+    val ok = com.curveon.data.groups.ShareNames.usable(name, taken)
+    Dialog(onDismissRequest = { if (!conflict) onSave(offer.name) }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
+        HideSystemBars()
+        Column(
+            Modifier.imePadding().padding(16.dp).clip(RoundedCornerShape(20.dp)).background(CockpitSurface).widthIn(max = 520.dp)
+                .verticalScroll(rememberScrollState()).padding(20.dp).testTag("shared_gpx_offer"),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(stringResource(if (offer.isGroup) R.string.shared_gpx_group_offer_title else R.string.shared_gpx_track_offer_title, offer.fromNickname ?: ""),
+                color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
+            Text(offer.name, color = NeonAmber, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text(listOfNotNull(offer.groupName, if (offer.isGroup) pluralStringResource(R.plurals.gpx_tracks_count, offer.tracks, offer.tracks) else null,
+                "${offer.km} ${stringResource(R.string.stat_km)}").joinToString(" · "), color = TextSecondary, fontSize = 13.sp)
+            Text(stringResource(R.string.shared_gpx_offer_hint), color = TextMuted, fontSize = 13.sp)
+            if (conflict) SaveAsField(offer.name, taken, name) { name = it }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.shared_gpx_save), if (ok) ElectricCyan else CockpitSurfaceVariant, if (ok) Color(0xFF00363D) else TextMuted,
+                    Modifier.weight(1f).testTag("shared_gpx_save")) { if (ok) onSave(name.trim()) }
+                PillButton(Icons.Default.Close, stringResource(R.string.shared_trip_ignore), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("shared_gpx_ignore"), onIgnore)
             }
         }
     }

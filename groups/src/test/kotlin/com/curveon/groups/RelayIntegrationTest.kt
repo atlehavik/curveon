@@ -203,6 +203,41 @@ class RelayIntegrationTest {
     late.await { (it as? GroupEvent.Position)?.takeIf { e -> e.pos.lat == 62.0 } }
   }
 
+  /** The biggest GPX group that may be shared, through the real relay's limits: to a rider who is there, and one who looks in later. */
+  @Test fun aBigGpxGroupReachesThoseHereAndThoseWhoComeLater() {
+    val random = java.util.Random(5)
+    fun track(i: Int): SharedGpxTrack {
+      var lat = 59.0; var lon = 5.0
+      val points = (0 until 30_000).joinToString(";") {
+        lat += random.nextGaussian() * 0.0003; lon += random.nextGaussian() * 0.0005
+        String.format(java.util.Locale.ROOT, "%.6f,%.6f,%d", lat, lon, it % 50)
+      }
+      return SharedGpxTrack("T$i", "", 10f, 0, 0, 30_000, points, "", false, "TET", true, 0, true, false)
+    }
+    // As much as fits: more tracks until it would not.
+    var tracks = (1..4).map(::track)
+    while (true) {
+      val more = tracks + track(tracks.size + 1)
+      if (GpxShare.pack(SharedGpx("Big", true, more), "share1") == null) break
+      tracks = more
+    }
+    val group = SharedGpx("Big", true, tracks, 1, 2, true, 7)
+    val parts = GpxShare.pack(group, "share1")!!
+    assertEquals(GpxShare.MAX_PARTS, parts.size)
+
+    val (ola, invite) = group()
+    ola.client.start()
+    val kari = joined(invite, "Kari").also { it.client.start() }
+    ola.await { (it as? GroupEvent.MemberUpdated)?.takeIf { e -> e.member.nickname == "Kari" } }
+    parts.forEach { assertTrue(ola.client.sendTrip(it)); Thread.sleep(300) }
+    val here = parts.map { kari.await(20_000) { e -> (e as? GroupEvent.TripReceived)?.trip } }
+    assertEquals(group, GpxShare.unpack(here.map { GpxShare.parsePart(it.doc)!! }))
+
+    val per = joined(invite, "Per").also { it.client.start() }
+    val later = parts.map { per.await(20_000) { e -> (e as? GroupEvent.TripReceived)?.trip } }
+    assertEquals(group, GpxShare.unpack(later.map { GpxShare.parsePart(it.doc)!! }))
+  }
+
   @Test fun aSecondDeviceOfTheSameRiderIsNotANewRider() {
     val (a, invite) = group()
     a.client.start()

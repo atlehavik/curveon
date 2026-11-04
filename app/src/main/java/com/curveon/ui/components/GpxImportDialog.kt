@@ -164,9 +164,10 @@ fun GpxManagerDialog(
                             onColorClick = { colorFor = if (colorFor == "g${row.id}") null else "g${row.id}" },
                             onColor = { actions.onGroupColor(row, it); colorFor = null },
                             onDirection = { actions.onGroupDirection(row) },
-                            menu = listOf(
+                            menu = listOfNotNull(
                                 MenuItem(Icons.Default.Edit, stringResource(R.string.rename)) { renaming = row },
                                 MenuItem(Icons.Default.IosShare, stringResource(R.string.gpx_export)) { export(row, null) },
+                                actions.onShareGroup?.let { share -> MenuItem(Icons.Default.Groups, stringResource(R.string.share_with_group)) { share(row) } },
                                 MenuItem(Icons.Default.FolderOff, stringResource(R.string.gpx_ungroup)) { actions.onDeleteGroup(row, true) },
                                 MenuItem(Icons.Default.DeleteOutline, stringResource(R.string.gpx_delete_group)) { confirmDeleteGroup = row }
                             )
@@ -184,6 +185,7 @@ fun GpxManagerDialog(
                                 MenuItem(Icons.Default.IosShare, stringResource(R.string.gpx_export)) { export(null, t) },
                                 actions.onSendToTablet?.let { send -> MenuItem(Icons.Default.TabletAndroid, stringResource(R.string.send_to_tablet)) { send(t) } },
                                 actions.onShareWithGroup?.let { share -> MenuItem(Icons.Default.Groups, stringResource(R.string.share_with_group)) { share(t) } },
+                                actions.onShareAsGpx?.let { share -> MenuItem(Icons.Default.Route, stringResource(R.string.share_as_gpx_track)) { share(t) } },
                                 actions.onToPlanned?.let { add -> MenuItem(Icons.Default.EventNote, stringResource(R.string.add_to_planned)) { add(t) } },
                                 MenuItem(Icons.Default.DriveFileMove, stringResource(R.string.gpx_move_to_group)) { moving = t },
                                 MenuItem(Icons.Default.DeleteOutline, stringResource(R.string.delete)) { confirmDelete = t }
@@ -258,6 +260,10 @@ class GpxActions(
     val onSendToTablet: ((GpxTrack) -> Unit)? = null,
     /** Share the track with the group ride on now. */
     val onShareWithGroup: ((GpxTrack) -> Unit)? = null,
+    /** Share the track with the group ride on now, to keep as a GPX track rather than a trip. */
+    val onShareAsGpx: ((GpxTrack) -> Unit)? = null,
+    /** Share the group with all its tracks with the group ride on now. */
+    val onShareGroup: ((GpxGroup) -> Unit)? = null,
     /** Keep the track among the planned trips too (and so on the web planner). */
     val onToPlanned: ((GpxTrack) -> Unit)? = null
 )

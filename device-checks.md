@@ -6,6 +6,17 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-04 — Del GPX-grupper og spor, og velg annet navn
+
+Overføringen er prøvd gjennom det ekte relayet, og skjermene på emulator. Mellom to ekte enheter, og med telefonen som tunnel for nettbrettet, kan det bare prøves på ekte. Dere må være i samme gruppe.
+
+- [ ] Del en GPX-gruppe (menyen på gruppen → Del med gruppa) med en annen enhet: tilbudet kommer, og etter Lagre ligger gruppen i GPX-listen med alle sporene, fargene og synligheten.
+- [ ] Del en stor gruppe (mange spor) fra nettbrettet med telefonen som tunnel: alt kommer fram. Si fra om hvor lang tid det tok.
+- [ ] Del et enkelt spor med Del som GPX-spor: det havner i GPX-listen, ikke under Delte ruter. Del med gruppa gir fortsatt en tur som før.
+- [ ] Ta imot noe med et navn du allerede har (tur, spor og gruppe): du får beskjed og kan velge et annet navn, og det gamle er urørt.
+- [ ] En enhet som er av når du deler: slå den på senere, og tilbudet kommer likevel.
+- [ ] Del en gruppe mens du mister nett midt i: si fra hva som skjer. En gruppe som bare delvis kommer fram, vises ikke hos mottakeren.
+
 ## 2026-11-04 — Fartsgrensen i ruta følger skiltene
 
 Målt med simulert kjøring på ekte veidata og NVDB på åtte turer på Bømlo, Stord og Haugalandet. Hvordan det oppleves mens du kjører, kan bare prøves på ekte.

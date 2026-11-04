@@ -136,6 +136,10 @@ A sender asks the relay to hand a frame to those who connect later with three op
 - A malformed `k`, `x` or `m` is ignored: the frame is forwarded and kept by the type's own rule.
 - A relay from before slots ignores the fields, so a client that asks gets the old behaviour there, never an error.
 
+Shared GPX goes in `trip` frames too: `tid` = `gpxshare/<id>/<i>`, `doc` = `{kind: "gpx", id, i, n, name, group, tracks, km, data}`, `data`
+being part `i` of `n` (at most 4, 256 KiB each, base64url) of the gzipped group or track. Parts come 3 s apart: the relay drops
+frames to a receiver with over 1 MiB waiting. To a client that does not know it, the `doc` is not a valid trip and is ignored.
+
 What the reference client keeps this way: every `trip` (slot `trip/<tid>/<device id>`, 30 days), so a trip that
 changes often never pushes other trips, the sync document or "I share with you" out of what a later joiner gets.
 

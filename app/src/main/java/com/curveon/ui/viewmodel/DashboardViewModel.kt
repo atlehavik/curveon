@@ -1979,6 +1979,63 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         return str(R.string.toast_shared_group, group)
     }
 
+    /** Shares [g] with all its tracks and settings with the group ride on now, to keep among their GPX tracks; [told] gets what to tell the rider. */
+    fun shareGpxGroup(g: GpxGroup, told: (String) -> Unit) = viewModelScope.launch {
+        val tracks = repository.gpxTracksInGroup(g.id)
+        shareGpx(com.curveon.groups.SharedGpx(g.name, true, tracks.map { sharedGpxTrack(it, it.showOnMap, com.curveon.data.gpx.GpxOverlay.colorOf(it), it.reversed) },
+            g.visibility, g.direction, g.sameColor, GpxGroups.groupColor(g)), told)
+    }
+
+    /** Shares [t] as a track, as it looks now, with the group ride on now, to keep among their GPX tracks (not as a trip, as [shareWithGroup]). */
+    fun shareGpxTrack(t: GpxTrack, told: (String) -> Unit) = viewModelScope.launch {
+        val g = t.groupId?.let { id -> gpxGroups.value.firstOrNull { it.id == id } }
+        shareGpx(com.curveon.groups.SharedGpx(t.name, false, listOf(sharedGpxTrack(t, GpxGroups.visible(t, g), GpxGroups.color(t, g), GpxGroups.reversed(t, g)))), told)
+    }
+
+    private fun sharedGpxTrack(t: GpxTrack, show: Boolean, color: Int, reversed: Boolean) = com.curveon.groups.SharedGpxTrack(
+        t.name, t.filename, t.totalDistanceKm, t.elevationGainMeters, t.maxElevationMeters, t.pointCount, t.trackPointsJson, t.waypointsJson,
+        t.isFavorite, t.category, show, color, t.showPois, reversed
+    )
+
+    private suspend fun shareGpx(share: com.curveon.groups.SharedGpx, told: (String) -> Unit) {
+        val group = sharedTrips.activeGroupName() ?: return told(str(R.string.share_needs_group, str(R.string.friends_title), str(R.string.friends_tab_group)))
+        if (!sharedTrips.groupConnected()) return told(str(R.string.share_no_connection))
+        if (share.tracks.isEmpty()) return told(str(R.string.share_nothing))
+        val id = java.util.UUID.randomUUID().toString()
+        val parts = withContext(Dispatchers.Default) { com.curveon.groups.GpxShare.pack(share, id) } ?: return told(str(R.string.share_gpx_too_big))
+        told(str(R.string.toast_shared_group, group))
+        sharedTrips.sendGpx(parts)
+    }
+
+    /** The names a shared trip must not take: trips the rider keeps and GPX tracks. A flow: at the start the lists are not read yet. */
+    val tripNamesTaken: StateFlow<Set<String>> = combine(sharedTrips.shared, savedRoutes, savedGpxTracks) { shared, routes, tracks ->
+        (shared.map { it.title } + routes.filter { it.inPlanned }.map { it.title } + tracks.map { it.name }).toSet()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
+    /** The names shared GPX must not take: other groups for a group, other tracks for a track. */
+    val gpxGroupNames: StateFlow<Set<String>> = gpxGroups.map { l -> l.map { it.name }.toSet() }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+    val gpxTrackNames: StateFlow<Set<String>> = savedGpxTracks.map { l -> l.map { it.name }.toSet() }.stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
+
+    /** Keeps shared GPX among the rider's own, as the sender has it, called [name]; [told] gets what to tell the rider. */
+    fun saveSharedGpx(offer: com.curveon.data.groups.SharedGpxOffer, name: String, told: (String) -> Unit) = viewModelScope.launch {
+        val share = withContext(Dispatchers.IO) { sharedTrips.gpx.read(offer.shareId) } ?: return@launch told(str(R.string.toast_shared_gpx_failed))
+        val saved = runCatching {
+            val groupId = if (!share.isGroup) null else repository.createGpxGroup(name).also { id ->
+                repository.updateGpxGroup(GpxGroup(id, name, share.visibility, share.direction, share.sameColor, share.color))
+            }
+            share.tracks.forEach { t ->
+                repository.saveGpxTrack(GpxTrack(
+                    name = if (share.isGroup) t.name else name, filename = t.filename, totalDistanceKm = t.km, elevationGainMeters = t.gain,
+                    maxElevationMeters = t.maxEle, pointCount = t.pointCount, trackPointsJson = t.points, waypointsJson = t.waypoints, isFavorite = t.favorite,
+                    category = t.category, showOnMap = t.showOnMap, color = t.color, showPois = t.showPois, groupId = groupId, reversed = t.reversed
+                ))
+            }
+        }.isSuccess
+        if (!saved) return@launch told(str(R.string.toast_shared_gpx_failed))
+        withContext(Dispatchers.IO) { sharedTrips.gpx.answered(offer.shareId) }
+        told(str(R.string.toast_shared_gpx_saved))
+    }
+
     /** A GPX track among the planned trips (and so on the web planner too), ridden as it is; false when it has no line. */
     fun gpxToPlanned(track: GpxTrack): Boolean {
         val item = gpxForTablet(track) ?: return false

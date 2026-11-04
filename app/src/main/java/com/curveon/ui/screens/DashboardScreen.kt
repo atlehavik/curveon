@@ -335,6 +335,12 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     LaunchedEffect(navState.preview == null) { if (navState.preview == null) editingRoute = false }
     val sharedTripList by viewModel.sharedTrips.shared.collectAsStateWithLifecycle()
     val sharedOffer by viewModel.sharedTrips.offer.collectAsStateWithLifecycle()
+    val sharedGpxOffers by viewModel.sharedTrips.gpx.offers.collectAsStateWithLifecycle()
+    val sharedGpxOffer = sharedGpxOffers.firstOrNull()
+    var savingGpxShare by remember { mutableStateOf<String?>(null) }
+    val tripNamesTaken by viewModel.tripNamesTaken.collectAsStateWithLifecycle()
+    val gpxGroupNames by viewModel.gpxGroupNames.collectAsStateWithLifecycle()
+    val gpxTrackNames by viewModel.gpxTrackNames.collectAsStateWithLifecycle()
     val sharedChanged by viewModel.sharedTrips.justChanged.collectAsStateWithLifecycle()
     val shareTrip: () -> Unit = {
         toast = context.getString(if (viewModel.sharedTrips.shareCurrent()) R.string.toast_trip_shared else R.string.toast_trip_not_shared)
@@ -1240,6 +1246,8 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
                             onExport = { g, t, uri -> viewModel.exportGpx(g, t, uri) },
                             onSendToTablet = if (companionInstalled) { t -> sendToTablet(viewModel.gpxForTablet(t)) } else null,
                             onShareWithGroup = { t -> toast = viewModel.shareWithGroup(viewModel.gpxForTablet(t)) },
+                            onShareAsGpx = { t -> viewModel.shareGpxTrack(t) { toast = it } },
+                            onShareGroup = { g -> viewModel.shareGpxGroup(g) { toast = it } },
                             onToPlanned = { t ->
                                 toast = context.getString(if (viewModel.gpxToPlanned(t)) R.string.toast_added_to_planned else R.string.share_nothing)
                             }
@@ -1534,10 +1542,22 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     sharedOffer?.let { t ->
         com.curveon.ui.components.SharedTripOfferDialog(
             trip = t,
-            onRideNow = { viewModel.sharedTrips.open(t) },
-            onSave = { viewModel.sharedTrips.accept(t); toast = context.getString(R.string.toast_shared_trip_saved) },
+            onRideNow = { name -> viewModel.sharedTrips.open(t, name) },
+            onSave = { name -> viewModel.sharedTrips.accept(t, name); toast = context.getString(R.string.toast_shared_trip_saved) },
             onIgnore = { viewModel.sharedTrips.ignore(t) },
-            fromFriend = viewModel.sharedTrips.fromFriend(t)
+            fromFriend = viewModel.sharedTrips.fromFriend(t),
+            taken = tripNamesTaken
+        )
+    }
+    sharedGpxOffer?.takeIf { sharedOffer == null && it.shareId != savingGpxShare }?.let { o ->
+        com.curveon.ui.components.SharedGpxOfferDialog(
+            offer = o,
+            taken = if (o.isGroup) gpxGroupNames else gpxTrackNames,
+            onSave = { name ->
+                savingGpxShare = o.shareId // gone at once: two presses must not save it twice
+                viewModel.saveSharedGpx(o, name) { toast = it; savingGpxShare = null }
+            },
+            onIgnore = { viewModel.sharedTrips.gpx.answered(o.shareId) }
         )
     }
     pickFriends?.let { fromPreview ->

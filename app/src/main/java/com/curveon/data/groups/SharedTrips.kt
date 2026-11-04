@@ -16,8 +16,12 @@ import java.io.File
  */
 class SharedTrip(
     val tripId: String, val groupId: String, val groupName: String?, val rev: Long, val from: String, val fromNickname: String?,
-    val doc: TripDoc, val accepted: Boolean, val receivedAt: Long
-)
+    val doc: TripDoc, val accepted: Boolean, val receivedAt: Long,
+    /** What this rider calls it, because they already had the name. Only here: the group's trip keeps its own. */
+    val ownName: String? = null
+) {
+    val title: String get() = ownName ?: doc.name.ifBlank { doc.destination.name }
+}
 
 /**
  * The shared trips kept on this device, in a file of their own (no database change): the trips, which stops this rider
@@ -47,7 +51,7 @@ class SharedTrips(context: Context) {
         if (current != null && !TripDoc.isNewer(m.rev, m.from, current.rev, current.from)) return Merged.STALE
         val trip = SharedTrip(
             m.tripId, m.groupId, groupName ?: current?.groupName, m.rev, m.from, m.fromNickname ?: current?.fromNickname, doc,
-            accepted = current?.accepted ?: m.mine, receivedAt = current?.receivedAt ?: now
+            accepted = current?.accepted ?: m.mine, receivedAt = current?.receivedAt ?: now, ownName = current?.ownName
         )
         put(trip)
         return if (current == null && !m.mine) Merged.NEW else Merged.UPDATED
@@ -58,7 +62,9 @@ class SharedTrips(context: Context) {
     fun putOwn(trip: SharedTrip) = put(trip)
 
     @Synchronized
-    fun accept(tripId: String) = latest(tripId)?.let { put(SharedTrip(it.tripId, it.groupId, it.groupName, it.rev, it.from, it.fromNickname, it.doc, true, it.receivedAt)) }
+    fun accept(tripId: String, ownName: String? = null) = latest(tripId)?.let {
+        put(SharedTrip(it.tripId, it.groupId, it.groupName, it.rev, it.from, it.fromNickname, it.doc, true, it.receivedAt, ownName ?: it.ownName))
+    }
 
     /** Not offered again, and removed from the list. */
     @Synchronized
@@ -93,7 +99,7 @@ class SharedTrips(context: Context) {
                 .put("trips", JSONArray(_trips.value.map {
                     JSONObject().put("id", it.tripId).put("group", it.groupId).put("gname", it.groupName ?: JSONObject.NULL).put("rev", it.rev)
                         .put("from", it.from).put("nick", it.fromNickname ?: JSONObject.NULL).put("doc", it.doc.toJson())
-                        .put("accepted", it.accepted).put("at", it.receivedAt)
+                        .put("accepted", it.accepted).put("at", it.receivedAt).put("own", it.ownName ?: JSONObject.NULL)
                 }))
                 .put("passed", JSONObject().apply { passed.forEach { (id, keys) -> put(id, JSONArray(keys.toList())) } })
                 .put("ignored", JSONArray(ignored.toList()))
@@ -111,7 +117,8 @@ class SharedTrips(context: Context) {
             val doc = TripDoc.fromJson(t.getString("doc")) ?: return@mapNotNull null
             SharedTrip(
                 t.getString("id"), t.getString("group"), if (t.isNull("gname")) null else t.getString("gname"), t.getLong("rev"), t.getString("from"),
-                if (t.isNull("nick")) null else t.getString("nick"), doc, t.optBoolean("accepted"), t.optLong("at")
+                if (t.isNull("nick")) null else t.getString("nick"), doc, t.optBoolean("accepted"), t.optLong("at"),
+                if (t.isNull("own")) null else t.getString("own")
             )
         }
     }.getOrDefault(emptyList())

@@ -7,11 +7,15 @@ import com.curveon.data.routing.NavigationGoal
 import com.curveon.data.routing.Navigator
 import com.curveon.data.routing.SavedRoutes
 import com.curveon.data.routing.Stop
+import com.curveon.groups.GpxShare
+import com.curveon.groups.Payload
 import com.curveon.groups.TripDoc
 import com.curveon.groups.TripStop
 import com.curveon.routing.Geo
 import com.curveon.routing.LatLon
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +27,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.File
 import java.util.UUID
 
 /**
@@ -39,6 +45,9 @@ class SharedTripsController(
     private val manager: GroupManager
 ) {
     val store = SharedTrips(context)
+
+    /** GPX groups and tracks that have come whole, for the rider to save or ignore. */
+    val gpx = SharedGpxStore(File(context.filesDir, "shared_gpx"))
 
     /** The shared trips the rider has accepted: the list under "Shared routes". */
     val shared: StateFlow<List<SharedTrip>> = store.trips.map { list -> list.filter { it.accepted } }
@@ -64,6 +73,10 @@ class SharedTripsController(
         scope.launch {
             manager.trips.collect { m ->
                 val groupName = manager.groups.value.firstOrNull { it.id == m.groupId }?.name
+                if (GpxShare.isPart(m.tripId)) {
+                    if (!m.mine) withContext(Dispatchers.IO) { gpx.received(m.doc, m.fromNickname, groupName) }
+                    return@collect
+                }
                 when (store.merge(m, groupName)) {
                     SharedTrips.Merged.UPDATED -> store.latest(m.tripId)?.let { if (it.accepted) applyToNavigator(it, byOthers = !m.mine) }
                     else -> Unit
@@ -137,7 +150,7 @@ class SharedTripsController(
         lineTaken[id] = edited.line
         val rev = trip.rev + 1
         Log.i("Curveon", "Shared trip $id changed here: ${edited.stops.size} stops, revision $rev")
-        store.putOwn(SharedTrip(id, trip.groupId, trip.groupName, rev, mine, null, edited, true, trip.receivedAt))
+        store.putOwn(SharedTrip(id, trip.groupId, trip.groupName, rev, mine, null, edited, true, trip.receivedAt, trip.ownName))
         manager.shareTrip(id, rev, trip.doc.name, edited.toJson())
     }
 
@@ -175,12 +188,12 @@ class SharedTripsController(
     // ---- what the rider does ----
 
     /** Ride (or look at) a shared trip: it opens in the preview, and from then on its changes go both ways. */
-    fun open(trip: SharedTrip) {
-        store.accept(trip.tripId)
+    fun open(trip: SharedTrip, ownName: String? = null) {
+        store.accept(trip.tripId, ownName)
         navigator.previewPlanned(goalFor(trip))
     }
 
-    fun accept(trip: SharedTrip) = store.accept(trip.tripId)
+    fun accept(trip: SharedTrip, ownName: String? = null) = store.accept(trip.tripId, ownName)
 
     /** Not wanted: gone, and not offered again. */
     fun ignore(trip: SharedTrip) = store.ignore(trip.tripId)
@@ -226,6 +239,17 @@ class SharedTripsController(
         return true
     }
 
+    /** Whether what is shared now can go out: the phone or this device is connected to the group ride on now. */
+    fun groupConnected() = manager.connection.value?.status == com.curveon.protocol.Message.GroupStatus.CONNECTED
+
+    /** Sends a share's [parts] to the active group, with time between them: the relay drops what a slow receiver can't take at once. */
+    suspend fun sendGpx(parts: List<Payload.Trip>) {
+        parts.forEachIndexed { i, p ->
+            if (i > 0) delay(GPX_PART_GAP_MS)
+            manager.shareTrip(p.tripId, p.rev, p.name, p.doc)
+        }
+    }
+
     /** The group ride on now, by name; null when there is none to share in. */
     fun activeGroupName(): String? = manager.activeId.value?.let { id -> manager.groups.value.firstOrNull { it.id == id }?.name ?: "" }
 
@@ -252,6 +276,8 @@ class SharedTripsController(
         return id
     }
 }
+
+private const val GPX_PART_GAP_MS = 3_000L
 
 private fun Stop.toTrip() = TripStop(name, point.lat, point.lon, via)
 private fun TripStop.toStop() = Stop(name, LatLon(lat, lon), via)

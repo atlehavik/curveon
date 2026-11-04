@@ -112,7 +112,10 @@ phone, with an optional companion app on the phone when a tablet is used.
 - **Group rides and friends**: friends scan each other's code; a group sees its riders on the map,
   shares routes and trips (anyone can change a shared trip), and has SOS. End-to-end encrypted through
   a relay (`relay.curveon.no` by default, another under Advanced); a tablet without internet uses the
-  phone's connection over Bluetooth. Design in [groups.md](../groups.md).
+  phone's connection over Bluetooth. Design in [groups.md](groups.md). A GPX group, or a track as a track, is shared
+  with everything in it (`GpxShare`, in trip frames, so nothing new is needed of relay or phone, and older apps ignore it)
+  and goes among the receiver's GPX tracks. Whatever is shared and has a name the rider already has is saved under
+  another name they choose; nothing is overwritten.
 - **Welcome tour** on the first start (language first; what is behind each main button; animated how-tos: how tablet, phone and intercom fit together, Curveon on just a phone, planning, building a trip point by point on the map, editing it, a roundtrip, an adventure): the screen dims and a lit ring walks over the buttons and
   gestures with a card for each; again any time from Settings → Help, which also lists every symbol. The symbols are not in the tour. The first time a trip to a place is planned, the same machinery walks over the trip card (`tripHelpSeen`, five steps, `TRIP_STEPS`); "Start the tour" in Help brings that back too.
 - **Demo ride** (Settings) drives the active route without GPS; **demo phone data** (Phone link)
