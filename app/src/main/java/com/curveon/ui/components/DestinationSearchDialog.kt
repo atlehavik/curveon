@@ -256,18 +256,25 @@ fun DestinationSearchDialog(
                 Shortcut(Icons.Default.Map, stringResource(R.string.pick_on_map), if (purpose == SearchPurpose.STOP) NeonAmber else ElectricCyan, onClick = minimize)
             }
         }
-        // Narrow (a phone held upright): the shortcuts scroll sideways, the status gets its own line.
-        if (androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 700) {
+        // Not room for all on one line in every language (a phone either way, large text): the shortcuts scroll
+        // sideways with Pick on map first, and the status gets its own line. Else Pick on map or the status gets cut.
+        val config = androidx.compose.ui.platform.LocalConfiguration.current
+        if (config.screenWidthDp / config.fontScale < SHORTCUTS_ON_ONE_LINE_DP) {
             Row(
                 Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically
             ) { pickOnMap(); shortcuts() }
             Text(searchStatus, color = TextMuted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        } else Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            shortcuts()
-            Text(searchStatus, color = TextMuted, fontSize = 11.sp, textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            pickOnMap()
-        }
+        } else ShortcutsOnOneLine(
+            shortcuts = {
+                Row(
+                    Modifier.horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically
+                ) { shortcuts() }
+            },
+            status = { Text(searchStatus, color = TextMuted, fontSize = 11.sp, textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+            pickOnMap = pickOnMap
+        )
 
         LazyColumn(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             // No search data here yet: fuel, camping and the like need it, and it is small enough to fetch alone.
@@ -392,6 +399,30 @@ private fun Shortcut(icon: ImageVector, label: String, tint: Color, selected: Bo
 }
 
 /** One-tap "nearest …" searches; [kinds] are the search-index kinds each one covers. */
+private const val SHORTCUTS_ON_ONE_LINE_DP = 950f
+
+/**
+ * The shortcuts, the status and Pick on map on one line. Pick on map is always whole, the shortcuts scroll if the words
+ * are long (French on the X7), and the status gets what is left.
+ */
+@Composable
+private fun ShortcutsOnOneLine(shortcuts: @Composable () -> Unit, status: @Composable () -> Unit, pickOnMap: @Composable () -> Unit) {
+    androidx.compose.ui.layout.Layout(content = { Box { shortcuts() }; Box { status() }; Box { pickOnMap() } }) { (row, text, button), c ->
+        val gap = 10.dp.roundToPx()
+        val loose = c.copy(minWidth = 0, minHeight = 0)
+        val pick = button.measure(loose)
+        val chips = row.measure(loose.copy(maxWidth = (c.maxWidth - pick.width - gap).coerceAtLeast(0)))
+        val left = c.maxWidth - chips.width - pick.width - 2 * gap
+        val said = if (left > 0) text.measure(loose.copy(maxWidth = left)) else null
+        val height = maxOf(chips.height, pick.height, said?.height ?: 0)
+        layout(c.maxWidth, height) {
+            chips.place(0, (height - chips.height) / 2)
+            pick.place(c.maxWidth - pick.width, (height - pick.height) / 2)
+            said?.place(c.maxWidth - pick.width - gap - said.width, (height - said.height) / 2)
+        }
+    }
+}
+
 private enum class NearestCategory(val label: Int, val icon: ImageVector, val tint: Color, val kinds: List<String>) {
     FUEL(R.string.kind_fuel, Icons.Default.LocalGasStation, EcoGreen, listOf("fuel")),
     CAMPING(R.string.kind_camping, Icons.Default.Cabin, ElectricCyan, listOf("camp_site")),
