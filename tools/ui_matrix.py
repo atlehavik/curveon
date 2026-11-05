@@ -176,6 +176,7 @@ def go_home(d, demo=None, limit=0):
     """Curveon started afresh on the dashboard; demo=True/False first turns demo phone data on or off (debug build);
     limit > 0 shows that speed limit in the speed card (the emulator has no map data to read one from)."""
     d.sh("am", "force-stop", PKG)
+    d.sh("cmd", "statusbar", "collapse")  # a swipe gone astray must not leave the notifications over every later screen
     forget_plan(d)
     # The tour scenarios leave the welcome tour or the trip card's walk-through unseen: not over the other screens.
     set_seen(d, "tourSeen", "tripHelpSeen")
@@ -633,7 +634,10 @@ def scenario_sidesigns(d):
         go_home(d)
         d.tap([settings])
         d.tap([display], wait=1.5)
-        reveal(d, [title])
+        for _ in range(4):  # a low screen held sideways shows few rows: more swipes than one reveal has
+            reveal(d, [title])
+            if d.find([title]) is not None:
+                break
         nodes = d.nodes()
         row = d.find([title], nodes)
         if row is None:
@@ -714,19 +718,28 @@ def reach_in_offer(d, labels, floor):
     a text half out still looks whole: it is the button round it, 56 dp high when whole (PillButton), that tells."""
     dp = density(d)
     margin = int(16 * dp)
-    w, _ = d.screen()
+    w, h = d.screen()
     step = int(50 * dp)
-    start = max(floor - margin - 2, step + margin)
+    # Not from the screen's bottom edge: with gesture navigation an upward swipe from there leaves the app.
+    start = max(min(floor - margin - 2, h - int(70 * dp)), step + margin)
     n = None
     for _ in range(12):
         nodes = d.nodes()
         n = d.find(labels, nodes)
+        back = False
         if n is not None:
             x1, y1, x2, y2 = n["bounds"]
             pill = next((c for c in nodes if c["clickable"] and c["bounds"][0] <= x1 and c["bounds"][1] <= y1 and c["bounds"][2] >= x2 and c["bounds"][3] >= y2), None)
-            if pill is not None and pill["bounds"][3] - pill["bounds"][1] >= 54 * dp and pill["bounds"][3] <= floor and pill["bounds"][1] >= 0 and x2 <= w:
-                return None
-        d.sh("input", "swipe", str(w // 2), str(start), str(w // 2), str(start - step), "700")
+            if pill is not None:
+                _, py1, _, py2 = pill["bounds"]
+                if py2 - py1 >= 54 * dp and py2 <= floor - margin + 2 and py1 >= margin - 2 and x2 <= w:
+                    return None
+                back = py1 < margin - 2  # scrolled past on a low screen, where one step is most of the card
+        x = w // 2  # between the two buttons of a row: a short swipe on one could press it
+        if back:
+            d.sh("input", "swipe", str(x), str(start - step // 2), str(x), str(start), "700")
+        else:
+            d.sh("input", "swipe", str(x), str(start), str(x), str(start - step), "700")
         time.sleep(0.7)
     if n is None:
         return f"'{labels[0]}' could not be scrolled to"
@@ -789,11 +802,12 @@ def check_offer(d, seed, name_of, offers):
             p = reach_in_offer(d, labels, floor)
             if p:
                 d.extra.append(f"{lang}, keyboard up: {p}")
-    return must
+    return must[-1:]  # with the keyboard up the last button is in view, the others are scrolled past on a low screen
 
 
 def go_home_keeping_offers(d):
     """Curveon started afresh with the offer written before it; go_home would clear it away."""
+    d.sh("cmd", "statusbar", "collapse")
     d.sh("settings", "put", "system", "user_rotation", str(d.rotation))
     set_seen(d, "tourSeen", "tripHelpSeen")
     d.sh(f"run-as {PKG} rm -f files/plan-draft.json")
@@ -934,14 +948,22 @@ def main():
                     tag = f"{v[0]}-{'land' if rot else 'port'}"
                     d.scenario = s
                     d.tag = tag
-                    d.shots = []
-                    try:
-                        d.extra = []
-                        d.scrolling_row_ok = False
-                        must = SCENARIOS[s](d)
-                        problems = d.extra + check(d, must)
-                    except LookupError as e:
-                        problems = [f"could not get there: {e}"]
+                    # The emulator's GPS driver sometimes hangs and Android restarts itself: says nothing about the screen.
+                    for attempt in range(2):
+                        started = d.sh("getprop", "sys.system_server.start_count")
+                        d.shots = []
+                        try:
+                            d.extra = []
+                            d.scrolling_row_ok = False
+                            must = SCENARIOS[s](d)
+                            problems = d.extra + check(d, must)
+                        except LookupError as e:
+                            problems = [f"could not get there: {e}"]
+                        if attempt == 1 or d.sh("getprop", "sys.system_server.start_count") == started:
+                            break
+                        print(f"{s:10} {tag:18} Android restarted itself during this, once more", flush=True)
+                        time.sleep(30)
+                        apply_variant(d, v, rot)
                     path = os.path.join(a.out, f"{s}_{tag}.png")
                     d.screenshot(path)
                     shots[s] += d.shots
