@@ -121,12 +121,15 @@ private fun CameraScan(accept: (String) -> Boolean, onInvite: (String) -> Unit, 
     val lifecycleOwner = LocalLifecycleOwner.current
     val analysisThread = remember { Executors.newSingleThreadExecutor() }
     val done = remember { AtomicBoolean(false) }
+    /** Closed before the camera was ready: it must not be switched on after all (it stayed on, the green dot too). */
+    val disposed = remember { AtomicBoolean(false) }
     val main = remember { ContextCompat.getMainExecutor(context) }
     val latestInvite by rememberUpdatedState(onInvite)
     val latestOther by rememberUpdatedState(onOther)
 
     DisposableEffect(Unit) {
         onDispose {
+            disposed.set(true)
             runCatching { ProcessCameraProvider.getInstance(context).get().unbindAll() }
             analysisThread.shutdown()
         }
@@ -137,6 +140,7 @@ private fun CameraScan(accept: (String) -> Boolean, onInvite: (String) -> Unit, 
             PreviewView(ctx).apply { scaleType = PreviewView.ScaleType.FILL_CENTER }.also { view ->
                 val future = ProcessCameraProvider.getInstance(ctx)
                 future.addListener({
+                    if (disposed.get()) return@addListener
                     val preview = Preview.Builder().build().also { it.surfaceProvider = view.surfaceProvider }
                     // Big enough to read a dense code held at arm's length, small enough to keep up.
                     val analysis = ImageAnalysis.Builder()
