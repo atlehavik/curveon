@@ -8,10 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.curveon.R
 import com.curveon.data.bluetooth.PhoneCompanionManager
 import com.curveon.data.bluetooth.TabletRoutes
-import com.curveon.data.webplan.WebPlans
 import com.curveon.data.db.AppDatabase
 import com.curveon.data.gpx.GpxGroups
-import com.curveon.data.gpx.GpxWriter
 import com.curveon.data.location.DemoRide
 import com.curveon.data.location.GpsFix
 import com.curveon.data.location.LocationSource
@@ -38,8 +36,6 @@ import com.curveon.data.routing.SavedRoutes
 import com.curveon.data.routing.Stop
 import com.curveon.data.search.PlaceSearch
 import com.curveon.data.search.SearchResult
-import com.curveon.data.update.AppUpdates
-import com.curveon.data.update.Changelog
 import com.curveon.data.update.ChangelogEntry
 import com.curveon.data.update.UpdateState
 import com.curveon.protocol.Message
@@ -187,31 +183,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** The country at the place drives on the left (decides which way a roundabout turns). */
     private fun drivesOnLeft(lat: Double, lon: Double): Boolean =
         mapCatalog.areaAt(lat, lon)?.iso in LEFT_HAND_TRAFFIC
-    private var latestMapBuild: String? = null
-    private val _installedMaps = MutableStateFlow(mapDownloads.installed(null))
-    val installedMaps: StateFlow<List<com.curveon.data.map.InstalledMap>> = _installedMaps.asStateFlow()
-    private val _mapDownload = MutableStateFlow<com.curveon.data.map.MapDownloadState>(com.curveon.data.map.MapDownloadState.Idle)
-    /** A country whose map is in place and whose routing and search are being fetched while the next map downloads. */
-    private val _mapFinishing = MutableStateFlow<com.curveon.data.map.MapDownloadState.Running?>(null)
-    val mapDownload: StateFlow<com.curveon.data.map.MapDownloadState> = combine(_mapDownload, _mapFinishing) { d, f ->
-        when {
-            f == null || d is com.curveon.data.map.MapDownloadState.Failed -> d
-            d is com.curveon.data.map.MapDownloadState.Running -> d.copy(finishing = f)
-            else -> f
-        }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, com.curveon.data.map.MapDownloadState.Idle)
+    /** The maps on the device: downloads, search data without the map, a map file imported by hand. */
+    private val maps = MapDownloadController(application, viewModelScope, mapDownloads, offlineMaps, navigator.routingData, placeSearch.indexes,
+        location = { _currentLocation.value })
+    val installedMaps: StateFlow<List<com.curveon.data.map.InstalledMap>> = maps.installedMaps
+    val mapDownload: StateFlow<com.curveon.data.map.MapDownloadState> = maps.mapDownload
     /** Countries waiting their turn after the one downloading now. */
-    private val _mapQueue = MutableStateFlow<List<String>>(emptyList())
-    val mapQueue: StateFlow<List<String>> = _mapQueue.asStateFlow()
+    val mapQueue: StateFlow<List<String>> = maps.mapQueue
     /** Bumped when the offline map files change so the map view reloads them. */
-    private val _mapVersion = MutableStateFlow(0)
-    val mapVersion: StateFlow<Int> = _mapVersion.asStateFlow()
-    @Volatile private var cancelMapDownload = false
-    @Volatile private var cancelMapFinish = false
-    /** A finishing step that failed while a map was downloading; shown when the queue is done. */
-    @Volatile private var deferredFailure: String? = null
-    private var mapWorker: Job? = null
-    private var mapFinisher: Job? = null
+    val mapVersion: StateFlow<Int> = maps.mapVersion
 
     /** Room for maps, counting what Android would clear for them; may take seconds, so not on the main thread. */
     fun freeStorageBytes() = mapDownloads.freeBytes()
@@ -228,149 +208,26 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ---------------------------------------------------------------- search data without the map
 
-    private val _searchOffer = MutableStateFlow<com.curveon.data.search.SearchOffer?>(null)
     /** Search data for where the rider is that can be fetched without downloading the map (see [checkSearchOffer]). */
-    val searchOffer: StateFlow<com.curveon.data.search.SearchOffer?> = _searchOffer.asStateFlow()
-    private var searchOfferJob: Job? = null
+    val searchOffer: StateFlow<com.curveon.data.search.SearchOffer?> = maps.searchOffer
     private var searchChecked = false
-    /** Countries already fetched by themselves this time the app runs: once, so a failure doesn't make a loop. */
-    private val autoSearchTried = mutableSetOf<String>()
 
-    /**
-     * Is there a search index for where the rider is that isn't on the tablet but is small enough to
-     * offer? Called when Where to? opens and at the first GPS fix. It is fetched by itself (once per run, so a
-     * failure doesn't make a loop); the card in Where to? shows how far it is, or lets the rider try again.
-     */
-    fun checkSearchOffer() {
-        if (searchOfferJob?.isActive == true) return
-        val here = _currentLocation.value
-        if (here == DEFAULT_LOCATION) return
-        viewModelScope.launch {
-            val area = withContext(Dispatchers.Default) { mapCatalog.indexAreaAt(here.latitude, here.longitude) }
-            if (area == null || placeSearch.indexes.source(area.id) != com.curveon.data.search.SearchIndexes.Source.NONE) { _searchOffer.value = null; return@launch }
-            withContext(Dispatchers.IO) { if (mapDownloads.searchBytes(area.id) == null) mapDownloads.refreshSearch() }
-            val bytes = mapDownloads.searchBytes(area.id)
-            if (bytes == null || bytes > SEARCH_OFFER_MAX_BYTES) { _searchOffer.value = null; return@launch }
-            if (_searchOffer.value?.areaId != area.id) _searchOffer.value = com.curveon.data.search.SearchOffer(area.id, area.displayName(java.util.Locale.getDefault()), bytes)
-            if (autoSearchTried.add(area.id)) downloadSearchIndex()
-        }
-    }
+    /** Is there a search index for where the rider is, small enough to fetch by itself? Called when Where to? opens and at the first GPS fix. */
+    fun checkSearchOffer() = maps.checkSearchOffer()
 
     /** Fetches the offered search index. */
-    fun downloadSearchIndex() {
-        val offer = _searchOffer.value ?: return
-        if (searchOfferJob?.isActive == true) return
-        searchOfferJob = viewModelScope.launch {
-            _searchOffer.value = offer.copy(progress = str(R.string.search_offer_starting), fraction = 0f, failed = false)
-            try {
-                placeSearch.indexes.fetch(offer.areaId, { msg, f -> _searchOffer.value = offer.copy(progress = msg, fraction = f) }, isCancelled = { false })
-                _searchOffer.value = null
-                updateMapStatus()
-            } catch (e: Throwable) {
-                placeSearch.indexes.cleanupPartial(offer.areaId)
-                _searchOffer.value = offer.copy(progress = str(R.string.search_download_failed, e.message ?: ""), failed = true)
-            }
-        }
-    }
+    fun downloadSearchIndex() = maps.downloadSearchIndex()
 
     /** Checks online (when there is a connection) whether a newer map build exists. */
-    fun refreshMapStatus() = viewModelScope.launch {
-        latestMapBuild = mapDownloads.latestBuild() ?: latestMapBuild
-        mapDownloads.refreshSearch()
-        updateMapStatus()
-    }
+    fun refreshMapStatus() = maps.refreshMapStatus()
 
-    private fun updateMapStatus() {
-        _installedMaps.value = mapDownloads.installed(latestMapBuild)
-        _routingDataStatus.value = navigator.routingData.describe()
-    }
-
-    /**
-     * Queues a country (map and routing). Maps download one after another; a finished map's routing
-     * and search are fetched/built meanwhile, so the next map doesn't wait for them.
-     */
-    fun downloadMap(areaId: String) {
-        val running = (_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId
-        if (areaId == running || areaId == _mapFinishing.value?.areaId || areaId in _mapQueue.value || mapCatalog.byId[areaId] == null) return
-        _mapQueue.update { it + areaId }
-        if (mapWorker?.isActive != true) mapWorker = viewModelScope.launch { runMapQueue() }
-    }
-
-    private suspend fun runMapQueue() {
-        while (true) {
-            val id = _mapQueue.value.firstOrNull() ?: break
-            _mapQueue.update { it.drop(1) }
-            val area = mapCatalog.byId[id] ?: continue
-            cancelMapDownload = false
-            _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(id, str(R.string.map_checking_newest), 0f)
-            val progress = { msg: String, f: Float -> _mapDownload.value = com.curveon.data.map.MapDownloadState.Running(id, msg, f) }
-            try {
-                val installed = _installedMaps.value.firstOrNull { it.id == id }
-                // A current map only needs the routing and search it lacks.
-                if (installed == null || installed.newerBuild != null || (installed.missingRouting.isEmpty() && !installed.missingSearch)) {
-                    val build = mapDownloads.latestBuild() ?: error(str(R.string.map_no_connection))
-                    latestMapBuild = build
-                    mapDownloads.download(area, build, progress, isCancelled = { cancelMapDownload })
-                    _mapVersion.value++
-                    updateMapStatus()
-                }
-                // One finishing step at a time; the next map can start downloading once this one is handed over.
-                progress(str(R.string.maps_waiting), 1f)
-                mapFinisher?.join()
-                check(!cancelMapDownload) { "Cancelled" }
-                _mapFinishing.value = com.curveon.data.map.MapDownloadState.Running(id, str(R.string.map_checking_newest), 0f)
-                cancelMapFinish = false
-                mapFinisher = viewModelScope.launch { finishMap(area) }
-                _mapDownload.value = com.curveon.data.map.MapDownloadState.Idle
-            } catch (e: Throwable) {
-                mapDownloads.cleanupPartial(id)
-                if (cancelMapDownload) _mapDownload.value = com.curveon.data.map.MapDownloadState.Idle
-                else {
-                    _mapDownload.value = com.curveon.data.map.MapDownloadState.Failed(str(R.string.map_download_failed, e.message ?: ""))
-                    _mapQueue.value = emptyList() // no connection or no space: the rest would fail too
-                }
-            }
-            updateMapStatus()
-        }
-        deferredFailure?.let {
-            deferredFailure = null
-            _mapDownload.value = com.curveon.data.map.MapDownloadState.Failed(it)
-        }
-    }
-
-    /** Routing tiles, search index and speed limits for a country whose map is installed. */
-    private suspend fun finishMap(area: com.curveon.data.map.CatalogArea) {
-        val id = area.id
-        val progress = { msg: String, f: Float -> _mapFinishing.value = com.curveon.data.map.MapDownloadState.Running(id, msg, f) }
-        try {
-            mapDownloads.completeMissing(area, progress, isCancelled = { cancelMapFinish })
-        } catch (e: Throwable) {
-            mapDownloads.cleanupPartial(id)
-            if (!cancelMapFinish) {
-                val message = str(R.string.map_download_failed, e.message ?: "")
-                if (_mapDownload.value is com.curveon.data.map.MapDownloadState.Running) deferredFailure = message
-                else _mapDownload.value = com.curveon.data.map.MapDownloadState.Failed(message)
-            }
-        } finally {
-            _mapFinishing.value = null
-            updateMapStatus()
-        }
-    }
+    /** Queues a country (map and routing); maps download one after another. */
+    fun downloadMap(areaId: String) = maps.downloadMap(areaId)
 
     /** Stops [areaId]: the running download or finishing step, or takes it out of the queue. */
-    fun cancelMapDownload(areaId: String) {
-        when {
-            (_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId == areaId -> cancelMapDownload = true
-            _mapFinishing.value?.areaId == areaId -> cancelMapFinish = true
-            else -> _mapQueue.update { it - areaId }
-        }
-    }
+    fun cancelMapDownload(areaId: String) = maps.cancelMapDownload(areaId)
 
-    fun deleteMap(id: String) {
-        mapDownloads.delete(id)
-        updateMapStatus()
-        _mapVersion.value++
-    }
+    fun deleteMap(id: String) = maps.deleteMap(id)
 
     /** How many seconds ahead of the GPS the rider arrow sits ([RiderMotion.LEAD_S]; negative = behind). */
     private val _arrowLead = MutableStateFlow(
@@ -431,83 +288,23 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ---------------------------------------------------------------- app updates (GitHub releases)
 
-    private val appUpdates = AppUpdates(application)
-    private val _appUpdate = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    private val updates = AppUpdateController(application, viewModelScope, settings, tourSeen = { tourSeen }, untilAwake = { untilAwake() })
     /** A newer version on GitHub, and how far downloading and installing it has come. */
-    val appUpdate: StateFlow<UpdateState> = _appUpdate.asStateFlow()
-    private val _updateAnnounced = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val appUpdate: StateFlow<UpdateState> = updates.appUpdate
     /** A newer version was just found by the startup check (once per version): its number. */
-    val updateAnnounced: SharedFlow<String> = _updateAnnounced
+    val updateAnnounced: SharedFlow<String> = updates.updateAnnounced
 
     /** Looks for a newer version now (Settings → Help, or [quiet]ly by itself). */
-    fun checkForUpdate(quiet: Boolean = false) {
-        if (!com.curveon.BuildConfig.SELF_UPDATE) return
-        val s = _appUpdate.value
-        if (s is UpdateState.Checking || s is UpdateState.Downloading ||
-            s is UpdateState.Installing) return
-        viewModelScope.launch { checkNow(quiet) }
-    }
-
-    /** True once the server answered. */
-    private suspend fun checkNow(quiet: Boolean): Boolean {
-        if (!quiet) _appUpdate.value = UpdateState.Checking
-        return runCatching { appUpdates.newer() }.fold(
-            onSuccess = { release ->
-                if (release == null) {
-                    if (_appUpdate.value !is UpdateState.Available || !quiet) _appUpdate.value = UpdateState.UpToDate
-                    appUpdates.cleanup()
-                } else {
-                    _appUpdate.value = UpdateState.Available(release)
-                    if (quiet && settings.getString("updateAnnounced", null) != release.version) {
-                        settings.edit().putString("updateAnnounced", release.version).apply()
-                        _updateAnnounced.tryEmit(release.version)
-                    }
-                }
-                true
-            },
-            onFailure = {
-                if (!quiet) _appUpdate.value = UpdateState.Failed(str(R.string.update_offline), null)
-                false
-            }
-        )
-    }
+    fun checkForUpdate(quiet: Boolean = false) = updates.checkForUpdate(quiet)
 
     /** Downloads the new version and hands it to Android's installer, which asks the rider to confirm. */
-    fun installUpdate() {
-        val release = when (val s = _appUpdate.value) {
-            is UpdateState.Available -> s.release
-            is UpdateState.Failed -> s.release
-            else -> null
-        } ?: return
-        viewModelScope.launch {
-            runCatching {
-                _appUpdate.value = UpdateState.Downloading(release, 0f)
-                val apk = appUpdates.download(release) { f -> _appUpdate.value = UpdateState.Downloading(release, f) }
-                _appUpdate.value = UpdateState.Installing(release)
-                appUpdates.install(apk)
-            }.onFailure {
-                _appUpdate.value = UpdateState.Failed(str(
-                    if (it is AppUpdates.SignedDifferently) R.string.update_signed_differently else R.string.update_download_failed
-                ), release)
-            }
-        }
-    }
+    fun installUpdate() = updates.installUpdate()
 
     /** What changed, newest version first, in the rider's language. */
-    fun changelog(): List<ChangelogEntry> =
-        Changelog.read(app, com.curveon.AppLanguage.current(app).tag)
+    fun changelog(): List<ChangelogEntry> = updates.changelog()
 
-    /**
-     * The versions installed since the app last ran, to show once after an update; empty on a
-     * fresh install. (1.0 didn't note its version: a rider who has seen the tour came from 1.0.)
-     */
-    fun takeNewChanges(): List<ChangelogEntry> {
-        val current = com.curveon.BuildConfig.VERSION_NAME
-        val last = settings.getString("lastVersion", null) ?: if (tourSeen) "1.0" else current
-        settings.edit().putString("lastVersion", current).apply()
-        if (!AppUpdates.isNewer(current, last)) return emptyList()
-        return Changelog.since(changelog(), last).filterNot { AppUpdates.isNewer(it.version, current) }
-    }
+    /** The versions installed since the app last ran, to show once after an update; empty on a fresh install. */
+    fun takeNewChanges(): List<ChangelogEntry> = updates.takeNewChanges()
 
     fun setShowAltitude(on: Boolean) { _showAltitude.value = on; settings.edit().putBoolean("showAltitude", on).apply() }
     fun setShowClock(on: Boolean) { _showClock.value = on; settings.edit().putBoolean("showClock", on).apply() }
@@ -626,17 +423,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun connectObd() = obd.use(_obdDevice.value.takeIf { _telemetry.value.isObdEnabled })
 
-    private val _offlineMapStatus = MutableStateFlow(describeOfflineMaps())
-    val offlineMapStatus: StateFlow<String> = _offlineMapStatus.asStateFlow()
+    val offlineMapStatus: StateFlow<String> = maps.offlineMapStatus
 
-    private val _routingDataStatus = MutableStateFlow(navigator.routingData.describe())
-    val routingDataStatus: StateFlow<String> = _routingDataStatus.asStateFlow()
+    val routingDataStatus: StateFlow<String> = maps.routingDataStatus
 
     /** After a language change: redo the status texts that were written in the old language. */
     fun refreshTexts() {
-        _routingDataStatus.value = navigator.routingData.describe()
-        _offlineMapStatus.value = describeOfflineMaps()
-        _gpxMessage.value = null
+        maps.refreshTexts()
+        gpx.clearMessage()
     }
 
     val savedRoutes = repository.allRoutes.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -666,8 +460,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ---------------------------------------------------------------- Planning session with the web planner
 
-    private val webPlans = WebPlans(application, repository)
-
     /** The web planner as the Planned page shows it: how many browsers are connected, and how the last fetch went. */
     data class WebPlanState(
         val browsers: Int = 0, val fetching: Boolean = false,
@@ -683,98 +475,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
          */
         val report: Long = 0,
     )
-    private val _webPlan = MutableStateFlow(WebPlanState(browsers = webPlans.links().size))
-    val webPlan: StateFlow<WebPlanState> = _webPlan.asStateFlow()
-    private var webPlanFetched = 0L
-    private var webPlanSession: com.curveon.data.webplan.WebPlanSession? = null
-    private var webPlanWanted = 0
-
-    init {
-        if (webPlans.links().isNotEmpty()) fetchWebPlans()
-        showPlannedOnWeb()
-    }
-
-    /**
-     * A planned trip saved, renamed, moved or deleted here: the page sees it (at once while connected, else on a
-     * short connection, and only when something it shows did change).
-     */
-    @OptIn(kotlinx.coroutines.FlowPreview::class)
-    private fun showPlannedOnWeb() = viewModelScope.launch {
-        combine(savedRoutes, repository.allRouteGroups) { r, g -> r to g }.drop(1).debounce(2000).collect {
-            if (webPlans.links().isEmpty()) return@collect
-            val session = webPlanSession
-            if (session != null) runCatching { session.publish() }
-            else if (webPlans.needsPublish()) fetchWebPlans()
-        }
-    }
+    // After savedRoutes, which it follows; it fetches what the page sent as soon as it is made.
+    private val webPlanner =WebPlanController(application, viewModelScope, repository, savedRoutes)
+    val webPlan: StateFlow<WebPlanState> = webPlanner.webPlan
 
     /** Fetches what the web planner sent and shows it this device's trips; [auto] (app shown, Planned opened) at most every half minute. */
-    fun fetchWebPlans(auto: Boolean = false) {
-        if (_webPlan.value.fetching || webPlans.links().isEmpty() || webPlanSession != null) return
-        if (auto && System.currentTimeMillis() - webPlanFetched < 30_000) return
-        webPlanFetched = System.currentTimeMillis()
-        _webPlan.update { it.copy(fetching = true) }
-        viewModelScope.launch {
-            val r = runCatching { webPlans.sync() }.getOrNull()
-            val news = r != null && r.any
-            _webPlan.update { it.copy(fetching = false, added = r?.added, changed = r?.changed ?: 0, deleted = r?.deleted ?: 0, tracks = r?.tracks ?: 0, offline = r == null,
-                report = if (news) System.currentTimeMillis() else it.report) }
-        }
-    }
+    fun fetchWebPlans(auto: Boolean = false) = webPlanner.fetchWebPlans(auto)
 
     /** While the planned trips are on screen: connected, so a trip from the page arrives at once. Pair with [webPlanHidden]. */
-    fun webPlanShown() {
-        webPlanWanted++
-        connectWebPlans()
-    }
+    fun webPlanShown() = webPlanner.webPlanShown()
 
-    fun webPlanHidden() {
-        webPlanWanted = (webPlanWanted - 1).coerceAtLeast(0)
-        if (webPlanWanted == 0) { webPlanSession?.close(); webPlanSession = null; _webPlan.update { it.copy(live = false) } }
-    }
-
-    private fun connectWebPlans() {
-        if (webPlanSession != null || webPlanWanted == 0 || webPlans.links().isEmpty()) return
-        var session: com.curveon.data.webplan.WebPlanSession? = null
-        session = webPlans.live(
-            onResult = { r ->
-                if (r.any) _webPlan.update { it.copy(added = r.added, changed = r.changed, deleted = r.deleted, tracks = r.tracks, offline = false, report = System.currentTimeMillis()) }
-            },
-            onDropped = {
-                // Coverage gone or the relay restarted: try again in a while, as long as the trips are still open.
-                viewModelScope.launch {
-                    // One browser's link dropping ends the whole session, its other links too: left open, they stayed
-                    // connected for good beside the new session's (each one a relay channel). A session already replaced
-                    // (a new browser linked meanwhile) is old news.
-                    if (webPlanSession !== session) return@launch
-                    session?.close()
-                    webPlanSession = null
-                    _webPlan.update { it.copy(live = false) }
-                    delay(10_000)
-                    connectWebPlans()
-                }
-            }
-        )
-        webPlanSession = session
-        _webPlan.update { it.copy(live = true, offline = false) }
-    }
+    fun webPlanHidden() = webPlanner.webPlanHidden()
 
     /** A scanned (or opened) web planner code: the session starts, and the page sees this device's trips. False when it is not one. */
-    fun addWebPlanLink(uri: String): Boolean {
-        if (!webPlans.add(uri)) return false
-        _webPlan.update { it.copy(browsers = webPlans.links().size) }
-        // Connected anew, so the new browser is in it.
-        webPlanSession?.close(); webPlanSession = null
-        if (webPlanWanted > 0) connectWebPlans() else fetchWebPlans()
-        return true
-    }
+    fun addWebPlanLink(uri: String): Boolean = webPlanner.addWebPlanLink(uri)
 
     /** Ends the planning sessions; the trips here stay. */
-    fun forgetWebPlans() {
-        webPlanSession?.close(); webPlanSession = null
-        webPlans.forgetAll()
-        _webPlan.value = WebPlanState()
-    }
+    fun forgetWebPlans() = webPlanner.forgetWebPlans()
+
     /** Named sets of planned trips ("Trips for the weekend"). */
     val routeGroups = repository.allRouteGroups.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val savedGpxTracks = repository.allGpxTracks.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -1373,23 +1091,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         restorePlan()
         restoreTrip()
         viewModelScope.launch { while (true) { delay(60_000); untilAwake(); updateMapDark() } }
-        // A new version on GitHub: looked for soon after start, again every half hour until the
-        // server has answered (often offline), then once a day. Developer builds are signed with
-        // another key and can't take the release, so they only look when asked (Settings → Help).
-        // The Google Play build is updated by Play and doesn't look at all.
-        if (!com.curveon.BuildConfig.DEV && com.curveon.BuildConfig.SELF_UPDATE) viewModelScope.launch {
-            delay(15_000)
-            while (true) { untilAwake(); delay(if (checkNow(quiet = true)) 24 * 3_600_000L else 30 * 60_000L) }
-        }
-        viewModelScope.launch {
-            AppUpdates.results.collect { r ->
-                val release = (_appUpdate.value as? UpdateState.Installing)?.release
-                _appUpdate.value = when (r) {
-                    AppUpdates.InstallResult.Cancelled -> release?.let { UpdateState.Available(it) } ?: UpdateState.Idle
-                    is AppUpdates.InstallResult.Error -> UpdateState.Failed(r.message, release)
-                }
-            }
-        }
+        // A new version on GitHub: looked for soon after start, then now and then (see AppUpdateController.start).
+        updates.start()
         // The service's notification says when a trip is navigated (the companion's battery test reads it).
         viewModelScope.launch { isNavigating.collect { com.curveon.RideService.navigation(application, it) } }
         viewModelScope.launch { phoneCompanion.notifications.collect { n -> com.curveon.RideService.call(application, n.any { it.isOngoingCall }) } }
@@ -1556,7 +1259,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun watchSleep() = viewModelScope.launch {
-        combine(onScreen, isNavigating, _mapDownload) { shown, navigating, download ->
+        combine(onScreen, isNavigating, maps.downloadingNow) { shown, navigating, download ->
             shown || navigating || download is com.curveon.data.map.MapDownloadState.Running
         }.distinctUntilChanged().drop(1).collect { if (it) wake() else sleep() }
     }
@@ -2643,42 +2346,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     // ---------------------------------------------------------------- GPX import
 
-    private val _gpxMessage = MutableStateFlow<String?>(null)
-    val gpxMessage: StateFlow<String?> = _gpxMessage.asStateFlow()
+    private val gpx = GpxController(application, viewModelScope, repository)
+    val gpxMessage: StateFlow<String?> = gpx.gpxMessage
 
-    private val gpxImporter = com.curveon.data.osm.GpxImporter(application, repository)
+    fun importGpx(uri: Uri) = gpx.importGpx(uri)
 
-    fun importGpx(uri: Uri) {
-        viewModelScope.launch {
-            runCatching { gpxImporter.import(uri) }
-                .onSuccess { _gpxMessage.value = if (it.size == 1) str(R.string.gpx_imported_one, it[0])
-                    else getApplication<Application>().resources.getQuantityString(R.plurals.gpx_imported_tracks, it.size, it.size) }
-                .onFailure { _gpxMessage.value = str(R.string.import_failed, it.message ?: "") }
-        }
-    }
-
-    private val _showGpxPanel = MutableStateFlow(false)
     /** A GPX file was opened from another app: show GPX & rides (the screen resets it once open). */
-    val showGpxPanel: StateFlow<Boolean> = _showGpxPanel.asStateFlow()
-    fun gpxPanelShown() { _showGpxPanel.value = false }
+    val showGpxPanel: StateFlow<Boolean> = gpx.showGpxPanel
+    fun gpxPanelShown() = gpx.gpxPanelShown()
 
     /** A GPX file opened or shared from another app: imported, and GPX & rides shows it. */
-    fun openGpx(uri: Uri) {
-        _gpxMessage.value = null
-        importGpx(uri)
-        _showGpxPanel.value = true
-    }
+    fun openGpx(uri: Uri) = gpx.openGpx(uri)
 
-    // Declared after gpxImporter and _gpxMessage so they exist when this runs.
+    // Declared after gpx so it exists when this runs.
     init {
-        importGpxInbox(); connectObd()
+        gpx.importGpxInbox(); connectObd()
         navigator.describePlace = { describePoint(GeoPoint(it.lat, it.lon)) }
-    }
-
-    /** GPX files copied over USB into the gpx/ folder are imported at startup. */
-    private fun importGpxInbox() = viewModelScope.launch {
-        val names = runCatching { gpxImporter.importInbox() }.getOrDefault(emptyList())
-        if (names.isNotEmpty()) _gpxMessage.value = getApplication<Application>().resources.getQuantityString(R.plurals.gpx_imported_inbox, names.size, names.size)
     }
 
     private fun watchTracks(fix: GpsFix) {
@@ -2705,92 +2388,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         navigator.followTrackNow(t.name, if (reverse) pts.reversed() else pts, RouteOptions(RoadStyle.FASTEST, SurfacePreference.MIXED))
     }
 
-    fun setTrackOnMap(track: GpxTrack, show: Boolean) = viewModelScope.launch {
-        // Pin the palette colour so it doesn't change when other tracks come and go.
-        val pinned = track.copy(color = com.curveon.data.gpx.GpxOverlay.colorOf(track))
-        inGroup(pinned) { g, tracks -> GpxGroups.setTrackVisible(g, tracks, track.id, show) } ?: repository.updateGpxTrack(pinned.copy(showOnMap = show))
-    }
-
-    fun setTrackColor(track: GpxTrack, color: Int) = viewModelScope.launch {
-        inGroup(track) { g, tracks -> GpxGroups.setTrackColor(g, tracks, track.id, color) } ?: repository.updateGpxTrack(track.copy(color = color))
-    }
-
-    fun setTrackReversed(track: GpxTrack, reversed: Boolean) = viewModelScope.launch {
-        inGroup(track) { g, tracks -> GpxGroups.setTrackReversed(g, tracks, track.id, reversed) } ?: repository.updateGpxTrack(track.copy(reversed = reversed))
-    }
-
-    /**
-     * Applies a change to one track of a group (which may turn a group override back to custom);
-     * null when the track has no group.
-     */
-    private suspend fun inGroup(track: GpxTrack, change: (GpxGroup, List<GpxTrack>) -> Pair<GpxGroup, List<GpxTrack>>): Unit? {
-        val g = track.groupId?.let { repository.gpxGroup(it) } ?: return null
-        val tracks = repository.gpxTracksInGroup(g.id).map { if (it.id == track.id) track else it }
-        val (g2, changed) = change(g, tracks)
-        repository.updateGpxTracks(changed)
-        repository.updateGpxGroup(g2)
-        return Unit
-    }
-
-    fun renameTrack(track: GpxTrack, name: String) = viewModelScope.launch {
-        if (name.isNotBlank()) repository.updateGpxTrack(track.copy(name = name.trim()))
-    }
-
-    fun moveTrack(track: GpxTrack, groupId: Long?, newGroup: String?) = viewModelScope.launch {
-        val target = newGroup?.takeIf { it.isNotBlank() }?.let { repository.createGpxGroup(it.trim()) } ?: groupId
-        // Keep how it looks now: its old group's overrides become its own settings.
-        val old = track.groupId?.let { repository.gpxGroup(it) }
-        repository.updateGpxTrack(
-            track.copy(
-                groupId = target,
-                showOnMap = GpxGroups.visible(track, old),
-                reversed = GpxGroups.reversed(track, old),
-                color = GpxGroups.color(track, old)
-            )
-        )
-    }
-
-    fun toggleGroupVisibility(g: GpxGroup) = viewModelScope.launch {
-        val tracks = repository.gpxTracksInGroup(g.id)
-        val next = GpxGroups.nextVisibility(g, tracks)
-        // Pin palette colours, as for a single track.
-        repository.updateGpxTracks(tracks.filter { it.color == 0 }.map { it.copy(color = com.curveon.data.gpx.GpxOverlay.colorOf(it)) })
-        repository.updateGpxGroup(next)
-    }
-
-    fun toggleGroupDirection(g: GpxGroup) = viewModelScope.launch {
-        repository.updateGpxGroup(GpxGroups.nextDirection(g, repository.gpxTracksInGroup(g.id)))
-    }
+    fun setTrackOnMap(track: GpxTrack, show: Boolean) = gpx.setTrackOnMap(track, show)
+    fun setTrackColor(track: GpxTrack, color: Int) = gpx.setTrackColor(track, color)
+    fun setTrackReversed(track: GpxTrack, reversed: Boolean) = gpx.setTrackReversed(track, reversed)
+    fun renameTrack(track: GpxTrack, name: String) = gpx.renameTrack(track, name)
+    fun moveTrack(track: GpxTrack, groupId: Long?, newGroup: String?) = gpx.moveTrack(track, groupId, newGroup)
+    fun toggleGroupVisibility(g: GpxGroup) = gpx.toggleGroupVisibility(g)
+    fun toggleGroupDirection(g: GpxGroup) = gpx.toggleGroupDirection(g)
 
     /** [color] null: back to each track's own colour; otherwise all tracks in that colour. */
-    fun setGroupColor(g: GpxGroup, color: Int?) = viewModelScope.launch {
-        repository.updateGpxGroup(if (color == null) g.copy(sameColor = false) else g.copy(sameColor = true, color = color))
-    }
-
-    fun renameGroup(g: GpxGroup, name: String) = viewModelScope.launch {
-        if (name.isNotBlank()) repository.updateGpxGroup(g.copy(name = name.trim()))
-    }
+    fun setGroupColor(g: GpxGroup, color: Int?) = gpx.setGroupColor(g, color)
+    fun renameGroup(g: GpxGroup, name: String) = gpx.renameGroup(g, name)
 
     /** Ungroup keeps the tracks (looking as they do now); delete removes them too. */
-    fun deleteGroup(g: GpxGroup, keepTracks: Boolean) = viewModelScope.launch {
-        if (keepTracks) repository.updateGpxTracks(repository.gpxTracksInGroup(g.id).map {
-            it.copy(showOnMap = GpxGroups.visible(it, g), reversed = GpxGroups.reversed(it, g), color = GpxGroups.color(it, g))
-        })
-        repository.deleteGpxGroup(g.id, keepTracks)
-    }
+    fun deleteGroup(g: GpxGroup, keepTracks: Boolean) = gpx.deleteGroup(g, keepTracks)
 
     /** Writes a track, or a whole group when [track] is null, to a GPX file the rider picked. */
-    fun exportGpx(group: GpxGroup?, track: GpxTrack?, uri: Uri) = viewModelScope.launch(Dispatchers.IO) {
-        val result = runCatching {
-            val g = group ?: track?.groupId?.let { repository.gpxGroup(it) }
-            val tracks = if (track != null) listOf(track) else repository.gpxTracksInGroup(g!!.id).sortedBy { it.name.lowercase() }
-            val xml = GpxWriter.write(track?.name ?: g!!.name, tracks, g)
-            getApplication<Application>().contentResolver.openOutputStream(uri)!!.use { it.write(xml.toByteArray()) }
-        }
-        _gpxMessage.value = result.fold({ str(R.string.gpx_exported, track?.name ?: group?.name ?: "") }, { str(R.string.gpx_export_failed, it.message ?: "") })
-    }
+    fun exportGpx(group: GpxGroup?, track: GpxTrack?, uri: Uri) = gpx.exportGpx(group, track, uri)
 
-    fun setTrackPois(track: GpxTrack, show: Boolean) = viewModelScope.launch { repository.updateGpxTrack(track.copy(showPois = show)) }
+    fun setTrackPois(track: GpxTrack, show: Boolean) = gpx.setTrackPois(track, show)
 
     fun togglePoiCategory(c: com.curveon.data.gpx.PoiCategory) {
         val next = if (c in _poiCategories.value) _poiCategories.value - c else _poiCategories.value + c
@@ -2803,26 +2419,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         settings.edit().putBoolean("autoFollowTracks", on).apply()
     }
 
-    fun deleteGpx(track: GpxTrack) {
-        viewModelScope.launch { repository.deleteGpxTrack(track.id) }
-    }
+    fun deleteGpx(track: GpxTrack) = gpx.deleteGpx(track)
 
     // ---------------------------------------------------------------- offline map
 
-    private fun describeOfflineMaps(): String {
-        val maps = offlineMaps.installedMaps()
-        return if (maps.isEmpty()) str(R.string.offline_map_none, offlineMaps.mapsDir)
-        else maps.joinToString("\n") { str(R.string.offline_map_line, it.name, it.length() / 1e6) } + "\n" + str(R.string.offline_map_restart)
-    }
-
-    fun importOfflineMap(uri: Uri) {
-        viewModelScope.launch {
-            runCatching {
-                offlineMaps.import(uri) { p -> _offlineMapStatus.value = str(R.string.importing_percent, p * 100) }
-            }.onFailure { _offlineMapStatus.value = str(R.string.import_failed, it.message ?: "") }
-                .onSuccess { _offlineMapStatus.value = describeOfflineMaps(); _mapVersion.value++; updateMapStatus() }
-        }
-    }
+    fun importOfflineMap(uri: Uri) = maps.importOfflineMap(uri)
 
     companion object {
         /** Below this, for [PARKED_AFTER_MS], the rider has stopped somewhere: the road sign goes. */
@@ -2852,8 +2453,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         /** Not navigating and standing still (under 3 km/h) for this many reads, about a minute: parked, no road limit to show. */
         private const val STILL_BEFORE_HIDING_LIMIT = 15
         val DEFAULT_LOCATION = GeoPoint(59.9139, 10.7522)
-        /** Search data bigger than this (compressed) isn't fetched on its own: it comes with the country's map. */
-        private const val SEARCH_OFFER_MAX_BYTES = 120_000_000L
         private const val DR_START_MS = 3_000L
         /** The GPS gives a fix every second, standing still too: this long without one, the signal is gone. */
         private const val GPS_LOST_MS = 8_000L
