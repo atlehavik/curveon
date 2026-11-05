@@ -117,10 +117,22 @@ internal fun raisePlaceNames(s: Style) {
         if (s.removeLayer(l)) s.addLayer(l)
     }
 }
-
 internal fun addOverlayLayers(s: Style, dark: Boolean) {
     addSurfaceLayers(s, dark)
     s.addImage(ARROW_IMAGE, arrowBitmap(), true)
+    addGpxLayers(s, dark)
+    addRouteLayers(s, dark)
+    addSurfaceOverLayers(s, dark)
+    addWeatherLayer(s, dark)
+    raisePlaceNames(s)
+    addPoiAndPinLayers(s, dark)
+    addGroupLayers(s, dark)
+    addEditLayers(s, dark)
+    addSignLayers(s, dark)
+}
+
+/** GPX tracks in their colour with direction arrows, and the dashed way to the nearest one. */
+private fun addGpxLayers(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(GPX))
     s.addSource(GeoJsonSource(GPX_POIS))
     s.addSource(GeoJsonSource(HINT))
@@ -159,6 +171,20 @@ internal fun addOverlayLayers(s: Style, dark: Boolean) {
             org.maplibre.android.style.expressions.Expression.geometryType(),
             org.maplibre.android.style.expressions.Expression.literal("Point")))
     )
+}
+
+// The line to follow: thick when riding zoomed in, thinner zoomed out so the map still shows.
+private fun routeWidth(z10: Float, z14: Float, z17: Float) = lineWidth(
+    org.maplibre.android.style.expressions.Expression.interpolate(
+        org.maplibre.android.style.expressions.Expression.linear(), org.maplibre.android.style.expressions.Expression.zoom(),
+        org.maplibre.android.style.expressions.Expression.stop(10, z10),
+        org.maplibre.android.style.expressions.Expression.stop(14, z14),
+        org.maplibre.android.style.expressions.Expression.stop(17, z17)
+    )
+)
+
+/** The trips previewed, the way to the route's start, the route ridden with its gravel and tracks, and tracks along it. */
+private fun addRouteLayers(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(ALT))
     s.addSource(GeoJsonSource(ROUTE))
     s.addSource(GeoJsonSource(MARKERS))
@@ -173,15 +199,6 @@ internal fun addOverlayLayers(s: Style, dark: Boolean) {
         LineLayer("$ALT-line", ALT).withProperties(
             lineColor(if (dark) "#5A6B7D" else "#8FA3B8"), lineWidth(6f), lineOpacity(0.85f),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
-        )
-    )
-    // The line to follow: thick when riding zoomed in, thinner zoomed out so the map still shows.
-    fun routeWidth(z10: Float, z14: Float, z17: Float) = lineWidth(
-        org.maplibre.android.style.expressions.Expression.interpolate(
-            org.maplibre.android.style.expressions.Expression.linear(), org.maplibre.android.style.expressions.Expression.zoom(),
-            org.maplibre.android.style.expressions.Expression.stop(10, z10),
-            org.maplibre.android.style.expressions.Expression.stop(14, z14),
-            org.maplibre.android.style.expressions.Expression.stop(17, z17)
         )
     )
     s.addLayer(
@@ -221,8 +238,10 @@ internal fun addOverlayLayers(s: Style, dark: Boolean) {
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )
-    addSurfaceOverLayers(s, dark)
-    // The weather while drawing a loop: under the place names (raised next) and the drawn line, there to draw by.
+}
+
+/** The weather while drawing a loop: under the place names (raised next) and the drawn line, there to draw by. */
+private fun addWeatherLayer(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(WEATHER))
     s.addLayer(
         org.maplibre.android.style.layers.SymbolLayer("$WEATHER-icons", WEATHER).withProperties(
@@ -233,7 +252,10 @@ internal fun addOverlayLayers(s: Style, dark: Boolean) {
             textAnchor(Property.TEXT_ANCHOR_TOP), textOffset(arrayOf(0f, 1.4f)), textOptional(true)
         )
     )
-    raisePlaceNames(s)
+}
+
+/** GPX waypoints, and the trip's pins (A, the stops, B). */
+private fun addPoiAndPinLayers(s: Style, dark: Boolean) {
     // Zoomed out: small dots in the category colour (many waypoints stay readable). Zoomed in:
     // a badge with an icon per kind, and the name.
     s.addLayer(
@@ -268,6 +290,10 @@ internal fun addOverlayLayers(s: Style, dark: Boolean) {
             textAllowOverlap(true), textIgnorePlacement(true)
         )
     )
+}
+
+/** The other riders of a group ride, and friends who share where they are. */
+private fun addGroupLayers(s: Style, dark: Boolean) {
     // The other riders of a group ride: a ring in their colour with the name under it, dimmed when not heard from for a while.
     // Riders so close that their markers would lie on top of each other (standing together) are one marker: how many, and
     // their names under it. Done by the map itself, so it costs nothing while the map moves.
@@ -345,7 +371,10 @@ internal fun addOverlayLayers(s: Style, dark: Boolean) {
             ).also { it.setFilter(filter) }
         )
     }
-    addEditLayers(s, dark)
+}
+
+/** An area being drawn, give way, stop and speed signs, and the place picked. */
+private fun addSignLayers(s: Style, dark: Boolean) {
     s.addSource(GeoJsonSource(SKETCH))
     s.addLayer(
         LineLayer("$SKETCH-line", SKETCH).withProperties(
