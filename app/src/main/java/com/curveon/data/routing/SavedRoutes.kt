@@ -143,12 +143,16 @@ object SavedRoutes {
     private fun optionsJson(o: RouteOptions) = JSONObject()
         .put("style", o.roadStyle.name).put("surface", o.surface.name)
         .put("ferries", o.avoidFerries).put("motorways", o.avoidMotorways).put("trunk", o.avoidTrunk).put("toll", o.avoidToll)
+        // How far the gravel may be, as in the plan draft: a saved or shared gravel trip changed later keeps its reach.
+        .putOpt("gravelReachKm", o.gravelReachKm).put("gravelPull", o.gravelPull)
 
     private fun parseOptions(j: JSONObject) = RouteOptions(
         RoadStyle.valueOf(j.optString("style", "CURVY")),
         SurfacePreference.valueOf(j.optString("surface", "PAVED")),
         avoidFerries = j.optBoolean("ferries"), avoidMotorways = j.optBoolean("motorways"),
-        avoidTrunk = j.optBoolean("trunk"), avoidToll = j.optBoolean("toll")
+        avoidTrunk = j.optBoolean("trunk"), avoidToll = j.optBoolean("toll"),
+        gravelReachKm = if (j.has("gravelReachKm")) j.getInt("gravelReachKm") else null,
+        gravelPull = j.optInt("gravelPull", 100)
     )
 
     private fun stopJson(name: String, p: LatLon) = JSONObject().put("name", name).put("lat", p.lat).put("lon", p.lon)
