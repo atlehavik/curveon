@@ -37,10 +37,9 @@ object GiveWay {
     fun alongRoute(route: Route, signs: List<GiveWaySign>, priorityRoad: ((Double, Double) -> RoadPiece?)? = null): List<GiveWayOnRoute> {
         val pts = route.points
         if (pts.size < 2) return emptyList()
-        val kx = 111_320.0 * cos(Math.toRadians(pts[0].lat))
         val found = ArrayList<GiveWayOnRoute>()
         val roundabouts = route.maneuvers.filter { it.type == ManeuverType.ROUNDABOUT }.map { it.distanceFromStart }
-        if (priorityRoad != null) found += priorityEntries(route, kx, roundabouts, priorityRoad)
+        if (priorityRoad != null) found += priorityEntries(route, roundabouts, priorityRoad)
         // The route's segments by grid square, to find those near a sign quickly.
         val grid = HashMap<Long, MutableList<Int>>()
         for (i in 0 until pts.size - 1) {
@@ -52,6 +51,9 @@ object GiveWay {
 
         for (s in signs) {
             val near = grid[key(cell(s.lat), cell(s.lon / 2))] ?: continue
+            // Metres per degree east where the sign stands: a long trip north or south changes it by a third and more,
+            // and the tests here are a few metres.
+            val kx = metresPerDegreeLon(s.lat)
             // Where the route passes the sign: (along, offset, segment), one per pass.
             val passes = ArrayList<Triple<Double, Double, Int>>()
             for (i in near) {
@@ -131,7 +133,7 @@ object GiveWay {
      * Where [route] comes onto a priority road out of another road and rides on along it. (Straight
      * across one is left out: from the geometry alone it can't be told from a bridge over it.)
      */
-    private fun priorityEntries(route: Route, kx: Double, roundabouts: List<Double>, priorityRoad: (Double, Double) -> RoadPiece?): List<GiveWayOnRoute> {
+    private fun priorityEntries(route: Route, roundabouts: List<Double>, priorityRoad: (Double, Double) -> RoadPiece?): List<GiveWayOnRoute> {
         val out = ArrayList<GiveWayOnRoute>()
         var wasOn = true // the start counts as on it: setting off from beside one is no junction
         var lastOn = 0.0
@@ -139,6 +141,7 @@ object GiveWay {
         val end = route.distanceMeters
         while (along <= end) {
             val p = pointAt(route, along) ?: break
+            val kx = metresPerDegreeLon(p.lat)
             val piece = priorityRoad(p.lat, p.lon)
             val d = piece?.let { offset(it, p, kx, line = false) }
             val on = d != null && d < ON_PRIORITY_M
@@ -255,6 +258,7 @@ object GiveWay {
 
     private fun cell(deg: Double) = floor(deg / CELL_DEG).toLong()
     private fun key(y: Long, x: Long) = (y shl 32) xor (x and 0xffffffffL)
+    private fun metresPerDegreeLon(lat: Double) = 111_320.0 * cos(Math.toRadians(lat))
 
     private const val KY = 110_574.0
     private const val CELL_DEG = 0.002 // ~220 m north-south
