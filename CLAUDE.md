@@ -52,7 +52,7 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
 ## Devices: installing and branches
 
 - **A device never loses what it runs.** Make branches and worktrees whenever that is the safest way
-  to work (a session's own worktree, the nightly run's `nightly/*`); ask which branch is current if
+  to work (a session's own worktree); ask which branch is current if
   it looks wrong. Before building for a device from a branch, merge the newest local `main` into it
   (`git log --oneline HEAD..main`; local `main` can be ahead of `origin/main`). Before every install,
   check `git log --oneline HEAD..<branch>` against `main` and every other active branch
@@ -115,8 +115,7 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
 - **New visual elements: test for overlap.** Before a new visual element goes in, look at it on the
   Pixel 9a emulator (above) in both portrait and landscape, while navigating and not navigating
   (demo ride), and with the music player on and off (demo phone data). Overlap with other elements is
-  the main thing to look for every time; check the X7 AVD too. Other kinds of screens: the nightly
-  matrix (below).
+  the main thing to look for every time; check the X7 AVD too.
 - **Nothing off screen on phones (recurring bug, ~14 times).** The Pixel 9a has a camera hole and
   gesture navigation; the plain X7 AVD has neither, so it hides this. Any new or changed screen,
   dialog or sheet is checked on the Pixel 9a emulator, in portrait *and* landscape, before it is
@@ -124,19 +123,10 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   shows its `Requested` size inside its `frame`. Every `Dialog` calls `HideSystemBars()`
   (CockpitDialog.kt), which lets the window cover the camera hole; without it Android puts the window
   below the hole at full height and cuts off its bottom.
-- **Screen matrix at night, never during the day.** `tools/ui_matrix.py` dresses the `Curveon_Phone`
-  emulator up as eight common screens (360-411 dp phones, 720p budget phone, 21:9, large text,
-  foldable inner screen, 10" tablet, X7) in portrait and landscape and checks that the named buttons
-  are wholly on screen. A session never runs it: when a change could plausibly look wrong on some
-  kind of screen (layout, dialogs, rows of buttons, text that may not fit, anything sized to the
-  screen), queue it in the same change with
-  `python3 -I tools/ui_matrix_queue.py add --scenarios <names> "<what changed, what to look for>"`
-  (`--new "<how to get there; what must fit>"` for a screen with no scenario yet), and say in chat that
-  it is queued. The night run (03:30; how it works: the top of `tools/ui_matrix_nightly.sh`) **only reports**: it
-  never changes the app, and the script throws away anything it tries to change outside `tools/ui_matrix*`. The report
-  with pictures is on https://claude.ai/artifact/5985b69pxJdmJ1yK1opdfb. A session starts with last night's summary
-  (SessionStart hook): pass it on. Nothing it found is fixed unless the rider says so. After changing any
-  `tools/ui_matrix*` file run `tools/ui_matrix_nightly.sh install`.
+- **The night run is parked (since 2026-11-05, the rider's decision).** The timer is off. Don't queue anything, and don't
+  run `tools/ui_matrix_nightly.sh install`, which turns it on again, unless the rider asks for the night run back.
+  It was meant to find and fix visual faults on all kinds of screens and made them instead (the Settings menu, above).
+  `tools/ui_matrix.py` and its files stay in the repo.
 - **Never call Curveon "free" / "gratis"** (website, README, store text, changelog, app texts): the
   rider plans some income from it on Google Play. "Open source", "no account", "no ads" are fine;
   saying that a map source or a service the app uses costs nothing is not about Curveon's price.
@@ -167,7 +157,7 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   only what was asked: improving *how* something works (e.g. finding the fuel signal) is not
   permission to remove a neighbouring feature (e.g. the tank table).
 - **Never change how something looks or is laid out unless the rider asked for just that.** This is absolute, for
-  every session and the night run, and it covers fixes: a screen that does not fit gets the smallest change that keeps it
+  every session, and it covers fixes: a screen that does not fit gets the smallest change that keeps it
   the same screen (shorter text, a smaller margin, wrapping, scrolling), never another kind of menu, another arrangement
   or icons in place of words. If only a redesign would do, ask. "All on screen" is not "looks right": before calling a
   screen done, or merging anything that touches one, compare it with how it looked before and say what differs. Anything
