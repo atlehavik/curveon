@@ -99,6 +99,7 @@ private const val FRAME_NS = 25_000_000L
 private const val MAX_FPS = 30
 private const val GPX = "curveon-gpx"
 private const val GPX_POIS = "curveon-gpx-pois"
+private const val GPX_ON_ROUTE = "curveon-gpx-on-route"
 private const val GIVE_WAY = "curveon-give-way"
 private const val GIVE_WAY_IMAGE = "curveon-give-way-sign"
 private const val SPEED_SIGNS = "curveon-speed-signs"
@@ -238,6 +239,8 @@ fun CurveonMapView(
     /** Whether the weather button can be seen now, so the weather is only fetched then. */
     onWeatherButtonShown: (Boolean) -> Unit = {},
     trackHint: com.curveon.data.gpx.TrackHint? = null,
+    /** While navigating: where a track shown runs along the route, as a thin stripe in its colour inside the route line. */
+    gpxOnRoute: List<Pair<Int, List<List<GeoPoint>>>> = emptyList(),
     onPoiClick: (com.curveon.data.gpx.GpxPoi) -> Unit = {},
     /** A tap on another rider or a friend on the map: their [MapGroupRider.id], or several where they stand together. */
     onGroupRiderClick: (List<String>) -> Unit = {},
@@ -735,6 +738,14 @@ fun CurveonMapView(
             })
         }
         if (style === s && s.isFullyLoaded) s.getSourceAs<GeoJsonSource>(GPX)?.setGeoJson(features)
+    }
+    LaunchedEffect(style, gpxOnRoute) {
+        val s = style ?: return@LaunchedEffect
+        val features = FeatureCollection.fromFeatures(gpxOnRoute.map { (color, runs) ->
+            Feature.fromGeometry(org.maplibre.geojson.MultiLineString.fromLngLats(runs.map { run -> run.map { Point.fromLngLat(it.longitude, it.latitude) } }))
+                .also { it.addStringProperty("color", hex(color)) }
+        })
+        if (s.isFullyLoaded) s.getSourceAs<GeoJsonSource>(GPX_ON_ROUTE)?.setGeoJson(features)
     }
     // Where the map is looking, for the places kept on it. The following camera moves without ever
     // settling, so look now and then and report when the view has moved or zoomed enough to matter.
@@ -1869,6 +1880,21 @@ private fun addOverlayLayers(s: Style, dark: Boolean) {
                 org.maplibre.android.style.expressions.Expression.literal(GRAVEL_COLOR),
                 org.maplibre.android.style.expressions.Expression.stop(SURFACE_TRACK, TRACK_COLOR))),
             routeWidth(6.5f, 11f, 17f), lineCap(Property.LINE_CAP_BUTT), lineJoin(Property.LINE_JOIN_ROUND)
+        )
+    )
+    // A track shown that the route runs along: a thin stripe in its colour inside the route line, with a thin edge so it
+    // shows also when the track has the route's own colour.
+    s.addSource(GeoJsonSource(GPX_ON_ROUTE))
+    s.addLayer(
+        LineLayer("$GPX_ON_ROUTE-casing", GPX_ON_ROUTE).withProperties(
+            lineColor(if (dark) "#0B0F14" else "#FFFFFF"), routeWidth(2.6f, 4.4f, 6.8f),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
+        )
+    )
+    s.addLayer(
+        LineLayer("$GPX_ON_ROUTE-line", GPX_ON_ROUTE).withProperties(
+            lineColor(org.maplibre.android.style.expressions.Expression.get("color")), routeWidth(1.4f, 2.4f, 3.8f),
+            lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
     )
     addSurfaceOverLayers(s, dark)

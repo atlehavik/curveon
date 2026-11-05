@@ -6,6 +6,14 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-05 — GPX-spor på ruten, og skjulte spor blir borte
+
+Prøvd på emulator med et testspor langs Fv542, stående og liggende, og med sporet i rutens egen farge.
+
+- [ ] Naviger langs en vei der et synlig GPX-spor går: en tynn stripe i sporets farge inni den blå streken der ruten følger sporet, og ingen andre steder.
+- [ ] Er stripen lett å se mens du kjører, også i dagkart og med et spor i blått eller cyan? Si fra hvis den er for tynn eller for kraftig.
+- [ ] Skjul et spor du står nær, også uten GPS: linjen til sporet og navnet forsvinner med en gang.
+
 ## 2026-11-05 — Turopptaket går ferdig også når du går ut av appen
 
 Prøvd på emulator, som ikke sover slik en ekte telefon gjør. Hvor presist det går med skjermen av og telefonen i ro, og hva det koster i batteri, kan bare prøves på ekte.

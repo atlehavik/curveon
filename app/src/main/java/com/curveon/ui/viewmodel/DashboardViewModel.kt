@@ -787,6 +787,24 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         .onEach { trackWatcher.setTracks(it) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /**
+     * While navigating: the stretches of the tracks shown that the route runs along, for a thin stripe in their colour
+     * inside the route line. (Colour, stretches.)
+     */
+    val gpxOnRoute: StateFlow<List<Pair<Int, List<List<GeoPoint>>>>> =
+        combine(navigator.state.map { it.route }.distinctUntilChanged(), overlayTracks) { route, tracks -> route to tracks }
+            .map { (route, tracks) ->
+                if (route == null || tracks.isEmpty()) emptyList()
+                else withContext(Dispatchers.Default) {
+                    val corridor = com.curveon.routing.RouteCorridor(route, 10.0)
+                    tracks.mapNotNull { t ->
+                        com.curveon.routing.RouteOverlap.along(corridor, t.points.map { LatLon(it.latitude, it.longitude) })
+                            .takeIf { it.isNotEmpty() }?.let { runs -> t.color to runs.map { run -> run.map { GeoPoint(it.lat, it.lon) } } }
+                    }
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     private val _poiCategories = MutableStateFlow(
         settings.getStringSet("poiCategories", null)?.mapNotNull { runCatching { com.curveon.data.gpx.PoiCategory.valueOf(it) }.getOrNull() }?.toSet()
             ?: com.curveon.data.gpx.PoiCategory.entries.toSet()
@@ -880,6 +898,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _trackHint = MutableStateFlow<com.curveon.data.gpx.TrackHint?>(null)
     /** Nearest visible track (line from the rider to it); null while navigating. */
     val trackHint: StateFlow<com.curveon.data.gpx.TrackHint?> = _trackHint.asStateFlow()
+
+    init {
+        // A track hidden on the map leaves nothing behind: its hint goes at once, not at the next fix (none comes with no GPS).
+        viewModelScope.launch {
+            overlayTracks.collect { shown ->
+                val h = _trackHint.value ?: return@collect
+                if (shown.none { it.id == h.trackId }) { _trackHint.value = null; trackWatcher.reset() }
+            }
+        }
+    }
 
     private val _autoFollow = MutableStateFlow(settings.getBoolean("autoFollowTracks", false))
     val autoFollowTracks: StateFlow<Boolean> = _autoFollow.asStateFlow()

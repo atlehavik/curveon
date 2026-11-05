@@ -119,6 +119,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     // Waypoints of visible tracks, and the kinds of place the rider keeps on the map.
     val overlayPois = remember(trackPois, layerPois) { trackPois + layerPois }
     val trackHint by viewModel.trackHint.collectAsStateWithLifecycle()
+    val gpxOnRoute by viewModel.gpxOnRoute.collectAsStateWithLifecycle()
     val poiCategories by viewModel.poiCategories.collectAsStateWithLifecycle()
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
     val mapAutoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
@@ -936,6 +937,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             gpxTracks = overlayTracks,
             gpxPois = overlayPois,
             trackHint = trackHint.takeIf { preview == null && !isNavigating },
+            gpxOnRoute = gpxOnRoute,
             onPoiClick = { shownPoi = it },
             onGroupRiderClick = { shownRiders = it },
             onViewport = viewModel::setViewport,
