@@ -1,8 +1,12 @@
 package com.curveon.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -13,7 +17,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -24,6 +34,7 @@ import androidx.compose.ui.window.Dialog
 import com.curveon.R
 import com.curveon.data.groups.SharedTrip
 import com.curveon.ui.theme.*
+import kotlinx.coroutines.delay
 
 /** The shared trips the rider has accepted, under "Shared routes": ride one (it opens in the preview) or take it off the list. */
 @Composable
@@ -54,9 +65,18 @@ private fun sharedTripInfo(t: SharedTrip): String {
  * What is shared is called [original], and the rider has [taken]: a field for the name to save it under, with a free one
  * in it. Nothing is overwritten.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SaveAsField(original: String, taken: Collection<String>, name: String, onName: (String) -> Unit) {
     Text(stringResource(R.string.share_name_taken, original), color = NeonAmber, fontSize = 14.sp)
+    // The keyboard takes most of a phone held sideways: the card scrolls to the field, so the rider sees what they type.
+    val bring = remember { BringIntoViewRequester() }
+    var focused by remember { mutableStateOf(false) }
+    val keyboard = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(focused, keyboard) {
+        // Again as the keyboard settles and the card gets its last height. Nothing moves if the field can already be seen.
+        if (focused && keyboard > 0) repeat(4) { delay(200); bring.bringIntoView() }
+    }
     OutlinedTextField(
         value = name, onValueChange = onName, singleLine = true, label = { Text(stringResource(R.string.share_save_as)) },
         isError = !com.curveon.data.groups.ShareNames.usable(name, taken),
@@ -65,8 +85,48 @@ private fun SaveAsField(original: String, taken: Collection<String>, name: Strin
             focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary, focusedBorderColor = ElectricCyan, unfocusedBorderColor = CockpitBorder,
             cursorColor = ElectricCyan, focusedLabelColor = ElectricCyan, unfocusedLabelColor = TextSecondary
         ),
-        modifier = Modifier.fillMaxWidth().testTag("share_save_as")
+        modifier = Modifier.fillMaxWidth().bringIntoViewRequester(bring).onFocusChanged { focused = it.isFocused }.testTag("share_save_as")
     )
+}
+
+/**
+ * The card of a shared offer. Its window fills the screen and the card stays clear of the keyboard, so with the keyboard
+ * up the name field and the buttons can always be scrolled to, also on a phone held sideways, where the keyboard takes
+ * more than half the height.
+ */
+@Composable
+private fun OfferFrame(onOutside: () -> Unit, tag: String, content: @Composable ColumnScope.() -> Unit) {
+    Dialog(onDismissRequest = onOutside, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
+        HideSystemBars()
+        val view = LocalView.current
+        val density = LocalDensity.current
+        // With gesture navigation Android counts the keyboard from a window edge one navigation bar above the real one, so
+        // the card would end that far behind the keyboard: what is still covered is measured against what can be seen.
+        var covered by remember { mutableStateOf(0.dp) }
+        var box by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
+        fun measure() {
+            val b = box?.takeIf { it.isAttached } ?: return
+            val seen = android.graphics.Rect().also(view::getWindowVisibleDisplayFrame)
+            val onScreen = IntArray(2).also(view::getLocationOnScreen)
+            val below = onScreen[1] + b.positionInWindow().y + b.size.height - seen.bottom
+            covered = with(density) { below.coerceAtLeast(0f).toDp() }
+        }
+        // What can be seen is told a moment after the keyboard's height, so it is looked at again as the keyboard settles.
+        val keyboard = WindowInsets.ime.getBottom(density)
+        LaunchedEffect(keyboard) { repeat(6) { delay(100); measure() } }
+        val outside by rememberUpdatedState(onOutside)
+        Box(
+            // The window is the whole screen, so Android no longer sees a tap beside the card as outside it.
+            Modifier.fillMaxSize().pointerInput(Unit) { detectTapGestures { outside() } }.safeDrawingPadding().onGloballyPositioned { box = it; measure() }.padding(bottom = covered),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                Modifier.padding(16.dp).clip(RoundedCornerShape(20.dp)).pointerInput(Unit) { detectTapGestures { } }.background(CockpitSurface).widthIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState()).padding(20.dp).testTag(tag),
+                verticalArrangement = Arrangement.spacedBy(12.dp), content = content
+            )
+        }
+    }
 }
 
 /**
@@ -82,26 +142,19 @@ fun SharedTripOfferDialog(
     var name by remember(trip.tripId, taken) { mutableStateOf(com.curveon.data.groups.ShareNames.free(trip.title, taken)) }
     val ok = !conflict || com.curveon.data.groups.ShareNames.usable(name, taken)
     val chosen = name.trim().takeIf { conflict }
-    Dialog(onDismissRequest = { if (!conflict) onSave(null) }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
-        HideSystemBars()
-        Column(
-            Modifier.imePadding().padding(16.dp).clip(RoundedCornerShape(20.dp)).background(CockpitSurface).widthIn(max = 520.dp)
-                .verticalScroll(rememberScrollState()).padding(20.dp).testTag("shared_trip_offer"),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(stringResource(R.string.shared_trip_offer_title, trip.fromNickname ?: ""), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
-            Text(trip.title, color = NeonAmber, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-            Text(sharedTripInfo(trip), color = TextSecondary, fontSize = 13.sp)
-            // With a name to choose there is no room for the hint on a phone held sideways, and the name matters more.
-            if (conflict) SaveAsField(trip.title, taken, name) { name = it }
-            else Text(stringResource(if (fromFriend) R.string.shared_trip_offer_hint_friend else R.string.shared_trip_offer_hint), color = TextMuted, fontSize = 13.sp)
-            PillButton(Icons.Default.Navigation, stringResource(R.string.ride_now), if (ok) ElectricCyan else CockpitSurfaceVariant, if (ok) Color(0xFF00363D) else TextMuted,
-                Modifier.fillMaxWidth().testTag("shared_offer_ride")) { if (ok) onRideNow(chosen) }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.shared_trip_save), CockpitSurfaceVariant, if (ok) TextPrimary else TextMuted,
-                    Modifier.weight(1f).testTag("shared_offer_save")) { if (ok) onSave(chosen) }
-                PillButton(Icons.Default.Close, stringResource(R.string.shared_trip_ignore), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("shared_offer_ignore"), onIgnore)
-            }
+    OfferFrame(onOutside = { if (!conflict) onSave(null) }, tag = "shared_trip_offer") {
+        Text(stringResource(R.string.shared_trip_offer_title, trip.fromNickname ?: ""), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
+        Text(trip.title, color = NeonAmber, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text(sharedTripInfo(trip), color = TextSecondary, fontSize = 13.sp)
+        // With a name to choose there is no room for the hint on a phone held sideways, and the name matters more.
+        if (conflict) SaveAsField(trip.title, taken, name) { name = it }
+        else Text(stringResource(if (fromFriend) R.string.shared_trip_offer_hint_friend else R.string.shared_trip_offer_hint), color = TextMuted, fontSize = 13.sp)
+        PillButton(Icons.Default.Navigation, stringResource(R.string.ride_now), if (ok) ElectricCyan else CockpitSurfaceVariant, if (ok) Color(0xFF00363D) else TextMuted,
+            Modifier.fillMaxWidth().testTag("shared_offer_ride")) { if (ok) onRideNow(chosen) }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.shared_trip_save), CockpitSurfaceVariant, if (ok) TextPrimary else TextMuted,
+                Modifier.weight(1f).testTag("shared_offer_save")) { if (ok) onSave(chosen) }
+            PillButton(Icons.Default.Close, stringResource(R.string.shared_trip_ignore), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("shared_offer_ignore"), onIgnore)
         }
     }
 }
@@ -112,25 +165,18 @@ fun SharedGpxOfferDialog(offer: com.curveon.data.groups.SharedGpxOffer, taken: C
     val conflict = com.curveon.data.groups.ShareNames.taken(offer.name, taken)
     var name by remember(offer.shareId, taken) { mutableStateOf(com.curveon.data.groups.ShareNames.free(offer.name, taken)) }
     val ok = com.curveon.data.groups.ShareNames.usable(name, taken)
-    Dialog(onDismissRequest = { if (!conflict) onSave(offer.name) }, properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)) {
-        HideSystemBars()
-        Column(
-            Modifier.imePadding().padding(16.dp).clip(RoundedCornerShape(20.dp)).background(CockpitSurface).widthIn(max = 520.dp)
-                .verticalScroll(rememberScrollState()).padding(20.dp).testTag("shared_gpx_offer"),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(stringResource(if (offer.isGroup) R.string.shared_gpx_group_offer_title else R.string.shared_gpx_track_offer_title, offer.fromNickname ?: ""),
-                color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
-            Text(offer.name, color = NeonAmber, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-            Text(listOfNotNull(offer.groupName, if (offer.isGroup) pluralStringResource(R.plurals.gpx_tracks_count, offer.tracks, offer.tracks) else null,
-                "${offer.km} ${stringResource(R.string.stat_km)}").joinToString(" · "), color = TextSecondary, fontSize = 13.sp)
-            Text(stringResource(R.string.shared_gpx_offer_hint), color = TextMuted, fontSize = 13.sp)
-            if (conflict) SaveAsField(offer.name, taken, name) { name = it }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.shared_gpx_save), if (ok) ElectricCyan else CockpitSurfaceVariant, if (ok) Color(0xFF00363D) else TextMuted,
-                    Modifier.weight(1f).testTag("shared_gpx_save")) { if (ok) onSave(name.trim()) }
-                PillButton(Icons.Default.Close, stringResource(R.string.shared_trip_ignore), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("shared_gpx_ignore"), onIgnore)
-            }
+    OfferFrame(onOutside = { if (!conflict) onSave(offer.name) }, tag = "shared_gpx_offer") {
+        Text(stringResource(if (offer.isGroup) R.string.shared_gpx_group_offer_title else R.string.shared_gpx_track_offer_title, offer.fromNickname ?: ""),
+            color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
+        Text(offer.name, color = NeonAmber, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text(listOfNotNull(offer.groupName, if (offer.isGroup) pluralStringResource(R.plurals.gpx_tracks_count, offer.tracks, offer.tracks) else null,
+            "${offer.km} ${stringResource(R.string.stat_km)}").joinToString(" · "), color = TextSecondary, fontSize = 13.sp)
+        Text(stringResource(R.string.shared_gpx_offer_hint), color = TextMuted, fontSize = 13.sp)
+        if (conflict) SaveAsField(offer.name, taken, name) { name = it }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillButton(Icons.Default.BookmarkBorder, stringResource(R.string.shared_gpx_save), if (ok) ElectricCyan else CockpitSurfaceVariant, if (ok) Color(0xFF00363D) else TextMuted,
+                Modifier.weight(1f).testTag("shared_gpx_save")) { if (ok) onSave(name.trim()) }
+            PillButton(Icons.Default.Close, stringResource(R.string.shared_trip_ignore), WarningRed.copy(alpha = 0.25f), WarningRed, Modifier.weight(1f).testTag("shared_gpx_ignore"), onIgnore)
         }
     }
 }
