@@ -74,9 +74,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val useMph by remember { derivedStateOf { telemetryState.value.useMph } }
     val obdEnabled by remember { derivedStateOf { telemetryState.value.isObdEnabled } }
     val speedBelowStanding by remember { derivedStateOf { telemetryState.value.speedKmh < 3f } }
-    val routePoints by viewModel.activeRoutePoints.collectAsStateWithLifecycle()
-    val routeSurfaces by viewModel.activeRouteSurfaces.collectAsStateWithLifecycle()
-    val groundPreference by viewModel.groundPreference.collectAsStateWithLifecycle()
     val currentTurnInstruction by viewModel.currentTurnInstruction.collectAsStateWithLifecycle()
     val isFullScreenMap by viewModel.isFullScreenMap.collectAsStateWithLifecycle()
     val navigationSummary by viewModel.navigationSummary.collectAsStateWithLifecycle()
@@ -112,20 +109,16 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var demoMenu by remember { mutableStateOf(false) }
     val savedGpxTracks by viewModel.savedGpxTracks.collectAsStateWithLifecycle()
     val gpxGroups by viewModel.gpxGroups.collectAsStateWithLifecycle()
-    val overlayTracks by viewModel.overlayTracks.collectAsStateWithLifecycle()
     val trackPois by viewModel.overlayPois.collectAsStateWithLifecycle()
     val layerPois by viewModel.mapPois.collectAsStateWithLifecycle()
     val mapLayers by viewModel.mapLayers.collectAsStateWithLifecycle()
     // Waypoints of visible tracks, and the kinds of place the rider keeps on the map.
     val overlayPois = remember(trackPois, layerPois) { trackPois + layerPois }
     val trackHint by viewModel.trackHint.collectAsStateWithLifecycle()
-    val gpxOnRoute by viewModel.gpxOnRoute.collectAsStateWithLifecycle()
     val poiCategories by viewModel.poiCategories.collectAsStateWithLifecycle()
     val autoFollow by viewModel.autoFollowTracks.collectAsStateWithLifecycle()
-    val mapAutoZoom by viewModel.autoZoom.collectAsStateWithLifecycle()
     val arrowLead by viewModel.arrowLead.collectAsStateWithLifecycle()
     val surfaceMode by viewModel.surfaceMode.collectAsStateWithLifecycle()
-    val showGravelHeat by viewModel.showGravelHeat.collectAsStateWithLifecycle()
     val gravelHeatButton by viewModel.gravelHeatButton.collectAsStateWithLifecycle()
     val showAltitude by viewModel.showAltitude.collectAsStateWithLifecycle()
     val showClock by viewModel.showClock.collectAsStateWithLifecycle()
@@ -140,8 +133,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val showMapMedia by viewModel.showMapMedia.collectAsStateWithLifecycle()
     val roadHere by viewModel.currentRoad.collectAsStateWithLifecycle()
     val freeGiveWay by viewModel.freeGiveWay.collectAsStateWithLifecycle()
-    val mapGiveWays by viewModel.mapGiveWays.collectAsStateWithLifecycle()
-    val mapSpeedSigns by viewModel.mapSpeedSigns.collectAsStateWithLifecycle()
     val giveWayAlert by viewModel.giveWayAlert.collectAsStateWithLifecycle()
     // The road card: the road's number and priority sign, and a give way or stop just ahead (on the route
     // when navigating, else on the road ridden): the one place for the junction's sign and its distance.
@@ -152,7 +143,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     var roadCardBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
     var rootTopLeft by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
     LaunchedEffect(roadNameShown) { if (roadNameShown) { kotlinx.coroutines.delay(6_000); roadNameShown = false } }
-    val mapVersion by viewModel.mapVersion.collectAsStateWithLifecycle()
     var shownPoi by remember { mutableStateOf<com.curveon.data.gpx.GpxPoi?>(null) }
     /**
      * Riders or friends tapped on the map ([com.curveon.ui.components.MapGroupRider.id]): one shows what is known about
@@ -163,7 +153,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val preview by viewModel.preview.collectAsStateWithLifecycle()
     val isNavigating by viewModel.isNavigating.collectAsStateWithLifecycle()
     val markers by viewModel.routeMarkers.collectAsStateWithLifecycle()
-    val roadNameProbe by viewModel.roadNameProbe.collectAsStateWithLifecycle()
     val mapDark by viewModel.mapDark.collectAsStateWithLifecycle()
     val mapTheme by viewModel.mapTheme.collectAsStateWithLifecycle()
     val roadContrast by viewModel.roadContrast.collectAsStateWithLifecycle()
@@ -179,7 +168,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     val sketchWeather by viewModel.weather.sketch.collectAsStateWithLifecycle()
     val weatherOn by viewModel.weather.enabled.collectAsStateWithLifecycle()
     val mapWeather by viewModel.weather.map.collectAsStateWithLifecycle()
-    val weatherMapOn by viewModel.weatherMap.collectAsStateWithLifecycle()
     val rides by viewModel.rides.collectAsStateWithLifecycle()
     val currentRide by viewModel.currentRide.collectAsStateWithLifecycle()
     val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
@@ -336,12 +324,6 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
     LaunchedEffect(navState.preview == null) { if (navState.preview == null) editingRoute = false }
     val sharedTripList by viewModel.sharedTrips.shared.collectAsStateWithLifecycle()
     val sharedOffer by viewModel.sharedTrips.offer.collectAsStateWithLifecycle()
-    val sharedGpxOffers by viewModel.sharedTrips.gpx.offers.collectAsStateWithLifecycle()
-    val sharedGpxOffer = sharedGpxOffers.firstOrNull()
-    var savingGpxShare by remember { mutableStateOf<String?>(null) }
-    val tripNamesTaken by viewModel.tripNamesTaken.collectAsStateWithLifecycle()
-    val gpxGroupNames by viewModel.gpxGroupNames.collectAsStateWithLifecycle()
-    val gpxTrackNames by viewModel.gpxTrackNames.collectAsStateWithLifecycle()
     val sharedChanged by viewModel.sharedTrips.justChanged.collectAsStateWithLifecycle()
     val shareTrip: () -> Unit = {
         toast = context.getString(if (viewModel.sharedTrips.shareCurrent()) R.string.toast_trip_shared else R.string.toast_trip_not_shared)
@@ -871,11 +853,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             speedLimitKmh = telemetryState.value.speedLimitKmh,
             hasGpsFix = telemetryState.value.hasGpsFix,
             gpsLost = telemetryState.value.gpsLost || telemetryState.value.isDeadReckoning,
-            routePoints = routePoints,
-            routeSurfaces = routeSurfaces,
-            giveWaySigns = mapGiveWays,
-            speedSigns = mapSpeedSigns,
-            groundPreference = groundPreference,
+            routePoints = viewModel.activeRoutePoints.collectAsStateWithLifecycle().value,
+            routeSurfaces = viewModel.activeRouteSurfaces.collectAsStateWithLifecycle().value,
+            giveWaySigns = viewModel.mapGiveWays.collectAsStateWithLifecycle().value,
+            speedSigns = viewModel.mapSpeedSigns.collectAsStateWithLifecycle().value,
+            groundPreference = viewModel.groundPreference.collectAsStateWithLifecycle().value,
             currentTurnInstruction = currentTurnInstruction,
             isFullScreen = isFullScreenMap,
             bottomClearance = bottomClearance,
@@ -896,11 +878,11 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             surfaceMode = surfaceMode,
             surfaceZoom = mapDetail.surfaceZoom,
             gravelHeat = viewModel.gravelHeat.takeIf { gravelHeatButton != com.curveon.ui.components.GravelHeatButton.OFF },
-            showGravelHeat = showGravelHeat,
+            showGravelHeat = viewModel.showGravelHeat.collectAsStateWithLifecycle().value,
             gravelHeatOnMap = gravelHeatButton == com.curveon.ui.components.GravelHeatButton.MAP,
             planningTrip = preview != null || mapPick != null || sketching,
             onShowGravelHeat = viewModel::setShowGravelHeat,
-            roadNameProbe = roadNameProbe,
+            roadNameProbe = viewModel.roadNameProbe.collectAsStateWithLifecycle().value,
             onRoadName = viewModel::onRoadName,
             onRoadHere = if (showRoadInfo) viewModel::onRoadHere else null,
             onRoadsNear = if (isNavigating) null else viewModel::onRoadsNear,
@@ -931,18 +913,18 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
             }) else null,
             weatherSpots = { if (sketching) sketchWeather else mapWeather },
             // On the full-screen map, with weather to be had (internet here, or the phone): the map hides it while riding.
-            weatherMapOn = weatherMapOn,
+            weatherMapOn = viewModel.weatherMap.collectAsStateWithLifecycle().value,
             onWeatherMap = if (isFullScreenMap && weatherOn && !sketching && viewModel.phoneCompanion.canFetchWeather) viewModel::setWeatherMap else null,
             onWeatherButtonShown = viewModel::setWeatherMapShown,
-            gpxTracks = overlayTracks,
+            gpxTracks = viewModel.overlayTracks.collectAsStateWithLifecycle().value,
             gpxPois = overlayPois,
             trackHint = trackHint.takeIf { preview == null && !isNavigating },
-            gpxOnRoute = gpxOnRoute,
+            gpxOnRoute = viewModel.gpxOnRoute.collectAsStateWithLifecycle().value,
             onPoiClick = { shownPoi = it },
             onGroupRiderClick = { shownRiders = it },
             onViewport = viewModel::setViewport,
-            autoZoom = mapAutoZoom,
-            mapVersion = mapVersion,
+            autoZoom = viewModel.autoZoom.collectAsStateWithLifecycle().value,
+            mapVersion = viewModel.mapVersion.collectAsStateWithLifecycle().value,
             overlays = mapOverlays
         )
         resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide,
@@ -1541,27 +1523,7 @@ fun DashboardScreen(viewModel: DashboardViewModel, modifier: Modifier = Modifier
         }
     }
     // Offers and answers that may come at any time, also with no rail screen open.
-    sharedOffer?.let { t ->
-        com.curveon.ui.components.SharedTripOfferDialog(
-            trip = t,
-            onRideNow = { name -> viewModel.sharedTrips.open(t, name) },
-            onSave = { name -> viewModel.sharedTrips.accept(t, name); toast = context.getString(R.string.toast_shared_trip_saved) },
-            onIgnore = { viewModel.sharedTrips.ignore(t) },
-            fromFriend = viewModel.sharedTrips.fromFriend(t),
-            taken = tripNamesTaken
-        )
-    }
-    sharedGpxOffer?.takeIf { sharedOffer == null && it.shareId != savingGpxShare }?.let { o ->
-        com.curveon.ui.components.SharedGpxOfferDialog(
-            offer = o,
-            taken = if (o.isGroup) gpxGroupNames else gpxTrackNames,
-            onSave = { name ->
-                savingGpxShare = o.shareId // gone at once: two presses must not save it twice
-                viewModel.saveSharedGpx(o, name) { toast = it; savingGpxShare = null }
-            },
-            onIgnore = { viewModel.sharedTrips.gpx.answered(o.shareId) }
-        )
-    }
+    SharedOffers(viewModel, sharedOffer) { toast = it }
     pickFriends?.let { fromPreview ->
         com.curveon.ui.components.FriendPickerDialog(
             friendList,
@@ -1932,3 +1894,38 @@ private fun savedToast(t: RouteSaveTargets) = when {
     else -> R.string.toast_saved_to_gpx
 }
 
+/**
+ * Trips and GPX that someone shared, to save or ignore. A function of its own and not part of [DashboardScreen]: that one
+ * is so big that one more value made the compiler write code Android 17 refuses to run (it crashed at start on 2026-11-05).
+ */
+@Composable
+private fun SharedOffers(viewModel: DashboardViewModel, sharedOffer: com.curveon.data.groups.SharedTrip?, toast: (String) -> Unit) {
+    val context = LocalContext.current
+    val sharedGpxOffers by viewModel.sharedTrips.gpx.offers.collectAsStateWithLifecycle()
+    val sharedGpxOffer = sharedGpxOffers.firstOrNull()
+    var savingGpxShare by remember { mutableStateOf<String?>(null) }
+    val tripNamesTaken by viewModel.tripNamesTaken.collectAsStateWithLifecycle()
+    val gpxGroupNames by viewModel.gpxGroupNames.collectAsStateWithLifecycle()
+    val gpxTrackNames by viewModel.gpxTrackNames.collectAsStateWithLifecycle()
+    sharedOffer?.let { t ->
+        com.curveon.ui.components.SharedTripOfferDialog(
+            trip = t,
+            onRideNow = { name -> viewModel.sharedTrips.open(t, name) },
+            onSave = { name -> viewModel.sharedTrips.accept(t, name); toast(context.getString(R.string.toast_shared_trip_saved)) },
+            onIgnore = { viewModel.sharedTrips.ignore(t) },
+            fromFriend = viewModel.sharedTrips.fromFriend(t),
+            taken = tripNamesTaken
+        )
+    }
+    sharedGpxOffer?.takeIf { sharedOffer == null && it.shareId != savingGpxShare }?.let { o ->
+        com.curveon.ui.components.SharedGpxOfferDialog(
+            offer = o,
+            taken = if (o.isGroup) gpxGroupNames else gpxTrackNames,
+            onSave = { name ->
+                savingGpxShare = o.shareId // gone at once: two presses must not save it twice
+                viewModel.saveSharedGpx(o, name) { toast(it); savingGpxShare = null }
+            },
+            onIgnore = { viewModel.sharedTrips.gpx.answered(o.shareId) }
+        )
+    }
+}

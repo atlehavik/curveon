@@ -164,6 +164,9 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   that differs and was not asked for is a fault, and it goes back. (2026-11-04: the night run turned the Settings menu
   on a phone from a list with names into a grid of icons, and a session with before and after in front of it merged
   it and called it right.)
+- **Before a build goes to a device or out:** `python3 -I tools/check_dex_registers.py <apk>` must say ok. A method of
+  the app over 255 registers made the compiler write code Android 17 refused to run (1.2.10 crashed at start on the
+  Pixel): split such a method, `DashboardScreen` first of all, which is near the limit.
 - **A release only when the rider says release.** Before it goes out, show what looks or works differently for riders
   since the last release, with pictures of what looks different, and wait for a yes to that list.
 - **Plan before a bigger change.** For a change that touches several files, write 3–4 lines first:

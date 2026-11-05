@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.2.11",
+    "en": [
+      "Curveon starts again on phones with the newest Android: version 1.2.10 stopped right at the start there. Sorry for the trouble!"
+    ],
+    "nb": [
+      "Curveon starter igjen på telefoner med den nyeste Android-versjonen: 1.2.10 stoppet rett ved oppstart der. Beklager bryet!"
+    ],
+    "sv": [
+      "Curveon startar igen på telefoner med den nyaste Android-versionen: 1.2.10 stannade direkt vid start där. Förlåt för besväret!"
+    ],
+    "da": [
+      "Curveon starter igen på telefoner med den nyeste Android-version: 1.2.10 stoppede lige ved opstart der. Undskyld besværet!"
+    ],
+    "fi": [
+      "Curveon käynnistyy taas puhelimissa, joissa on uusin Android: versio 1.2.10 pysähtyi niissä heti käynnistyksessä. Pahoittelemme vaivaa!"
+    ],
+    "is": [
+      "Curveon ræsist aftur í símum með nýjustu Android-útgáfunni: 1.2.10 stöðvaðist strax við ræsingu þar. Afsakið ónæðið!"
+    ],
+    "de": [
+      "Curveon startet wieder auf Handys mit dem neuesten Android: Version 1.2.10 blieb dort gleich beim Start stehen. Entschuldige die Umstände!"
+    ],
+    "es": [
+      "Curveon vuelve a arrancar en teléfonos con el Android más reciente: la versión 1.2.10 se detenía nada más empezar. ¡Disculpa las molestias!"
+    ],
+    "fr": [
+      "Curveon redémarre sur les téléphones équipés du tout dernier Android : la version 1.2.10 s'y arrêtait dès le lancement. Désolé pour le dérangement !"
+    ],
+    "nl": [
+      "Curveon start weer op telefoons met de nieuwste Android: versie 1.2.10 stopte daar meteen bij het opstarten. Sorry voor het ongemak!"
+    ],
+    "pl": [
+      "Curveon znów uruchamia się na telefonach z najnowszym Androidem: wersja 1.2.10 zatrzymywała się tam zaraz po starcie. Przepraszamy za kłopot!"
+    ]
+  },
+  {
     "version": "1.2.10",
     "en": [
       "You can now share a whole GPX group with your riding group! Open the menu on the group and choose Share with the group: everyone gets it among their own GPX tracks with all its tracks, colours and settings, just as you have it. A single GPX track can now be shared as a GPX track too, not only as a trip.",
