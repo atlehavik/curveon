@@ -234,7 +234,10 @@ class GroupClient(
     if (!connected || riderId == B64.encode(state.riderId)) return false
     val newKey = GroupKeys.newGroupKey()
     val newEpoch = state.epoch + 1
-    val recipients = members.values.filter { it.id != riderId }.map { it.riderId to it.agreementPublicKey }
+    // The rider's own other devices (the same rider id and keys, linked) are never among the members: without a copy of
+    // their own, they took the new key for being removed from the group.
+    val recipients = members.values.filter { it.id != riderId }.map { it.riderId to it.agreementPublicKey } +
+      (state.riderId to state.agreement.publicKey)
     val rekey = Rekey.create(state.groupId, newEpoch, newKey, signing.privateKey, recipients)
     if (transport?.send(Wire.encode(rekey, state.riderId)) != true) return false
     state.switchKey(newKey, newEpoch)
