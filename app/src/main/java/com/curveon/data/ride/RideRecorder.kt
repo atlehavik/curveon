@@ -31,14 +31,19 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
     private var lastEle: Double? = null
     private var movingSince = 0L
     private var lastMovingAt = 0L
+    private var lastFixMoving = false
     private var lastSavedAt = 0L
     /** The rider ended a ride by hand: no new one until the bike has stood still once. */
     private var holdUntilStopped = false
 
     fun onFix(fix: GpsFix, speedKmh: Float): Event {
         val t = now()
+        // Before this fix counts: riding off again after the ride's time was up is a new ride, with a gap in between.
+        if (over()) return Event.FINISHED
         val moving = speedKmh >= MOVING_KMH
         if (moving) lastMovingAt = t
+        lastFixMoving = moving
+        if (over()) return Event.FINISHED // standing still after a long gap: no tunnel after all
 
         var ride = current
         if (ride == null) {
@@ -56,8 +61,6 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
             resumeOffer = lastFinished?.takeIf { t - finishedAt <= RESUME_WINDOW_MS }
             return Event.STARTED
         }
-
-        if (t - lastMovingAt > END_AFTER_STOP_MS) return Event.FINISHED
 
         val prev = lastPoint
         var distance = ride.distanceMeters
@@ -96,11 +99,18 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         return Event.NONE
     }
 
+    /**
+     * Whether the ride under way has ended by now, also with no fix to go by (a phone indoors, Curveon out of sight).
+     * The last fix in motion and then none is a tunnel, not a stop: the ride gets longer, as a long tunnel can take.
+     */
+    fun over(): Boolean = current != null && now() - lastMovingAt > if (lastFixMoving) NO_GPS_END_MS else END_AFTER_STOP_MS
+
     /** The ride as it should be stored when finishing, or null if it was too short to keep. */
     fun finish(): Ride? {
         val r = current?.copy(track = track.toString())
         current = null
         movingSince = 0L
+        lastFixMoving = false
         resumeOffer = null
         val kept = r?.takeIf { it.distanceMeters >= MIN_RIDE_M }
         if (kept != null) { lastFinished = kept; finishedAt = now() }
@@ -165,6 +175,7 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         const val MOVING_KMH = 12f
         const val START_AFTER_MS = 10_000L
         const val END_AFTER_STOP_MS = 5 * 60_000L
+        const val NO_GPS_END_MS = 30 * 60_000L
         const val RESUME_WINDOW_MS = 2 * 60 * 60_000L
         const val MIN_RIDE_M = 1_000.0
         const val POINT_SPACING_M = 20.0

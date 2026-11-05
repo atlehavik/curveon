@@ -120,6 +120,7 @@
         <receiver
             android:name=".data.update.AppUpdates$InstallResultReceiver"
             android:exported="false" />
+        <receiver android:name=".data.ride.RideCheck" android:exported="false" />
     </application>
 
 </manifest>

@@ -963,7 +963,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /**
      * Out of sight with no trip being navigated (and no map downloading), Curveon sleeps: no GPS,
-     * phone link, OBD or lookups, so it uses no battery until it is on screen again.
+     * phone link, OBD or lookups, so it uses no battery until it is on screen again. A ride being recorded goes on with
+     * GPS only, until it has ended ([rideChanged]).
      */
     private val awake = MutableStateFlow(true)
     private val onScreen = MutableStateFlow(true)
@@ -1333,6 +1334,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         startDeadReckoning()
         watchCurrentRoad()
         watchSleep()
+        watchRideEnd()
         restorePlan()
         restoreTrip()
         viewModelScope.launch { while (true) { delay(60_000); untilAwake(); updateMapDark() } }
@@ -1511,6 +1513,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (shown) fetchWebPlans(auto = true)
     }
 
+    private fun watchRideEnd() = viewModelScope.launch {
+        com.curveon.data.ride.RideCheck.ticks.collect {
+            checkRideEnd()
+            if (rideRecorder.current != null) com.curveon.data.ride.RideCheck.next(getApplication())
+        }
+    }
+
     private fun watchSleep() = viewModelScope.launch {
         combine(onScreen, isNavigating, _mapDownload) { shown, navigating, download ->
             shown || navigating || download is com.curveon.data.map.MapDownloadState.Running
@@ -1520,18 +1529,23 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun sleep() {
         NavTrace.event("asleep")
         awake.value = false
-        gpsJob?.cancel()
-        gpsJob = null
         phoneCompanion.pause()
         obd.use(null)
         saveRide(finish = false)
         NavTrace.flush()
+        if (rideRecorder.current == null) stopGps()
+    }
+
+    private fun stopGps() {
+        gpsJob?.cancel()
+        gpsJob = null
         com.curveon.RideService.stop(getApplication())
     }
 
     private fun wake() {
         NavTrace.event("awake")
         awake.value = true
+        checkRideEnd()
         if (androidx.core.content.ContextCompat.checkSelfPermission(getApplication(), android.Manifest.permission.ACCESS_FINE_LOCATION) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED) startGps()
         phoneCompanion.restart()
@@ -1792,8 +1806,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             RideRecorder.Event.FINISHED -> saveRide(finish = true)
             RideRecorder.Event.NONE -> Unit
         }
+        rideChanged()
+    }
+
+    private fun rideChanged() {
+        val wasRecording = _currentRide.value != null
         _currentRide.value = rideRecorder.current
-        if (rideRecorder.current == null) _resumeOffer.value = null
+        val recording = rideRecorder.current != null
+        if (recording && !wasRecording) com.curveon.data.ride.RideCheck.next(getApplication())
+        if (!recording) {
+            _resumeOffer.value = null
+            if (wasRecording) com.curveon.data.ride.RideCheck.cancel(getApplication())
+            if (!awake.value) stopGps() // the ride was what kept the GPS on out of sight
+        }
+    }
+
+    /** The ride under way ends when its time is up, also with no GPS fix to go by and Curveon out of sight. */
+    private fun checkRideEnd() {
+        if (rideRecorder.over()) saveRide(finish = true)
+        rideChanged()
     }
 
     /** The ride that finished a short while ago, while a new one is under way: the rider is asked whether to go on with it. */
@@ -1824,7 +1855,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** The rider ends the ride under way now, rather than waiting for the long stop. */
     fun stopRide() {
         saveRide(finish = true, byHand = true)
-        _currentRide.value = rideRecorder.current
+        rideChanged()
     }
 
     /** Joins the rides picked in the ride log into one; the originals go (GPX copies already kept stay). */

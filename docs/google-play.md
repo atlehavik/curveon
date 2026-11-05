@@ -94,6 +94,7 @@ endrer seg på Play-siden:
 - **Personvernerklæringen** må få et eget avsnitt om grupper (valgfritt, av som standard, hva reléet ser, hvor lenge det
   lagrer: posisjoner lagres ikke, øvrig ca. 30 dager) og si hvem som drifter reléet.
 - **Foreground service og posisjon:** companion trenger en tjeneste av riktig type; deklarasjon og demovideo i Play Console.
+- **Turopptak ute av syne:** hovedappen holder posisjonstjenesten (`location`) i gang under et pågående turopptak også når appen er ute av syne, med varsel og Avslutt-knapp, til turen er ferdig. Tjenesten startes alltid mens appen er synlig, så det krever ikke `ACCESS_BACKGROUND_LOCATION`, men må med i forklaringen i Play Console. Alarmen hvert minutt (`RideCheck`) er ueksakt og krever ikke `SCHEDULE_EXACT_ALARM`.
 - **Anbefaling: første Play-versjon uten grupper.** (Companion er nå bare status, QR-skanning og lenker; alt oppsett gjøres i Curveon selv.) Da har companion fortsatt ingen `INTERNET`, den sterkeste
   setningen i unntakssøknaden står, og første vurdering blir enklere. Gruppene kommer som en oppdatering sammen med
   oppdatert Data safety og personvernerklæring. Test gruppene i lukket testing og via GitHub-APK først.

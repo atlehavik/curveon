@@ -6,6 +6,15 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-05 — Turopptaket går ferdig også når du går ut av appen
+
+Prøvd på emulator, som ikke sover slik en ekte telefon gjør. Hvor presist det går med skjermen av og telefonen i ro, og hva det koster i batteri, kan bare prøves på ekte.
+
+- [ ] Kjør så opptak starter, gå ut av appen og fortsett å kjøre: turen har hele strekningen, uten hull, når du åpner den.
+- [ ] Stopp, gå ut av appen og la telefonen ligge med skjermen av i 10 minutter, gjerne innendørs: turen er avsluttet med riktig sluttid når du åpner Curveon, og varselet fra Curveon er borte. Si fra hvis varselet ble liggende lenge.
+- [ ] Etter at turen er ferdig og appen er ute av syne: GPS-symbolet er borte.
+- [ ] Merker du at batteriet går fortere enn før på turer der appen er ute av syne?
+
 ## 2026-11-05 — Fartsskilt ved tunnel og vikeplikt uten navigering
 
 Målt med simulert kjøring på ekte veidata og NVDB på åtte turer, og avspilt forbi Raunhildetunnelen på emulator (med GPS også inne i tunnelen). Ekte kjøring med GPS-bortfall i tunnelen kan bare prøves på ekte. Uten navigering.

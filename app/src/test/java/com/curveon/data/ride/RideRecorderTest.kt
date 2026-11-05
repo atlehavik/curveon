@@ -89,6 +89,47 @@ class RideRecorderTest {
     }
 
     @Test
+    fun `a stop is over after five minutes also with no fix to go by`() {
+        val lat = ride(120)
+        standStill(60_000, lat) // stopped, and then no more fixes: indoors, or Curveon out of sight
+        clock += 3 * 60_000
+        assertEquals(false, recorder.over())
+        clock += 2 * 60_000
+        assertEquals(true, recorder.over())
+    }
+
+    @Test
+    fun `riding off after the time was up does not carry on the old ride`() {
+        val lat = ride(120)
+        standStill(60_000, lat)
+        clock += 6 * 60_000
+        // The first fix is at speed: without the time being looked at first, this would have looked like riding all along.
+        assertEquals(RideRecorder.Event.FINISHED, recorder.onFix(GpsFix(lat, 10.0, 100.0, 20f, 0f, 5f, clock), 72f))
+    }
+
+    @Test
+    fun `a long tunnel with no fixes does not end the ride`() {
+        val lat = ride(120)
+        clock += 20 * 60_000 // Laerdal: over 24 km with no GPS, the last fix at speed
+        assertEquals(false, recorder.over())
+        assertTrue(recorder.onFix(GpsFix(lat + 0.2, 10.0, 100.0, 20f, 0f, 5f, clock), 72f) != RideRecorder.Event.FINISHED)
+        assertNotNull(recorder.current)
+    }
+
+    @Test
+    fun `fixes in motion that stop for very long do end the ride`() {
+        ride(120)
+        clock += 31 * 60_000
+        assertEquals(true, recorder.over())
+    }
+
+    @Test
+    fun `no ride under way is never over`() {
+        clock += 60 * 60_000
+        assertEquals(false, recorder.over())
+    }
+
+    @Test
     fun `riding again after a finished ride offers to go on with it, and going on joins the two`() {
         val lat = ride(120)
         standStill(RideRecorder.END_AFTER_STOP_MS + 1000, lat)
