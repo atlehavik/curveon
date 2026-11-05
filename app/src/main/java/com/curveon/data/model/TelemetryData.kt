@@ -1,5 +1,7 @@
 package com.curveon.data.model
 
+import kotlin.math.roundToInt
+
 data class TelemetryData(
     val speedKmh: Float = 0f,
     /** 0 = unknown, the sign is hidden. */
@@ -29,11 +31,19 @@ data class TelemetryData(
         get() = if (useMph) (speedKmh * 0.621371f).toInt() else speedKmh.toInt()
 
     val displaySpeedLimit: Int
-        get() = if (useMph) (speedLimitKmh * 0.621371f).toInt() else speedLimitKmh
+        get() = if (useMph) mphLimit(speedLimitKmh) else speedLimitKmh
 
     val speedUnit: String
         get() = if (useMph) "MPH" else "KM/H"
 
     val isOverSpeedLimit: Boolean
         get() = speedLimitKmh > 0 && speedKmh > (speedLimitKmh + 3)
+
+    companion object {
+        /**
+         * A speed limit sign in mph: limits in mph are steps of 5, and the data keeps a 30 mph road as 50 km/h, which
+         * converted straight was 31 (20 mph showed 18, 70 mph 68).
+         */
+        fun mphLimit(kmh: Int): Int = ((kmh * 0.621371f) / 5f).roundToInt() * 5
+    }
 }

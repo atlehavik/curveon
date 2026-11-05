@@ -166,11 +166,14 @@ private fun PlaceDialog(viewModel: DashboardViewModel, state: DashboardScreenSta
     val isNavigating by viewModel.isNavigating.collectAsStateWithLifecycle()
     val preview by viewModel.preview.collectAsStateWithLifecycle()
     val planning = isPlanning(preview)
+    val telemetryState = viewModel.telemetry.collectAsStateWithLifecycle()
+    val useMph by remember { derivedStateOf { telemetryState.value.useMph } }
     val favoriteSaved = stringResource(R.string.favorite_saved)
     state.pendingPlace?.let { (point, name) ->
         PlaceActionDialog(
             name = name,
             road = state.roadInfo,
+            useMph = useMph,
             tracks = state.pressedTracks?.takeIf { it.first == point }?.second.orEmpty(),
             onAddStop = if (isNavigating || planning) ({ viewModel.addStop(point, name); state.pendingPlace = null }) else null,
             onGoHere = {

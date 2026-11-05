@@ -117,6 +117,7 @@ internal fun CurveonMapState.SignsAndPois(
     speedSigns: List<com.curveon.routing.SpeedChange>,
     gpxPois: List<com.curveon.data.gpx.GpxPoi>,
     trackHint: com.curveon.data.gpx.TrackHint?,
+    useMph: Boolean,
 ) {
     val context = LocalContext.current
     // Give way signs: on the right of the road, a few metres before the junction, as they stand.
@@ -131,13 +132,15 @@ internal fun CurveonMapState.SignsAndPois(
         }))
     }
     // Speed limit signs where the limit changes, on the right of the road as they stand.
-    LaunchedEffect(style, speedSigns) {
+    LaunchedEffect(style, speedSigns, useMph) {
         val s = style ?: return@LaunchedEffect
         val density = context.resources.displayMetrics.density
-        speedSigns.map { it.limit }.distinct().forEach { l -> if (s.getImage(speedSignImageName(l)) == null) s.addImage(speedSignImageName(l), speedSignImage(l, density)) }
+        // In mph as the speed card shows it (the signs said km/h beside a card in mph).
+        fun shown(limit: Int) = if (useMph) com.curveon.data.model.TelemetryData.mphLimit(limit) else limit
+        speedSigns.map { shown(it.limit) }.distinct().forEach { l -> if (s.getImage(speedSignImageName(l)) == null) s.addImage(speedSignImageName(l), speedSignImage(l, density)) }
         s.getSourceAs<GeoJsonSource>(SPEED_SIGNS)?.setGeoJson(FeatureCollection.fromFeatures(speedSigns.map { c ->
             val at = com.curveon.routing.Geo.destination(com.curveon.routing.LatLon(c.lat, c.lon), c.bearingDeg + 90.0, 6.0)
-            Feature.fromGeometry(Point.fromLngLat(at.lon, at.lat)).also { it.addStringProperty("icon", speedSignImageName(c.limit)) }
+            Feature.fromGeometry(Point.fromLngLat(at.lon, at.lat)).also { it.addStringProperty("icon", speedSignImageName(shown(c.limit))) }
         }))
     }
     LaunchedEffect(style, gpxPois) {

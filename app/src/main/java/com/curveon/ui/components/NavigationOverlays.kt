@@ -300,6 +300,8 @@ fun PlaceActionDialog(
     name: String,
     /** The road there (held on the map): shown under the name; null while looked up, or none. */
     road: com.curveon.data.routing.RoadInfo? = null,
+    /** The rider rides in mph: the road's speed limit sign in mph too. */
+    useMph: Boolean = false,
     /** GPX tracks drawn where the finger was held: name and colour ("#RRGGBB"). */
     tracks: List<Pair<String, String>> = emptyList(),
     /** Null when there is no trip to add it to. */
@@ -331,7 +333,7 @@ fun PlaceActionDialog(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(name, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 2)
-            road?.let { RoadInfoRow(it) }
+            road?.let { RoadInfoRow(it, useMph) }
             tracks.forEach { (track, color) ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.testTag("place_track")) {
                     Icon(Icons.Default.Route, null, tint = runCatching { Color(android.graphics.Color.parseColor(color)) }.getOrDefault(TextSecondary), modifier = Modifier.size(22.dp))
@@ -911,11 +913,11 @@ fun SketchBar(
 
 /** The road under a held finger: its speed limit sign, name, class and surface. Information only. */
 @Composable
-fun RoadInfoRow(road: com.curveon.data.routing.RoadInfo) {
+fun RoadInfoRow(road: com.curveon.data.routing.RoadInfo, useMph: Boolean = false) {
     val kind = road.highway?.let { roadKind(it) }
     val surface = roadSurface(road)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.testTag("road_info")) {
-        road.speedKmh?.let { SpeedLimitSign(it, 44.dp) }
+        road.speedKmh?.let { SpeedLimitSign(if (useMph) com.curveon.data.model.TelemetryData.mphLimit(it) else it, 44.dp) }
         road.ref?.let { RoadShield(it, 30.dp) }
         if (road.priority) PriorityRoadSign(34.dp)
         Column {

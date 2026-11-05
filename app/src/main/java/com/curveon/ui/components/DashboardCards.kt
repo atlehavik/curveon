@@ -131,7 +131,7 @@ fun MapSpeedCluster(
                 Text(telemetry.displaySpeed.toString(), color = speedColor, fontSize = 32.sp, lineHeight = 32.sp,
                     fontWeight = FontWeight.Black, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                     modifier = Modifier.testTag("map_speed"))
-                if (limit > 0) SpeedLimitSign(if (telemetry.useMph) (limit * 0.621371f).toInt() else limit, signSize,
+                if (limit > 0) SpeedLimitSign(if (telemetry.useMph) com.curveon.data.model.TelemetryData.mphLimit(limit) else limit, signSize,
                     modifier = Modifier.layout { measurable, constraints ->
                         // Takes the room of a normal sign and is centred on it; the rest sticks out.
                         val p = measurable.measure(constraints)

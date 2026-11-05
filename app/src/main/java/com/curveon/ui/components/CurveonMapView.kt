@@ -174,6 +174,8 @@ fun CurveonMapView(
     giveWaySigns: List<com.curveon.data.routing.GiveWayAlert> = emptyList(),
     /** Where the speed limit changes ahead on the route: a sign on the right of the road. */
     speedSigns: List<com.curveon.routing.SpeedChange> = emptyList(),
+    /** The rider rides in mph: the speed signs show mph too. */
+    useMph: Boolean = false,
     /** The weather to show (sun, cloud, rain, wind and how warm): round where a loop starts while drawing it, or from the button. */
     weatherSpots: () -> List<com.curveon.data.weather.MapWeather> = { emptyList() },
     /** The weather map button (full-screen map, not navigating, standing still): on or off, and switching it; null = no button. */
@@ -255,7 +257,7 @@ fun CurveonMapView(
     h.RouteLines(routePoints, previewRoutes, routeSurfaces)
     h.TrackLines(gpxTracks, gpxOnRoute)
     h.ViewportReports(onViewport)
-    h.SignsAndPois(giveWaySigns, speedSigns, gpxPois, trackHint)
+    h.SignsAndPois(giveWaySigns, speedSigns, gpxPois, trackHint, useMph)
     h.PlanMarks(markers, groupRiders, sketch, pickedPoint, location, approachTo, editor, previewRoutes, dark)
     val hasPreviewTrip = h.PreviewCamera(previewRoutes, editor, previewSheetMinimized, location, onSketch)
     val inPreview = previewRoutes.isNotEmpty()

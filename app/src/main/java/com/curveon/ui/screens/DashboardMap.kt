@@ -169,6 +169,7 @@ private fun DashboardMap(
         routeSurfaces = viewModel.activeRouteSurfaces.collectAsStateWithLifecycle().value,
         giveWaySigns = viewModel.mapGiveWays.collectAsStateWithLifecycle().value,
         speedSigns = viewModel.mapSpeedSigns.collectAsStateWithLifecycle().value,
+        useMph = telemetryState.value.useMph,
         groundPreference = viewModel.groundPreference.collectAsStateWithLifecycle().value,
         currentTurnInstruction = currentTurnInstruction,
         isFullScreen = isFullScreenMap,
