@@ -169,6 +169,7 @@ class CompanionService : Service() {
             Log.i(TAG, "Tablet connection ended: ${e.message}")
         } finally {
             relay.closeAll()
+            weather.close()
             GroupMirror.clear()
             PhoneHub.removeTablet(sink)
             runCatching { socket.close() }
@@ -189,7 +190,15 @@ class CompanionService : Service() {
             .build()
         val types = if (hasMicPermission()) ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
         else ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-        startForeground(NOTIFICATION_ID, notification, types)
+        try {
+            startForeground(NOTIFICATION_ID, notification, types)
+        } catch (e: SecurityException) {
+            // Android 14 and later allow the microphone only when started from the screen: restarted by Android in the
+            // background (after it had to free memory) the service crashed here, again on every restart. Without it the
+            // link, notifications and music go on; spoken replies come back the next time the app is opened.
+            Log.w(TAG, "Started in the background: no microphone for now", e)
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        }
     }
 
     private fun hasMicPermission() =

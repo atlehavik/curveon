@@ -46,4 +46,9 @@ class WeatherTunnelServer(private val fetch: (Double, Double) -> WeatherForecast
         if (m.lat !in -90.0..90.0 || m.lon !in -180.0..180.0) return sink(Message.WeatherData(m.id, null))
         pool.execute { sink(Message.WeatherData(m.id, runCatching { fetch(m.lat, m.lon) }.getOrNull())) }
     }
+
+    /** The tablet's link has ended: its threads go too (each new link makes its own, and these never ended by themselves). */
+    fun close() {
+        pool.shutdownNow()
+    }
 }
