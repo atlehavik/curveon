@@ -166,6 +166,16 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   something is dropped on purpose, say so in the plan first and ask; never decide it silently. Change
   only what was asked: improving *how* something works (e.g. finding the fuel signal) is not
   permission to remove a neighbouring feature (e.g. the tank table).
+- **Never change how something looks or is laid out unless the rider asked for just that.** This is absolute, for
+  every session and the night run, and it covers fixes: a screen that does not fit gets the smallest change that keeps it
+  the same screen (shorter text, a smaller margin, wrapping, scrolling), never another kind of menu, another arrangement
+  or icons in place of words. If only a redesign would do, ask. "All on screen" is not "looks right": before calling a
+  screen done, or merging anything that touches one, compare it with how it looked before and say what differs. Anything
+  that differs and was not asked for is a fault, and it goes back. (2026-11-04: the night run turned the Settings menu
+  on a phone from a list with names into a grid of icons, and a session with before and after in front of it merged
+  it and called it right.)
+- **Merging `nightly/*`.** Read each commit first. One that changes how a screen looks or is laid out is not merged on
+  a general yes: show the rider what it changes, before and after, and ask about that one.
 - **Plan before a bigger change.** For a change that touches several files, write 3–4 lines first:
   what changes, what stays, and what (if anything) is removed. Then implement.
 - Commit messages describe the change from the rider's point of view (see `git log`).

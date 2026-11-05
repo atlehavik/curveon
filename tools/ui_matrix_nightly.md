@@ -15,6 +15,16 @@ applies, with these exceptions, which win:
   (`git push -u origin nightly/<branch>`). Never commit to, merge into or push the rider's branch, `main` or any
   other branch; no releases, no website, no tags. The rider merges in the morning.
 - No questions and no plans to approve: work through the items, then write the report.
+- **Making something fit never redesigns it.** This is absolute. A fix may shorten a text, shrink a margin, let a text
+  wrap, or let a page or row scroll. It keeps every control, label and icon where it is and as it looks. It never puts in
+  another kind of menu, another arrangement, icons in place of words, a new order, or anything the rider would see as
+  a different screen. If that is the only way to make it fit, change nothing: report the item as `open`, say in plain
+  words what does not fit and what could be done, and leave the choice to the rider. A row that can be scrolled to is not
+  a fault.
+- **A check never asks for a look.** A scenario may check that things are on screen or can be reached. It may not ask
+  for all of something to show at once, or anything else that only another layout could meet. (2026-11-04: a check
+  added here said every Settings tab must show at once, and the fix for it turned the menu into a grid of icons. The
+  rider had to find it, and it had gone out in a release.)
 
 ## What to do
 
@@ -28,7 +38,7 @@ applies, with these exceptions, which win:
    Norwegian, like the others), and commit it with the fixes.
 3. Look over the contact sheets (`sheet_<scenario>.png`) yourself too, not only the automatic checks: overlap,
    text cut off or running out of a card, buttons off screen. The item's note says what to look for.
-4. Fix what is wrong in the app (layouts, sizes, text that does not fit; follow CLAUDE.md: every language,
+4. Fix what is wrong in the app, within the limit above (sizes, text that does not fit; follow CLAUDE.md: every language,
    `isNarrowScreen()`, `HideSystemBars()`, place names on top). A problem that is really the scenario's (a
    label that changed, a tap that misses) is fixed in the scenario. Run the build and the matrix again
    (`run2`, `run3`) until it passes or you have tried three times. `./gradlew test` must still pass.

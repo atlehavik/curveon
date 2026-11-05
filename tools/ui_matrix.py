@@ -534,22 +534,26 @@ REMOTE_ROWS = [["=Opp", "=Up"], ["=Ned", "=Down"], ["=Venstre", "=Left"], ["=Hø
                ["=Hvor skal du?", "=Where to?"], ["=Si hvor du vil", "=Say where to go"], ["=Kartretning", "=Map direction"],
                ["=Kart eller dashbord", "=Map or dashboard"], ["=Neste sang", "=Next song"], ["=Forrige sang", "=Previous song"],
                ["=Spill av eller pause", "=Play or pause"], ["=Svar eller legg på", "=Answer or hang up"]]
-SETTINGS_TABS = [["Skjerm", "Display"], ["Navigasjon", "Navigation"], ["Motor", "Engine"], ["Telefon", "Phone"],
-                 ["Fjernkontroll", "Remote"], ["Kart og data", "Maps & data"], ["Hjelp", "Help"]]
 
 
 def scenario_remote(d):
     """Settings -> Remote (no remote on the emulator, so the Bluetooth button shows): every row is scrolled to and must
     lie wholly on screen, as must the open tab and the Bluetooth button. Choosing a job opens its "press the button"
-    question, which must fit too. Look over the sheet for hints cut off and for the tabs."""
+    question, which must fit too. Look over the sheet for hints cut off. The tabs may scroll: how the menu is laid out is
+    the rider's, and no check may ask for another layout."""
     d.sh("cmd", "locale", "set-app-locales", PKG, "--locales", "nb")
     go_home(d)
     d.tap(["Settings", "Innstillinger"])
     w, h = d.screen()
-    nodes = d.nodes()
-    for tab in SETTINGS_TABS:
-        if d.find(tab, nodes) is None:
-            d.extra.append(f"the tab '{tab[0]}' is not on screen when Settings opens")
+    # The tabs scroll, along the top when upright and down the side when sideways: to the one wanted.
+    for _ in range(6):
+        if d.find(["Fjernkontroll", "Remote"]) is not None:
+            break
+        if h > w:
+            d.sh("input", "swipe", str(w * 3 // 4), str(h // 5), str(w // 4), str(h // 5), "400")
+        else:
+            d.sh("input", "swipe", str(w // 4), str(h * 3 // 4), str(w // 4), str(h * 2 // 5), "400")
+        time.sleep(1)
     d.tap(["Fjernkontroll", "Remote"], wait=3)
     tab_row = [["Fjernkontroll", "Remote"]]
     top = [["Ingen fjernkontroll tilkoblet", "No remote connected"], ["Bluetooth"], ["Lukk", "Close"]]
