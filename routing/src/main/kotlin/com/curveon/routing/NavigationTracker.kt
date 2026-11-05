@@ -50,22 +50,29 @@ class NavigationTracker(
         var bestIdx = lastIndex
         var bestT = 0.0
         var bestDist = Double.MAX_VALUE
-        fun search(reach: Double) {
+        fun search(reach: Double, withTheRider: Boolean = false) {
             var bestScore = Double.MAX_VALUE
             bestDist = Double.MAX_VALUE
             for (i in lastIndex until searchEnd) {
                 if (i > lastIndex && pts[i].distanceFromStart > reach) break
+                val isAgainst = headingDeg != null && against(headingDeg, pts[i], pts[i + 1])
+                if (withTheRider && isAgainst) continue
                 val (t, d) = projectOnSegment(position, pts[i], pts[i + 1])
-                val score = d + if (headingDeg != null && against(headingDeg, pts[i], pts[i + 1])) AGAINST_PENALTY_M else 0.0
+                val score = d + if (isAgainst) AGAINST_PENALTY_M else 0.0
                 if (score < bestScore) { bestScore = score; bestDist = d; bestIdx = i; bestT = t }
             }
         }
         // First no further along than the road can have been ridden since the last fix (a hairpin is about 1.6 times
         // the straight line): the leg back from a switchback is out of reach. Nothing on the route there (after a
-        // tunnel, say), then the whole window.
+        // tunnel, say), then the whole window, but only road going the way the rider goes: a fix far off towards the
+        // leg back of a wide switchback (150 m across, 1 km along) put the rider on it for good, a kilometre on.
         val reach = lastOnRoute?.let { lastAlong + Geo.distance(it, position) * REACH_FACTOR + REACH_MARGIN_M }
         search(reach ?: Double.MAX_VALUE)
-        if (reach != null && bestDist > threshold) search(Double.MAX_VALUE)
+        if (reach != null && bestDist > threshold) {
+            val near = Triple(bestIdx, bestT, bestDist)
+            search(Double.MAX_VALUE, withTheRider = true)
+            if (bestDist == Double.MAX_VALUE) { bestIdx = near.first; bestT = near.second; bestDist = near.third }
+        }
         // Lost the route window (e.g. after a long tunnel)? Search everything once.
         if (bestDist > REJOIN_SEARCH_M) {
             for (i in 0 until pts.lastIndex) {

@@ -227,6 +227,39 @@ class NavigationTrackerTest {
         assertFalse(next.offRoute)
     }
 
+    /** A wide switchback: 700 m north, a hairpin 150 m east, 700 m back south (the Trollstigen kind). */
+    private fun wideSwitchback(): Route {
+        val start = LatLon(60.0, 10.0)
+        val east = Geo.destination(start, 90.0, 150.0)
+        val geometry = (0..70).map { Geo.destination(start, 0.0, it * 10.0) } +
+            (1..14).map { Geo.destination(Geo.destination(start, 0.0, 700.0), 90.0, it * 10.0) } +
+            (0..70).map { Geo.destination(east, 0.0, 700.0 - it * 10.0) }
+        val pts = mutableListOf<RoutePoint>()
+        var d = 0.0
+        geometry.forEachIndexed { i, p ->
+            if (i > 0) d += Geo.distance(geometry[i - 1], p)
+            pts += RoutePoint(p.lat, p.lon, 0.0, d, d / 15.0, "tertiary", 60, unpaved = false, ferry = false)
+        }
+        val maneuvers = listOf(Maneuver(ManeuverType.DEPART, 0, 0.0), Maneuver(ManeuverType.U_TURN, 75, pts[75].distanceFromStart),
+            Maneuver(ManeuverType.ARRIVE, pts.lastIndex, d))
+        return Route(pts, maneuvers, d, d / 15.0, 0.0, 0, 0.0, 0)
+    }
+
+    @Test
+    fun `a fix far off towards the other leg of a wide switchback does not move the rider onto it`() {
+        val start = LatLon(60.0, 10.0)
+        val tracker = NavigationTracker(wideSwitchback())
+        for (y in 100..400 step 10) tracker.update(Geo.destination(start, 0.0, y.toDouble()), 10.0, headingDeg = 0.0)
+        // One fix 140 m off, 10 m from the leg back (which is 1.1 km further along and goes the other way).
+        val stray = tracker.update(Geo.destination(Geo.destination(start, 0.0, 410.0), 90.0, 140.0), 20.0, headingDeg = 0.0)
+        assertEquals(410.0, stray.distanceAlongRoute, 20.0)
+        for (y in 420..500 step 10) {
+            val p = tracker.update(Geo.destination(start, 0.0, y.toDouble()), 10.0, headingDeg = 0.0)
+            assertEquals(y.toDouble(), p.distanceAlongRoute, 5.0)
+            assertFalse(p.offRoute)
+        }
+    }
+
     @Test
     fun `the switchback is still followed all the way round`() {
         val start = LatLon(60.0, 10.0)
