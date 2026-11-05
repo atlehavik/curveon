@@ -75,6 +75,21 @@ class RideRecorderTest {
         assertTrue("points ${RideRecorder.parseTrack(done.track).size}", RideRecorder.parseTrack(done.track).size > 100)
     }
 
+    @Test
+    fun `riding slower than a track point a second counts each metre once`() {
+        // 36 km/h: 10 m a second, so the track keeps every second fix only.
+        var lat = 60.0
+        repeat(130) {
+            clock += 1000
+            lat += 10.0 / 111_320
+            recorder.onFix(GpsFix(lat, 10.0, 100.0, 10f, 0f, 5f, clock), 36f)
+        }
+        val r = recorder.current!!
+        val ridden = (lat - 60.0) * 111_320
+        assertTrue("distance ${r.distanceMeters} of $ridden", r.distanceMeters in ridden - 150..ridden + 1.0)
+        assertTrue("moving ${r.movingMillis}", r.movingMillis in 100_000L..130_000L)
+    }
+
     private fun standStill(ms: Long, lat: Double) {
         clock += ms
         recorder.onFix(GpsFix(lat, 10.0, 100.0, 0f, 0f, 5f, clock), 0f)

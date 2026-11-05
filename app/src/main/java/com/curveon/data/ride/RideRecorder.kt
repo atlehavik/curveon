@@ -28,6 +28,8 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
     private var finishedAt = 0L
     private val track = StringBuilder()
     private var lastPoint: GpsFix? = null
+    /** The last fix the distance and moving time were counted to (the track keeps fewer points than that). */
+    private var lastCounted: GpsFix? = null
     private var lastEle: Double? = null
     private var movingSince = 0L
     private var lastMovingAt = 0L
@@ -58,6 +60,7 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
             lastEle = null
             lastSavedAt = t
             append(fix, ride.startMs)
+            lastCounted = fix
             resumeOffer = lastFinished?.takeIf { t - finishedAt <= RESUME_WINDOW_MS }
             return Event.STARTED
         }
@@ -66,12 +69,15 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         var distance = ride.distanceMeters
         var movingMs = ride.movingMillis
         var ascent = ride.ascentMeters
-        if (prev != null && (fix.accuracyMeters ?: 0f) <= 30f) {
-            val d = TripTracker.distanceMeters(prev, fix)
-            if (moving) {
-                distance += d
-                movingMs += (fix.timeMillis - prev.timeMillis).coerceIn(0, 5_000)
+        // Counted from fix to fix, not from the track's last point: that one stays put for a few fixes when riding slowly,
+        // and the same stretch was counted again on each of them (half as far again at 50 km/h, twice at 30).
+        val counted = lastCounted
+        if ((fix.accuracyMeters ?: 0f) <= 30f) {
+            if (counted != null && moving) {
+                distance += TripTracker.distanceMeters(counted, fix)
+                movingMs += (fix.timeMillis - counted.timeMillis).coerceIn(0, 5_000)
             }
+            lastCounted = fix
         }
         fix.altitudeMeters?.let { e ->
             val last = lastEle
