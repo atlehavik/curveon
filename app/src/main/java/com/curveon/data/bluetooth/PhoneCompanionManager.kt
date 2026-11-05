@@ -488,10 +488,15 @@ class PhoneCompanionManager(
         val device = adapter.getRemoteDevice(address)
         val s = device.createRfcommSocketToServiceRecord(Protocol.SERVICE_UUID)
         socket = s
+        // What this link set up, so that when it ends it takes away only its own: the rider may have moved on to another
+        // phone or "This device" meanwhile, whose writer and progress ticker are in the same fields by then.
+        var myWriter: MessageWriter? = null
+        var myTicker: Job? = null
         try {
             s.connect()
             if (!active()) return
             val w = MessageWriter(s.outputStream)
+            myWriter = w
             writer = w
             w.write(Message.Hello(Build.MODEL))
             w.write(Message.RequestPhoneBook) // so the phone screen opens with fresh lists
@@ -501,6 +506,7 @@ class PhoneCompanionManager(
             _connectedSince.value = System.currentTimeMillis()
             _connectedDeviceName.value = device.name ?: address
             startTicker()
+            myTicker = tickerJob
             PhoneHub.addGroupListener(companionMirror)
             if (!hasInternet()) GroupHub.reconnectNow() // the groups can use the phone's internet from now on
             val reader = MessageReader(s.inputStream)
@@ -510,11 +516,11 @@ class PhoneCompanionManager(
                 handle(msg, fromPhone = true)
             }
         } finally {
-            writer = null
+            if (writer === myWriter) writer = null
             PhoneHub.removeGroupListener(companionMirror)
             relayTunnel.linkLost()
             weatherTunnel.linkLost()
-            tickerJob?.cancel()
+            myTicker?.cancel()
             runCatching { s.close() }
         }
     }
