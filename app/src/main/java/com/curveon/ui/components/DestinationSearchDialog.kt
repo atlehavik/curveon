@@ -131,7 +131,9 @@ fun DestinationSearchDialog(
 
     LaunchedEffect(query) {
         if (query.isNotEmpty()) nearest = null
-        if (query.trim().length < 2) { if (nearest == null) results = emptyList(); return@LaunchedEffect }
+        // Nothing to search for: a search still running when the field was cleared (or the microphone tapped) was
+        // cancelled before it could stop its spinner.
+        if (query.trim().length < 2) { searching = false; if (nearest == null) results = emptyList(); return@LaunchedEffect }
         delay(250) // debounce typing
         searching = true
         onSearch(query).collect { results = it }

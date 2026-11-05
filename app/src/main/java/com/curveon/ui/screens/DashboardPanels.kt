@@ -103,7 +103,8 @@ private fun SearchPanel(viewModel: DashboardViewModel, state: DashboardScreenSta
     val preview by viewModel.preview.collectAsStateWithLifecycle()
     val planning = isPlanning(preview)
     DestinationSearchDialog(
-        searchStatus = remember { viewModel.searchStatus() },
+        // Read again once a search download offered here is done, so the line stops saying there is none.
+        searchStatus = remember(searchOffer) { viewModel.searchStatus() },
         voice = voiceSearch,
         listenAtOnce = state.speakOnOpen,
         onListened = { state.speakOnOpen = false },

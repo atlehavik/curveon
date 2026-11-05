@@ -109,8 +109,8 @@ private fun settingsState(
         maps = installedMaps, mapDownload = mapDownload, mapQueue = mapQueue,
         mapLayers = mapLayers,
         mapName = { id -> viewModel.mapCatalog.byId[id]?.let { if (it.parent.isEmpty()) it.displayName(locale) else it.name } ?: id },
-        routingDataStatus = routingDataStatus, searchStatus = remember { viewModel.searchStatus() },
-        speedLimitsStatus = remember { viewModel.speedLimitsStatus() },
+        routingDataStatus = routingDataStatus, searchStatus = remember(installedMaps) { viewModel.searchStatus() },
+        speedLimitsStatus = remember(installedMaps) { viewModel.speedLimitsStatus() },
         appUpdate = appUpdate
     )
 }
