@@ -132,11 +132,11 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   screen), queue it in the same change with
   `python3 -I tools/ui_matrix_queue.py add --scenarios <names> "<what changed, what to look for>"`
   (`--new "<how to get there; what must fit>"` for a screen with no scenario yet), and say in chat that
-  it is queued. The night run (03:30; how it works: the top of `tools/ui_matrix_nightly.sh`) fixes
-  what it finds on `nightly/<branch>` and publishes a report with pictures on
-  https://claude.ai/artifact/5985b69pxJdmJ1yK1opdfb. A session starts with last night's summary
-  (SessionStart hook): pass it on, and merge `nightly/<branch>` into the branch only after the rider
-  says yes. After changing any `tools/ui_matrix*` file run `tools/ui_matrix_nightly.sh install`.
+  it is queued. The night run (03:30; how it works: the top of `tools/ui_matrix_nightly.sh`) **only reports**: it
+  never changes the app, and the script throws away anything it tries to change outside `tools/ui_matrix*`. The report
+  with pictures is on https://claude.ai/artifact/5985b69pxJdmJ1yK1opdfb. A session starts with last night's summary
+  (SessionStart hook): pass it on. Nothing it found is fixed unless the rider says so. After changing any
+  `tools/ui_matrix*` file run `tools/ui_matrix_nightly.sh install`.
 - **Never call Curveon "free" / "gratis"** (website, README, store text, changelog, app texts): the
   rider plans some income from it on Google Play. "Open source", "no account", "no ads" are fine;
   saying that a map source or a service the app uses costs nothing is not about Curveon's price.
@@ -174,8 +174,8 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   that differs and was not asked for is a fault, and it goes back. (2026-11-04: the night run turned the Settings menu
   on a phone from a list with names into a grid of icons, and a session with before and after in front of it merged
   it and called it right.)
-- **Merging `nightly/*`.** Read each commit first. One that changes how a screen looks or is laid out is not merged on
-  a general yes: show the rider what it changes, before and after, and ask about that one.
+- **A release only when the rider says release.** Before it goes out, show what looks or works differently for riders
+  since the last release, with pictures of what looks different, and wait for a yes to that list.
 - **Plan before a bigger change.** For a change that touches several files, write 3–4 lines first:
   what changes, what stays, and what (if anything) is removed. Then implement.
 - Commit messages describe the change from the rider's point of view (see `git log`).

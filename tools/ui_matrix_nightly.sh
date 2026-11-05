@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # The nightly screen matrix: at 03:30 (systemd user timer) it takes what sessions queued during the day
 # (tools/ui_matrix_queue.py), runs tools/ui_matrix.py on the Curveon_Phone emulator for each queued branch,
-# lets a headless Claude session fix what it finds on the branch nightly/<branch>, and publishes the report
-# page (a private claude.ai artifact, its address in ~/.curveon-nightly/page-url).
+# lets a headless Claude session look over what it finds, and publishes the report page (a private claude.ai
+# artifact, its address in ~/.curveon-nightly/page-url). It reports only: it never changes the app (see hold_to_checks).
 #
 #   tools/ui_matrix_nightly.sh install   copy this and its helpers to ~/.curveon-nightly/bin and turn the timer on
 #                                        (run it again after changing any of them)
@@ -11,7 +11,7 @@
 #   ui_matrix_nightly.sh publish         build and publish the report page again from what is in ~/.curveon-nightly
 #
 # Everything lives in ~/.curveon-nightly: queue.json, nights/<date>/ (results, screenshots), page/, logs/.
-# Only the emulator is touched: never the X7 or the Pixel, and only nightly/* branches are committed to.
+# Only the emulator is touched: never the X7 or the Pixel, and only tools/ui_matrix* on nightly/* branches is committed to.
 set -uo pipefail
 
 N=${CURVEON_NIGHTLY:-$HOME/.curveon-nightly}
@@ -60,8 +60,8 @@ start_emu() {
     log "emulator $SERIAL"
 }
 
-# The worktree on nightly/<branch>: the rider's branch as it is now, plus fixes from earlier nights not yet
-# merged. If those no longer merge, they are kept as nightly/<branch>-<date> and the night starts afresh.
+# The worktree on nightly/<branch>: the rider's branch as it is now, plus changes to the checks from earlier nights not
+# yet merged. If those no longer merge, they are kept as nightly/<branch>-<date> and the night starts afresh.
 prepare() {
     local b=$1 nb=nightly/$1
     git -C "$REPO" rev-parse --verify -q "refs/heads/$b" >/dev/null || { log "no branch $b"; return 1; }
@@ -91,6 +91,29 @@ items = [i for i in json.load(open(queue)) if i["branch"] == branch]
 json.dump({"branch": branch, "base": "", "nightly_branch": f"nightly/{branch}", "build": "", "commits": [], "sheets": [],
            "items": [{"id": i["id"], "note": i["note"], "scenarios": i["scenarios"], "status": "skipped",
                       "summary": reason} for i in items]}, open(out, "w"), indent=1, ensure_ascii=False)
+EOF2
+}
+
+# The night run may not change the app, whatever its session did: anything outside tools/ui_matrix* since [tested] is
+# thrown away, and the rider is told on the page. Not left to the instructions alone: on 2026-11-04 they let it redesign a menu.
+hold_to_checks() {
+    local b=$1 tested=$2 out=$3 bad
+    bad=$( { git -C "$WT" diff --name-only "$tested" HEAD; git -C "$WT" status --porcelain | cut -c4-; } | sort -u | grep -vE '^(tools/ui_matrix|tools/__pycache__/|\.nightly-page/)' )
+    [ -z "$bad" ] && return 0
+    log "the session changed what it may not, thrown away: $(echo "$bad" | tr '\n' ' ')"
+    git -C "$WT" reset -q --hard "$tested"
+    git -C "$WT" clean -qfd
+    python3 -I - "$out" "$bad" <<'EOF2'
+import json, sys
+out, bad = sys.argv[1:]
+try:
+    d = json.load(open(out))
+except (OSError, ValueError):
+    sys.exit()
+d["commits"] = []
+for i in d.get("items", []):
+    i["summary"] = (i.get("summary") or "") + " NB: nattøkta prøvde å endre filer den ikke har lov til å endre (" + ", ".join(bad.split()) + "). Det ble kastet."
+json.dump(d, open(out, "w"), indent=1, ensure_ascii=False)
 EOF2
 }
 
@@ -151,7 +174,8 @@ cmd_run() {
             continue
         fi
         log "branch $b at $(git -C "$WT" rev-parse --short HEAD)"
-        local prompt
+        local prompt tested
+        tested=$(git -C "$WT" rev-parse HEAD)
         prompt="$(sed -e "s|\\\$ANDROID_SERIAL|$SERIAL|g" -e "s|\\\$NIGHT|$night|g" -e "s|\\\$QUEUE_TOOL|$HERE/ui_matrix_queue.py|g" -e "s|\\\$BIN|$HERE|g" "$HERE/ui_matrix_nightly.md")
 
 ## Tonight
@@ -164,6 +188,7 @@ $(python3 -I "$HERE/ui_matrix_queue.py" list --branch "$b" --json)"
             "Read Edit Write Glob Grep Bash(./gradlew *) Bash(adb -s $SERIAL *) Bash(python3 -I tools/ui_matrix.py *) Bash(python3 -I $HERE/ui_matrix_queue.py *)" \
             "$prompt"
         reset_display
+        hold_to_checks "$b" "$tested" "$night/$b.json"
         # Items stay queued for the next night when the session did not get to report them.
         [ -s "$night/$b.json" ] || skipped "$b" "Nattøkta ble ikke ferdig (se loggen $LOG); punktene prøves igjen neste natt." "$night/$b.json"
     done
