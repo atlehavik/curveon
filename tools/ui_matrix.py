@@ -4,7 +4,7 @@ Screen matrix: runs Curveon's screens on one emulator dressed up as the common k
 (sizes, densities, camera holes and notches, navigation bars, large text), in portrait and landscape, and
 checks that nothing the rider must reach ends up off screen.
 
-    python3 -I tools/ui_matrix.py -s emulator-5556 [--variants pixel9a,small360] [--scenarios crop] [--out DIR] [--json FILE]
+    python3 -I tools/ui_matrix.py -s emulator-5556 [--variants pixel9a,small360] [--scenarios crop] [--languages de,nb] [--out DIR] [--json FILE]
 
 Use the Curveon_Phone AVD (API 36) with a debug build installed, "This device" picked as the phone
 (Settings -> Phone) and at least one picture in the gallery (for the profile picture). Per variant and
@@ -19,11 +19,15 @@ Checks, on every screen:
 - nothing clickable sticks out past the screen.
 """
 import argparse
+import base64
+import gzip
 import json
 import os
 import re
+import sqlite3
 import subprocess
 import sys
+import tempfile
 import time
 import xml.etree.ElementTree as ET
 
@@ -51,6 +55,10 @@ class Device:
         self.rotation = 0  # how the variant holds the screen: 0 portrait, 1 landscape
         self.extra = []  # problems a scenario found on the screens it passed on the way (a tour's steps)
         self.scrolling_row_ok = False  # a scenario's screen has a row meant to scroll sideways: a cut button shows there is more
+        self.out = "."  # where screenshots go
+        self.scenario = ""  # the scenario running now
+        self.tag = ""  # the variant and orientation now
+        self.shots = []  # (label, path) of screens a scenario passed on the way, for its contact sheet
 
     def sh(self, *args, check=False):
         r = subprocess.run(["adb", "-s", self.serial, "shell", *args], capture_output=True, text=True)
@@ -61,6 +69,12 @@ class Device:
     def screenshot(self, path):
         with open(path, "wb") as f:
             subprocess.run(["adb", "-s", self.serial, "exec-out", "screencap", "-p"], stdout=f, check=True)
+
+    def shot(self, name):
+        """A screenshot of a screen on the way, for the contact sheet: the scenario's last screen is not all it shows."""
+        path = os.path.join(self.out, f"{self.scenario}_{self.tag}_{name}.png")
+        self.screenshot(path)
+        self.shots.append((f"{self.tag} {name}", path))
 
     def screen(self):
         """The display's size in px as it is turned now."""
@@ -137,7 +151,13 @@ def forget_plan(d):
     """No trip left planned from a scenario before (the trip card would come back on the next start), and the screen
     turned back the way the variant holds it (the welcome tour turns it sideways, and Android keeps it so)."""
     d.sh(f"run-as {PKG} rm -f files/plan-draft.json")
+    forget_offers(d)
     d.sh("settings", "put", "system", "user_rotation", str(d.rotation))
+
+
+def forget_offers(d):
+    """Nothing shared left to answer (a scenario's, or a test's from the day): the offer would lie over every other screen."""
+    d.sh(f"run-as {PKG} rm -rf files/shared_trips.json files/shared_gpx")
 
 
 def set_seen(d, *names):
@@ -586,6 +606,217 @@ def scenario_remote(d):
     return tab_row + top
 
 
+# Language, Settings, Display, the row's title: the long ones, German (with the longest hint of them) last, for the sheet.
+SIDE_SIGN_LANGUAGES = [("fi", "Asetukset", "Näyttö", "Nopeusmerkit sivuteillä"),
+                       ("is", "Stillingar", "Skjár", "Hraðamerki á hliðarvegum"),
+                       ("de", "Einstellungen", "Anzeige", "Tempolimits auf Seitenstraßen")]
+# Language, Ride, Save for later, Ignore, Save: the long ones (French has the longest "Save for later"), then Norwegian.
+# The contact sheet shows the first of them with the keyboard down, and the last with it up.
+OFFER_LANGUAGES = [("de", "Fahren", "Für später speichern", "Ignorieren", "Speichern"),
+                   ("fi", "Aja", "Tallenna myöhemmäksi", "Ohita", "Tallenna"),
+                   ("fr", "Rouler", "Garder pour plus tard", "Ignorer", "Enregistrer"),
+                   ("nb", "Kjør", "Lagre til senere", "Ignorer", "Lagre")]
+LANGUAGES = []  # with --languages: only these of the lists above (a whole run in every language takes hours)
+
+
+def picked(table):
+    return [row for row in table if not LANGUAGES or row[0] in LANGUAGES]
+
+
+def scenario_sidesigns(d):
+    """Settings -> Display, the row Speed signs on side roads (a switch and a hint that wraps) in the languages with the
+    longest texts: the switch wholly on screen, not pushed out by the words. Look over the sheet for the hint cut off."""
+    must = None
+    languages = picked(SIDE_SIGN_LANGUAGES)
+    for lang, settings, display, title in languages:
+        d.sh("cmd", "locale", "set-app-locales", PKG, "--locales", lang)
+        go_home(d)
+        d.tap([settings])
+        d.tap([display], wait=1.5)
+        reveal(d, [title])
+        nodes = d.nodes()
+        row = d.find([title], nodes)
+        if row is None:
+            raise LookupError(f"{lang}: not on screen: {title}")
+        must = [[title]]
+        # The switch has no words of its own: the first clickable thing after the row's title.
+        switch = next((n for n in nodes[nodes.index(row):] if n["clickable"] and not n["text"] and not n["desc"]), None)
+        if switch is None:
+            d.extra.append(f"{lang}: no switch after the row")
+            continue
+        x1, y1, x2, y2 = switch["bounds"]
+        w, h = d.screen()
+        if x1 < 0 or y1 < 0 or x2 > w - 4 or y2 > h - 4 or x2 - x1 < 30 * density(d):
+            d.extra.append(f"{lang}: the switch is cut or squeezed: {switch['bounds']} on {w}x{h}")
+        if lang != languages[-1][0]:
+            d.extra += [f"{lang}: {p}" for p in check(d, must)]
+    return must
+
+
+# A share the scenarios put on the emulator, named as something the rider has (needs a GPX group and a track under GPX).
+OFFER_FROM = "Kari Nordmann"
+OFFER_GROUP = "Helgetur til Dovre"
+
+
+def write_app_file(d, path, text):
+    """Writes [text] to a file of the app's (a debug build's) as the app itself."""
+    r = subprocess.run(["adb", "-s", d.serial, "shell", f"run-as {PKG} sh -c 'mkdir -p {os.path.dirname(path)}; cat > {path}'"],
+                       input=text.encode(), capture_output=True)
+    if r.returncode != 0:
+        raise RuntimeError(f"could not write {path}: {r.stderr.decode().strip()}")
+
+
+def gpx_names(d):
+    """The names of the GPX groups and tracks in the app's database (the app is stopped for it)."""
+    d.sh("am", "force-stop", PKG)
+    with tempfile.TemporaryDirectory() as tmp:
+        for name in ("curveon_database", "curveon_database-wal", "curveon_database-shm"):
+            with open(os.path.join(tmp, name), "wb") as f:
+                subprocess.run(["adb", "-s", d.serial, "exec-out", "run-as", PKG, "cat", f"databases/{name}"], stdout=f)
+        db = sqlite3.connect(os.path.join(tmp, "curveon_database"))
+        try:
+            return ([r[0] for r in db.execute("select name from gpx_groups")],
+                    [r[0] for r in db.execute("select name from gpx_tracks")])
+        finally:
+            db.close()
+
+
+def offer_trip(d, name):
+    """A trip someone shared, not answered yet (SharedTrips), called [name]."""
+    doc = {"v": 1, "name": name, "destination": {"name": name, "lat": 59.9, "lon": 5.5}, "stops": [], "options": {}}
+    trip = {"id": "uimatrix-trip", "group": "uimatrix", "gname": OFFER_GROUP, "rev": 1, "from": "uimatrix", "nick": OFFER_FROM,
+            "doc": json.dumps(doc), "accepted": False, "at": int(time.time() * 1000), "own": None}
+    write_app_file(d, "files/shared_trips.json", json.dumps({"trips": [trip], "passed": {}, "ignored": []}))
+
+
+def offer_gpx_group(d, name):
+    """A GPX group someone shared, all of it here, not answered yet (GpxShare, SharedGpxStore), called [name]."""
+    share = {"v": 1, "name": name, "group": True, "visibility": 0, "direction": 0, "sameColor": False, "color": 0, "tracks": [
+        {"name": "S-01", "file": "s-01.gpx", "km": 6.5, "gain": 0, "maxEle": 0, "count": 2, "way": "", "fav": False, "cat": "",
+         "show": True, "color": 0, "pois": True, "rev": False, "p": "59.900000,5.500000,0;59.910000,5.510000,0"}]}
+    data = base64.urlsafe_b64encode(gzip.compress(json.dumps(share).encode())).decode().rstrip("=")
+    doc = {"kind": "gpx", "id": "uimatrix", "i": 0, "n": 1, "name": name, "group": True, "tracks": 12, "km": 1234, "data": data}
+    part = {"doc": json.dumps(doc), "nick": OFFER_FROM, "gname": OFFER_GROUP, "at": int(time.time() * 1000)}
+    write_app_file(d, "files/shared_gpx/uimatrix/0.json", json.dumps(part))
+
+
+def keyboard_top(d):
+    """The y where the on-screen keyboard starts, or None when it is not up."""
+    for m in re.finditer(r"type=ime frame=\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\] visibleFrame=\S+ visible=true", d.sh("dumpsys", "window", "displays")):
+        if int(m.group(4)) > int(m.group(2)):
+            return int(m.group(2))
+    return None
+
+
+def reach_in_offer(d, labels, floor):
+    """Scrolls the offer down in small steps (as the rider would) until the button with [labels] lies wholly inside the
+    card, and says what is wrong if it can't. The card ends 16 dp above [floor]. A bound is cut off by the card's edge, so
+    a text half out still looks whole: it is the button round it, 56 dp high when whole (PillButton), that tells."""
+    dp = density(d)
+    margin = int(16 * dp)
+    w, _ = d.screen()
+    step = int(50 * dp)
+    start = max(floor - margin - 2, step + margin)
+    n = None
+    for _ in range(12):
+        nodes = d.nodes()
+        n = d.find(labels, nodes)
+        if n is not None:
+            x1, y1, x2, y2 = n["bounds"]
+            pill = next((c for c in nodes if c["clickable"] and c["bounds"][0] <= x1 and c["bounds"][1] <= y1 and c["bounds"][2] >= x2 and c["bounds"][3] >= y2), None)
+            if pill is not None and pill["bounds"][3] - pill["bounds"][1] >= 54 * dp and pill["bounds"][3] <= floor and pill["bounds"][1] >= 0 and x2 <= w:
+                return None
+        d.sh("input", "swipe", str(w // 2), str(start), str(w // 2), str(start - step), "700")
+        time.sleep(0.7)
+    if n is None:
+        return f"'{labels[0]}' could not be scrolled to"
+    return f"'{labels[0]}' can't be scrolled wholly into the card above y={floor}: {n['bounds']}"
+
+
+def field_of_offer(d):
+    return next((n for n in d.nodes() if n["cls"].endswith("EditText")), None)
+
+
+def check_offer(d, seed, name_of, offers):
+    """One offer with a name the rider already has, in the languages with the longest texts and at last in Norwegian: the
+    name field and every button can be reached, with the keyboard down and up, and with the name typed back to the one
+    that is taken (which adds a line under the field). It ends with the keyboard up and the last button in view."""
+    d.sh("settings", "put", "secure", "show_ime_with_hard_keyboard", "1")  # the emulator's own keyboard would keep it down
+    must = None
+    offers = picked(offers)
+    for lang, *buttons in offers:
+        d.sh("cmd", "locale", "set-app-locales", PKG, "--locales", lang)
+        d.sh("am", "force-stop", PKG)
+        forget_offers(d)
+        seed(d, name_of)
+        go_home_keeping_offers(d)
+        must = [[b] for b in buttons]
+        field = field_of_offer(d)
+        if field is None:
+            raise LookupError(f"{lang}: no name field in the offer (is {name_of} still a name the rider has?)")
+        _, h = d.screen()
+        for labels in must:
+            p = reach_in_offer(d, labels, h)
+            if p:
+                d.extra.append(f"{lang}, keyboard down: {p}")
+        d.extra += [f"{lang}, keyboard down: {p}" for p in check(d, must)]
+        if lang == offers[0][0]:
+            d.shot(f"{lang}_keyboard_down")
+        field = field_of_offer(d)
+        if field is None:
+            d.sh("input", "swipe", str(d.screen()[0] // 2), str(h // 3), str(d.screen()[0] // 2), str(h * 3 // 4), "400")
+            time.sleep(1)
+            field = field_of_offer(d)
+        if field is None:
+            d.extra.append(f"{lang}: the name field can't be scrolled back to")
+            continue
+        x1, y1, x2, y2 = field["bounds"]
+        d.sh("input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
+        time.sleep(3)
+        floor = keyboard_top(d)
+        if floor is None:
+            d.extra.append(f"{lang}: the keyboard did not come up")
+            continue
+        field = field_of_offer(d)
+        if field is None or field["bounds"][3] > floor - 16 * density(d) + 2 or field["bounds"][1] < 0:
+            d.extra.append(f"{lang}: the name field is hidden while typing: {field and field['bounds']}, the keyboard starts at y={floor}")
+        # Back to the name that is taken: "(2)" off the end. A line comes under the field and the buttons go grey.
+        d.sh("input", "keyevent", "KEYCODE_MOVE_END")
+        for _ in range(4):
+            d.sh("input", "keyevent", "KEYCODE_DEL")
+        time.sleep(1.5)
+        for labels in must:
+            p = reach_in_offer(d, labels, floor)
+            if p:
+                d.extra.append(f"{lang}, keyboard up: {p}")
+    return must
+
+
+def go_home_keeping_offers(d):
+    """Curveon started afresh with the offer written before it; go_home would clear it away."""
+    d.sh("settings", "put", "system", "user_rotation", str(d.rotation))
+    set_seen(d, "tourSeen", "tripHelpSeen")
+    d.sh(f"run-as {PKG} rm -f files/plan-draft.json")
+    d.sh("am", "start", "-n", f"{PKG}/com.curveon.MainActivity")
+    time.sleep(6)
+
+
+def scenario_offertrip(d):
+    """A shared trip whose name the rider already has among their GPX tracks: Save as, and Ride, Save for later, Ignore."""
+    _, tracks = gpx_names(d)
+    if not tracks:
+        raise LookupError("no track under GPX to share the name of")
+    return check_offer(d, offer_trip, tracks[0], [(lang, ride, later, ignore) for lang, ride, later, ignore, _ in OFFER_LANGUAGES])
+
+
+def scenario_offergpx(d):
+    """A shared GPX group whose name the rider already has among their groups: Save as, and Save, Ignore."""
+    groups, _ = gpx_names(d)
+    if not groups:
+        raise LookupError("no group under GPX to share the name of")
+    return check_offer(d, offer_gpx_group, groups[0], [(lang, save, ignore) for lang, _, _, ignore, save in OFFER_LANGUAGES])
+
+
 SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "crop": scenario_crop,
              "mappoint": scenario_mappoint, "sendtablet": scenario_sendtablet, "groups": scenario_groups,
              "groupdetail": scenario_groupdetail, "friends": scenario_friends, "nudge": scenario_nudge,
@@ -593,7 +824,8 @@ SCENARIOS = {"dashboard": scenario_dashboard, "settings": scenario_settings, "cr
              "webplan": scenario_webplan, "webplanscan": scenario_webplanscan, "selfie": scenario_selfie,
              "callbig": scenario_callbig, "callmsg": scenario_callmsg, "tour": scenario_tour, "triphelp": scenario_triphelp,
              "ridebuttons": scenario_ridebuttons, "gpxmenu": scenario_gpxmenu, "plannedmenu": scenario_plannedmenu,
-             "whereto": scenario_whereto, "remote": scenario_remote}
+             "whereto": scenario_whereto, "remote": scenario_remote, "sidesigns": scenario_sidesigns,
+             "offertrip": scenario_offertrip, "offergpx": scenario_offergpx}
 
 
 def apply_variant(d, v, rotation):
@@ -625,7 +857,8 @@ def check(d, must):
     if scr is None:
         return ["could not read the screen size"]
     w, h = scr
-    for rw, rh, (l, t, r, b) in d.dialog_windows():
+    # With the keyboard up Android takes the window's frame in round it (a navigation bar's worth): nothing off screen.
+    for rw, rh, (l, t, r, b) in d.dialog_windows() if keyboard_top(d) is None else []:
         if rh > (b - t) + 1 or rw > (r - l) + 1:
             problems.append(f"dialog window {rw}x{rh} is larger than its frame [{l},{t}][{r},{b}]: its edge is off screen")
     nodes = d.nodes()
@@ -681,9 +914,15 @@ def main():
     ap.add_argument("--rotations", default="0,1", help="0 = portrait, 1 = landscape")
     ap.add_argument("--out", default="ui-matrix-out")
     ap.add_argument("--json", help="also write the results here")
+    ap.add_argument("--languages", default="", help="only these languages in the scenarios that go through several, e.g. de,nb")
     a = ap.parse_args()
+    LANGUAGES.extend(x for x in a.languages.split(",") if x)
     os.makedirs(a.out, exist_ok=True)
     d = Device(a.serial)
+    d.out = a.out
+    # Near the country whose data is on the emulator: left where it stands by default (California), Curveon fetches that
+    # state's search data by itself, as it should, and the emulator soon has no room to install a new build.
+    subprocess.run(["adb", "-s", d.serial, "emu", "geo", "fix", "10.20", "59.74"], capture_output=True)
     wanted = [v for v in VARIANTS if v[0] in a.variants.split(",")]
     shots = {s: [] for s in a.scenarios.split(",")}
     failures, results = [], []
@@ -693,6 +932,9 @@ def main():
                 apply_variant(d, v, rot)
                 for s in shots:
                     tag = f"{v[0]}-{'land' if rot else 'port'}"
+                    d.scenario = s
+                    d.tag = tag
+                    d.shots = []
                     try:
                         d.extra = []
                         d.scrolling_row_ok = False
@@ -702,6 +944,7 @@ def main():
                         problems = [f"could not get there: {e}"]
                     path = os.path.join(a.out, f"{s}_{tag}.png")
                     d.screenshot(path)
+                    shots[s] += d.shots
                     shots[s].append((f"{tag}{'  !' if problems else ''}", path))
                     results.append({"scenario": s, "tag": tag, "problems": problems, "shot": os.path.abspath(path)})
                     for p in problems:
@@ -710,6 +953,10 @@ def main():
                     for p in problems:
                         print(f"           {p}", flush=True)
     finally:
+        d.sh("am", "force-stop", PKG)
+        forget_offers(d)
+        d.sh("cmd", "locale", "set-app-locales", PKG, "--locales", "nb")
+        d.sh("settings", "put", "secure", "show_ime_with_hard_keyboard", "0")
         d.sh("wm", "size", "reset")
         d.sh("wm", "density", "reset")
         d.sh("settings", "put", "system", "font_scale", "1.0")
