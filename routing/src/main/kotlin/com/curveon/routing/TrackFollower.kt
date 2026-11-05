@@ -18,8 +18,10 @@ class TrackFollower(private val engine: BRouterEngine) {
      */
     fun route(from: LatLon, track: List<LatLon>, options: RouteOptions, fromStart: Boolean = false, headingDeg: Double? = null, exact: Boolean = false): Route {
         require(track.size >= 2) { "Track has no points" }
-        val joinIndex = (if (fromStart) firstIndexWithin(from, track, ON_TRACK_M) else
-            nearestIndex(from, track).takeIf { Geo.distance(from, track[it]) < ON_TRACK_M }) ?: 0
+        // Never the very last point: a track of one point left has nothing to ride (the router refused it, and following
+        // failed for a rider near the end of a track, or at home on a loop whose end is nearer than its start).
+        val joinIndex = ((if (fromStart) firstIndexWithin(from, track, ON_TRACK_M) else
+            nearestIndex(from, track).takeIf { Geo.distance(from, track[it]) < ON_TRACK_M }) ?: 0).coerceAtMost(track.size - 2)
         val vias = sample(track.subList(joinIndex, track.size), VIA_SPACING_M)
         // Tight snapping keeps us on the track's roads; the approach leg uses normal snapping
         // because the rider may start far from any road the track uses.
