@@ -252,7 +252,7 @@ class RemoteControl(context: Context) {
                 if (holding == action) {
                     handler.removeCallbacks(holdTimer)
                     holding = null
-                    if (!holdFired) run(remoteCommand(action, false, situation), action, event, w, focused)
+                    if (!holdFired) run(remoteCommand(action, false, situation, code == KeyEvent.KEYCODE_ENDCALL), action, event, w, focused)
                 } else if (choosing && downAction == action) {
                     choosing = false
                     w.passOn(asChoose(event))
@@ -265,7 +265,7 @@ class RemoteControl(context: Context) {
                 // Android says when a held key has become a long press; the timer is for remotes that send no repeats.
                 if (holding == action && event.isLongPress && !holdFired) { handler.removeCallbacks(holdTimer); holdTimer.run() }
                 if (holding == action || !(action.isArrow || action.isZoom)) return true
-                val gap = if (remoteCommand(action, false, situation).isZoom) ZOOM_REPEAT_MS else MOVE_REPEAT_MS
+                val gap = if (remoteCommand(action, false, situation, code == KeyEvent.KEYCODE_ENDCALL).isZoom) ZOOM_REPEAT_MS else MOVE_REPEAT_MS
                 val now = SystemClock.uptimeMillis()
                 if (now - lastRepeat < gap) return true
                 lastRepeat = now
@@ -276,7 +276,7 @@ class RemoteControl(context: Context) {
                 holdTimer = Runnable {
                     if (holding == action) {
                         holdFired = true
-                        run(remoteCommand(action, true, situation), action, event, w, focused)
+                        run(remoteCommand(action, true, situation, code == KeyEvent.KEYCODE_ENDCALL), action, event, w, focused)
                     }
                 }
                 handler.postDelayed(holdTimer, HOLD_MS)
@@ -285,7 +285,7 @@ class RemoteControl(context: Context) {
             else -> lastRepeat = SystemClock.uptimeMillis()
         }
         downAction = action
-        run(remoteCommand(action, false, situation), action, event, w, focused)
+        run(remoteCommand(action, false, situation, code == KeyEvent.KEYCODE_ENDCALL), action, event, w, focused)
         w.ringSoon()
         if (level == RemoteLevel.BUTTONS) leaveMenuLater(w)
         return true

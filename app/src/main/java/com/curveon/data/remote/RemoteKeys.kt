@@ -143,10 +143,12 @@ data class RemoteSituation(
  * On the map the arrows move the map and +/− zoom (what other riding apps do), OK opens the menu and
  * Back comes back. With a button chosen the arrows move between buttons, OK presses it and Back leaves.
  */
-fun remoteCommand(action: RemoteAction, held: Boolean, s: RemoteSituation): RemoteCommand {
+fun remoteCommand(action: RemoteAction, held: Boolean, s: RemoteSituation, hangUpKey: Boolean = false): RemoteCommand {
     // A call beats everything except a window that is on top of the card.
     if (s.ringing && s.level != RemoteLevel.DIALOG) when (action) {
-        RemoteAction.OK, RemoteAction.CALL -> return RemoteCommand.ANSWER
+        // The red hang-up key shares the call action (it ends a call), but never answers one: it turns a ringing call away.
+        RemoteAction.CALL -> return if (hangUpKey) RemoteCommand.DECLINE else RemoteCommand.ANSWER
+        RemoteAction.OK -> return RemoteCommand.ANSWER
         RemoteAction.BACK -> return RemoteCommand.DECLINE
         else -> Unit
     }

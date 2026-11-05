@@ -124,6 +124,10 @@ class RemoteKeysTest {
         assertEquals(C.OPEN_MENU, remoteCommand(OK, false, talking))
         assertEquals(C.GO_BACK, remoteCommand(BACK, false, talking))
         assertEquals(C.END_CALL, remoteCommand(CALL, false, talking))
+        // The green key answers; the red hang-up key turns the call away, and ends it once answered.
+        assertEquals(C.ANSWER, remoteCommand(CALL, false, ringing))
+        assertEquals(C.DECLINE, remoteCommand(CALL, false, ringing, hangUpKey = true))
+        assertEquals(C.END_CALL, remoteCommand(CALL, false, talking, hangUpKey = true))
     }
 
     @Test fun `music keys work anywhere`() {
