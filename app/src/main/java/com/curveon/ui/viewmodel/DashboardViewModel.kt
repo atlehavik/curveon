@@ -735,13 +735,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun connectWebPlans() {
         if (webPlanSession != null || webPlanWanted == 0 || webPlans.links().isEmpty()) return
-        webPlanSession = webPlans.live(
+        var session: com.curveon.data.webplan.WebPlanSession? = null
+        session = webPlans.live(
             onResult = { r ->
                 if (r.any) _webPlan.update { it.copy(added = r.added, changed = r.changed, deleted = r.deleted, tracks = r.tracks, offline = false, report = System.currentTimeMillis()) }
             },
             onDropped = {
                 // Coverage gone or the relay restarted: try again in a while, as long as the trips are still open.
                 viewModelScope.launch {
+                    // One browser's link dropping ends the whole session, its other links too: left open, they stayed
+                    // connected for good beside the new session's (each one a relay channel). A session already replaced
+                    // (a new browser linked meanwhile) is old news.
+                    if (webPlanSession !== session) return@launch
+                    session?.close()
                     webPlanSession = null
                     _webPlan.update { it.copy(live = false) }
                     delay(10_000)
@@ -749,6 +755,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 }
             }
         )
+        webPlanSession = session
         _webPlan.update { it.copy(live = true, offline = false) }
     }
 
