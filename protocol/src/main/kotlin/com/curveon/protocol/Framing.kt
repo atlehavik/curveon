@@ -38,6 +38,9 @@ class MessageReader(input: InputStream) {
             try {
                 Message.fromJson(JSONObject(String(bytes, Charsets.UTF_8)))?.let { return it }
             } catch (_: JSONException) {
+            } catch (_: IllegalArgumentException) {
+                // A value this side doesn't know (from a newer Curveon or Companion, updated on its own): that frame is
+                // skipped like any other it can't read, instead of ending the link.
             }
         }
     }
