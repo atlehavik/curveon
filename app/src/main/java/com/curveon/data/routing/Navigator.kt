@@ -911,6 +911,18 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         _state.value = NavigationState()
     }
 
+    /**
+     * Arrived a while ago: the trip ends. A next trip the rider has started planning meanwhile stays, and so does its
+     * routing (ending it all with [stop] took the new plan away under the rider's finger).
+     */
+    private fun endArrived() {
+        if (_state.value.preview == null) { stop(); return }
+        calcJob?.cancel()
+        arrivalJob = null
+        tracker = null
+        _state.update { NavigationState(preview = it.preview) }
+    }
+
     fun dismissError() {
         if (_state.value.status is RoutingStatus.Failed) _state.update { it.copy(status = RoutingStatus.Idle) }
     }
@@ -1003,7 +1015,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val asking = current.wrongTurn
         when {
             progress.arrived && current.goal !is NavigationGoal.Roundtrip ->
-                if (arrivalJob == null) arrivalJob = scope.launch { delay(15_000); if (tracker === t) stop() }
+                if (arrivalJob == null) arrivalJob = scope.launch { delay(15_000); if (tracker === t) endArrived() }
             // Back on the line while we were asking: nothing to decide any more.
             asking != null && !progress.offRoute -> _state.update { it.copy(wrongTurn = null) }
             // Not answered and still riding away: carry on the way the rider is going.
