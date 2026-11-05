@@ -6,6 +6,20 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-06 — Kodegjennomgang: dashbordet og kartet delt opp, og feil rettet
+
+Dashbordet og kartet er delt i mange mindre deler uten at noe skal se annerledes ut eller virke annerledes; sammenlignet
+piksel for piksel på emulator (dashbord, fullt kart, søk, GPX, telefon, venner, innstillinger, planlegging, navigering,
+stående og liggende). Bluetooth, en ekte fjernkontroll, Companion i bakgrunnen og grupper med to enheter kan bare prøves på ekte.
+
+- [ ] Bruk appen som vanlig en tur: kjennes noe annerledes ut, tregere, eller ser noe annerledes ut enn før? Si fra om alt du merker.
+- [ ] Etter en tur under 70 km/t (by eller svingete vei): stemmer turens lengde i Turer med det du kjørte (før ble den for lang, opptil det dobbelte)?
+- [ ] Bytt fra telefonen over Bluetooth til «Denne enheten» mens musikk spiller: tidslinjen i musikk-kortet går videre.
+- [ ] Med en styrefjernkontroll som har rød «legg på»-knapp: når det ringer, avviser den samtalen (før svarte den).
+- [ ] Har du telefon og nettbrett i samme turgruppe og fjerner en rytter på den ene: den andre enheten blir værende i gruppen.
+- [ ] La Curveon Companion stå i bakgrunnen en dag: den krasjer ikke, og Bluetooth, varsler og musikk virker når du kommer tilbake.
+- [ ] Kom fram til et mål og planlegg neste tur med en gang: planen blir stående (før forsvant den etter 15 sekunder).
+
 ## 2026-11-05 — GPX-spor på ruten, og skjulte spor blir borte
 
 Prøvd på emulator med et testspor langs Fv542, stående og liggende, og med sporet i rutens egen farge.
