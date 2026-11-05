@@ -103,7 +103,10 @@ class SharedTrips(context: Context) {
                 }))
                 .put("passed", JSONObject().apply { passed.forEach { (id, keys) -> put(id, JSONArray(keys.toList())) } })
                 .put("ignored", JSONArray(ignored.toList()))
-            file.writeText(o.toString())
+            // Written aside and then put in place: a process ended halfway through writing (Quit, or Android) loses nothing.
+            val tmp = File(file.path + ".tmp")
+            tmp.writeText(o.toString())
+            tmp.renameTo(file)
         }
     }
 

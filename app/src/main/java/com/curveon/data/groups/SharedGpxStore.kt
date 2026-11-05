@@ -58,7 +58,12 @@ class SharedGpxStore(private val dir: File, private val now: () -> Long = System
     fun answered(shareId: String) {
         answered += shareId
         while (answered.size > MAX_ANSWERED) answered.remove(answered.first())
-        runCatching { answeredFile.writeText(JSONArray(answered.toList()).toString()) }
+        runCatching {
+            // Written aside and then put in place, so a process ended halfway through writing keeps the shares answered.
+            val tmp = File(answeredFile.path + ".tmp")
+            tmp.writeText(JSONArray(answered.toList()).toString())
+            tmp.renameTo(answeredFile)
+        }
         File(dir, shareId).deleteRecursively()
         _offers.value = _offers.value.filterNot { it.shareId == shareId }
     }
