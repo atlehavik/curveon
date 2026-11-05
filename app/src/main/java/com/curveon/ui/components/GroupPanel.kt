@@ -2,34 +2,13 @@
 
 package com.curveon.ui.components
 
-import android.content.Context
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.lerp
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -42,10 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -54,8 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.curveon.R
 import com.curveon.data.groups.GroupManager
@@ -64,10 +38,9 @@ import com.curveon.phone.QrCode
 import com.curveon.protocol.Message
 import com.curveon.ui.theme.*
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeoutOrNull
 
 /** The icons a rider can pick for their marker; every device draws the same, and only the id travels. */
-private val GroupIcons: Map<String, ImageVector> = linkedMapOf(
+internal val GroupIcons: Map<String, ImageVector> = linkedMapOf(
     "helmet" to Icons.Default.SportsMotorsports,
     "bike" to Icons.Default.TwoWheeler,
     "mountain" to Icons.Default.Terrain,
@@ -77,10 +50,7 @@ private val GroupIcons: Map<String, ImageVector> = linkedMapOf(
 )
 
 /** Colours to pick from, bright enough on both the day and the night map. */
-private val GroupColours = listOf(0xFF00E5FF, 0xFFFF5252, 0xFF69F0AE, 0xFFFFD740, 0xFFE040FB, 0xFFFF9100).map { it.toInt() }
-
-private const val SOS_HOLD_MS = 3_000
-private const val SOS_COUNTDOWN_S = 10
+internal val GroupColours = listOf(0xFF00E5FF, 0xFFFF5252, 0xFF69F0AE, 0xFFFFD740, 0xFFE040FB, 0xFFFF9100).map { it.toInt() }
 
 /**
  * The Group ride tab: every group the rider is in as a card, with the switch that picks which one gets the rider's position
@@ -339,189 +309,6 @@ internal fun groupErrorText(code: Message.GroupErrorCode) = when (code) {
     Message.GroupErrorCode.NOT_LINKED -> R.string.group_error_other
 }
 
-/** The marker's picture: the rider's photo, their icon or their initials, on their colour. */
-@Composable
-fun RiderAvatar(r: GroupRider, size: androidx.compose.ui.unit.Dp) {
-    Box(
-        Modifier.size(size).clip(CircleShape).background(Color(r.colour)).border(2.dp, Color.White, CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
-        val photo = r.photo
-        val icon = r.icon?.let { GroupIcons[it] }
-        when {
-            photo != null -> Image(photo.asImageBitmap(), null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            icon != null -> Icon(icon, null, tint = Color(0xFF0B0E14), modifier = Modifier.size(size * 0.6f))
-            else -> Text(r.nickname.take(2).uppercase(), color = Color(0xFF0B0E14), fontWeight = FontWeight.Black, fontSize = (size.value * 0.4f).sp)
-        }
-    }
-}
-
-@Composable
-private fun RiderRow(
-    r: GroupRider, me: Boolean, pos: Message.GroupPositionInfo?, onRemove: (() -> Unit)?, nudge: Pair<GroupManager, String>? = null,
-    befriend: GroupManager? = null
-) {
-    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RiderAvatar(r, 40.dp)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(if (me) stringResource(R.string.group_rider_you, r.nickname) else r.nickname, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-                if (!me) Text(riderStatus(pos), color = TextSecondary, fontSize = 13.sp)
-                nudge?.let { (manager, groupId) -> NudgeRowStatus(manager, groupId, r.id, r.nickname) }
-            }
-            befriend?.let { FriendRequestIconButton(it, r.id) }
-            nudge?.let { (manager, groupId) -> NudgeIconButton(manager, groupId, r.id) }
-            if (onRemove != null) IconButton(onClick = onRemove) { Icon(Icons.Default.PersonRemove, stringResource(R.string.group_remove), tint = TextSecondary) }
-        }
-        // On a line of its own, the full width of the row: beside the name it is a narrow column that breaks words at large text.
-        befriend?.let { FriendRequestRowStatus(it, r.id, r.nickname) }
-    }
-}
-
-/** "now", "3 min ago" or "stopped 12 min", the way the sender reports it. */
-@Composable
-private fun riderStatus(p: Message.GroupPositionInfo?): String {
-    p ?: return stringResource(R.string.group_no_position)
-    if (p.paused) return stringResource(R.string.group_rider_paused)
-    val now = System.currentTimeMillis()
-    if (p.stopped && p.stoppedSince != null) return stringResource(R.string.group_stopped_for, ((now - p.stoppedSince!!) / 60_000).coerceAtLeast(1).toInt())
-    val min = ((now - p.timeMs) / 60_000).toInt()
-    return if (min < 1) stringResource(R.string.group_seen_now) else stringResource(R.string.group_seen_min, min)
-}
-
-/**
- * Nickname, colour, icon and the rider's own picture. The picture is taken with the camera or chosen from the
- * pictures, cut in a round window, and shown as the others will see it. Every change is saved by itself (the name once
- * the typing stops) and told to the phone, which tells the group; "Saved" says it went.
- */
-@Composable
-internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: (String, Int, String?, String?) -> Unit) {
-    var open by rememberSaveable { mutableStateOf(false) }
-    val context = LocalContext.current
-    // The rider's own picture (base64 JPEG): kept as it is unless a new one is cut or it is removed.
-    var photo by rememberSaveable { mutableStateOf(me.photoBase64) }
-    val preview = remember(photo) { photo?.let { runCatching { val b = android.util.Base64.decode(it, android.util.Base64.DEFAULT); android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size) }.getOrNull() } }
-    // The photo just taken or chosen, waiting to be cut.
-    var toCut by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    val captureFile = remember { java.io.File(context.cacheDir, "photos/profile.jpg") }
-    fun toast(res: Int) = android.widget.Toast.makeText(context, context.getString(res), android.widget.Toast.LENGTH_LONG).show()
-    fun cutFrom(uri: android.net.Uri) {
-        val bitmap = com.curveon.phone.ProfilePhoto.load(context, uri)
-        runCatching { captureFile.delete() } // a picture of the rider's face is not left in the cache
-        if (bitmap != null) toCut = bitmap else toast(R.string.group_photo_failed)
-    }
-    val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) cutFrom(uri) }
-    // The picture is taken in Curveon's own camera (front lens, mirror view, saved as shown): the phone's camera app saves a
-    // selfie mirrored or not depending on its own setting, so what came back could be the other way round from what the rider saw.
-    var cameraOpen by remember { mutableStateOf(false) }
-    fun takePhoto() { cameraOpen = true }
-    if (cameraOpen) com.curveon.qrscan.SelfieCameraDialog(
-        file = captureFile.also { it.parentFile?.mkdirs() },
-        onPicture = { cameraOpen = false; cutFrom(android.net.Uri.fromFile(captureFile)) },
-        onDismiss = { cameraOpen = false }
-    )
-
-    // Taken from the profile once: what comes back after a save must not undo letters typed meanwhile.
-    var nick by rememberSaveable { mutableStateOf(me.nickname) }
-    var colour by rememberSaveable { mutableStateOf(me.colour) }
-    var icon by rememberSaveable { mutableStateOf(me.icon) }
-    var saved by remember { mutableStateOf(listOf<Any?>(me.nickname, me.colour, me.icon, me.photoBase64)) }
-    var savedCount by remember { mutableIntStateOf(0) }
-    fun saveNow() {
-        val name = nick.trim().ifEmpty { return }
-        val now = listOf<Any?>(name, colour, icon, photo)
-        if (now == saved) return
-        onSave(name, colour, icon, photo)
-        saved = now
-        savedCount++
-    }
-    LaunchedEffect(nick, colour, icon, photo) {
-        if (nick.trim() != saved[0]) delay(900) // the name: once the typing stops
-        saveNow()
-    }
-    DisposableEffect(Unit) { onDispose { saveNow() } } // closed while still typing
-    var showSaved by remember { mutableStateOf(false) }
-    LaunchedEffect(savedCount) { if (savedCount > 0) { showSaved = true; delay(2_500); showSaved = false } }
-    if (!alwaysOpen) TextButton(onClick = { open = !open }) {
-        Icon(Icons.Default.Edit, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.group_profile), color = ElectricCyan, fontWeight = FontWeight.Bold)
-    }
-    if (open || alwaysOpen) Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        OutlinedTextField(nick, { nick = it.take(20) }, singleLine = true, label = { Text(stringResource(R.string.group_nickname)) }, modifier = Modifier.fillMaxWidth())
-        // How the others see you: this very marker, as it will be on their map and in their list.
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            RiderAvatar(me.copy(nickname = nick.ifEmpty { me.nickname }, colour = colour, icon = icon, photo = preview, photoBase64 = photo), 96.dp)
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(nick.ifEmpty { me.nickname }, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text(stringResource(R.string.group_photo_preview), color = TextSecondary, fontSize = 13.sp)
-                if (showSaved) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("profile_saved")) {
-                    Icon(Icons.Default.Check, null, tint = EcoGreen, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.profile_saved), color = EcoGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { takePhoto() }, modifier = Modifier.testTag("group_take_photo")) {
-                Icon(Icons.Default.PhotoCamera, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.group_photo_take), color = ElectricCyan, fontWeight = FontWeight.Bold)
-            }
-            OutlinedButton(onClick = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.testTag("group_pick_photo")) {
-                Icon(Icons.Default.PhotoLibrary, null, tint = ElectricCyan, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.group_photo_gallery), color = ElectricCyan, fontWeight = FontWeight.Bold)
-            }
-            if (photo != null) OutlinedButton(onClick = { photo = null }, modifier = Modifier.testTag("group_remove_photo")) {
-                Icon(Icons.Default.Delete, null, tint = TextSecondary, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.group_photo_remove), color = TextSecondary, fontWeight = FontWeight.Bold)
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-            GroupColours.forEach { c ->
-                Box(Modifier.size(36.dp).clip(CircleShape).background(Color(c)).border(if (c == colour) 3.dp else 1.dp, if (c == colour) Color.White else CockpitBorder, CircleShape).clickable { colour = c })
-            }
-        }
-        // The picture is shown instead of an icon: the icons are for when there is no picture.
-        val iconsOn = photo == null
-        if (!iconsOn) Text(stringResource(R.string.group_icons_off), color = TextMuted, fontSize = 13.sp)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState()).graphicsLayer { alpha = if (iconsOn) 1f else 0.35f }) {
-            GroupIcons.forEach { (id, vector) ->
-                val picked = iconsOn && id == icon
-                Box(
-                    Modifier.size(40.dp).clip(CircleShape).background(if (picked) Color(colour) else CockpitSurface)
-                        .border(1.dp, CockpitBorder, CircleShape).clickable(enabled = iconsOn) { icon = if (icon == id) null else id },
-                    contentAlignment = Alignment.Center
-                ) { Icon(vector, null, tint = if (picked) Color(0xFF0B0E14) else TextSecondary, modifier = Modifier.size(22.dp)) }
-            }
-        }
-    }
-    toCut?.let { bitmap ->
-        PhotoCropDialog(
-            bitmap,
-            colour,
-            onDone = { square ->
-                val b64 = com.curveon.phone.ProfilePhoto.encode(square)
-                if (b64 != null) photo = b64 else toast(R.string.group_photo_failed)
-                toCut = null
-            },
-            onCancel = { toCut = null }
-        )
-    }
-}
-
-/** A friend's round picture, icon or initials, as the riders have. */
-@Composable
-internal fun FriendAvatar(f: Message.FriendInfo, size: androidx.compose.ui.unit.Dp) {
-    val photo = remember(f.photoJpegBase64) {
-        f.photoJpegBase64?.let { runCatching { val b = android.util.Base64.decode(it, android.util.Base64.DEFAULT); android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size) }.getOrNull() }
-    }
-    RiderAvatar(GroupRider(f.id, f.nickname, f.colour, f.icon, photo, f.photoJpegBase64), size)
-}
-
 /** Add friends to the group: pick some of them and each gets an invite to answer (through the private channel between you). */
 @Composable
 private fun AddFriendsSection(manager: GroupManager, groupId: String) {
@@ -599,185 +386,3 @@ internal fun QrBlock(uri: String?, hint: Int, description: Int, shareLink: Boole
     }
 }
 
-// ---- SOS ----
-
-/** Held for three seconds, so a gloved thumb does not set it off by accident. */
-@Composable
-private fun SosButton(onTrigger: () -> Unit) {
-    var holding by remember { mutableStateOf(false) }
-    var progress by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(holding) {
-        if (!holding) { progress = 0f; return@LaunchedEffect }
-        val start = System.currentTimeMillis()
-        while (holding) {
-            progress = ((System.currentTimeMillis() - start) / SOS_HOLD_MS.toFloat()).coerceAtMost(1f)
-            delay(30)
-        }
-    }
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(
-            Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(16.dp)).background(WarningRed.copy(alpha = 0.18f))
-                .border(2.dp, WarningRed, RoundedCornerShape(16.dp)).testTag("group_sos_hold")
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        awaitFirstDown()
-                        holding = true
-                        // Only a thumb that stays put for the whole hold sets it off: lifting, sliding off the
-                        // button or the list taking over the gesture (scrolling) all cancel.
-                        var completed = true
-                        withTimeoutOrNull(SOS_HOLD_MS.toLong()) {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                val change = event.changes.firstOrNull() ?: run { completed = false; return@withTimeoutOrNull }
-                                if (!change.pressed || change.isConsumed || change.position.x !in 0f..size.width.toFloat() ||
-                                    change.position.y !in 0f..size.height.toFloat()
-                                ) { completed = false; return@withTimeoutOrNull }
-                            }
-                        }
-                        holding = false
-                        if (completed) onTrigger()
-                    }
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Box(Modifier.align(Alignment.CenterStart).fillMaxHeight().fillMaxWidth(progress).background(WarningRed.copy(alpha = 0.55f)))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Sos, null, tint = WarningRed, modifier = Modifier.size(28.dp))
-                Spacer(Modifier.width(10.dp))
-                Text(stringResource(R.string.sos_hold), color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black)
-            }
-        }
-        Text(stringResource(R.string.sos_hold_hint), color = TextMuted, fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun SosCountdown(left: Int, onCancel: () -> Unit) {
-    Dialog(onDismissRequest = onCancel, properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = false)) {
-        HideSystemBars()
-        Column(
-            Modifier.fillMaxSize().background(Color(0xFF7A0B00)).padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
-        ) {
-            Text(stringResource(R.string.sos_countdown_title), color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
-            Text("$left", color = Color.White, fontSize = 120.sp, fontWeight = FontWeight.Black, modifier = Modifier.testTag("sos_countdown"))
-            Button(onClick = onCancel, colors = ButtonDefaults.buttonColors(containerColor = Color.White), modifier = Modifier.height(64.dp).widthIn(min = 240.dp).testTag("sos_countdown_cancel")) {
-                Text(stringResource(R.string.cancel), color = Color(0xFF7A0B00), fontSize = 20.sp, fontWeight = FontWeight.Black)
-            }
-        }
-    }
-}
-
-/**
- * On top of everything: the rider's own SOS with how far it has got (a bar at the top), and a
- * full-screen alert when someone else sends one. [navigateTo] starts a route to the rider in trouble.
- */
-@Composable
-fun GroupSosOverlay(manager: GroupManager, myLat: Double?, myLon: Double?, navigateTo: (Double, Double, String) -> Unit) {
-    val sos by manager.sos.collectAsStateWithLifecycle()
-    val members by manager.members.collectAsStateWithLifecycle()
-    val myId by manager.myId.collectAsStateWithLifecycle()
-    var dismissed by remember { mutableStateOf(setOf<Long>()) }
-
-    Box(Modifier.fillMaxSize()) {
-    sos.values.firstOrNull { it.mine }?.let { mine -> MySosCard(mine, manager, Modifier.align(Alignment.TopCenter).padding(12.dp)) }
-
-    val incoming = sos.values.firstOrNull { !it.mine && it.timeMs !in dismissed }
-    incoming?.let { s ->
-        val who = members[s.from]?.nickname ?: stringResource(R.string.group_unnamed)
-        val onTheWay = s.acks.count { it.coming }
-        // It may be nothing, and not everyone has to go: ignoring it is as easy as answering.
-        val ignore = { dismissed = dismissed + s.timeMs }
-        SosAlertSound()
-        // Beats like the siren: the red swells and fades, the edge flashes and the icon pounds, until the rider answers.
-        val beat by rememberInfiniteTransition(label = "sosBeat").animateFloat(0f, 1f, infiniteRepeatable(tween(450, easing = LinearEasing), RepeatMode.Reverse), label = "sosBeatValue")
-        Dialog(onDismissRequest = ignore, properties = DialogProperties(dismissOnClickOutside = false)) {
-            HideSystemBars()
-            Column(
-                Modifier.widthIn(max = 380.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp))
-                    .drawBehind { drawRect(lerp(Color(0xFF8E0000), Color(0xFFE53935), beat)) }
-                    .border(4.dp, Color.White.copy(alpha = 0.2f + 0.8f * beat), RoundedCornerShape(20.dp))
-                    .padding(18.dp).testTag("sos_alert"),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.Sos, null, tint = Color.White,
-                        modifier = Modifier.size(40.dp).graphicsLayer { scaleX = 1f + 0.3f * beat; scaleY = 1f + 0.3f * beat })
-                    Column {
-                        Text(stringResource(R.string.sos_alert_title, who), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
-                        if (myLat != null && myLon != null) {
-                            val m = com.curveon.routing.Geo.distance(myLat, myLon, s.lat, s.lon).toInt()
-                            Text(
-                                if (m < 1000) stringResource(R.string.sos_away_m, m) else stringResource(R.string.sos_away_km, m / 1000.0),
-                                color = Color.White, fontSize = 15.sp
-                            )
-                        }
-                    }
-                }
-                Text(
-                    if (onTheWay > 0) stringResource(R.string.sos_on_the_way, onTheWay) else stringResource(R.string.sos_nobody_yet),
-                    color = if (onTheWay > 0) Color(0xFFB9F6CA) else Color(0xFFFFCDD2), fontSize = 14.sp, fontWeight = FontWeight.Bold
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Button(
-                        onClick = { manager.sosAnswer(s.from, true); navigateTo(s.lat, s.lon, who); ignore() },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White), modifier = Modifier.weight(1f).height(52.dp).testTag("sos_drive")
-                    ) { Text(stringResource(R.string.sos_drive_there), color = Color(0xFFB71C1C), fontSize = 16.sp, fontWeight = FontWeight.Black) }
-                    TextButton(onClick = ignore, modifier = Modifier.height(52.dp).testTag("sos_ignore")) {
-                        Text(stringResource(R.string.sos_ignore), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-    }
-    }
-}
-
-/** The rider's own SOS: how far it has got, and a way to end it. Shown on the dashboard and, as the dialog covers that, in the dialog too. */
-@Composable
-private fun MySosCard(sos: Message.GroupSos, manager: GroupManager, modifier: Modifier = Modifier) {
-    val seen = sos.acks.size
-    val coming = sos.acks.count { it.coming }
-    val others = (sos.memberCount - 1).coerceAtLeast(0)
-    Column(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFF7A0B00))
-            .border(2.dp, WarningRed, RoundedCornerShape(16.dp)).padding(14.dp).testTag("sos_sent"),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Text(stringResource(R.string.sos_sent), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black)
-        Text(stringResource(R.string.sos_delivery, seen, others), color = Color.White, fontSize = 15.sp)
-        if (coming > 0) Text(stringResource(R.string.sos_on_the_way, coming), color = Color(0xFFB9F6CA), fontSize = 15.sp, fontWeight = FontWeight.Bold)
-        else if (seen == 0) Text(stringResource(R.string.sos_no_delivery), color = Color(0xFFFFD180), fontSize = 14.sp)
-        Button(onClick = { manager.sosCancel() }, colors = ButtonDefaults.buttonColors(containerColor = Color.White)) {
-            Text(stringResource(R.string.sos_cancel), color = Color(0xFF7A0B00), fontWeight = FontWeight.Black)
-        }
-    }
-}
-
-/** The SOS siren and vibration for as long as the alert is up. */
-@Composable
-private fun SosAlertSound() {
-    val context = LocalContext.current
-    DisposableEffect(Unit) {
-        val siren = SosSiren().also { it.start() }
-        val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= 31) context.getSystemService(VibratorManager::class.java)?.defaultVibrator
-        else @Suppress("DEPRECATION") context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-        runCatching { vibrator?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 600, 400), 0)) }
-        onDispose {
-            siren.stop()
-            runCatching { vibrator?.cancel() }
-        }
-    }
-}
-
-/** Where Android last knew this device was (any source), for an SOS sent before Curveon's own GPS has a fix. */
-@android.annotation.SuppressLint("MissingPermission") // no permission: no position, and the rider is told
-private fun lastKnownPosition(context: Context): Pair<Double, Double>? = runCatching {
-    val lm = context.getSystemService(android.location.LocationManager::class.java)
-    lm.getProviders(true).mapNotNull { lm.getLastKnownLocation(it) }.maxByOrNull { it.time }?.let { it.latitude to it.longitude }
-}.getOrNull()
-
-private fun hasInternet(context: Context): Boolean = runCatching {
-    val cm = context.getSystemService(android.net.ConnectivityManager::class.java)
-    cm.getNetworkCapabilities(cm.activeNetwork)?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-}.getOrDefault(false)
