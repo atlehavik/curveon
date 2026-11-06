@@ -85,4 +85,30 @@ class RiderMotionTest {
         val after = distanceAlong(m.sample(1_000_000_000L)!!)
         assertEquals(before, after, 0.01)
     }
+
+    @Test fun `without a route the arrow stays on the road through a bend`() {
+        // A bend of radius 60 m, as the map's road lines round the rider, ridden at 55 km/h with a fix a second.
+        val centre = Geo.destination(start, 90.0, 60.0)
+        val road = (0..180 step 3).map { Geo.destination(centre, (270.0 + it) % 360, 60.0) }
+        val speed = 55 / 3.6
+        val m = RiderMotion()
+        var worst = 0.0
+        var t = 0.0
+        var nextFix = 0.0
+        while (t < 6.0) {
+            if (t >= nextFix - 1e-9) {
+                val angle = Math.toDegrees(speed * nextFix / 60.0)
+                val on = Geo.destination(centre, (270.0 + angle) % 360, 60.0)
+                val bearing = (angle + 360) % 360
+                val (path, along) = com.curveon.routing.RoadSnap.path(on, listOf(road), bearing, 120.0, 250.0)
+                m.onFix(RiderMotion.Fix(on.lat, on.lon, bearing, speed, (nextFix * 1e9).toLong(), path, along), (t * 1e9).toLong())
+                nextFix += 1.0
+            }
+            val p = m.sample((t * 1e9).toLong())!!
+            if (t > 0.5) worst = maxOf(worst, kotlin.math.abs(Geo.distance(centre, LatLon(p.lat, p.lon)) - 60.0))
+            t += 1.0 / 60
+        }
+        // Carried straight on it was ~10 m outside the bend before each fix pulled it back.
+        assertTrue("worst $worst m off the road", worst < 1.0)
+    }
 }

@@ -31,6 +31,43 @@ class RoadSnapTest {
         assertEquals(90.0, RoadSnap.near(gps, roads, 90.0, 15.0, 30.0)!!.second, 1.0)
     }
 
+    /** A right-hand bend of radius 80 m from [start], heading north, a point every 3°, out to [toDeg] degrees. */
+    private fun bend(fromDeg: Int, toDeg: Int): List<LatLon> {
+        val centre = Geo.destination(start, 90.0, 80.0)
+        return (fromDeg..toDeg step 3).map { Geo.destination(centre, (270.0 + it) % 360, 80.0) }
+    }
+
+    @Test
+    fun the_path_follows_the_bend_on_into_the_next_line_and_not_the_road_turning_off() {
+        // The bend in two lines meeting at 60°, a side road leaving there to the north-west, and the second line
+        // starting a little before the first ends, as at the edge of a map tile.
+        val first = bend(0, 60)
+        val second = bend(57, 180)
+        val joint = first.last()
+        val side = listOf(joint, Geo.destination(joint, 320.0, 200.0))
+        val (route, along) = RoadSnap.path(start, listOf(side, second, first), 0.0, 30.0, 300.0)
+        assertEquals(30.0, along, 0.5)
+        val centre = Geo.destination(start, 90.0, 80.0)
+        // Everything on the bend (some 250 m of it), off it only straight on past where the lines end.
+        for (p in route.points) {
+            val ll = LatLon(p.lat, p.lon)
+            if (p.distanceFromStart in along..along + 245) assertEquals("at ${p.distanceFromStart}", 80.0, Geo.distance(centre, ll), 1.0)
+        }
+        val end = route.points.last()
+        assertEquals(along + 300.0, end.distanceFromStart, 1.0)
+        // Past the bend's end (heading south) it goes on straight south.
+        assertEquals(180.0, Geo.bearing(second.last().lat, second.last().lon, end.lat, end.lon), 2.0)
+    }
+
+    @Test
+    fun the_path_behind_runs_back_along_the_road() {
+        val (route, along) = RoadSnap.path(Geo.destination(start, 90.0, 100.0), roads, 90.0, 30.0, 50.0)
+        val (back, _) = Routes.pointAt(route, 0.0)
+        assertEquals(0.0, Geo.distance(back, Geo.destination(start, 90.0, 70.0)), 0.5)
+        assertEquals(80.0, route.distanceMeters, 0.5)
+        assertEquals(30.0, along, 0.5)
+    }
+
     @Test
     fun too_far_or_across_every_road_is_raw_gps() {
         assertNull(RoadSnap.near(Geo.destination(Geo.destination(start, 90.0, 100.0), 0.0, 30.0), roads, 90.0, 15.0, 30.0))

@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.2.12",
+    "en": [
+      "Riding without a route, your arrow now follows the road through every bend, just as it does when you navigate. No more sliding out of each curve and jumping back onto the road a moment later."
+    ],
+    "nb": [
+      "Når du kjører uten rute, følger pila nå veien gjennom hver sving, akkurat som når du navigerer. Den sklir ikke lenger ut av svingene og hopper tilbake på veien et øyeblikk etter."
+    ],
+    "sv": [
+      "När du kör utan rutt följer pilen nu vägen genom varje kurva, precis som när du navigerar. Den glider inte längre ut i kurvorna och hoppar tillbaka på vägen en stund senare."
+    ],
+    "da": [
+      "Når du kører uden rute, følger pilen nu vejen gennem hvert sving, ligesom når du navigerer. Den glider ikke længere ud af svingene og hopper tilbage på vejen et øjeblik efter."
+    ],
+    "fi": [
+      "Kun ajat ilman reittiä, nuoli seuraa nyt tietä jokaisessa mutkassa, aivan kuten navigoidessa. Se ei enää liu'u mutkista ulos ja hyppää hetken päästä takaisin tielle."
+    ],
+    "is": [
+      "Þegar þú ekur án leiðar fylgir örin nú veginum í gegnum hverja beygju, alveg eins og þegar þú leiðsegir. Hún rennur ekki lengur út úr beygjunum og stekkur aftur upp á veginn augnabliki síðar."
+    ],
+    "de": [
+      "Fährst du ohne Route, folgt dein Pfeil jetzt der Straße durch jede Kurve, genau wie beim Navigieren. Er rutscht nicht mehr aus jeder Kurve und springt einen Moment später auf die Straße zurück."
+    ],
+    "es": [
+      "Cuando vas sin ruta, tu flecha sigue ahora la carretera en cada curva, igual que cuando navegas. Ya no se sale de las curvas para volver de un salto a la carretera un momento después."
+    ],
+    "fr": [
+      "Sans itinéraire, ta flèche suit désormais la route dans chaque virage, comme quand tu navigues. Elle ne sort plus de chaque courbe pour revenir d'un bond sur la route un instant plus tard."
+    ],
+    "nl": [
+      "Rijd je zonder route, dan volgt je pijl nu de weg door elke bocht, net als tijdens het navigeren. Hij glijdt niet meer uit elke bocht om even later terug op de weg te springen."
+    ],
+    "pl": [
+      "Gdy jedziesz bez trasy, strzałka podąża teraz za drogą przez każdy zakręt, tak samo jak podczas nawigacji. Nie wypada już z zakrętów, by chwilę później wskoczyć z powrotem na drogę."
+    ]
+  },
+  {
     "version": "1.2.11",
     "en": [
       "Curveon starts again on phones with the newest Android: version 1.2.10 stopped right at the start there. Sorry for the trouble!"

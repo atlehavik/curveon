@@ -6,6 +6,15 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-06 — Pila følger veien gjennom svingene uten rute
+
+Uten rute ble pila skjøvet rett fram mellom GPS-punktene (opptil 1,5–2,5 s, ~11 m ut av en sving i 55 km/t) og dratt
+tilbake ved neste punkt. Nå følger den veilinja kartet tegner, som med rute. Prøvd på emulator langs Hiskavegen på Bømlo;
+ekte GPS-støy kan bare prøves på tur.
+
+- [ ] Kjør en svingete vei uten rute (som Kv1187 / Hiskavegen): ligger pila på veien gjennom svingene, uten å skli ut og hoppe tilbake?
+- [ ] Ta av i et kryss uten rute: følger pila den veien du tok innen et par sekunder, ikke den som går rett fram?
+
 ## 2026-11-06 — Kodegjennomgang: dashbordet og kartet delt opp, og feil rettet
 
 Dashbordet og kartet er delt i mange mindre deler uten at noe skal se annerledes ut eller virke annerledes; sammenlignet

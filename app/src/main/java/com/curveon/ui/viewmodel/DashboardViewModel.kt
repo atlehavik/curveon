@@ -1434,8 +1434,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             lat = _currentLocation.value.latitude, lon = _currentLocation.value.longitude,
             headingDeg = heading.toDouble(), speedMps = tripTracker.speedKmh / 3.6,
             atNanos = fix.atNanos,
-            route = if (onRoad != null) nav.route else null,
-            along = if (onRoad != null) nav.progress?.distanceAlongRoute else null,
+            // Carried on along the route, or without one along the road the rider is drawn on (see [snapToRoad]).
+            route = if (onRoad == null) null else if (nav.progress == null) drawnRoadPath?.first else nav.route,
+            along = if (onRoad == null) null else if (nav.progress == null) drawnRoadPath?.second else nav.progress?.distanceAlongRoute,
             // In a tunnel the guess drifts: the halo grows with the distance ridden since the last real fix.
             accuracyM = if (estimated) minOf(DR_MAX_ACCURACY_M, 15.0 + 0.1 * tripTracker.speedKmh / 3.6 * (System.currentTimeMillis() - lastRealFixAt) / 1000.0)
                 else (fix.accuracyMeters ?: 10f).toDouble()
@@ -1489,6 +1490,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** The bearing of the road the rider is drawn on without a route (see [snapToRoad]); null = raw GPS. */
     private var drawnOnRoad: Double? = null
 
+    /** That road ahead and behind, and how far along it the rider is drawn: the arrow is carried along it between fixes. */
+    private var drawnRoadPath: Pair<com.curveon.routing.Route, Double>? = null
+
     /** The road lines the map draws round the rider (see [onRoadsNear]), and where they were read. */
     @Volatile private var roadsNear: Pair<LatLon, List<List<LatLon>>>? = null
 
@@ -1502,6 +1506,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
      * (a junction) or none near (off road, or the map's roads not read here yet) shows the raw GPS.
      */
     private fun snapToRoad(fix: GpsFix): Pair<LatLon, Float>? {
+        drawnRoadPath = null
         if (navigator.state.value.progress != null) { drawnOnRoad = null; return null }
         val here = LatLon(fix.latitude, fix.longitude)
         val lines = roadsNear?.takeIf { com.curveon.routing.Geo.distance(it.first, here) < ROADS_NEAR_FRESH_M }?.second
@@ -1514,6 +1519,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             else com.curveon.routing.RoadSnap.near(here, lines, it, maxOf(ROAD_SNAP_JOIN_M, acc), 30.0)
         }
         drawnOnRoad = hit?.second
+        drawnRoadPath = hit?.let { com.curveon.routing.RoadSnap.path(it.first, lines, it.second, ROAD_PATH_BEHIND_M, ROAD_PATH_AHEAD_M) }
         return hit?.let { it.first to it.second.toFloat() }
     }
 
@@ -2474,6 +2480,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         private const val ROAD_SNAP_MIN_KMH = 8f
         /** The map's roads read further away than this from the rider are too old to put them on. */
         private const val ROADS_NEAR_FRESH_M = 60.0
+        /** How much of the road the arrow may be carried along: past the lead at any speed and lead (Settings → Navigation). */
+        private const val ROAD_PATH_AHEAD_M = 250.0
+        private const val ROAD_PATH_BEHIND_M = 120.0
         /** The tunnel halo stops growing here: it says "roughly here", not "anywhere". */
         private const val DR_MAX_ACCURACY_M = 300.0
         /** The tunnel guess stays this far short of the end of the route (arrival is for a real fix to decide). */
