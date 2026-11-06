@@ -66,6 +66,14 @@ object GroupHub {
     private const val NUDGE_MIN_GAP_MS = 20_000L
     /** How often Curveon looks for where the friends who share with the rider are. */
     private const val FRIEND_WATCH_MINUTES = 2L
+    /**
+     * Friends looked in on at once, and how long until the next ones (each is open [FRIEND_LOOK_MS]): a tablet without
+     * internet has every channel through the phone, which carries 8 at a time, and with the rider's own and the ride
+     * group's that left the same friends out on every round.
+     */
+    private const val FRIEND_BATCH = 4
+    private const val FRIEND_LOOK_MS = 6_000L
+    private const val FRIEND_BATCH_GAP_MS = FRIEND_LOOK_MS + 1_000L
     private val exec = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "curveon-group-hub").apply { isDaemon = true } }
     /** The relay straight over the internet. */
     val directTransports: com.curveon.groups.TransportFactory = OkHttpTransportFactory()
@@ -498,7 +506,7 @@ object GroupHub {
 
     /**
      * While a tablet listens, look in on every friend now and then: an invite from one may be waiting. Friends who share where
-     * they are are looked in on more often, all at once (one wake of the radio), and the relay hands over their latest position.
+     * they are are looked in on more often, a few at once ([FRIEND_BATCH]), and the relay hands over their latest position.
      */
     private fun updateFriendSweep() {
         val listening = PhoneHub.tabletCount > 0
@@ -509,11 +517,19 @@ object GroupHub {
         else if (!watching && watchJob != null) { watchJob?.cancel(false); watchJob = null }
     }
 
-    private fun watchFriends() = store?.friendsSharingWithMe.orEmpty().forEach { touchFriend(it, 6_000) }
+    private fun watchFriends() = lookInOn(store?.friendsSharingWithMe.orEmpty().toList())
 
     private fun sweepFriends() {
-        friendStates().forEach { touchFriend(it.groupIdHex, 6_000) }
         selfState()?.let { touchFriend(it.groupIdHex, 8_000) { c -> exec.schedule({ sendSync(c) }, 1_500, TimeUnit.MILLISECONDS) } }
+        lookInOn(friendStates().map { it.groupIdHex })
+    }
+
+    /** Opens the channels to [ids] [FRIEND_BATCH] at a time, the next ones once the last have closed (if a tablet still listens). */
+    private fun lookInOn(ids: List<String>) {
+        ids.chunked(FRIEND_BATCH).forEachIndexed { i, batch ->
+            if (i == 0) batch.forEach { touchFriend(it, FRIEND_LOOK_MS) }
+            else exec.schedule({ if (PhoneHub.tabletCount > 0) batch.forEach { touchFriend(it, FRIEND_LOOK_MS) } }, i * FRIEND_BATCH_GAP_MS, TimeUnit.MILLISECONDS)
+        }
     }
 
     private fun onFriendEvent(state: GroupState, e: GroupEvent) {
