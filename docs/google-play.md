@@ -167,7 +167,8 @@ krasjrapport til reléet (`POST /feedback`), som gjør det om til en offentlig G
   Reléet holder dem i en privat kø (`data/feedback-pending/`), eieren godkjenner eller avviser på
   relay.curveon.no/feedback/review (passord, bildene uskarpe til man trykker), og det som ikke er behandlet slettes
   etter 14 dager uten å bli publisert. Issuet lages med en gang (med en plassholder), så appen får nummeret som før.
-  Varsel til eieren går via ntfy med bare antall, aldri innholdet. Dette er i tråd med Plays krav om moderering av
+  Varsel til eieren går som e-post fra Curveons egen e-postkonto (mail@curveon.no, fra 2026-11-06; før det ntfy), med
+  bare antall og lenken til godkjenningssiden, aldri innholdet. Ingen tredjepart får vite noe. Dette er i tråd med Plays krav om moderering av
   brukerinnhold, selv om innholdet ikke vises i appen.
 - Reléet lagrer altså rapportinnhold midlertidig (maks 14 dager) når noe holdes tilbake. Netcup-DPA-en dekker data
   på serveren generelt; sjekk at den er signert. Personvernerklæringen sier det (oppdatert samme dag).
