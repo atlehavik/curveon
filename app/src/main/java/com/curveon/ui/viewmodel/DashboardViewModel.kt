@@ -1239,7 +1239,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     override fun onCleared() {
         obd.use(null)
         NavTrace.flush()
-        saveRide(finish = true)
+        // Not in viewModelScope: Android has cancelled it by now, and the ride's last part, its name and its GPX copy were never written.
+        saveRide(finish = true, scope = AFTER_CLOSING)
         super.onCleared()
     }
 
@@ -1604,11 +1605,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         rideDao.delete(rides.map { it.id })
     }
 
-    private fun saveRide(finish: Boolean, byHand: Boolean = false) {
+    private fun saveRide(finish: Boolean, byHand: Boolean = false, scope: kotlinx.coroutines.CoroutineScope = viewModelScope) {
         val current = rideRecorder.current ?: return
         if (current.id == 0L) return
         val ride = if (byHand) rideRecorder.stop() else if (finish) rideRecorder.finish() else current
-        viewModelScope.launch(Dispatchers.IO) {
+        scope.launch(Dispatchers.IO) {
             if (ride == null) { rideDao.delete(current.id); return@launch } // too short to keep
             val pts = RideRecorder.parseTrack(ride.track)
             val end = pts.lastOrNull()
@@ -2426,6 +2427,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun importOfflineMap(uri: Uri) = maps.importOfflineMap(uri)
 
     companion object {
+        /** For what is written as the dashboard closes for good ([onCleared]), when its own scope has been cancelled. */
+        private val AFTER_CLOSING = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
+
         /** Below this, for [PARKED_AFTER_MS], the rider has stopped somewhere: the road sign goes. */
         private const val PARKED_KMH = 3f
         private const val PARKED_AFTER_MS = 120_000L
