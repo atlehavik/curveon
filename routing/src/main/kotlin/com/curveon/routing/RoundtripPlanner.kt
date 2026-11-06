@@ -26,7 +26,15 @@ import kotlin.math.ln
  * the same road twice and – for curvy styles – the most curves. When nothing on land comes near
  * the asked length, a loop with ferries may win; the preview then warns about it.
  */
-class RoundtripPlanner(private val engine: BRouterEngine, private val log: (String) -> Unit = {}) {
+class RoundtripPlanner(
+    private val engine: BRouterEngine,
+    /** Gives up the search (the web planner's page asked for something newer): also the routes worked out on the pools' threads. */
+    private val cancel: BRouterEngine.Cancel? = null,
+    private val log: (String) -> Unit = {},
+) {
+
+    /** [block] on a pool's thread, given up with [cancel] like the search that started it. */
+    private fun <T> underCancel(block: () -> T): T = cancel?.let { BRouterEngine.cancellable(it, block) } ?: block()
 
     private data class Loop(val radius: Double, val directionDeg: Double, val route: Route)
 
@@ -186,7 +194,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
     private class Results<T>(val successes: List<T>, val firstError: Throwable?)
 
     private fun <T : Any> parallel(pool: ExecutorService, jobs: List<() -> T>): Results<T> {
-        val outcomes = jobs.map { job -> pool.submit(Callable { runCatching(job) }) }.map { it.get() }
+        val outcomes = jobs.map { job -> pool.submit(Callable { runCatching { underCancel(job) } }) }.map { it.get() }
         return Results(outcomes.mapNotNull { it.getOrNull() }, outcomes.firstNotNullOfOrNull { it.exceptionOrNull() })
     }
 
@@ -343,7 +351,7 @@ class RoundtripPlanner(private val engine: BRouterEngine, private val log: (Stri
         legs.computeIfAbsent(Leg(a, b, catchingRange, options)) { leg ->
             // The loop's shape is found with gravel's full pull; how far it may stray for gravel is
             // kept to once the loop is ridden as a trip through its points.
-            legPool.submit(Callable { engine.route(listOf(leg.from, leg.to), leg.options.copy(gravelReachKm = null), leg.catchingRange, PLANNING_FERRY_COST) })
+            legPool.submit(Callable { underCancel { engine.route(listOf(leg.from, leg.to), leg.options.copy(gravelReachKm = null), leg.catchingRange, PLANNING_FERRY_COST) } })
         }
 
     /**

@@ -324,6 +324,9 @@ class BRouterEngine(
         /** Whether the search this thread runs for was given up (for work between BRouter runs). */
         fun cancelled(): Boolean = CANCEL.get()?.cancelled == true
 
+        /** The [Cancel] this thread runs under, to hand to work it starts on threads of its own. */
+        fun current(): Cancel? = CANCEL.get()
+
         /** Which way a route ends: the bearing over its last 20 m, or null for a leg too short to say. */
         fun arrivalHeading(leg: Route): Double? =
             if (leg.distanceMeters < 40) null else Routes.pointAt(leg, leg.distanceMeters - 20).second

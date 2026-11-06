@@ -132,6 +132,26 @@ class PlannerTest {
     assertEquals("bad_request", refused { Planner(leg).adventure(JSONObject(adventureBody.toString()).put("area", org.json.JSONArray("[[59,5],[60,6]]"))) })
   }
 
+  @Test fun `an adventure running is given up when its page asks again, and frees its places at once`() {
+    val asked = java.util.concurrent.atomic.AtomicInteger()
+    val started = CountDownLatch(1)
+    // The first one works until it is given up (as the planners do between their routes); the second answers at once.
+    val p = Planner(leg, {
+      if (asked.incrementAndGet() == 1) { started.countDown(); while (!BRouterEngine.cancelled()) Thread.sleep(10) }
+      long()
+    }, parallel = 2, queue = 4, waitSeconds = 5)
+    val tabbed = JSONObject(adventureBody.toString()).put("tab", "page-one-abc")
+    val pool = Executors.newFixedThreadPool(1)
+    val first = pool.submit<String?> { refused { p.adventure(tabbed) } }
+    assertTrue(started.await(5, TimeUnit.SECONDS))
+    val t0 = System.nanoTime()
+    val second = p.adventure(JSONObject(tabbed.toString()).put("variant", 3))
+    assertEquals(100_000, second.getInt("m"))
+    assertTrue("waited ${(System.nanoTime() - t0) / 1_000_000} ms", System.nanoTime() - t0 < TimeUnit.SECONDS.toNanos(3))
+    assertEquals("superseded", first.get(5, TimeUnit.SECONDS))
+    pool.shutdown()
+  }
+
   @Test fun `an adventure takes every place, a route waits for it`() {
     val release = CountDownLatch(1)
     val p = Planner(leg, { release.await(); long() }, parallel = 2, queue = 4, waitSeconds = 1)

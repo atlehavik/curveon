@@ -45,7 +45,7 @@ class RoutingBenchmarkTest {
         val e = engine()
         for ((dir, km) in (System.getProperty("curveon.cases") ?: "0:100,0:150,0:220,45:100,45:150,45:220,90:100,90:150,90:220,135:100,135:150,135:220").split(',').map { c -> c.split(':').let { it[0].toDouble() to it[1].toDouble() } }) {
             val opts = RouteOptions(RoadStyle.CURVY, avoidFerries = true)
-            val r = timed("roundtrip dir=$dir km=$km") { runCatching { RoundtripPlanner(e, ::println).plan(home, km, dir, opts) } }
+            val r = timed("roundtrip dir=$dir km=$km") { runCatching { RoundtripPlanner(e, log = ::println).plan(home, km, dir, opts) } }
             r.onSuccess { println("    %.0f km, ferries=%d curvy=%d".format(it.distanceMeters / 1000, it.ferryCount, it.curviness)) }
                 .onFailure { println("    failed: ${it.message}") }
         }

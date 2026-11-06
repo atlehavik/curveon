@@ -71,8 +71,13 @@ class Planner(
 
   constructor(engine: BRouterEngine, roads: SurfaceReader? = null, pois: Pois? = null) : this(
     { a, b, options, heading -> engine.routeLegs(listOf(a, b), options, heading, maxMillis = 45_000).single() },
-    { a -> AdventurePlanner(engine, roads = roads).plan(a.start, a.destination, a.area, a.minutes, a.options, a.variant) },
-    { l -> RoundtripPlanner(engine).planArea(l.start, l.area, l.options, l.variant, l.maxKm?.toDouble()) },
+    // Both run under the page's [BRouterEngine.Cancel] (see [givenUp]): a page that asks again gives up their search too.
+    { a ->
+      val cancel = BRouterEngine.current()
+      AdventurePlanner(engine, roads = roads, cancelled = { cancel?.cancelled == true })
+        .plan(a.start, a.destination, a.area, a.minutes, a.options, a.variant)
+    },
+    { l -> RoundtripPlanner(engine, cancel = BRouterEngine.current()).planArea(l.start, l.area, l.options, l.variant, l.maxKm?.toDouble()) },
     pois,
     roads = roads,
   )
@@ -115,9 +120,9 @@ class Planner(
     val minutes = if (body.has("minutes") && !body.isNull("minutes")) body.getInt("minutes").also { if (it !in 10..24 * 60) throw PlanRefused(400, "bad_request") } else null
     val ask = AdventureAsk(ends[0], ends[1], area, minutes, routeOptions(body.optJSONObject("options") ?: JSONObject()), body.optInt("variant").coerceIn(0, 1000))
     // Waits longer for its turn: the one before may be an adventure too.
-    return inTurn(parallel, waitSeconds * 3, tab(body), "adventure") {
+    return inTurn(parallel, waitSeconds * 3, tab(body), "adventure") { cancel ->
       val r = try {
-        adventure(ask)
+        givenUp(cancel) { adventure(ask) }
       } catch (e: NoAdventureException) {
         throw if (e.directMinutes != null) PlanRefused(422, "adventure_too_short", e.directMinutes) else PlanRefused(422, "no_adventure")
       } catch (e: RoutingException) {
@@ -133,9 +138,9 @@ class Planner(
     val area = area(body.optJSONArray("area") ?: throw PlanRefused(400, "bad_request"))
     val km = if (body.has("km") && !body.isNull("km")) body.getInt("km").also { if (it !in 10..1000) throw PlanRefused(400, "bad_request") } else null
     val ask = LoopAsk(start, area, km, routeOptions(body.optJSONObject("options") ?: JSONObject()), body.optInt("variant").coerceIn(0, 1000))
-    return inTurn(parallel, waitSeconds * 3, tab(body), "roundtrip") {
+    return inTurn(parallel, waitSeconds * 3, tab(body), "roundtrip") { cancel ->
       val r = try {
-        roundtrip(ask)
+        givenUp(cancel) { roundtrip(ask) }
       } catch (e: RoutingException) {
         throw refusal(e, "no_roundtrip")
       }
@@ -215,6 +220,21 @@ class Planner(
    * Runs [work] holding [places] of the [parallel] ones, after waiting at most [wait] seconds in the queue. A newer
    * request from the same [tab] (the same page, the same kind of search) makes this one give up, waiting or running.
    */
+  /**
+   * An adventure or a roundtrip under [cancel]: when the page asks again it stops (it held both places for a minute or
+   * more before, keeping the new search and every other rider's waiting), and the answer says it was given up.
+   */
+  private fun givenUp(cancel: BRouterEngine.Cancel, work: () -> Route): Route {
+    val r = try {
+      BRouterEngine.cancellable(cancel, work)
+    } catch (e: Exception) {
+      if (cancel.cancelled) throw PlanRefused(409, "superseded")
+      throw e
+    }
+    if (cancel.cancelled) throw PlanRefused(409, "superseded")
+    return r
+  }
+
   private fun inTurn(places: Int, wait: Long, tab: String?, kind: String, work: (BRouterEngine.Cancel) -> JSONObject): JSONObject {
     stats.asked(kind)
     val cancel = BRouterEngine.Cancel()
