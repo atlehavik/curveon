@@ -186,9 +186,6 @@ Prøvd med simulert anrop på emulator (Android 16). Pixelen har Android 17 og e
 - [ ] Pixel, uten lader og uten navigering, stillestående: skjermen slukker etter Androids vanlige tid når det er gått 10 minutter siden du sist kjørte. Med lader i, mens du navigerer, eller i fart: skjermen holder seg på. X7 på motorsykkelstrøm: alltid på.
 - [ ] Pixel med Companion-telefon (eller X7 + Pixel): trykk play/pause og så neste raskt etter hverandre: telefonen gjør dem i den rekkefølgen.
 - [ ] Planlegg en Svingete tur over et fjell med hårnålssvinger (f.eks. Trollstigen): Svingete-baren står høyere enn før, og en tur gjennom en by står lavere.
-## 2026-10-25 — Tilbakemeldinger med bilder venter på godkjenning
-
-- [ ] Pixel: send en feilmelding med ett bilde fra Innstillinger → Hjelp. Issuet på GitHub sier «A picture is waiting to be looked over», og mail@curveon.no får en e-post «Curveon: tilbakemelding #… venter» (ingen app trengs lenger; ntfy er borte). Trykk på lenken i e-posten: relay.curveon.no/feedback/review spør om passord (`grep REVIEW_KEY ~/.curveon-vps/feedback-review.env`, hvilket som helst brukernavn), bildet er uskarpt til du trykker på det, og «Publiser bildene» får bildet inn i issuet. Lukk testissuet etterpå.
 
 ## 2026-10-25 — GPX fra nettet havner under GPX; varmekart og språkknapp på nett
 
