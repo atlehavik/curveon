@@ -56,12 +56,12 @@
     <string name="settings_language">Tungumál</string>
     <string name="settings_language_hint">Allur texti í Curveon</string>
     <string name="settings_speed">Hraði</string>
-    <string name="settings_speed_hint">Hraði og hámarkshraði; hæð í fetum með mph</string>
-    <string name="settings_map">Kort</string>
+    <string name="settings_speed_hint">Metrakerfi (km/h, metrar) eða breska kerfið (mph, fet)</string>
+    <string name="settings_map">Kortahamur</string>
     <string name="settings_map_hint">Sjálfvirkt skiptir yfir í næturkort eftir sólsetur</string>
     <string name="settings_screen_lock">Skjásnúningur</string>
-    <string name="settings_screen_lock_hint">Læstur snýst hann ekki við hnjask</string>
-    <string name="screen_lock_auto">Snýst</string>
+    <string name="settings_screen_lock_hint">Veldu sjálfvirkt eða læst</string>
+    <string name="screen_lock_auto">Sjálfvirkt</string>
     <string name="screen_lock_landscape">Langsnið</string>
     <string name="screen_lock_portrait">Skammsnið</string>
     <string name="settings_roads">Vegir</string>
@@ -108,7 +108,7 @@
     <string name="settings_road_info_hint">Vegnúmer og aðalbrautarmerki undir hraðanum, þegar það er vitað</string>
     <string name="altitude_m">%1$d m y.s.</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Yfirborð vega</string>
+    <string name="settings_surfaces">Sýna möl</string>
     <string name="settings_surfaces_hint">Malarvegir og lausir vegir teiknaðir á kortið</string>
     <string name="settings_surfaces_off">Slökkt</string>
     <string name="surface_mode_dashed">Strikað</string>

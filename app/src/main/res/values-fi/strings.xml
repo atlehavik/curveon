@@ -48,12 +48,12 @@
     <string name="settings_language">Kieli</string>
     <string name="settings_language_hint">Kaikki Curveonin tekstit</string>
     <string name="settings_speed">Nopeus</string>
-    <string name="settings_speed_hint">Nopeus ja nopeusrajoitukset; mph:lla korkeus jalkoina</string>
-    <string name="settings_map">Kartta</string>
+    <string name="settings_speed_hint">Metrijärjestelmä (km/h, metrit) tai brittiläiset yksiköt (mph, jalat)</string>
+    <string name="settings_map">Karttatila</string>
     <string name="settings_map_hint">Auto vaihtaa yökarttaan auringonlaskun jälkeen</string>
     <string name="settings_screen_lock">Näytön kierto</string>
-    <string name="settings_screen_lock_hint">Lukittuna se ei käänny töyssyissä</string>
-    <string name="screen_lock_auto">Kääntyy</string>
+    <string name="settings_screen_lock_hint">Valitse automaattinen tai lukittu</string>
+    <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Vaaka</string>
     <string name="screen_lock_portrait">Pysty</string>
     <string name="settings_roads">Tiet</string>
@@ -100,7 +100,7 @@
     <string name="settings_road_info_hint">Tienumero ja etuajo-oikeutetun tien merkki nopeuden alla, kun tiedossa</string>
     <string name="altitude_m">%1$d m mpy</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Tienpinnat</string>
+    <string name="settings_surfaces">Soran näyttö</string>
     <string name="settings_surfaces_hint">Sora- ja pehmeät tiet piirretään kartalle</string>
     <string name="settings_surfaces_off">Pois</string>
     <string name="surface_mode_dashed">Katkoviiva</string>

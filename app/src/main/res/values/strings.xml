@@ -58,12 +58,12 @@
     <string name="settings_language">Language</string>
     <string name="settings_language_hint">All text in Curveon</string>
     <string name="settings_speed">Speed</string>
-    <string name="settings_speed_hint">Speed and speed limits; height in feet with mph</string>
-    <string name="settings_map">Map</string>
+    <string name="settings_speed_hint">Metric (km/h, metres) or imperial units (mph, feet)</string>
+    <string name="settings_map">Map mode</string>
     <string name="settings_map_hint">Auto switches to the night map after sunset</string>
     <string name="settings_screen_lock">Screen rotation</string>
-    <string name="settings_screen_lock_hint">Locked, it doesn\'t turn with bumps</string>
-    <string name="screen_lock_auto">Turns</string>
+    <string name="settings_screen_lock_hint">Choose automatic or locked</string>
+    <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Landscape</string>
     <string name="screen_lock_portrait">Portrait</string>
     <string name="settings_roads">Roads</string>
@@ -110,7 +110,7 @@
     <string name="settings_road_info_hint">Road number and priority road sign under the speed, when known</string>
     <string name="altitude_m">%1$d m a.s.l.</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Road surfaces</string>
+    <string name="settings_surfaces">Gravel display</string>
     <string name="settings_surfaces_hint">Gravel and soft roads drawn on the map</string>
     <string name="settings_surfaces_off">Off</string>
     <string name="surface_mode_dashed">Dashed</string>

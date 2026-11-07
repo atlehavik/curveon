@@ -57,12 +57,12 @@
     <string name="settings_language">Sprog</string>
     <string name="settings_language_hint">Al tekst i Curveon</string>
     <string name="settings_speed">Hastighed</string>
-    <string name="settings_speed_hint">Hastighed og fartgrænser; højde i fod med mph</string>
-    <string name="settings_map">Kort</string>
+    <string name="settings_speed_hint">Metriske (km/h, meter) eller imperiale enheder (mph, fod)</string>
+    <string name="settings_map">Korttilstand</string>
     <string name="settings_map_hint">Auto skifter til natkortet efter solnedgang</string>
     <string name="settings_screen_lock">Skærmrotation</string>
-    <string name="settings_screen_lock_hint">Låst drejer den ikke ved bump</string>
-    <string name="screen_lock_auto">Drejer</string>
+    <string name="settings_screen_lock_hint">Vælg automatisk eller låst</string>
+    <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Liggende</string>
     <string name="screen_lock_portrait">Stående</string>
     <string name="settings_roads">Veje</string>
@@ -109,7 +109,7 @@
     <string name="settings_road_info_hint">Vejnummer og hovedvejsskilt under hastigheden, når de kendes</string>
     <string name="altitude_m">%1$d m.o.h.</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Vejbelægning</string>
+    <string name="settings_surfaces">Visning af grus</string>
     <string name="settings_surfaces_hint">Grusveje og bløde veje vist på kortet</string>
     <string name="settings_surfaces_off">Fra</string>
     <string name="surface_mode_dashed">Stiplet</string>

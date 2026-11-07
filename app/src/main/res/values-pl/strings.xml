@@ -57,12 +57,12 @@
     <string name="settings_language">Język</string>
     <string name="settings_language_hint">Wszystkie teksty w Curveon</string>
     <string name="settings_speed">Prędkość</string>
-    <string name="settings_speed_hint">Prędkość i ograniczenia; wysokość w stopach przy mph</string>
-    <string name="settings_map">Mapa</string>
+    <string name="settings_speed_hint">Jednostki metryczne (km/h, metry) lub imperialne (mph, stopy)</string>
+    <string name="settings_map">Tryb mapy</string>
     <string name="settings_map_hint">Auto włącza mapę nocną po zachodzie słońca</string>
     <string name="settings_screen_lock">Obrót ekranu</string>
-    <string name="settings_screen_lock_hint">Zablokowany nie obraca się na wybojach</string>
-    <string name="screen_lock_auto">Obraca się</string>
+    <string name="settings_screen_lock_hint">Wybierz automatyczny lub zablokowany</string>
+    <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Poziomo</string>
     <string name="screen_lock_portrait">Pionowo</string>
     <string name="settings_roads">Drogi</string>
@@ -109,7 +109,7 @@
     <string name="settings_road_info_hint">Numer drogi i znak drogi z pierwszeństwem pod prędkością, jeśli znane</string>
     <string name="altitude_m">%1$d m n.p.m.</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Nawierzchnie</string>
+    <string name="settings_surfaces">Widok szutru</string>
     <string name="settings_surfaces_hint">Szuter i drogi gruntowe zaznaczone na mapie</string>
     <string name="settings_surfaces_off">Wył.</string>
     <string name="surface_mode_dashed">Przerywane</string>

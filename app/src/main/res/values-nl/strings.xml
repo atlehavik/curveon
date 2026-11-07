@@ -52,12 +52,12 @@
     <string name="settings_language">Taal</string>
     <string name="settings_language_hint">Alle tekst in Curveon</string>
     <string name="settings_speed">Snelheid</string>
-    <string name="settings_speed_hint">Snelheid en limieten; hoogte in voet bij mph</string>
-    <string name="settings_map">Kaart</string>
+    <string name="settings_speed_hint">Metrisch (km/h, meter) of imperiaal (mph, voet)</string>
+    <string name="settings_map">Kaartmodus</string>
     <string name="settings_map_hint">Auto schakelt na zonsondergang naar de nachtkaart</string>
     <string name="settings_screen_lock">Schermrotatie</string>
-    <string name="settings_screen_lock_hint">Vergrendeld draait het niet mee bij hobbels</string>
-    <string name="screen_lock_auto">Draait</string>
+    <string name="settings_screen_lock_hint">Kies automatisch of vergrendeld</string>
+    <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Liggend</string>
     <string name="screen_lock_portrait">Staand</string>
     <string name="settings_roads">Wegen</string>
@@ -104,7 +104,7 @@
     <string name="settings_road_info_hint">Wegnummer en voorrangswegbord onder de snelheid, als die bekend zijn</string>
     <string name="altitude_m">%1$d m boven zee</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Wegdek</string>
+    <string name="settings_surfaces">Weergave grind</string>
     <string name="settings_surfaces_hint">Gravel en onverharde wegen op de kaart getekend</string>
     <string name="settings_surfaces_off">Uit</string>
     <string name="surface_mode_dashed">Gestreept</string>

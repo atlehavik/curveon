@@ -57,12 +57,12 @@
     <string name="settings_language">Langue</string>
     <string name="settings_language_hint">Tous les textes de Curveon</string>
     <string name="settings_speed">Vitesse</string>
-    <string name="settings_speed_hint">Vitesse et limitations ; altitude en pieds avec les mph</string>
-    <string name="settings_map">Carte</string>
+    <string name="settings_speed_hint">Unités métriques (km/h, mètres) ou impériales (mph, pieds)</string>
+    <string name="settings_map">Mode carte</string>
     <string name="settings_map_hint">Auto passe à la carte de nuit après le coucher du soleil</string>
     <string name="settings_screen_lock">Rotation de l’écran</string>
-    <string name="settings_screen_lock_hint">Verrouillé, il ne tourne pas avec les secousses</string>
-    <string name="screen_lock_auto">Pivote</string>
+    <string name="settings_screen_lock_hint">Choisir automatique ou verrouillé</string>
+    <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Paysage</string>
     <string name="screen_lock_portrait">Portrait</string>
     <string name="settings_roads">Routes</string>
@@ -109,7 +109,7 @@
     <string name="settings_road_info_hint">Numéro de route et panneau route prioritaire sous la vitesse, si connus</string>
     <string name="altitude_m">%1$d m</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Revêtements</string>
+    <string name="settings_surfaces">Affichage du gravier</string>
     <string name="settings_surfaces_hint">Routes en gravier et en terre tracées sur la carte</string>
     <string name="settings_surfaces_off">Désactivé</string>
     <string name="surface_mode_dashed">Pointillés</string>

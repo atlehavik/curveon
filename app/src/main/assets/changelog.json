@@ -3,47 +3,58 @@
     "version": "1.2.12",
     "en": [
       "Riding without a route, your arrow now follows the road through every bend, just as it does when you navigate. No more sliding out of each curve and jumping back onto the road a moment later.",
-      "Your arrow now keeps to the road instead of jumping onto a footway or cycleway beside it. In roundabouts and at junctions it no longer guesses which way you are heading, so it never runs off down an exit you didn't take."
+      "Your arrow now keeps to the road instead of jumping onto a footway or cycleway beside it. In roundabouts and at junctions it no longer guesses which way you are heading, so it never runs off down an exit you didn't take.",
+      "On a phone, the row of tabs in Settings and other screens now always shows the next icon on each side, so you can see there is more to swipe to. The screen settings also explain themselves better: speed says it picks metric or imperial units, screen rotation offers Auto or locked, and the map and gravel settings have clearer names."
     ],
     "nb": [
       "Når du kjører uten rute, følger pila nå veien gjennom hver sving, akkurat som når du navigerer. Den sklir ikke lenger ut av svingene og hopper tilbake på veien et øyeblikk etter.",
-      "Pila holder seg nå på veien i stedet for å hoppe over på gang- og sykkelstien ved siden av. I rundkjøringer og kryss gjetter den ikke lenger hvor du skal, så den farer aldri ut en avkjørsel du ikke tok."
+      "Pila holder seg nå på veien i stedet for å hoppe over på gang- og sykkelstien ved siden av. I rundkjøringer og kryss gjetter den ikke lenger hvor du skal, så den farer aldri ut en avkjørsel du ikke tok.",
+      "På telefonen viser fanene i Innstillinger og andre skjermbilder nå alltid neste ikon på hver side, så du ser at det er mer å sveipe til. Skjerminnstillingene forklarer seg også bedre: fart sier at du velger metriske eller imperiale enheter, skjermretning gir valget Auto eller låst, og kart- og grusvalgene har fått tydeligere navn."
     ],
     "sv": [
       "När du kör utan rutt följer pilen nu vägen genom varje kurva, precis som när du navigerar. Den glider inte längre ut i kurvorna och hoppar tillbaka på vägen en stund senare.",
-      "Pilen håller sig nu på vägen i stället för att hoppa över till gång- och cykelbanan bredvid. I rondeller och korsningar gissar den inte längre vart du ska, så den rusar aldrig ut i en avfart du inte tog."
+      "Pilen håller sig nu på vägen i stället för att hoppa över till gång- och cykelbanan bredvid. I rondeller och korsningar gissar den inte längre vart du ska, så den rusar aldrig ut i en avfart du inte tog.",
+      "På telefonen visar flikarna i Inställningar och andra vyer nu alltid nästa ikon på varje sida, så du ser att det finns mer att svepa till. Skärminställningarna förklarar sig också bättre: hastighet säger att du väljer metriska eller brittiska enheter, skärmriktning ger valet Auto eller låst, och kart- och grusvalen har fått tydligare namn."
     ],
     "da": [
       "Når du kører uden rute, følger pilen nu vejen gennem hvert sving, ligesom når du navigerer. Den glider ikke længere ud af svingene og hopper tilbage på vejen et øjeblik efter.",
-      "Pilen holder sig nu på vejen i stedet for at hoppe over på cykelstien eller fortovet ved siden af. I rundkørsler og kryds gætter den ikke længere på, hvor du skal hen, så den farer aldrig ud ad en afkørsel, du ikke tog."
+      "Pilen holder sig nu på vejen i stedet for at hoppe over på cykelstien eller fortovet ved siden af. I rundkørsler og kryds gætter den ikke længere på, hvor du skal hen, så den farer aldrig ud ad en afkørsel, du ikke tog.",
+      "På telefonen viser fanerne i Indstillinger og andre skærmbilleder nu altid næste ikon på hver side, så du kan se, at der er mere at swipe til. Skærmindstillingerne forklarer sig også bedre: hastighed siger, at du vælger metriske eller imperiale enheder, skærmretning giver valget Auto eller låst, og kort- og grusvalgene har fået tydeligere navne."
     ],
     "fi": [
       "Kun ajat ilman reittiä, nuoli seuraa nyt tietä jokaisessa mutkassa, aivan kuten navigoidessa. Se ei enää liu'u mutkista ulos ja hyppää hetken päästä takaisin tielle.",
-      "Nuoli pysyy nyt tiellä eikä hyppää viereiselle kävely- ja pyörätielle. Liikenneympyröissä ja risteyksissä se ei enää arvaa, minne olet menossa, joten se ei koskaan karkaa liittymään, jota et valinnut."
+      "Nuoli pysyy nyt tiellä eikä hyppää viereiselle kävely- ja pyörätielle. Liikenneympyröissä ja risteyksissä se ei enää arvaa, minne olet menossa, joten se ei koskaan karkaa liittymään, jota et valinnut.",
+      "Puhelimessa Asetusten ja muiden näkymien välilehdet näyttävät nyt aina seuraavan kuvakkeen kummallakin puolella, joten näet, että pyyhkäistävää on vielä. Näytön asetukset myös selittävät itsensä paremmin: nopeus kertoo, että valitset metri- tai brittiläiset yksiköt, näytön suunnassa valitaan Auto tai lukittu, ja kartan ja soran asetuksilla on selkeämmät nimet."
     ],
     "is": [
       "Þegar þú ekur án leiðar fylgir örin nú veginum í gegnum hverja beygju, alveg eins og þegar þú leiðsegir. Hún rennur ekki lengur út úr beygjunum og stekkur aftur upp á veginn augnabliki síðar.",
-      "Örin heldur sig nú á veginum í stað þess að stökkva yfir á göngu- eða hjólastíginn við hliðina. Í hringtorgum og á gatnamótum giskar hún ekki lengur á hvert þú ætlar, svo hún þýtur aldrei út um afrein sem þú tókst ekki."
+      "Örin heldur sig nú á veginum í stað þess að stökkva yfir á göngu- eða hjólastíginn við hliðina. Í hringtorgum og á gatnamótum giskar hún ekki lengur á hvert þú ætlar, svo hún þýtur aldrei út um afrein sem þú tókst ekki.",
+      "Í símanum sýna flipar í Stillingum og öðrum skjám nú alltaf næsta tákn hvorum megin, svo þú sérð að það er meira að strjúka til. Skjástillingarnar skýra sig líka betur: hraði segir að þú veljir metrakerfi eða breska kerfið, snúningur skjás býður Sjálfvirkt eða læst, og stillingar fyrir kort og möl hafa fengið skýrari nöfn."
     ],
     "de": [
       "Fährst du ohne Route, folgt dein Pfeil jetzt der Straße durch jede Kurve, genau wie beim Navigieren. Er rutscht nicht mehr aus jeder Kurve und springt einen Moment später auf die Straße zurück.",
-      "Dein Pfeil bleibt jetzt auf der Straße, statt auf den Rad- oder Fußweg daneben zu springen. In Kreisverkehren und an Kreuzungen rät er nicht mehr, wohin du fährst, und schießt deshalb nie in eine Ausfahrt, die du gar nicht genommen hast."
+      "Dein Pfeil bleibt jetzt auf der Straße, statt auf den Rad- oder Fußweg daneben zu springen. In Kreisverkehren und an Kreuzungen rät er nicht mehr, wohin du fährst, und schießt deshalb nie in eine Ausfahrt, die du gar nicht genommen hast.",
+      "Auf dem Handy zeigt die Reiterleiste in den Einstellungen und anderen Ansichten jetzt immer das nächste Symbol auf jeder Seite, damit du siehst, dass es noch weitergeht. Auch die Bildschirm-Einstellungen erklären sich besser: Tempo sagt, dass du metrische oder imperiale Einheiten wählst, die Bildschirmdrehung bietet Auto oder gesperrt, und die Karten- und Schottereinstellungen haben klarere Namen."
     ],
     "es": [
       "Cuando vas sin ruta, tu flecha sigue ahora la carretera en cada curva, igual que cuando navegas. Ya no se sale de las curvas para volver de un salto a la carretera un momento después.",
-      "Tu flecha se mantiene ahora en la carretera en lugar de saltar a la acera o al carril bici de al lado. En rotondas y cruces ya no adivina hacia dónde vas, así que nunca se escapa por una salida que no has tomado."
+      "Tu flecha se mantiene ahora en la carretera en lugar de saltar a la acera o al carril bici de al lado. En rotondas y cruces ya no adivina hacia dónde vas, así que nunca se escapa por una salida que no has tomado.",
+      "En el móvil, la fila de pestañas de Ajustes y otras pantallas muestra ahora siempre el siguiente icono a cada lado, para que veas que hay más hacia donde deslizar. Los ajustes de pantalla también se explican mejor: la velocidad dice que eliges unidades métricas o imperiales, la rotación ofrece Auto o bloqueada, y los ajustes del mapa y de la grava tienen nombres más claros."
     ],
     "fr": [
       "Sans itinéraire, ta flèche suit désormais la route dans chaque virage, comme quand tu navigues. Elle ne sort plus de chaque courbe pour revenir d'un bond sur la route un instant plus tard.",
-      "Ta flèche reste désormais sur la route au lieu de sauter sur la piste cyclable ou le trottoir d'à côté. Dans les ronds-points et aux carrefours, elle ne devine plus où tu vas, et ne file donc jamais vers une sortie que tu n'as pas prise."
+      "Ta flèche reste désormais sur la route au lieu de sauter sur la piste cyclable ou le trottoir d'à côté. Dans les ronds-points et aux carrefours, elle ne devine plus où tu vas, et ne file donc jamais vers une sortie que tu n'as pas prise.",
+      "Sur le téléphone, la rangée d'onglets des Réglages et des autres écrans montre maintenant toujours l'icône suivante de chaque côté, pour que tu voies qu'il reste de quoi faire défiler. Les réglages d'affichage s'expliquent aussi mieux : la vitesse dit que tu choisis des unités métriques ou impériales, la rotation propose Auto ou verrouillé, et les réglages de carte et de gravier ont des noms plus clairs."
     ],
     "nl": [
       "Rijd je zonder route, dan volgt je pijl nu de weg door elke bocht, net als tijdens het navigeren. Hij glijdt niet meer uit elke bocht om even later terug op de weg te springen.",
-      "Je pijl blijft nu op de weg in plaats van naar het fiets- of voetpad ernaast te springen. Op rotondes en kruispunten raadt hij niet meer welke kant je op gaat, dus schiet hij nooit een afslag in die je niet nam."
+      "Je pijl blijft nu op de weg in plaats van naar het fiets- of voetpad ernaast te springen. Op rotondes en kruispunten raadt hij niet meer welke kant je op gaat, dus schiet hij nooit een afslag in die je niet nam.",
+      "Op de telefoon toont de rij tabbladen in Instellingen en andere schermen nu altijd het volgende icoon aan elke kant, zodat je ziet dat er meer is om naartoe te vegen. De scherminstellingen leggen zichzelf ook beter uit: snelheid zegt dat je metrische of imperiale eenheden kiest, schermdraaiing biedt Auto of vergrendeld, en de kaart- en grindinstellingen hebben duidelijkere namen."
     ],
     "pl": [
       "Gdy jedziesz bez trasy, strzałka podąża teraz za drogą przez każdy zakręt, tak samo jak podczas nawigacji. Nie wypada już z zakrętów, by chwilę później wskoczyć z powrotem na drogę.",
-      "Strzałka trzyma się teraz drogi, zamiast przeskakiwać na chodnik lub ścieżkę rowerową obok. Na rondach i skrzyżowaniach nie zgaduje już, dokąd jedziesz, więc nigdy nie ucieka w zły zjazd."
+      "Strzałka trzyma się teraz drogi, zamiast przeskakiwać na chodnik lub ścieżkę rowerową obok. Na rondach i skrzyżowaniach nie zgaduje już, dokąd jedziesz, więc nigdy nie ucieka w zły zjazd.",
+      "Na telefonie pasek kart w Ustawieniach i innych ekranach pokazuje teraz zawsze następną ikonę po każdej stronie, więc widać, że jest dokąd przesunąć dalej. Ustawienia ekranu też lepiej się tłumaczą: prędkość mówi, że wybierasz jednostki metryczne lub imperialne, obrót ekranu daje wybór Auto lub zablokowany, a ustawienia mapy i szutru mają jaśniejsze nazwy."
     ]
   },
   {

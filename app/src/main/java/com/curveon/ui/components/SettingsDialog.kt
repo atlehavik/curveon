@@ -48,7 +48,7 @@ data class SettingsState(
     val language: AppLanguage,
     val useMph: Boolean,
     val mapTheme: MapTheme,
-    val roadContrast: RoadContrast = RoadContrast.HIGH,
+    val roadContrast: RoadContrast = RoadContrast.NORMAL,
     val mapDetail: MapDetail = MapDetail.RESPONSE,
     val screenLock: com.curveon.ScreenLock,
     val obdEnabled: Boolean,
@@ -61,7 +61,7 @@ data class SettingsState(
     val pairedDevices: () -> List<com.curveon.data.obd.PairedDevice>,
     val autoZoom: Boolean,
     val arrowLead: Double = com.curveon.data.location.RiderMotion.DEFAULT_LEAD_S,
-    val surfaceMode: SurfaceMode = SurfaceMode.DASHED,
+    val surfaceMode: SurfaceMode = SurfaceMode.COLOURED,
     /** Whether the map is drawn dark now, so the dash colours are shown as they look on it. */
     val mapDark: Boolean = true,
     val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,

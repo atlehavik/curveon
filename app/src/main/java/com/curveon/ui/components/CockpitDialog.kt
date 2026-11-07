@@ -39,6 +39,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -279,13 +280,26 @@ fun <T> DialogTabs(
                 .horizontalScroll(rememberScrollState()).padding(6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            items.forEach { t ->
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            items.forEachIndexed { i, t ->
                 val on = t == selected
-                // The open tab grows by its label: scroll so all of it shows, also at the right-hand end.
+                // The open tab grows by its label: scroll so all of it shows, also at the right-hand end,
+                // and so does the icon next to it on each side, so the row never looks as if it ended
+                // there while there are more pages beyond.
                 val inView = androidx.compose.runtime.remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
-                LaunchedEffect(on) { if (on) { androidx.compose.runtime.withFrameNanos { }; inView.bringIntoView() } }
+                var size by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+                LaunchedEffect(on) {
+                    if (on) {
+                        androidx.compose.runtime.withFrameNanos { }
+                        val neighbour = with(density) { (16.dp + 22.dp + 16.dp + 6.dp).toPx() } // a closed tab and the gap to it
+                        inView.bringIntoView(androidx.compose.ui.geometry.Rect(
+                            if (i > 0) -neighbour else 0f, 0f,
+                            size.width + if (i < items.lastIndex) neighbour else 0f, size.height.toFloat()
+                        ))
+                    }
+                }
                 Row(
-                    Modifier.bringIntoViewRequester(inView)
+                    Modifier.bringIntoViewRequester(inView).onSizeChanged { size = it }
                         .clip(RoundedCornerShape(14.dp)).background(if (on) ElectricCyan else Color.Transparent)
                         .onFocusChanged { if (it.isFocused && !on) onSelect(t) } // the remote goes through the pages by moving over them
                         .clickable { onSelect(t) }.padding(horizontal = 16.dp, vertical = 12.dp),

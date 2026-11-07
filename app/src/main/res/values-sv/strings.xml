@@ -57,12 +57,12 @@
     <string name="settings_language">Språk</string>
     <string name="settings_language_hint">All text i Curveon</string>
     <string name="settings_speed">Hastighet</string>
-    <string name="settings_speed_hint">Hastighet och hastighetsgränser; höjd i fot med mph</string>
-    <string name="settings_map">Karta</string>
+    <string name="settings_speed_hint">Metriska (km/h, meter) eller brittiska enheter (mph, fot)</string>
+    <string name="settings_map">Kartläge</string>
     <string name="settings_map_hint">Auto byter till nattkartan efter solnedgången</string>
     <string name="settings_screen_lock">Skärmrotation</string>
-    <string name="settings_screen_lock_hint">Låst vrids den inte av gupp</string>
-    <string name="screen_lock_auto">Vrids</string>
+    <string name="settings_screen_lock_hint">Välj automatiskt eller låst</string>
+    <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Liggande</string>
     <string name="screen_lock_portrait">Stående</string>
     <string name="settings_roads">Vägar</string>
@@ -109,7 +109,7 @@
     <string name="settings_road_info_hint">Vägnummer och huvudledsskylt under hastigheten, när de är kända</string>
     <string name="altitude_m">%1$d m ö.h.</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Vägbeläggning</string>
+    <string name="settings_surfaces">Visning av grus</string>
     <string name="settings_surfaces_hint">Grus och mjuka vägar ritade på kartan</string>
     <string name="settings_surfaces_off">Av</string>
     <string name="surface_mode_dashed">Streckad</string>

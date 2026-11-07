@@ -56,12 +56,12 @@
     <string name="settings_language">Sprache</string>
     <string name="settings_language_hint">Alle Texte in Curveon</string>
     <string name="settings_speed">Tempo</string>
-    <string name="settings_speed_hint">Tempo und Tempolimits; Höhe in Fuß bei mph</string>
-    <string name="settings_map">Karte</string>
+    <string name="settings_speed_hint">Metrische (km/h, Meter) oder imperiale Einheiten (mph, Fuß)</string>
+    <string name="settings_map">Kartenmodus</string>
     <string name="settings_map_hint">Auto wechselt nach Sonnenuntergang zur Nachtkarte</string>
     <string name="settings_screen_lock">Bildschirmdrehung</string>
-    <string name="settings_screen_lock_hint">Gesperrt dreht er sich bei Schlaglöchern nicht</string>
-    <string name="screen_lock_auto">Dreht</string>
+    <string name="settings_screen_lock_hint">Automatisch oder gesperrt</string>
+    <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Quer</string>
     <string name="screen_lock_portrait">Hoch</string>
     <string name="settings_roads">Straßen</string>
@@ -108,7 +108,7 @@
     <string name="settings_road_info_hint">Straßennummer und Vorfahrtstraßen-Schild unter dem Tempo, wenn bekannt</string>
     <string name="altitude_m">%1$d m ü. M.</string>
     <string name="altitude_ft">%1$d ft</string>
-    <string name="settings_surfaces">Straßenbeläge</string>
+    <string name="settings_surfaces">Schotteranzeige</string>
     <string name="settings_surfaces_hint">Schotter und unbefestigte Wege auf der Karte</string>
     <string name="settings_surfaces_off">Aus</string>
     <string name="surface_mode_dashed">Gestrichelt</string>

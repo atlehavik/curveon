@@ -251,7 +251,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     /** Gravel and soft roads on the map: not shown, dashed like the road, or coloured like the route. */
     private val _surfaceMode = MutableStateFlow(
         runCatching { com.curveon.ui.components.SurfaceMode.valueOf(settings.getString("surfaceMode", null)!!) }.getOrNull()
-            ?: if (settings.getBoolean("showSurfaces", true)) com.curveon.ui.components.SurfaceMode.DASHED else com.curveon.ui.components.SurfaceMode.OFF)
+            ?: when {
+                settings.contains("showSurfaces") -> if (settings.getBoolean("showSurfaces", true)) com.curveon.ui.components.SurfaceMode.DASHED else com.curveon.ui.components.SurfaceMode.OFF
+                // Coloured on a new install; a rider who already had the app keeps the dashes they knew.
+                else -> (if (tourSeen) com.curveon.ui.components.SurfaceMode.DASHED else com.curveon.ui.components.SurfaceMode.COLOURED)
+                    .also { settings.edit().putString("surfaceMode", it.name).apply() }
+            })
     val surfaceMode: StateFlow<com.curveon.ui.components.SurfaceMode> = _surfaceMode.asStateFlow()
     fun setSurfaceMode(m: com.curveon.ui.components.SurfaceMode) { _surfaceMode.value = m; settings.edit().putString("surfaceMode", m.name).apply() }
     /** The gravel heat map while planning (its button on the map). */
@@ -1030,7 +1035,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _roadContrast = MutableStateFlow(
         // GREY and DARK_GREY are what the day map's choice was called before it also applied at night.
         settings.getString("roadContrast", null)?.let { n -> RoadContrast.entries.firstOrNull { it.name == n } ?: if (n == "GREY") RoadContrast.NORMAL else null }
-            ?: RoadContrast.HIGH
+            // Normal on a new install; a rider who already had the app keeps the high contrast they knew.
+            ?: (if (tourSeen) RoadContrast.HIGH else RoadContrast.NORMAL).also { settings.edit().putString("roadContrast", it.name).apply() }
     )
     val roadContrast: StateFlow<RoadContrast> = _roadContrast.asStateFlow()
     fun setRoadContrast(c: RoadContrast) { _roadContrast.value = c; settings.edit().putString("roadContrast", c.name).apply() }
