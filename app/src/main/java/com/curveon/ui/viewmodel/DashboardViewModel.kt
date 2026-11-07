@@ -1494,21 +1494,30 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private var drawnRoadPath: Pair<com.curveon.routing.Route, Double>? = null
 
     /** The road lines the map draws round the rider (see [onRoadsNear]), and where they were read. */
-    @Volatile private var roadsNear: Pair<LatLon, List<List<LatLon>>>? = null
+    @Volatile private var roadsNear: Pair<LatLon, List<com.curveon.routing.RoadSnap.Line>>? = null
 
     /** The map's roads round the rider, read by the map now and then while there is no route. */
-    fun onRoadsNear(at: LatLon, lines: List<List<LatLon>>) { roadsNear = at to lines }
+    fun onRoadsNear(at: LatLon, lines: List<com.curveon.routing.RoadSnap.Line>) { roadsNear = at to lines }
+
+    /** The roundabout the rider rides in (middle, radius): the arrow floats on the GPS until clear of it (see [snapToRoad]). */
+    private var inRoundabout: Pair<LatLon, Double>? = null
 
     /**
      * Where to draw the rider when not navigating: on the road they ride, as the map draws it, pointing along
      * it, so GPS drift beside the road doesn't show. Riding on, the road is held a little further off and at
      * a wider angle than it is taken; standing still, it is held the way it ran. A road across the rider
-     * (a junction) or none near (off road, or the map's roads not read here yet) shows the raw GPS.
+     * (a junction) or none near (off road, or the map's roads not read here yet) shows the raw GPS. So does a
+     * roundabout, until the rider is clear of it: which exit they take isn't known, and an arrow carried on
+     * round the ring (or out of the wrong exit) is worse than one floating a little on the GPS.
      */
     private fun snapToRoad(fix: GpsFix): Pair<LatLon, Float>? {
         drawnRoadPath = null
-        if (navigator.state.value.progress != null) { drawnOnRoad = null; return null }
+        if (navigator.state.value.progress != null) { drawnOnRoad = null; inRoundabout = null; return null }
         val here = LatLon(fix.latitude, fix.longitude)
+        inRoundabout?.let { (middle, radius) ->
+            if (com.curveon.routing.Geo.distance(middle, here) < radius + ROUNDABOUT_CLEAR_M) { drawnOnRoad = null; return null }
+            inRoundabout = null
+        }
         val lines = roadsNear?.takeIf { com.curveon.routing.Geo.distance(it.first, here) < ROADS_NEAR_FRESH_M }?.second
             ?: run { drawnOnRoad = null; return null }
         val acc = (fix.accuracyMeters ?: 10f).toDouble()
@@ -1517,6 +1526,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val hit = heading?.let {
             if (held != null) com.curveon.routing.RoadSnap.near(here, lines, it, maxOf(ROAD_SNAP_LEAVE_M, acc * 1.5), 45.0)
             else com.curveon.routing.RoadSnap.near(here, lines, it, maxOf(ROAD_SNAP_JOIN_M, acc), 30.0)
+        }
+        if (hit != null) com.curveon.routing.RoadSnap.roundabout(hit.first, lines, hit.second)?.let {
+            inRoundabout = it; drawnOnRoad = null; return null
         }
         drawnOnRoad = hit?.second
         drawnRoadPath = hit?.let { com.curveon.routing.RoadSnap.path(it.first, lines, it.second, ROAD_PATH_BEHIND_M, ROAD_PATH_AHEAD_M) }
@@ -2483,6 +2495,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         /** How much of the road the arrow may be carried along: past the lead at any speed and lead (Settings → Navigation). */
         private const val ROAD_PATH_AHEAD_M = 250.0
         private const val ROAD_PATH_BEHIND_M = 120.0
+        /** Past this outside a roundabout's ring the rider has left it, and is put on the road again. */
+        private const val ROUNDABOUT_CLEAR_M = 20.0
         /** The tunnel halo stops growing here: it says "roughly here", not "anywhere". */
         private const val DR_MAX_ACCURACY_M = 300.0
         /** The tunnel guess stays this far short of the end of the route (arrival is for a real fix to decide). */

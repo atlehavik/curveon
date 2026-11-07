@@ -167,7 +167,7 @@ fun CurveonMapView(
     /** Called now and then with the road under the rider as the tiles have it; null = don't read it. */
     onRoadHere: ((com.curveon.data.road.MapRoad?) -> Unit)? = null,
     /** Called every second with where the rider is and the road lines the map draws round them; null = don't read them. */
-    onRoadsNear: ((com.curveon.routing.LatLon, List<List<com.curveon.routing.LatLon>>) -> Unit)? = null,
+    onRoadsNear: ((com.curveon.routing.LatLon, List<com.curveon.routing.RoadSnap.Line>) -> Unit)? = null,
     gpxTracks: List<com.curveon.data.gpx.OverlayTrack> = emptyList(),
     gpxPois: List<com.curveon.data.gpx.GpxPoi> = emptyList(),
     /** Give way and stop signs that apply to the rider, stood beside the road before their junctions. */

@@ -6,14 +6,18 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
-## 2026-11-06 — Pila følger veien gjennom svingene uten rute
+## 2026-11-07 — Pila uten rute: vei før sykkelsti, og flyter i rundkjøringer
 
-Uten rute ble pila skjøvet rett fram mellom GPS-punktene (opptil 1,5–2,5 s, ~11 m ut av en sving i 55 km/t) og dratt
-tilbake ved neste punkt. Nå følger den veilinja kartet tegner, som med rute. Prøvd på emulator langs Hiskavegen på Bømlo;
-ekte GPS-støy kan bare prøves på tur.
+Svingene virket ganske bra (rytteren 2026-11-07), men pila tok like gjerne gang- og sykkelstien ved siden av veien og
+gjettet feil vei ut av rundkjøringer. Nå vinner veien over stien (stien tas bare når ingen vei er nær), jernbane tas ikke,
+i rundkjøringer flyter pila på GPS-en som før til du er ute, og ved kryss følges veien bare fram til krysset og så rett
+fram. Rundkjøringene kjennes igjen på formen (kartet merker dem ikke); prøvd på ekte kartdata fra Leirvik og Bergen
+(alle rundkjøringer funnet hele veien rundt, ingen hårnåler i Trollstigen). Ekte GPS-støy kan bare prøves på tur.
 
-- [ ] Kjør en svingete vei uten rute (som Kv1187 / Hiskavegen): ligger pila på veien gjennom svingene, uten å skli ut og hoppe tilbake?
+- [ ] Kjør langs en vei med gang- og sykkelsti ved siden av uten rute: holder pila seg på veien?
+- [ ] Kjør gjennom en rundkjøring uten rute og ta en annen avkjørsel enn rett fram: flyter pila med deg rundt, uten å fare ut feil avkjørsel, og legger den seg på veien igjen like etter?
 - [ ] Ta av i et kryss uten rute: følger pila den veien du tok innen et par sekunder, ikke den som går rett fram?
+- [ ] Kjør gjennom en tett bebygd by uten rute: legger pila seg på veien mellom kryssene, eller flyter den det meste av tiden?
 
 ## 2026-11-06 — Kodegjennomgang: dashbordet og kartet delt opp, og feil rettet
 

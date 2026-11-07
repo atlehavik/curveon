@@ -207,7 +207,7 @@ internal fun CurveonMapState.RoadReading(
     roadNameProbe: Pair<Int, GeoPoint>?,
     onRoadName: (Int, com.curveon.data.road.MapRoad?) -> Unit,
     onRoadHere: ((com.curveon.data.road.MapRoad?) -> Unit)?,
-    onRoadsNear: ((com.curveon.routing.LatLon, List<List<com.curveon.routing.LatLon>>) -> Unit)?,
+    onRoadsNear: ((com.curveon.routing.LatLon, List<com.curveon.routing.RoadSnap.Line>) -> Unit)?,
     location: GeoPoint,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -255,16 +255,36 @@ internal fun CurveonMapState.RoadReading(
             lifecycleOwner.lifecycle.untilStarted()
             val p = puck ?: continue
             val here = locationState.value
-            // ~40 m round the rider, however far the map is zoomed out (then it's a few pixels and little is read).
+            // ~70 m round the rider, however far the map is zoomed out (then it's a few pixels and little is read).
             val r = (ROADS_NEAR_M / m.projection.getMetersPerPixelAtLatitude(here.latitude)).toFloat().coerceIn(4f, 400f)
             val lines = m.queryRenderedFeatures(RectF(p.x - r, p.y - r, p.x + r, p.y + r), *roadLayers).flatMap { f ->
+                val kind = roadKind(f) ?: return@flatMap emptyList()
                 when (val g = f.geometry()) {
                     is LineString -> listOf(g.coordinates())
                     is org.maplibre.geojson.MultiLineString -> g.coordinates()
                     else -> emptyList()
-                }
-            }.map { pts -> pts.map { com.curveon.routing.LatLon(it.latitude(), it.longitude()) } }
+                }.map { pts -> pts.map { com.curveon.routing.LatLon(it.latitude(), it.longitude()) } to kind }
+            }
+                // A road is drawn in several layers (casing, fill, arrows, name): the same line once.
+                .distinctBy { it.first }
+                .map { (pts, kind) -> com.curveon.routing.RoadSnap.Line(pts, kind) }
             onRoadsNearState.value?.invoke(com.curveon.routing.LatLon(here.latitude, here.longitude), lines)
         }
+    }
+}
+
+/**
+ * What kind of way a feature of the map's road layers is, for putting the rider on it, or null for one the
+ * rider can't be on: rail, runways, taxiways, piers.
+ */
+private fun roadKind(f: org.maplibre.geojson.Feature): com.curveon.routing.RoadSnap.Kind? {
+    val kind = f.getStringProperty("kind")
+    val detail = f.getStringProperty("kind_detail")
+    return when {
+        kind == "rail" || detail in setOf("runway", "taxiway", "pier", "platform") -> null
+        detail in setOf("footway", "cycleway", "path", "pedestrian", "steps", "bridleway", "corridor", "sidewalk", "crossing") ->
+            com.curveon.routing.RoadSnap.Kind.PATH
+        detail == "service" -> com.curveon.routing.RoadSnap.Kind.SERVICE
+        else -> com.curveon.routing.RoadSnap.Kind.ROAD
     }
 }

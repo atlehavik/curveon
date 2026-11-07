@@ -100,7 +100,7 @@ class RiderMotionTest {
                 val angle = Math.toDegrees(speed * nextFix / 60.0)
                 val on = Geo.destination(centre, (270.0 + angle) % 360, 60.0)
                 val bearing = (angle + 360) % 360
-                val (path, along) = com.curveon.routing.RoadSnap.path(on, listOf(road), bearing, 120.0, 250.0)
+                val (path, along) = com.curveon.routing.RoadSnap.path(on, listOf(com.curveon.routing.RoadSnap.Line(road)), bearing, 120.0, 250.0)
                 m.onFix(RiderMotion.Fix(on.lat, on.lon, bearing, speed, (nextFix * 1e9).toLong(), path, along), (t * 1e9).toLong())
                 nextFix += 1.0
             }

@@ -35,8 +35,11 @@ internal data class Puck(val x: Float, val y: Float, val rotation: Float, val ti
 /** The smallest halo: a ring just outside the arrow (44 dp, its tip ~21 dp from the middle). */
 internal const val HALO_MIN_DP = 27f
 
-/** How far round the rider the map's roads are read to put the rider on one (see onRoadsNear). */
-internal const val ROADS_NEAR_M = 40.0
+/**
+ * How far round the rider the map's roads are read to put the rider on one (see onRoadsNear): far enough to
+ * see the whole of a roundabout they ride in, to let the arrow float there.
+ */
+internal const val ROADS_NEAR_M = 70.0
 
 /**
  * A see-through disc under the arrow, as big as the GPS's accuracy: a small ring round the arrow

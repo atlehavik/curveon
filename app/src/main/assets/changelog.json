@@ -2,37 +2,48 @@
   {
     "version": "1.2.12",
     "en": [
-      "Riding without a route, your arrow now follows the road through every bend, just as it does when you navigate. No more sliding out of each curve and jumping back onto the road a moment later."
+      "Riding without a route, your arrow now follows the road through every bend, just as it does when you navigate. No more sliding out of each curve and jumping back onto the road a moment later.",
+      "Your arrow now keeps to the road instead of jumping onto a footway or cycleway beside it. In roundabouts and at junctions it no longer guesses which way you are heading, so it never runs off down an exit you didn't take."
     ],
     "nb": [
-      "Når du kjører uten rute, følger pila nå veien gjennom hver sving, akkurat som når du navigerer. Den sklir ikke lenger ut av svingene og hopper tilbake på veien et øyeblikk etter."
+      "Når du kjører uten rute, følger pila nå veien gjennom hver sving, akkurat som når du navigerer. Den sklir ikke lenger ut av svingene og hopper tilbake på veien et øyeblikk etter.",
+      "Pila holder seg nå på veien i stedet for å hoppe over på gang- og sykkelstien ved siden av. I rundkjøringer og kryss gjetter den ikke lenger hvor du skal, så den farer aldri ut en avkjørsel du ikke tok."
     ],
     "sv": [
-      "När du kör utan rutt följer pilen nu vägen genom varje kurva, precis som när du navigerar. Den glider inte längre ut i kurvorna och hoppar tillbaka på vägen en stund senare."
+      "När du kör utan rutt följer pilen nu vägen genom varje kurva, precis som när du navigerar. Den glider inte längre ut i kurvorna och hoppar tillbaka på vägen en stund senare.",
+      "Pilen håller sig nu på vägen i stället för att hoppa över till gång- och cykelbanan bredvid. I rondeller och korsningar gissar den inte längre vart du ska, så den rusar aldrig ut i en avfart du inte tog."
     ],
     "da": [
-      "Når du kører uden rute, følger pilen nu vejen gennem hvert sving, ligesom når du navigerer. Den glider ikke længere ud af svingene og hopper tilbage på vejen et øjeblik efter."
+      "Når du kører uden rute, følger pilen nu vejen gennem hvert sving, ligesom når du navigerer. Den glider ikke længere ud af svingene og hopper tilbage på vejen et øjeblik efter.",
+      "Pilen holder sig nu på vejen i stedet for at hoppe over på cykelstien eller fortovet ved siden af. I rundkørsler og kryds gætter den ikke længere på, hvor du skal hen, så den farer aldrig ud ad en afkørsel, du ikke tog."
     ],
     "fi": [
-      "Kun ajat ilman reittiä, nuoli seuraa nyt tietä jokaisessa mutkassa, aivan kuten navigoidessa. Se ei enää liu'u mutkista ulos ja hyppää hetken päästä takaisin tielle."
+      "Kun ajat ilman reittiä, nuoli seuraa nyt tietä jokaisessa mutkassa, aivan kuten navigoidessa. Se ei enää liu'u mutkista ulos ja hyppää hetken päästä takaisin tielle.",
+      "Nuoli pysyy nyt tiellä eikä hyppää viereiselle kävely- ja pyörätielle. Liikenneympyröissä ja risteyksissä se ei enää arvaa, minne olet menossa, joten se ei koskaan karkaa liittymään, jota et valinnut."
     ],
     "is": [
-      "Þegar þú ekur án leiðar fylgir örin nú veginum í gegnum hverja beygju, alveg eins og þegar þú leiðsegir. Hún rennur ekki lengur út úr beygjunum og stekkur aftur upp á veginn augnabliki síðar."
+      "Þegar þú ekur án leiðar fylgir örin nú veginum í gegnum hverja beygju, alveg eins og þegar þú leiðsegir. Hún rennur ekki lengur út úr beygjunum og stekkur aftur upp á veginn augnabliki síðar.",
+      "Örin heldur sig nú á veginum í stað þess að stökkva yfir á göngu- eða hjólastíginn við hliðina. Í hringtorgum og á gatnamótum giskar hún ekki lengur á hvert þú ætlar, svo hún þýtur aldrei út um afrein sem þú tókst ekki."
     ],
     "de": [
-      "Fährst du ohne Route, folgt dein Pfeil jetzt der Straße durch jede Kurve, genau wie beim Navigieren. Er rutscht nicht mehr aus jeder Kurve und springt einen Moment später auf die Straße zurück."
+      "Fährst du ohne Route, folgt dein Pfeil jetzt der Straße durch jede Kurve, genau wie beim Navigieren. Er rutscht nicht mehr aus jeder Kurve und springt einen Moment später auf die Straße zurück.",
+      "Dein Pfeil bleibt jetzt auf der Straße, statt auf den Rad- oder Fußweg daneben zu springen. In Kreisverkehren und an Kreuzungen rät er nicht mehr, wohin du fährst, und schießt deshalb nie in eine Ausfahrt, die du gar nicht genommen hast."
     ],
     "es": [
-      "Cuando vas sin ruta, tu flecha sigue ahora la carretera en cada curva, igual que cuando navegas. Ya no se sale de las curvas para volver de un salto a la carretera un momento después."
+      "Cuando vas sin ruta, tu flecha sigue ahora la carretera en cada curva, igual que cuando navegas. Ya no se sale de las curvas para volver de un salto a la carretera un momento después.",
+      "Tu flecha se mantiene ahora en la carretera en lugar de saltar a la acera o al carril bici de al lado. En rotondas y cruces ya no adivina hacia dónde vas, así que nunca se escapa por una salida que no has tomado."
     ],
     "fr": [
-      "Sans itinéraire, ta flèche suit désormais la route dans chaque virage, comme quand tu navigues. Elle ne sort plus de chaque courbe pour revenir d'un bond sur la route un instant plus tard."
+      "Sans itinéraire, ta flèche suit désormais la route dans chaque virage, comme quand tu navigues. Elle ne sort plus de chaque courbe pour revenir d'un bond sur la route un instant plus tard.",
+      "Ta flèche reste désormais sur la route au lieu de sauter sur la piste cyclable ou le trottoir d'à côté. Dans les ronds-points et aux carrefours, elle ne devine plus où tu vas, et ne file donc jamais vers une sortie que tu n'as pas prise."
     ],
     "nl": [
-      "Rijd je zonder route, dan volgt je pijl nu de weg door elke bocht, net als tijdens het navigeren. Hij glijdt niet meer uit elke bocht om even later terug op de weg te springen."
+      "Rijd je zonder route, dan volgt je pijl nu de weg door elke bocht, net als tijdens het navigeren. Hij glijdt niet meer uit elke bocht om even later terug op de weg te springen.",
+      "Je pijl blijft nu op de weg in plaats van naar het fiets- of voetpad ernaast te springen. Op rotondes en kruispunten raadt hij niet meer welke kant je op gaat, dus schiet hij nooit een afslag in die je niet nam."
     ],
     "pl": [
-      "Gdy jedziesz bez trasy, strzałka podąża teraz za drogą przez każdy zakręt, tak samo jak podczas nawigacji. Nie wypada już z zakrętów, by chwilę później wskoczyć z powrotem na drogę."
+      "Gdy jedziesz bez trasy, strzałka podąża teraz za drogą przez każdy zakręt, tak samo jak podczas nawigacji. Nie wypada już z zakrętów, by chwilę później wskoczyć z powrotem na drogę.",
+      "Strzałka trzyma się teraz drogi, zamiast przeskakiwać na chodnik lub ścieżkę rowerową obok. Na rondach i skrzyżowaniach nie zgaduje już, dokąd jedziesz, więc nigdy nie ucieka w zły zjazd."
     ]
   },
   {
