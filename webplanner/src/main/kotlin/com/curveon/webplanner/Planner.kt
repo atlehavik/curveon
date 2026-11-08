@@ -333,16 +333,11 @@ class Planner(
       return pts
     }
 
-    /** 4 to 16 points evenly along [r] (their index in it), never on a ferry (a stop out at sea is a ride out and back). */
-    fun vias(r: Route): List<Int> {
-      val count = (r.distanceMeters / VIA_SPACING_M).toInt().coerceIn(4, 16)
-      var next = 0
-      return buildList {
-        for ((i, pt) in r.points.withIndex()) if (next < count && i in 1 until r.points.lastIndex && !pt.ferry && pt.distanceFromStart >= r.distanceMeters * (next + 1) / (count + 1)) {
-          add(i); next++
-        }
-      }
-    }
+    /**
+     * 4 to 16 points evenly along [r] (their index in it), as the app places them: never on a ferry (a stop out at sea is a
+     * ride out and back) nor down a road ridden there and back ([Routes.viaIndices]).
+     */
+    fun vias(r: Route): List<Int> = com.curveon.routing.Routes.viaIndices(r, (r.distanceMeters / VIA_SPACING_M).toInt().coerceIn(4, 16))
 
     /** Points [from] to [to] of [r] as a route of their own (a leg between two of its vias). */
     fun part(r: Route, from: Int, to: Int): Route {

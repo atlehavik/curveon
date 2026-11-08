@@ -1,6 +1,34 @@
 package com.curveon.routing
 
 object Routes {
+    /**
+     * About [count] points spread evenly along [route], for making a trip of it (its via points): never on a ferry (a stop
+     * out at sea is a ride out and back) nor on an out-and-back spur (a via point there keeps the detour when the trip is
+     * worked out again, where it would otherwise drop out), nor at either end. Where an even place falls on one of those,
+     * the next point after it that is neither takes its place, and places passed meanwhile are left out (no clumps).
+     */
+    fun viaPoints(route: Route, count: Int): List<LatLon> = viaIndices(route, count).map { LatLon(route.points[it].lat, route.points[it].lon) }
+
+    /** Where [viaPoints] are: their indices in the route's points. */
+    fun viaIndices(route: Route, count: Int): List<Int> {
+        val pts = route.points
+        val spurs = Spurs.find(route).map { (it.turnaroundAlong - it.halfLength - SPUR_MARGIN_M)..(it.turnaroundAlong + it.halfLength + SPUR_MARGIN_M) }
+        fun target(n: Int) = route.distanceMeters * (n + 1) / (count + 1)
+        var next = 0
+        return buildList {
+            for (i in 1 until pts.lastIndex) {
+                if (next >= count) break
+                val p = pts[i]
+                if (p.distanceFromStart < target(next) || p.ferry || spurs.any { p.distanceFromStart in it }) continue
+                add(i)
+                while (next < count && target(next) <= p.distanceFromStart) next++
+            }
+        }
+    }
+
+    /** Kept clear of a spur's ends too: a via point just before one may still be snapped into it. */
+    private const val SPUR_MARGIN_M = 100.0
+
 
     /** The farthest [route] gets from [other] (metres), sampled every ~200 m. */
     fun farthestFrom(route: Route, other: Route): Double {

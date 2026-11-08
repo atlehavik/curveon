@@ -473,13 +473,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private suspend fun tripFromLoop(g: NavigationGoal.Roundtrip, route: Route) {
         val first = LatLon(route.points.first().lat, route.points.first().lon)
         val home = g.start ?: Stop(describePlace(first), first)
-        val count = (route.distanceMeters / LOOP_VIA_SPACING_M).toInt().coerceIn(4, 12)
-        var next = 0
-        val points = buildList {
-            for (pt in route.points) if (next < count && pt.distanceFromStart >= route.distanceMeters * (next + 1) / (count + 1)) {
-                add(LatLon(pt.lat, pt.lon)); next++
-            }
-        }
+        // Never out at sea on a ferry, nor down a road the loop rides there and back: the trip is worked out again
+        // through these, and a point there would keep the detour.
+        val points = Routes.viaPoints(route, (route.distanceMeters / LOOP_VIA_SPACING_M).toInt().coerceIn(4, 12))
         val vias = points.map { Stop(describePlace(it), it, via = true) }
         // Still the same loop on screen?
         if (_state.value.preview?.goal != g) return
@@ -487,6 +483,10 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         // The loop's road style stays picked.
         val style = RoadStyle.entries.indexOf(g.options.roadStyle)
         val trip = NavigationGoal.Destination(home.name, home.point, g.options, vias, g.start, loop = g)
+        // Its own style rides the loop as the planner found it: worked out again leg by leg through the points, each leg
+        // takes its own shortest way and the loop rides much more road twice (19% against 8% round Bømlo). Only a change
+        // the rider makes works it out through the points.
+        remember(trip, trip.start?.point ?: lastPosition ?: first, g.options.roadStyle, route)
         preview(trip, keepSelection = style, keepHistory = true)
         // The loop stays on the map until its own style's route through the points is in (if the trip did open: it holds every style).
         updatePreview({ it.goal == trip }) { p ->
@@ -827,20 +827,16 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         /** Which of the suggestions this is, for the switcher in the sheet. */
         index: Int = 0
     ): NavigationGoal.Destination? {
-        val count = (route.distanceMeters / ADVENTURE_VIA_SPACING_M).toInt().coerceIn(4, 16)
-        var next = 0
-        val points = buildList {
-            // Never on a ferry: a stop out at sea is a ride out and back.
-            for (pt in route.points) if (next < count && !pt.ferry && pt.distanceFromStart >= route.distanceMeters * (next + 1) / (count + 1)) {
-                add(LatLon(pt.lat, pt.lon)); next++
-            }
-        }
+        // Never out at sea on a ferry, nor down a road ridden there and back (see Routes.viaPoints).
+        val points = Routes.viaPoints(route, (route.distanceMeters / ADVENTURE_VIA_SPACING_M).toInt().coerceIn(4, 16))
         val vias = points.map { Stop(describePlace(it), it, via = true) }
         // Still the same trip on screen?
         if (_state.value.preview?.goal != expected) return null
         previewHistory.clear()
         val style = RoadStyle.entries.indexOf(g.options.roadStyle)
         val trip = NavigationGoal.Destination(g.name, g.destination, g.options, vias, g.start, adventure = g)
+        // Its own style rides the adventure as found, not worked out again leg by leg (see tripFromLoop).
+        remember(trip, trip.start?.point ?: lastPosition ?: LatLon(route.points.first().lat, route.points.first().lon), g.options.roadStyle, route)
         watched = watched + trip
         preview(trip, keepSelection = style, keepHistory = true, keepAdventure = true)
         // The adventure stays on the map until its own style's route through the points is in.
