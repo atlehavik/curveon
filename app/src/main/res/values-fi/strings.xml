@@ -67,6 +67,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Päivä</string>
     <string name="map_theme_night">Yö</string>
+    <string name="settings_quiet_towns">Rauhallisemmat kaupungit</string>
+    <string name="settings_quiet_towns_hint">Kaupungeissa pikkutiet näkyvät, kun zoomaat lähemmäs. Maaseudulla näkyvät kaikki tiet</string>
     <string name="settings_buildings_3d">3D-rakennukset</string>
     <string name="settings_buildings_3d_hint">3D-näkymässä rakennukset nousevat pystyyn lähelle zoomattaessa. Kuluttaa hieman enemmän akkua</string>
     <string name="settings_altitude">Korkeus</string>

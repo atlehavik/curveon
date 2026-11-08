@@ -66,6 +66,7 @@ data class SettingsState(
     val mapDark: Boolean = true,
     val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,
     val buildings3d: Boolean = false,
+    val quietTowns: Boolean = true,
     val showAltitude: Boolean,
     val showClock: Boolean = true,
     val showBattery: Boolean = false,
@@ -117,6 +118,7 @@ class SettingsActions(
     val onSurfaceMode: (SurfaceMode) -> Unit = {},
     val onGravelHeatButton: (GravelHeatButton) -> Unit = {},
     val onBuildings3d: (Boolean) -> Unit = {},
+    val onQuietTowns: (Boolean) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
     val onShowClock: (Boolean) -> Unit = {},
     val onShowBattery: (Boolean) -> Unit = {},
@@ -216,6 +218,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             CockpitSwitch(state.gravelHeatButton == GravelHeatButton.MAP, onCheckedChange = {
                                 actions.onGravelHeatButton(if (it) GravelHeatButton.MAP else GravelHeatButton.OFF)
                             })
+                        }
+                        Setting(stringResource(R.string.settings_quiet_towns), stringResource(R.string.settings_quiet_towns_hint)) {
+                            CockpitSwitch(state.quietTowns, actions.onQuietTowns)
                         }
                         Setting(stringResource(R.string.settings_buildings_3d), stringResource(R.string.settings_buildings_3d_hint)) {
                             CockpitSwitch(state.buildings3d, actions.onBuildings3d)

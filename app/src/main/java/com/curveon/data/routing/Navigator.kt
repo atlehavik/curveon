@@ -308,6 +308,23 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             com.curveon.routing.SurfaceReader(routingData.segmentsDir, File(ProfileInstaller.install(profileDir), "lookups.dat")))
     }
 
+    private val towns by lazy {
+        com.curveon.routing.CityAreas(routingData.segmentsDir, File(context.filesDir, "towns"),
+            com.curveon.routing.SurfaceReader(routingData.segmentsDir, File(ProfileInstaller.install(profileDir), "lookups.dat")))
+    }
+
+    /**
+     * The towns of every country on the device (where the map waits with its small roads until zoomed in close), as
+     * CityAreas squares. Counted once per routing data file (seconds each), then kept. Blocking.
+     */
+    fun townSquares(): Set<Long> {
+        val t0 = System.nanoTime()
+        val tiles = towns.tiles()
+        return tiles.flatMap { towns.squares(it) }.toHashSet().also {
+            android.util.Log.i("Curveon", "Towns: ${it.size} squares in ${tiles.size} routing files, %.1f s".format((System.nanoTime() - t0) / 1e9))
+        }
+    }
+
     /** The routing data files covering the area, for the gravel heat map (any country that is on the device). */
     fun gravelHeatTiles(south: Double, west: Double, north: Double, east: Double) = heat.tiles(south, west, north, east)
 

@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dzień</string>
     <string name="map_theme_night">Noc</string>
+    <string name="settings_quiet_towns">Spokojniejsze miasta</string>
+    <string name="settings_quiet_towns_hint">W miastach małe ulice pojawiają się po przybliżeniu. Poza miastem widać wszystkie drogi</string>
     <string name="settings_buildings_3d">Budynki 3D</string>
     <string name="settings_buildings_3d_hint">W widoku 3D budynki wyrastają, gdy jesteś blisko. Zużywa nieco więcej baterii</string>
     <string name="settings_altitude">Wysokość</string>

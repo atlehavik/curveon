@@ -124,6 +124,10 @@ class SurfaceReader(private val segmentDir: File, lookupsFile: File) {
     @Synchronized
     internal fun cellWays(lonIdx: Int, latIdx: Int): List<SurfaceWay>? = runCatching { decodeCell(lonIdx, latIdx) }.getOrDefault(emptyList())
 
+    /** The ordinary roads (rank 2: tertiary and up, 1: unclassified, residential) starting in one 1/32° cell, read afresh; null without a segment file. */
+    @Synchronized
+    internal fun cellRoads(lonIdx: Int, latIdx: Int): List<SurfaceWay>? = runCatching { decodeCell(lonIdx, latIdx, ::classifyRoad) }.getOrDefault(emptyList())
+
     private fun osmFile(lonDegree: Int, latDegree: Int): OsmFile? {
         val key = lonDegree.toLong() shl 32 or latDegree.toLong()
         osmFiles[key]?.let { return it }

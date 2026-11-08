@@ -1045,6 +1045,27 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val mapDetail: StateFlow<MapDetail> = _mapDetail.asStateFlow()
     fun setMapDetail(detail: MapDetail) { _mapDetail.value = detail; settings.edit().putString("mapDetail", detail.name).apply() }
 
+    /**
+     * Settings → Display → Quieter towns: where the map is a town (much road close together, see CityAreas) its small
+     * roads and paths wait until zoomed in close; out in the countryside every road shows as before. On by default;
+     * off, the map is exactly as it was.
+     */
+    private val _quietTowns = MutableStateFlow(settings.getBoolean("quietTowns", true))
+    val quietTowns: StateFlow<Boolean> = _quietTowns.asStateFlow()
+    fun setQuietTowns(on: Boolean) { _quietTowns.value = on; settings.edit().putBoolean("quietTowns", on).apply() }
+
+    /** The towns (CityAreas squares), counted in the background once the map is up; null until then or when off. */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val townSquares: StateFlow<Set<Long>?> = combine(quietTowns, mapVersion) { on, v -> on to v }
+        .mapLatest { (on, _) ->
+            if (!on) null else withContext(Dispatchers.IO) {
+                // After the start, so the first map and position come first.
+                delay(TOWNS_AFTER_START_MS)
+                runCatching { navigator.townSquares() }.onFailure { android.util.Log.w("Curveon", "Towns not counted", it) }.getOrNull()
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     /** Settings → Display → 3D buildings: in the 3D view the buildings stand up when zoomed in close. Off by default (it costs battery). */
     private val _buildings3d = MutableStateFlow(settings.getBoolean("buildings3d", false))
     val buildings3d: StateFlow<Boolean> = _buildings3d.asStateFlow()
@@ -2456,6 +2477,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun importOfflineMap(uri: Uri) = maps.importOfflineMap(uri)
 
     companion object {
+        /** The towns are counted this long after the start (the first time some seconds per routing file, then at once from disk). */
+        private const val TOWNS_AFTER_START_MS = 8_000L
         /** For what is written as the dashboard closes for good ([onCleared]), when its own scope has been cancelled. */
         private val AFTER_CLOSING = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob())
 

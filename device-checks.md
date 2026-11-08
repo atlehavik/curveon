@@ -6,6 +6,18 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-08 — Roligere byer (Innstillinger → Skjerm, på som standard)
+
+Der det er mye vei tett i tett (talt fra rutedataene, ca. 1,7 × 1,7 km om gangen, ikke etter veitype) vises småveier
+og stier først fra zoom 14; ute på landet som før. Første gang etter installasjon telles byene i bakgrunnen (ca. et
+halvt minutt per land), så tar det et øyeblikk før det slår inn. Prøvd i emulatoren med Vestlandskartet: Bergen
+sentrum mye roligere ved zoom 13, stiene og veiene i fjellet rundt urørt.
+
+- [ ] X7: panorer rundt i Bergen (eller en annen by) ved zoom 12–13: føles kartet kvikkere enn før?
+- [ ] X7: kjør ut av byen: kommer småveiene og grusveiene tilbake straks du er ute av tettbebyggelsen?
+- [ ] X7: står det noen bygd eller hyttefelt der veier du trenger forsvinner? Si hvor, så justerer jeg grensen.
+- [ ] X7: slå av Roligere byer: er kartet akkurat som før?
+
 ## 2026-11-08 — 3D-bygninger (Innstillinger → Skjerm)
 
 Nytt valg, av som standard. Bygningene står opp bare når kartet er i 3D, fra gatenivå (zoom 15). Prøvd i emulatoren i

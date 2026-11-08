@@ -71,6 +71,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Nacht</string>
+    <string name="settings_quiet_towns">Rustiger steden</string>
+    <string name="settings_quiet_towns_hint">In steden verschijnen de kleine straten als je verder inzoomt. Op het platteland zie je alle wegen</string>
     <string name="settings_buildings_3d">3D-gebouwen</string>
     <string name="settings_buildings_3d_hint">In de 3D-weergave komen de gebouwen overeind als je dichtbij bent. Kost iets meer batterij</string>
     <string name="settings_altitude">Hoogte</string>

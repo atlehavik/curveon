@@ -75,6 +75,8 @@
     <string name="map_theme_auto">Sjálfvirkt</string>
     <string name="map_theme_day">Dagur</string>
     <string name="map_theme_night">Nótt</string>
+    <string name="settings_quiet_towns">Rólegri bæir</string>
+    <string name="settings_quiet_towns_hint">Í bæjum sjást litlu göturnar þegar þú stækkar nær. Úti á landi sjást allir vegir</string>
     <string name="settings_buildings_3d">Byggingar í þrívídd</string>
     <string name="settings_buildings_3d_hint">Í þrívíddarsýn rísa byggingarnar þegar þú ert nálægt. Notar aðeins meira rafmagn</string>
     <string name="settings_altitude">Hæð</string>

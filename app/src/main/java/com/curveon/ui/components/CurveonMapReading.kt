@@ -327,3 +327,83 @@ internal fun CurveonMapState.Buildings3d(on: Boolean, dark: Boolean) {
         layers.forEach { if (firstLabel != null) s.addLayerBelow(it, firstLabel) else s.addLayer(it) }
     }
 }
+
+/** The map's layers of small roads and paths that wait until [TOWN_ROADS_ZOOM] inside a town (by id, before any "~n"). */
+private val TOWN_QUIET_LAYERS = setOf(
+    "roads_minor", "roads_minor_casing", "roads_minor_service", "roads_minor_service_casing", "roads_other",
+    "roads_tunnels_minor", "roads_tunnels_minor_casing", "roads_tunnels_other", "roads_tunnels_other_casing",
+    "roads_bridges_minor", "roads_bridges_minor_casing", "roads_bridges_other", "roads_bridges_other_casing",
+    "online-roads_minor", "online-roads_minor_casing", "online-roads_other",
+)
+/** Inside a town the small roads show from this zoom (out in the countryside, as before). */
+internal const val TOWN_ROADS_ZOOM = 14f
+
+/**
+ * Settings → Display → Quieter towns: in a town (see CityAreas) the small roads and paths show only from
+ * [TOWN_ROADS_ZOOM]; everywhere else, and with the setting off ([squares] null), the layers keep the filters they had,
+ * so the map is exactly as before. The main roads always show.
+ *
+ * The map's tiles hold all their small roads as one line each, so it is decided tile by tile: a tile at least half
+ * town ([com.curveon.routing.CityAreas.townTiles]) is quiet whole. Each such tile is a rectangle a little bigger than
+ * the tile (its lines reach just past its edge), and a tile's lines lie within its own rectangle and no other.
+ */
+@Composable
+internal fun CurveonMapState.TownRoads(squares: Set<Long>?) {
+    // Each layer's own filter, from before any change (per style: a new style brings its layers afresh).
+    val own = remember(style) { HashMap<String, E?>() }
+    // The box the town tiles were chosen for: a move within it changes nothing.
+    var covered by remember(style, squares) { mutableStateOf<LatLngBounds?>(null) }
+    LaunchedEffect(style, squares, cameraIdleTick) {
+        val s = style ?: return@LaunchedEffect
+        val m = map ?: return@LaunchedEffect
+        val view = m.projection.visibleRegion.latLngBounds
+        val have = covered
+        if (have != null && have.contains(view.northEast) && have.contains(view.southWest)) return@LaunchedEffect
+        // Two views' width round the view (at least about 20 km), so panning about a town changes nothing for a while.
+        val dLat = maxOf((view.latitudeNorth - view.latitudeSouth) * 2, 0.1)
+        val dLon = maxOf((view.longitudeEast - view.longitudeWest) * 2, 0.2)
+        val box = LatLngBounds.from(view.latitudeNorth + dLat, view.longitudeEast + dLon, view.latitudeSouth - dLat, view.longitudeWest - dLon)
+        val quiet = squares?.let { all ->
+            val near = withContext(Dispatchers.Default) {
+                val x0 = Math.floor(box.longitudeWest * com.curveon.routing.CityAreas.LON_DIV).toInt()
+                val x1 = Math.floor(box.longitudeEast * com.curveon.routing.CityAreas.LON_DIV).toInt()
+                val y0 = Math.floor(box.latitudeSouth * com.curveon.routing.CityAreas.LAT_DIV).toInt()
+                val y1 = Math.floor(box.latitudeNorth * com.curveon.routing.CityAreas.LAT_DIV).toInt()
+                all.filter { k -> val (x, y) = com.curveon.routing.CityAreas.unsquare(k); x in x0..x1 && y in y0..y1 }
+            }
+            fun inTownTile(zoom: Int): E? {
+                val rects = com.curveon.routing.CityAreas.townTiles(near, zoom).map { (tx, ty) ->
+                    val (south, west, north, east) = com.curveon.routing.CityAreas.tileBounds(tx, ty, zoom)
+                    val mLat = (north - south) * TILE_MARGIN; val mLon = (east - west) * TILE_MARGIN
+                    val ring = listOf(west - mLon to south - mLat, east + mLon to south - mLat, east + mLon to north + mLat, west - mLon to north + mLat, west - mLon to south - mLat)
+                    E.within(org.maplibre.geojson.Polygon.fromLngLats(listOf(ring.map { org.maplibre.geojson.Point.fromLngLat(it.first, it.second) })))
+                }
+                return when (rects.size) { 0 -> null; 1 -> rects.first(); else -> E.any(*rects.toTypedArray()) }
+            }
+            // The map's tiles: 13 from zoom 13, 12 below (smaller ones hold hardly any small roads).
+            val t12 = inTownTile(12); val t13 = inTownTile(13)
+            if (t12 == null && t13 == null) null
+            else E.any(
+                E.gte(E.zoom(), E.literal(TOWN_ROADS_ZOOM)),
+                E.all(E.lt(E.zoom(), E.literal(13f)), t12?.let { E.not(it) } ?: E.literal(true)),
+                E.all(E.gte(E.zoom(), E.literal(13f)), t13?.let { E.not(it) } ?: E.literal(true)),
+            )
+        }
+        if (style !== s) return@LaunchedEffect
+        covered = box
+        for (layer in s.layers) {
+            if (layer.id.substringBefore('~') !in TOWN_QUIET_LAYERS) continue
+            val line = layer as? org.maplibre.android.style.layers.LineLayer ?: continue
+            if (line.id !in own) own[line.id] = line.filter
+            val base = own[line.id]
+            when {
+                quiet == null -> if (base != null) line.setFilter(base) else line.setFilter(E.literal(true))
+                base == null -> line.setFilter(quiet)
+                else -> line.setFilter(E.all(base, quiet))
+            }
+        }
+    }
+}
+
+/** How much bigger than a tile its rectangle is: the map's tiles reach 64/4096 (1.6%) past their edge. */
+private const val TILE_MARGIN = 0.03

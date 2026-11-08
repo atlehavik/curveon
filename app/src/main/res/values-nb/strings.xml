@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Natt</string>
+    <string name="settings_quiet_towns">Roligere byer</string>
+    <string name="settings_quiet_towns_hint">I byer vises småveiene når du zoomer nærmere. Ute på landet vises alle veier</string>
     <string name="settings_buildings_3d">3D-bygninger</string>
     <string name="settings_buildings_3d_hint">I 3D-visning reiser bygningene seg når du er nær nok. Bruker litt mer batteri</string>
     <string name="settings_altitude">Høyde</string>
