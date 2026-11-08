@@ -517,10 +517,10 @@ private fun CandidateCard(
                 // How much of it is tarmac, gravel and offroad, each in its colour on the map; none shown that isn't there.
                 val (paved, gravel, track) = remember(route) { surfaceMeters(route) }
                 Column {
-                    if (paved >= MIN_SURFACE_SHOWN_M) SurfaceLine(stringResource(R.string.preview_paved_amount, shortDistance(paved)), PavedTextColor)
-                    if (gravel >= MIN_SURFACE_SHOWN_M) SurfaceLine(stringResource(R.string.preview_gravel_amount, shortDistance(gravel)), Color(android.graphics.Color.parseColor(GRAVEL_COLOR)))
-                    if (track >= MIN_SURFACE_SHOWN_M) SurfaceLine(stringResource(R.string.preview_offroad_amount, shortDistance(track)), Color(android.graphics.Color.parseColor(TRACK_COLOR)))
-                    if (route.ferryCount > 0) SurfaceLine(pluralStringResource(R.plurals.preview_ferries, route.ferryCount, route.ferryCount), TextSecondary)
+                    if (paved >= MIN_SURFACE_SHOWN_M) shortDistance(paved).let { SurfaceLine(stringResource(R.string.preview_paved_amount, it), it, PavedTextColor) }
+                    if (gravel >= MIN_SURFACE_SHOWN_M) shortDistance(gravel).let { SurfaceLine(stringResource(R.string.preview_gravel_amount, it), it, GravelTextColor) }
+                    if (track >= MIN_SURFACE_SHOWN_M) shortDistance(track).let { SurfaceLine(stringResource(R.string.preview_offroad_amount, it), it, OffroadTextColor) }
+                    if (route.ferryCount > 0) SurfaceLine(pluralStringResource(R.plurals.preview_ferries, route.ferryCount, route.ferryCount), route.ferryCount.toString(), TextSecondary)
                 }
                 weatherNote?.let { (text, color) -> Text(text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
             }
@@ -576,16 +576,27 @@ private fun TimeAndDistance(time: String, distance: String) {
     }
 }
 
-/** One surface's share of the route ("12 km gravel"), in its colour on the map. */
+/** One surface's share of the route ("12 km gravel"), in its colour on the map, with the amount ([amount], inside [text]) in bold. */
 @Composable
-private fun SurfaceLine(text: String, color: Color) =
-    Text(text, color = color, fontSize = 11.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+private fun SurfaceLine(text: String, amount: String, color: Color) {
+    val at = text.indexOf(amount)
+    val styled = androidx.compose.ui.text.buildAnnotatedString {
+        append(text)
+        if (at >= 0) addStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold), at, at + amount.length)
+    }
+    Text(styled, color = color, fontSize = 11.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+}
 
 /** Shorter than this, a surface isn't listed (it would read "0 km"). */
 private const val MIN_SURFACE_SHOWN_M = 50.0
 
-/** Tarmac in the route's blue: between the map's light blue line and its cyan one at night, and easy to read on the dark card. */
-private val PavedTextColor = Color(0xFF29A8FF)
+/**
+ * The surfaces' colours on the map, made light enough to read on the dark card and on the chosen card's teal (each at least
+ * 5.5:1 there, over the 4.5:1 that text needs): the map's purple (#D500F9) was 3.2:1, too faint for small text.
+ */
+private val PavedTextColor = Color(0xFF6CC4FF)
+private val GravelTextColor = Color(0xFFFF9100)
+private val OffroadTextColor = Color(0xFFEA80FC)
 
 /**
  * Metres of tarmac, gravel and offroad along [route], split the way the map colours the route line: a track is offroad,
