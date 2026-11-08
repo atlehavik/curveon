@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Día</string>
     <string name="map_theme_night">Noche</string>
+    <string name="settings_buildings_3d">Edificios en 3D</string>
+    <string name="settings_buildings_3d_hint">En la vista 3D los edificios se levantan cuando estás cerca. Gasta algo más de batería</string>
     <string name="settings_altitude">Altitud</string>
     <string name="settings_clock">Reloj</string>
     <string name="settings_clock_hint">La hora junto a la velocidad</string>

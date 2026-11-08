@@ -65,6 +65,7 @@ data class SettingsState(
     /** Whether the map is drawn dark now, so the dash colours are shown as they look on it. */
     val mapDark: Boolean = true,
     val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,
+    val buildings3d: Boolean = false,
     val showAltitude: Boolean,
     val showClock: Boolean = true,
     val showBattery: Boolean = false,
@@ -115,6 +116,7 @@ class SettingsActions(
     val onArrowLead: (Double) -> Unit = {},
     val onSurfaceMode: (SurfaceMode) -> Unit = {},
     val onGravelHeatButton: (GravelHeatButton) -> Unit = {},
+    val onBuildings3d: (Boolean) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
     val onShowClock: (Boolean) -> Unit = {},
     val onShowBattery: (Boolean) -> Unit = {},
@@ -214,6 +216,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             CockpitSwitch(state.gravelHeatButton == GravelHeatButton.MAP, onCheckedChange = {
                                 actions.onGravelHeatButton(if (it) GravelHeatButton.MAP else GravelHeatButton.OFF)
                             })
+                        }
+                        Setting(stringResource(R.string.settings_buildings_3d), stringResource(R.string.settings_buildings_3d_hint)) {
+                            CockpitSwitch(state.buildings3d, actions.onBuildings3d)
                         }
                         Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint)) {
                             CockpitSwitch(state.showAltitude, actions.onShowAltitude)

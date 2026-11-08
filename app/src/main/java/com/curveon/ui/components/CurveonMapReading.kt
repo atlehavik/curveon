@@ -288,3 +288,42 @@ private fun roadKind(f: org.maplibre.geojson.Feature): com.curveon.routing.RoadS
         else -> com.curveon.routing.RoadSnap.Kind.ROAD
     }
 }
+
+/** The buildings standing up in the 3D view (Settings → Display → 3D buildings). */
+internal const val BUILDINGS_3D = "cv-buildings-3d"
+
+/**
+ * In the 3D view with the setting on, the buildings stand up from zoom 15, growing to their height by 16, in the downloaded
+ * maps and in the online map. Off (or in a flat view) the layers are taken out again, so the map draws nothing more than
+ * before. They lie under the road names and everything Curveon draws (route, tracks, pins), so the route is never hidden
+ * behind a house; a building the map knows no height of is a low one.
+ */
+@Composable
+internal fun CurveonMapState.Buildings3d(on: Boolean, dark: Boolean) {
+    LaunchedEffect(style, on, dark) {
+        val s = style ?: return@LaunchedEffect
+        s.layers.filter { it.id.startsWith(BUILDINGS_3D) || it.id.startsWith("online-$BUILDINGS_3D") }.forEach { s.removeLayer(it) }
+        if (!on) return@LaunchedEffect
+        val firstLabel = (s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer && !it.id.startsWith("online-") && !it.id.startsWith("org.maplibre") }
+            ?: s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer && !it.id.startsWith("org.maplibre") })?.id
+        fun standing(id: String, source: String, sourceLayer: String, height: String, base: String, filter: E?) =
+            org.maplibre.android.style.layers.FillExtrusionLayer(id, source).withSourceLayer(sourceLayer).withProperties(
+                fillExtrusionColor(if (dark) "#2B3644" else "#D8D2C8"),
+                fillExtrusionOpacity(0.9f),
+                fillExtrusionHeight(E.interpolate(E.linear(), E.zoom(), E.stop(15, 0f), E.stop(16, E.coalesce(E.get(height), E.literal(5f))))),
+                fillExtrusionBase(E.interpolate(E.linear(), E.zoom(), E.stop(15, 0f), E.stop(16, E.coalesce(E.get(base), E.literal(0f))))),
+            ).apply { minZoom = 15f; filter?.let { setFilter(it) } }
+        val layers = buildList {
+            // The downloaded maps' own buildings layer, once per map ("buildings", "buildings~1", …).
+            s.layers.filterIsInstance<org.maplibre.android.style.layers.FillLayer>().filter { it.id.substringBefore('~') == "buildings" }.forEachIndexed { i, flat ->
+                add(standing("$BUILDINGS_3D-$i", flat.sourceId, "buildings", "height", "min_height", flat.filter))
+            }
+            // The online map's, shown and hidden with the rest of it ("online-" ids, see OnlineLayers).
+            (s.getLayer("online-building") as? org.maplibre.android.style.layers.FillLayer)?.let { flat ->
+                add(standing("online-$BUILDINGS_3D", flat.sourceId, "building", "render_height", "render_min_height", flat.filter)
+                    .apply { setProperties(visibility(flat.visibility.value ?: Property.VISIBLE)) })
+            }
+        }
+        layers.forEach { if (firstLabel != null) s.addLayerBelow(it, firstLabel) else s.addLayer(it) }
+    }
+}

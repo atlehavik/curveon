@@ -1045,6 +1045,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val mapDetail: StateFlow<MapDetail> = _mapDetail.asStateFlow()
     fun setMapDetail(detail: MapDetail) { _mapDetail.value = detail; settings.edit().putString("mapDetail", detail.name).apply() }
 
+    /** Settings → Display → 3D buildings: in the 3D view the buildings stand up when zoomed in close. Off by default (it costs battery). */
+    private val _buildings3d = MutableStateFlow(settings.getBoolean("buildings3d", false))
+    val buildings3d: StateFlow<Boolean> = _buildings3d.asStateFlow()
+    fun setBuildings3d(on: Boolean) { _buildings3d.value = on; settings.edit().putBoolean("buildings3d", on).apply() }
+
     private val _mapDark = MutableStateFlow(true)
     val mapDark: StateFlow<Boolean> = _mapDark.asStateFlow()
 

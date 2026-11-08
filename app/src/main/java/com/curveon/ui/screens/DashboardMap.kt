@@ -193,6 +193,7 @@ private fun DashboardMap(
         gravelHeat = viewModel.gravelHeat.takeIf { gravelHeatButton != GravelHeatButton.OFF },
         showGravelHeat = viewModel.showGravelHeat.collectAsStateWithLifecycle().value,
         gravelHeatOnMap = gravelHeatButton == GravelHeatButton.MAP,
+        buildings3d = viewModel.buildings3d.collectAsStateWithLifecycle().value,
         planningTrip = preview != null || state.mapPick != null || sketching,
         onShowGravelHeat = viewModel::setShowGravelHeat,
         roadNameProbe = viewModel.roadNameProbe.collectAsStateWithLifecycle().value,

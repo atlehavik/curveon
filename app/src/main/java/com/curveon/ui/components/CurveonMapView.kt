@@ -232,6 +232,8 @@ fun CurveonMapView(
     showGravelHeat: Boolean = false,
     /** Settings → Display: the heat map button also on the ordinary map (not while riding). */
     gravelHeatOnMap: Boolean = false,
+    /** Settings → Display: the buildings stand up in the 3D view. */
+    buildings3d: Boolean = false,
     /** A trip is being planned (its sheet is open, even before a route has come back). */
     planningTrip: Boolean = false,
     onShowGravelHeat: ((Boolean) -> Unit)? = null,
@@ -264,6 +266,7 @@ fun CurveonMapView(
     h.FollowCamera(routePoints, riderFix, location, headingDeg, speedKmh, currentTurnInstruction, bottomClearance, inPreview, hasGpsFix, autoZoom)
     h.OnlineLayers(hasOfflineMap)
     h.SurfaceLayers(surfaceWays, surfaceMode, surfaceZoom, roadShade, dark)
+    h.Buildings3d(buildings3d && h.orientation == Orientation.THREE_D, dark)
 
     // Planning a trip: a preview, editing it, picking places or drawing an area on the map.
     val planning = planningTrip || previewRoutes.isNotEmpty() || editor != null || onTap != null || onSketch != null

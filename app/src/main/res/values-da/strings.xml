@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Nat</string>
+    <string name="settings_buildings_3d">3D-bygninger</string>
+    <string name="settings_buildings_3d_hint">I 3D-visning rejser bygningerne sig, når du er tæt på. Bruger lidt mere strøm</string>
     <string name="settings_altitude">Højde</string>
     <string name="settings_clock">Ur</string>
     <string name="settings_clock_hint">Klokken ved siden af hastigheden</string>

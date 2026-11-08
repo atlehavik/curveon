@@ -6,6 +6,15 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-08 — 3D-bygninger (Innstillinger → Skjerm)
+
+Nytt valg, av som standard. Bygningene står opp bare når kartet er i 3D, fra gatenivå (zoom 15). Prøvd i emulatoren i
+Bergen sentrum; hvor mye det koster på Mali-GPU-en og batteriet kan bare prøves på ekte.
+
+- [ ] X7: slå på 3D-bygninger, sett kartet i 3D og kjør (eller la demoturen gå) gjennom et sentrum: henger kartet med, eller hakker det mer enn uten?
+- [ ] X7: ligger ruten og pila synlig oppå husene hele veien, også bak høye bygg?
+- [ ] X7: blir nettbrettet merkbart varmere eller går batteriet raskere med 3D-bygninger på i by?
+
 ## 2026-11-08 — Bytte mellom Asfalt, Grus og Offroad uten å vente
 
 Rutene du allerede har sett, huskes nå (samme tur, samme startsted, inntil en halvtime), og når rutene til en tur var

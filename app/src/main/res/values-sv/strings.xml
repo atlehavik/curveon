@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Natt</string>
+    <string name="settings_buildings_3d">3D-byggnader</string>
+    <string name="settings_buildings_3d_hint">I 3D-vyn reser sig byggnaderna när du är nära. Drar lite mer batteri</string>
     <string name="settings_altitude">Höjd</string>
     <string name="settings_clock">Klocka</string>
     <string name="settings_clock_hint">Tiden bredvid hastigheten</string>
