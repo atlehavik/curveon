@@ -765,7 +765,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     /**
-     * Works out the trip on screen with the surfaces not shown (Gravel and Offroad, or Tarmac), one route at a time, the
+     * Works out the trip on screen with the surfaces not shown (Gravel, Offroad, Mixed, Tarmac), one route at a time, the
      * style chosen first. Only when the shown one was quick to work out, and only while the same trip stays on screen:
      * it stops when the rider plans another trip, closes it or rides it.
      */
@@ -1464,8 +1464,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         private const val CACHE_MAX_AGE_MS = 30 * 60_000L
         /** The other surfaces are worked out ahead only when the shown routes took no longer than this. */
         private const val PREFETCH_IF_UNDER_NS = 10_000_000_000L
-        /** The surfaces worked out ahead: the ones on the map in their own colours, and Tarmac to go back to. */
-        private val PREFETCH_SURFACES = listOf(com.curveon.routing.SurfacePreference.GRAVEL, com.curveon.routing.SurfacePreference.OFFROAD, com.curveon.routing.SurfacePreference.PAVED)
+        /** The surfaces worked out ahead, every one the rider can pick (the one shown is left out), most often tried first. */
+        private val PREFETCH_SURFACES = listOf(com.curveon.routing.SurfacePreference.GRAVEL, com.curveon.routing.SurfacePreference.OFFROAD,
+            com.curveon.routing.SurfacePreference.MIXED, com.curveon.routing.SurfacePreference.PAVED)
         /** A loop made into a trip gets about one via point this far apart (close enough to keep its shape). */
         private const val LOOP_VIA_SPACING_M = 8_000.0
         /** A track made into a trip gets about one via point this far apart: close enough to keep to its roads. */
