@@ -220,3 +220,5 @@ dialog form.buttons { flex-wrap: wrap; gap: 8px; }
   #panel { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 62vh; border-radius: 14px 14px 0 0; }
   #options { grid-template-columns: 1fr 1fr; }
 }
+/* Anything being dragged (the map, a point, the route): the closed hand everywhere until let go. */
+body.grabbing, body.grabbing * { cursor: grabbing !important; }

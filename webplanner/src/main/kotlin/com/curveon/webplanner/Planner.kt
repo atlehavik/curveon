@@ -65,6 +65,8 @@ class Planner(
   private val waiting = AtomicInteger(0)
   /** The search each page (its `tab`) has going, to give up when the same page asks for something newer. */
   private val tabs = ConcurrentHashMap<String, BRouterEngine.Cancel>()
+  /** Routes worked out ahead ([plan] with `ahead`), given up as soon as anyone else's search has to wait for a place. */
+  private val behind = ConcurrentHashMap.newKeySet<BRouterEngine.Cancel>()
 
   /** A route is being worked out, or waits for its turn: background work (the heat map) waits too. */
   fun busy() = waiting.get() > 0
@@ -87,11 +89,11 @@ class Planner(
    * a leg before these arrived with, as the answer gives it in `arrive`). The answer has every leg on its own (`legs`)
    * and the whole trip's numbers; a page that does not ask for `legs` gets the whole line too, as before.
    */
-  fun plan(body: JSONObject): JSONObject {
+  fun plan(body: JSONObject, ahead: Boolean = false): JSONObject {
     val points = points(body.optJSONArray("points") ?: throw PlanRefused(400, "bad_request"))
     val options = routeOptions(body.optJSONObject("options") ?: JSONObject())
     val heading = if (body.has("heading") && !body.isNull("heading")) body.getDouble("heading").also { if (it !in 0.0..360.0) throw PlanRefused(400, "bad_request") } else null
-    return inTurn(1, waitSeconds, tab(body), "route") { cancel ->
+    return inTurn(1, waitSeconds, tab(body), if (ahead) "ahead" else "route", behind = ahead) { cancel ->
       val legs = ArrayList<Route>(points.size - 1)
       for ((i, ab) in points.zipWithNext().withIndex()) {
         val h = if (i == 0) heading else arrival(legs.last())
@@ -235,7 +237,12 @@ class Planner(
     return r
   }
 
-  private fun inTurn(places: Int, wait: Long, tab: String?, kind: String, work: (BRouterEngine.Cancel) -> JSONObject): JSONObject {
+  /**
+   * [behind]: work done ahead for a page (the other surfaces and styles of its trip, so switching to one is instant). It
+   * only ever takes a place that is free right now, never waits in the queue, and is given up as soon as any other
+   * search has to wait for its place: it never makes anyone's own search slower.
+   */
+  private fun inTurn(places: Int, wait: Long, tab: String?, kind: String, behind: Boolean = false, work: (BRouterEngine.Cancel) -> JSONObject): JSONObject {
     stats.asked(kind)
     val cancel = BRouterEngine.Cancel()
     val key = tab?.let { "$kind:$it" }
@@ -252,7 +259,15 @@ class Planner(
         // In short steps, so that a page that moved on frees its place in the queue at once.
         var got = false
         val until = t0 + TimeUnit.SECONDS.toNanos(wait)
-        while (!got && !cancel.cancelled && System.nanoTime() < until) got = running.tryAcquire(places, 200, TimeUnit.MILLISECONDS)
+        if (behind) {
+          got = running.tryAcquire(places)
+          if (!got) throw PlanRefused(503, "busy")
+          this.behind += cancel
+        } else while (!got && !cancel.cancelled && System.nanoTime() < until) {
+          got = running.tryAcquire(places)
+          // No place free: work done ahead gives up its place to this.
+          if (!got) { this.behind.forEach { it.cancel() }; got = running.tryAcquire(places, 200, TimeUnit.MILLISECONDS) }
+        }
         if (!got) {
           if (cancel.cancelled) { stats.superseded.incrementAndGet(); throw PlanRefused(409, "superseded") }
           stats.busy.incrementAndGet()
@@ -266,6 +281,7 @@ class Planner(
           if (e.code == "superseded") stats.superseded.incrementAndGet()
           throw e
         } finally {
+          if (behind) this.behind -= cancel
           running.release(places)
           stats.workedMillis.addAndGet((System.nanoTime() - t1) / 1_000_000)
         }

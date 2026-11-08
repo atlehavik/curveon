@@ -34,6 +34,9 @@ fun main() {
   // The roads, read from the segments, put an adventure's anchors on them (as in the app).
   val planner = Planner(BRouterEngine(segments, profiles, timeoutMillis = 45_000, memoryClassMb = 128), SurfaceReader(segments, File(profiles, "lookups.dat")), pois)
   val limiter = RateLimiter(perWindow = 120, windowMillis = 10 * 60_000)
+  // Routes worked out ahead (the trip's other surfaces and styles): counted apart, so they never use up the rider's own,
+  // and only ever on a place no one else needs (see Planner.inTurn).
+  val ahead = RateLimiter(perWindow = 300, windowMillis = 10 * 60_000)
   // An adventure or a roundtrip is dozens of routes: fewer of them.
   val adventures = RateLimiter(perWindow = 12, windowMillis = 10 * 60_000)
   // Places are a look in memory: many, as the rider moves the map about.
@@ -61,11 +64,14 @@ fun main() {
         path == "/api/health" -> send(ex, 200, "text/plain", "ok\n".toByteArray())
         // On the VPS itself only (Caddy always says who it forwards for): curl 127.0.0.1:8788/plan/api/stats
         path == "/api/stats" && forwarded == null && ex.remoteAddress.address.isLoopbackAddress -> sendJson(ex, 200, planner.stats.json())
-        path in setOf("/api/route", "/api/adventure", "/api/roundtrip") && ex.requestMethod == "POST" -> {
-          allow(if (path == "/api/route") limiter else adventures)
+        path in setOf("/api/route", "/api/ahead", "/api/adventure", "/api/roundtrip") && ex.requestMethod == "POST" -> {
+          allow(when (path) { "/api/route" -> limiter; "/api/ahead" -> ahead; else -> adventures })
           val body = ex.requestBody.use { it.readNBytes(256 * 1024) }
           val json = try { JSONObject(String(body)) } catch (_: Exception) { throw PlanRefused(400, "bad_request") }
-          sendJson(ex, 200, when (path) { "/api/adventure" -> planner.adventure(json); "/api/roundtrip" -> planner.roundtrip(json); else -> planner.plan(json) })
+          sendJson(ex, 200, when (path) {
+            "/api/adventure" -> planner.adventure(json); "/api/roundtrip" -> planner.roundtrip(json)
+            "/api/ahead" -> planner.plan(json, ahead = true); else -> planner.plan(json)
+          })
         }
         path == "/api/surface" && ex.requestMethod == "GET" -> {
           allow(places)

@@ -224,6 +224,7 @@ for (const [name, viewport] of Object.entries({ desktop: { width: 1400, height: 
     check(asked.length === n0, `desktop: back to Curvy came from the legs the page had (${asked.length - n0} requests)`);
 
     // The height profile: pointing at it shows the place on the map and how high it is.
+    await page.locator("#profile-canvas").scrollIntoViewIfNeeded();
     const pbox = await page.locator("#profile-canvas").boundingBox();
     await page.mouse.move(pbox.x + pbox.width / 2, pbox.y + 40);
     const hover = await page.evaluate(() => window.curveonMap.getStyle().sources["cv-hover"].data);
@@ -540,9 +541,18 @@ ${SECTIONS.map((s) => `<trk><name>${s[0]}</name><trkseg>${sectionLine(s).map(([l
     await page.screenshot({ path: `${out}/${name}-6-roundtrip.png` });
     check(await page.isHidden("#busy"), "desktop: the working chip goes when the roundtrip is there");
     // A click on the roundtrip's line offers a via point there.
-    const mid2 = await page.evaluate(() => {
-      const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates; const c = l[Math.floor(l.length / 3)];
-      m.jumpTo({ center: c, zoom: 11 }); const q = m.project(c); const r = m.getCanvas().getBoundingClientRect(); return { x: r.left + q.x, y: r.top + q.y };
+    // On the line, away from its points (a click on a point asks about the point).
+    const mid2 = await page.evaluate(async () => {
+      const m = window.curveonMap; const l = m.getStyle().sources.route.data.geometry.coordinates;
+      for (const f of [1 / 3, 0.38, 0.29, 0.44, 0.24, 0.5, 0.6]) {
+        const c = l[Math.floor(l.length * f)];
+        m.jumpTo({ center: c, zoom: 11 });
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const q = m.project(c); const r = m.getCanvas().getBoundingClientRect(); const at = { x: r.left + q.x, y: r.top + q.y };
+        const clear = [...document.querySelectorAll(".pin")].every((e) => { const b = e.getBoundingClientRect(); return Math.hypot(b.left + b.width / 2 - at.x, b.top + b.height / 2 - at.y) > 30; });
+        if (clear) return at;
+      }
+      return null;
     });
     await page.waitForTimeout(800);
     const pinsBefore = await page.$$eval(".pin", (e) => e.length);

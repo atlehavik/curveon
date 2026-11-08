@@ -223,6 +223,32 @@ class PlannerTest {
     assertEquals(2000, r.getInt("m"))
   }
 
+  @Test fun `work ahead takes only a free place, and gives it up when a route has to wait`() {
+    val started = CountDownLatch(1)
+    val p = Planner({ a, b, _, _ ->
+      if (started.count == 1L) {
+        started.countDown()
+        // As BRouter runs: until done, or until its search is given up.
+        val t0 = System.nanoTime()
+        while (System.nanoTime() - t0 < 5_000_000_000) { Thread.sleep(20); if (BRouterEngine.cancelled()) throw RoutingException(BRouterEngine.CANCELLED) }
+      }
+      straight(listOf(a, b))
+    }, parallel = 1, waitSeconds = 3)
+    val pool = Executors.newFixedThreadPool(1)
+    val ahead = pool.submit<String> { try { p.plan(JSONObject(body.toString()).put("tab", "page-ahead"), ahead = true); "done" } catch (e: PlanRefused) { e.code } }
+    assertTrue(started.await(2, TimeUnit.SECONDS))
+    // Its place taken: more work ahead is turned down at once, it never waits.
+    val t1 = System.nanoTime()
+    assertEquals("busy", refused { p.plan(JSONObject(body.toString()).put("tab", "page-other"), ahead = true) })
+    assertTrue((System.nanoTime() - t1) / 1e9 < 0.5)
+    // Someone's own route: the work ahead gives up its place.
+    val t0 = System.nanoTime()
+    p.plan(JSONObject(body.toString()).put("tab", "page-mine"))
+    assertTrue("the route waited for the work ahead", (System.nanoTime() - t0) / 1e9 < 2)
+    assertEquals("superseded", ahead.get(5, TimeUnit.SECONDS))
+    pool.shutdown()
+  }
+
   @Test fun `a page that asks again gives up its search before`() {
     val started = CountDownLatch(1)
     val p = Planner({ a, b, _, _ ->

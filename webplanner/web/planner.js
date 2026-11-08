@@ -285,6 +285,9 @@ let editing = null;
 let viewOnly = false;
 /** An adventure being drawn or looked for, while its box is open: { area: [[lat, lon]], ends: [start, destination], variant, drawing, stroke }. */
 let adv = null;
+// The mouse pointer (see showPointer): what is under it ("line", "place", "track" or nothing), and whether anything is dragged.
+let hover = null;
+let grabbing = false;
 let advCtl = null;
 /** The via points in a row shown one by one in the list, not as one line. */
 let viasOpen = false;
@@ -526,11 +529,12 @@ function drawMarkers() {
     const e = el("div", "pin " + kind + (isNight(i) ? " night" : ""), pinText(kind, i));
     e.title = p.name || t(kind === "via" ? "via" : "map_point");
     const m = new maplibregl.Marker({ element: e, draggable: true }).setLngLat([p.lon, p.lat]).addTo(map);
-    m.on("dragstart", () => { draggingLine = true; closeMenu(); });
+    m.on("dragstart", () => { draggingLine = true; closeMenu(); setGrabbing(true); });
     m.on("drag", () => drawDrag(points[i - 1], m.getLngLat(), points[i + 1]));
     m.on("dragend", async () => {
       const ll = m.getLngLat();
       drawDrag();
+      setGrabbing(false);
       const moved = (points[i] = { ...points[i], lat: ll.lat, lon: ll.lng });
       setTimeout(() => { draggingLine = false; }, 50);
       changed();
@@ -745,7 +749,30 @@ function bestLeg(p) {
 
 // ---------- The little menu on the map ----------
 let menu = null;
-function closeMenu() { menu?.remove(); menu = null; }
+function closeMenu() { menu?.remove(); menu = null; showPointer(); }
+
+// ---------- The mouse pointer ----------
+// It shows what a click or a drag does where it is, never a hand where there is nothing to take hold of: a cross on the
+// empty map (a click puts a place there; dragging moves the map), an open hand on the route (drag it through another
+// road), a pointing finger on what opens when clicked (a place on the map's layers, a track of an open GPX file), the
+// plain arrow while a menu is open (a click only closes it), and a closed hand while anything is dragged. The points
+// themselves have the open hand in the style sheet.
+function pointerShape() {
+  if (grabbing) return "grabbing";
+  if (adv?.drawing) return "crosshair";
+  if (hover === "line") return "grab";
+  if (menu) return "default";
+  if (hover === "place" || hover === "track") return "pointer";
+  return "crosshair";
+}
+function showPointer() {
+  map.getCanvas().style.cursor = pointerShape();
+  // Over a point or a menu too while dragging, not only over the map.
+  document.body.classList.toggle("grabbing", grabbing);
+}
+function setGrabbing(on) { grabbing = on; showPointer(); }
+/** The line can be taken hold of: a trip of two places or more, or a line opened from a device (it becomes a trip). */
+const lineTakes = () => !!result && (viewOnly || points.length >= 2);
 
 /**
  * A menu at [ll] with a [title], [items] ([label, action, class]; an action that returns "keep" leaves it open) and
@@ -772,6 +799,7 @@ function showMenu(ll, title, items, notes, infoFirst = false) {
   const anchor = innerWidth <= 640 ? (y < 220 ? "top" : "bottom") : undefined;
   menu = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: "curveon-menu", offset: 16, maxWidth: "280px", anchor })
     .setLngLat(ll).setDOMContent(box).addTo(map);
+  showPointer();
   return head;
 }
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
@@ -937,14 +965,13 @@ map.getCanvasContainer().addEventListener("mousedown", (e) => {
   if (e.button !== 1) return;
   e.preventDefault(); // no autoscroll
   let last = [e.clientX, e.clientY];
-  const cursor = map.getCanvas().style.cursor;
-  map.getCanvas().style.cursor = "grabbing";
+  setGrabbing(true);
   const move = (ev) => { map.panBy([last[0] - ev.clientX, last[1] - ev.clientY], { animate: false }); last = [ev.clientX, ev.clientY]; };
   const up = (ev) => {
     if (ev.button !== 1) return;
     removeEventListener("mousemove", move);
     removeEventListener("mouseup", up);
-    map.getCanvas().style.cursor = cursor;
+    setGrabbing(false);
   };
   addEventListener("mousemove", move);
   addEventListener("mouseup", up);
@@ -977,7 +1004,7 @@ map.on("click", (e) => {
 });
 // Pointing at a track of an open GPX file: it stands out, with its name and length beside the pointer.
 const fileTip = new maplibregl.Popup({ closeButton: false, closeOnClick: false, className: "file-tip", offset: 14, maxWidth: "none" });
-let hotFile = null, fileCursor = false;
+let hotFile = null;
 function hotTrack(i) {
   if (hotFile === i) return;
   if (hotFile != null) map.setFeatureState({ source: "cv-file", id: hotFile }, { hot: false });
@@ -987,19 +1014,29 @@ function hotTrack(i) {
 function fileTipOff() {
   hotTrack(null);
   fileTip.remove();
-  if (fileCursor) { map.getCanvas().style.cursor = ""; fileCursor = false; }
 }
 map.on("mousemove", "cv-file-hit", (e) => {
   const g = gpxFile?.tracks[e.features[0]?.properties.i];
   if (!g || adv?.drawing || draggingLine || (result && map.queryRenderedFeatures(e.point, { layers: ["route-hit"] }).length)) { fileTipOff(); return; }
   hotTrack(e.features[0].properties.i);
-  map.getCanvas().style.cursor = "pointer";
-  fileCursor = true;
   fileTip.setLngLat(e.lngLat).setText(`${g.name} · ${kmText(g.m)}`).addTo(map);
 });
 map.on("mouseleave", "cv-file-hit", fileTipOff);
-map.on("mouseenter", "cv-pois", () => { if (!adv?.drawing) map.getCanvas().style.cursor = "pointer"; });
-map.on("mouseleave", "cv-pois", () => { if (!adv?.drawing) map.getCanvas().style.cursor = ""; });
+// What is under the pointer, for its shape: the same order a click goes by (the route before a place, a place before a
+// track of the file).
+const HOVER_LAYERS = [["route-hit", "line"], ["cv-pois", "place"], ["cv-file-hit", "track"]];
+map.on("mousemove", (e) => {
+  const layers = HOVER_LAYERS.map(([id]) => id).filter((id) => map.getLayer(id));
+  const ids = new Set(layers.length ? map.queryRenderedFeatures(e.point, { layers }).map((f) => f.layer.id) : []);
+  const found = HOVER_LAYERS.find(([id, what]) => ids.has(id) && (what !== "line" || lineTakes()));
+  const now = found ? found[1] : null;
+  if (now !== hover) { hover = now; showPointer(); }
+});
+map.getCanvas().addEventListener("mouseleave", () => { hover = null; showPointer(); });
+// Moving the map by dragging it: the closed hand until let go.
+map.on("dragstart", () => setGrabbing(true));
+map.on("dragend", () => setGrabbing(false));
+if (map.loaded()) showPointer(); else map.once("load", showPointer);
 // A right-click is the usual context menu: what is there (the road, the place, how far along the route), to copy or zoom.
 map.on("contextmenu", (e) => {
   e.preventDefault();
@@ -1071,8 +1108,6 @@ function infoMenu(ll, pt) {
 }
 
 // Drag the line: a through-point goes in where it was grabbed, on the leg it belongs to.
-map.on("mouseenter", "route-hit", () => { map.getCanvas().style.cursor = "grab"; });
-map.on("mouseleave", "route-hit", () => { map.getCanvas().style.cursor = ""; });
 map.on("mousedown", "route-hit", (e) => startLineDrag(e));
 map.on("touchstart", "route-hit", (e) => { if (e.points.length === 1) startLineDrag(e); });
 
@@ -1090,6 +1125,7 @@ function startLineDrag(e) {
     if (!moved && Math.hypot(ev.point.x - from.x, ev.point.y - from.y) <= 4) return;
     if (!moved) {
       moved = true;
+      setGrabbing(true);
       if (viewOnly) lineToTrip();
       leg = legAt(at);
       ghost = new maplibregl.Marker({ element: el("div", "pin via") }).setLngLat(ev.lngLat).addTo(map);
@@ -1099,6 +1135,7 @@ function startLineDrag(e) {
   };
   const up = () => {
     map.off("mousemove", move); map.off("touchmove", move);
+    setGrabbing(false);
     if (!moved) {
       // A click on the line: a via point or a stop there? Asked here, not by the click that follows, which some
       // browsers (Chrome, Edge) never send after a press on the line.
@@ -1175,6 +1212,8 @@ function changed() {
   drawSummary();
   clearTimeout(routeTimer);
   routeTimer = setTimeout(route, 200);
+  // Nothing more worked out ahead for the trip as it was (what is on its way still comes, into the cache).
+  aheadRun++;
 }
 
 /**
@@ -1216,7 +1255,10 @@ class Refused extends Error { constructor(code, minutes) { super(code); this.cod
  * The legs between [pts] with options [o], from the cache where it has them and from the service where not ([onLeg]
  * hears of each as it comes). [tab] names the search, so the service drops this page's search before.
  */
-async function legsFor(pts, o, signal, tab, onLeg = () => {}) {
+async function legsFor(pts, o, signal, tab, onLeg = () => {}, ahead = false) {
+  // Being worked out ahead right now: wait for that instead of asking for it twice.
+  const pending = !ahead && aheadPending.get(tripKey(pts, o));
+  if (pending) await pending.catch(() => {});
   const legs = [];
   let i = 0;
   while (i < pts.length - 1) {
@@ -1226,7 +1268,7 @@ async function legsFor(pts, o, signal, tab, onLeg = () => {}) {
     // Ask for the legs from here up to one the page already has some version of (it most likely still fits).
     let j = i + 1;
     while (j < pts.length - 1 && !legPairs.has(pairKey(pts[j], pts[j + 1], o))) j++;
-    const r = await fetch(API, {
+    const r = await fetch(ahead ? BASE + "api/ahead" : API, {
       method: "POST", signal, headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ points: pts.slice(i, j + 1).map((p) => [p.lat, p.lon]), options: o, heading, legs: true, tab }),
     });
@@ -1240,6 +1282,46 @@ async function legsFor(pts, o, signal, tab, onLeg = () => {}) {
     i = j;
   }
   return legs;
+}
+
+// ---------- Working ahead ----------
+// As in the app: once a trip's route came quickly, the same trip is worked out with the other surfaces and road styles
+// in the background, one at a time, into the leg cache, so picking another surface or style (or comparing them) shows
+// it at once. The service gives this only a place no one else needs, and takes it back as soon as anyone waits (its
+// api/ahead). It stops when the trip changes; one still on its way when the rider picks it is waited for, not asked again.
+const AHEAD_IF_UNDER_MS = 10000;
+const AHEAD_SURFACES = ["GRAVEL", "OFFROAD", "MIXED", "PAVED"];
+const aheadPending = new Map(); // tripKey → its legs on their way
+const tripKey = (pts, o) => pts.map(ll6).join("|") + JSON.stringify(o);
+let aheadRun = 0;
+
+/** Every leg of [pts] with [o] is in the cache already. */
+function haveAll(pts, o) {
+  let heading = null;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const l = legCache.get(legKey(pts[i], pts[i + 1], o, heading));
+    if (!l) return false;
+    heading = l.arrive;
+  }
+  return true;
+}
+
+/** The trip [pts] with every other surface and style: the chosen style first, then the others with the chosen surface first. */
+async function workAhead(pts) {
+  const run = ++aheadRun;
+  const now = routeOptions();
+  const styles = [now.style, ...STYLES.map(([s]) => s).filter((s) => s !== now.style)];
+  const surfaces = [now.surface, ...AHEAD_SURFACES.filter((s) => s !== now.surface)];
+  for (const style of styles) for (const surface of surfaces) {
+    if (style === now.style && surface === now.surface) continue;
+    if (run !== aheadRun) return;
+    const o = routeOptions(style, surface), key = tripKey(pts, o);
+    if (aheadPending.has(key) || haveAll(pts, o)) continue;
+    const legs = legsFor(pts, o, undefined, TAB, undefined, true);
+    aheadPending.set(key, legs);
+    // Busy, too many, given up for someone's own search, offline: no more until the next change.
+    try { await legs; } catch { return; } finally { aheadPending.delete(key); }
+  }
 }
 
 /** One trip from its legs: the line and heights end to end, where each point is on it (cuts), and the numbers. */
@@ -1286,7 +1368,7 @@ async function route() {
   routeCtl?.abort();
   if (points.length < 2) { setStatus(""); return; }
   const ctl = (routeCtl = new AbortController());
-  const pts = points.slice(), o = routeOptions();
+  const pts = points.slice(), o = routeOptions(), t0 = Date.now();
   setStatus(t("routing"));
   const slow = setTimeout(() => { if (routeCtl === ctl) setStatus(t("queued")); }, 6000);
   const done = busy(t("routing"), 1200);
@@ -1305,6 +1387,8 @@ async function route() {
     drawSummary();
     // A road style picked while comparing: the comparison stays, from the legs already here.
     if (compareKeep) { compareKeep = false; openCompare(); }
+    // Quick to work out: the other surfaces and styles too, in the background.
+    if (!viewOnly && !adv && Date.now() - t0 <= AHEAD_IF_UNDER_MS) workAhead(pts);
   } catch (e) {
     if (routeCtl !== ctl || e.name === "AbortError" || e.code === "superseded") return;
     drawRoute();
@@ -1343,7 +1427,7 @@ function startDrawing() {
   advCtl?.abort();
   Object.assign(adv, { drawing: true, stroke: [], area: null });
   map.dragPan.disable();
-  map.getCanvas().style.cursor = "crosshair";
+  showPointer();
   drawArea();
   // On the map itself, where the rider looks next: what to do now, and a way out.
   $("draw-text").textContent = t(adv.loop ? (touchy ? "loop_draw_touch" : "loop_draw") : touchy ? "adv_draw_touch" : "adv_draw");
@@ -1358,8 +1442,8 @@ function startDrawing() {
 function stopDrawing() {
   $("draw").hidden = true;
   map.dragPan.enable();
-  map.getCanvas().style.cursor = "";
   if (adv) adv.drawing = false;
+  showPointer();
 }
 
 function closeAdventure() {
@@ -1506,10 +1590,11 @@ $("adv-time").addEventListener("change", () => {
   if (adv?.area) findAdventure();
 });
 
-function routeOptions() {
-  return { style: options.style, surface: options.surface, ferries: options.ferries, motorways: options.motorways, trunk: options.trunk, toll: false,
+/** The options for the service: the rider's, or with another road [style] or [surface] (for working ahead). */
+function routeOptions(style = options.style, surface = options.surface) {
+  return { style, surface, ferries: options.ferries, motorways: options.motorways, trunk: options.trunk, toll: false,
     // How far off the ordinary route for gravel: only with Gravel or Offroad, as in the app.
-    ...(gravelSurface() && options.gravelReachKm ? { gravelReachKm: options.gravelReachKm } : {}) };
+    ...((surface === "GRAVEL" || surface === "OFFROAD") && options.gravelReachKm ? { gravelReachKm: options.gravelReachKm } : {}) };
 }
 const gravelSurface = () => options.surface === "GRAVEL" || options.surface === "OFFROAD";
 
