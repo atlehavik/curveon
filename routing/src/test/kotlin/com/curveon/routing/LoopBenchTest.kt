@@ -31,6 +31,8 @@ class LoopBenchTest {
                 LatLon(60.25, 5.00), LatLon(60.45, 4.98))) to null,
             Triple("voss", LatLon(60.628, 6.42), listOf(LatLon(60.80, 6.20), LatLon(60.80, 6.70), LatLon(60.55, 6.80), LatLon(60.45, 6.50),
                 LatLon(60.50, 6.15))) to null,
+            // The rider's ellipse 2026-11-08 (Bømlo, Stord, Fitjar, Huftarøy): gave a ferry to Austevoll and straight back.
+            Triple("huftarøy", LatLon(59.795, 5.21), (0 until 48).map { k -> val a = 2 * Math.PI * k / 48; LatLon(59.915 + 0.21 * Math.sin(a), 5.265 + 0.17 * Math.cos(a)) }) to null,
             Triple("bømlo stord", LatLon(59.794, 5.144), listOf(LatLon(59.95, 5.10), LatLon(59.95, 5.60), LatLon(59.70, 5.65), LatLon(59.60, 5.30),
                 LatLon(59.65, 5.05))) to null,
         )

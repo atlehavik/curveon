@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +43,28 @@ internal fun <T> SettingChoice(options: List<T>, selected: T, label: @Composable
 @Composable
 internal fun SectionTitle(text: String) {
     Text(text.uppercase(), color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+}
+
+/**
+ * A group of settings under a title ([SectionTitle]'s look, with an arrow): tap the title to fold the group away or
+ * open it again. Open unless [startFolded]; what the rider folds stays folded (by [key]) until opened again.
+ */
+@Composable
+internal fun Group(title: String, key: String, startFolded: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    val prefs = androidx.compose.ui.platform.LocalContext.current.getSharedPreferences("settings_groups", android.content.Context.MODE_PRIVATE)
+    var open by remember(key) { mutableStateOf(prefs.getBoolean(key, !startFolded)) }
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 36.dp).clip(RoundedCornerShape(8.dp))
+            .clickable { open = !open; prefs.edit().putBoolean(key, open).apply() }.testTag("settings_group_$key"),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(Modifier.weight(1f)) { SectionTitle(title) }
+        androidx.compose.material3.Icon(
+            if (open) androidx.compose.material.icons.Icons.Default.ExpandLess else androidx.compose.material.icons.Icons.Default.ExpandMore,
+            stringResource(if (open) R.string.settings_group_fold else R.string.settings_group_open), tint = TextMuted, modifier = Modifier.size(22.dp)
+        )
+    }
+    if (open) Column(verticalArrangement = Arrangement.spacedBy(18.dp), content = content)
 }
 
 /**

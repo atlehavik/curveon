@@ -67,6 +67,7 @@ data class SettingsState(
     val gravelHeatButton: GravelHeatButton = GravelHeatButton.OFF,
     val buildings3d: Boolean = false,
     val quietTowns: Boolean = true,
+    val showZoom: Boolean = false,
     val showAltitude: Boolean,
     val showClock: Boolean = true,
     val showBattery: Boolean = false,
@@ -119,6 +120,7 @@ class SettingsActions(
     val onGravelHeatButton: (GravelHeatButton) -> Unit = {},
     val onBuildings3d: (Boolean) -> Unit = {},
     val onQuietTowns: (Boolean) -> Unit = {},
+    val onShowZoom: (Boolean) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
     val onShowClock: (Boolean) -> Unit = {},
     val onShowBattery: (Boolean) -> Unit = {},
@@ -191,126 +193,150 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                 when (which) {
                     SettingsTab.REMOTE -> Page { LocalRemote.current?.let { RemoteSettingsPage(it) } }
                     SettingsTab.DISPLAY -> Page {
-                        if (AppLanguage.canChoose) Setting(stringResource(R.string.settings_language), stringResource(R.string.settings_language_hint)) {
-                            Choice(AppLanguage.entries, state.language, { it.label }, actions.onLanguage)
-                        }
-                        Setting(stringResource(R.string.settings_speed), stringResource(R.string.settings_speed_hint)) {
-                            Choice(listOf(false, true), state.useMph, { if (it) "mph" else "km/h" }, actions.onUnits)
-                        }
-                        Setting(stringResource(R.string.settings_screen_lock), stringResource(R.string.settings_screen_lock_hint)) {
-                            Choice(com.curveon.ScreenLock.entries, state.screenLock, { stringResource(it.label) }, actions.onScreenLock)
-                        }
-                        Setting(stringResource(R.string.settings_map), stringResource(R.string.settings_map_hint)) {
-                            Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
-                        }
-                        Setting(stringResource(R.string.settings_roads), stringResource(R.string.settings_roads_hint)) {
-                            Choice(RoadContrast.entries, state.roadContrast, { stringResource(it.label) }, actions.onRoadContrast)
-                        }
-                        Setting(stringResource(R.string.settings_map_detail), stringResource(R.string.settings_map_detail_hint)) {
-                            Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)
-                        }
-                        Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = {
-                            if (state.surfaceMode != SurfaceMode.OFF) SurfaceColours(state.surfaceMode, state.mapDark)
-                        }) {
-                            Choice(SurfaceMode.entries, state.surfaceMode, { stringResource(it.label) }, actions.onSurfaceMode)
-                        }
-                        Setting(stringResource(R.string.settings_gravel_heat), stringResource(R.string.settings_gravel_heat_hint)) {
-                            CockpitSwitch(state.gravelHeatButton == GravelHeatButton.MAP, onCheckedChange = {
-                                actions.onGravelHeatButton(if (it) GravelHeatButton.MAP else GravelHeatButton.OFF)
-                            })
-                        }
-                        Setting(stringResource(R.string.settings_quiet_towns), stringResource(R.string.settings_quiet_towns_hint)) {
-                            CockpitSwitch(state.quietTowns, actions.onQuietTowns)
-                        }
-                        Setting(stringResource(R.string.settings_buildings_3d), stringResource(R.string.settings_buildings_3d_hint)) {
-                            CockpitSwitch(state.buildings3d, actions.onBuildings3d)
-                        }
-                        Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint)) {
-                            CockpitSwitch(state.showAltitude, actions.onShowAltitude)
-                        }
-                        Setting(stringResource(R.string.settings_clock), stringResource(R.string.settings_clock_hint)) {
-                            CockpitSwitch(state.showClock, actions.onShowClock)
-                        }
-                        Setting(stringResource(R.string.settings_battery), stringResource(R.string.settings_battery_hint)) {
-                            CockpitSwitch(state.showBattery, actions.onShowBattery)
-                        }
-                        if (state.phoneBatteryOffered) Setting(stringResource(R.string.settings_phone_battery), stringResource(R.string.settings_phone_battery_hint)) {
-                            CockpitSwitch(state.showPhoneBattery, actions.onShowPhoneBattery)
-                        }
-                        Setting(stringResource(R.string.settings_speed_sign), stringResource(R.string.settings_speed_sign_hint)) {
-                            Choice(com.curveon.ui.viewmodel.SpeedSignSize.entries, state.speedSign, { stringResource(it.label) }, actions.onSpeedSign)
-                        }
-                        Setting(stringResource(R.string.settings_side_road_signs), stringResource(R.string.settings_side_road_signs_hint)) {
-                            CockpitSwitch(state.speedSignsSideRoads, actions.onSpeedSignsSideRoads)
-                        }
-                        Setting(stringResource(R.string.settings_road_info), stringResource(R.string.settings_road_info_hint)) {
-                            CockpitSwitch(state.showRoadInfo, actions.onShowRoadInfo)
-                        }
-                        Setting(stringResource(R.string.settings_road_size), stringResource(R.string.settings_road_size_hint)) {
-                            Choice(com.curveon.ui.viewmodel.RoadCardSize.entries, state.roadCardSize, { stringResource(it.label) }, actions.onRoadCardSize)
-                        }
-                        Setting(stringResource(R.string.settings_map_media), stringResource(R.string.settings_map_media_hint)) {
-                            CockpitSwitch(state.showMapMedia, actions.onShowMapMedia)
-                        }
-                        SectionTitle(stringResource(R.string.settings_map_layers))
-                        Text(stringResource(R.string.settings_map_layers_hint), color = TextMuted, fontSize = 13.sp)
-                        MapLayerChips(state.mapLayers, actions.onMapLayer)
-                    }
-                    SettingsTab.NAVIGATION -> Page {
-                        Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint)) {
-                            CockpitSwitch(state.autoZoom, actions.onAutoZoom)
-                        }
-                        Setting(stringResource(R.string.settings_arrow), stringResource(R.string.settings_arrow_hint)) {
-                            ArrowLeadStepper(state.arrowLead, actions.onArrowLead)
-                        }
-                        Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
-                            CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
-                        }
-                        Setting(stringResource(R.string.settings_weather), stringResource(R.string.settings_weather_hint)) {
-                            CockpitSwitch(state.weather, actions.onWeather)
-                        }
-                        SectionTitle(stringResource(R.string.settings_sound_title))
-                        val voice = state.navAlerts == com.curveon.data.routing.NavAlerts.VOICE
-                        Setting(stringResource(R.string.settings_nav_alerts),
-                            stringResource(if (voice) R.string.settings_nav_alerts_voice_hint else R.string.settings_nav_alerts_hint)) {
-                            Choice(com.curveon.data.routing.NavAlerts.entries, state.navAlerts, {
-                                stringResource(when (it) {
-                                    com.curveon.data.routing.NavAlerts.OFF -> R.string.nav_alerts_off
-                                    com.curveon.data.routing.NavAlerts.SOUNDS -> R.string.nav_alerts_sounds
-                                    com.curveon.data.routing.NavAlerts.VOICE -> R.string.nav_alerts_voice
-                                })
-                            }, actions.onNavAlerts)
-                        }
-                        if (voice) {
-                            state.voiceMissing?.let { VoiceDownloadTip(it, actions.onInstallVoice) }
-                            Setting(stringResource(R.string.settings_voice_heads_up), stringResource(R.string.settings_voice_heads_up_hint)) {
-                                CockpitSwitch(state.voiceHeadsUp, actions.onVoiceHeadsUp)
+                        Group(stringResource(R.string.settings_group_general), "display_general") {
+                            if (AppLanguage.canChoose) Setting(stringResource(R.string.settings_language), stringResource(R.string.settings_language_hint)) {
+                                Choice(AppLanguage.entries, state.language, { it.label }, actions.onLanguage)
+                            }
+                            Setting(stringResource(R.string.settings_speed), stringResource(R.string.settings_speed_hint)) {
+                                Choice(listOf(false, true), state.useMph, { if (it) "mph" else "km/h" }, actions.onUnits)
+                            }
+                            Setting(stringResource(R.string.settings_screen_lock), stringResource(R.string.settings_screen_lock_hint)) {
+                                Choice(com.curveon.ScreenLock.entries, state.screenLock, { stringResource(it.label) }, actions.onScreenLock)
                             }
                         }
-                        Setting(stringResource(R.string.settings_off_route_alerts), stringResource(R.string.settings_off_route_alerts_hint)) {
-                            CockpitSwitch(state.offRouteAlerts, actions.onOffRouteAlerts)
+                        Group(stringResource(R.string.settings_group_map), "display_map") {
+                            Setting(stringResource(R.string.settings_map), stringResource(R.string.settings_map_hint)) {
+                                Choice(MapTheme.entries, state.mapTheme, { stringResource(it.label) }, actions.onMapTheme)
+                            }
+                            Setting(stringResource(R.string.settings_roads), stringResource(R.string.settings_roads_hint)) {
+                                Choice(RoadContrast.entries, state.roadContrast, { stringResource(it.label) }, actions.onRoadContrast)
+                            }
+                            Setting(stringResource(R.string.settings_map_detail), stringResource(R.string.settings_map_detail_hint)) {
+                                Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)
+                            }
+                            Setting(stringResource(R.string.settings_quiet_towns), stringResource(R.string.settings_quiet_towns_hint)) {
+                                CockpitSwitch(state.quietTowns, actions.onQuietTowns)
+                            }
+                            Setting(stringResource(R.string.settings_buildings_3d), stringResource(R.string.settings_buildings_3d_hint)) {
+                                CockpitSwitch(state.buildings3d, actions.onBuildings3d)
+                            }
+                            Setting(stringResource(R.string.settings_map_media), stringResource(R.string.settings_map_media_hint)) {
+                                CockpitSwitch(state.showMapMedia, actions.onShowMapMedia)
+                            }
+                        }
+                        Group(stringResource(R.string.settings_group_gravel), "display_gravel") {
+                            Setting(stringResource(R.string.settings_surfaces), stringResource(R.string.settings_surfaces_hint), below = {
+                                if (state.surfaceMode != SurfaceMode.OFF) SurfaceColours(state.surfaceMode, state.mapDark)
+                            }) {
+                                Choice(SurfaceMode.entries, state.surfaceMode, { stringResource(it.label) }, actions.onSurfaceMode)
+                            }
+                            Setting(stringResource(R.string.settings_gravel_heat), stringResource(R.string.settings_gravel_heat_hint)) {
+                                CockpitSwitch(state.gravelHeatButton == GravelHeatButton.MAP, onCheckedChange = {
+                                    actions.onGravelHeatButton(if (it) GravelHeatButton.MAP else GravelHeatButton.OFF)
+                                })
+                            }
+                        }
+                        Group(stringResource(R.string.settings_group_by_speed), "display_by_speed") {
+                            Setting(stringResource(R.string.settings_altitude), stringResource(R.string.settings_altitude_hint)) {
+                                CockpitSwitch(state.showAltitude, actions.onShowAltitude)
+                            }
+                            Setting(stringResource(R.string.settings_clock), stringResource(R.string.settings_clock_hint)) {
+                                CockpitSwitch(state.showClock, actions.onShowClock)
+                            }
+                            Setting(stringResource(R.string.settings_battery), stringResource(R.string.settings_battery_hint)) {
+                                CockpitSwitch(state.showBattery, actions.onShowBattery)
+                            }
+                            if (state.phoneBatteryOffered) Setting(stringResource(R.string.settings_phone_battery), stringResource(R.string.settings_phone_battery_hint)) {
+                                CockpitSwitch(state.showPhoneBattery, actions.onShowPhoneBattery)
+                            }
+                            Setting(stringResource(R.string.settings_road_info), stringResource(R.string.settings_road_info_hint)) {
+                                CockpitSwitch(state.showRoadInfo, actions.onShowRoadInfo)
+                            }
+                            Setting(stringResource(R.string.settings_road_size), stringResource(R.string.settings_road_size_hint)) {
+                                Choice(com.curveon.ui.viewmodel.RoadCardSize.entries, state.roadCardSize, { stringResource(it.label) }, actions.onRoadCardSize)
+                            }
+                        }
+                        Group(stringResource(R.string.settings_group_speed_signs), "display_speed_signs") {
+                            Setting(stringResource(R.string.settings_speed_sign), stringResource(R.string.settings_speed_sign_hint)) {
+                                Choice(com.curveon.ui.viewmodel.SpeedSignSize.entries, state.speedSign, { stringResource(it.label) }, actions.onSpeedSign)
+                            }
+                            Setting(stringResource(R.string.settings_side_road_signs), stringResource(R.string.settings_side_road_signs_hint)) {
+                                CockpitSwitch(state.speedSignsSideRoads, actions.onSpeedSignsSideRoads)
+                            }
+                        }
+                        Group(stringResource(R.string.settings_map_layers), "display_map_layers") {
+                            Text(stringResource(R.string.settings_map_layers_hint), color = TextMuted, fontSize = 13.sp)
+                            MapLayerChips(state.mapLayers, actions.onMapLayer)
+                        }
+                        Group(stringResource(R.string.settings_group_advanced), "display_advanced", startFolded = true) {
+                            Setting(stringResource(R.string.settings_show_zoom), stringResource(R.string.settings_show_zoom_hint)) {
+                                CockpitSwitch(state.showZoom, actions.onShowZoom)
+                            }
+                        }
+                    }
+                    SettingsTab.NAVIGATION -> Page {
+                        Group(stringResource(R.string.settings_group_riding), "nav_riding") {
+                            Setting(stringResource(R.string.settings_auto_zoom), stringResource(R.string.settings_auto_zoom_hint)) {
+                                CockpitSwitch(state.autoZoom, actions.onAutoZoom)
+                            }
+                            Setting(stringResource(R.string.settings_arrow), stringResource(R.string.settings_arrow_hint)) {
+                                ArrowLeadStepper(state.arrowLead, actions.onArrowLead)
+                            }
+                        }
+                        Group(stringResource(R.string.settings_group_trips), "nav_trips") {
+                            Setting(stringResource(R.string.settings_auto_follow), stringResource(R.string.settings_auto_follow_hint)) {
+                                CockpitSwitch(state.autoFollowTracks, actions.onAutoFollow)
+                            }
+                            Setting(stringResource(R.string.settings_weather), stringResource(R.string.settings_weather_hint)) {
+                                CockpitSwitch(state.weather, actions.onWeather)
+                            }
+                        }
+                        Group(stringResource(R.string.settings_sound_title), "nav_sound") {
+                            val voice = state.navAlerts == com.curveon.data.routing.NavAlerts.VOICE
+                            Setting(stringResource(R.string.settings_nav_alerts),
+                                stringResource(if (voice) R.string.settings_nav_alerts_voice_hint else R.string.settings_nav_alerts_hint)) {
+                                Choice(com.curveon.data.routing.NavAlerts.entries, state.navAlerts, {
+                                    stringResource(when (it) {
+                                        com.curveon.data.routing.NavAlerts.OFF -> R.string.nav_alerts_off
+                                        com.curveon.data.routing.NavAlerts.SOUNDS -> R.string.nav_alerts_sounds
+                                        com.curveon.data.routing.NavAlerts.VOICE -> R.string.nav_alerts_voice
+                                    })
+                                }, actions.onNavAlerts)
+                            }
+                            if (voice) {
+                                state.voiceMissing?.let { VoiceDownloadTip(it, actions.onInstallVoice) }
+                                Setting(stringResource(R.string.settings_voice_heads_up), stringResource(R.string.settings_voice_heads_up_hint)) {
+                                    CockpitSwitch(state.voiceHeadsUp, actions.onVoiceHeadsUp)
+                                }
+                            }
+                            Setting(stringResource(R.string.settings_off_route_alerts), stringResource(R.string.settings_off_route_alerts_hint)) {
+                                CockpitSwitch(state.offRouteAlerts, actions.onOffRouteAlerts)
+                            }
                         }
                         val o = state.offRoute
-                        SectionTitle(stringResource(R.string.settings_wrong_turn_title))
-                        Setting(stringResource(R.string.settings_off_route), stringResource(R.string.settings_off_route_hint)) {
-                            Choice(listOf(25, 40, 60, 100), o.offRouteMeters, { stringResource(R.string.distance_m, it.toDouble()) }, { actions.onOffRoute(o.copy(offRouteMeters = it)) })
-                        }
-                        Text(stringResource(R.string.settings_rejoin_explain), color = TextMuted, fontSize = 13.sp)
-                        Setting(stringResource(R.string.settings_rejoin_minutes), stringResource(R.string.settings_rejoin_minutes_hint)) {
-                            Choice(listOf(1, 3, 5, 10), o.maxExtraMinutes, { stringResource(R.string.minutes_short, it) }, { actions.onOffRoute(o.copy(maxExtraMinutes = it)) })
-                        }
-                        Setting(stringResource(R.string.settings_rejoin_percent), stringResource(R.string.settings_rejoin_percent_hint)) {
-                            Choice(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
+                        Group(stringResource(R.string.settings_wrong_turn_title), "nav_wrong_turn") {
+                            Setting(stringResource(R.string.settings_off_route), stringResource(R.string.settings_off_route_hint)) {
+                                Choice(listOf(25, 40, 60, 100), o.offRouteMeters, { stringResource(R.string.distance_m, it.toDouble()) }, { actions.onOffRoute(o.copy(offRouteMeters = it)) })
+                            }
+                            Text(stringResource(R.string.settings_rejoin_explain), color = TextMuted, fontSize = 13.sp)
+                            Setting(stringResource(R.string.settings_rejoin_minutes), stringResource(R.string.settings_rejoin_minutes_hint)) {
+                                Choice(listOf(1, 3, 5, 10), o.maxExtraMinutes, { stringResource(R.string.minutes_short, it) }, { actions.onOffRoute(o.copy(maxExtraMinutes = it)) })
+                            }
+                            Setting(stringResource(R.string.settings_rejoin_percent), stringResource(R.string.settings_rejoin_percent_hint)) {
+                                Choice(listOf(5, 10, 20, 30), o.maxExtraPercent, { "$it %" }, { actions.onOffRoute(o.copy(maxExtraPercent = it)) })
+                            }
                         }
                         // Kept in public releases too: handy for showing and trying Curveon.
-                        Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
-                            CockpitSwitch(state.demoMode, actions.onDemoMode, accent = NeonAmber)
+                        Group(stringResource(R.string.settings_group_demo), "nav_demo") {
+                            Setting(stringResource(R.string.settings_demo_ride), stringResource(R.string.settings_demo_ride_hint)) {
+                                CockpitSwitch(state.demoMode, actions.onDemoMode, accent = NeonAmber)
+                            }
                         }
                     }
                     SettingsTab.ENGINE -> Page { EngineSettings(state, actions) }
                     SettingsTab.PHONE -> PhoneLinkContent(phone, Modifier.fillMaxSize())
                     SettingsTab.DATA -> Page {
-                        SectionTitle(stringResource(R.string.settings_offline_maps))
+                        Group(stringResource(R.string.settings_offline_maps), "data_maps") {
                         if (state.maps.isEmpty()) Text(stringResource(R.string.maps_none), color = TextSecondary, fontSize = 14.sp)
                         state.maps.forEach { m -> MapRow(m, state.mapDownload, state.mapQueue, actions) { confirmDelete = m } }
                         // Downloads queued from the country list that aren't installed yet.
@@ -326,13 +352,16 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                         Text(stringResource(R.string.settings_map_attribution),
                             color = TextMuted, fontSize = 12.sp)
                         TextButton(onClick = actions.onImportMap) { Text(stringResource(R.string.settings_import_pmtiles), color = ElectricCyan) }
-
-                        SectionTitle(stringResource(R.string.settings_routing_data))
-                        Text(state.routingDataStatus, color = TextSecondary, fontSize = 13.sp)
-                        SectionTitle(stringResource(R.string.settings_search_index))
-                        Text(state.searchStatus, color = TextSecondary, fontSize = 13.sp)
-                        SectionTitle(stringResource(R.string.settings_speed_limits))
-                        Text(state.speedLimitsStatus, color = TextSecondary, fontSize = 13.sp)
+                        }
+                        Group(stringResource(R.string.settings_routing_data), "data_routing") {
+                            Text(state.routingDataStatus, color = TextSecondary, fontSize = 13.sp)
+                        }
+                        Group(stringResource(R.string.settings_search_index), "data_search") {
+                            Text(state.searchStatus, color = TextSecondary, fontSize = 13.sp)
+                        }
+                        Group(stringResource(R.string.settings_speed_limits), "data_speed_limits") {
+                            Text(state.speedLimitsStatus, color = TextSecondary, fontSize = 13.sp)
+                        }
                     }
                     SettingsTab.HELP -> Page { AppVersionCard(state.appUpdate, actions); HelpPage(actions.onTour) }
                 }

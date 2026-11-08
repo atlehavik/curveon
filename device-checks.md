@@ -6,10 +6,16 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-08 — Innstillinger i grupper, og zoomnivå på kartet
+
+- [ ] X7 og Pixel: gå gjennom alle fanene i Innstillinger: står alt du brukte der fortsatt, og i en gruppe der du ville lett etter det?
+- [ ] Slå sammen en gruppe, lukk Innstillinger og åpne igjen: er den fortsatt sammenslått?
+- [ ] Skjerm → Avansert → Vis zoomnivå: står tallet ved +-knappen uten å dekke noe, også mens du kjører med kortene oppe?
+
 ## 2026-11-08 — Roligere byer (Innstillinger → Skjerm, på som standard)
 
 Der det er mye vei tett i tett (talt fra rutedataene, ca. 1,7 × 1,7 km om gangen, ikke etter veitype) vises småveier
-og stier først fra zoom 14; ute på landet som før. Første gang etter installasjon telles byene i bakgrunnen (ca. et
+og stier først fra zoom 14; ute på landet som før. Fra 2026-11-08 kveld avgjøres det likt på alle zoomnivåer under 14 (før kunne småveiene i kanten av en by komme og gå mens du zoomet), og en flis må være minst halvt by. Første gang etter installasjon telles byene i bakgrunnen (ca. et
 halvt minutt per land), så tar det et øyeblikk før det slår inn. Prøvd i emulatoren med Vestlandskartet: Bergen
 sentrum mye roligere ved zoom 13, stiene og veiene i fjellet rundt urørt.
 

@@ -79,8 +79,7 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
             }
         }
 
-        if (demo || selected != null || thisDevice) {
-            LinkSectionTitle(stringResource(R.string.link_music_apps))
+        if (demo || selected != null || thisDevice) Group(stringResource(R.string.link_music_apps), "phone_music_apps") {
             if (installed.isEmpty()) Text(stringResource(R.string.link_music_apps_none), color = TextMuted, fontSize = 13.sp)
             else {
                 Text(stringResource(R.string.link_music_apps_hint), color = TextMuted, fontSize = 13.sp)
@@ -98,25 +97,27 @@ fun PhoneLinkContent(manager: PhoneCompanionManager, modifier: Modifier = Modifi
             }
         }
 
-        if (!demo && !thisDevice) PhoneRow(stringResource(R.string.link_this_device),
-            stringResource(if (manager.canCall) R.string.link_this_device_hint else R.string.link_this_device_hint_no_calls)) {
-            manager.useThisDevice(); refresh++
-        }
+        // The phones to link to: this device itself, the other paired phones, and Android's Bluetooth settings for a new one.
         val others = phones.filter { it.address != selected }
-        if (!demo && others.isNotEmpty()) {
-            LinkSectionTitle(stringResource(if (selected == null && !thisDevice) R.string.link_paired_phones else R.string.link_other_phones))
-            others.forEach { p -> PhoneRow(p.name, p.address) { manager.selectPhone(p); refresh++ } }
-        }
-        if (!demo) TextButton(onClick = {
-            runCatching { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        }) { Text(stringResource(R.string.link_bluetooth_settings), color = ElectricCyan) }
-
-        if (com.curveon.BuildConfig.DEV || demo) Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.link_demo_data), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Text(stringResource(R.string.link_demo_data_hint), color = TextMuted, fontSize = 12.sp)
+        if (!demo) Group(stringResource(R.string.link_phones), "phone_phones") {
+            if (!thisDevice) PhoneRow(stringResource(R.string.link_this_device),
+                stringResource(if (manager.canCall) R.string.link_this_device_hint else R.string.link_this_device_hint_no_calls)) {
+                manager.useThisDevice(); refresh++
             }
-            CockpitSwitch(checked = demo, onCheckedChange = { manager.setDemo(it); refresh++ }, accent = NeonAmber)
+            others.forEach { p -> PhoneRow(p.name, p.address) { manager.selectPhone(p); refresh++ } }
+            TextButton(onClick = {
+                runCatching { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            }) { Text(stringResource(R.string.link_bluetooth_settings), color = ElectricCyan) }
+        }
+
+        if (com.curveon.BuildConfig.DEV || demo) Group(stringResource(R.string.settings_group_demo), "phone_demo") {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.link_demo_data), color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.link_demo_data_hint), color = TextMuted, fontSize = 12.sp)
+                }
+                CockpitSwitch(checked = demo, onCheckedChange = { manager.setDemo(it); refresh++ }, accent = NeonAmber)
+            }
         }
     }
 
@@ -274,7 +275,3 @@ private fun MusicAppRow(app: MediaApp, playing: Boolean?, favorite: Boolean, mod
     }
 }
 
-@Composable
-private fun LinkSectionTitle(text: String) {
-    Text(text.uppercase(), color = ElectricCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-}

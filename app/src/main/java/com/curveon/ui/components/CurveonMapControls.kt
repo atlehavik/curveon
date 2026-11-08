@@ -62,6 +62,7 @@ internal fun CurveonMapState.MapContent(
     showGravelHeat: Boolean,
     heatOn: Boolean,
     hasOfflineMap: Boolean,
+    showZoom: Boolean = false,
     overlays: @Composable BoxScope.() -> Unit,
 ) {
     Box(
@@ -86,7 +87,9 @@ internal fun CurveonMapState.MapContent(
         if (!inPreview) MapButtons(this@MapContent, navigating, headingDeg, autoZoom, buttonsTopInset, buttonsBottomInset, weatherButton, onWeatherMap, weatherMapOn)
 
         // Zoom to extents: the whole trip being planned, at a tap; under the speed and road cards.
-        if (inPreview && hasPreviewTrip) Box(Modifier.align(Alignment.TopEnd).padding(top = maxOf(buttonsTopInset, 92.dp), end = 14.dp)) {
+        if (inPreview && hasPreviewTrip) Row(Modifier.align(Alignment.TopEnd).padding(top = maxOf(buttonsTopInset, 92.dp), end = 14.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            ZoomLevel(this@MapContent)
             MapButton(onClick = { fitTick++ }, tag = "map_fit_trip_btn") {
                 Icon(Icons.Default.ZoomOutMap, stringResource(R.string.map_fit_trip), tint = TextPrimary, modifier = Modifier.size(24.dp))
             }
@@ -111,6 +114,13 @@ internal fun CurveonMapState.MapContent(
         }
 
         overlays()
+
+        // Settings → Display → Show zoom level: the map's zoom, beside + (or the whole-trip button while planning),
+        // where the buttons are kept clear of every card.
+        LaunchedEffect(showZoom) {
+            trackZoom = showZoom
+            zoomTenths = if (showZoom) ((map?.cameraPosition?.zoom ?: 0.0) * 10).toInt() else -1
+        }
 
         // Riding on the online map is a fine choice; only say something when that leaves no map.
         if (!hasOfflineMap && !rememberOnline()) {
@@ -261,10 +271,13 @@ internal fun BoxScope.MapButtons(
                 }
             }
         }
-        MapButton(onClick = {
-            if (following && autoZoom) zoomBias = (zoomBias + 1).coerceAtMost(3.0) else map?.animateCamera(CameraUpdateFactory.zoomIn())
-        }, tag = "map_zoom_in_btn") {
-            Icon(Icons.Default.Add, stringResource(R.string.map_zoom_in), tint = TextPrimary, modifier = Modifier.size(24.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ZoomLevel(h)
+            MapButton(onClick = {
+                if (following && autoZoom) zoomBias = (zoomBias + 1).coerceAtMost(3.0) else map?.animateCamera(CameraUpdateFactory.zoomIn())
+            }, tag = "map_zoom_in_btn") {
+                Icon(Icons.Default.Add, stringResource(R.string.map_zoom_in), tint = TextPrimary, modifier = Modifier.size(24.dp))
+            }
         }
         MapButton(onClick = {
             if (following && autoZoom) zoomBias = (zoomBias - 1).coerceAtLeast(-4.0) else map?.animateCamera(CameraUpdateFactory.zoomOut())
@@ -279,4 +292,14 @@ internal fun BoxScope.MapButtons(
         }
 
     }
+}
+
+/** The map's zoom ("z 12.4"), small, left of a map button; nothing unless Settings → Display → Show zoom level is on. */
+@Composable
+private fun ZoomLevel(h: CurveonMapState) {
+    val z = h.zoomTenths
+    if (z < 0) return
+    Text("z %d.%d".format(z / 10, z % 10), color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(end = 6.dp).clip(RoundedCornerShape(8.dp)).background(CockpitBackground.copy(alpha = 0.8f))
+            .padding(horizontal = 6.dp, vertical = 3.dp).testTag("map_zoom_level"))
 }

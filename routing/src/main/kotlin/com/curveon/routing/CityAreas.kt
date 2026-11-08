@@ -99,7 +99,7 @@ class CityAreas(
         /** Residential and unclassified road in one square (km) from which it is a town. */
         const val DENSE_KM = 10.0
         /** A map tile is town when this share of it is town squares. */
-        const val TOWN_TILE_SHARE = 0.4
+        const val TOWN_TILE_SHARE = 0.5
         private const val VERSION = 4
 
         /**

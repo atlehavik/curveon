@@ -234,6 +234,8 @@ fun CurveonMapView(
     gravelHeatOnMap: Boolean = false,
     /** Settings → Display: the buildings stand up in the 3D view. */
     buildings3d: Boolean = false,
+    /** Settings → Display → Show zoom level. */
+    showZoom: Boolean = false,
     /** Settings → Display → Quieter towns: where the towns are (CityAreas squares; null: off, or not counted yet). */
     townSquares: Set<Long>? = null,
     /** A trip is being planned (its sheet is open, even before a route has come back). */
@@ -291,7 +293,7 @@ fun CurveonMapView(
         speedKmh = speedKmh, autoZoom = autoZoom, onSketch = onSketch, buttonsTopInset = buttonsTopInset,
         buttonsBottomInset = buttonsBottomInset, weatherButton = weatherButton, onWeatherMap = onWeatherMap, weatherMapOn = weatherMapOn,
         hasPreviewTrip = hasPreviewTrip, heatButton = heatButton, onShowGravelHeat = onShowGravelHeat, showGravelHeat = showGravelHeat,
-        heatOn = heatOn, hasOfflineMap = hasOfflineMap, overlays = overlays
+        heatOn = heatOn, hasOfflineMap = hasOfflineMap, showZoom = showZoom, overlays = overlays
     )
 }
 

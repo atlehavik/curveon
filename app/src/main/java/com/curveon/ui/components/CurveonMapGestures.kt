@@ -93,6 +93,7 @@ internal fun CurveonMapState.listenToCamera(m: MapLibreMap, cb: MapCallbacks) = 
     m.addOnCameraMoveListener {
         val bearing = m.cameraPosition.bearing.toFloat()
         if (kotlin.math.abs(bearing - cameraBearing) >= 0.5f) cameraBearing = bearing
+        if (trackZoom) (m.cameraPosition.zoom * 10).toInt().let { if (it != zoomTenths) zoomTenths = it }
         if (!following) trackRider()
         wake.trySend(Unit)
     }

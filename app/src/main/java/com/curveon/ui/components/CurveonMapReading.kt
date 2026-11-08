@@ -380,14 +380,9 @@ internal fun CurveonMapState.TownRoads(squares: Set<Long>?) {
                 }
                 return when (rects.size) { 0 -> null; 1 -> rects.first(); else -> E.any(*rects.toTypedArray()) }
             }
-            // The map's tiles: 13 from zoom 13, 12 below (smaller ones hold hardly any small roads).
-            val t12 = inTownTile(12); val t13 = inTownTile(13)
-            if (t12 == null && t13 == null) null
-            else E.any(
-                E.gte(E.zoom(), E.literal(TOWN_ROADS_ZOOM)),
-                E.all(E.lt(E.zoom(), E.literal(13f)), t12?.let { E.not(it) } ?: E.literal(true)),
-                E.all(E.gte(E.zoom(), E.literal(13f)), t13?.let { E.not(it) } ?: E.literal(true)),
-            )
+            // Decided on the zoom 12 tiles for every zoom below 14: a zoom 13 tile lies inside its zoom 12 tile's rectangle,
+            // so a place is town or not the same way all the way in, and its small roads don't come and go while zooming.
+            inTownTile(TOWN_TILE_ZOOM)?.let { E.any(E.gte(E.zoom(), E.literal(TOWN_ROADS_ZOOM)), E.not(it)) }
         }
         if (style !== s) return@LaunchedEffect
         covered = box
@@ -404,6 +399,9 @@ internal fun CurveonMapState.TownRoads(squares: Set<Long>?) {
         }
     }
 }
+
+/** The map tiles a town is decided on (see [TownRoads]). */
+private const val TOWN_TILE_ZOOM = 12
 
 /** How much bigger than a tile its rectangle is: the map's tiles reach 64/4096 (1.6%) past their edge. */
 private const val TILE_MARGIN = 0.03

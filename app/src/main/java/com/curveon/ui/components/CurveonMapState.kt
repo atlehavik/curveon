@@ -56,6 +56,9 @@ internal class CurveonMapState(context: android.content.Context, navigating: Boo
     /** +/- while following nudges the speed-based zoom by this many levels. */
     var zoomBias by mutableDoubleStateOf(0.0)
     var cameraBearing by mutableFloatStateOf(0f)
+    /** The map's zoom in tenths, kept only while it is shown (Settings → Display → Show zoom level); -1 otherwise. */
+    var zoomTenths by mutableIntStateOf(-1)
+    @Volatile var trackZoom = false
     var cameraIdleTick by mutableIntStateOf(0)
     /** Nudged when what the rider loop draws may change (a fix, the camera, the layout), to wake it. */
     val wake = kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED)

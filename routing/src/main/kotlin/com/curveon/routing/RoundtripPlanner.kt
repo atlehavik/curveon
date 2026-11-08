@@ -250,7 +250,8 @@ class RoundtripPlanner(
 
     /**
      * The chosen loop without one of its vias, then another, when that makes it better by [score]: a via out on a
-     * peninsula or an island reached by one road is ridden out and back, and the loop is often as good without it.
+     * peninsula or an island reached by one road is ridden out and back, and one on the road may turn the loop round
+     * there; the loop is often as good without it.
      * Each try routes one new leg (the others are kept), all tries at once.
      */
     private fun fewerVias(start: LatLon, route: Route, options: RouteOptions, pool: ExecutorService, score: (Route) -> Double): Route {
@@ -258,15 +259,18 @@ class RoundtripPlanner(
         var bestScore = score(route)
         repeat(MAX_VIA_DROPS) {
             val (vias, catching) = loopVias[best] ?: return best
-            if (vias.size <= 2 || overlapFraction(best) < 0.03) return best
+            if (vias.size <= 2 || (overlapFraction(best) < 0.03 && uTurns(best) == 0 && Spurs.wastedMeters(best) < 500)) return best
             // Mended as every loop is (off islands, out of dead ends): without a via the next one may lie down a dead end.
             val tries = parallel(pool, vias.indices.map { i -> { mendedLoop(start, vias.filterIndexed { k, _ -> k != i }, options, catching, withFerry = {}, onEach = {}) } }).successes
-            val (v, c, r) = tries.maxByOrNull { score(it.third) } ?: return best
+            // Only for riding less road twice, a dead end fewer or a turn on the road fewer, never by more of another: the best of those.
+            fun better(r: Route) = overlapFraction(r) <= overlapFraction(best) - 0.01 || uTurns(r) < uTurns(best) || Spurs.wastedMeters(r) < Spurs.wastedMeters(best) - 500
+            fun noWorse(r: Route) = overlapFraction(r) <= overlapFraction(best) + 0.01 && uTurns(r) <= uTurns(best) && Spurs.wastedMeters(r) <= Spurs.wastedMeters(best) + 500
+            val (v, c, r) = tries.filter { better(it.third) && noWorse(it.third) }
+                .maxByOrNull { score(it.third) } ?: return best
             val sc = score(r)
             log("    without a via: twice %.0f%% -> %.0f%%, spurs %.1f -> %.1f km, %.0f -> %.0f km, score %.0f -> %.0f".format(overlapFraction(best) * 100, overlapFraction(r) * 100,
                 Spurs.wastedMeters(best) / 1000, Spurs.wastedMeters(r) / 1000, best.distanceMeters / 1000, r.distanceMeters / 1000, bestScore, sc))
-            // Only for riding less road twice, and never by a dead end instead.
-            if (sc <= bestScore || overlapFraction(r) > overlapFraction(best) - 0.01 || Spurs.wastedMeters(r) > Spurs.wastedMeters(best) + 500) return best
+            if (sc <= bestScore) return best
             loopVias[r] = v to c
             best = r; bestScore = sc
         }
@@ -286,12 +290,15 @@ class RoundtripPlanner(
         // back whatever the options say. Replace such a via by the quay on the near side: the loop then
         // stays on land, and the dead-end fix below moves it off the quay road onto the junction.
         if (options.avoidFerries && route.ferryCount > 0) withFerry(route)
+        // With ferries allowed the same goes for a via the loop reaches by a ferry and leaves by the same ferry back: out
+        // to an island and straight back is the same road twice, sea and all (one over and back by another ferry stays).
         repeat(2) {
-            if (!options.avoidFerries || route.ferryCount == 0) return@repeat
+            val sameFerryBack = !options.avoidFerries && ferryTwice(route)
+            if (!sameFerryBack && (!options.avoidFerries || route.ferryCount == 0)) return@repeat
             val at = viaIndices(route, vias)
             val moved = vias.mapIndexed { i, via -> if (beyondFerry(route, at[i])) quayBefore(route, if (i == 0) 0 else at[i - 1], at[i]) else via }
                 .distinct().filter { Geo.distance(it, start) > 1000 }
-            if (moved.isEmpty()) throw RoutingException("Every point of this loop needs a ferry")
+            if (moved.isEmpty()) { if (sameFerryBack) return@repeat else throw RoutingException("Every point of this loop needs a ferry") }
             if (moved == vias) return@repeat
             vias = moved
             route = routeVias(start, vias, options, catchingRange).also(::stage)
@@ -358,7 +365,8 @@ class RoundtripPlanner(
             val o = overlapFraction(joined)
             // Never by riding into a dead end and back instead (that is road twice too, and the worst kind).
             if (o < bestTwice - 0.01 && joined.distanceMeters < best.distanceMeters * 1.3 + 3_000 &&
-                (!options.avoidFerries || joined.ferryCount <= best.ferryCount) && Spurs.wastedMeters(joined) <= Spurs.wastedMeters(best) + 300) {
+                (!options.avoidFerries || joined.ferryCount <= best.ferryCount) && Spurs.wastedMeters(joined) <= Spurs.wastedMeters(best) + 300 &&
+                uTurns(joined) <= uTurns(best)) {
                 legs[i] = alt; best = joined; bestTwice = o
             }
         }
@@ -428,6 +436,30 @@ class RoundtripPlanner(
         }
     }
 
+    /** [route] crosses the same stretch of sea twice: a ferry out and the same ferry back. */
+    private fun ferryTwice(route: Route): Boolean {
+        if (route.ferryCount < 2) return false
+        val cell = 0.002 // ~200 m: the two crossings of one ferry line lie about on top of each other
+        val seen = HashMap<Long, Double>()
+        val pts = route.points
+        for (i in 1 until pts.size) {
+            if (!pts[i].ferry) continue
+            val a = pts[i - 1]; val b = pts[i]
+            val len = b.distanceFromStart - a.distanceFromStart
+            var d = 0.0
+            while (d <= len) {
+                val f = if (len > 0) d / len else 0.0
+                val lat = a.lat + (b.lat - a.lat) * f; val lon = a.lon + (b.lon - a.lon) * f
+                val key = (floor(lat / cell).toLong() shl 32) xor floor(lon / (cell * 2)).toLong()
+                val first = seen[key]
+                if (first == null) seen[key] = a.distanceFromStart + d
+                else if (a.distanceFromStart + d - first > 2000) return true
+                d += 200
+            }
+        }
+        return false
+    }
+
     /** With ferries this expensive, a via that needs one both to get there and to get back is on an island. */
     private fun beyondFerry(route: Route, index: Int): Boolean {
         val pts = route.points
@@ -476,7 +508,7 @@ class RoundtripPlanner(
         /** Score per share of a loop ridden twice (see [quality]). */
         private const val OVERLAP_WEIGHT = 900.0
         /** Score per share of a loop wasted in dead ends ridden in and out (see [quality]). */
-        private const val SPUR_WEIGHT = 1500.0
+        private const val SPUR_WEIGHT = 3000.0
         /** At most this many vias are dropped from the chosen loop to ride less road twice (see [fewerVias]). */
         private const val MAX_VIA_DROPS = 2
         /** Rounds of routing legs again round road ridden twice (see [lessTwice]). */
@@ -523,17 +555,14 @@ class RoundtripPlanner(
             val cell = 0.0004 // ~40 m in latitude
             val seen = HashMap<Long, Double>()
             val out = ArrayList<Triple<LatLon, Double, Double>>()
-            var nextSampleAt = 0.0
             var nextOutAt = 0.0
-            for (p in route.points) {
-                if (p.distanceFromStart < nextSampleAt) continue
-                nextSampleAt = p.distanceFromStart + 40.0
-                val key = (floor(p.lat / cell).toLong() shl 32) xor floor(p.lon / (cell * 2)).toLong()
+            along(route, 40.0) { lat, lon, at ->
+                val key = (floor(lat / cell).toLong() shl 32) xor floor(lon / (cell * 2)).toLong()
                 val first = seen[key]
-                if (first == null) seen[key] = p.distanceFromStart
-                else if (p.distanceFromStart - first > 500.0 && p.distanceFromStart >= nextOutAt) {
-                    out += Triple(LatLon(p.lat, p.lon), p.distanceFromStart, first)
-                    nextOutAt = p.distanceFromStart + TWICE_SAMPLE_M
+                if (first == null) seen[key] = at
+                else if (at - first > 500.0 && at >= nextOutAt) {
+                    out += Triple(LatLon(lat, lon), at, first)
+                    nextOutAt = at + TWICE_SAMPLE_M
                 }
             }
             return out
@@ -541,23 +570,38 @@ class RoundtripPlanner(
 
         /** Share of the route (by sample) that runs within ~40 m of an earlier, non-adjacent part of itself. */
         fun overlapFraction(route: Route): Double {
-            val pts = route.points
-            if (pts.size < 10) return 0.0
+            if (route.points.size < 10) return 0.0
             val cell = 0.0004 // ~40 m in latitude
             val seen = HashMap<Long, Double>() // grid cell -> distance along route when first visited
             var overlapping = 0
             var samples = 0
-            var nextSampleAt = 0.0
-            for (p in pts) {
-                if (p.distanceFromStart < nextSampleAt) continue
-                nextSampleAt = p.distanceFromStart + 50.0
+            along(route, 50.0) { lat, lon, at ->
                 samples++
-                val key = (floor(p.lat / cell).toLong() shl 32) xor floor(p.lon / (cell * 2)).toLong()
+                val key = (floor(lat / cell).toLong() shl 32) xor floor(lon / (cell * 2)).toLong()
                 val first = seen[key]
-                if (first == null) seen[key] = p.distanceFromStart
-                else if (p.distanceFromStart - first > 500.0) overlapping++
+                if (first == null) seen[key] = at
+                else if (at - first > 500.0) overlapping++
             }
             return if (samples == 0) 0.0 else overlapping.toDouble() / samples
+        }
+
+        /**
+         * Points every [step] metres along [route], between its points too: a ferry is one straight line of two points,
+         * and a ferry ridden there and back must count as the kilometres it is (2026-11-08 a 13 km ferry out and back to
+         * Huftarøy counted as almost nothing).
+         */
+        private inline fun along(route: Route, step: Double, each: (Double, Double, Double) -> Unit) {
+            val pts = route.points
+            var next = 0.0
+            for (i in 1 until pts.size) {
+                val a = pts[i - 1]; val b = pts[i]
+                val len = b.distanceFromStart - a.distanceFromStart
+                while (len > 0 && next <= b.distanceFromStart) {
+                    val f = (next - a.distanceFromStart) / len
+                    each(a.lat + (b.lat - a.lat) * f, a.lon + (b.lon - a.lon) * f, next)
+                    next += step
+                }
+            }
         }
     }
 }

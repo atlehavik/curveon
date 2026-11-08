@@ -1066,6 +1066,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** Settings → Display → Show zoom level: the map's zoom on its left edge, to tell zoom levels apart (off by default). */
+    private val _showZoom = MutableStateFlow(settings.getBoolean("showZoom", false))
+    val showZoom: StateFlow<Boolean> = _showZoom.asStateFlow()
+    fun setShowZoom(on: Boolean) { _showZoom.value = on; settings.edit().putBoolean("showZoom", on).apply() }
+
     /** Settings → Display → 3D buildings: in the 3D view the buildings stand up when zoomed in close. Off by default (it costs battery). */
     private val _buildings3d = MutableStateFlow(settings.getBoolean("buildings3d", false))
     val buildings3d: StateFlow<Boolean> = _buildings3d.asStateFlow()

@@ -98,6 +98,7 @@ internal fun ColumnScope.RemoteSettingsPage(remote: RemoteControl) {
         onDispose { input.unregisterInputDeviceListener(listener) }
     }
 
+    Group(stringResource(R.string.settings_group_remote), "remote_remote") {
     SettingRow(
         if (connected.isEmpty()) stringResource(R.string.remote_none) else stringResource(R.string.remote_connected, connected.joinToString(", ")),
         if (connected.isEmpty()) stringResource(R.string.remote_none_hint) else null
@@ -122,8 +123,9 @@ internal fun ColumnScope.RemoteSettingsPage(remote: RemoteControl) {
             stringResource(if (it) R.string.remote_joystick_zoom else R.string.remote_joystick_move)
         }, remote::chooseJoystickZooms)
     }
+    }
 
-    SettingTitle(stringResource(R.string.remote_buttons))
+    Group(stringResource(R.string.remote_buttons), "remote_buttons") {
     Text(stringResource(R.string.remote_buttons_hint), color = TextMuted, fontSize = 13.sp)
     RemoteAction.entries.forEach { action ->
         val keys = remote.bindings.keysFor(action)
@@ -142,6 +144,7 @@ internal fun ColumnScope.RemoteSettingsPage(remote: RemoteControl) {
         }
     }
     if (remote.bindings.changes.isNotEmpty()) TextButton(onClick = remote::resetButtons) { Text(stringResource(R.string.remote_reset), color = NeonAmber) }
+    }
 
     remote.capturing?.let { action ->
         LaunchedEffect(action) {

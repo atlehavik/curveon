@@ -31,7 +31,7 @@ internal fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsA
         CockpitSwitch(state.obdEnabled, actions.onObd)
     }
     if (!state.obdEnabled) return
-    SectionTitle(stringResource(R.string.settings_obd_adapter))
+    Group(stringResource(R.string.settings_obd_adapter), "engine_adapter") {
     Text(stringResource(R.string.settings_obd_adapter_hint), color = TextSecondary, fontSize = 13.sp)
     // Bluetooth not allowed or off: say which, with the button that sorts it (the list of adapters is empty until then).
     val btProblem = rememberBluetoothProblem()
@@ -67,6 +67,8 @@ internal fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsA
             }
         }
     }
+    }
+    Group(stringResource(R.string.settings_group_fuel), "engine_fuel") {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(CockpitSurfaceVariant)
             .clickable(onClick = actions.onFuelSetup).padding(horizontal = 14.dp, vertical = 12.dp).testTag("settings_fuel_setup"),
@@ -80,7 +82,8 @@ internal fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsA
         Text(stringResource(if (state.fuelSetUp) R.string.settings_fuel_setup_done else R.string.settings_fuel_setup_open),
             color = if (state.fuelSetUp) EcoGreen else NeonAmber, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
-    SectionTitle(stringResource(R.string.settings_obd_values))
+    }
+    Group(stringResource(R.string.settings_obd_values), "engine_values") {
     com.curveon.data.obd.ObdValue.entries.forEach { v ->
         Setting(stringResource(when (v) {
             com.curveon.data.obd.ObdValue.FUEL -> R.string.poi_fuel
@@ -90,6 +93,7 @@ internal fun ColumnScope.EngineSettings(state: SettingsState, actions: SettingsA
         })) {
             CockpitSwitch(v in state.obdValues, { actions.onObdValue(v) })
         }
+    }
     }
 }
 
@@ -196,13 +200,14 @@ internal fun ColumnScope.HelpPage(onTour: () -> Unit) {
     }
     // Two columns on the tablet, one on a phone held upright.
     val columns = if (isNarrowScreen()) 1 else 2
-    HELP_GROUPS.forEach { (title, symbols) ->
-        SectionTitle(stringResource(title))
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            symbols.chunked(columns).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    row.forEach { HelpSymbolRow(it, Modifier.weight(1f)) }
-                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+    HELP_GROUPS.forEachIndexed { i, (title, symbols) ->
+        Group(stringResource(title), "help_$i") {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                symbols.chunked(columns).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        row.forEach { HelpSymbolRow(it, Modifier.weight(1f)) }
+                        repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
         }
