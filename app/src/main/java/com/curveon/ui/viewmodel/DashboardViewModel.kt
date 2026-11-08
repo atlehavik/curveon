@@ -55,6 +55,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -1054,14 +1055,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val quietTowns: StateFlow<Boolean> = _quietTowns.asStateFlow()
     fun setQuietTowns(on: Boolean) { _quietTowns.value = on; settings.edit().putBoolean("quietTowns", on).apply() }
 
+    /** Where the towns are counted: one thread of its own (set to low priority while counting). */
+    private val townCounting = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "towns").apply { isDaemon = true } }.asCoroutineDispatcher()
+
     /** The towns (CityAreas squares), counted in the background once the map is up; null until then or when off. */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val townSquares: StateFlow<Set<Long>?> = combine(quietTowns, mapVersion) { on, v -> on to v }
-        .mapLatest { (on, _) ->
-            if (!on) null else withContext(Dispatchers.IO) {
-                // After the start, so the first map and position come first.
+        .flatMapLatest { (on, _) ->
+            if (!on) flowOf(null) else channelFlow<Set<Long>?> {
+                // After the start, so the first map and position come first; on a thread of low priority, so the map stays quick.
                 delay(TOWNS_AFTER_START_MS)
-                runCatching { navigator.townSquares() }.onFailure { android.util.Log.w("Curveon", "Towns not counted", it) }.getOrNull()
+                val here = currentLocation.value.let { com.curveon.routing.LatLon(it.latitude, it.longitude) }
+                withContext(townCounting) {
+                    android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+                    runCatching { navigator.townSquares(here) { trySend(it) } }.onFailure { android.util.Log.w("Curveon", "Towns not counted", it) }
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)

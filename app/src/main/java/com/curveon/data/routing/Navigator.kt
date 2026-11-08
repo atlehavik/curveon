@@ -317,12 +317,21 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      * The towns of every country on the device (where the map waits with its small roads until zoomed in close), as
      * CityAreas squares. Counted once per routing data file (seconds each), then kept. Blocking.
      */
-    fun townSquares(): Set<Long> {
+    fun townSquares(near: LatLon?, onEach: (Set<Long>) -> Unit = {}): Set<Long> {
         val t0 = System.nanoTime()
-        val tiles = towns.tiles()
-        return tiles.flatMap { towns.squares(it) }.toHashSet().also {
-            android.util.Log.i("Curveon", "Towns: ${it.size} squares in ${tiles.size} routing files, %.1f s".format((System.nanoTime() - t0) / 1e9))
+        // The file where the rider is first, then outwards: each one's towns quiet the map as soon as it is counted
+        // (all of Europe's files took the tablet many minutes the first time).
+        val tiles = towns.tiles().sortedBy { t ->
+            val (lon, lat) = com.curveon.routing.GravelHeat.origin(t) ?: return@sortedBy Double.MAX_VALUE
+            if (near == null) 0.0 else Geo.distance(near, LatLon(lat + 2.5, lon + 2.5))
         }
+        val all = HashSet<Long>()
+        for (t in tiles) {
+            all += towns.squares(t)
+            onEach(HashSet(all))
+        }
+        android.util.Log.i("Curveon", "Towns: ${all.size} squares in ${tiles.size} routing files, %.1f s".format((System.nanoTime() - t0) / 1e9))
+        return all
     }
 
     /** The routing data files covering the area, for the gravel heat map (any country that is on the device). */
