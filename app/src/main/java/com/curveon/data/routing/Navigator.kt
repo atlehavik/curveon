@@ -178,6 +178,12 @@ sealed interface NavigationGoal {
 }
 
 /** One option shown in the preview; [style] is null for loops and tracks, which have only one. */
+/** A trip with its surface and style ([NavigationGoal.Destination.options] holds both), as [Navigator] keeps its routes. */
+private data class RouteKey(val goal: NavigationGoal.Destination)
+
+/** A route worked out from [from] (or being worked out), at [at]. */
+private class CachedRoute(val from: LatLon, val route: kotlinx.coroutines.Deferred<Route>, val at: Long = System.currentTimeMillis())
+
 data class RouteCandidate(val style: RoadStyle?, val route: Route? = null, val error: String? = null)
 
 data class RoutePreview(
@@ -243,6 +249,16 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     /** The adventures the planner has found for the one on screen, in the order found (guarded by `this`). */
     private val suggestions = ArrayList<Route>()
     @Volatile private var adventureRunning = false
+    /** Working out the trip on screen with the other surfaces, so a tap on Gravel or Offroad finds it ready (see [prefetchSurfaces]). */
+    private var prefetchJob: Job? = null
+    /**
+     * Trips already worked out, by trip, surface and style (guarded by itself): going back to Tarmac after a look at Gravel
+     * shows the Tarmac routes at once instead of working them out again. A route still being worked out in the
+     * background is here too, to wait for instead of starting it twice.
+     */
+    private val routeCache = object : LinkedHashMap<RouteKey, CachedRoute>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<RouteKey, CachedRoute>?) = size > ROUTE_CACHE_SIZE
+    }
     private var lastPosition: LatLon? = null
     private var lastHeading: Double? = null
     /** Where the rider was ~20 m ago, for a heading from how they actually moved. */
@@ -631,6 +647,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     fun cancelPreview() {
         pendingPreview = null
         previewJob?.cancel()
+        prefetchJob?.cancel()
         pruneJob?.cancel()
         adventureJob?.cancel()
         _state.update { it.copy(preview = null, status = RoutingStatus.Idle) }
@@ -680,6 +697,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         if (!canRoute(tiles)) return fail(routingData.describe())
         previewJob?.cancel()
         pruneJob?.cancel()
+        prefetchJob?.cancel()
         if (!keepAdventure) adventureJob?.cancel()
         val styles: List<RoadStyle?> = if (planned != null && planned.fixedLine == null) RoadStyle.entries else listOf(null)
         val selected = (keepSelection ?: styles.indexOf(preferredStyle)).coerceIn(0, styles.lastIndex)
@@ -693,10 +711,11 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             }
             // An adventure is planned in a job of its own: it goes on looking for a better trip once this one is shown.
             if (goal is NavigationGoal.Adventure) return@launch startAdventure(goal, from)
+            val started = System.nanoTime()
             styles.mapIndexed { i, style ->
                 async(Dispatchers.Default) {
                     val t0 = System.nanoTime()
-                    val result = runCatching { calculate(goal, from, style) { !isActive } }
+                    val result = runCatching { cachedRoute(goal, from, style) ?: calculate(goal, from, style) { !isActive }.also { remember(goal, from, style, it) } }
                     android.util.Log.i("Curveon", "Routed ${goal::class.simpleName} ${style ?: ""} in %.1f s: %s".format(
                         (System.nanoTime() - t0) / 1e9,
                         result.fold({ "%.0f km, %d ferries, %.0f m unpaved".format(it.distanceMeters / 1000, it.ferryCount, it.unpavedMeters) }, { "failed: ${it.message}" })))
@@ -714,6 +733,76 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             // If the pre-selected style failed, fall back to one that worked.
             val p = _state.value.preview ?: return@launch
             if (p.selectedRoute == null) p.candidates.indexOfFirst { it.route != null }.takeIf { it >= 0 }?.let { selectCandidate(it) }
+            // Quick to work out: the other surfaces too, in the background, so trying them is quick as well.
+            if (goal is NavigationGoal.Destination && goal.fixedLine == null && System.nanoTime() - started <= PREFETCH_IF_UNDER_NS)
+                prefetchSurfaces(goal, from)
+        }
+    }
+
+    /** The trip [goal] with [style], as the cache knows it. */
+    private fun routeKey(goal: NavigationGoal.Destination, style: RoadStyle) =
+        RouteKey(goal.copy(options = goal.options.copy(roadStyle = style)))
+
+    /** The trip without its options: the same trip whatever surface or style it is worked out with. */
+    private fun NavigationGoal.Destination.trip() = copy(options = RouteOptions())
+
+    /**
+     * The route for [goal] in [style] from [from] if it was worked out a moment ago from about here, waiting for it when
+     * it is still being worked out in the background. Null when it has to be worked out.
+     */
+    private suspend fun cachedRoute(goal: NavigationGoal, from: LatLon, style: RoadStyle?): Route? {
+        if (goal !is NavigationGoal.Destination || goal.fixedLine != null || style == null) return null
+        val hit = synchronized(routeCache) { routeCache[routeKey(goal, style)] } ?: return null
+        if (Geo.distance(hit.from, from) > CACHE_SAME_START_M || System.currentTimeMillis() - hit.at > CACHE_MAX_AGE_MS) return null
+        return try { hit.route.await() } catch (e: kotlinx.coroutines.CancellationException) {
+            if (!kotlin.coroutines.coroutineContext.isActive) throw e else null
+        } catch (e: Exception) { null }
+    }
+
+    private fun remember(goal: NavigationGoal, from: LatLon, style: RoadStyle?, route: Route) {
+        if (goal !is NavigationGoal.Destination || goal.fixedLine != null || style == null) return
+        synchronized(routeCache) { routeCache[routeKey(goal, style)] = CachedRoute(from, kotlinx.coroutines.CompletableDeferred(route)) }
+    }
+
+    /**
+     * Works out the trip on screen with the surfaces not shown (Gravel and Offroad, or Tarmac), one route at a time, the
+     * style chosen first. Only when the shown one was quick to work out, and only while the same trip stays on screen:
+     * it stops when the rider plans another trip, closes it or rides it.
+     */
+    private fun prefetchSurfaces(goal: NavigationGoal.Destination, from: LatLon) {
+        prefetchJob?.cancel()
+        val trip = goal.trip()
+        fun stillShown() = (_state.value.preview?.goal as? NavigationGoal.Destination)?.trip() == trip
+        prefetchJob = scope.launch(Dispatchers.Default) {
+            val chosen = _state.value.preview?.takeIf { it.goal == goal }?.let { it.candidates.getOrNull(it.selected)?.style } ?: goal.options.roadStyle
+            val surfaces = PREFETCH_SURFACES - goal.options.surface
+            val styles = listOf(chosen) + (RoadStyle.entries - chosen)
+            // The chosen style with each surface first, then the other styles.
+            val order = styles.flatMap { style -> surfaces.map { goal.copy(options = goal.options.copy(surface = it)) to style } }
+            for ((g, style) in order) {
+                if (!isActive || !stillShown()) return@launch
+                val key = routeKey(g, style)
+                val known = synchronized(routeCache) { routeCache[key] }
+                if (known != null && Geo.distance(known.from, from) <= CACHE_SAME_START_M && System.currentTimeMillis() - known.at <= CACHE_MAX_AGE_MS) {
+                    // Still being worked out (from a round before): wait for it, so only one is worked out at a time.
+                    try { known.route.await() } catch (e: kotlinx.coroutines.CancellationException) { if (!isActive) return@launch } catch (e: Exception) { }
+                    continue
+                }
+                // Not a child of this job: the rider may pick this surface meanwhile, and then waits for it instead of starting it again.
+                val route = scope.async(Dispatchers.Default) {
+                    if (!stillShown()) throw kotlinx.coroutines.CancellationException("Trip left")
+                    val t0 = System.nanoTime()
+                    calculate(g, from, style).also {
+                        android.util.Log.i("Curveon", "Worked out ahead: ${g.options.surface} $style in %.1f s".format((System.nanoTime() - t0) / 1e9))
+                    }
+                }
+                synchronized(routeCache) { routeCache[key] = CachedRoute(from, route) }
+                try { route.await() } catch (e: kotlinx.coroutines.CancellationException) {
+                    if (!isActive) return@launch // this job was stopped; the route itself goes on, for whoever waits for it
+                } catch (e: Exception) {
+                    synchronized(routeCache) { if (routeCache[key]?.route === route) routeCache.remove(key) }
+                }
+            }
         }
     }
 
@@ -904,6 +993,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         pendingFollow = null
         calcJob?.cancel()
         previewJob?.cancel()
+        prefetchJob?.cancel()
         adventureJob?.cancel()
         arrivalJob?.cancel()
         arrivalJob = null
@@ -940,6 +1030,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     private fun activate(goal: NavigationGoal, route: Route) {
         previewJob?.cancel()
+        prefetchJob?.cancel()
         adventureJob?.cancel()
         followUntil = 0L
         arrivalJob?.cancel()
@@ -1365,6 +1456,16 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     companion object {
         private const val REROUTE_COOLDOWN_MS = 10_000L
+        /** Routes kept to go back to (a long trip's route is a few MB). */
+        private const val ROUTE_CACHE_SIZE = 12
+        /** A kept route is used again only when the trip starts this close to where it was worked out from. */
+        private const val CACHE_SAME_START_M = 50.0
+        /** …and only this soon after (routing data may have been updated meanwhile). */
+        private const val CACHE_MAX_AGE_MS = 30 * 60_000L
+        /** The other surfaces are worked out ahead only when the shown routes took no longer than this. */
+        private const val PREFETCH_IF_UNDER_NS = 10_000_000_000L
+        /** The surfaces worked out ahead: the ones on the map in their own colours, and Tarmac to go back to. */
+        private val PREFETCH_SURFACES = listOf(com.curveon.routing.SurfacePreference.GRAVEL, com.curveon.routing.SurfacePreference.OFFROAD, com.curveon.routing.SurfacePreference.PAVED)
         /** A loop made into a trip gets about one via point this far apart (close enough to keep its shape). */
         private const val LOOP_VIA_SPACING_M = 8_000.0
         /** A track made into a trip gets about one via point this far apart: close enough to keep to its roads. */

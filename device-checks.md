@@ -6,6 +6,17 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-08 — Bytte mellom Asfalt, Grus og Offroad uten å vente
+
+Rutene du allerede har sett, huskes nå (samme tur, samme startsted, inntil en halvtime), og når rutene til en tur var
+raske å regne ut (under 10 s), regnes Grus og Offroad ut i bakgrunnen, én om gangen. Prøvd i emulatoren på en kort tur i
+Bergen: bytte fram og tilbake kom på 0,0 s. Hvor lang tid det tar på X7-en med en lang tur, og om nettbrettet blir varmt
+eller tregt mens det regner i bakgrunnen, må prøves på ekte.
+
+- [ ] X7: planlegg en tur, vent til rutene er inne, bytt til Grus og så tilbake til Kun asfalt: kommer asfaltrutene med en gang?
+- [ ] X7: planlegg en kort tur (under en time), vent 10–20 sekunder og bytt så til Grus eller Offroad: er rutene der med en gang eller nesten med en gang?
+- [ ] X7: kjennes kartet og planleggeren like kvikke de første sekundene etter at rutene er inne (mens den regner i bakgrunnen)?
+
 ## 2026-11-07 — Pila uten rute: vei før sykkelsti, og flyter i rundkjøringer
 
 Svingene virket ganske bra (rytteren 2026-11-07), men pila tok like gjerne gang- og sykkelstien ved siden av veien og
