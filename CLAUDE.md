@@ -1,5 +1,6 @@
 # Curveon
 
+
 Offline motorcycle dashboard for a Hugerock X7 tablet (7", 1920x1080 landscape, Android 13) on the
 handlebars, plus a companion app on the rider's Pixel 9a. Modules, features in detail, build and
 release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facing overview in
