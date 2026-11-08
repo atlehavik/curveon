@@ -57,11 +57,19 @@ internal fun CurveonMapState.SurfaceLayers(
     surfaceZoom: Float,
     roadShade: Pair<String, String>,
     dark: Boolean,
+    /** Quieter towns: the town squares (CityAreas), where the tarmac drawn here below the map's own small roads is left out. */
+    townSquares: Set<Long>? = null,
 ) {
     LaunchedEffect(style, surfaceMode) {
         val s = style ?: return@LaunchedEffect
         val v = if (surfaceMode != SurfaceMode.OFF) Property.VISIBLE else Property.NONE
         s.layers.filter { it.id.startsWith(SURFACE) }.forEach { it.setProperties(visibility(v)) }
+    }
+    // Quieter towns: these small roads (sorted road by road, towns left out) go on up to TOWN_ROADS_ZOOM, where the map's
+    // own come in (see TownRoads); otherwise only until the map's own small roads are in its tiles.
+    LaunchedEffect(style, townSquares != null && surfaceMode != SurfaceMode.OFF) {
+        val s = style ?: return@LaunchedEffect
+        s.getLayer("$SURFACE-road")?.setMaxZoom(if (townSquares != null && surfaceMode != SurfaceMode.OFF) TOWN_ROADS_ZOOM else MAP_ROADS_ZOOM)
     }
     // The zoom the dashes start at. The gravel heat fades out as the dashes come in.
     LaunchedEffect(style, surfaceZoom) {
@@ -70,7 +78,8 @@ internal fun CurveonMapState.SurfaceLayers(
         s.getLayer("$HEAT-layer")?.setProperties(heatmapOpacity(E.interpolate(E.linear(), E.zoom(),
             E.stop(surfaceZoom, if (dark) 0.8f else 0.7f), E.stop(surfaceZoom + 1.5f, 0f))))
     }
-    LaunchedEffect(style, cameraIdleTick, surfaceMode != SurfaceMode.OFF, surfaceZoom) {
+    LaunchedEffect(townSquares) { surfaceBounds = null }
+    LaunchedEffect(style, cameraIdleTick, surfaceMode != SurfaceMode.OFF, surfaceZoom, townSquares) {
         val m = map ?: return@LaunchedEffect
         val s = style ?: return@LaunchedEffect
         val fetch = surfaceWays?.takeIf { surfaceMode != SurfaceMode.OFF } ?: return@LaunchedEffect
@@ -86,7 +95,14 @@ internal fun CurveonMapState.SurfaceLayers(
             .onFailure { android.util.Log.w("CurveonMap", "Surfaces not read", it) }.getOrNull()
             ?.let { com.curveon.routing.SurfaceReader.leadingToGravel(it) } ?: return@LaunchedEffect
         val features = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-            FeatureCollection.fromFeatures(ways.map { w ->
+            // In a town only gravel and soft ground: its many small tarmac streets are what made towns a white mush when zoomed out.
+            fun inTown(w: com.curveon.routing.SurfaceWay): Boolean {
+                val towns = townSquares ?: return false
+                val m = (w.coords.size / 2 / 2) * 2
+                return com.curveon.routing.CityAreas.square(w.coords[m], w.coords[m + 1]) in towns
+            }
+            val shown = ways.filter { it.kind == com.curveon.routing.SurfaceKind.GRAVEL || it.kind == com.curveon.routing.SurfaceKind.SOFT || !inTown(it) }
+            FeatureCollection.fromFeatures(shown.map { w ->
                 Feature.fromGeometry(LineString.fromLngLats((w.coords.indices step 2).map { Point.fromLngLat(w.coords[it], w.coords[it + 1]) })).apply {
                     addStringProperty("kind", when (w.kind) {
                         com.curveon.routing.SurfaceKind.GRAVEL -> "gravel"
@@ -359,12 +375,12 @@ internal const val TOWN_ROADS_ZOOM = 14f
  * the tile (its lines reach just past its edge), and a tile's lines lie within its own rectangle and no other.
  */
 @Composable
-internal fun CurveonMapState.TownRoads(squares: Set<Long>?, showPaths: Boolean = true) {
+internal fun CurveonMapState.TownRoads(squares: Set<Long>?, showPaths: Boolean = true, ownRoads: Boolean = false) {
     // Each layer's own filter, from before any change (per style: a new style brings its layers afresh).
     val own = remember(style) { HashMap<String, E?>() }
     // The box the town tiles were chosen for: a move within it changes nothing.
-    var covered by remember(style, squares, showPaths) { mutableStateOf<LatLngBounds?>(null) }
-    LaunchedEffect(style, squares, showPaths, cameraIdleTick) {
+    var covered by remember(style, squares, showPaths, ownRoads) { mutableStateOf<LatLngBounds?>(null) }
+    LaunchedEffect(style, squares, showPaths, ownRoads, cameraIdleTick) {
         val s = style ?: return@LaunchedEffect
         val m = map ?: return@LaunchedEffect
         val view = m.projection.visibleRegion.latLngBounds
@@ -404,7 +420,15 @@ internal fun CurveonMapState.TownRoads(squares: Set<Long>?, showPaths: Boolean =
             val base = own.getOrPut(layer.id) { (layer as? org.maplibre.android.style.layers.LineLayer)?.filter ?: (layer as? org.maplibre.android.style.layers.SymbolLayer)?.filter }
             // Settings → Display → Footpaths and cycleways off: those are left out (tracks, piers and the rest stay).
             val noPaths = if (pathLayer && !showPaths) (if (id.startsWith("online-")) ONLINE_NO_PATHS else NO_PATHS) else null
-            val parts = listOfNotNull(base, quiet.takeIf { id in TOWN_QUIET_LAYERS }, noPaths)
+            // The downloaded maps' small roads, below TOWN_ROADS_ZOOM, are drawn from the routing data instead, road by road with
+            // the towns left out ([ownRoads], SurfaceLayers): the map's own lines are one per tile and kind, too coarse to tell.
+            val townQuiet = when {
+                id !in TOWN_QUIET_LAYERS -> null
+                // (Footpaths, when shown, are not in the routing data: those keep the map's own, tile by tile.)
+                squares != null && ownRoads && !id.startsWith("online-") && !(showPaths && id.endsWith("_other")) -> E.gte(E.zoom(), E.literal(TOWN_ROADS_ZOOM))
+                else -> quiet
+            }
+            val parts = listOfNotNull(base, townQuiet, noPaths)
             val filter = when (parts.size) { 0 -> E.literal(true); 1 -> parts.first(); else -> E.all(*parts.toTypedArray()) }
             when (layer) {
                 is org.maplibre.android.style.layers.LineLayer -> layer.setFilter(filter)

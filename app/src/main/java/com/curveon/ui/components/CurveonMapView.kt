@@ -271,9 +271,9 @@ fun CurveonMapView(
     val inPreview = previewRoutes.isNotEmpty()
     h.FollowCamera(routePoints, riderFix, location, headingDeg, speedKmh, currentTurnInstruction, bottomClearance, inPreview, hasGpsFix, autoZoom)
     h.OnlineLayers(hasOfflineMap)
-    h.SurfaceLayers(surfaceWays, surfaceMode, surfaceZoom, roadShade, dark)
+    h.SurfaceLayers(surfaceWays, surfaceMode, surfaceZoom, roadShade, dark, townSquares)
     h.Buildings3d(buildings3d && h.orientation == Orientation.THREE_D, dark)
-    h.TownRoads(townSquares, showPaths)
+    h.TownRoads(townSquares, showPaths, ownRoads = surfaceWays != null && surfaceMode != SurfaceMode.OFF)
 
     // Planning a trip: a preview, editing it, picking places or drawing an area on the map.
     val planning = planningTrip || previewRoutes.isNotEmpty() || editor != null || onTap != null || onSketch != null

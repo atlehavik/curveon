@@ -15,7 +15,7 @@ Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, 
 ## 2026-11-08 — Roligere byer (Innstillinger → Skjerm, på som standard)
 
 Der det er mye vei tett i tett (talt fra rutedataene, ca. 1,7 × 1,7 km om gangen, ikke etter veitype) vises småveier
-og stier først fra zoom 14; ute på landet som før. Fra 2026-11-08 kveld avgjøres det likt på alle zoomnivåer under 14 (før kunne småveiene i kanten av en by komme og gå mens du zoomet), og en flis må være minst halvt by. Første gang etter installasjon telles byene i bakgrunnen (ca. et
+og stier først fra zoom 14; ute på landet som før. Fra 2026-11-08 kveld avgjøres det likt på alle zoomnivåer under 14 (før kunne småveiene i kanten av en by komme og gå mens du zoomet), og en flis må være minst halvt by. Fra 17:40 samme kveld: småveiene under zoom 14 tegnes fra rutedataene vei for vei (byene utelatt), så Haugesund og Oslo er rolige på 11, 12 og 13 like mye, og småveiene rett utenfor byen står. Første gang etter installasjon telles byene i bakgrunnen (ca. et
 halvt minutt per land), så tar det et øyeblikk før det slår inn. Prøvd i emulatoren med Vestlandskartet: Bergen
 sentrum mye roligere ved zoom 13, stiene og veiene i fjellet rundt urørt.
 
