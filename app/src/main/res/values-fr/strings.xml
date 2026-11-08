@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Jour</string>
     <string name="map_theme_night">Nuit</string>
+    <string name="settings_paths">Chemins piétons et cyclables</string>
+    <string name="settings_paths_hint">Afficher trottoirs, pistes cyclables et sentiers sur la carte. Les pistes s\'affichent toujours</string>
     <string name="settings_quiet_towns">Villes plus lisibles</string>
     <string name="settings_quiet_towns_hint">En ville, les petites rues apparaissent quand tu zoomes plus près. À la campagne, toutes les routes restent visibles</string>
     <string name="settings_group_fold">Replier</string>

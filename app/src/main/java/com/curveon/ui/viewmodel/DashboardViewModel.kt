@@ -1066,6 +1066,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** Settings → Display → Footpaths and cycleways on the map: hardly ever of use on a motorbike, so off by default. */
+    private val _showPaths = MutableStateFlow(settings.getBoolean("showPaths", false))
+    val showPaths: StateFlow<Boolean> = _showPaths.asStateFlow()
+    fun setShowPaths(on: Boolean) { _showPaths.value = on; settings.edit().putBoolean("showPaths", on).apply() }
+
     /** Settings → Display → Show zoom level: the map's zoom on its left edge, to tell zoom levels apart (off by default). */
     private val _showZoom = MutableStateFlow(settings.getBoolean("showZoom", false))
     val showZoom: StateFlow<Boolean> = _showZoom.asStateFlow()

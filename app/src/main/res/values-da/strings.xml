@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Nat</string>
+    <string name="settings_paths">Gang- og cykelstier</string>
+    <string name="settings_paths_hint">Vis gangstier, cykelstier og stier på kortet. Markveje vises altid</string>
     <string name="settings_quiet_towns">Roligere byer</string>
     <string name="settings_quiet_towns_hint">I byer vises småvejene, når du zoomer tættere ind. Ude på landet vises alle veje</string>
     <string name="settings_group_fold">Fold sammen</string>

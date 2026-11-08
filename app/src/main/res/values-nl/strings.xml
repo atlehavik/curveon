@@ -71,6 +71,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Nacht</string>
+    <string name="settings_paths">Voet- en fietspaden</string>
+    <string name="settings_paths_hint">Voetpaden, fietspaden en paden op de kaart tonen. Onverharde wegen staan er altijd</string>
     <string name="settings_quiet_towns">Rustiger steden</string>
     <string name="settings_quiet_towns_hint">In steden verschijnen de kleine straten als je verder inzoomt. Op het platteland zie je alle wegen</string>
     <string name="settings_group_fold">Inklappen</string>

@@ -68,6 +68,7 @@ data class SettingsState(
     val buildings3d: Boolean = false,
     val quietTowns: Boolean = true,
     val showZoom: Boolean = false,
+    val showPaths: Boolean = false,
     val showAltitude: Boolean,
     val showClock: Boolean = true,
     val showBattery: Boolean = false,
@@ -121,6 +122,7 @@ class SettingsActions(
     val onBuildings3d: (Boolean) -> Unit = {},
     val onQuietTowns: (Boolean) -> Unit = {},
     val onShowZoom: (Boolean) -> Unit = {},
+    val onShowPaths: (Boolean) -> Unit = {},
     val onShowAltitude: (Boolean) -> Unit,
     val onShowClock: (Boolean) -> Unit = {},
     val onShowBattery: (Boolean) -> Unit = {},
@@ -213,6 +215,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             }
                             Setting(stringResource(R.string.settings_map_detail), stringResource(R.string.settings_map_detail_hint)) {
                                 Choice(MapDetail.entries, state.mapDetail, { stringResource(it.label) }, actions.onMapDetail)
+                            }
+                            Setting(stringResource(R.string.settings_paths), stringResource(R.string.settings_paths_hint)) {
+                                CockpitSwitch(state.showPaths, actions.onShowPaths)
                             }
                             Setting(stringResource(R.string.settings_quiet_towns), stringResource(R.string.settings_quiet_towns_hint)) {
                                 CockpitSwitch(state.quietTowns, actions.onQuietTowns)

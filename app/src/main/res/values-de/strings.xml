@@ -75,6 +75,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Tag</string>
     <string name="map_theme_night">Nacht</string>
+    <string name="settings_paths">Fuß- und Radwege</string>
+    <string name="settings_paths_hint">Fußwege, Radwege und Pfade auf der Karte zeigen. Feldwege erscheinen immer</string>
     <string name="settings_quiet_towns">Ruhigere Städte</string>
     <string name="settings_quiet_towns_hint">In Städten erscheinen die kleinen Straßen, wenn du näher heranzoomst. Auf dem Land siehst du alle Straßen</string>
     <string name="settings_group_fold">Einklappen</string>

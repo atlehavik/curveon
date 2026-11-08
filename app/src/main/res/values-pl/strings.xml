@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dzień</string>
     <string name="map_theme_night">Noc</string>
+    <string name="settings_paths">Ścieżki piesze i rowerowe</string>
+    <string name="settings_paths_hint">Pokaż chodniki, ścieżki rowerowe i ścieżki na mapie. Drogi gruntowe widać zawsze</string>
     <string name="settings_quiet_towns">Spokojniejsze miasta</string>
     <string name="settings_quiet_towns_hint">W miastach małe ulice pojawiają się po przybliżeniu. Poza miastem widać wszystkie drogi</string>
     <string name="settings_group_fold">Zwiń</string>

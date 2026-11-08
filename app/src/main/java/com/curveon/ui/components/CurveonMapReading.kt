@@ -335,6 +335,17 @@ private val TOWN_QUIET_LAYERS = setOf(
     "roads_bridges_minor", "roads_bridges_minor_casing", "roads_bridges_other", "roads_bridges_other_casing",
     "online-roads_minor", "online-roads_minor_casing", "online-roads_other",
 )
+/** The layers that draw footpaths and cycleways (with tracks, which stay), and their names. */
+private val PATH_LAYERS = setOf(
+    "roads_other", "roads_tunnels_other", "roads_tunnels_other_casing", "roads_bridges_other", "roads_bridges_other_casing",
+    "roads_labels_minor", "online-roads_other",
+)
+/** Footways, cycleways, paths, pavements, steps and squares: never roads a motorbike rides. Tracks are not among them. */
+private val NO_PATHS = E.not(E.`in`(E.get("kind_detail"), E.literal(arrayOf<Any>(
+    "footway", "cycleway", "path", "sidewalk", "steps", "pedestrian", "crossing", "corridor", "bridleway"))))
+/** The online map has them all as class "path" (tracks are class "track"). */
+private val ONLINE_NO_PATHS = E.neq(E.get("class"), E.literal("path"))
+
 /** Inside a town the small roads show from this zoom (out in the countryside, as before). */
 internal const val TOWN_ROADS_ZOOM = 14f
 
@@ -348,12 +359,12 @@ internal const val TOWN_ROADS_ZOOM = 14f
  * the tile (its lines reach just past its edge), and a tile's lines lie within its own rectangle and no other.
  */
 @Composable
-internal fun CurveonMapState.TownRoads(squares: Set<Long>?) {
+internal fun CurveonMapState.TownRoads(squares: Set<Long>?, showPaths: Boolean = true) {
     // Each layer's own filter, from before any change (per style: a new style brings its layers afresh).
     val own = remember(style) { HashMap<String, E?>() }
     // The box the town tiles were chosen for: a move within it changes nothing.
-    var covered by remember(style, squares) { mutableStateOf<LatLngBounds?>(null) }
-    LaunchedEffect(style, squares, cameraIdleTick) {
+    var covered by remember(style, squares, showPaths) { mutableStateOf<LatLngBounds?>(null) }
+    LaunchedEffect(style, squares, showPaths, cameraIdleTick) {
         val s = style ?: return@LaunchedEffect
         val m = map ?: return@LaunchedEffect
         val view = m.projection.visibleRegion.latLngBounds
@@ -387,14 +398,17 @@ internal fun CurveonMapState.TownRoads(squares: Set<Long>?) {
         if (style !== s) return@LaunchedEffect
         covered = box
         for (layer in s.layers) {
-            if (layer.id.substringBefore('~') !in TOWN_QUIET_LAYERS) continue
-            val line = layer as? org.maplibre.android.style.layers.LineLayer ?: continue
-            if (line.id !in own) own[line.id] = line.filter
-            val base = own[line.id]
-            when {
-                quiet == null -> if (base != null) line.setFilter(base) else line.setFilter(E.literal(true))
-                base == null -> line.setFilter(quiet)
-                else -> line.setFilter(E.all(base, quiet))
+            val id = layer.id.substringBefore('~')
+            val pathLayer = id in PATH_LAYERS
+            if (id !in TOWN_QUIET_LAYERS && !pathLayer) continue
+            val base = own.getOrPut(layer.id) { (layer as? org.maplibre.android.style.layers.LineLayer)?.filter ?: (layer as? org.maplibre.android.style.layers.SymbolLayer)?.filter }
+            // Settings → Display → Footpaths and cycleways off: those are left out (tracks, piers and the rest stay).
+            val noPaths = if (pathLayer && !showPaths) (if (id.startsWith("online-")) ONLINE_NO_PATHS else NO_PATHS) else null
+            val parts = listOfNotNull(base, quiet.takeIf { id in TOWN_QUIET_LAYERS }, noPaths)
+            val filter = when (parts.size) { 0 -> E.literal(true); 1 -> parts.first(); else -> E.all(*parts.toTypedArray()) }
+            when (layer) {
+                is org.maplibre.android.style.layers.LineLayer -> layer.setFilter(filter)
+                is org.maplibre.android.style.layers.SymbolLayer -> layer.setFilter(filter)
             }
         }
     }

@@ -75,6 +75,8 @@
     <string name="map_theme_auto">Sjálfvirkt</string>
     <string name="map_theme_day">Dagur</string>
     <string name="map_theme_night">Nótt</string>
+    <string name="settings_paths">Göngu- og hjólastígar</string>
+    <string name="settings_paths_hint">Sýna göngustíga, hjólastíga og slóða á kortinu. Slóðar fyrir ökutæki sjást alltaf</string>
     <string name="settings_quiet_towns">Rólegri bæir</string>
     <string name="settings_quiet_towns_hint">Í bæjum sjást litlu göturnar þegar þú stækkar nær. Úti á landi sjást allir vegir</string>
     <string name="settings_group_fold">Fela</string>

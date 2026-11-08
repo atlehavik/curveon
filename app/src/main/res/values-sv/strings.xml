@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Natt</string>
+    <string name="settings_paths">Gång- och cykelvägar</string>
+    <string name="settings_paths_hint">Visa gångvägar, cykelvägar och stigar på kartan. Traktorvägar visas alltid</string>
     <string name="settings_quiet_towns">Lugnare städer</string>
     <string name="settings_quiet_towns_hint">I städer visas småvägarna när du zoomar in närmare. Ute på landet visas alla vägar</string>
     <string name="settings_group_fold">Fäll ihop</string>

@@ -67,6 +67,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Päivä</string>
     <string name="map_theme_night">Yö</string>
+    <string name="settings_paths">Kävely- ja pyörätiet</string>
+    <string name="settings_paths_hint">Näytä kävelytiet, pyörätiet ja polut kartalla. Ajourat näkyvät aina</string>
     <string name="settings_quiet_towns">Rauhallisemmat kaupungit</string>
     <string name="settings_quiet_towns_hint">Kaupungeissa pikkutiet näkyvät, kun zoomaat lähemmäs. Maaseudulla näkyvät kaikki tiet</string>
     <string name="settings_group_fold">Pienennä</string>

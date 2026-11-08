@@ -77,6 +77,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Day</string>
     <string name="map_theme_night">Night</string>
+    <string name="settings_paths">Footpaths and cycleways</string>
+    <string name="settings_paths_hint">Show footways, cycleways and paths on the map. Tracks always show</string>
     <string name="settings_quiet_towns">Quieter towns</string>
     <string name="settings_quiet_towns_hint">In towns the small roads show when you zoom in closer. Out in the countryside every road shows</string>
     <string name="settings_group_fold">Fold away</string>

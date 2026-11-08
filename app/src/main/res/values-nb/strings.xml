@@ -76,6 +76,8 @@
     <string name="map_theme_auto">Auto</string>
     <string name="map_theme_day">Dag</string>
     <string name="map_theme_night">Natt</string>
+    <string name="settings_paths">Gang- og sykkelstier</string>
+    <string name="settings_paths_hint">Vis gangveier, sykkelveier og stier på kartet. Traktorveier vises alltid</string>
     <string name="settings_quiet_towns">Roligere byer</string>
     <string name="settings_quiet_towns_hint">I byer vises småveiene når du zoomer nærmere. Ute på landet vises alle veier</string>
     <string name="settings_group_fold">Slå sammen</string>

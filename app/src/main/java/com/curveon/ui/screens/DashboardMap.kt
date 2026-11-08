@@ -195,6 +195,7 @@ private fun DashboardMap(
         gravelHeatOnMap = gravelHeatButton == GravelHeatButton.MAP,
         buildings3d = viewModel.buildings3d.collectAsStateWithLifecycle().value,
         showZoom = viewModel.showZoom.collectAsStateWithLifecycle().value,
+        showPaths = viewModel.showPaths.collectAsStateWithLifecycle().value,
         townSquares = viewModel.townSquares.collectAsStateWithLifecycle().value,
         planningTrip = preview != null || state.mapPick != null || sketching,
         onShowGravelHeat = viewModel::setShowGravelHeat,
