@@ -123,7 +123,7 @@ class GravelHeat(
             return km
         }
 
-        internal fun tileName(lon: Int, lat: Int) = (if (lon < 0) "W${-lon}" else "E$lon") + "_" + (if (lat < 0) "S${-lat}" else "N$lat")
+        fun tileName(lon: Int, lat: Int) = (if (lon < 0) "W${-lon}" else "E$lon") + "_" + (if (lat < 0) "S${-lat}" else "N$lat")
 
         /** "E5_N60" → (5, 60). */
         fun origin(tile: String): Pair<Int, Int>? {

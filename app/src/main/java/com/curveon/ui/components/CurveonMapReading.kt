@@ -375,7 +375,11 @@ internal const val TOWN_ROADS_ZOOM = 14f
  * the tile (its lines reach just past its edge), and a tile's lines lie within its own rectangle and no other.
  */
 @Composable
-internal fun CurveonMapState.TownRoads(squares: Set<Long>?, showPaths: Boolean = true, ownRoads: Boolean = false) {
+internal fun CurveonMapState.TownRoads(
+    squares: Set<Long>?, showPaths: Boolean = true, ownRoads: Boolean = false,
+    /** The routing data files covering an area (south, west, north, east): where there are some, the online map's small roads are drawn from them too. */
+    routingTiles: (suspend (Double, Double, Double, Double) -> List<String>)? = null,
+) {
     // Each layer's own filter, from before any change (per style: a new style brings its layers afresh).
     val own = remember(style) { HashMap<String, E?>() }
     // The box the town tiles were chosen for: a move within it changes nothing.
@@ -411,6 +415,13 @@ internal fun CurveonMapState.TownRoads(squares: Set<Long>?, showPaths: Boolean =
             // so a place is town or not the same way all the way in, and its small roads don't come and go while zooming.
             inTownTile(TOWN_TILE_ZOOM)?.let { E.any(E.gte(E.zoom(), E.literal(TOWN_ROADS_ZOOM)), E.not(it)) }
         }
+        // The online map (where no map is downloaded) the same way, where routing data covers all round the view.
+        val routingInView = ownRoads && squares != null && routingTiles != null && run {
+            val needed = listOf(box.latitudeSouth to box.longitudeWest, box.latitudeSouth to box.longitudeEast,
+                box.latitudeNorth to box.longitudeWest, box.latitudeNorth to box.longitudeEast)
+                .map { (la, lo) -> com.curveon.routing.GravelHeat.tileName(Math.floorDiv(Math.floor(lo).toInt(), 5) * 5, Math.floorDiv(Math.floor(la).toInt(), 5) * 5) }.toSet()
+            runCatching { routingTiles(box.latitudeSouth, box.longitudeWest, box.latitudeNorth, box.longitudeEast) }.getOrNull()?.toSet()?.containsAll(needed) == true
+        }
         if (style !== s) return@LaunchedEffect
         covered = box
         for (layer in s.layers) {
@@ -425,7 +436,7 @@ internal fun CurveonMapState.TownRoads(squares: Set<Long>?, showPaths: Boolean =
             val townQuiet = when {
                 id !in TOWN_QUIET_LAYERS -> null
                 // (Footpaths, when shown, are not in the routing data: those keep the map's own, tile by tile.)
-                squares != null && ownRoads && !id.startsWith("online-") && !(showPaths && id.endsWith("_other")) -> E.gte(E.zoom(), E.literal(TOWN_ROADS_ZOOM))
+                squares != null && ownRoads && (!id.startsWith("online-") || routingInView) && !(showPaths && id.endsWith("_other")) -> E.gte(E.zoom(), E.literal(TOWN_ROADS_ZOOM))
                 else -> quiet
             }
             val parts = listOfNotNull(base, townQuiet, noPaths)

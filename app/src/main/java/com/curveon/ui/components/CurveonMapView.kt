@@ -234,6 +234,8 @@ fun CurveonMapView(
     gravelHeatOnMap: Boolean = false,
     /** Settings → Display: the buildings stand up in the 3D view. */
     buildings3d: Boolean = false,
+    /** The routing data files covering an area (for quieter towns on the online map). */
+    routingTiles: (suspend (Double, Double, Double, Double) -> List<String>)? = null,
     /** Settings → Display → Footpaths and cycleways (off by default). */
     showPaths: Boolean = false,
     /** Settings → Display → Show zoom level. */
@@ -273,7 +275,7 @@ fun CurveonMapView(
     h.OnlineLayers(hasOfflineMap)
     h.SurfaceLayers(surfaceWays, surfaceMode, surfaceZoom, roadShade, dark, townSquares)
     h.Buildings3d(buildings3d && h.orientation == Orientation.THREE_D, dark)
-    h.TownRoads(townSquares, showPaths, ownRoads = surfaceWays != null && surfaceMode != SurfaceMode.OFF)
+    h.TownRoads(townSquares, showPaths, ownRoads = surfaceWays != null && surfaceMode != SurfaceMode.OFF, routingTiles = routingTiles)
 
     // Planning a trip: a preview, editing it, picking places or drawing an area on the map.
     val planning = planningTrip || previewRoutes.isNotEmpty() || editor != null || onTap != null || onSketch != null
