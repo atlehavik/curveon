@@ -465,7 +465,8 @@
     <string name="preview_ferry_loop">Pas de boucle aussi longue dans ce sens sans ferry – essaie une autre direction ou distance.</string>
     <string name="preview_ferry_road">Il n’y a pas de route par là sans ferry.</string>
     <string name="preview_go">GO</string>
-    <string name="preview_km_gravel">%.0f km de gravier</string>
+    <string name="preview_paved_amount">%1$s de bitume</string>
+    <string name="preview_offroad_amount">%1$s tout-terrain</string>
     <string name="preview_forced_gravel">Cet itinéraire t’oblige à passer sur du gravier : %1$s, %2$s. Il n’y a pas de route goudronnée par là sans gros détour.</string>
     <string name="preview_gravel_from_start">dès le départ</string>
     <string name="preview_gravel_after">commence après %1$s</string>

@@ -465,7 +465,8 @@
     <string name="preview_ferry_loop">No hay una vuelta tan larga en ese sentido sin ferri: prueba otra dirección o distancia.</string>
     <string name="preview_ferry_road">No hay carretera ahí sin ferri.</string>
     <string name="preview_go">VAMOS</string>
-    <string name="preview_km_gravel">%.0f km de tierra</string>
+    <string name="preview_paved_amount">%1$s de asfalto</string>
+    <string name="preview_offroad_amount">%1$s off-road</string>
     <string name="preview_forced_gravel">Esta ruta te obliga a ir por tierra: %1$s, %2$s. No hay carretera asfaltada sin un gran desvío.</string>
     <string name="preview_gravel_from_start">desde el principio</string>
     <string name="preview_gravel_after">empieza tras %1$s</string>

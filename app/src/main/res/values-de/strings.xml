@@ -457,7 +457,8 @@
     <string name="preview_ferry_loop">Ohne Fähre gibt es keine so lange Runde in diese Richtung – versuch eine andere Richtung oder Distanz.</string>
     <string name="preview_ferry_road">Dorthin gibt es keine Straße ohne Fähre.</string>
     <string name="preview_go">LOS</string>
-    <string name="preview_km_gravel">%.0f km Schotter</string>
+    <string name="preview_paved_amount">%1$s Asphalt</string>
+    <string name="preview_offroad_amount">%1$s Offroad</string>
     <string name="preview_forced_gravel">Diese Route führt zwingend über Schotter: %1$s, %2$s. Ohne großen Umweg gibt es dort keine Asphaltstraße.</string>
     <string name="preview_gravel_from_start">gleich ab dem Start</string>
     <string name="preview_gravel_after">beginnt nach %1$s</string>

@@ -457,7 +457,8 @@
     <string name="preview_ferry_loop">Enginn svo langur hringur í þá átt án ferju – prófaðu aðra átt eða vegalengd.</string>
     <string name="preview_ferry_road">Það er enginn vegur þangað án ferju.</string>
     <string name="preview_go">AF STAÐ</string>
-    <string name="preview_km_gravel">%.0f km möl</string>
+    <string name="preview_paved_amount">%1$s malbik</string>
+    <string name="preview_offroad_amount">%1$s utanvega</string>
     <string name="preview_forced_gravel">Þessi leið neyðir þig á möl: %1$s, %2$s. Enginn malbikaður vegur er þar án stórs króks.</string>
     <string name="preview_gravel_from_start">strax frá byrjun</string>
     <string name="preview_gravel_after">byrjar eftir %1$s</string>

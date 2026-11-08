@@ -458,7 +458,8 @@
     <string name="preview_ferry_loop">Ingen så lång runda åt det hållet utan – prova en annan riktning eller sträcka.</string>
     <string name="preview_ferry_road">Det finns ingen väg dit utan.</string>
     <string name="preview_go">KÖR</string>
-    <string name="preview_km_gravel">%.0f km grus</string>
+    <string name="preview_paved_amount">%1$s asfalt</string>
+    <string name="preview_offroad_amount">%1$s terräng</string>
     <string name="preview_forced_gravel">Den här rutten tvingar dig ut på grus: %1$s, %2$s. Det finns ingen asfaltväg där utan en stor omväg.</string>
     <string name="preview_gravel_from_start">redan från start</string>
     <string name="preview_gravel_after">börjar efter %1$s</string>

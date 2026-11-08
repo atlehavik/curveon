@@ -458,7 +458,8 @@
     <string name="preview_ferry_loop">Ingen så lang runde i den retningen uten ferje – prøv en annen retning eller lengde.</string>
     <string name="preview_ferry_road">Det finnes ingen vei dit uten ferje.</string>
     <string name="preview_go">KJØR</string>
-    <string name="preview_km_gravel">%.0f km grus</string>
+    <string name="preview_paved_amount">%1$s asfalt</string>
+    <string name="preview_offroad_amount">%1$s offroad</string>
     <string name="preview_forced_gravel">Denne ruten tvinger deg ut på grus: %1$s, %2$s. Det finnes ingen asfaltvei dit uten en stor omvei.</string>
     <string name="preview_gravel_from_start">rett fra start</string>
     <string name="preview_gravel_after">første bit etter %1$s</string>

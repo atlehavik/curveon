@@ -472,7 +472,8 @@
     <string name="preview_ferry_loop">W tę stronę nie ma tak długiej pętli bez promu – spróbuj innego kierunku lub dystansu.</string>
     <string name="preview_ferry_road">Nie ma tam drogi bez promu.</string>
     <string name="preview_go">JEDŹ</string>
-    <string name="preview_km_gravel">%.0f km szutru</string>
+    <string name="preview_paved_amount">asfalt: %1$s</string>
+    <string name="preview_offroad_amount">offroad: %1$s</string>
     <string name="preview_forced_gravel">Ta trasa prowadzi po szutrze: %1$s, %2$s. Nie ma tam asfaltu bez dużego objazdu.</string>
     <string name="preview_gravel_from_start">od samego startu</string>
     <string name="preview_gravel_after">zaczyna się po %1$s</string>

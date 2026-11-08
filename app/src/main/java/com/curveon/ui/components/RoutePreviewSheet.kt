@@ -500,8 +500,7 @@ private fun CandidateCard(
         when {
             route != null -> {
                 val min = (route.durationSeconds / 60).toInt()
-                Text("%d:%02d".format(min / 60, min % 60), color = TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                Text(stringResource(R.string.distance_km_whole, route.distanceMeters / 1000), color = TextSecondary, fontSize = 13.sp)
+                TimeAndDistance("%d:%02d".format(min / 60, min % 60), stringResource(R.string.distance_km_whole, route.distanceMeters / 1000))
                 if (showArrival) {
                     val arriveAt = route.points.last()
                     // Leaving now: when you get there, and whether it will be dark by then.
@@ -515,13 +514,14 @@ private fun CandidateCard(
                 }
                 Spacer(Modifier.height(6.dp))
                 CurvinessBar(route.curviness)
-                val gravel = stringResource(R.string.preview_km_gravel, route.unpavedMeters / 1000)
-                val ferries = pluralStringResource(R.plurals.preview_ferries, route.ferryCount, route.ferryCount)
-                val notes = buildList {
-                    if (route.unpavedMeters > 1000) add(gravel)
-                    if (route.ferryCount > 0) add(ferries)
+                // How much of it is tarmac, gravel and offroad, each in its colour on the map; none shown that isn't there.
+                val (paved, gravel, track) = remember(route) { surfaceMeters(route) }
+                Column {
+                    if (paved >= MIN_SURFACE_SHOWN_M) SurfaceLine(stringResource(R.string.preview_paved_amount, shortDistance(paved)), PavedTextColor)
+                    if (gravel >= MIN_SURFACE_SHOWN_M) SurfaceLine(stringResource(R.string.preview_gravel_amount, shortDistance(gravel)), Color(android.graphics.Color.parseColor(GRAVEL_COLOR)))
+                    if (track >= MIN_SURFACE_SHOWN_M) SurfaceLine(stringResource(R.string.preview_offroad_amount, shortDistance(track)), Color(android.graphics.Color.parseColor(TRACK_COLOR)))
+                    if (route.ferryCount > 0) SurfaceLine(pluralStringResource(R.plurals.preview_ferries, route.ferryCount, route.ferryCount), TextSecondary)
                 }
-                if (notes.isNotEmpty()) Text(notes.joinToString(" · "), color = NeonAmber, fontSize = 11.sp, maxLines = 1)
                 weatherNote?.let { (text, color) -> Text(text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
             }
             c.error != null -> Text(c.error, color = WarningRed, fontSize = 12.sp, maxLines = 3)
@@ -532,18 +532,77 @@ private fun CandidateCard(
     }
 }
 
-/** Five little segments: how twisty the route is. */
+/**
+ * How twisty the route is: the twisty-road sign, then five little segments in a plain colour (not a surface's, so they
+ * aren't read as gravel). On a narrow card the segments get shorter, so the sign always shows.
+ */
 @Composable
 private fun CurvinessBar(curviness: Int) {
     val filled = ((curviness + 10) / 20).coerceIn(1, 5)
-    Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
-        repeat(5) { i ->
-            Box(Modifier.size(width = 14.dp, height = 5.dp).clip(RoundedCornerShape(3.dp))
-                .background(if (i < filled) NeonAmber else CockpitBorder))
+    BoxWithConstraints {
+        // The sign (14) and the gap after it (6), four gaps of 3 between the five segments.
+        val segment = ((maxWidth - 14.dp - 6.dp - 12.dp) / 5).coerceIn(6.dp, 14.dp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Gesture, stringResource(R.string.preview_curviness), tint = TextSecondary, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                repeat(5) { i ->
+                    Box(Modifier.size(width = segment, height = 5.dp).clip(RoundedCornerShape(3.dp))
+                        .background(if (i < filled) TextSecondary else CockpitBorder))
+                }
+            }
         }
-        Spacer(Modifier.width(6.dp))
-        Icon(Icons.Default.Gesture, stringResource(R.string.preview_curviness), tint = TextMuted, modifier = Modifier.size(14.dp))
     }
+}
+
+/** The route's time with its length beside it ("1:02  38 km"), or the length under the time when the card is too narrow for both. */
+@Composable
+private fun TimeAndDistance(time: String, distance: String) {
+    val timeStyle = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Black)
+    val distanceStyle = TextStyle(fontSize = 13.sp)
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints {
+        val gap = 8.dp
+        val needed = measurer.measure(time, timeStyle, maxLines = 1).size.width + measurer.measure(distance, distanceStyle, maxLines = 1).size.width +
+            with(LocalDensity.current) { gap.roundToPx() }
+        if (needed <= constraints.maxWidth) Row {
+            Text(time, color = TextPrimary, style = timeStyle, maxLines = 1, modifier = Modifier.alignByBaseline())
+            Spacer(Modifier.width(gap))
+            Text(distance, color = TextSecondary, style = distanceStyle, maxLines = 1, modifier = Modifier.alignByBaseline())
+        } else Column {
+            Text(time, color = TextPrimary, style = timeStyle)
+            Text(distance, color = TextSecondary, style = distanceStyle)
+        }
+    }
+}
+
+/** One surface's share of the route ("12 km gravel"), in its colour on the map. */
+@Composable
+private fun SurfaceLine(text: String, color: Color) =
+    Text(text, color = color, fontSize = 11.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+
+/** Shorter than this, a surface isn't listed (it would read "0 km"). */
+private const val MIN_SURFACE_SHOWN_M = 50.0
+
+/** Tarmac in the route's blue: between the map's light blue line and its cyan one at night, and easy to read on the dark card. */
+private val PavedTextColor = Color(0xFF29A8FF)
+
+/**
+ * Metres of tarmac, gravel and offroad along [route], split the way the map colours the route line: a track is offroad,
+ * any other unpaved road gravel, the rest tarmac (each stretch as the road leading to its end point).
+ */
+private fun surfaceMeters(route: com.curveon.routing.Route): Triple<Double, Double, Double> {
+    var paved = 0.0; var gravel = 0.0; var track = 0.0
+    for (i in 1 until route.points.size) {
+        val p = route.points[i]
+        val d = p.distanceFromStart - route.points[i - 1].distanceFromStart
+        when {
+            p.highway == "track" -> track += d
+            p.unpaved -> gravel += d
+            else -> paved += d
+        }
+    }
+    return Triple(paved, gravel, track)
 }
 
 /**

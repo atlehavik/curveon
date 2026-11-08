@@ -442,7 +442,8 @@
     <string name="preview_ferry_loop">Geen rondje van deze lengte die kant op zonder – probeer een andere richting of afstand.</string>
     <string name="preview_ferry_road">Daar is geen weg zonder.</string>
     <string name="preview_go">GA</string>
-    <string name="preview_km_gravel">%.0f km gravel</string>
+    <string name="preview_paved_amount">%1$s asfalt</string>
+    <string name="preview_offroad_amount">%1$s offroad</string>
     <string name="preview_forced_gravel">Deze route dwingt je over gravel: %1$s, %2$s. Er is daar geen asfaltweg zonder grote omweg.</string>
     <string name="preview_gravel_from_start">meteen vanaf de start</string>
     <string name="preview_gravel_after">begint na %1$s</string>

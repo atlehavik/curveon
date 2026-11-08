@@ -427,7 +427,8 @@
     <string name="preview_ferry_loop">Näin pitkää kierrosta siihen suuntaan ei ole ilman lauttaa – kokeile toista suuntaa tai matkaa.</string>
     <string name="preview_ferry_road">Sinne ei ole tietä ilman lauttaa.</string>
     <string name="preview_go">AJA</string>
-    <string name="preview_km_gravel">%.0f km soraa</string>
+    <string name="preview_paved_amount">%1$s asfalttia</string>
+    <string name="preview_offroad_amount">%1$s maastoa</string>
     <string name="preview_forced_gravel">Tämä reitti vie sinut soralle: %1$s, %2$s. Sinne ei ole asfalttitietä ilman isoa kiertotietä.</string>
     <string name="preview_gravel_from_start">heti alusta</string>
     <string name="preview_gravel_after">alkaa %1$s jälkeen</string>
