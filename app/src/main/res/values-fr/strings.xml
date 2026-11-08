@@ -65,7 +65,7 @@
     <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Paysage</string>
     <string name="screen_lock_portrait">Portrait</string>
-    <string name="settings_roads">Routes</string>
+    <string name="settings_roads">Contraste</string>
     <string name="settings_roads_hint">La couleur des petites routes, de jour et de nuit</string>
     <string name="road_contrast_normal">Normal</string>
     <string name="road_contrast_high">Contraste élevé</string>

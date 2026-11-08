@@ -60,7 +60,7 @@
     <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Liggend</string>
     <string name="screen_lock_portrait">Staand</string>
-    <string name="settings_roads">Wegen</string>
+    <string name="settings_roads">Contrast</string>
     <string name="settings_roads_hint">De kleur van de kleine wegen, dag en nacht</string>
     <string name="road_contrast_normal">Normaal</string>
     <string name="road_contrast_high">Hoog contrast</string>

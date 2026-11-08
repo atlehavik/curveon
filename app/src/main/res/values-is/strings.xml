@@ -64,7 +64,7 @@
     <string name="screen_lock_auto">Sjálfvirkt</string>
     <string name="screen_lock_landscape">Langsnið</string>
     <string name="screen_lock_portrait">Skammsnið</string>
-    <string name="settings_roads">Vegir</string>
+    <string name="settings_roads">Birtuskil</string>
     <string name="settings_roads_hint">Litur smáveganna, dag og nótt</string>
     <string name="road_contrast_normal">Venjulegt</string>
     <string name="road_contrast_high">Mikil birtuskil</string>

@@ -56,7 +56,7 @@
     <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Vaaka</string>
     <string name="screen_lock_portrait">Pysty</string>
-    <string name="settings_roads">Tiet</string>
+    <string name="settings_roads">Kontrasti</string>
     <string name="settings_roads_hint">Pienten teiden väri, päivällä ja yöllä</string>
     <string name="road_contrast_normal">Normaali</string>
     <string name="road_contrast_high">Korkea kontrasti</string>

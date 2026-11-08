@@ -65,7 +65,7 @@
     <string name="screen_lock_auto">Auto</string>
     <string name="screen_lock_landscape">Liggende</string>
     <string name="screen_lock_portrait">Stående</string>
-    <string name="settings_roads">Veier</string>
+    <string name="settings_roads">Kontrast</string>
     <string name="settings_roads_hint">Fargen på de små veiene, dag og natt</string>
     <string name="road_contrast_normal">Normal</string>
     <string name="road_contrast_high">Høykontrast</string>
