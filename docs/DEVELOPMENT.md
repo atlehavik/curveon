@@ -40,7 +40,7 @@ phone, with an optional companion app on the phone when a tablet is used.
   120 MB: it is fetched in the background at the first GPS fix and when Where to? opens, on any
   connection, once per run (a failure shows a Try again card in Where to?). Bigger ones (Germany)
   come with the country's map.
-- **Roundtrip** (from "Where to?" when no trip is planned): draw the area to ride in on the map with a finger; the loop avoids riding the same road twice. Can start elsewhere than where you are, and "Edit on map" turns the loop into an ordinary trip through via points.
+- **Roundtrip** (from "Where to?" when no trip is planned): draw the area to ride in on the map with a finger. Riding the same road twice is what a loop avoids first (the rider's wish, 2026-11-08: not a round circle, but as little road twice as at all possible; a dead end ridden in and out weighs even more), then the length, then curves; working it out stays quick (seconds), and a loop made into a trip keeps the planner's line until the rider changes it (see `RoundtripPlanner.quality`, `LoopBenchTest`). Can start elsewhere than where you are, and "Edit on map" turns the loop into an ordinary trip through via points.
 - **GPX**: import tracks/routes, ride them (also reversed), routing onto the track first. Tracks live in
   groups (a multi-track file becomes one) that can show/hide, colour and invert all their tracks at once
   while keeping each track's own settings; tracks and groups can be renamed and exported as GPX.

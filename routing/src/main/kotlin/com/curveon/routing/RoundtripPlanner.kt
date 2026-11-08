@@ -94,7 +94,7 @@ class RoundtripPlanner(
                 }).successes
                 best = (retries + best).maxBy { score(it.route, targetM, options) }
             }
-            return polish(start, best.route, options)
+            return polish(start, fewerVias(start, best.route, options, pool) { score(it, targetM, options) }, options)
         } finally {
             pool.shutdownNow()
             legPool.shutdownNow()
@@ -143,11 +143,11 @@ class RoundtripPlanner(
             fun score(expected: Double, r: Route) = areaScore(r, drawn, expected, options) -
                 if (maxM != null && r.distanceMeters > maxM * 1.05) ln(r.distanceMeters / maxM) * 700 else 0.0
             loops.forEach { (expected, r) ->
-                log("  area -> %.0f km (expected %.0f) ferries=%d outside=%.0f%% score=%.0f".format(r.distanceMeters / 1000, expected / 1000,
-                    r.ferryCount, drawn.outsideShare(r) * 100, score(expected, r)))
+                log("  area -> %.0f km (expected %.0f) ferries=%d outside=%.0f%% twice=%.0f%% spurs=%.1f km score=%.0f".format(r.distanceMeters / 1000, expected / 1000,
+                    r.ferryCount, drawn.outsideShare(r) * 100, overlapFraction(r) * 100, Spurs.wastedMeters(r) / 1000, score(expected, r)))
             }
-            val best = usable.maxBy { (expected, r) -> score(expected, r) }.second
-            return polish(start, best, options)
+            val (expected, best) = usable.maxBy { (expected, r) -> score(expected, r) }
+            return polish(start, fewerVias(start, best, options, pool) { score(expected, it) }, options)
         } finally {
             pool.shutdownNow()
             legPool.shutdownNow()
@@ -237,8 +237,40 @@ class RoundtripPlanner(
 
     /** The chosen loop, riding less road twice where it can. */
     private fun polish(start: LatLon, route: Route, options: RouteOptions): Route {
-        val (vias, catching) = loopVias[route] ?: return route
-        return lessTwice(start, vias, catching, options, route)
+        var r = route
+        repeat(TWICE_ROUNDS) {
+            val (vias, catching) = loopVias[r] ?: return r
+            val next = lessTwice(start, vias, catching, options, r)
+            if (next === r) return r
+            loopVias[next] = vias to catching
+            r = next
+        }
+        return r
+    }
+
+    /**
+     * The chosen loop without one of its vias, then another, when that makes it better by [score]: a via out on a
+     * peninsula or an island reached by one road is ridden out and back, and the loop is often as good without it.
+     * Each try routes one new leg (the others are kept), all tries at once.
+     */
+    private fun fewerVias(start: LatLon, route: Route, options: RouteOptions, pool: ExecutorService, score: (Route) -> Double): Route {
+        var best = route
+        var bestScore = score(route)
+        repeat(MAX_VIA_DROPS) {
+            val (vias, catching) = loopVias[best] ?: return best
+            if (vias.size <= 2 || overlapFraction(best) < 0.03) return best
+            // Mended as every loop is (off islands, out of dead ends): without a via the next one may lie down a dead end.
+            val tries = parallel(pool, vias.indices.map { i -> { mendedLoop(start, vias.filterIndexed { k, _ -> k != i }, options, catching, withFerry = {}, onEach = {}) } }).successes
+            val (v, c, r) = tries.maxByOrNull { score(it.third) } ?: return best
+            val sc = score(r)
+            log("    without a via: twice %.0f%% -> %.0f%%, spurs %.1f -> %.1f km, %.0f -> %.0f km, score %.0f -> %.0f".format(overlapFraction(best) * 100, overlapFraction(r) * 100,
+                Spurs.wastedMeters(best) / 1000, Spurs.wastedMeters(r) / 1000, best.distanceMeters / 1000, r.distanceMeters / 1000, bestScore, sc))
+            // Only for riding less road twice, and never by a dead end instead.
+            if (sc <= bestScore || overlapFraction(r) > overlapFraction(best) - 0.01 || Spurs.wastedMeters(r) > Spurs.wastedMeters(best) + 500) return best
+            loopVias[r] = v to c
+            best = r; bestScore = sc
+        }
+        return best
     }
 
     /** The loop through [firstVias], with vias moved off islands and out of dead ends; also the vias and catching range it ended with. */
@@ -324,12 +356,14 @@ class RoundtripPlanner(
             val tried = legs.toMutableList().also { it[i] = alt }
             val joined = Routes.joinLegs(tried)
             val o = overlapFraction(joined)
+            // Never by riding into a dead end and back instead (that is road twice too, and the worst kind).
             if (o < bestTwice - 0.01 && joined.distanceMeters < best.distanceMeters * 1.3 + 3_000 &&
-                (!options.avoidFerries || joined.ferryCount <= best.ferryCount)) {
+                (!options.avoidFerries || joined.ferryCount <= best.ferryCount) && Spurs.wastedMeters(joined) <= Spurs.wastedMeters(best) + 300) {
                 legs[i] = alt; best = joined; bestTwice = o
             }
         }
-        log("    twice %.0f%% -> %.0f%% (%d legs tried, %.1f s)".format(overlapFraction(route) * 100, bestTwice * 100, tryLegs.size, (System.nanoTime() - t0) / 1e9))
+        log("    twice %.0f%% -> %.0f%%, spurs %.1f -> %.1f km (%d legs tried, %.1f s)".format(overlapFraction(route) * 100, bestTwice * 100,
+            Spurs.wastedMeters(route) / 1000, Spurs.wastedMeters(best) / 1000, tryLegs.size, (System.nanoTime() - t0) / 1e9))
         return best
     }
 
@@ -417,11 +451,13 @@ class RoundtripPlanner(
     private fun quality(route: Route, options: RouteOptions): Double {
         // Some riding the same road twice is unavoidable on islands and peninsulas (one road out).
         // Riding the same road twice is what a loop should avoid most, after the length.
-        val overlapPenalty = overlapFraction(route) * 300                          // 20% same road twice = -60
+        // The rider's first wish for a loop (2026-11-08: "avoid, as far as at all possible, using the same road"): 20%
+        // ridden twice weighs as much as a loop half again too long or short (asked distance), more than any curves.
+        val overlapPenalty = overlapFraction(route) * OVERLAP_WEIGHT
         val curveBonus = if (options.roadStyle == RoadStyle.FASTEST) 0.0 else route.curviness.toDouble()
         val gravelPenalty = if (options.surface == SurfacePreference.PAVED) route.unpavedShare() * 600 else 0.0
-        // Riding into a dead end and back is the most annoying thing a loop can do.
-        val spurPenalty = Spurs.wastedMeters(route) / route.distanceMeters * 400
+        // Riding into a dead end and back weighs more than other road ridden twice (it is counted in that too).
+        val spurPenalty = Spurs.wastedMeters(route) / route.distanceMeters * SPUR_WEIGHT
         // Ferries switched off: loops with one only compete when nothing on land fits (see plan),
         // and even then each ferry weighs as much as a loop 27% off the asked length.
         val ferryPenalty = if (options.avoidFerries) route.ferryCount * 60.0 else 0.0
@@ -437,6 +473,14 @@ class RoundtripPlanner(
 
     companion object {
         private const val ROAD_DETOUR_FACTOR = 1.3
+        /** Score per share of a loop ridden twice (see [quality]). */
+        private const val OVERLAP_WEIGHT = 900.0
+        /** Score per share of a loop wasted in dead ends ridden in and out (see [quality]). */
+        private const val SPUR_WEIGHT = 1500.0
+        /** At most this many vias are dropped from the chosen loop to ride less road twice (see [fewerVias]). */
+        private const val MAX_VIA_DROPS = 2
+        /** Rounds of routing legs again round road ridden twice (see [lessTwice]). */
+        private const val TWICE_ROUNDS = 2
         private const val VIA_POINTS = 3
         /** A drawn area: about one via this far apart round it, shrunk towards the middle by each inset. */
         private const val AREA_VIA_SPACING_M = 15_000.0
