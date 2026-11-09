@@ -90,7 +90,7 @@ internal fun CurveonMapState.SurfaceLayers(
         // A margin around the view, so small pans need nothing new.
         val dLat = (b.latitudeNorth - b.latitudeSouth) * 0.3
         val dLon = (b.longitudeEast - b.longitudeWest) * 0.3
-        val area = LatLngBounds.from(b.latitudeNorth + dLat, b.longitudeEast + dLon, b.latitudeSouth - dLat, b.longitudeWest - dLon)
+        val area = grownBounds(b, dLat, dLon)
         val ways = runCatching { fetch(area.latitudeSouth, area.longitudeWest, area.latitudeNorth, area.longitudeEast) }
             .onFailure { android.util.Log.w("CurveonMap", "Surfaces not read", it) }.getOrNull()
             ?.let { com.curveon.routing.SurfaceReader.leadingToGravel(it) } ?: return@LaunchedEffect
@@ -362,6 +362,15 @@ private val NO_PATHS = E.not(E.`in`(E.get("kind_detail"), E.literal(arrayOf<Any>
 /** The online map has them all as class "path" (tracks are class "track"). */
 private val ONLINE_NO_PATHS = E.neq(E.get("class"), E.literal("path"))
 
+/**
+ * [b] with a margin round it, kept on the globe: zoomed far out, the margin reached past a pole, and MapLibre refuses a
+ * latitude beyond 90 (the app crashed, 2026-11-09).
+ */
+internal fun grownBounds(b: LatLngBounds, dLat: Double, dLon: Double): LatLngBounds = LatLngBounds.from(
+    minOf(b.latitudeNorth + dLat, 90.0), minOf(b.longitudeEast + dLon, 180.0),
+    maxOf(b.latitudeSouth - dLat, -90.0), maxOf(b.longitudeWest - dLon, -180.0)
+)
+
 /** Inside a town the small roads show from this zoom (out in the countryside, as before). */
 internal const val TOWN_ROADS_ZOOM = 14f
 
@@ -393,7 +402,7 @@ internal fun CurveonMapState.TownRoads(
         // Two views' width round the view (at least about 20 km), so panning about a town changes nothing for a while.
         val dLat = maxOf((view.latitudeNorth - view.latitudeSouth) * 2, 0.1)
         val dLon = maxOf((view.longitudeEast - view.longitudeWest) * 2, 0.2)
-        val box = LatLngBounds.from(view.latitudeNorth + dLat, view.longitudeEast + dLon, view.latitudeSouth - dLat, view.longitudeWest - dLon)
+        val box = grownBounds(view, dLat, dLon)
         val quiet = squares?.let { all ->
             val near = withContext(Dispatchers.Default) {
                 val x0 = Math.floor(box.longitudeWest * com.curveon.routing.CityAreas.LON_DIV).toInt()
