@@ -133,7 +133,7 @@ limit, but the *group* stays, so the next morning is one tap on "Start sharing",
 ## Relay (small WebSocket server run on a VPS)
 The traffic is tiny (about 100 bytes per position per rider every 5-10 s). One long-running process
 keeps the sockets and the groups in memory, plus a small SQLite file for the rare things below.
-Written in TypeScript on Node (runs the same on PC, Raspberry Pi and VPS), in `~/develop/curveon-relay`.
+Written in TypeScript on Node (runs the same on PC, Raspberry Pi and VPS), in the separate `curveon-relay` project.
 Caddy in front for TLS; the same host serves the `https` invite landing page.
 
 - `GET /g/<groupId>` upgrades to WebSocket.
@@ -276,7 +276,7 @@ Kotlin, so an iOS (or any other) client can be written by anyone who wants to.
 ## Gaps found 2026-10-18 (resolve before building)
 **Status 2026-10-19:** gaps 1-5 are specified in [docs/groups-protocol.md](docs/groups-protocol.md)
 and implemented and unit tested in `:groups` (invite, keys, frames, replay guard, rekey; Tink for
-X25519/Ed25519, Apache 2.0). The relay side of 5 and 6 is done too (`~/develop/curveon-relay`: access
+X25519/Ed25519, Apache 2.0). The relay side of 5 and 6 is done too (`curveon-relay`: access
 proof, new frame types, SQLite storage and replay, per-IP creation limit, signed rekey, tested; the
 Kotlin and Node sides agree on the rekey signature byte for byte). Not done yet: "make admin" (a change
 signed by an existing admin), test vectors, JSON encoding of frames in `:groups`, wiring into the apps.
@@ -293,7 +293,7 @@ Built 2026-10-19: the group library (`:groups`: client, payloads, position shari
 (`:protocol` version 2), the phone side (`GroupHub` in `:phone`, encrypted store, OkHttp), a Group ride card in the companion, and on the
 tablet the other riders on the map, a group button, the group dialog (also Settings → Group ride) with invite QR, pause, profile, remove
 rider and SOS (hold 3 s, 10 s countdown, full-screen alert), in English and Norwegian. Tried on the X7 against a relay on the PC with
-simulated riders (`~/develop/curveon-relay/test/rider.ts`, an independent implementation of the protocol, which also reads what the Kotlin
+simulated riders (`curveon-relay/test/rider.ts`, an independent implementation of the protocol, which also reads what the Kotlin
 side sends). Added the same day: only one of a rider's devices sends their position (a `claim` frame, the other device shows "Use this device"; a left-behind device
 is taken over after three minutes), the rider's own picture (192 px, on the list and on the map marker), and QR scanning inside Curveon (CameraX + ZXing; the
 camera opens on the X7, a code held in front of it is not yet tried). The companion has no scanner.

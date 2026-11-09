@@ -1,5 +1,5 @@
 # Unit tests and lint on every pull request and push to main. Tests that need the real map data
-# (~/develop/Curveon-data) or the local relay (~/develop/curveon-relay) skip themselves here; run
+# (Curveon-data) or the local relay (curveon-relay), both kept beside the repo, skip themselves here; run
 # them on the PC before a release (CLAUDE.md, "Tests").
 name: CI
 

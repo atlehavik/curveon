@@ -6,7 +6,7 @@ here="$(cd "$(dirname "$0")/.." && pwd)"
 # Leses linje for linje, ikke som shell-kode, så passordet kan ha hvilke tegn som helst.
 while IFS='=' read -r k v; do
   case "$k" in FTP_HOST|FTP_USER|FTP_PASS|FTP_DIR) printf -v "$k" '%s' "$v";; esac
-done < "$HOME/.curveon-signing/website.env"
+done < "${CURVEON_WEBSITE_ENV:?set CURVEON_WEBSITE_ENV to the file with FTP_HOST, FTP_USER, FTP_PASS and FTP_DIR}"
 flag="--dry-run"; [ "${1:-}" = "--apply" ] && flag=""
 lftp -c "
 set ftp:ssl-force true

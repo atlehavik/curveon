@@ -15,7 +15,22 @@ import os, re, subprocess, sys, tempfile, zipfile
 
 LIMIT = 255
 PREFIX = 'Lcom/curveon/'
-SDK = os.path.expanduser('~/Android/Sdk/build-tools')
+
+
+def sdk_dir():
+    """The Android SDK, as Gradle finds it: ANDROID_HOME / ANDROID_SDK_ROOT, else sdk.dir in local.properties."""
+    for v in ('ANDROID_HOME', 'ANDROID_SDK_ROOT'):
+        if os.environ.get(v):
+            return os.environ[v]
+    props = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'local.properties')
+    if os.path.exists(props):
+        for line in open(props, encoding='utf-8'):
+            if line.startswith('sdk.dir='):
+                return line.split('=', 1)[1].strip()
+    sys.exit('no Android SDK: set ANDROID_HOME')
+
+
+SDK = os.path.join(sdk_dir(), 'build-tools')
 
 
 def dexdump():

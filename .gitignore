@@ -22,3 +22,6 @@ signing.env
 
 # Screenshots from tools/ui_matrix.py
 /ui-matrix-out/
+
+# Python bytecode
+__pycache__/

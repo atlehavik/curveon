@@ -173,7 +173,7 @@ downloads the APK and hands it to Android's installer. For a release it can find
    being prepared gets new points: once a version is released its entry never changes (changes made
    after a release start the next version's entry).
 3. `./gradlew :app:assembleRelease` with `KEYSTORE_PATH`, `STORE_PASSWORD` and `KEY_PASSWORD` set
-   for the release key (the maintainer keeps them in `~/.curveon-signing/signing.env`).
+   for the release key (the maintainer keeps them outside git).
 4. Release tagged `v<versionName>` (e.g. `v1.1`) with the APK named `Curveon-<versionName>.apk`:
    `gh release create v1.1 Curveon-1.1.apk --title "Curveon 1.1" --notes "..."`.
    The notes are shown in the app before installing.

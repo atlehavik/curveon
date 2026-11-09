@@ -46,9 +46,11 @@ private class JdkTransportFactory : TransportFactory {
   }
 }
 
-/** The real relay (~/develop/curveon-relay, Node) with real clients. Skipped where it is not installed. */
+/** The real relay (the curveon-relay project beside this repo, or \$CURVEON_RELAY; Node) with real clients. Skipped where it is not installed. */
 class RelayIntegrationTest {
-  private val relayDir = File(System.getProperty("user.home"), "develop/curveon-relay")
+  private val relayDir = System.getenv("CURVEON_RELAY")?.let(::File)
+    ?: generateSequence(File("").absoluteFile) { it.parentFile }.mapNotNull { it.parentFile?.resolve("curveon-relay") }.firstOrNull { it.isDirectory }
+    ?: File("curveon-relay")
   private val port = 18790
   private var relay: Process? = null
   private val riders = mutableListOf<Rider>()

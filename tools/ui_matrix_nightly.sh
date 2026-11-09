@@ -15,11 +15,13 @@
 set -uo pipefail
 
 N=${CURVEON_NIGHTLY:-$HOME/.curveon-nightly}
-REPO=$HOME/develop/Curveon
-SDK=$HOME/Android/Sdk
+HERE=$(cd "$(dirname "$0")" && pwd)
+# Where the repo and the Android SDK are: written by `install`, since the timer runs a copy outside the repo.
+[ -f "$N/env" ] && . "$N/env"
+REPO=${REPO:-$(dirname "$(git -C "$HERE" rev-parse --path-format=absolute --git-common-dir)")}
+SDK=${SDK:-${ANDROID_HOME:-}}
 WT=$REPO/.claude/worktrees/nightly-ui
 AVD=Curveon_Phone
-HERE=$(cd "$(dirname "$0")" && pwd)
 export PATH=$SDK/platform-tools:$SDK/emulator:$HOME/.local/bin:$PATH
 export CURVEON_NIGHTLY_RUN=1
 mkdir -p "$N/logs" "$N/nights"
@@ -142,7 +144,7 @@ publish() {
     local url
     url=$(cat "$N/page-url" 2>/dev/null) || { log "no page-url: the page is not published"; return 1; }
     python3 -I "$HERE/ui_matrix_report.py" "$N/page" | tee -a "$LOG"
-    # The session must start in a folder Claude trusts (under ~/develop/Curveon), and publishes only files under it.
+    # The session must start in a folder Claude trusts (under the repo), and publishes only files under it.
     mkdir -p "$WT/.nightly-page"
     grep -qx '/.nightly-page/' "$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir)/info/exclude" 2>/dev/null \
         || echo '/.nightly-page/' >> "$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir)/info/exclude"
@@ -232,6 +234,7 @@ cmd_install() {
     mkdir -p "$N/bin" "$HOME/.config/systemd/user"
     cp "$HERE"/ui_matrix_nightly.sh "$HERE"/ui_matrix_nightly.md "$HERE"/ui_matrix_queue.py "$HERE"/ui_matrix_report.py "$N/bin/"
     chmod +x "$N/bin/ui_matrix_nightly.sh"
+    printf 'REPO=%q\nSDK=%q\n' "$REPO" "$SDK" > "$N/env"
     cp "$HERE"/systemd/curveon-ui-nightly.service "$HERE"/systemd/curveon-ui-nightly.timer "$HOME/.config/systemd/user/"
     systemctl --user daemon-reload
     systemctl --user enable --now curveon-ui-nightly.timer

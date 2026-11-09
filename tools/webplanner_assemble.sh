@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 # Puts together what the web planner serves, in one folder (default build/webplanner):
 #   web/            the page (webplanner/web) with the map libraries in web/vendor (pinned versions, checked by sha256)
-#   web/map/        the map styles (built as the app builds them), fonts, sprites, and the Norway map (norway.pmtiles from ~/develop/Curveon-data)
+#   web/map/        the map styles (built as the app builds them), fonts, sprites, and the Norway map (norway.pmtiles from the data folder, Curveon-data beside the repo or $CURVEON_DATA)
 #   webplanner-server.jar
 # tools/deploy-webplanner.sh copies it to the VPS. To try it on this PC:
-#   SEGMENTS=~/develop/Curveon-data/brouter/segments4 WEB_DIR=build/webplanner/web MAP_DIR=build/webplanner/web/map \
+#   SEGMENTS=<data folder>/brouter/segments4 WEB_DIR=build/webplanner/web MAP_DIR=build/webplanner/web/map \
 #     PORT=8788 java -jar build/webplanner/webplanner-server.jar     # then http://localhost:8788/plan/?relay=localhost:8787
 set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT=${1:-build/webplanner}
-DATA=${CURVEON_DATA:-$HOME/develop/Curveon-data}
+# A folder beside this checkout, or beside a folder above it (a worktree sits inside the main checkout).
+beside() { local d; d=$(pwd); while [ "$d" != / ]; do [ -d "$(dirname "$d")/$1" ] && { echo "$(dirname "$d")/$1"; return; }; d=$(dirname "$d"); done; }
+DATA=${CURVEON_DATA:-$(beside Curveon-data)}
+[ -n "$DATA" ] || { echo "No Curveon-data folder beside the repo: set CURVEON_DATA" >&2; exit 1; }
 
 # name  url  sha256 — maplibre-gl and pmtiles: BSD-3-Clause; qrcode-generator: MIT (THIRD_PARTY_LICENSES.md).
 LIBS="

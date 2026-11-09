@@ -140,7 +140,7 @@ Under **Innstillinger → Navigasjon → Lyd**:
   ellers spiller enheten selv (Curveon på mobil, eller nettbrett uten telefon).
 - Innstillinger → Navigasjon → Lyd: «Navigeringslyder» (Av/Lyder, senere Stemme) og «Lyd ved
   feilkjøring» (på/av). Begge på som standard. Valget spiller en prøvelyd.
-- Lydene som WAV for å lytte på PC: `~/develop/Curveon-data/cue-sounds/`.
+- Lydene som WAV for å lytte på PC: `cue-sounds/` i datamappa (Curveon-data, utenfor repoet).
 
 - Demotur 2026-10-16: lydene hørtes bra ut, men tikket kom når svingen var i gang. Flyttet 2 s
   tidligere (`LAG_S`). Feiltilstandene er ikke prøvd ennå.

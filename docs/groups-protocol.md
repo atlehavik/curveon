@@ -2,7 +2,7 @@
 
 The wire format for riding together. Design and reasons are in [groups.md](groups.md); this
 file is what another implementation (iOS, a test client, the relay) must match. Reference code:
-`:groups` (Kotlin) and `~/develop/curveon-relay`. Primitives only: AES-256-GCM, HMAC-SHA256, HKDF-SHA256,
+`:groups` (Kotlin) and the relay (the separate `curveon-relay` project). Primitives only: AES-256-GCM, HMAC-SHA256, HKDF-SHA256,
 X25519, Ed25519. All binary values are base64url without padding unless stated.
 
 ## Identifiers and keys

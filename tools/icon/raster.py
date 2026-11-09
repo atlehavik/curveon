@@ -1,4 +1,4 @@
-# Launcher icons from the painted Curveon artwork (a square PNG, e.g. ~/Pictures/curveon-icon.png).
+# Launcher icons from the painted Curveon artwork (a square PNG).
 # Usage: python3 tools/icon/raster.py <artwork.png> [export-dir]
 # Writes the adaptive icon layers of :app and :companion (bitmaps on the 108 dp canvas), the legacy
 # mipmaps, and a round and a rounded-square PNG of the icon in export-dir (default: next to the art).

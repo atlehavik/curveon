@@ -4,10 +4,10 @@ Notater fra samtalene 2026-10-11/12 og 2026-10-18. Ikke committet.
 
 ## Status
 
-- Opplastingsnøkkel: `~/.curveon-signing/upload-key.jks`, passord i `~/.curveon-signing/signing.env`
+- Opplastingsnøkkel: `upload-key.jks`, passord i `signing.env`, begge utenfor git
   (alias `upload`). **Ta backup av hele mappen.** Mistes nøkkelen kan Play nullstille den, men det er tungvint.
 - Begge appene har signert bygg for Play:
-  `source ~/.curveon-signing/signing.env && ./gradlew :app:bundlePlay :companion:bundleRelease`
+  `source <signing.env> && ./gradlew :app:bundlePlay :companion:bundleRelease`
   - `app/build/outputs/bundle/play/app-play.aab` (hovedappen, `com.curveon.app`, ca. 30 MB)
   - `companion/build/outputs/bundle/release/companion-release.aab` (telefon, `com.curveon.companion`, ca. 6 MB)
 - **`play`-byggtypen i `:app`** (2026-10-18) er `release` uten selvoppdatering: `BuildConfig.SELF_UPDATE` er
@@ -112,7 +112,7 @@ endrer seg på Play-siden:
   til «siste posisjon holdes kryptert i minnet i inntil 30 minutter».
 
 - **Invitasjonslenker som App Links (2026-10-22):** `https://relay.curveon.no/join` åpner Curveon direkte, verifisert med
-  `/.well-known/assetlinks.json` på reléet (`~/develop/curveon-relay/public/assetlinks.json`), som lister GitHub-release-nøkkelen og
+  `/.well-known/assetlinks.json` på reléet (`public/assetlinks.json` i relay-prosjektet), som lister GitHub-release-nøkkelen og
   debug-nøkkelen. **Med Play App Signing signerer Google appen med en annen nøkkel:** dens SHA-256 (Play Console → App integrity) må legges
   til i `assetlinks.json` før Play-versjonen, ellers åpnes lenken i nettleseren (siden har da en «Åpne i Curveon»-knapp).
 

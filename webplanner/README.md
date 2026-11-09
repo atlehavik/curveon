@@ -37,11 +37,14 @@ browser ──POST /plan/api/route──> webplanner-server.jar (this module, 12
 
 ## Try it on this PC
 
+`CURVEON_DATA` is the data folder (Curveon-data) and `CURVEON_RELAY` the relay project (curveon-relay), both kept outside
+the repo; `webplanner_assemble.sh` finds Curveon-data by itself when it sits beside the repo.
+
 ```
 tools/webplanner_assemble.sh
-(cd ~/develop/curveon-relay && PORT=8787 node src/server.ts) &
-python3 -I tools/webplanner_pois.py /tmp/pois --sqlite ~/develop/Curveon-data/norway-search.sqlite   # places, if wanted
-SEGMENTS=~/develop/Curveon-data/brouter/segments4 WEB_DIR=build/webplanner/web MAP_DIR=build/webplanner/web/map POIS=/tmp/pois \
+(cd "$CURVEON_RELAY" && PORT=8787 node src/server.ts) &
+python3 -I tools/webplanner_pois.py /tmp/pois --sqlite "$CURVEON_DATA/norway-search.sqlite"   # places, if wanted
+SEGMENTS="$CURVEON_DATA/brouter/segments4" WEB_DIR=build/webplanner/web MAP_DIR=build/webplanner/web/map POIS=/tmp/pois \
   PORT=8788 java -jar build/webplanner/webplanner-server.jar
 # http://localhost:8788/plan/?relay=localhost:8787
 ```

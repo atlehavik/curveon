@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Puts the web planner on the relay VPS (ssh host curveon-vps, see ~/.curveon-vps/README.md), next to the relay:
+# Puts the web planner on the relay VPS (ssh host curveon-vps; its setup notes are kept outside git), next to the relay:
 #   /opt/curveon-planner/webplanner-server.jar   routing service (systemd curveon-planner, 127.0.0.1:8788)
 #   /opt/curveon-planner/segments/               BRouter segments for Europe (fetched by the VPS from brouter.de)
 #   /opt/curveon-planner/plan/                   the page and the map, served by Caddy at https://relay.curveon.no/plan/
@@ -9,7 +9,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 APPLY=${1:-}
 HOST=curveon-vps
-DATA=${CURVEON_DATA:-$HOME/develop/Curveon-data}
 OUT=build/webplanner
 
 tools/webplanner_assemble.sh "$OUT" >/dev/null
