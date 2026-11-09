@@ -1160,6 +1160,9 @@
     <string name="devices_show">Code tonen voor mijn andere apparaat</string>
     <string name="devices_scan">Code scannen van mijn andere apparaat</string>
     <string name="devices_unlink">Ontkoppelen</string>
+    <string name="devices_profiles_differ">Je apparaten hadden verschillende namen of foto\'s. Welke wil je op allebei?</string>
+    <string name="devices_profile_in_use">In gebruik</string>
+    <string name="devices_profile_use">Deze gebruiken</string>
     <string name="devices_code_hint">Scan dit binnen 15 minuten op je andere apparaat. Het geeft toegang tot je vrienden en groepen, dus laat het alleen aan jezelf zien.</string>
     <string name="nudge_button">Aandacht vragen</string>
     <string name="nudge_sent">Verstuurd: %1$s ziet dat je contact zoekt</string>

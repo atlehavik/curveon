@@ -1190,6 +1190,9 @@
     <string name="devices_show">Show code for my other device</string>
     <string name="devices_scan">Scan code from my other device</string>
     <string name="devices_unlink">Unlink</string>
+    <string name="devices_profiles_differ">Your devices had different names or pictures. Which one do you want on both?</string>
+    <string name="devices_profile_in_use">In use</string>
+    <string name="devices_profile_use">Use this one</string>
     <string name="devices_code_hint">Scan this on your other device within 15 minutes. It opens your friends and groups, so show it only to yourself.</string>
     <string name="nudge_button">Get attention</string>
     <string name="nudge_sent">Sent: %1$s will see you\'re trying to reach them</string>

@@ -551,9 +551,13 @@ sealed interface Message {
         override fun toJson() = obj("self_unlink")
     }
 
-    /** Hub -> UI: whether the rider's other device is linked ([waiting]: a link was made but the other device has not answered yet). */
-    data class SelfStatus(val linked: Boolean, val waiting: Boolean) : Message {
-        override fun toJson() = obj("self_status").put("linked", linked).put("waiting", waiting)
+    /**
+     * Hub -> UI: whether the rider's other device is linked ([waiting]: a link was made but the other device has not answered yet).
+     * [other]: the profile the other device had when they were linked, if it differed from the one both now use; the rider may
+     * pick it instead (or keep the one in use) with a [GroupProfile], and it is gone.
+     */
+    data class SelfStatus(val linked: Boolean, val waiting: Boolean, val other: GroupProfile? = null) : Message {
+        override fun toJson() = obj("self_status").put("linked", linked).put("waiting", waiting).put("other", other?.toJson() ?: JSONObject.NULL)
     }
 
     // ---- the relay through the phone: a tablet with no internet of its own reaches the relay over the Bluetooth link ----
@@ -769,7 +773,7 @@ sealed interface Message {
             "request_self_link" -> RequestSelfLink
             "self_link" -> SelfLink(o.getString("uri"))
             "self_unlink" -> SelfUnlink
-            "self_status" -> SelfStatus(o.optBoolean("linked"), o.optBoolean("waiting"))
+            "self_status" -> SelfStatus(o.optBoolean("linked"), o.optBoolean("waiting"), o.optJSONObject("other")?.let { fromJson(it) as? GroupProfile })
             "relay_open" -> RelayOpen(o.getInt("sock"), o.getString("url"))
             "relay_send" -> RelaySend(o.getInt("sock"), o.getString("text"))
             "relay_close" -> RelayClose(o.getInt("sock"), o.optInt("code", 1000))

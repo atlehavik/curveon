@@ -94,6 +94,7 @@ class ProtocolTest {
         Message.SelfLink("curveon://join#x"),
         Message.SelfUnlink,
         Message.SelfStatus(linked = true, waiting = false),
+        Message.SelfStatus(linked = true, waiting = false, other = Message.GroupProfile("Kari", 7, null, "AAAA")),
         Message.RelayOpen(1, "wss://relay.curveon.no/g/00?p=x"),
         Message.RelaySend(1, """{"v":1,"t":"pos"}"""),
         Message.RelayClose(1, 1000),

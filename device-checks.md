@@ -6,6 +6,11 @@ teste i emulatoren. Nyeste først; kryss dem av eller slett dem når de er gjort
 Kommandoene forutsetter at enheten er koblet til over USB. Er begge koblet til, velg en med
 `-s <serial>` (se `adb devices`). `adb` ligger i `~/Android/Sdk/platform-tools/`.
 
+## 2026-11-09 — Samme navn og bilde på telefon og nettbrett (Venner → Meg → Mine enheter)
+
+- [ ] Med Venner → Meg åpen på begge: endre navnet eller bildet på den ene. Kommer det fram på den andre uten at du lukker og åpner Venner (det kan ta opptil et minutt)?
+- [ ] Valget mellom profilene vises bare når enhetene kobles mens de har ulike navn eller bilder. Din kobling er allerede slått sammen, så for å se valget: Koble fra, gi den ene et annet navn eller bilde, og koble dem igjen med QR-koden. Får begge spørsmålet med begge profilene, og blir det du trykker på brukt på begge, og spørsmålet borte?
+
 ## 2026-11-08 — Innstillinger i grupper, og zoomnivå på kartet
 
 - [ ] X7 og Pixel: gå gjennom alle fanene i Innstillinger: står alt du brukte der fortsatt, og i en gruppe der du ville lett etter det?

@@ -246,6 +246,7 @@ object GroupHub {
                 store.profile = m
                 track(SyncDoc.PROFILE, profilePayload())
                 profileChanged()
+                if (store.profileOther != null) { store.profileOther = null; send(selfStatus()) } // the rider has chosen
             }
             is Message.MyPosition -> position(m)
             is Message.ShareRoute -> {
@@ -542,6 +543,7 @@ object GroupHub {
                     if (state.peer == null) {
                         state.peer = PeerProfile("device", 0, null, null, m.id)
                         store?.save(state)
+                        store?.selfLinkedAt = System.currentTimeMillis()
                         send(selfStatus())
                         scheduleSync(500)
                     }
@@ -801,7 +803,9 @@ object GroupHub {
 
     private fun selfState() = groups.values.firstOrNull { it.kind == GroupKind.SELF }
 
-    private fun selfStatus(): Message.SelfStatus = selfState().let { Message.SelfStatus(linked = it?.peer != null, waiting = it != null && it.peer == null) }
+    private fun selfStatus(): Message.SelfStatus = selfState().let {
+        Message.SelfStatus(linked = it?.peer != null, waiting = it != null && it.peer == null, other = store?.profileOther?.takeIf { _ -> it?.peer != null })
+    }
 
     private fun saveSync() { store?.syncDoc = syncDoc.toJson() }
 
@@ -879,6 +883,7 @@ object GroupHub {
         val remote = SyncDoc.fromJson(doc) ?: return
         syncSeen = syncSeen.merge(remote)
         refreshSync()
+        noteProfileChoice(remote)
         val changes = syncDoc.newerIn(remote)
         if (changes.isNotEmpty()) applySync(changes)
         if (syncDoc.hasNewerThan(syncSeen)) scheduleSync(500)
@@ -888,6 +893,8 @@ object GroupHub {
         for (e in changes) {
             if (e.key == SyncDoc.PROFILE) {
                 if (!e.deleted) e.payload?.let(::applyRemoteProfile)
+                // Changed on the other device since the two were linked (the rider chose there, or edited): no question here either.
+                if (e.ts > (store?.profileOtherTs ?: 0L) && store?.profileOther != null) { store?.profileOther = null; send(selfStatus()) }
                 syncDoc = syncDoc.with(e)
             } else if (e.key == SHARE_KEY) {
                 if (!e.deleted) e.payload?.let(::applyRemoteShare)
@@ -942,11 +949,34 @@ object GroupHub {
     }
 
     private fun applyRemoteProfile(payload: String) {
-        val o = runCatching { JSONObject(payload) }.getOrNull() ?: return
-        store?.profile = Message.GroupProfile(
+        store?.profile = profileFrom(payload) ?: return
+        profileChanged()
+    }
+
+    private fun profileFrom(payload: String): Message.GroupProfile? {
+        val o = runCatching { JSONObject(payload) }.getOrNull() ?: return null
+        return Message.GroupProfile(
             o.optString("nick"), o.optInt("colour"), if (o.isNull("icon")) null else o.optString("icon"), if (o.isNull("photo")) null else o.optString("photo")
         )
-        profileChanged()
+    }
+
+    /**
+     * Two devices linked with a profile each, set up before they were linked and not the same: one wins by itself (the newer, or
+     * the one with a picture), and the other is kept so the rider can pick it instead. Both devices note it, whichever won.
+     */
+    private fun noteProfileChoice(remote: SyncDoc) {
+        val store = store ?: return
+        val linkedAt = store.selfLinkedAt.takeIf { it > 0 } ?: return
+        val theirs = remote.entries[SyncDoc.PROFILE]?.takeUnless { it.deleted || it.payload == null } ?: return
+        val ours = syncDoc.entries[SyncDoc.PROFILE]?.takeUnless { it.deleted || it.payload == null } ?: return
+        if (theirs.ts >= linkedAt || ours.ts >= linkedAt || theirs.payload == ours.payload) return
+        val (winner, loser) = if (theirs.beats(ours)) theirs to ours else ours to theirs
+        if (store.profileOtherTs > winner.ts) return // a newer question (or answer) is already here
+        val other = profileFrom(loser.payload ?: return) ?: return
+        if (other == store.profileOther) return
+        store.profileOther = other
+        store.profileOtherTs = winner.ts
+        send(selfStatus())
     }
 
     private fun Message.GroupProfile.isUnset() = (nickname.isBlank() || nickname == "Rider") && icon == null && photoJpegBase64 == null
@@ -973,6 +1003,8 @@ object GroupHub {
         groups[state.groupIdHex] = state
         store?.save(state)
         syncSeen = SyncDoc()
+        store?.profileOther = null
+        store?.selfLinkedAt = System.currentTimeMillis() // now, not at the other device's hello: its profile may come first
         touchFriend(state.groupIdHex, 20_000)
         send(selfStatus())
         scheduleSync(1_000)
@@ -980,6 +1012,8 @@ object GroupHub {
 
     private fun unlinkSelf() {
         selfState()?.let { st -> stopFriend(st.groupIdHex); groups.remove(st.groupIdHex); store?.delete(st.groupIdHex) }
+        store?.profileOther = null
+        store?.selfLinkedAt = 0L
         syncSeen = SyncDoc()
         lastSent = null
         send(selfStatus())

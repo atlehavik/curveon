@@ -1188,6 +1188,9 @@
     <string name="devices_show">Visa kod för min andra enhet</string>
     <string name="devices_scan">Skanna kod från min andra enhet</string>
     <string name="devices_unlink">Koppla isär</string>
+    <string name="devices_profiles_differ">Dina enheter hade olika namn eller bilder. Vilken vill du använda på båda?</string>
+    <string name="devices_profile_in_use">Används</string>
+    <string name="devices_profile_use">Använd den här</string>
     <string name="devices_code_hint">Skanna den här på din andra enhet inom 15 minuter. Den öppnar dina vänner och grupper, så visa den bara för dig själv.</string>
     <string name="nudge_button">Vill ha kontakt</string>
     <string name="nudge_sent">Skickat: %1$s ser att du försöker nå hen</string>

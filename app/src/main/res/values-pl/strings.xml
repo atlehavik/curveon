@@ -1224,6 +1224,9 @@
     <string name="devices_show">Pokaż kod dla drugiego urządzenia</string>
     <string name="devices_scan">Zeskanuj kod z drugiego urządzenia</string>
     <string name="devices_unlink">Rozłącz</string>
+    <string name="devices_profiles_differ">Twoje urządzenia miały różne nazwy lub zdjęcia. Którego chcesz używać na obu?</string>
+    <string name="devices_profile_in_use">W użyciu</string>
+    <string name="devices_profile_use">Użyj tego</string>
     <string name="devices_code_hint">Zeskanuj to na drugim urządzeniu w ciągu 15 minut. Otwiera twoich znajomych i grupy, więc pokazuj go tylko sobie.</string>
     <string name="nudge_button">Zwróć uwagę</string>
     <string name="nudge_sent">Wysłano: %1$s zobaczy, że próbujesz się skontaktować</string>

@@ -3,6 +3,7 @@
 package com.curveon.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.*
@@ -110,6 +111,9 @@ private fun MyDevicesSection(manager: GroupManager) {
     LaunchedEffect(status.linked) { if (status.linked) { showCode = false; manager.forgetSelfLink() } }
     FriendsSectionLabel(stringResource(R.string.devices_title))
     Text(stringResource(if (status.linked) R.string.devices_linked else R.string.devices_hint), color = TextSecondary, fontSize = 14.sp)
+    val other = status.other
+    val current by manager.profile.collectAsStateWithLifecycle()
+    if (status.linked && other != null) current?.let { ProfileChoice(it, other) { p -> manager.setProfile(p.nickname, p.colour, p.icon, p.photoJpegBase64) } }
     if (status.linked) {
         OutlinedButton(onClick = { manager.unlinkSelf() }, modifier = Modifier.testTag("devices_unlink")) {
             Text(stringResource(R.string.devices_unlink), color = WarningRed, fontWeight = FontWeight.Bold)
@@ -132,6 +136,35 @@ private fun MyDevicesSection(manager: GroupManager) {
         }
     }
     if (scanning) com.curveon.qrscan.QrScanDialog(onInvite = { l -> scanning = false; manager.join(l) }, onDismiss = { scanning = false })
+}
+
+/**
+ * The two devices had a profile each when they were linked: the one in use and the other device's, side by side. A tap on either
+ * puts it on both devices, and the question is gone.
+ */
+@Composable
+private fun ProfileChoice(inUse: Message.GroupProfile, other: Message.GroupProfile, onPick: (Message.GroupProfile) -> Unit) {
+    Text(stringResource(R.string.devices_profiles_differ), color = TextPrimary, fontSize = 14.sp)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        for ((p, used) in listOf(inUse to true, other to false)) {
+            val photo = remember(p.photoJpegBase64) {
+                p.photoJpegBase64?.let { runCatching { val b = android.util.Base64.decode(it, android.util.Base64.DEFAULT); android.graphics.BitmapFactory.decodeByteArray(b, 0, b.size) }.getOrNull() }
+            }
+            Row(
+                Modifier.clip(RoundedCornerShape(14.dp)).background(CockpitSurfaceVariant)
+                    .border(if (used) 2.dp else 1.dp, if (used) ElectricCyan else CockpitBorder, RoundedCornerShape(14.dp))
+                    .clickable { onPick(p) }.padding(horizontal = 12.dp, vertical = 10.dp)
+                    .testTag(if (used) "devices_profile_in_use" else "devices_profile_other"),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                RiderAvatar(GroupRider("me", p.nickname, p.colour, p.icon, photo, p.photoJpegBase64), 48.dp)
+                Column {
+                    Text(p.nickname, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(if (used) R.string.devices_profile_in_use else R.string.devices_profile_use), color = if (used) ElectricCyan else TextSecondary, fontSize = 13.sp)
+                }
+            }
+        }
+    }
 }
 
 /** My friends: show your code (or send it as a link), scan a friend's code, and the friends you have. */

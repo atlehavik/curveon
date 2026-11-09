@@ -128,17 +128,32 @@ internal fun ProfileEditor(me: GroupRider, alwaysOpen: Boolean = false, onSave: 
     var icon by rememberSaveable { mutableStateOf(me.icon) }
     var saved by remember { mutableStateOf(listOf<Any?>(me.nickname, me.colour, me.icon, me.photoBase64)) }
     var savedCount by remember { mutableIntStateOf(0) }
+    // What was saved here a moment ago: when it comes back from the hub it is not news (a later save may be under way).
+    val sent = remember { mutableListOf<Pair<Long, List<Any?>>>() }
     fun saveNow() {
         val name = nick.trim().ifEmpty { return }
         val now = listOf<Any?>(name, colour, icon, photo)
         if (now == saved) return
         onSave(name, colour, icon, photo)
         saved = now
+        sent.add(System.currentTimeMillis() to now)
         savedCount++
     }
     LaunchedEffect(nick, colour, icon, photo) {
         if (nick.trim() != saved[0]) delay(900) // the name: once the typing stops
         saveNow()
+    }
+    // The profile changed elsewhere (on the rider's other device, or another one was picked): shown at once, unless the rider
+    // has something here not saved yet.
+    val incoming = listOf<Any?>(me.nickname, me.colour, me.icon, me.photoBase64)
+    LaunchedEffect(incoming) {
+        val now = System.currentTimeMillis()
+        sent.removeAll { now - it.first > 10_000 }
+        val echo = sent.indexOfFirst { it.second == incoming }
+        if (echo >= 0) { repeat(echo + 1) { sent.removeAt(0) }; return@LaunchedEffect }
+        if (incoming == saved || listOf<Any?>(nick.trim(), colour, icon, photo) != saved) return@LaunchedEffect
+        nick = me.nickname; colour = me.colour; icon = me.icon; photo = me.photoBase64
+        saved = incoming
     }
     DisposableEffect(Unit) { onDispose { saveNow() } } // closed while still typing
     var showSaved by remember { mutableStateOf(false) }

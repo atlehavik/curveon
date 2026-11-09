@@ -49,6 +49,23 @@ class GroupStore(context: Context) {
         get() = prefs.getString(SYNC, null)
         set(v) = prefs.edit().putString(SYNC, v).apply()
 
+    /**
+     * When the rider's other device was linked (0: before this was kept). Profiles changed before then were each device's own;
+     * see [profileOther].
+     */
+    var selfLinkedAt: Long
+        get() = prefs.getLong(SELF_LINKED_AT, 0L)
+        set(v) = prefs.edit().putLong(SELF_LINKED_AT, v).apply()
+
+    /** The profile the other device had when they were linked, which lost to the one in use; with [profileOtherTs], the newer of the two. */
+    var profileOther: Message.GroupProfile?
+        get() = prefs.getString(PROFILE_OTHER, null)?.let { runCatching { Message.fromJson(org.json.JSONObject(it)) as? Message.GroupProfile }.getOrNull() }
+        set(v) = prefs.edit().putString(PROFILE_OTHER, v?.toJson()?.toString()).apply()
+
+    var profileOtherTs: Long
+        get() = prefs.getLong(PROFILE_OTHER_TS, 0L)
+        set(v) = prefs.edit().putLong(PROFILE_OTHER_TS, v).apply()
+
     var activeId: String?
         get() = prefs.getString(ACTIVE, null)
         set(v) = prefs.edit().putString(ACTIVE, v).apply()
@@ -126,6 +143,9 @@ class GroupStore(context: Context) {
         const val DATA_SAVER = "data_saver"
         const val HANDLED = "handled_offers"
         const val PROFILE = "profile"
+        const val PROFILE_OTHER = "profile_other"
+        const val PROFILE_OTHER_TS = "profile_other_ts"
+        const val SELF_LINKED_AT = "self_linked_at"
         const val FRIEND_SHARING = "friend_sharing"
         const val PENDING_LINKS = "pending_friend_links"
         const val SEEING_ME = "friends_seeing_me"

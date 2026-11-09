@@ -1139,6 +1139,9 @@
     <string name="devices_show">Näytä koodi toiselle laitteelleni</string>
     <string name="devices_scan">Skannaa koodi toisesta laitteestani</string>
     <string name="devices_unlink">Poista linkitys</string>
+    <string name="devices_profiles_differ">Laitteillasi oli eri nimet tai kuvat. Kumpaa haluat käyttää molemmissa?</string>
+    <string name="devices_profile_in_use">Käytössä</string>
+    <string name="devices_profile_use">Käytä tätä</string>
     <string name="devices_code_hint">Skannaa tämä toisella laitteellasi 15 minuutin kuluessa. Se avaa kaverisi ja ryhmäsi, joten näytä se vain itsellesi.</string>
     <string name="nudge_button">Haluan yhteyden</string>
     <string name="nudge_sent">Lähetetty: %1$s näkee, että yrität tavoittaa</string>

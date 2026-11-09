@@ -1206,6 +1206,9 @@
     <string name="devices_show">Montrer le code pour mon autre appareil</string>
     <string name="devices_scan">Scanner le code de mon autre appareil</string>
     <string name="devices_unlink">Dissocier</string>
+    <string name="devices_profiles_differ">Vos appareils avaient des noms ou des photos différents. Lequel voulez-vous sur les deux ?</string>
+    <string name="devices_profile_in_use">Utilisé</string>
+    <string name="devices_profile_use">Choisir celui-ci</string>
     <string name="devices_code_hint">Scanne-le sur ton autre appareil dans les 15 minutes. Il ouvre tes amis et tes groupes, alors ne le montre qu’à toi.</string>
     <string name="nudge_button">Attirer son attention</string>
     <string name="nudge_sent">Envoyé : %1$s verra que tu veux lui parler</string>
