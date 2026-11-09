@@ -83,21 +83,17 @@ outside git and read from here when it exists: @~/.claude/curveon-personal.md
   tracks) must never cover place names: they stay above every line layer (see `raisePlaceNames` in
   CurveonMapView.kt, and the order in `OfflineMaps.styleJson`). Check it with the layer switched on,
   not only off, at a zoom where names show.
-- **New visual elements: test for overlap.** Before a new visual element goes in, look at it on the
-  Pixel 9a emulator (above) in both portrait and landscape, while navigating and not navigating
-  (demo ride), and with the music player on and off (demo phone data). Overlap with other elements is
-  the main thing to look for every time; check the X7 AVD too.
-- **Nothing off screen on phones (recurring bug, ~14 times).** The Pixel 9a has a camera hole and
-  gesture navigation; the plain X7 AVD has neither, so it hides this. Any new or changed screen,
-  dialog or sheet is checked on the Pixel 9a emulator, in portrait *and* landscape, before it is
-  called done: every button fully on screen, and for a dialog window `adb shell dumpsys window windows`
-  shows its `Requested` size inside its `frame`. Every `Dialog` calls `HideSystemBars()`
-  (CockpitDialog.kt), which lets the window cover the camera hole; without it Android puts the window
-  below the hole at full height and cuts off its bottom.
-- **The night run is parked (since 2026-11-05, the rider's decision).** The timer is off. Don't queue anything, and don't
-  run `tools/ui_matrix_nightly.sh install`, which turns it on again, unless the rider asks for the night run back.
-  It was meant to find and fix visual faults on all kinds of screens and made them instead (the Settings menu, above).
-  `tools/ui_matrix.py` and its files stay in the repo.
+- **Check every new or changed screen on the Pixel 9a emulator (above), portrait *and* landscape, and on
+  the X7 AVD, before it is called done.** Things ending up off screen on phones is a recurring bug (~14 times):
+  the Pixel 9a has a camera hole and gesture navigation, the plain X7 AVD has neither, so it hides this.
+  Every button must be fully on screen, and for a dialog window `adb shell dumpsys window windows` shows its
+  `Requested` size inside its `frame`. Every `Dialog` calls `HideSystemBars()` (CockpitDialog.kt), which lets
+  the window cover the camera hole; without it Android puts the window below the hole at full height and cuts
+  off its bottom. A new visual element is also looked at while navigating and not (demo
+  ride) and with the music player on and off (demo phone data): overlap with other elements is the main thing
+  to look for.
+- **The night run is parked:** don't queue anything or run `tools/ui_matrix_nightly.sh install` unless the
+  rider asks for it back.
 - **Never call Curveon "free" / "gratis"** (website, README, store text, changelog, app texts): the
   rider plans some income from it on Google Play. "Open source", "no account", "no ads" are fine;
   saying that a map source or a service the app uses costs nothing is not about Curveon's price.

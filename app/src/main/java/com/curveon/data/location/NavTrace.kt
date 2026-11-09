@@ -11,7 +11,7 @@ import java.util.concurrent.Executors
 /**
  * A plain-text log of what the GPS said and what the map showed, for tuning how the rider is
  * drawn (smoothness, lag, leaving the route) from real rides. One file per app start in
- * Android/data/<app>/files/navtrace/, pulled with adb (see device-checks.md). Lines:
+ * Android/data/<app>/files/navtrace/, pulled with `adb pull /sdcard/Android/data/com.curveon.app/files/navtrace`. Lines:
  *
  * - `F,wallMs,monoMs,ageMs,lat,lon,acc,alt,speed,speedAcc,bearing,bearingAcc,sats,estimated,receivedWallMs` a fix;
  *   wallMs is the receiver's (GPS) time of the fix, receivedWallMs the phone's clock when it came, so

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-device-checks.md <-> the "Device checks" page (a private claude.ai artifact the rider ticks on the phone).
+device-checks.md (kept outside the repo) <-> the "Device checks" page (a private claude.ai artifact the rider ticks on the phone).
 
   export <md> <out.json>              the open checks as the page's list document
   apply  <md> <results dir>           what the rider marked, back into the file: a check that

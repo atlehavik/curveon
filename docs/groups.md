@@ -297,7 +297,7 @@ simulated riders (`~/develop/curveon-relay/test/rider.ts`, an independent implem
 side sends). Added the same day: only one of a rider's devices sends their position (a `claim` frame, the other device shows "Use this device"; a left-behind device
 is taken over after three minutes), the rider's own picture (192 px, on the list and on the map marker), and QR scanning inside Curveon (CameraX + ZXing; the
 camera opens on the X7, a code held in front of it is not yet tried). The companion has no scanner.
-Still open: the real Pixel + X7 chain (see `device-checks.md`), QR scanning in the apps, sharing a route to the group from
+Still open: the chain on real devices, QR scanning in the apps, sharing a route to the group from
 the route screens, an SOS notification when the app is not open, "Call him" in the SOS alert (there are no phone numbers in the protocol,
 dropped on purpose), the `https` invite and landing page (domain), a VPS, and the Play decisions in `google-play.md`.
 Spec fix found while building the relay: the rekey signature must cover the new proof, or a member

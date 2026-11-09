@@ -235,7 +235,7 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
 
     /**
      * Writes down what this bike's ECU answers, for finding the fuel level and fuel use on bikes
-     * that don't give PID 012F (see device-checks.md): the protocol, which mode-01 PIDs it
+     * that don't give PID 012F: the protocol, which mode-01 PIDs it
      * supports, one answer to each, and 20 s of raw bus traffic (the dash may broadcast the fuel
      * gauge). Goes to files/navtrace/obd-*.txt. Returns PIDs worth logging while riding.
      */

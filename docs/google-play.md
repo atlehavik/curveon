@@ -74,7 +74,7 @@ Kilde: https://support.google.com/googleplay/android-developer/answer/10208820 (
 Erstattet av `<queries>` i `phone/src/main/AndroidManifest.xml`: alle apper med startikon (`MAIN`/`LAUNCHER`)
 og alle med `MediaBrowserService`. Det gir de samme appnavnene («Spotify», «WhatsApp») og musikklisten som før,
 uten erklæring. Gjelder begge appene. Risiko: en app som sender varsler uten startikon vises med pakkenavn.
-Sjekkes på enhet (se `device-checks.md`).
+Sjekkes på enhet.
 
 ## Kjøregrupper (`groups.md`) og Play
 
