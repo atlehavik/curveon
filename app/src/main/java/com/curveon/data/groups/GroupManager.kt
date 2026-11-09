@@ -293,6 +293,7 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
     fun requestSelfLink() = send(Message.RequestSelfLink)
     fun forgetSelfLink() { _selfLink.value = null }
     fun unlinkSelf() = send(Message.SelfUnlink)
+    fun watchSelf() = send(Message.SelfWatch)
 
     fun requestFriends() = send(Message.RequestFriends)
     fun requestFriendInvite() = send(Message.RequestFriendInvite)

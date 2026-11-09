@@ -546,6 +546,14 @@ sealed interface Message {
         override fun toJson() = obj("self_link").put("uri", uri)
     }
 
+    /**
+     * UI -> hub: the rider is looking at their own profile; keep the channel to the other device open for a while, so a
+     * name or picture changed there shows up here at once. Sent again while the screen stays open.
+     */
+    data object SelfWatch : Message {
+        override fun toJson() = obj("self_watch")
+    }
+
     /** UI -> hub: stop keeping this device in step with the other one (what is here stays here). */
     data object SelfUnlink : Message {
         override fun toJson() = obj("self_unlink")
@@ -773,6 +781,7 @@ sealed interface Message {
             "request_self_link" -> RequestSelfLink
             "self_link" -> SelfLink(o.getString("uri"))
             "self_unlink" -> SelfUnlink
+            "self_watch" -> SelfWatch
             "self_status" -> SelfStatus(o.optBoolean("linked"), o.optBoolean("waiting"), o.optJSONObject("other")?.let { fromJson(it) as? GroupProfile })
             "relay_open" -> RelayOpen(o.getInt("sock"), o.getString("url"))
             "relay_send" -> RelaySend(o.getInt("sock"), o.getString("text"))

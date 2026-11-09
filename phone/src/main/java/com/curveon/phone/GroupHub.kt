@@ -50,6 +50,8 @@ object GroupHub {
     private const val DEFAULT_INVITE_DAYS = 7
     private const val DEVICE_LINK_MINUTES = 15
     private const val SYNC_TRIP = "me"
+    /** How long the channel to the rider's other device stays open after a [Message.SelfWatch] (the screen sends one a minute). */
+    private const val SELF_WATCH_MS = 90_000L
     /** In a friend channel: "1" when the sender lets the friend see where they are, "0" when no more. */
     private const val SHARE_TRIP = "share"
     /** In the rider's sync document: who of the friends see the rider. */
@@ -185,7 +187,7 @@ object GroupHub {
         is Message.SosCancel, is Message.SosAnswer, is Message.GroupRemoveRider, is Message.RequestDeviceLink, is Message.GroupSettings,
         is Message.GroupUseThisDevice, is Message.RequestFriends, is Message.RequestFriendInvite, is Message.FriendRemove,
         is Message.FriendAddToGroup, is Message.GroupInviteAnswer, is Message.TripShare, is Message.TripToFriends, is Message.RequestGroupInvite,
-        is Message.RequestSelfLink, is Message.SelfUnlink, is Message.FriendSharing, is Message.RequestFriendLink,
+        is Message.RequestSelfLink, is Message.SelfUnlink, is Message.SelfWatch, is Message.FriendSharing, is Message.RequestFriendLink,
         is Message.NudgeSend, is Message.NudgeAnswer, is Message.FriendRequestSend -> true
         else -> false
     }
@@ -290,6 +292,7 @@ object GroupHub {
             }
             is Message.RequestSelfLink -> makeSelfLink()
             is Message.SelfUnlink -> unlinkSelf()
+            is Message.SelfWatch -> selfState()?.let { touchFriend(it.groupIdHex, SELF_WATCH_MS) }
             is Message.RequestFriends -> { send(friendList()); sweepFriends() }
             is Message.RequestFriendInvite -> makeFriendInvite()?.let { (id, uri) -> send(Message.FriendInvite(id, uri)) }
             is Message.RequestFriendLink -> makeFriendLink()
