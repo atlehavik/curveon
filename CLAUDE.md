@@ -1,40 +1,37 @@
 # Curveon
 
-
-Offline motorcycle dashboard for a Hugerock X7 tablet (7", 1920x1080 landscape, Android 13) on the
-handlebars, plus a companion app on the rider's Pixel 9a. Modules, features in detail, build and
+Offline motorcycle dashboard for a tablet on the handlebars (made on a Hugerock X7: 7", 1920x1080
+landscape, Android 13), plus a companion app on the rider's phone. Modules, features in detail, build and
 release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facing overview in
 [README.md](README.md).
 
+The maintainer's own setup (paths on this PC, the rider's real devices and how to install on them) is kept
+outside git and read from here when it exists: @~/.claude/curveon-personal.md
+
 ## Build and run
 
-- JDK 21 lives in `~/.local/share/jdks/jdk-21.0.12.1+1` (set via `org.gradle.java.home` in
-  `~/.gradle/gradle.properties`); the system JRE 25 can't build. SDK: `~/Android/Sdk`.
-- Emulators: `~/Android/Sdk/emulator/emulator -avd Hugerock_X7` (the X7, API 33, 960x540 dp) or
+- Build with JDK 21 (newer JREs can't build).
+- Emulators: `emulator -avd Hugerock_X7` (the tablet, API 33, 960x540 dp) or
   `-avd Curveon_Phone` (API 36; for `:companion`, and for Curveon at phone size). The emulator has no
   Bluetooth: use demo phone data / demo ride. Rotation: `adb shell settings put system user_rotation 0`
   (portrait) / `1` (landscape).
 - **The Pixel 9a on the emulator.** Phone screens are checked on `Curveon_Phone` dressed as the Pixel
-  9a (same as the `pixel9a` variant in `tools/ui_matrix.py`), not on the rider's real phone:
+  9a (same as the `pixel9a` variant in `tools/ui_matrix.py`):
   `adb shell wm size 1080x2424; adb shell wm density 420`,
   `adb shell cmd overlay enable-exclusive --category com.android.internal.display.cutout.emulation.hole`,
   `adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.gestural`
   (undo with `wm size reset; wm density reset` and `cmd overlay disable com.android.internal.display.cutout.emulation.hole`).
   Curveon_Phone has no maps or routing data; for a screen that needs them (route preview etc.) dress
   the X7 AVD the same way, but it runs older Android, so check dialogs on Curveon_Phone.
-- **Layouts** must work on the X7 in landscape and on a phone (Pixel 9a, 411 dp wide) in both
+- **Layouts** must work on the tablet (X7) in landscape and on a phone (Pixel 9a, 411 dp wide) in both
   orientations: `isNarrowScreen()` (CockpitDialog.kt) stacks what sits side by side on the tablet.
 - Tablet: `./gradlew :app:installDebug`, then
   `adb shell am start -n com.curveon.app/com.curveon.MainActivity`.
 - Phone: `./gradlew :companion:installDebug` (package `com.curveon.companion`).
-- The X7 and the Pixel may be on USB or on wifi; how to find and connect them over wifi (pairing,
-  `tcpip 5555`, last known addresses) is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#devices-over-wifi).
+- Devices over wifi (pairing, `tcpip 5555`): [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#devices-over-wifi).
   With several devices, pick one with `-s <serial>` / `ANDROID_SERIAL`.
-- **Curveon on the Pixel is release-signed** (since 2026-10-15), so it can also update itself from
-  GitHub releases: install it with `./gradlew :app:assembleRelease` (signing env from
-  `~/.curveon-signing/signing.env`) and `adb install -r app/build/outputs/apk/release/app-release.apk`,
-  never `installDebug` (Android refuses a debug build over it). Release builds have no DEV aids
-  (demo data, fake OBD) and no `run-as`, but do have the demo ride (Settings → Navigation).
+- Release builds have no DEV aids (demo data, fake OBD) and no `run-as`, but do have the demo ride
+  (Settings → Navigation). A release-signed install can't be replaced by a debug build without an uninstall.
 - **Crash reports** (`CrashLog.kt`): one `.txt` per crash under
   `Android/data/com.curveon.app/files/crashes/` on the device, also on release builds:
   `adb -s <device> pull /sdcard/Android/data/com.curveon.app/files/crashes`. Native crashes and
@@ -42,42 +39,15 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   stack, and the whole tombstone (all threads, recent log) is in the `.pb` next to it. Look here
   first when the rider says the app crashed.
 - **Map renderer: OpenGL ES** (`android-sdk-opengl`), not MapLibre's default Vulkan: Vulkan crashed
-  in the Mali driver on the Pixel 9a (five times on 2026-10-16, `vkCmdBeginRenderPass`), and both
-  devices have Mali GPUs. Switching back is the artifact name in `gradle/libs.versions.toml`.
+  in the Mali driver on a Pixel 9a (`vkCmdBeginRenderPass`), and the X7 has a Mali GPU too. Switching
+  back is the artifact name in `gradle/libs.versions.toml`.
 - Tests: `./gradlew test`. `:routing:test` routes over real Norway data.
-- Large data (pmtiles, BRouter segments, search index, OSM extracts) lives outside the repo in
-  `~/develop/Curveon-data`; on the tablet it goes under `Android/data/com.curveon.app/files/`.
-- The group relay (and the web planner) runs on a VPS: `ssh curveon-vps`; what runs there, secrets
-  and how to rebuild it are in `~/.curveon-vps/README.md` (never in git).
-
-## Devices: installing and branches
-
-- **A device never loses what it runs.** Make branches and worktrees whenever that is the safest way
-  to work (a session's own worktree); ask which branch is current if
-  it looks wrong. Before building for a device from a branch, merge the newest local `main` into it
-  (`git log --oneline HEAD..main`; local `main` can be ahead of `origin/main`). Before every install,
-  check `git log --oneline HEAD..<branch>` against `main` and every other active branch
-  (`worktree-*`, `web-planner`, `origin/*`): if any has commits the device already runs, stop and
-  ask. (2026-10-21 a build from a fresh branch off `main` wiped 34 commits of group rides, friends,
-  mic search etc. off the Pixel; 2026-10-20 a branch on an old `main` brought fixed bugs back.)
-- **Installing:** a device on USB (`adb devices` shows a `usb:` transport) and the Pixel can always be
-  installed on, after each change, without asking. The X7 when it is reached only over wifi (on the
-  handlebars) is not: say what is waiting to be installed and end the message with the question
-  whether to install; once the rider says yes, do it for that batch.
-- **The X7 runs the release build by default** (`assembleRelease`, signing env as for the Pixel), because
-  the rider wants to feel how fast it really responds. When a debug build is better (logging, DEV aids
-  like demo data, `run-as`, a crash to chase), put it on and say why; switch back to release when done.
-  **Switching between debug and release needs an uninstall first (different signing keys), which
-  deletes the app's data and the maps under `Android/data/com.curveon.app/files/`:** say so and get a
-  yes before each switch, and copy the maps back from `~/develop/Curveon-data` afterwards.
-- **Don't drive the rider's real devices.** Installing is fine, but don't tap around, change the app's
-  settings or start rides or groups on the real X7 or Pixel: try things on the emulator.
+- Large data (pmtiles, BRouter segments, search index, OSM extracts) lives outside the repo; on the
+  tablet it goes under `Android/data/com.curveon.app/files/`.
+- The group relay (and the web planner) runs on a VPS, its source outside this repo.
 - **Read the build before committing.** Look at the whole output of `./gradlew` and `adb install`.
   `BUILD FAILED`, `INSTALL_FAILED…` or a non-zero exit means it is not done: find the cause and
-  say what it was before committing or reporting success. A failure that is expected (e.g.
-  `installDebug` over the release-signed Pixel) is handled (`ANDROID_SERIAL=<device>`), not ignored.
-- Committing and pushing are always allowed once a build has been installed on the devices (X7 or
-  Pixel); no need to ask first.
+  say what it was before committing or reporting success.
 
 ## How to work here
 
@@ -144,12 +114,6 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   navigation app: keep its UI to setup/status. It stays a separately installed app, in this repo so
   both apps share `:protocol`. What it reads on the phone lives in `:phone`, which Curveon also uses
   for "This device" (Curveon on a phone being its own companion); changes there affect both.
-- **Device checks.** Whenever the rider should test or run something on the real X7 or Pixel
-  (e.g. `adb logcat -s PhoneLink` after a call), add it to [device-checks.md](device-checks.md)
-  (newest first, checkboxes) in the same change, as well as saying it in chat. Remove items once
-  the rider reports back. The rider ticks them on the phone on a private claude.ai page
-  (https://claude.ai/artifact/9iV3p3tvJyTcW2pUdbrTMW); `tools/device_checks_sync.py` syncs it both
-  ways (how: its docstring, and the memory note on the page).
 - Bluetooth, real calls, tunnel dead reckoning and gyro lean can't be verified in the emulator;
   say so rather than claiming they work.
 - **A redesign keeps what the rider could do.** Before removing or replacing a button, step, setting
@@ -166,8 +130,8 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
   on a phone from a list with names into a grid of icons, and a session with before and after in front of it merged
   it and called it right.)
 - **Before a build goes to a device or out:** `python3 -I tools/check_dex_registers.py <apk>` must say ok. A method of
-  the app over 255 registers made the compiler write code Android 17 refused to run (1.2.10 crashed at start on the
-  Pixel): split such a method, `DashboardScreen` first of all, which is near the limit.
+  the app over 255 registers made the compiler write code Android 17 refused to run (1.2.10 crashed at start on
+  Android 17): split such a method, `DashboardScreen` first of all, which is near the limit.
 - **A release only when the rider says release.** Before it goes out, show what looks or works differently for riders
   since the last release, with pictures of what looks different, and wait for a yes to that list.
 - **Plan before a bigger change.** For a change that touches several files, write 3–4 lines first:
@@ -190,7 +154,7 @@ release steps are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the rider-facin
 ## Website and web planner
 
 - **Website (curveon.no):** the source is `website/`; it is deployed by hand-free script
-  `tools/deploy-website.sh` (FTPS, login in `~/.curveon-signing/website.env`; no `--apply` = dry run,
+  `tools/deploy-website.sh` (FTPS, login kept outside git; no `--apply` = dry run,
   show the list and get a yes before `--apply`). The download button links to
   `https://github.com/atlehavik/curveon/releases/latest`, which follows every GitHub release by
   itself, so a new release needs no website change. After a release, check that

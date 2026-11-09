@@ -160,8 +160,6 @@ The X7 on the handlebars and the Pixel are often reached over wifi instead of US
   off/sleep, roaming, reboot); "Connection refused" or "device offline" means that happened
   (`adb mdns services` may still show a stale entry). Once connected, `adb -s <ip:port> tcpip 5555`
   and use `<ip>:5555` from then on: that survives wifi drops until a reboot.
-- Last known addresses: the X7 `192.168.86.250` (mDNS name `adb-241181d1-…`, already paired), the
-  Pixel `192.168.86.199`.
 
 ## Releases and in-app updates
 
