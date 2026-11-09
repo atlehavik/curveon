@@ -40,6 +40,8 @@ internal const val IDLE_TICK_MS = 1_000L
  */
 internal const val FRAME_NS = 25_000_000L
 internal const val MAX_FPS = 30
+/** While a finger moves the map: 30 a second lags behind the finger and feels slow. Back to [MAX_FPS] when it settles. */
+internal const val FINGER_FPS = 60
 internal const val GPX = "curveon-gpx"
 internal const val GPX_POIS = "curveon-gpx-pois"
 internal const val GPX_ON_ROUTE = "curveon-gpx-on-route"

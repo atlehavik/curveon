@@ -92,9 +92,9 @@ internal fun CurveonMapState.SurfaceLayers(
         val dLon = (b.longitudeEast - b.longitudeWest) * 0.3
         val area = grownBounds(b, dLat, dLon)
         val ways = runCatching { fetch(area.latitudeSouth, area.longitudeWest, area.latitudeNorth, area.longitudeEast) }
-            .onFailure { android.util.Log.w("CurveonMap", "Surfaces not read", it) }.getOrNull()
-            ?.let { com.curveon.routing.SurfaceReader.leadingToGravel(it) } ?: return@LaunchedEffect
+            .onFailure { android.util.Log.w("CurveonMap", "Surfaces not read", it) }.getOrNull() ?: return@LaunchedEffect
         val features = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            val ways = com.curveon.routing.SurfaceReader.leadingToGravel(ways) // was on the main thread: whole areas of roads
             // In a town only gravel and soft ground: its many small tarmac streets are what made towns a white mush when zoomed out.
             fun inTown(w: com.curveon.routing.SurfaceWay): Boolean {
                 val towns = townSquares ?: return false
@@ -252,6 +252,7 @@ internal fun CurveonMapState.RoadReading(
         while (true) {
             kotlinx.coroutines.delay(2_000)
             lifecycleOwner.lifecycle.untilStarted()
+            if (fingerMoving) continue // the next look, once the map stands still
             val p = puck ?: continue
             val r = 10f * mapView.resources.displayMetrics.density
             onRoadHereState.value?.invoke(mapRoad(m.queryRenderedFeatures(RectF(p.x - r, p.y - r, p.x + r, p.y + r), *roadLayers)))
@@ -269,11 +270,15 @@ internal fun CurveonMapState.RoadReading(
         while (true) {
             kotlinx.coroutines.delay(1_000)
             lifecycleOwner.lifecycle.untilStarted()
+            // While a finger moves the map, reading it would hold up every frame; the rider's roads wait a moment.
+            if (fingerMoving) continue
             val p = puck ?: continue
             val here = locationState.value
             // ~70 m round the rider, however far the map is zoomed out (then it's a few pixels and little is read).
             val r = (ROADS_NEAR_M / m.projection.getMetersPerPixelAtLatitude(here.latitude)).toFloat().coerceIn(4f, 400f)
-            val lines = m.queryRenderedFeatures(RectF(p.x - r, p.y - r, p.x + r, p.y + r), *roadLayers).flatMap { f ->
+            val found = m.queryRenderedFeatures(RectF(p.x - r, p.y - r, p.x + r, p.y + r), *roadLayers)
+            // Only the asking must be on the main thread: sorting what came back (whole lines, zoomed out) is not.
+            val lines = withContext(Dispatchers.Default) { found.flatMap { f ->
                 val kind = roadKind(f) ?: return@flatMap emptyList()
                 when (val g = f.geometry()) {
                     is LineString -> listOf(g.coordinates())
@@ -283,7 +288,7 @@ internal fun CurveonMapState.RoadReading(
             }
                 // A road is drawn in several layers (casing, fill, arrows, name): the same line once.
                 .distinctBy { it.first }
-                .map { (pts, kind) -> com.curveon.routing.RoadSnap.Line(pts, kind) }
+                .map { (pts, kind) -> com.curveon.routing.RoadSnap.Line(pts, kind) } }
             onRoadsNearState.value?.invoke(com.curveon.routing.LatLon(here.latitude, here.longitude), lines)
         }
     }
@@ -391,6 +396,8 @@ internal fun CurveonMapState.TownRoads(
 ) {
     // Each layer's own filter, from before any change (per style: a new style brings its layers afresh).
     val own = remember(style) { HashMap<String, E?>() }
+    // The filter each layer was last given: setting the same again still makes the map lay out its tiles anew.
+    val given = remember(style) { HashMap<String, String>() }
     // The box the town tiles were chosen for: a move within it changes nothing.
     var covered by remember(style, squares, showPaths, ownRoads) { mutableStateOf<LatLngBounds?>(null) }
     LaunchedEffect(style, squares, showPaths, ownRoads, cameraIdleTick) {
@@ -403,14 +410,13 @@ internal fun CurveonMapState.TownRoads(
         val dLat = maxOf((view.latitudeNorth - view.latitudeSouth) * 2, 0.1)
         val dLon = maxOf((view.longitudeEast - view.longitudeWest) * 2, 0.2)
         val box = grownBounds(view, dLat, dLon)
-        val quiet = squares?.let { all ->
-            val near = withContext(Dispatchers.Default) {
-                val x0 = Math.floor(box.longitudeWest * com.curveon.routing.CityAreas.LON_DIV).toInt()
-                val x1 = Math.floor(box.longitudeEast * com.curveon.routing.CityAreas.LON_DIV).toInt()
-                val y0 = Math.floor(box.latitudeSouth * com.curveon.routing.CityAreas.LAT_DIV).toInt()
-                val y1 = Math.floor(box.latitudeNorth * com.curveon.routing.CityAreas.LAT_DIV).toInt()
-                all.filter { k -> val (x, y) = com.curveon.routing.CityAreas.unsquare(k); x in x0..x1 && y in y0..y1 }
-            }
+        // Worked out off the main thread (a view far out holds many towns); only the filters are set on it.
+        val quiet = squares?.let { all -> withContext(Dispatchers.Default) {
+            val x0 = Math.floor(box.longitudeWest * com.curveon.routing.CityAreas.LON_DIV).toInt()
+            val x1 = Math.floor(box.longitudeEast * com.curveon.routing.CityAreas.LON_DIV).toInt()
+            val y0 = Math.floor(box.latitudeSouth * com.curveon.routing.CityAreas.LAT_DIV).toInt()
+            val y1 = Math.floor(box.latitudeNorth * com.curveon.routing.CityAreas.LAT_DIV).toInt()
+            val near = all.filter { k -> val (x, y) = com.curveon.routing.CityAreas.unsquare(k); x in x0..x1 && y in y0..y1 }
             fun inTownTile(zoom: Int): E? {
                 val rects = com.curveon.routing.CityAreas.townTiles(near, zoom).map { (tx, ty) ->
                     val (south, west, north, east) = com.curveon.routing.CityAreas.tileBounds(tx, ty, zoom)
@@ -423,7 +429,7 @@ internal fun CurveonMapState.TownRoads(
             // Decided on the zoom 12 tiles for every zoom below 14: a zoom 13 tile lies inside its zoom 12 tile's rectangle,
             // so a place is town or not the same way all the way in, and its small roads don't come and go while zooming.
             inTownTile(TOWN_TILE_ZOOM)?.let { E.any(E.gte(E.zoom(), E.literal(TOWN_ROADS_ZOOM)), E.not(it)) }
-        }
+        } }
         // The online map (where no map is downloaded) the same way, where routing data covers all round the view.
         val routingInView = ownRoads && squares != null && routingTiles != null && run {
             val needed = listOf(box.latitudeSouth to box.longitudeWest, box.latitudeSouth to box.longitudeEast,
@@ -450,6 +456,9 @@ internal fun CurveonMapState.TownRoads(
             }
             val parts = listOfNotNull(base, townQuiet, noPaths)
             val filter = when (parts.size) { 0 -> E.literal(true); 1 -> parts.first(); else -> E.all(*parts.toTypedArray()) }
+            val text = filter.toString()
+            if (given[layer.id] == text) continue
+            given[layer.id] = text
             when (layer) {
                 is org.maplibre.android.style.layers.LineLayer -> layer.setFilter(filter)
                 is org.maplibre.android.style.layers.SymbolLayer -> layer.setFilter(filter)

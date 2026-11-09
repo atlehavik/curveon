@@ -81,7 +81,10 @@ internal fun CurveonMapState.MapListeners(
 /** The camera moved by a finger stops following; while it moves and when it settles, what depends on it is told. */
 internal fun CurveonMapState.listenToCamera(m: MapLibreMap, cb: MapCallbacks) = with(cb) {
     m.addOnCameraMoveStartedListener { reason ->
-        if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) following = false
+        if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) {
+            following = false
+            if (!fingerMoving) { fingerMoving = true; mapView.setMaximumFps(FINGER_FPS) }
+        }
     }
     val trackRider = {
         val loc = locationState.value
@@ -104,6 +107,7 @@ internal fun CurveonMapState.listenToCamera(m: MapLibreMap, cb: MapCallbacks) = 
     var lastIdleTick = 0L
     val idleTick = Runnable { lastIdleTick = android.os.SystemClock.uptimeMillis(); cameraIdleTick++ }
     m.addOnCameraIdleListener {
+        if (fingerMoving) { fingerMoving = false; mapView.setMaximumFps(MAX_FPS) }
         if (!following) { trackRider(); viewportWake.trySend(Unit) }
         mapView.removeCallbacks(idleTick)
         val wait = lastIdleTick + IDLE_TICK_MS - android.os.SystemClock.uptimeMillis()

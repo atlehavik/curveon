@@ -326,9 +326,13 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
             if (near == null) 0.0 else Geo.distance(near, LatLon(lat + 2.5, lon + 2.5))
         }
         val all = HashSet<Long>()
-        for (t in tiles) {
+        var told = 0L
+        for ((i, t) in tiles.withIndex()) {
+            val before = all.size
             all += towns.squares(t)
-            onEach(HashSet(all))
+            // Each new set lays the map's roads out anew: the nearest file at once, then at most every few seconds, and the last.
+            val now = System.nanoTime()
+            if (all.size != before && (told == 0L || now - told >= TOWNS_TELL_NS) || i == tiles.lastIndex) { onEach(HashSet(all)); told = now }
         }
         android.util.Log.i("Curveon", "Towns: ${all.size} squares in ${tiles.size} routing files, %.1f s".format((System.nanoTime() - t0) / 1e9))
         return all
@@ -1477,6 +1481,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     }
 
     companion object {
+        /** How often a growing count of towns is passed on while the files are counted (see townSquares). */
+        private const val TOWNS_TELL_NS = 5_000_000_000L
         private const val REROUTE_COOLDOWN_MS = 10_000L
         /** Routes kept to go back to (a long trip's route is a few MB). */
         private const val ROUTE_CACHE_SIZE = 12

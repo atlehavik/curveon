@@ -60,6 +60,8 @@ internal class CurveonMapState(context: android.content.Context, navigating: Boo
     var zoomTenths by mutableIntStateOf(-1)
     @Volatile var trackZoom = false
     var cameraIdleTick by mutableIntStateOf(0)
+    /** A finger is moving the map (from its first move until the camera settles): what can wait, waits. */
+    var fingerMoving = false
     /** Nudged when what the rider loop draws may change (a fix, the camera, the layout), to wake it. */
     val wake = kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED)
     /** The rider stopped moving the map by hand: look at where it now shows at once, not at the next look. */
