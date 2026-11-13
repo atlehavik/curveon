@@ -1277,7 +1277,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     /** Wrong-turn answer: back to where the route was left (turning round). */
     fun turnBack() = answerWrongTurn(R.string.nav_turning_back) { pos, goal, route, wt ->
-        goal to offRoute.back(pos, route, wt.leftAlong, goal.options).route
+        // The way that really turns round here; the plain way back may ride on and round instead.
+        goal to (lastHeading?.let { offRoute.turnRound(pos, it, route, wt.leftAlong, goal.options) } ?: offRoute.back(pos, route, wt.leftAlong, goal.options)).route
     }
 
     /** Wrong-turn answer on a trip: a new route to the destination that starts the way the rider is going. */

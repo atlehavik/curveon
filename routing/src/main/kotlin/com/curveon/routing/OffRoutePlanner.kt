@@ -43,17 +43,22 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
     ): OffRouteDecision {
         val back = runCatching { back(position, route, leftAlong, options) }.getOrNull()
         if (headingDeg == null) return back?.takeIf { tripWaypoints == null }?.let { OffRouteDecision.Rejoin(it, 0.0) } ?: OffRouteDecision.Replan
+        val turnRound = turnRound(position, headingDeg, route, leftAlong, options, back)
+        // A way on that rides out along a road and back along it is turning round, only later and further
+        // away: where the rider can turn round here, it is not offered as carrying on.
+        fun WayBack.reallyOn() = turnRound == null || Routes.riddenTwiceMeters(this.route) <= RIDDEN_TWICE_M
         // On a trip the old route is worth nothing in itself: the answer is the best route from here that keeps
         // riding ahead. Turning round is only brought up when it is the only way, or clearly quicker.
         if (tripWaypoints != null) {
-            val turnRound = back?.takeIf { turnsBack(it.route, position, headingDeg) || uTurnsAhead(it.route) }
             val onward = forwardOnly(position, headingDeg, tripWaypoints, options).second
-                ?.let { WayBack(it, route.distanceMeters, it.durationSeconds) }
+                ?.let { WayBack(it, route.distanceMeters, it.durationSeconds) }?.takeIf { it.reallyOn() }
             return when {
                 onward != null && (turnRound == null || isQuick(onward, turnRound, maxExtraSeconds, maxExtraFraction)) ->
                     OffRouteDecision.Rejoin(onward, onward.totalSeconds - (turnRound?.totalSeconds ?: onward.totalSeconds))
                 onward != null -> OffRouteDecision.Ask(turnRound!!, onward)
                 turnRound != null -> OffRouteDecision.Rejoin(turnRound, 0.0, deadEnd = true)
+                // No way on and none found that turns round: the plain way back, whatever it does.
+                back != null -> OffRouteDecision.Rejoin(back, 0.0)
                 else -> OffRouteDecision.Replan
             }
         }
@@ -65,16 +70,34 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
             if (backRidesOn.totalSeconds - onRoute <= ALWAYS_QUICK_S) return OffRouteDecision.Rejoin(backRidesOn, 0.0)
         }
         // Otherwise it is one way ahead among the others: riding on only to come all the way back to where the
-        // route was left (round a loop the route would have ridden) must not win over simply going on from here.
+        // route was left (round a loop the route would have ridden) must not win over joining it further on.
         val found = aheadWays(position, headingDeg, route, leftAlong, options)
-        val best = (found.ways + listOfNotNull(backRidesOn)).minByOrNull { it.totalSeconds }
+        val best = (found.ways + listOfNotNull(backRidesOn)).filter { it.reallyOn() }.minByOrNull { it.totalSeconds }
         return when {
-            best != null && (back == null || isQuick(best, back, maxExtraSeconds, maxExtraFraction)) ->
-                OffRouteDecision.Rejoin(best, best.totalSeconds - (back?.totalSeconds ?: best.totalSeconds))
-            best == null && back != null && found.deadEnd -> OffRouteDecision.Rejoin(back, 0.0, deadEnd = true)
-            back != null -> OffRouteDecision.Ask(back, best)
+            best != null && (turnRound == null || isQuick(best, turnRound, maxExtraSeconds, maxExtraFraction)) ->
+                OffRouteDecision.Rejoin(best, best.totalSeconds - (turnRound?.totalSeconds ?: best.totalSeconds))
+            best != null -> OffRouteDecision.Ask(turnRound!!, best)
+            // No way on: turning round is the only choice, so there is nothing to ask.
+            turnRound != null -> OffRouteDecision.Rejoin(turnRound, 0.0, deadEnd = true)
+            back != null -> OffRouteDecision.Rejoin(back, 0.0)
             else -> OffRouteDecision.Replan
         }
+    }
+
+    /**
+     * Turning round where the rider is and riding back to the route just after where they left it, or null
+     * when they can't turn round here (a one-way road, a slip road). The search itself avoids turning round
+     * on a road, so the plain way [back] may ride on and round instead where turning is far shorter: the
+     * way that starts the other way is asked for too, and the quicker of the two that do turn is it.
+     */
+    fun turnRound(position: LatLon, headingDeg: Double, route: Route, leftAlong: Double, options: RouteOptions, back: WayBack? = runCatching { back(position, route, leftAlong, options) }.getOrNull()): WayBack? {
+        val plain = back?.takeIf { turnsBack(it.route, position, headingDeg) || uTurnsAhead(it.route) }
+        val along = minOf(leftAlong + BACK_JOIN_M, route.distanceMeters)
+        val turned = runCatching {
+            val leg = engine.route(listOf(position, Routes.pointAt(route, along).first), options, startHeadingDeg = (headingDeg + 180) % 360, tracksAsLastResort = false)
+            leg.takeIf { turnsBack(it, position, headingDeg) }?.let { join(it, route, along) }
+        }.getOrNull()
+        return listOfNotNull(plain, turned).minByOrNull { it.totalSeconds }
     }
 
     /** Ways back onto the route that keep riding ahead; [deadEnd] when no road leads on at all. */
@@ -152,6 +175,8 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
         /** Where on the route ahead to try joining it again, from where the rider left it. */
         val JOIN_AHEAD_M = listOf(400.0, 1_500.0, 4_000.0, 10_000.0)
         const val BACK_JOIN_M = 150.0
+        /** A way that rides more than this much road a second time is out and back, not a way on. */
+        const val RIDDEN_TWICE_M = 300.0
         /** At most this many ways back are blocked one after another (the branches of a junction behind). */
         const val MAX_BLOCKS = 4
 

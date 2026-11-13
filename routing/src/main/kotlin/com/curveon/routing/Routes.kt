@@ -29,6 +29,23 @@ object Routes {
     /** Kept clear of a spur's ends too: a via point just before one may still be snapped into it. */
     private const val SPUR_MARGIN_M = 100.0
 
+    /**
+     * Metres of [route] ridden along road it has already ridden, either way: out along a road and back,
+     * or round a loop twice. Crossing its own line, or a short stretch shared at a junction, counts little.
+     * Only the first [withinMeters] of the route are looked at (it is asked about what happens from here).
+     */
+    fun riddenTwiceMeters(route: Route, withinMeters: Double = 40_000.0): Double {
+        val step = 40.0
+        val pts = generateSequence(0.0) { it + step }.takeWhile { it <= minOf(route.distanceMeters, withinMeters) }.map { it to pointAt(route, it).first }.toList()
+        var again = 0
+        for ((i, e) in pts.withIndex()) {
+            for (j in 0 until i) {
+                if (pts[j].first >= e.first - 500) break
+                if (Geo.distance(pts[j].second, e.second) < 20) { again++; break }
+            }
+        }
+        return again * step
+    }
 
     /** The farthest [route] gets from [other] (metres), sampled every ~200 m. */
     fun farthestFrom(route: Route, other: Route): Double {
