@@ -42,17 +42,21 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
     ): OffRouteDecision {
         val back = runCatching { back(position, route, leftAlong, options) }.getOrNull()
         if (headingDeg == null) return back?.let { OffRouteDecision.Rejoin(it, 0.0) } ?: OffRouteDecision.Replan
-        // The way back doesn't actually turn round (e.g. the wrong road runs alongside): that's it.
-        if (back != null && !turnsBack(back.route, position, headingDeg) && !uTurnsAhead(back.route)) {
-            return OffRouteDecision.Rejoin(back, 0.0)
+        // The way back doesn't actually turn round (e.g. the wrong road runs alongside) and costs next to nothing: that's it.
+        val backRidesOn = back?.takeIf { !turnsBack(it.route, position, headingDeg) && !uTurnsAhead(it.route) }
+        if (backRidesOn != null) {
+            val onRoute = route.durationSeconds - Routes.secondsAt(route, leftAlong)
+            if (backRidesOn.totalSeconds - onRoute <= ALWAYS_QUICK_S) return OffRouteDecision.Rejoin(backRidesOn, 0.0)
         }
+        // Otherwise it is one way ahead among the others: riding on only to come all the way back to where the
+        // route was left (round a loop the route would have ridden) must not win over simply going on from here.
         val found = aheadWays(position, headingDeg, route, leftAlong, options)
         val trip = tripWaypoints?.let { wp ->
             forwardOnly(position, headingDeg, wp, options, found.noGo).second
                 ?.takeIf { !uTurnsAhead(it) }
                 ?.let { WayBack(it, route.distanceMeters, it.durationSeconds) }
         }
-        val best = (found.ways + listOfNotNull(trip)).minByOrNull { it.totalSeconds }
+        val best = (found.ways + listOfNotNull(trip, backRidesOn)).minByOrNull { it.totalSeconds }
         return when {
             best != null && (back == null || isQuick(best, back, maxExtraSeconds, maxExtraFraction)) ->
                 OffRouteDecision.Rejoin(best, best.totalSeconds - (back?.totalSeconds ?: best.totalSeconds))
