@@ -104,7 +104,14 @@ data class WrongTurn(
     val autoAtMillis: Long,
     /** Where the rider was when asked: carrying on by itself needs them to have ridden on since. */
     val askedAt: LatLon
-)
+) {
+    /** Carrying on costs a lot: the question stays up longer before it answers itself, and its card pulses to be seen. */
+    val costly: Boolean get() = (aheadExtraMinutes ?: 0) >= COSTLY_MINUTES
+
+    companion object {
+        const val COSTLY_MINUTES = 10
+    }
+}
 
 /** What the rider asked for, kept so we can recalculate after leaving the route. */
 sealed interface NavigationGoal {
@@ -1249,9 +1256,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                             stopsLeft = (goal as? NavigationGoal.Destination)?.stops?.size ?: 0,
                             leftAlong = leftAlong,
                             aheadExtraMinutes = decision.ahead?.let { ((it.totalSeconds - decision.back.totalSeconds) / 60).roundToInt().coerceAtLeast(0) },
-                            autoAtMillis = android.os.SystemClock.elapsedRealtime() + WRONG_TURN_AUTO_MS,
+                            autoAtMillis = 0L,
                             askedAt = position
-                        )
+                        ).let { it.copy(autoAtMillis = android.os.SystemClock.elapsedRealtime() + if (it.costly) WRONG_TURN_AUTO_COSTLY_MS else WRONG_TURN_AUTO_MS) }
                         _state.update { it.copy(status = RoutingStatus.Idle, wrongTurn = wrongTurn) }
                     }
                     OffRouteDecision.Replan -> adopt(position, when (goal) {
@@ -1532,6 +1539,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         private const val AUTO_AFTER_RIDING_M = 150.0
         /** Unanswered wrong-turn question: carry on by itself after this long. */
         const val WRONG_TURN_AUTO_MS = 20_000L
+        /** The same when carrying on costs a lot ([WrongTurn.costly]): longer, so the rider has time to see it and choose. */
+        const val WRONG_TURN_AUTO_COSTLY_MS = 45_000L
         /** How long after "carry on" further wrong turns are taken without asking. */
         private const val FOLLOW_MS = 5 * 60_000L
         private const val REJOIN_AHEAD_M = 1_500.0

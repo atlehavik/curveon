@@ -15,7 +15,8 @@
       "Footpaths, cycleways and trails are now hidden on the map, so towns look much cleaner and you see the roads you can actually ride. Tracks still show. Want them back? Settings → Display → Map → Footpaths and cycleways.",
       "Linked your phone and tablet under Friends → Me? Your name and picture from the other device now show up right away, without closing and reopening Friends. And if the two had different names or pictures when you linked them, both are shown side by side so you can pick the one you like best for both.",
       "Moving the map with your finger feels smoother and keeps up better: the map draws twice as often while you drag it, and the work it does in the background now waits until you let go.",
-      "Ride straight past a turn the route wanted, and Curveon now simply finds a new route from where you are. Before, it could send you in at the next junction and all the way back to the turn you skipped, only to ride the same road forward again."
+      "Ride straight past a turn the route wanted, and Curveon now simply finds a new route from where you are. Before, it could send you in at the next junction and all the way back to the turn you skipped, only to ride the same road forward again.",
+      "When carrying on after a wrong turn would cost you many minutes, the question now stays up longer before Curveon chooses for you, and its card pulses gently so you notice it in time."
     ],
     "nb": [
       "Når du kjører uten rute, følger pila nå veien gjennom hver sving, akkurat som når du navigerer. Den sklir ikke lenger ut av svingene og hopper tilbake på veien et øyeblikk etter.",
@@ -31,7 +32,8 @@
       "Gangveier, sykkelveier og stier er nå skjult på kartet, så byene blir mye ryddigere og du ser veiene du faktisk kan kjøre. Traktorveier vises fortsatt. Vil du ha dem tilbake? Innstillinger → Skjerm → Kart → Gang- og sykkelstier.",
       "Har du koblet sammen telefonen og nettbrettet under Venner → Meg? Nå dukker navnet og bildet fra den andre enheten opp med en gang, uten at du må lukke og åpne Venner igjen. Og hadde de ulike navn eller bilder da du koblet dem, vises begge side om side, så du kan velge den du liker best til begge.",
       "Kartet følger fingeren din jevnere når du drar i det: det tegnes dobbelt så ofte mens du flytter det, og arbeidet det gjør i bakgrunnen venter til du slipper.",
-      "Kjører du rett forbi en avkjøring ruten ville ta, finner Curveon nå ganske enkelt en ny rute derfra du er. Før kunne den sende deg inn i neste kryss og helt tilbake til avkjøringen du hoppet over, bare for å kjøre samme vei fremover igjen."
+      "Kjører du rett forbi en avkjøring ruten ville ta, finner Curveon nå ganske enkelt en ny rute derfra du er. Før kunne den sende deg inn i neste kryss og helt tilbake til avkjøringen du hoppet over, bare for å kjøre samme vei fremover igjen.",
+      "Når det å fortsette etter en feilkjøring vil koste deg mange minutter, blir spørsmålet nå stående lenger før Curveon velger for deg, og kortet pulserer rolig så du rekker å legge merke til det."
     ],
     "sv": [
       "När du kör utan rutt följer pilen nu vägen genom varje kurva, precis som när du navigerar. Den glider inte längre ut i kurvorna och hoppar tillbaka på vägen en stund senare.",
@@ -47,7 +49,8 @@
       "Gångvägar, cykelvägar och stigar döljs nu på kartan, så städerna blir mycket renare och du ser vägarna du faktiskt kan köra. Traktorvägar visas fortfarande. Vill du ha tillbaka dem? Inställningar → Skärm → Karta → Gång- och cykelvägar.",
       "Har du kopplat ihop telefonen och surfplattan under Vänner → Jag? Nu syns namnet och bilden från den andra enheten direkt, utan att du behöver stänga och öppna Vänner igen. Och hade de olika namn eller bilder när du kopplade ihop dem visas båda sida vid sida, så att du kan välja den du gillar bäst till båda.",
       "Kartan följer fingret mjukare när du drar i den: den ritas dubbelt så ofta medan du flyttar den, och arbetet den gör i bakgrunden väntar tills du släpper.",
-      "Kör du rakt förbi en avfart som rutten ville ta hittar Curveon nu helt enkelt en ny rutt därifrån du är. Tidigare kunde den skicka in dig i nästa korsning och hela vägen tillbaka till avfarten du hoppade över, bara för att köra samma väg framåt igen."
+      "Kör du rakt förbi en avfart som rutten ville ta hittar Curveon nu helt enkelt en ny rutt därifrån du är. Tidigare kunde den skicka in dig i nästa korsning och hela vägen tillbaka till avfarten du hoppade över, bara för att köra samma väg framåt igen.",
+      "När det skulle kosta dig många minuter att fortsätta efter en felkörning står frågan nu kvar längre innan Curveon väljer åt dig, och kortet pulserar lugnt så att du hinner lägga märke till det."
     ],
     "da": [
       "Når du kører uden rute, følger pilen nu vejen gennem hvert sving, ligesom når du navigerer. Den glider ikke længere ud af svingene og hopper tilbage på vejen et øjeblik efter.",
@@ -63,7 +66,8 @@
       "Gangstier, cykelstier og stier er nu skjult på kortet, så byerne bliver meget mere overskuelige, og du ser de veje, du faktisk kan køre. Markveje vises stadig. Vil du have dem tilbage? Indstillinger → Skærm → Kort → Gang- og cykelstier.",
       "Har du forbundet telefonen og tabletten under Venner → Mig? Nu dukker navnet og billedet fra den anden enhed op med det samme, uden at du skal lukke og åbne Venner igen. Og havde de forskellige navne eller billeder, da du forbandt dem, vises begge side om side, så du kan vælge den, du bedst kan lide, til begge.",
       "Kortet følger din finger mere glat, når du trækker i det: det tegnes dobbelt så tit, mens du flytter det, og arbejdet i baggrunden venter, til du slipper.",
-      "Kører du lige forbi et sving, ruten ville tage, finder Curveon nu bare en ny rute derfra, hvor du er. Før kunne den sende dig ind i næste kryds og helt tilbage til svinget, du sprang over, blot for at køre samme vej fremad igen."
+      "Kører du lige forbi et sving, ruten ville tage, finder Curveon nu bare en ny rute derfra, hvor du er. Før kunne den sende dig ind i næste kryds og helt tilbage til svinget, du sprang over, blot for at køre samme vej fremad igen.",
+      "Når det vil koste dig mange minutter at fortsætte efter en forkert drejning, bliver spørgsmålet nu stående længere, før Curveon vælger for dig, og kortet pulserer roligt, så du når at lægge mærke til det."
     ],
     "fi": [
       "Kun ajat ilman reittiä, nuoli seuraa nyt tietä jokaisessa mutkassa, aivan kuten navigoidessa. Se ei enää liu'u mutkista ulos ja hyppää hetken päästä takaisin tielle.",
@@ -79,7 +83,8 @@
       "Kävelytiet, pyörätiet ja polut on nyt piilotettu kartalta, joten kaupungit näyttävät paljon selkeämmiltä ja näet tiet, joilla voit oikeasti ajaa. Ajourat näkyvät yhä. Haluatko ne takaisin? Asetukset → Näyttö → Kartta → Kävely- ja pyörätiet.",
       "Oletko linkittänyt puhelimen ja tabletin kohdassa Kaverit → Minä? Nyt toisen laitteen nimi ja kuva näkyvät heti, eikä Kavereita tarvitse sulkea ja avata uudelleen. Jos laitteilla oli linkitettäessä eri nimet tai kuvat, molemmat näytetään rinnakkain, ja voit valita mieluisamman kumpaankin.",
       "Kartta seuraa sormea sulavammin, kun vedät sitä: se piirretään kaksi kertaa useammin liikuttaessa, ja taustatyöt odottavat, kunnes päästät irti.",
-      "Jos ajat suoraan ohi käännöksestä, jonka reitti halusi tehdä, Curveon etsii nyt yksinkertaisesti uuden reitin siitä, missä olet. Aiemmin se saattoi ohjata sinut seuraavasta risteyksestä takaisin ohittamaasi käännökseen asti, vain ajaaksesi saman tien uudelleen eteenpäin."
+      "Jos ajat suoraan ohi käännöksestä, jonka reitti halusi tehdä, Curveon etsii nyt yksinkertaisesti uuden reitin siitä, missä olet. Aiemmin se saattoi ohjata sinut seuraavasta risteyksestä takaisin ohittamaasi käännökseen asti, vain ajaaksesi saman tien uudelleen eteenpäin.",
+      "Kun jatkaminen harha-ajon jälkeen maksaisi sinulle monta minuuttia, kysymys pysyy nyt näkyvissä pidempään ennen kuin Curveon valitsee puolestasi, ja kortti sykkii rauhallisesti, jotta ehdit huomata sen."
     ],
     "is": [
       "Þegar þú ekur án leiðar fylgir örin nú veginum í gegnum hverja beygju, alveg eins og þegar þú leiðsegir. Hún rennur ekki lengur út úr beygjunum og stekkur aftur upp á veginn augnabliki síðar.",
@@ -95,7 +100,8 @@
       "Göngustígar, hjólastígar og slóðar eru nú faldir á kortinu, svo bæirnir verða miklu snyrtilegri og þú sérð vegina sem þú getur í raun ekið. Slóðar fyrir ökutæki sjást enn. Viltu fá þá aftur? Stillingar → Skjár → Kort → Göngu- og hjólastígar.",
       "Tengdirðu símann og spjaldtölvuna undir Vinir → Ég? Nú birtast nafnið og myndin frá hinu tækinu strax, án þess að þú þurfir að loka Vinum og opna aftur. Og ef þau voru með ólík nöfn eða myndir þegar þú tengdir þau, sjást bæði hlið við hlið svo þú getur valið það sem þér líkar best fyrir bæði.",
       "Kortið fylgir fingrinum mýkra þegar þú dregur það: það er teiknað tvöfalt oftar á meðan þú hreyfir það og vinnan í bakgrunni bíður þar til þú sleppir.",
-      "Ef þú ekur beint fram hjá beygju sem leiðin vildi taka finnur Curveon nú einfaldlega nýja leið þaðan sem þú ert. Áður gat það sent þig inn á næstu gatnamótum og alla leið til baka að beygjunni sem þú slepptir, bara til að aka sama veg áfram aftur."
+      "Ef þú ekur beint fram hjá beygju sem leiðin vildi taka finnur Curveon nú einfaldlega nýja leið þaðan sem þú ert. Áður gat það sent þig inn á næstu gatnamótum og alla leið til baka að beygjunni sem þú slepptir, bara til að aka sama veg áfram aftur.",
+      "Þegar það myndi kosta þig margar mínútur að halda áfram eftir ranga beygju stendur spurningin nú lengur áður en Curveon velur fyrir þig, og spjaldið púlsar rólega svo þú takir eftir því í tæka tíð."
     ],
     "de": [
       "Fährst du ohne Route, folgt dein Pfeil jetzt der Straße durch jede Kurve, genau wie beim Navigieren. Er rutscht nicht mehr aus jeder Kurve und springt einen Moment später auf die Straße zurück.",
@@ -111,7 +117,8 @@
       "Fußwege, Radwege und Pfade sind jetzt auf der Karte ausgeblendet, sodass Städte viel aufgeräumter wirken und du die Straßen siehst, die du wirklich fahren kannst. Feldwege bleiben sichtbar. Zurückholen kannst du sie unter Einstellungen → Anzeige → Karte → Fuß- und Radwege.",
       "Handy und Tablet unter Freunde → Ich verbunden? Name und Bild vom anderen Gerät erscheinen jetzt sofort, ohne Freunde zu schließen und neu zu öffnen. Und hatten beide beim Verbinden verschiedene Namen oder Bilder, siehst du sie nebeneinander und wählst das, das dir am besten gefällt, für beide.",
       "Die Karte folgt deinem Finger jetzt flüssiger: Beim Ziehen wird sie doppelt so oft gezeichnet, und was sie im Hintergrund erledigt, wartet, bis du loslässt.",
-      "Fährst du an einer Abzweigung der Route einfach geradeaus vorbei, sucht Curveon jetzt schlicht eine neue Route von dort, wo du bist. Vorher konnte es dich an der nächsten Kreuzung abbiegen und den ganzen Weg zurück zur ausgelassenen Abzweigung fahren lassen, nur um dieselbe Straße wieder vorwärts zu fahren."
+      "Fährst du an einer Abzweigung der Route einfach geradeaus vorbei, sucht Curveon jetzt schlicht eine neue Route von dort, wo du bist. Vorher konnte es dich an der nächsten Kreuzung abbiegen und den ganzen Weg zurück zur ausgelassenen Abzweigung fahren lassen, nur um dieselbe Straße wieder vorwärts zu fahren.",
+      "Wenn Weiterfahren nach dem Verfahren viele Minuten kosten würde, bleibt die Frage jetzt länger stehen, bevor Curveon für dich entscheidet, und die Karte pulsiert sanft, damit du sie rechtzeitig bemerkst."
     ],
     "es": [
       "Cuando vas sin ruta, tu flecha sigue ahora la carretera en cada curva, igual que cuando navegas. Ya no se sale de las curvas para volver de un salto a la carretera un momento después.",
@@ -127,7 +134,8 @@
       "Las aceras, los carriles bici y los senderos ya no aparecen en el mapa, así las ciudades se ven mucho más limpias y ves las carreteras por las que realmente puedes ir. Las pistas siguen apareciendo. ¿Los quieres de vuelta? Ajustes → Pantalla → Mapa → Sendas peatonales y ciclistas.",
       "¿Has vinculado el móvil y la tableta en Amigos → Yo? Ahora el nombre y la foto del otro dispositivo aparecen al momento, sin cerrar y volver a abrir Amigos. Y si tenían nombres o fotos distintos al vincularlos, verás los dos uno al lado del otro para elegir el que más te guste para ambos.",
       "El mapa sigue tu dedo con más suavidad al arrastrarlo: se dibuja el doble de veces mientras lo mueves, y lo que hace en segundo plano espera a que lo sueltes.",
-      "Si pasas de largo un desvío que la ruta quería tomar, Curveon ahora simplemente busca una ruta nueva desde donde estás. Antes podía meterte por el siguiente cruce y llevarte de vuelta hasta el desvío que te saltaste, solo para recorrer otra vez la misma carretera hacia delante."
+      "Si pasas de largo un desvío que la ruta quería tomar, Curveon ahora simplemente busca una ruta nueva desde donde estás. Antes podía meterte por el siguiente cruce y llevarte de vuelta hasta el desvío que te saltaste, solo para recorrer otra vez la misma carretera hacia delante.",
+      "Cuando seguir adelante tras equivocarte de camino te costaría muchos minutos, la pregunta permanece ahora más tiempo antes de que Curveon elija por ti, y la tarjeta late suavemente para que la veas a tiempo."
     ],
     "fr": [
       "Sans itinéraire, ta flèche suit désormais la route dans chaque virage, comme quand tu navigues. Elle ne sort plus de chaque courbe pour revenir d'un bond sur la route un instant plus tard.",
@@ -143,7 +151,8 @@
       "Les trottoirs, pistes cyclables et sentiers sont maintenant masqués sur la carte : les villes sont bien plus lisibles et tu vois les routes que tu peux vraiment emprunter. Les pistes restent affichées. Tu les veux de retour ? Réglages → Affichage → Carte → Chemins piétons et cyclables.",
       "Vous avez associé téléphone et tablette dans Amis → Moi ? Le nom et la photo de l'autre appareil s'affichent maintenant tout de suite, sans fermer et rouvrir Amis. Et s'ils avaient des noms ou des photos différents au moment de l'association, les deux s'affichent côte à côte pour que vous choisissiez votre préféré pour les deux.",
       "La carte suit votre doigt plus en douceur quand vous la faites glisser : elle se redessine deux fois plus souvent pendant le geste, et son travail en arrière-plan attend que vous la lâchiez.",
-      "Si vous passez tout droit devant un virage que l'itinéraire voulait prendre, Curveon cherche désormais simplement un nouvel itinéraire depuis l'endroit où vous êtes. Avant, il pouvait vous faire entrer au carrefour suivant et revenir jusqu'au virage manqué, pour reprendre ensuite la même route dans l'autre sens."
+      "Si vous passez tout droit devant un virage que l'itinéraire voulait prendre, Curveon cherche désormais simplement un nouvel itinéraire depuis l'endroit où vous êtes. Avant, il pouvait vous faire entrer au carrefour suivant et revenir jusqu'au virage manqué, pour reprendre ensuite la même route dans l'autre sens.",
+      "Quand continuer après une erreur de route vous coûterait de nombreuses minutes, la question reste désormais affichée plus longtemps avant que Curveon ne choisisse pour vous, et sa carte pulse doucement pour que vous la remarquiez à temps."
     ],
     "nl": [
       "Rijd je zonder route, dan volgt je pijl nu de weg door elke bocht, net als tijdens het navigeren. Hij glijdt niet meer uit elke bocht om even later terug op de weg te springen.",
@@ -159,7 +168,8 @@
       "Voetpaden, fietspaden en paden zijn nu verborgen op de kaart, zodat steden veel overzichtelijker zijn en je de wegen ziet die je echt kunt rijden. Onverharde wegen blijven zichtbaar. Wil je ze terug? Instellingen → Weergave → Kaart → Voet- en fietspaden.",
       "Telefoon en tablet gekoppeld onder Vrienden → Ik? Je naam en foto van het andere apparaat verschijnen nu meteen, zonder Vrienden te sluiten en opnieuw te openen. En hadden ze bij het koppelen verschillende namen of foto's, dan zie je ze naast elkaar en kies je je favoriet voor allebei.",
       "De kaart volgt je vinger soepeler als je hem versleept: hij wordt twee keer zo vaak getekend terwijl je hem beweegt, en het werk op de achtergrond wacht tot je loslaat.",
-      "Rijd je rechtdoor langs een afslag die de route wilde nemen, dan zoekt Curveon nu gewoon een nieuwe route vanaf waar je bent. Eerder kon het je bij de volgende kruising naar binnen sturen en helemaal terug naar de overgeslagen afslag, alleen om dezelfde weg weer vooruit te rijden."
+      "Rijd je rechtdoor langs een afslag die de route wilde nemen, dan zoekt Curveon nu gewoon een nieuwe route vanaf waar je bent. Eerder kon het je bij de volgende kruising naar binnen sturen en helemaal terug naar de overgeslagen afslag, alleen om dezelfde weg weer vooruit te rijden.",
+      "Als doorrijden na een verkeerde afslag je veel minuten zou kosten, blijft de vraag nu langer staan voordat Curveon voor je kiest, en de kaart pulseert rustig zodat je hem op tijd opmerkt."
     ],
     "pl": [
       "Gdy jedziesz bez trasy, strzałka podąża teraz za drogą przez każdy zakręt, tak samo jak podczas nawigacji. Nie wypada już z zakrętów, by chwilę później wskoczyć z powrotem na drogę.",
@@ -175,7 +185,8 @@
       "Chodniki, ścieżki rowerowe i szlaki są teraz ukryte na mapie, więc miasta wyglądają dużo czytelniej, a ty widzisz drogi, którymi naprawdę możesz jechać. Drogi gruntowe nadal są widoczne. Chcesz je z powrotem? Ustawienia → Ekran → Mapa → Ścieżki piesze i rowerowe.",
       "Połączyłeś telefon i tablet w Znajomi → Ja? Nazwa i zdjęcie z drugiego urządzenia pojawiają się teraz od razu, bez zamykania i ponownego otwierania Znajomych. A jeśli przy łączeniu miały różne nazwy lub zdjęcia, zobaczysz oba obok siebie i wybierzesz to, które bardziej Ci się podoba, dla obu.",
       "Mapa płynniej podąża za palcem, gdy ją przesuwasz: rysuje się dwa razy częściej w trakcie ruchu, a praca w tle czeka, aż puścisz.",
-      "Gdy miniesz zjazd, w który chciała skręcić trasa, Curveon po prostu znajdzie teraz nową trasę z miejsca, w którym jesteś. Wcześniej potrafił skierować cię w następne skrzyżowanie i z powrotem aż do pominiętego zjazdu, tylko po to, by znów jechać tą samą drogą do przodu."
+      "Gdy miniesz zjazd, w który chciała skręcić trasa, Curveon po prostu znajdzie teraz nową trasę z miejsca, w którym jesteś. Wcześniej potrafił skierować cię w następne skrzyżowanie i z powrotem aż do pominiętego zjazdu, tylko po to, by znów jechać tą samą drogą do przodu.",
+      "Gdy dalsza jazda po zjechaniu z trasy kosztowałaby cię wiele minut, pytanie zostaje teraz dłużej na ekranie, zanim Curveon wybierze za ciebie, a karta łagodnie pulsuje, żebyś zdążył ją zauważyć."
     ]
   },
   {

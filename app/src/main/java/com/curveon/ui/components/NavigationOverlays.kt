@@ -12,9 +12,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
@@ -39,10 +41,17 @@ fun WrongTurnCard(
     var now by remember { mutableStateOf(android.os.SystemClock.elapsedRealtime()) }
     LaunchedEffect(wrongTurn) { while (true) { now = android.os.SystemClock.elapsedRealtime(); kotlinx.coroutines.delay(500) } }
     val secondsLeft = ((wrongTurn.autoAtMillis - now + 999) / 1000).coerceAtLeast(0).toInt()
+    // Carrying on costs a lot: the card's background breathes amber so it is seen (drawn only, nothing is laid out again).
+    val pulse = if (wrongTurn.costly) androidx.compose.animation.core.rememberInfiniteTransition(label = "wrongTurnPulse").animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse),
+        label = "wrongTurnPulse"
+    ) else null
     Column(
         modifier
             .clip(RoundedCornerShape(20.dp))
             .background(CockpitSurface.copy(alpha = 0.97f))
+            .drawBehind { pulse?.let { drawRect(NeonAmber.copy(alpha = 0.30f * it.value)) } }
             .border(2.dp, NeonAmber, RoundedCornerShape(20.dp))
             .padding(16.dp)
             .widthIn(max = 600.dp)
