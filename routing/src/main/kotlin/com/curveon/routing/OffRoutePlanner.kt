@@ -30,19 +30,35 @@ sealed interface OffRouteDecision {
 class OffRoutePlanner(private val engine: BRouterEngine) {
 
     /**
-     * Rejoin quietly when a way that keeps riding ahead costs at most [maxExtraSeconds] and
-     * [maxExtraFraction] of the trip left more than turning back; otherwise ask. On a trip
-     * ([tripWaypoints]: the stops left and the destination) a new route from here counts as a way
-     * ahead too. At a dead end (no way ahead at all) turning round is the only choice: no question.
-     * Without a heading (standing still) the plain way back is taken.
+     * On a trip ([tripWaypoints]: the stops left and the destination) the answer is a new route from here
+     * that keeps riding ahead; the old route is never ridden back to for its own sake. On a loop or track,
+     * the way back onto its line that keeps riding ahead. Either is taken quietly when it costs at most
+     * [maxExtraSeconds] and [maxExtraFraction] of the trip left more than turning round; otherwise ask.
+     * At a dead end (no way ahead at all) turning round is the only choice: no question.
+     * Without a heading (standing still): a trip is planned anew, a loop or track takes the plain way back.
      */
     fun decide(
         position: LatLon, headingDeg: Double?, route: Route, leftAlong: Double, options: RouteOptions,
         maxExtraSeconds: Double, maxExtraFraction: Double, tripWaypoints: List<LatLon>? = null
     ): OffRouteDecision {
         val back = runCatching { back(position, route, leftAlong, options) }.getOrNull()
-        if (headingDeg == null) return back?.let { OffRouteDecision.Rejoin(it, 0.0) } ?: OffRouteDecision.Replan
-        // The way back doesn't actually turn round (e.g. the wrong road runs alongside) and costs next to nothing: that's it.
+        if (headingDeg == null) return back?.takeIf { tripWaypoints == null }?.let { OffRouteDecision.Rejoin(it, 0.0) } ?: OffRouteDecision.Replan
+        // On a trip the old route is worth nothing in itself: the answer is the best route from here that keeps
+        // riding ahead. Turning round is only brought up when it is the only way, or clearly quicker.
+        if (tripWaypoints != null) {
+            val turnRound = back?.takeIf { turnsBack(it.route, position, headingDeg) || uTurnsAhead(it.route) }
+            val onward = forwardOnly(position, headingDeg, tripWaypoints, options).second
+                ?.let { WayBack(it, route.distanceMeters, it.durationSeconds) }
+            return when {
+                onward != null && (turnRound == null || isQuick(onward, turnRound, maxExtraSeconds, maxExtraFraction)) ->
+                    OffRouteDecision.Rejoin(onward, onward.totalSeconds - (turnRound?.totalSeconds ?: onward.totalSeconds))
+                onward != null -> OffRouteDecision.Ask(turnRound!!, onward)
+                turnRound != null -> OffRouteDecision.Rejoin(turnRound, 0.0, deadEnd = true)
+                else -> OffRouteDecision.Replan
+            }
+        }
+        // A loop or track is ridden for its line. A way back onto it that doesn't turn round (e.g. the wrong road
+        // runs alongside) and costs next to nothing: that's it.
         val backRidesOn = back?.takeIf { !turnsBack(it.route, position, headingDeg) && !uTurnsAhead(it.route) }
         if (backRidesOn != null) {
             val onRoute = route.durationSeconds - Routes.secondsAt(route, leftAlong)
@@ -51,16 +67,11 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
         // Otherwise it is one way ahead among the others: riding on only to come all the way back to where the
         // route was left (round a loop the route would have ridden) must not win over simply going on from here.
         val found = aheadWays(position, headingDeg, route, leftAlong, options)
-        val trip = tripWaypoints?.let { wp ->
-            forwardOnly(position, headingDeg, wp, options, found.noGo).second
-                ?.takeIf { !uTurnsAhead(it) }
-                ?.let { WayBack(it, route.distanceMeters, it.durationSeconds) }
-        }
-        val best = (found.ways + listOfNotNull(trip, backRidesOn)).minByOrNull { it.totalSeconds }
+        val best = (found.ways + listOfNotNull(backRidesOn)).minByOrNull { it.totalSeconds }
         return when {
             best != null && (back == null || isQuick(best, back, maxExtraSeconds, maxExtraFraction)) ->
                 OffRouteDecision.Rejoin(best, best.totalSeconds - (back?.totalSeconds ?: best.totalSeconds))
-            best == null && back != null && found.deadEnd && trip == null -> OffRouteDecision.Rejoin(back, 0.0, deadEnd = true)
+            best == null && back != null && found.deadEnd -> OffRouteDecision.Rejoin(back, 0.0, deadEnd = true)
             back != null -> OffRouteDecision.Ask(back, best)
             else -> OffRouteDecision.Replan
         }
