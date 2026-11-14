@@ -1245,18 +1245,25 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 val trip = (goal as? NavigationGoal.Destination)?.let { g -> g.stops.map { it.point } + g.destination }
                 // The rider chose to carry on a moment ago (following someone, own way): no more questions.
                 val following = now < followUntil && heading != null
+                val shaping = (goal as? NavigationGoal.Destination)?.stops?.takeWhile { it.via }.orEmpty()
+                val lineUntil = current.stopsAlong.firstOrNull { !it.first.via }?.second ?: route.distanceMeters
+                // The shaping points a way on leaves behind: all it was told to skip, or those before where it joins the line.
+                fun leftBehind(skipped: Int, way: com.curveon.routing.WayBack?) = when {
+                    skipped > 0 || way == null || way.joinAlong >= route.distanceMeters - 1 -> skipped
+                    else -> shaping.takeWhile { v -> current.stopsAlong.firstOrNull { it.first === v }?.let { it.second < way.joinAlong } ?: true }.size
+                }
                 val decision = withContext(Dispatchers.Default) {
-                    // Shaping points next on the trip may be left out once the only way to them is back.
-                    val shaping = (goal as? NavigationGoal.Destination)?.stops?.takeWhile { it.via }?.size ?: 0
-                    if (following) offRoute.decide(position, heading, route, leftAlong, goal.options, Double.MAX_VALUE, Double.MAX_VALUE, trip, shaping)
-                    else offRoute.decide(position, heading, route, leftAlong, goal.options, s.maxExtraMinutes * 60.0, s.maxExtraPercent / 100.0, trip, shaping)
+                    // Shaping points next on the trip are not ridden to: the planned line is, up to the first real stop.
+                    if (following) offRoute.decide(position, heading, route, leftAlong, goal.options, Double.MAX_VALUE, Double.MAX_VALUE, trip, shaping.size, lineUntil)
+                    else offRoute.decide(position, heading, route, leftAlong, goal.options, s.maxExtraMinutes * 60.0, s.maxExtraPercent / 100.0, trip, shaping.size, lineUntil)
                 }
                 android.util.Log.i("CurveonNav", "Off route at %.0f m, heading %s: %s".format(leftAlong, heading?.let { "%.0f".format(it) } ?: "none", describe(decision)))
                 when (decision) {
                     is OffRouteDecision.Rejoin -> {
-                        if (decision.skipped > 0) _state.update { st ->
+                        val gone = leftBehind(decision.skipped, decision.way)
+                        if (gone > 0) _state.update { st ->
                             val g = st.goal as? NavigationGoal.Destination ?: return@update st
-                            st.copy(goal = g.copy(stops = g.stops.drop(decision.skipped), fixedLine = null))
+                            st.copy(goal = g.copy(stops = g.stops.drop(gone), fixedLine = null))
                         }
                         adopt(position, decision.way.route)
                     }
@@ -1268,7 +1275,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                             aheadExtraMinutes = decision.ahead?.let { ((it.totalSeconds - decision.back.totalSeconds) / 60).roundToInt().coerceAtLeast(0) },
                             autoAtMillis = 0L,
                             askedAt = position,
-                            skippedShaping = decision.skipped
+                            skippedShaping = leftBehind(decision.skipped, decision.ahead)
                         ).let { it.copy(autoAtMillis = android.os.SystemClock.elapsedRealtime() + if (it.costly) WRONG_TURN_AUTO_COSTLY_MS else WRONG_TURN_AUTO_MS) }
                         _state.update { it.copy(status = RoutingStatus.Idle, wrongTurn = wrongTurn) }
                     }

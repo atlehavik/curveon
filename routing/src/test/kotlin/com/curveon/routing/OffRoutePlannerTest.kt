@@ -123,7 +123,7 @@ class OffRoutePlannerTest {
      * routes on a 2 km ride) all the way to the junction where the plan came in.
      */
     @Test
-    fun `a shaping point ridden past is left out instead of sending the rider back for it`() {
+    fun `shaping points are not ridden to after leaving the route`() {
         assumeTrue(File(System.getProperty("curveon.segments") ?: "", "E5_N55.rd5").exists())
         val curvy = RouteOptions(RoadStyle.CURVY)
         val home = LatLon(59.794218, 5.144344)
@@ -133,6 +133,7 @@ class OffRoutePlannerTest {
         val ride = engine.route(listOf(home, dest), fast)
         var waypoints = listOf(via, dest)
         var tracker = NavigationTracker(route)
+        val viaAlong = route.points.minBy { Geo.distance(it.lat, it.lon, via.lat, via.lon) }.distanceFromStart
         var d = 0.0
         var lastDecide = -1e9
         var decisions = 0
@@ -146,10 +147,11 @@ class OffRoutePlannerTest {
                 assertTrue("at $d m: expected a quiet new route, got $dec".take(300), dec is OffRouteDecision.Rejoin && !dec.deadEnd)
                 dec as OffRouteDecision.Rejoin
                 val left = ride.durationSeconds - Routes.secondsAt(ride, d)
-                println("at %.0f m: new route %.1f km %.0f s (the ride itself has %.0f s left), left out %d".format(d, dec.way.route.distanceMeters / 1000, dec.way.route.durationSeconds, left, dec.skipped))
+                println("at %.0f m: new route %.1f km %.0f s (the ride itself has %.0f s left), left out %d, joins at %.0f".format(d, dec.way.route.distanceMeters / 1000, dec.way.route.durationSeconds, left, dec.skipped, dec.way.joinAlong))
                 assertFalse("at $d m: rides the same road both ways", ridesBackOnItself(dec.way.route))
                 assertTrue("at $d m: %.0f s for a ride with %.0f s left".format(dec.way.route.durationSeconds, left), dec.way.route.durationSeconds <= left + 90)
-                waypoints = waypoints.drop(dec.skipped)
+                // As the app: the shaping point is gone once the new route skips it or joins the line after it.
+                if (dec.skipped > 0 || dec.way.joinAlong > viaAlong) waypoints = listOf(dest)
                 route = dec.way.route
                 tracker = NavigationTracker(route)
             }
@@ -157,19 +159,6 @@ class OffRoutePlannerTest {
         }
         assertTrue("the rider did leave the route", decisions > 0)
         assertEquals("the shaping point is gone", listOf(dest), waypoints)
-    }
-
-    @Test
-    fun `a shaping point still ahead is kept`() {
-        assumeTrue(File(System.getProperty("curveon.segments") ?: "", "E5_N55.rd5").exists())
-        val curvy = RouteOptions(RoadStyle.CURVY)
-        val via = LatLon(59.792836, 5.172305)
-        val dest = LatLon(59.803577, 5.164872)
-        val planned = engine.route(listOf(LatLon(59.794218, 5.144344), via, dest), curvy, visitEveryVia = true)
-        // 675 m up the Sjøvoll road: a road ahead still leads round to Svortland without riding anything twice.
-        val dec = planner.decide(LatLon(59.79654, 5.15142), 24.0, planned, 489.0, curvy, 180.0, 0.10, listOf(via, dest), 1)
-        assertTrue("$dec".take(300), dec is OffRouteDecision.Rejoin && dec.skipped == 0)
-        assertTrue("goes by the point", (dec as OffRouteDecision.Rejoin).way.route.points.any { Geo.distance(it.lat, it.lon, via.lat, via.lon) < 100 })
     }
 
     /** True when [r] comes back along a road it has already ridden (not merely crossing it). */

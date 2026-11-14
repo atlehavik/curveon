@@ -17,7 +17,7 @@ sealed interface OffRouteDecision {
     /** A way back that keeps going ahead and costs little: take it without asking. */
     data class Rejoin(
         val way: WayBack, val extraSeconds: Double, val deadEnd: Boolean = false,
-        /** On a trip: this many of the next shaping points are left out, the only way to them being back. */
+        /** On a trip: this many of the next shaping points are left out (no way onto the planned line ahead). */
         val skipped: Int = 0
     ) : OffRouteDecision
     /** Only turning back is cheap: ask the rider. [ahead] is the best way without turning round, if any. */
@@ -41,13 +41,15 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
      * At a dead end (no way ahead at all) turning round is the only choice: no question.
      * Without a heading (standing still): a trip is planned anew, a loop or track takes the plain way back.
      *
-     * The first [skippable] of [tripWaypoints] are shaping points (put there to bend the route, not places to
-     * visit). One the rider has ridden past, so that the way to it now is back, or out along a road and back
-     * along it, or round and past where they are again, is left out and the route goes on to what comes after.
+     * The first [skippable] of [tripWaypoints] are shaping points: put there while planning to bend the route,
+     * not places to ride to. With those next on the trip the planned line is what counts, up to the first real
+     * stop at [lineUntil] metres along it: the quickest way onto it further ahead that keeps riding on, or, when
+     * there is none, a new route to what comes after them ([OffRouteDecision.Rejoin.skipped]).
      */
     fun decide(
         position: LatLon, headingDeg: Double?, route: Route, leftAlong: Double, options: RouteOptions,
-        maxExtraSeconds: Double, maxExtraFraction: Double, tripWaypoints: List<LatLon>? = null, skippable: Int = 0
+        maxExtraSeconds: Double, maxExtraFraction: Double, tripWaypoints: List<LatLon>? = null, skippable: Int = 0,
+        lineUntil: Double = route.distanceMeters
     ): OffRouteDecision {
         val back = runCatching { back(position, route, leftAlong, options) }.getOrNull()
         if (headingDeg == null) return back?.takeIf { tripWaypoints == null }?.let { OffRouteDecision.Rejoin(it, 0.0) } ?: OffRouteDecision.Replan
@@ -60,15 +62,22 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
         if (tripWaypoints != null) {
             fun onwardThrough(waypoints: List<LatLon>) = forwardOnly(position, headingDeg, waypoints, options).second
                 ?.let { WayBack(it, route.distanceMeters, it.durationSeconds) }
-            // What the plan itself rode twice (a point down a road and back) is not held against the new route.
-            val plannedTwice by lazy { Routes.riddenTwiceMeters(Routes.slice(route, leftAlong)) }
-            fun WayBack.goesBackForIt() = Routes.riddenTwiceMeters(this.route) > RIDDEN_TWICE_M + plannedTwice || Routes.returnsTo(this.route, position)
             var skipped = 0
-            var found = onwardThrough(tripWaypoints)
-            while (skipped < minOf(skippable, tripWaypoints.size - 1) && (found == null || found.goesBackForIt())) {
-                skipped++
-                found = onwardThrough(tripWaypoints.drop(skipped))
-            }
+            var found: WayBack?
+            if (skippable > 0) {
+                // Shaping points are for planning, not places to ride to: what they left behind is the planned line.
+                // The quickest way onto it further ahead that keeps riding on (as for a track), never past a real
+                // stop; and when there is none, a new route to what comes after the shaping points.
+                val plannedTwice = Routes.riddenTwiceMeters(Routes.slice(route, leftAlong))
+                fun WayBack.ridesOn() = Routes.riddenTwiceMeters(this.route) <= RIDDEN_TWICE_M + plannedTwice && !Routes.returnsTo(this.route, position)
+                val joining = aheadWays(position, headingDeg, route, leftAlong, options, lineUntil).ways.filter { it.ridesOn() }.minByOrNull { it.totalSeconds }
+                // Straight to what comes after the shaping points: always when the line can't be joined, and as one
+                // way among the others when that is no further off than the line is tried (else every wrong turn
+                // on a long trip would throw its whole shape away for the quickest road).
+                val past = minOf(skippable, tripWaypoints.size - 1)
+                val direct = if (joining == null || lineUntil - leftAlong <= JOIN_AHEAD_M.last()) onwardThrough(tripWaypoints.drop(past)) else null
+                if (direct != null && (joining == null || direct.totalSeconds < joining.totalSeconds)) { found = direct; skipped = past } else found = joining
+            } else found = onwardThrough(tripWaypoints)
             val onward = found?.takeIf { it.reallyOn() }
             return when {
                 onward != null && (turnRound == null || isQuick(onward, turnRound, maxExtraSeconds, maxExtraFraction)) ->
@@ -121,9 +130,10 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
     /** Ways back onto the route that keep riding ahead; [deadEnd] when no road leads on at all. */
     class AheadWays(val ways: List<WayBack>, val noGo: List<NoGo>, val deadEnd: Boolean)
 
-    fun aheadWays(position: LatLon, headingDeg: Double, route: Route, leftAlong: Double, options: RouteOptions): AheadWays {
-        val ends = JOIN_AHEAD_M.map { leftAlong + it }.filter { it < route.distanceMeters - 50 }
-            .ifEmpty { listOf(route.distanceMeters) }
+    fun aheadWays(position: LatLon, headingDeg: Double, route: Route, leftAlong: Double, options: RouteOptions, until: Double = route.distanceMeters): AheadWays {
+        val last = minOf(until, route.distanceMeters)
+        val ends = JOIN_AHEAD_M.map { leftAlong + it }.filter { it < last - 50 }
+            .ifEmpty { listOf(last) }
         // Find the ways back once (they are right behind the rider), then try each place to join.
         val (noGo, first) = forwardOnly(position, headingDeg, listOf(Routes.pointAt(route, ends.first()).first), options)
         val ways = ends.mapIndexedNotNull { i, along ->
