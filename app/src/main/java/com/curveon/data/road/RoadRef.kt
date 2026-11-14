@@ -70,8 +70,9 @@ data class RoadRef(val text: String, val style: Style) {
 
 /** What is known about the road the rider is on: its number and whether it is a priority road. */
 /** [name]: the road's name as the map has it, shown for a moment when the road card is tapped. */
-data class CurrentRoad(val ref: RoadRef?, val priority: Boolean, val name: String? = null) {
-    val isEmpty get() = ref == null && !priority
+/** [compass]: which way the rider is heading, in eighths from north (0) clockwise (Settings → Display → Compass direction). */
+data class CurrentRoad(val ref: RoadRef?, val priority: Boolean, val name: String? = null, val compass: Int? = null) {
+    val isEmpty get() = ref == null && !priority && compass == null
 }
 
 /**

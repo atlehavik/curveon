@@ -124,6 +124,16 @@
     <string name="settings_map_media">Muziek op de kaart</string>
     <string name="settings_map_media_hint">De speler in de hoek van de schermvullende kaart</string>
     <string name="settings_road_info_hint">Wegnummer en voorrangswegbord onder de snelheid, als die bekend zijn</string>
+    <string name="settings_compass">Windrichting</string>
+    <string name="settings_compass_hint">In welke richting je rijdt (N, NO, O …), bij de weginfo</string>
+    <string name="compass_n">N</string>
+    <string name="compass_ne">NO</string>
+    <string name="compass_e">O</string>
+    <string name="compass_se">ZO</string>
+    <string name="compass_s">Z</string>
+    <string name="compass_sw">ZW</string>
+    <string name="compass_w">W</string>
+    <string name="compass_nw">NW</string>
     <string name="altitude_m">%1$d m boven zee</string>
     <string name="altitude_ft">%1$d ft</string>
     <string name="settings_surfaces">Weergave grind</string>
@@ -488,6 +498,7 @@
     <string name="ride_resume_title">Laatste rit opgeslagen</string>
     <string name="ride_resume_continue">Die rit voortzetten</string>
     <string name="ride_resume_new">Nieuwe rit starten</string>
+    <string name="ride_resume_auto">%1$s over %2$d s</string>
     <string name="nav_resume_title">Navigatie hervatten?</string>
     <string name="nav_resume_yes">Doorgaan</string>
     <string name="nav_resume_no">Nee, bedankt</string>

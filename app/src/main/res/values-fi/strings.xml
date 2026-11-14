@@ -120,6 +120,16 @@
     <string name="settings_map_media">Musiikki kartalla</string>
     <string name="settings_map_media_hint">Soitin koko näytön kartan kulmassa</string>
     <string name="settings_road_info_hint">Tienumero ja etuajo-oikeutetun tien merkki nopeuden alla, kun tiedossa</string>
+    <string name="settings_compass">Ilmansuunta</string>
+    <string name="settings_compass_hint">Mihin suuntaan ajat (P, KO, I …), tietietojen vieressä</string>
+    <string name="compass_n">P</string>
+    <string name="compass_ne">KO</string>
+    <string name="compass_e">I</string>
+    <string name="compass_se">KA</string>
+    <string name="compass_s">E</string>
+    <string name="compass_sw">LO</string>
+    <string name="compass_w">L</string>
+    <string name="compass_nw">LU</string>
     <string name="altitude_m">%1$d m mpy</string>
     <string name="altitude_ft">%1$d ft</string>
     <string name="settings_surfaces">Soran näyttö</string>
@@ -471,6 +481,7 @@
     <string name="ride_resume_title">Edellinen ajo tallennettiin</string>
     <string name="ride_resume_continue">Jatka sitä ajoa</string>
     <string name="ride_resume_new">Aloita uusi ajo</string>
+    <string name="ride_resume_auto">%1$s %2$d s kuluttua</string>
     <string name="nav_resume_title">Jatketaanko navigointia?</string>
     <string name="nav_resume_yes">Jatka</string>
     <string name="nav_resume_no">Ei kiitos</string>

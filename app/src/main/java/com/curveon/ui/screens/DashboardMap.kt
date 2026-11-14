@@ -393,7 +393,7 @@ private fun BoxScope.MapBanners(viewModel: DashboardViewModel, state: DashboardS
     val bannerKey = newestMessage?.let { bannerKey(it) }
     val bannerFresh = newestMessage != null && System.currentTimeMillis() - newestMessage.timestampMs < MESSAGE_BANNER_MS
     val reachedStop = state.reachedStop
-    resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide,
+    resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide, autoSeconds = com.curveon.ui.components.RIDE_RESUME_AUTO_S,
         modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp).remoteSheet(viewModel::startNewRide)) }
     // Waits while the ride's question is up (it goes by itself once riding on), and is not asked over a trip.
     navResumeOffer?.takeIf { resumeOffer == null && preview == null && !isNavigating }?.let {

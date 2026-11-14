@@ -129,6 +129,16 @@
     <string name="settings_map_media">Musikk på kartet</string>
     <string name="settings_map_media_hint">Spilleren i hjørnet når kartet fyller skjermen</string>
     <string name="settings_road_info_hint">Veinummer og forkjørsveiskilt under farten, når de er kjent</string>
+    <string name="settings_compass">Himmelretning</string>
+    <string name="settings_compass_hint">Hvilken vei du kjører (N, NØ, Ø …), ved veiinfoen</string>
+    <string name="compass_n">N</string>
+    <string name="compass_ne">NØ</string>
+    <string name="compass_e">Ø</string>
+    <string name="compass_se">SØ</string>
+    <string name="compass_s">S</string>
+    <string name="compass_sw">SV</string>
+    <string name="compass_w">V</string>
+    <string name="compass_nw">NV</string>
     <string name="altitude_m">%1$d moh.</string>
     <string name="altitude_ft">%1$d fot</string>
     <string name="settings_surfaces">Visning av grus</string>
@@ -506,6 +516,7 @@
     <string name="ride_resume_title">Forrige tur ble lagret</string>
     <string name="ride_resume_continue">Fortsett den turen</string>
     <string name="ride_resume_new">Start ny tur</string>
+    <string name="ride_resume_auto">%1$s om %2$d s</string>
     <string name="nav_resume_title">Fortsette navigeringen?</string>
     <string name="nav_resume_yes">Fortsett</string>
     <string name="nav_resume_no">Nei takk</string>

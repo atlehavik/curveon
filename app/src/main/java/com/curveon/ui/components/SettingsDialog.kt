@@ -78,6 +78,7 @@ data class SettingsState(
     val speedSign: com.curveon.ui.viewmodel.SpeedSignSize = com.curveon.ui.viewmodel.SpeedSignSize.HUGE,
     val speedSignsSideRoads: Boolean = false,
     val showRoadInfo: Boolean = true,
+    val showCompass: Boolean = false,
     val roadCardSize: com.curveon.ui.viewmodel.RoadCardSize = com.curveon.ui.viewmodel.RoadCardSize.NORMAL,
     val showMapMedia: Boolean = true,
     val autoFollowTracks: Boolean,
@@ -131,6 +132,7 @@ class SettingsActions(
     val onSpeedSignsSideRoads: (Boolean) -> Unit = {},
     val onRoadCardSize: (com.curveon.ui.viewmodel.RoadCardSize) -> Unit = {},
     val onShowRoadInfo: (Boolean) -> Unit = {},
+    val onShowCompass: (Boolean) -> Unit = {},
     val onShowMapMedia: (Boolean) -> Unit = {},
     val onAutoFollow: (Boolean) -> Unit,
     val onOffRoute: (com.curveon.data.routing.OffRouteSettings) -> Unit,
@@ -256,6 +258,9 @@ fun SettingsDialog(state: SettingsState, actions: SettingsActions, phone: PhoneC
                             }
                             Setting(stringResource(R.string.settings_road_info), stringResource(R.string.settings_road_info_hint)) {
                                 CockpitSwitch(state.showRoadInfo, actions.onShowRoadInfo)
+                            }
+                            Setting(stringResource(R.string.settings_compass), stringResource(R.string.settings_compass_hint)) {
+                                CockpitSwitch(state.showCompass, actions.onShowCompass)
                             }
                             Setting(stringResource(R.string.settings_road_size), stringResource(R.string.settings_road_size_hint)) {
                                 Choice(com.curveon.ui.viewmodel.RoadCardSize.entries, state.roadCardSize, { stringResource(it.label) }, actions.onRoadCardSize)

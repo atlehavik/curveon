@@ -128,6 +128,16 @@
     <string name="settings_map_media">Tónlist á kortinu</string>
     <string name="settings_map_media_hint">Spilarinn í horni kortsins á fullum skjá</string>
     <string name="settings_road_info_hint">Vegnúmer og aðalbrautarmerki undir hraðanum, þegar það er vitað</string>
+    <string name="settings_compass">Höfuðátt</string>
+    <string name="settings_compass_hint">Í hvaða átt þú ekur (N, NA, A …), hjá vegaupplýsingunum</string>
+    <string name="compass_n">N</string>
+    <string name="compass_ne">NA</string>
+    <string name="compass_e">A</string>
+    <string name="compass_se">SA</string>
+    <string name="compass_s">S</string>
+    <string name="compass_sw">SV</string>
+    <string name="compass_w">V</string>
+    <string name="compass_nw">NV</string>
     <string name="altitude_m">%1$d m y.s.</string>
     <string name="altitude_ft">%1$d ft</string>
     <string name="settings_surfaces">Sýna möl</string>
@@ -505,6 +515,7 @@
     <string name="ride_resume_title">Síðasta ferð var vistuð</string>
     <string name="ride_resume_continue">Halda þeirri ferð áfram</string>
     <string name="ride_resume_new">Hefja nýja ferð</string>
+    <string name="ride_resume_auto">%1$s eftir %2$d s</string>
     <string name="nav_resume_title">Halda leiðsögn áfram?</string>
     <string name="nav_resume_yes">Halda áfram</string>
     <string name="nav_resume_no">Nei takk</string>

@@ -39,8 +39,8 @@ private fun TimerEffects(viewModel: DashboardViewModel, state: DashboardScreenSt
     LaunchedEffect(bannerKey) { if (bannerKey != null) { delay(MESSAGE_BANNER_MS); state.bannerHidden = bannerKey } }
     LaunchedEffect(state.roadNameShown) { if (state.roadNameShown) { delay(6_000); state.roadNameShown = false } }
     val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
-    // Nothing pressed: it is a new ride, and the question goes away.
-    LaunchedEffect(resumeOffer) { if (resumeOffer != null) { delay(30_000); viewModel.startNewRide() } }
+    // Nothing pressed: the ride goes on, and the question goes away.
+    LaunchedEffect(resumeOffer) { if (resumeOffer != null) { delay(com.curveon.ui.components.RIDE_RESUME_AUTO_S * 1000L); viewModel.resumeRide() } }
     LaunchedEffect(state.showSettings) { if (!state.showSettings) { state.settingsOnEngine = false; state.settingsOnHelp = false } }
     // The welcome tour: once on the first start (when the screen has settled), and from Settings → Help.
     // The very first one starts with the choice of language.

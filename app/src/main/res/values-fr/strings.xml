@@ -129,6 +129,16 @@
     <string name="settings_map_media">Musique sur la carte</string>
     <string name="settings_map_media_hint">Le lecteur dans le coin de la carte plein écran</string>
     <string name="settings_road_info_hint">Numéro de route et panneau route prioritaire sous la vitesse, si connus</string>
+    <string name="settings_compass">Direction cardinale</string>
+    <string name="settings_compass_hint">Dans quelle direction vous roulez (N, NE, E …), près des infos de la route</string>
+    <string name="compass_n">N</string>
+    <string name="compass_ne">NE</string>
+    <string name="compass_e">E</string>
+    <string name="compass_se">SE</string>
+    <string name="compass_s">S</string>
+    <string name="compass_sw">SO</string>
+    <string name="compass_w">O</string>
+    <string name="compass_nw">NO</string>
     <string name="altitude_m">%1$d m</string>
     <string name="altitude_ft">%1$d ft</string>
     <string name="settings_surfaces">Affichage du gravier</string>
@@ -514,6 +524,7 @@
     <string name="ride_resume_title">Dernière balade enregistrée</string>
     <string name="ride_resume_continue">Reprendre cette balade</string>
     <string name="ride_resume_new">Nouvelle balade</string>
+    <string name="ride_resume_auto">%1$s dans %2$d s</string>
     <string name="nav_resume_title">Reprendre la navigation ?</string>
     <string name="nav_resume_yes">Continuer</string>
     <string name="nav_resume_no">Non merci</string>

@@ -110,6 +110,9 @@ fun StopSign(size: Dp, modifier: Modifier = Modifier) {
  * priority sign (Settings → Display → Road info). A junction just ahead where the rider gives way
  * or stops adds its sign and how far it is, with or without a route: this card is the one place for it.
  */
+private val COMPASS = intArrayOf(R.string.compass_n, R.string.compass_ne, R.string.compass_e, R.string.compass_se,
+    R.string.compass_s, R.string.compass_sw, R.string.compass_w, R.string.compass_nw)
+
 @Composable
 fun CurrentRoadCard(
     road: com.curveon.data.road.CurrentRoad, modifier: Modifier = Modifier, giveWay: com.curveon.data.routing.GiveWayAlert? = null,
@@ -133,6 +136,8 @@ fun CurrentRoadCard(
     ) {
         road.ref?.let { RoadShield(it, 26.dp * sign, Modifier.align(Alignment.CenterVertically)) }
         if (road.priority) PriorityRoadSign(30.dp * sign, Modifier.align(Alignment.CenterVertically))
+        road.compass?.let { Text(stringResource(COMPASS[it % 8]), color = TextPrimary, fontSize = (18 * scale).sp, fontWeight = FontWeight.Black,
+            maxLines = 1, modifier = Modifier.align(Alignment.CenterVertically).testTag("current_road_compass")) }
         if (showName && road.name != null) Text(road.name, color = TextPrimary, fontSize = (16 * scale).sp, fontWeight = FontWeight.Bold,
             maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.align(Alignment.CenterVertically).testTag("current_road_name"))
         giveWay?.let { g ->

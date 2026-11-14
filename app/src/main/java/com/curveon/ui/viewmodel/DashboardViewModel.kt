@@ -861,6 +861,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     val showRoadInfo: StateFlow<Boolean> = _showRoadInfo.asStateFlow()
     fun setShowRoadInfo(on: Boolean) { _showRoadInfo.value = on; settings.edit().putBoolean("roadInfo", on).apply() }
 
+    /** Settings → Display: which way the rider is heading (N, NE, E ...), in the road card. */
+    private val _showCompass = MutableStateFlow(settings.getBoolean("compass", false))
+    val showCompass: StateFlow<Boolean> = _showCompass.asStateFlow()
+    fun setShowCompass(on: Boolean) { _showCompass.value = on; settings.edit().putBoolean("compass", on).apply() }
+
     /** Settings → Display: the music player in the corner of the full-screen map. */
     private val _showMapMedia = MutableStateFlow(settings.getBoolean("mapMedia", true))
     val showMapMedia: StateFlow<Boolean> = _showMapMedia.asStateFlow()
@@ -877,11 +882,15 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun watchCurrentRoad() = viewModelScope.launch {
         var readAt: LatLon? = null
         var stoppedSince: Long? = null
+        var compass: Int? = null
         while (true) {
             delay(2_000)
             untilAwake()
             val t = _telemetry.value
-            if (!_showRoadInfo.value || !t.hasGpsFix) { _currentRoad.value = null; continue }
+            val roadInfo = _showRoadInfo.value
+            if (!roadInfo && !_showCompass.value || !t.hasGpsFix) { _currentRoad.value = null; continue }
+            // Which way the rider is going: the GPS's own heading while moving (it is noise when slow), else as it was.
+            compass = if (!_showCompass.value) null else if (t.speedKmh >= 8f) (((t.headingDeg % 360 + 360) % 360 + 22.5f) / 45f).toInt() % 8 else compass
             // Parked (a café, a fuel stop): the sign goes after a while and comes back once riding on; a red light
             // or a queue keeps it.
             val now = System.currentTimeMillis()
@@ -897,10 +906,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val here = LatLon(lat, lon)
             if (heading == null && _currentRoad.value != null && readAt?.let { com.curveon.routing.Geo.distance(it, here) < 100 } == true) continue
             readAt = here
-            val ref = roadRefAt(lat, lon, heading, mapRoadHere)
-            val priority = withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(lat, lon, heading) }
+            val ref = if (roadInfo) roadRefAt(lat, lon, heading, mapRoadHere) else null
+            val priority = roadInfo && withContext(Dispatchers.IO) { speedLimits.isPriorityRoad(lat, lon, heading) }
             // The road's own name, not a side road's.
-            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority, mapRoadHere?.ownName).takeUnless { it.isEmpty }
+            _currentRoad.value = com.curveon.data.road.CurrentRoad(ref, priority, mapRoadHere?.ownName.takeIf { roadInfo }, compass).takeUnless { it.isEmpty }
         }
     }
 

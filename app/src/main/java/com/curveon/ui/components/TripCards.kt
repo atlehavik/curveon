@@ -223,17 +223,23 @@ fun StopReachedBanner(name: String, onDismiss: () -> Unit, modifier: Modifier = 
 
 /**
  * Riding again soon after a ride finished: go on logging that ride, or start a new one (the
- * dashboard picks the new one itself after a while if nothing is pressed). With [heading], [resumeLabel] and [newLabel]
+ * dashboard goes on with the ride itself after [RIDE_RESUME_AUTO_S] seconds if nothing is pressed). With [heading], [resumeLabel] and [newLabel]
  * it asks the same of a trip that was being navigated when Android ended Curveon.
  */
+const val RIDE_RESUME_AUTO_S = 20
+
 @Composable
 fun RideResumeCard(
     title: String, onResume: () -> Unit, onNew: () -> Unit, modifier: Modifier = Modifier,
     heading: String = stringResource(R.string.ride_resume_title), resumeLabel: String = stringResource(R.string.ride_resume_continue),
     newLabel: String = stringResource(R.string.ride_resume_new),
     tag: String = "ride_resume",
+    /** Counts down under the heading from this many seconds (whoever shows the card presses it when the time is up). */
+    autoSeconds: Int? = null,
 ) {
     val shape = RoundedCornerShape(20.dp)
+    var left by remember(tag, title) { mutableStateOf(autoSeconds) }
+    LaunchedEffect(tag, title) { while ((left ?: 0) > 0) { kotlinx.coroutines.delay(1000); left = left?.minus(1) } }
     Column(
         modifier.clip(shape).background(CockpitSurface).border(2.dp, ElectricCyan, shape).padding(horizontal = 18.dp, vertical = 12.dp)
             .testTag(tag),
@@ -241,7 +247,9 @@ fun RideResumeCard(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(heading, color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1)
-        if (title.isNotEmpty()) Text(title, color = TextSecondary, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+        // The countdown to the first button's choice goes with the title: on the button it squeezed the other one on a phone.
+        val under = listOfNotNull(title.takeIf { it.isNotEmpty() }, left?.takeIf { it > 0 }?.let { stringResource(R.string.ride_resume_auto, resumeLabel, it) }).joinToString(" · ")
+        if (under.isNotEmpty()) Text(under, color = TextSecondary, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(onClick = onResume, colors = ButtonDefaults.buttonColors(containerColor = ElectricCyan, contentColor = Color.Black),
                 modifier = Modifier.height(52.dp)) { Text(resumeLabel, fontSize = 17.sp, fontWeight = FontWeight.Bold) }
