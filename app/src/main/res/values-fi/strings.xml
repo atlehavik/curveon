@@ -706,6 +706,7 @@
     <string name="nav_end">Lopeta navigointi</string>
     <string name="wrong_turn_title">Reitiltä poikettu</string>
     <string name="wrong_turn_trip">Eteenpäin jatkaminen vie %1$d min enemmän kuin kääntyminen takaisin.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">Reitille ei pääse takaisin kääntymättä.</string>
     <string name="wrong_turn_back">Käänny takaisin</string>
     <string name="wrong_turn_new_route">Uusi reitti tästä</string>

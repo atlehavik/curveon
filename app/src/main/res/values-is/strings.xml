@@ -750,6 +750,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Utan leiðar</string>
     <string name="wrong_turn_trip">Að halda áfram tekur %1$d mín lengur en að snúa við.</string>
+    <string name="wrong_turn_extra">+%1$d mín</string>
     <string name="wrong_turn_no_ahead">Ekki hægt að komast aftur á leiðina án þess að snúa við.</string>
     <string name="wrong_turn_back">Snúa við</string>
     <string name="wrong_turn_new_route">Ný leið héðan</string>

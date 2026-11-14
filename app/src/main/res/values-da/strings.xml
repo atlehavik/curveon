@@ -751,6 +751,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Uden for ruten</string>
     <string name="wrong_turn_trip">At fortsætte koster %1$d min mere end at vende om.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">Ingen vej tilbage til ruten uden at vende om.</string>
     <string name="wrong_turn_back">Vend om</string>
     <string name="wrong_turn_new_route">Ny rute herfra</string>

@@ -727,6 +727,7 @@
     <string name="nav_end">Navigatie beëindigen</string>
     <string name="wrong_turn_title">Van de route af</string>
     <string name="wrong_turn_trip">Doorrijden kost %1$d min meer dan omkeren.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">Geen weg terug naar de route zonder om te keren.</string>
     <string name="wrong_turn_back">Omkeren</string>
     <string name="wrong_turn_new_route">Nieuwe route vanaf hier</string>

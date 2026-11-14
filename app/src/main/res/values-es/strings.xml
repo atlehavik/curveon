@@ -766,6 +766,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Fuera de ruta</string>
     <string name="wrong_turn_trip">Seguir cuesta %1$d min más que dar la vuelta.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">No hay forma de volver a la ruta sin dar la vuelta.</string>
     <string name="wrong_turn_back">Dar la vuelta</string>
     <string name="wrong_turn_new_route">Nueva ruta desde aquí</string>

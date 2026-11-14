@@ -65,8 +65,10 @@ fun PillButton(icon: ImageVector, label: String, background: Color, content: Col
         Icon(icon, null, tint = content, modifier = Modifier.size(24.dp))
         Spacer(Modifier.width(8.dp))
         // A label too long for a narrow button (Norwegian on a 360 dp phone) gets smaller, then two lines, instead of cut off.
-        var size by remember(label, LocalConfiguration.current.screenWidthDp) { mutableStateOf(16f) }
-        var ready by remember(label, LocalConfiguration.current.screenWidthDp) { mutableStateOf(false) }
+        // Fitted anew when the words change, not when only a number in them does (a countdown would blink every second).
+        val words = label.filterNot { it.isDigit() }
+        var size by remember(words, LocalConfiguration.current.screenWidthDp) { mutableStateOf(16f) }
+        var ready by remember(words, LocalConfiguration.current.screenWidthDp) { mutableStateOf(false) }
         Text(label, color = content, fontSize = size.sp, lineHeight = (size * 1.15f).sp, fontWeight = FontWeight.Bold, maxLines = 2,
             textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis,
             modifier = Modifier.drawWithContent { if (ready) drawContent() },

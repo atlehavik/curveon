@@ -781,6 +781,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Poza trasą</string>
     <string name="wrong_turn_trip">Jazda dalej to %1$d min więcej niż zawrócenie.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">Nie da się wrócić na trasę bez zawracania.</string>
     <string name="wrong_turn_back">Zawróć</string>
     <string name="wrong_turn_new_route">Nowa trasa stąd</string>

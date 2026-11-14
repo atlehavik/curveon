@@ -753,6 +753,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Off route</string>
     <string name="wrong_turn_trip">Carrying on costs %1$d min more than turning back.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">No way back to the route without turning round.</string>
     <string name="wrong_turn_back">Turn back</string>
     <string name="wrong_turn_new_route">New route from here</string>

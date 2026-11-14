@@ -750,6 +750,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Abseits der Route</string>
     <string name="wrong_turn_trip">Weiterfahren kostet %1$d min mehr als umkehren.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">Kein Weg zurück zur Route, ohne umzudrehen.</string>
     <string name="wrong_turn_back">Umkehren</string>
     <string name="wrong_turn_new_route">Neue Route ab hier</string>

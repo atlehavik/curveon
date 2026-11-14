@@ -766,6 +766,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Hors itinéraire</string>
     <string name="wrong_turn_trip">Continuer prend %1$d min de plus que faire demi-tour.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">Pas de retour à l’itinéraire sans faire demi-tour.</string>
     <string name="wrong_turn_back">Faire demi-tour</string>
     <string name="wrong_turn_new_route">Nouvel itinéraire d’ici</string>

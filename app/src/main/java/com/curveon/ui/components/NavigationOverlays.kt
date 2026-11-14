@@ -61,13 +61,18 @@ fun WrongTurnCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.WrongLocation, null, tint = NeonAmber, modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(10.dp))
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.wrong_turn_title), color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Black)
                 Text(
                     if (askStops) androidx.compose.ui.res.pluralStringResource(R.plurals.wrong_turn_stops_left, wrongTurn.stopsLeft, wrongTurn.stopsLeft)
                     else wrongTurn.aheadExtraMinutes?.let { stringResource(R.string.wrong_turn_trip, it) } ?: stringResource(R.string.wrong_turn_no_ahead),
                     color = TextSecondary, fontSize = 14.sp
                 )
+            }
+            // What carrying on costs, big enough to read at a glance.
+            if (!askStops) wrongTurn.aheadExtraMinutes?.let {
+                Spacer(Modifier.width(14.dp))
+                Text(stringResource(R.string.wrong_turn_extra, it), color = NeonAmber, fontSize = 30.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
             }
         }
         // Counts down while riding on; at 0 it waits for the rider to ride on (or answer).

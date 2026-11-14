@@ -751,6 +751,7 @@
     <!-- Wrong turn -->
     <string name="wrong_turn_title">Utenfor ruten</string>
     <string name="wrong_turn_trip">Å kjøre videre tar %1$d min mer enn å snu.</string>
+    <string name="wrong_turn_extra">+%1$d min</string>
     <string name="wrong_turn_no_ahead">Ingen vei tilbake til ruten uten å snu.</string>
     <string name="wrong_turn_back">Snu</string>
     <string name="wrong_turn_new_route">Ny rute herfra</string>
