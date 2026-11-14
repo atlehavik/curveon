@@ -72,7 +72,7 @@ fun WrongTurnCard(
             // What carrying on costs, big enough to read at a glance.
             if (!askStops) wrongTurn.aheadExtraMinutes?.let {
                 Spacer(Modifier.width(14.dp))
-                Text(stringResource(R.string.wrong_turn_extra, it), color = NeonAmber, fontSize = 30.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
+                Text(stringResource(R.string.wrong_turn_extra, it), color = ElectricCyan, fontSize = 34.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false)
             }
         }
         // Counts down while riding on; at 0 it waits for the rider to ride on (or answer).
