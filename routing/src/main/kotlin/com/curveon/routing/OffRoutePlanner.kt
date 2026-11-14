@@ -15,9 +15,13 @@ data class WayBack(
 /** What to do after leaving the route. */
 sealed interface OffRouteDecision {
     /** A way back that keeps going ahead and costs little: take it without asking. */
-    data class Rejoin(val way: WayBack, val extraSeconds: Double, val deadEnd: Boolean = false) : OffRouteDecision
+    data class Rejoin(
+        val way: WayBack, val extraSeconds: Double, val deadEnd: Boolean = false,
+        /** On a trip: this many of the next shaping points are left out, the only way to them being back. */
+        val skipped: Int = 0
+    ) : OffRouteDecision
     /** Only turning back is cheap: ask the rider. [ahead] is the best way without turning round, if any. */
-    data class Ask(val back: WayBack, val ahead: WayBack?) : OffRouteDecision
+    data class Ask(val back: WayBack, val ahead: WayBack?, /** As [Rejoin.skipped], for [ahead]. */ val skipped: Int = 0) : OffRouteDecision
     /** No way back to the route was found at all. */
     data object Replan : OffRouteDecision
 }
@@ -36,10 +40,14 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
      * [maxExtraSeconds] and [maxExtraFraction] of the trip left more than turning round; otherwise ask.
      * At a dead end (no way ahead at all) turning round is the only choice: no question.
      * Without a heading (standing still): a trip is planned anew, a loop or track takes the plain way back.
+     *
+     * The first [skippable] of [tripWaypoints] are shaping points (put there to bend the route, not places to
+     * visit). One the rider has ridden past, so that the way to it now is back, or out along a road and back
+     * along it, or round and past where they are again, is left out and the route goes on to what comes after.
      */
     fun decide(
         position: LatLon, headingDeg: Double?, route: Route, leftAlong: Double, options: RouteOptions,
-        maxExtraSeconds: Double, maxExtraFraction: Double, tripWaypoints: List<LatLon>? = null
+        maxExtraSeconds: Double, maxExtraFraction: Double, tripWaypoints: List<LatLon>? = null, skippable: Int = 0
     ): OffRouteDecision {
         val back = runCatching { back(position, route, leftAlong, options) }.getOrNull()
         if (headingDeg == null) return back?.takeIf { tripWaypoints == null }?.let { OffRouteDecision.Rejoin(it, 0.0) } ?: OffRouteDecision.Replan
@@ -50,12 +58,22 @@ class OffRoutePlanner(private val engine: BRouterEngine) {
         // On a trip the old route is worth nothing in itself: the answer is the best route from here that keeps
         // riding ahead. Turning round is only brought up when it is the only way, or clearly quicker.
         if (tripWaypoints != null) {
-            val onward = forwardOnly(position, headingDeg, tripWaypoints, options).second
-                ?.let { WayBack(it, route.distanceMeters, it.durationSeconds) }?.takeIf { it.reallyOn() }
+            fun onwardThrough(waypoints: List<LatLon>) = forwardOnly(position, headingDeg, waypoints, options).second
+                ?.let { WayBack(it, route.distanceMeters, it.durationSeconds) }
+            // What the plan itself rode twice (a point down a road and back) is not held against the new route.
+            val plannedTwice by lazy { Routes.riddenTwiceMeters(Routes.slice(route, leftAlong)) }
+            fun WayBack.goesBackForIt() = Routes.riddenTwiceMeters(this.route) > RIDDEN_TWICE_M + plannedTwice || Routes.returnsTo(this.route, position)
+            var skipped = 0
+            var found = onwardThrough(tripWaypoints)
+            while (skipped < minOf(skippable, tripWaypoints.size - 1) && (found == null || found.goesBackForIt())) {
+                skipped++
+                found = onwardThrough(tripWaypoints.drop(skipped))
+            }
+            val onward = found?.takeIf { it.reallyOn() }
             return when {
                 onward != null && (turnRound == null || isQuick(onward, turnRound, maxExtraSeconds, maxExtraFraction)) ->
-                    OffRouteDecision.Rejoin(onward, onward.totalSeconds - (turnRound?.totalSeconds ?: onward.totalSeconds))
-                onward != null -> OffRouteDecision.Ask(turnRound!!, onward)
+                    OffRouteDecision.Rejoin(onward, onward.totalSeconds - (turnRound?.totalSeconds ?: onward.totalSeconds), skipped = skipped)
+                onward != null -> OffRouteDecision.Ask(turnRound!!, onward, skipped)
                 turnRound != null -> OffRouteDecision.Rejoin(turnRound, 0.0, deadEnd = true)
                 // No way on and none found that turns round: the plain way back, whatever it does.
                 back != null -> OffRouteDecision.Rejoin(back, 0.0)

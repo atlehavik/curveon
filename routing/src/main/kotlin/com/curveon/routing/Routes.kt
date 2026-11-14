@@ -47,6 +47,11 @@ object Routes {
         return again * step
     }
 
+    /** True when [route] comes back past [place] (within [nearMeters]) after riding at least [afterMeters] away along it. */
+    fun returnsTo(route: Route, place: LatLon, nearMeters: Double = 40.0, afterMeters: Double = 500.0, withinMeters: Double = 40_000.0): Boolean =
+        generateSequence(afterMeters) { it + 30.0 }.takeWhile { it <= minOf(route.distanceMeters, withinMeters) }
+            .any { Geo.distance(pointAt(route, it).first, place) < nearMeters }
+
     /** The farthest [route] gets from [other] (metres), sampled every ~200 m. */
     fun farthestFrom(route: Route, other: Route): Double {
         fun samples(r: Route, step: Double): List<LatLon> {

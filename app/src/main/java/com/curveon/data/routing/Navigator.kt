@@ -103,7 +103,9 @@ data class WrongTurn(
     /** When to carry on by itself, on [android.os.SystemClock.elapsedRealtime] (a clock the network time can't move). */
     val autoAtMillis: Long,
     /** Where the rider was when asked: carrying on by itself needs them to have ridden on since. */
-    val askedAt: LatLon
+    val askedAt: LatLon,
+    /** Carrying on leaves out this many of the trip's next shaping points (the only way to them is back). */
+    val skippedShaping: Int = 0
 ) {
     /** Carrying on costs a lot: the question stays up longer before it answers itself, and its card pulses to be seen. */
     val costly: Boolean get() = (aheadExtraMinutes ?: 0) >= COSTLY_MINUTES
@@ -1244,12 +1246,20 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                 // The rider chose to carry on a moment ago (following someone, own way): no more questions.
                 val following = now < followUntil && heading != null
                 val decision = withContext(Dispatchers.Default) {
-                    if (following) offRoute.decide(position, heading, route, leftAlong, goal.options, Double.MAX_VALUE, Double.MAX_VALUE, trip)
-                    else offRoute.decide(position, heading, route, leftAlong, goal.options, s.maxExtraMinutes * 60.0, s.maxExtraPercent / 100.0, trip)
+                    // Shaping points next on the trip may be left out once the only way to them is back.
+                    val shaping = (goal as? NavigationGoal.Destination)?.stops?.takeWhile { it.via }?.size ?: 0
+                    if (following) offRoute.decide(position, heading, route, leftAlong, goal.options, Double.MAX_VALUE, Double.MAX_VALUE, trip, shaping)
+                    else offRoute.decide(position, heading, route, leftAlong, goal.options, s.maxExtraMinutes * 60.0, s.maxExtraPercent / 100.0, trip, shaping)
                 }
                 android.util.Log.i("CurveonNav", "Off route at %.0f m, heading %s: %s".format(leftAlong, heading?.let { "%.0f".format(it) } ?: "none", describe(decision)))
                 when (decision) {
-                    is OffRouteDecision.Rejoin -> adopt(position, decision.way.route)
+                    is OffRouteDecision.Rejoin -> {
+                        if (decision.skipped > 0) _state.update { st ->
+                            val g = st.goal as? NavigationGoal.Destination ?: return@update st
+                            st.copy(goal = g.copy(stops = g.stops.drop(decision.skipped), fixedLine = null))
+                        }
+                        adopt(position, decision.way.route)
+                    }
                     is OffRouteDecision.Ask -> {
                         val wrongTurn = WrongTurn(
                             isTrip = goal is NavigationGoal.Destination,
@@ -1257,7 +1267,8 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
                             leftAlong = leftAlong,
                             aheadExtraMinutes = decision.ahead?.let { ((it.totalSeconds - decision.back.totalSeconds) / 60).roundToInt().coerceAtLeast(0) },
                             autoAtMillis = 0L,
-                            askedAt = position
+                            askedAt = position,
+                            skippedShaping = decision.skipped
                         ).let { it.copy(autoAtMillis = android.os.SystemClock.elapsedRealtime() + if (it.costly) WRONG_TURN_AUTO_COSTLY_MS else WRONG_TURN_AUTO_MS) }
                         _state.update { it.copy(status = RoutingStatus.Idle, wrongTurn = wrongTurn) }
                     }
@@ -1291,7 +1302,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     /** Wrong-turn answer on a trip: a new route to the destination that starts the way the rider is going. */
     fun newRouteFromHere(keepStops: Boolean) = answerWrongTurn(R.string.nav_recalculating, carryOn = true) { pos, goal, route, wt ->
         val g = goal as? NavigationGoal.Destination ?: return@answerWrongTurn goal to rejoin(pos, route, wt.leftAlong, goal.options)
-        val newGoal = (if (keepStops) g else g.copy(stops = emptyList())).copy(fixedLine = null)
+        val newGoal = (if (keepStops) g.copy(stops = g.stops.drop(wt.skippedShaping)) else g.copy(stops = emptyList())).copy(fixedLine = null)
         val waypoints = newGoal.stops.map { it.point } + newGoal.destination
         val heading = lastHeading
         newGoal to (if (heading != null) offRoute.fromHere(pos, heading, waypoints, g.options) else engine.route(listOf(pos) + waypoints, g.options, visitEveryVia = true))
