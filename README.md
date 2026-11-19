@@ -113,7 +113,8 @@ there and along it.
 - **Stops along the way:** fuel along the route (with a warning before a long gap), or any place
   you pick on the map.
 - **Hold a finger on a road** to see its speed limit, number, kind and surface.
-- **Tunnels:** your position keeps moving along the route when GPS drops out.
+- **Tunnels:** your position keeps moving along the route when GPS drops out, and without a route along the
+  road you ride until the first junction or roundabout.
 - **Places on the map:** keep fuel, viewpoints, mountain passes, camping, cafés, ferries or
   motorcycle workshops visible all the time.
 - **Updates itself:** Curveon tells you when a new version is out and installs it for you.

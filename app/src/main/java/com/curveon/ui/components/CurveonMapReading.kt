@@ -266,7 +266,7 @@ internal fun CurveonMapState.RoadReading(
         if (!canQuery || onRoadsNear == null) return@LaunchedEffect
         val m = map ?: return@LaunchedEffect
         val s = style ?: return@LaunchedEffect
-        val roadLayers = s.layers.map { it.id }.filter { it.startsWith("roads_") }.toTypedArray()
+        val roadLayers = s.layers.map { it.id }.filter { it.startsWith("roads_") || it.startsWith("online-roads_") }.toTypedArray()
         while (true) {
             kotlinx.coroutines.delay(1_000)
             lifecycleOwner.lifecycle.untilStarted()
@@ -284,11 +284,11 @@ internal fun CurveonMapState.RoadReading(
                     is LineString -> listOf(g.coordinates())
                     is org.maplibre.geojson.MultiLineString -> g.coordinates()
                     else -> emptyList()
-                }.map { pts -> pts.map { com.curveon.routing.LatLon(it.latitude(), it.longitude()) } to kind }
+                }.map { pts -> pts.map { com.curveon.routing.LatLon(it.latitude(), it.longitude()) } to (kind to roadLevel(f)) }
             }
                 // A road is drawn in several layers (casing, fill, arrows, name): the same line once.
                 .distinctBy { it.first }
-                .map { (pts, kind) -> com.curveon.routing.RoadSnap.Line(pts, kind) } }
+                .map { (pts, what) -> com.curveon.routing.RoadSnap.Line(pts, what.first, what.second) } }
             onRoadsNearState.value?.invoke(com.curveon.routing.LatLon(here.latitude, here.longitude), lines)
         }
     }
@@ -301,13 +301,24 @@ internal fun CurveonMapState.RoadReading(
 private fun roadKind(f: org.maplibre.geojson.Feature): com.curveon.routing.RoadSnap.Kind? {
     val kind = f.getStringProperty("kind")
     val detail = f.getStringProperty("kind_detail")
+    // The online map names its roads another way ("class"): paths apart from tracks, and ways to houses and yards.
+    val onlineClass = f.getStringProperty("class")
     return when {
-        kind == "rail" || detail in setOf("runway", "taxiway", "pier", "platform") -> null
+        kind == "rail" || onlineClass == "rail" || detail in setOf("runway", "taxiway", "pier", "platform") -> null
+        onlineClass == "path" -> com.curveon.routing.RoadSnap.Kind.PATH
+        onlineClass == "service" -> com.curveon.routing.RoadSnap.Kind.SERVICE
         detail in setOf("footway", "cycleway", "path", "pedestrian", "steps", "bridleway", "corridor", "sidewalk", "crossing") ->
             com.curveon.routing.RoadSnap.Kind.PATH
         detail == "service" -> com.curveon.routing.RoadSnap.Kind.SERVICE
         else -> com.curveon.routing.RoadSnap.Kind.ROAD
     }
+}
+
+/** Whether a feature of the map's road layers runs in a tunnel (-1), on a bridge (1) or on the ground (0), in the downloaded maps and the online one. */
+private fun roadLevel(f: org.maplibre.geojson.Feature): Int = when {
+    f.hasProperty("is_tunnel") || f.getStringProperty("brunnel") == "tunnel" -> -1
+    f.hasProperty("is_bridge") || f.getStringProperty("brunnel") == "bridge" -> 1
+    else -> 0
 }
 
 /** The buildings standing up in the 3D view (Settings → Display → 3D buildings). */

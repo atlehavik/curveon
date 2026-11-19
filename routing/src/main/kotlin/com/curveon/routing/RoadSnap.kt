@@ -9,8 +9,11 @@ import kotlin.math.sign
 /** Puts the rider on a road line: used to draw them on the road they ride when there is no route. */
 object RoadSnap {
 
-    /** A line the map draws among its roads, and what kind of way it is. */
-    class Line(val points: List<LatLon>, val kind: Kind = Kind.ROAD)
+    /**
+     * A line the map draws among its roads, what kind of way it is, and its [level]: -1 in a tunnel, 1 on a
+     * bridge, 0 on the ground. A road on another level passes over or under: it is no junction.
+     */
+    class Line(val points: List<LatLon>, val kind: Kind = Kind.ROAD, val level: Int = 0)
 
     enum class Kind {
         /** A road a motorcycle rides: gravel roads and tracks too. */
@@ -62,13 +65,38 @@ object RoadSnap {
      * first junction with another road, as which way the rider takes there isn't known; from there, as where the
      * lines read run out, it goes on straight. Returns the line and how far along it [from] lies.
      */
-    fun path(from: LatLon, lines: List<Line>, bearingDeg: Double, behindM: Double, aheadM: Double): Pair<Route, Double> {
+    fun path(from: LatLon, lines: List<Line>, bearingDeg: Double, behindM: Double, aheadM: Double): Pair<Route, Double> =
+        build(from, lines, bearingDeg, behindM, aheadM, straightOn = true).let { it.route to it.along }
+
+    /** Why the road [follow] gives ends where it does. */
+    enum class End {
+        /** It was followed as far as asked. */
+        FAR,
+        /** Another road meets or crosses it there (a roundabout too): which way the rider takes isn't known. */
+        JUNCTION,
+        /** The lines read run out there: the road ends, or the map hasn't been read that far yet. */
+        NO_ROAD,
+    }
+
+    /** The road from [follow]: a line, how far along it the start lies, and why it ends where it does. */
+    class Followed(val route: Route, val along: Double, val end: End)
+
+    /**
+     * The road through [from] like [path], but only as far ahead as it is known: it ends at the first junction
+     * or where the lines read run out, instead of going on straight. For guessing where the rider is with no
+     * GPS (a tunnel) and no route: along the road, and no further than the first place they may have turned.
+     */
+    fun follow(from: LatLon, lines: List<Line>, bearingDeg: Double, behindM: Double, aheadM: Double): Followed =
+        build(from, lines, bearingDeg, behindM, aheadM, straightOn = false)
+
+    private fun build(from: LatLon, lines: List<Line>, bearingDeg: Double, behindM: Double, aheadM: Double, straightOn: Boolean): Followed {
         val kx = cos(Math.toRadians(from.lat)) * 111_320.0
         val ky = 110_574.0
         val xy = lines.map { line -> line.points.map { (it.lon - from.lon) * kx to (it.lat - from.lat) * ky } }
         val kinds = lines.map { it.kind }
-        val back = walk(xy, kinds, (bearingDeg + 180) % 360, behindM, stopAtJunction = false)
-        val ahead = walk(xy, kinds, bearingDeg, aheadM, stopAtJunction = true)
+        val levels = lines.map { it.level }
+        val back = walk(xy, kinds, levels, (bearingDeg + 180) % 360, behindM, stopAtJunction = false, straightOn = true).first
+        val (ahead, end) = walk(xy, kinds, levels, bearingDeg, aheadM, stopAtJunction = true, straightOn = straightOn)
         val pts = back.asReversed() + ahead.drop(1)
         var d = 0.0
         val points = pts.mapIndexed { i, (x, y) ->
@@ -77,7 +105,7 @@ object RoadSnap {
         }
         var behind = 0.0
         for (i in 1 until back.size) behind += hypot(back[i].first - back[i - 1].first, back[i].second - back[i - 1].second)
-        return Route(points, emptyList(), d, 0.0, 0.0, 0, 0.0, 0) to behind
+        return Followed(Route(points, emptyList(), d, 0.0, 0.0, 0, 0.0, 0), behind, end)
     }
 
     /**
@@ -171,8 +199,12 @@ object RoadSnap {
         return total to out
     }
 
-    /** Points (metres east/north of the start) from the start along the roads [maxM] metres the way [bearingDeg] points. */
-    private fun walk(xy: List<List<Pair<Double, Double>>>, kinds: List<Kind>, bearingDeg: Double, maxM: Double, stopAtJunction: Boolean): List<Pair<Double, Double>> {
+    /**
+     * Points (metres east/north of the start) from the start along the roads [maxM] metres the way [bearingDeg]
+     * points, and why they end: short of [maxM] they go on straight when [straightOn], or stop there.
+     */
+    private fun walk(xy: List<List<Pair<Double, Double>>>, kinds: List<Kind>, levels: List<Int>, bearingDeg: Double, maxM: Double,
+                     stopAtJunction: Boolean, straightOn: Boolean): Pair<List<Pair<Double, Double>>, End> {
         val out = mutableListOf(0.0 to 0.0)
         var heading = bearingDeg
         var left = maxM
@@ -219,7 +251,7 @@ object RoadSnap {
                 val (nx, ny) = line[i]
                 val seg = hypot(nx - px, ny - py)
                 if (seg > 0.01) heading = (Math.toDegrees(atan2(nx - px, ny - py)) + 360) % 360
-                val j = if (stopAtJunction && seg > 0.01) junction(xy, kinds, used, px, py, nx, ny) else null
+                val j = if (stopAtJunction && seg > 0.01) junction(xy, kinds, levels, levels[k], used, px, py, nx, ny) else null
                 if (j != null && j * seg <= left) {
                     px += (nx - px) * j; py += (ny - py) * j
                     left -= j * seg
@@ -239,20 +271,22 @@ object RoadSnap {
                 out += px to py
             }
         }
-        if (left > 0.5) {
+        val end = if (atJunction) End.JUNCTION else if (left > 0.5) End.NO_ROAD else End.FAR
+        if (left > 0.5 && straightOn) {
             val (x, y) = out.last()
             val h = Math.toRadians(heading)
             out += (x + left * kotlin.math.sin(h)) to (y + left * cos(h))
         }
-        return out
+        return out to end
     }
 
     /**
      * Where along the piece from (ax, ay) to (bx, by) (0..1) another road first meets or crosses it, or null: a
      * road starting, ending or bending there, or one crossing it. A line running along it (the same road from the
-     * next map tile, or on after it) is no junction, nor is a path or a way to a yard.
+     * next map tile, or on after it) is no junction, nor is a path or a way to a yard, nor a road on another
+     * level than [level] (the streets above a tunnel, the road under a bridge).
      */
-    private fun junction(xy: List<List<Pair<Double, Double>>>, kinds: List<Kind>, used: Set<Int>,
+    private fun junction(xy: List<List<Pair<Double, Double>>>, kinds: List<Kind>, levels: List<Int>, level: Int, used: Set<Int>,
                          ax: Double, ay: Double, bx: Double, by: Double): Double? {
         val sx = bx - ax; val sy = by - ay
         val len2 = sx * sx + sy * sy
@@ -264,11 +298,13 @@ object RoadSnap {
             return minOf(off, 180 - off) <= PARALLEL_DEG
         }
         var first: Double? = null
+        // A road that ends on another one (a T-junction, the ring of a roundabout) meets it at its very end, give or take the rounding.
+        val past = 1 + JOIN_M / len
         for ((k, line) in xy.withIndex()) {
-            if (k in used || kinds[k] != Kind.ROAD) continue
+            if (k in used || kinds[k] != Kind.ROAD || levels[k] != level) continue
             for ((v, p) in line.withIndex()) {
                 val (vx, vy) = p
-                val t = ((vx - ax) * sx + (vy - ay) * sy) / len2
+                val t = (((vx - ax) * sx + (vy - ay) * sy) / len2).let { if (it > 1 && it <= past) 1.0 else it }
                 if (t < 0 || t > 1 || (first != null && t >= first)) continue
                 if (abs((vx - ax) * sy - (vy - ay) * sx) / len > JOIN_M) continue
                 val before = if (v > 0) alongside(line[v - 1].first, line[v - 1].second, vx, vy) else true
@@ -280,7 +316,7 @@ object RoadSnap {
                 val ex = dx - cx; val ey = dy - cy
                 val den = sx * ey - sy * ex
                 if (abs(den) < 1e-9 || alongside(cx, cy, dx, dy)) continue
-                val t = ((cx - ax) * ey - (cy - ay) * ex) / den
+                val t = (((cx - ax) * ey - (cy - ay) * ex) / den).let { if (it > 1 && it <= past) 1.0 else it }
                 val u = ((cx - ax) * sy - (cy - ay) * sx) / den
                 if (t in 0.0..1.0 && u in 0.0..1.0 && (first == null || t < first)) first = t
             }

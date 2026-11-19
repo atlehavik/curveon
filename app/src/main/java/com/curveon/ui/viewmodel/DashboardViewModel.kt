@@ -1425,13 +1425,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /**
      * Tunnels: Norwegian tunnels run for kilometres without GPS. While navigating we keep the
-     * rider moving along the route at the last known speed until real fixes return.
+     * rider moving along the route at the last known speed until real fixes return. Without a route
+     * they are kept moving the same way along the road they ride, as the map draws it, but only to the
+     * first junction or roundabout: which way they take there isn't known (see [guessAlongRoad]).
      */
     private fun startDeadReckoning() = viewModelScope.launch {
         var anchorAlong = 0.0
         var anchorTime = 0L
         var anchorSpeedMps = 0.0
         var anchorRoute: com.curveon.routing.Route? = null
+        var road: RoadGuess? = null
         while (true) {
             delay(1000)
             untilAwake()
@@ -1442,6 +1445,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val lost = lastRealFixAt != 0L && gap > GPS_LOST_MS
             if (_telemetry.value.gpsLost != lost) _telemetry.update { it.copy(gpsLost = lost) }
             // A demo ride guesses too while it plays at losing the signal (see demoSignalLost).
+            if (route == null && lastRealFixAt != 0L && gap >= DR_START_MS && !_isDemoRiding.value) {
+                anchorTime = 0L
+                val g = road ?: startRoadGuess().also { road = it }
+                if (g != null) guessAlongRoad(g, now)
+                else if (_telemetry.value.isDeadReckoning) _telemetry.update { it.copy(isDeadReckoning = false) }
+                continue
+            }
+            road = null
             if (route == null || lastRealFixAt == 0L || gap < DR_START_MS || (_isDemoRiding.value && !_demoSignalLost.value)) {
                 anchorTime = 0L
                 if (_telemetry.value.isDeadReckoning) _telemetry.update { it.copy(isDeadReckoning = false) }
@@ -1467,7 +1478,52 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    private fun handleFix(fix: GpsFix, estimated: Boolean) {
+    /**
+     * Where the rider is guessed to be with no GPS and no route: [at] on the road, riding [bearing], where they
+     * would be at [time] at [speedMps] (the speed they had when the signal went). [path] is that road round them.
+     */
+    private class RoadGuess(var at: LatLon, var bearing: Double, var time: Long, val speedMps: Double) {
+        var atJunction = false
+        var path: Pair<com.curveon.routing.Route, Double>? = null
+    }
+
+    /** A guess to begin from where the rider was last drawn, or null: not on a road, in a roundabout, or (nearly) standing still. */
+    private fun startRoadGuess(): RoadGuess? {
+        val bearing = drawnOnRoad ?: return null
+        if (inRoundabout != null) return null
+        val speedMps = _telemetry.value.speedKmh / 3.6
+        if (speedMps < 4.0) return null // stopped in the tunnel or parked: don't invent movement
+        return RoadGuess(LatLon(_currentLocation.value.latitude, _currentLocation.value.longitude), bearing, lastRealFixAt, speedMps)
+    }
+
+    /**
+     * The signal is gone and there is no route: the rider is carried on along the road they were on, as the map
+     * draws it, at the speed they had, like along a route in a tunnel. At the first junction or roundabout the
+     * guess stops and waits for the GPS: which way they took isn't known. Where the map hasn't read the road
+     * further yet, it waits a moment and then catches up.
+     */
+    private fun guessAlongRoad(g: RoadGuess, now: Long) {
+        val lines = roadsNear?.second
+        val on = if (g.atJunction || lines == null) null
+            else com.curveon.routing.RoadSnap.near(g.at, lines, g.bearing, ROAD_SNAP_LEAVE_M, 45.0)
+        if (lines != null && on != null) {
+            val want = g.speedMps * (now - g.time) / 1000.0
+            val f = com.curveon.routing.RoadSnap.follow(on.first, lines, on.second, ROAD_PATH_BEHIND_M, maxOf(want, ROAD_PATH_AHEAD_M))
+            val left = f.route.distanceMeters - f.along
+            val step = minOf(want, left)
+            val (p, bearing) = Routes.pointAt(f.route, f.along + step)
+            g.at = p
+            g.bearing = if (step > 0.5) bearing else on.second
+            g.time += (step / g.speedMps * 1000).toLong()
+            g.atJunction = f.end == com.curveon.routing.RoadSnap.End.JUNCTION && want >= left
+            g.path = f.route to f.along + step
+        }
+        val path = g.path ?: return
+        handleFix(GpsFix(g.at.lat, g.at.lon, null, g.speedMps.toFloat(), g.bearing.toFloat(), 25f, now), estimated = true, guessedRoad = path)
+    }
+
+    /** [guessedRoad]: the road an [estimated] position without a route lies on, and how far along it (see [guessAlongRoad]). */
+    private fun handleFix(fix: GpsFix, estimated: Boolean, guessedRoad: Pair<com.curveon.routing.Route, Double>? = null) {
         NavTrace.fix(fix, locationSource.satellitesUsed, estimated)
         // Moved on from where the rider last was, however slowly (a queue, a rough track); a poor fix indoors doesn't count.
         if (estimated || (fix.accuracyMeters ?: 0f) <= MOVED_ACCURACY_M) {
@@ -1481,7 +1537,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (!estimated) phoneCompanion.groups.onFix(fix)
         navigator.onLocation(LatLon(fix.latitude, fix.longitude), (fix.accuracyMeters ?: 10f).toDouble(),
             tripTracker.headingDeg.toDouble().takeIf { tripTracker.speedKmh > 5 })
-        val onRoad = snapToRoute(fix) ?: snapToRoad(fix)
+        val onRoad = snapToRoute(fix) ?: if (guessedRoad != null && navigator.state.value.progress == null) {
+            // Already on the road, and its line stops at the junction: the arrow isn't carried on past it.
+            drawnRoadPath = guessedRoad
+            fix.bearingDeg?.let { drawnOnRoad = it.toDouble() }
+            LatLon(fix.latitude, fix.longitude) to (fix.bearingDeg ?: tripTracker.headingDeg)
+        } else snapToRoad(fix)
         val nav = navigator.state.value
         nav.progress?.let { p ->
             NavTrace.match(onRoad != null, p.distanceFromRoute, p.routeBearingDeg, p.distanceAlongRoute, p.offRoute, tripTracker.headingDeg)

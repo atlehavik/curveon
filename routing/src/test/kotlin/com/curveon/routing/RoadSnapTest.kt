@@ -156,4 +156,42 @@ class RoadSnapTest {
         assertNull(RoadSnap.near(Geo.destination(Geo.destination(start, 90.0, 100.0), 0.0, 30.0), roads, 90.0, 15.0, 30.0))
         assertNull(RoadSnap.near(Geo.destination(Geo.destination(start, 90.0, 100.0), 0.0, 5.0), listOf(RoadSnap.Line(eastward)), 0.0, 15.0, 30.0))
     }
+
+    @Test
+    fun followed_with_no_gps_the_road_ends_at_the_first_junction() {
+        val f = RoadSnap.follow(Geo.destination(start, 90.0, 100.0), roads, 90.0, 30.0, 500.0)
+        assertEquals(RoadSnap.End.JUNCTION, f.end)
+        assertEquals(100.0, f.route.distanceMeters - f.along, 0.5)
+        assertEquals(0.0, Geo.distance(Routes.pointAt(f.route, f.route.distanceMeters).first, Geo.destination(start, 90.0, 200.0)), 0.5)
+        // Not that far to go: no junction to stop at yet.
+        assertEquals(RoadSnap.End.FAR, RoadSnap.follow(Geo.destination(start, 90.0, 100.0), roads, 90.0, 30.0, 60.0).end)
+    }
+
+    @Test
+    fun a_street_over_a_tunnel_is_no_junction_but_a_road_off_inside_it_is() {
+        val tunnel = RoadSnap.Line(eastward, level = -1)
+        val above = RoadSnap.Line(crossing)
+        val over = RoadSnap.follow(Geo.destination(start, 90.0, 100.0), listOf(tunnel, above), 90.0, 30.0, 500.0)
+        // Under the street and on to where the lines read run out: there it waits, it doesn't go on straight.
+        assertEquals(RoadSnap.End.NO_ROAD, over.end)
+        assertEquals(300.0, over.route.distanceMeters - over.along, 0.5)
+        val inside = RoadSnap.follow(Geo.destination(start, 90.0, 100.0), listOf(tunnel, RoadSnap.Line(crossing, level = -1)), 90.0, 30.0, 500.0)
+        assertEquals(RoadSnap.End.JUNCTION, inside.end)
+        assertEquals(100.0, inside.route.distanceMeters - inside.along, 0.5)
+        // The road under a bridge is none either.
+        assertEquals(RoadSnap.End.NO_ROAD, RoadSnap.follow(Geo.destination(start, 90.0, 100.0), listOf(RoadSnap.Line(eastward, level = 1), above), 90.0, 30.0, 500.0).end)
+    }
+
+    @Test
+    fun followed_into_a_roundabout_the_road_ends_where_it_meets_the_ring() {
+        // A ring of 20 m radius whose west side is 300 m along the road east.
+        val centre = Geo.destination(start, 90.0, 320.0)
+        val ring = (0..24).map { Geo.destination(centre, 270.0 + it * 15.0, 20.0) }
+        val road = listOf(start, Geo.destination(start, 90.0, 300.0))
+        for (level in listOf(0, -1)) {
+            val f = RoadSnap.follow(Geo.destination(start, 90.0, 100.0), listOf(RoadSnap.Line(road, level = level), RoadSnap.Line(ring, level = level)), 90.0, 30.0, 500.0)
+            assertEquals(RoadSnap.End.JUNCTION, f.end)
+            assertEquals(200.0, f.route.distanceMeters - f.along, 1.0)
+        }
+    }
 }
