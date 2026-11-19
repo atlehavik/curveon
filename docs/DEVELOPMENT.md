@@ -80,7 +80,8 @@ phone, with an optional companion app on the phone when a tablet is used.
 - **Road numbers/names** in the turn banner ("Turn right · Fv33 Storgata").
 - **Day/night map** that follows the sun at your position (or fixed in Settings).
 - **Tunnels**: position keeps moving along the route at your speed when GPS drops out. Without a route it moves
-  along the road you ride, as the map draws it (`RoadSnap.follow`), and stops at the first junction or roundabout.
+  along the road you ride, as the map draws it (`RoadSnap.follow`), and stops at the first junction or roundabout. With no GPS signal
+  (3 s without a fix, anywhere) the speed shows `--`, never the last one measured; the limit sign stays.
 - **Ride log**: rides record automatically (distance, time, speeds, climb);
   find them under Rides in the GPX & rides dialog (rail), save one to the GPX collection or ride one again.
 - **Speed limit sign**, while navigating and while free riding: the official limit where a country

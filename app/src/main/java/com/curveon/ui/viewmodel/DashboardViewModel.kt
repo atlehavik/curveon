@@ -1444,6 +1444,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val gap = now - lastRealFixAt
             val lost = lastRealFixAt != 0L && gap > GPS_LOST_MS
             if (_telemetry.value.gpsLost != lost) _telemetry.update { it.copy(gpsLost = lost) }
+            // A fix comes every second: a few seconds without one and the speed is no longer known (the sign with the limit stays).
+            val noSpeed = lastRealFixAt != 0L && gap >= DR_START_MS
+            if (_telemetry.value.speedUnknown != noSpeed) _telemetry.update { it.copy(speedUnknown = noSpeed) }
             // A demo ride guesses too while it plays at losing the signal (see demoSignalLost).
             if (route == null && lastRealFixAt != 0L && gap >= DR_START_MS && !_isDemoRiding.value) {
                 anchorTime = 0L
@@ -1571,6 +1574,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 gpsAccuracyMeters = (fix.accuracyMeters ?: 0f).roundToInt(),
                 isDeadReckoning = estimated,
                 gpsLost = estimated && it.gpsLost,
+                speedUnknown = estimated && it.speedUnknown,
                 tripDistanceKm = (stats.distanceMeters / 1000.0).toFloat(),
                 tripDurationMinutes = (stats.movingTimeMillis / 60_000L).toInt()
             )

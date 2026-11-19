@@ -22,11 +22,17 @@ data class TelemetryData(
     val isDeadReckoning: Boolean = false,
     /** No real fix for a while (GPS signal lost), navigating or not: the rider's arrow turns to a ghost. */
     val gpsLost: Boolean = false,
+    /** No real fix for a few seconds: [speedKmh] is only the last one measured, and is not shown as the speed. */
+    val speedUnknown: Boolean = false,
     val gpsAccuracyMeters: Int = 0,
     val isObdEnabled: Boolean = false,
     val isObdConnected: Boolean = false,
     val useMph: Boolean = false
 ) {
+    /** The speed is measured right now: there is a GPS signal. Without one no figure is shown, as it would only be an old one. */
+    val speedKnown: Boolean
+        get() = hasGpsFix && !speedUnknown && !gpsLost && !isDeadReckoning
+
     val displaySpeed: Int
         get() = if (useMph) (speedKmh * 0.621371f).toInt() else speedKmh.toInt()
 
@@ -37,7 +43,7 @@ data class TelemetryData(
         get() = if (useMph) "MPH" else "KM/H"
 
     val isOverSpeedLimit: Boolean
-        get() = speedLimitKmh > 0 && speedKmh > (speedLimitKmh + 3)
+        get() = speedKnown && speedLimitKmh > 0 && speedKmh > (speedLimitKmh + 3)
 
     companion object {
         /**

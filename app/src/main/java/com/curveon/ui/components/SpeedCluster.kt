@@ -67,7 +67,8 @@ fun MapSpeedCluster(
 ) {
     val telemetry = telemetryNow()
     val limit = camera?.maxSpeedKmh ?: telemetry.speedLimitKmh
-    val over = limit > 0 && telemetry.speedKmh > limit + 3
+    // No GPS signal, no speed: the last one measured (or a guess in a tunnel) could read as riding slower than the limit.
+    val over = telemetry.speedKnown && limit > 0 && telemetry.speedKmh > limit + 3
     val speedColor by animateColorAsState(if (over) WarningRed else TextPrimary, label = "speed")
     val border = when {
         over -> WarningRed
@@ -84,7 +85,7 @@ fun MapSpeedCluster(
         Box(Modifier.matchParentSize().background(CockpitSurface.copy(alpha = 0.92f), RoundedCornerShape(16.dp)).border(1.dp, border, RoundedCornerShape(16.dp)))
         Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), horizontalAlignment = Alignment.End) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(telemetry.displaySpeed.toString(), color = speedColor, fontSize = 32.sp, lineHeight = 32.sp,
+                Text(if (telemetry.speedKnown) telemetry.displaySpeed.toString() else "--", color = speedColor, fontSize = 32.sp, lineHeight = 32.sp,
                     fontWeight = FontWeight.Black, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                     modifier = Modifier.testTag("map_speed"))
                 if (limit > 0) SpeedLimitSign(if (telemetry.useMph) com.curveon.data.model.TelemetryData.mphLimit(limit) else limit, signSize,
