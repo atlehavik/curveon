@@ -4,6 +4,7 @@ import android.graphics.RectF
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -448,7 +449,8 @@ internal fun CurveonMapState.TownRoads(
                 .map { (la, lo) -> com.curveon.routing.GravelHeat.tileName(Math.floorDiv(Math.floor(lo).toInt(), 5) * 5, Math.floorDiv(Math.floor(la).toInt(), 5) * 5) }.toSet()
             runCatching { routingTiles(box.latitudeSouth, box.longitudeWest, box.latitudeNorth, box.longitudeEast) }.getOrNull()?.toSet()?.containsAll(needed) == true
         }
-        if (style !== s) return@LaunchedEffect
+        // A newer style (the map rebuilt, e.g. when Curveon's screen is built anew) makes this one's layers unreadable.
+        if (style !== s || !s.isFullyLoaded || !isActive) return@LaunchedEffect
         covered = box
         for (layer in s.layers) {
             val id = layer.id.substringBefore('~')
