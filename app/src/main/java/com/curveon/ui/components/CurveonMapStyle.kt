@@ -120,6 +120,7 @@ internal fun raisePlaceNames(s: Style) {
 internal fun addOverlayLayers(s: Style, dark: Boolean) {
     addSurfaceLayers(s, dark)
     s.addImage(ARROW_IMAGE, arrowBitmap(), true)
+    s.addImage(ROUTE_ARROW_IMAGE, routeArrowBitmap(), true)
     addGpxLayers(s, dark)
     addRouteLayers(s, dark)
     addSurfaceOverLayers(s, dark)
@@ -237,6 +238,34 @@ private fun addRouteLayers(s: Style, dark: Boolean) {
             lineColor(org.maplibre.android.style.expressions.Expression.get("color")), routeWidth(1.4f, 2.4f, 3.8f),
             lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
         )
+    )
+    addRouteArrowLayer(s, dark)
+}
+
+/**
+ * Which way the route goes: small see-through chevrons inside the line, far apart, sized with the line. Where the
+ * route is ridden both ways (out to a turning place and back) they sit in two rows like lanes, each way on its own
+ * right-hand side: the row on the rider's side points on, the other one back.
+ */
+private fun addRouteArrowLayer(s: Style, dark: Boolean) {
+    s.addSource(GeoJsonSource(ROUTE_ARROWS))
+    val both = E.get("both")
+    // Chevron about 0.75 of the line's width (0.5 in a lane); the bitmap's chevron with its stroke is 36 px high, which
+    // is 18 dp (the bitmap is taken at the screen's density, as the line's width is in dp).
+    fun size(lineW: Float) = E.switchCase(both, E.literal(0.5f * lineW / 18f), E.literal(0.75f * lineW / 18f))
+    s.addLayer(
+        org.maplibre.android.style.layers.SymbolLayer("$ROUTE-arrows", ROUTE_ARROWS).withProperties(
+            symbolPlacement(Property.SYMBOL_PLACEMENT_LINE), symbolSpacing(150f),
+            iconImage(ROUTE_ARROW_IMAGE),
+            // The route line's widths at zoom 12, 14 and 17 (routeWidth).
+            iconSize(E.interpolate(E.linear(), E.zoom(), E.stop(12, size(8.75f)), E.stop(14, size(11f)), E.stop(17, size(17f)))),
+            // A quarter of the line's width to the right of the way the chevron points (in the icon's dp, scaled with its
+            // size; along a line, positive y is to the right).
+            iconOffset(E.switchCase(both, E.literal(arrayOf(0f, 9f)), E.literal(arrayOf(0f, 0f)))),
+            iconColor(if (dark) "#00363D" else "#FFFFFF"), iconOpacity(if (dark) 0.65f else 0.8f),
+            iconAllowOverlap(true), iconIgnorePlacement(true),
+            iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP), iconPitchAlignment(Property.ICON_PITCH_ALIGNMENT_MAP)
+        ).also { it.minZoom = 12f }
     )
 }
 

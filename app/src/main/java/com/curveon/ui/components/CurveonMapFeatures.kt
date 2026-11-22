@@ -14,6 +14,88 @@ import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 
+/**
+ * For each segment of the line through [lat]/[lon] (segment i runs from point i to i + 1): whether the line also runs
+ * along it the other way elsewhere, as out to a turning place and back. Found where a point of the line, every few
+ * metres along it, has another part of the line within a few metres heading the opposite way; stretches shorter than
+ * [MIN_BOTH_M] are not counted (a road crossed, or the line only touching itself).
+ */
+internal fun bothWaysSegments(lat: DoubleArray, lon: DoubleArray): BooleanArray {
+    val n = lat.size
+    val both = BooleanArray(maxOf(n - 1, 0))
+    if (n < 3) return both
+    // Metres in a plane, east and north (each point with its own latitude's scale; neighbours share it).
+    val x = DoubleArray(n) { lon[it] * 111_320.0 * kotlin.math.cos(Math.toRadians(lat[it])) }
+    val y = DoubleArray(n) { lat[it] * 110_540.0 }
+    // Samples every STEP_M along the line: where, how far along, heading (unit vector), which segment.
+    val sx = ArrayList<Double>(); val sy = ArrayList<Double>(); val sd = ArrayList<Double>()
+    val hx = ArrayList<Double>(); val hy = ArrayList<Double>(); val seg = ArrayList<Int>()
+    var along = 0.0
+    for (i in 0 until n - 1) {
+        val dx = x[i + 1] - x[i]; val dy = y[i + 1] - y[i]
+        val len = kotlin.math.hypot(dx, dy)
+        if (len < 0.01) continue
+        var t = 0.0
+        while (t < len) {
+            sx += x[i] + dx * t / len; sy += y[i] + dy * t / len; sd += along + t
+            hx += dx / len; hy += dy / len; seg += i
+            t += BOTH_STEP_M
+        }
+        along += len
+    }
+    val cell = BOTH_NEAR_M
+    fun key(cx: Long, cy: Long) = (cx shl 32) xor (cy and 0xffffffffL)
+    val grid = HashMap<Long, MutableList<Int>>()
+    for (k in sx.indices) grid.getOrPut(key(kotlin.math.floor(sx[k] / cell).toLong(), kotlin.math.floor(sy[k] / cell).toLong())) { ArrayList(2) } += k
+    val hit = BooleanArray(sx.size)
+    for (k in sx.indices) {
+        val cx = kotlin.math.floor(sx[k] / cell).toLong(); val cy = kotlin.math.floor(sy[k] / cell).toLong()
+        search@ for (ox in -1L..1L) for (oy in -1L..1L) {
+            for (o in grid[key(cx + ox, cy + oy)] ?: continue) {
+                if (kotlin.math.abs(sd[o] - sd[k]) < BOTH_APART_M) continue
+                // Heading the other way: within about 35° of straight back.
+                if (hx[k] * hx[o] + hy[k] * hy[o] > -0.82) continue
+                if (kotlin.math.hypot(sx[o] - sx[k], sy[o] - sy[k]) > BOTH_NEAR_M) continue
+                hit[k] = true
+                break@search
+            }
+        }
+    }
+    // Runs of hits along the line, kept when long enough.
+    var k = 0
+    while (k < sx.size) {
+        if (!hit[k]) { k++; continue }
+        var e = k
+        while (e + 1 < sx.size && hit[e + 1]) e++
+        if (sd[e] - sd[k] >= MIN_BOTH_M) for (s in k..e) both[seg[s]] = true
+        k = e + 1
+    }
+    return both
+}
+
+private const val BOTH_STEP_M = 4.0
+/** Two parts of the line this close count as the same road (the line is drawn along the road's middle both ways). */
+private const val BOTH_NEAR_M = 8.0
+/** Not the same stretch of the line: points this far apart along it. */
+private const val BOTH_APART_M = 40.0
+internal const val MIN_BOTH_M = 25.0
+
+/** The route line in runs for its direction arrows: `both` where it is ridden both ways ([bothWaysSegments]). */
+internal fun routeArrowFeatures(pts: List<GeoPoint>): FeatureCollection {
+    if (pts.size < 2) return FeatureCollection.fromFeatures(emptyList())
+    val both = bothWaysSegments(DoubleArray(pts.size) { pts[it].latitude }, DoubleArray(pts.size) { pts[it].longitude })
+    val out = ArrayList<Feature>()
+    var i = 0
+    while (i < pts.size - 1) {
+        var j = i + 1
+        while (j < pts.size - 1 && both[j] == both[i]) j++
+        out += Feature.fromGeometry(LineString.fromLngLats(pts.subList(i, j + 1).map { Point.fromLngLat(it.longitude, it.latitude) }))
+            .also { it.addBooleanProperty("both", both[i]) }
+        i = j
+    }
+    return FeatureCollection.fromFeatures(out)
+}
+
 /** The unpaved stretches of [route], one line per run of the same kind. */
 internal fun surfaceRuns(route: MapRoute?): FeatureCollection {
     val kinds = route?.surfaces ?: return FeatureCollection.fromFeatures(emptyList())

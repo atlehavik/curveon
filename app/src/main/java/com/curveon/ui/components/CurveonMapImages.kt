@@ -156,6 +156,18 @@ internal fun ringedAvatar(photo: android.graphics.Bitmap, color: Int, density: F
     return bmp
 }
 
+/** A thin chevron for the route line's direction arrows (pointing along +x; tinted, so drawn white). */
+internal fun routeArrowBitmap(): android.graphics.Bitmap {
+    val size = 48
+    val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+    val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE; style = android.graphics.Paint.Style.STROKE
+        strokeWidth = 8f; strokeCap = android.graphics.Paint.Cap.ROUND; strokeJoin = android.graphics.Paint.Join.ROUND
+    }
+    android.graphics.Canvas(bmp).drawPath(android.graphics.Path().apply { moveTo(17f, 10f); lineTo(31f, 24f); lineTo(17f, 38f) }, p)
+    return bmp
+}
+
 internal fun arrowBitmap(): android.graphics.Bitmap {
     val size = 48
     val bmp = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)

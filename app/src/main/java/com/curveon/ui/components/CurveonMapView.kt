@@ -54,6 +54,9 @@ internal const val STOP_SIGN_IMAGE = "curveon-stop-sign"
 internal const val HINT = "curveon-track-hint"
 internal const val SKETCH = "curveon-sketch"
 internal const val ROUTE_SURFACE = "curveon-route-surface"
+/** Small chevrons along the route line showing which way it goes (two rows side by side where it is ridden both ways). */
+internal const val ROUTE_ARROWS = "curveon-route-arrows"
+internal const val ROUTE_ARROW_IMAGE = "curveon-route-arrow"
 internal const val SKETCH_ZOOM = 9.0
 internal const val ARROW_IMAGE = "curveon-arrow"
 /** GPX waypoints turn from dots into icons from this zoom in (about 30 km across the map). */

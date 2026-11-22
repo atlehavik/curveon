@@ -69,6 +69,15 @@ internal fun CurveonMapState.RouteLines(routePoints: List<GeoPoint>, previewRout
         s.getSourceAs<GeoJsonSource>(ROUTE)?.setGeoJson(line)
     }
 
+    // Which way the line goes: of the selected preview, else of the route being ridden.
+    LaunchedEffect(style, previewRoutes, routePoints) {
+        val s = style ?: return@LaunchedEffect
+        val pts = if (previewRoutes.isNotEmpty()) previewRoutes.firstOrNull { it.selected }?.points.orEmpty() else routePoints
+        val arrows = withContext(Dispatchers.Default) { routeArrowFeatures(pts) }
+        if (style !== s || !s.isFullyLoaded) return@LaunchedEffect
+        s.getSourceAs<GeoJsonSource>(ROUTE_ARROWS)?.setGeoJson(arrows)
+    }
+
     // Orange gravel and purple tracks over the line: of the selected preview, else of the route being ridden.
     // Then the map's own see-through dashes over the route are not wanted.
     LaunchedEffect(style, previewRoutes, routePoints, routeSurfaces) {
