@@ -963,9 +963,27 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     /** Routing data is here for [tiles], or can be fetched (online), or at least something is installed to try with. */
     private fun canRoute(tiles: List<String>) = routingData.isReady() || (routingData.toFetch(tiles).isNotEmpty() && routingData.online())
 
-    /** Fetches the missing routing tiles when online, showing it as the status meanwhile. */
+    /** Newer builds of old routing tiles, fetched in the background while planning online (see [RoutingData.refreshStale]). */
+    private var refreshJob: Job? = null
+
+    /**
+     * Fetches the missing routing tiles when online, showing it as the status meanwhile. Tiles here that are a month
+     * old or more are fetched again afterwards in the background when brouter.de has newer ones: this route uses
+     * what is here, the next one the newer roads.
+     */
     private suspend fun fetchRoutingData(tiles: List<String>) {
-        if (routingData.toFetch(tiles).isEmpty() || !routingData.online()) return
+        if (!routingData.online()) return
+        try {
+            fetchMissing(tiles)
+        } finally {
+            if (refreshJob?.isActive != true && routingData.stale(tiles).isNotEmpty()) {
+                refreshJob = scope.launch(Dispatchers.IO) { routingData.refreshStale(tiles) }
+            }
+        }
+    }
+
+    private suspend fun fetchMissing(tiles: List<String>) {
+        if (routingData.toFetch(tiles).isEmpty()) return
         try {
             routingData.fetch(tiles) { done, total ->
                 val text = context.getString(R.string.nav_fetching_routing, done + 1, total)

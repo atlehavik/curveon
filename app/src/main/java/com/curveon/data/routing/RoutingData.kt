@@ -3,6 +3,8 @@ package com.curveon.data.routing
 import android.content.Context
 import com.curveon.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -34,24 +36,81 @@ class RoutingData(private val context: Context) {
         else context.getString(R.string.routing_installed, tiles.size, tiles.sumOf { it.length() } / 1e6)
     }
 
-    /** Downloads those of [tiles] that are missing from brouter.de. Needs a connection (e.g. the phone's hotspot). */
+    /**
+     * Of [tiles], those on the device that are [STALE_DAYS] or more old (the file's date is brouter.de's build of it, or
+     * when it was downloaded). brouter.de rebuilds its tiles from OpenStreetMap about once a week, so these may lack
+     * roads and fixes made since.
+     */
+    fun stale(tiles: Collection<String>): List<String> {
+        val before = System.currentTimeMillis() - STALE_DAYS * 86_400_000L
+        return tiles.filter { File(segmentsDir, "$it.rd5").let { f -> f.exists() && f.lastModified() < before } }
+    }
+
+    /** Tiles on the device that are not [stale]: what a country's download need not fetch again. */
+    fun freshNames() = installedNames().let { have -> have - stale(have).toSet() }
+
+    /**
+     * Downloads those of [tiles] that are missing from brouter.de, and the [stale] ones brouter.de has a newer build
+     * of. Needs a connection (e.g. the phone's hotspot).
+     */
     suspend fun download(tiles: List<String>, onProgress: (done: Int, total: Int, file: String) -> Unit, isCancelled: () -> Boolean = { false }) =
         withContext(Dispatchers.IO) {
-            val missing = missing(tiles)
+            val todo = missing(tiles) + stale(tiles)
             val client = OkHttpClient()
-            missing.forEachIndexed { i, tile ->
+            todo.forEachIndexed { i, tile ->
                 check(!isCancelled()) { "Cancelled" }
-                onProgress(i, missing.size, tile)
-                val request = Request.Builder().url("$SEGMENTS_URL$tile.rd5").build()
-                client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) throw IOException("Download of $tile failed: HTTP ${response.code}")
-                    val tmp = File(segmentsDir, "$tile.rd5.part")
-                    response.body!!.byteStream().use { input -> tmp.outputStream().use { input.copyTo(it, 1 shl 16) } }
-                    tmp.renameTo(File(segmentsDir, "$tile.rd5"))
-                }
+                onProgress(i, todo.size, tile)
+                val got = get(client, tile, onlyIfNewer = tile !in missing(listOf(tile)))
+                if (got == 404) throw IOException("Download of $tile failed: HTTP 404")
             }
-            onProgress(missing.size, missing.size, "")
+            onProgress(todo.size, todo.size, "")
         }
+
+    /**
+     * Fetches newer builds of the [stale] ones of [tiles], one at a time, in the background while planning online:
+     * the route being worked out uses the tile already here, the next one the new build.
+     */
+    suspend fun refreshStale(tiles: List<String>) = withContext(Dispatchers.IO) {
+        val todo = stale(tiles)
+        if (todo.isEmpty() || !online()) return@withContext
+        val client = OkHttpClient()
+        for (tile in todo) runCatching { get(client, tile, onlyIfNewer = true) }
+    }
+
+    /**
+     * Downloads [tile] from brouter.de into the segments folder: to a part file first, so the tile already here stays
+     * usable until the new one is complete. With [onlyIfNewer], only when brouter.de's build is newer than the file
+     * here (otherwise the file's date is moved on, so it is not asked about again for [STALE_DAYS]). The file gets
+     * brouter.de's date of the build. Returns the HTTP code, 304 when nothing newer was there.
+     */
+    private suspend fun get(client: OkHttpClient, tile: String, onlyIfNewer: Boolean): Int = writing.computeIfAbsent(tile) { Mutex() }.withLock {
+        val file = File(segmentsDir, "$tile.rd5")
+        // Done meanwhile by the other caller (a country's download and planning online can both get here).
+        if (onlyIfNewer && file.exists() && !stale(listOf(tile)).contains(tile)) return@withLock 304
+        if (!onlyIfNewer && file.exists()) return@withLock 200
+        val request = Request.Builder().url("$SEGMENTS_URL$tile.rd5")
+        if (onlyIfNewer && file.exists()) request.header("If-Modified-Since", httpDate(file.lastModified()))
+        client.newCall(request.build()).execute().use { response ->
+            if (response.code == 304) { file.setLastModified(System.currentTimeMillis()); return@withLock 304 }
+            if (response.code == 404) return@withLock 404
+            if (!response.isSuccessful) throw IOException("Download of $tile failed: HTTP ${response.code}")
+            val built = response.headers.getDate("Last-Modified")?.time
+            // Older than the tile here (a stale mirror): keep ours.
+            if (onlyIfNewer && built != null && built <= file.lastModified()) { file.setLastModified(System.currentTimeMillis()); return@withLock 304 }
+            val tmp = File(segmentsDir, "$tile.rd5.part")
+            try {
+                response.body!!.byteStream().use { input -> tmp.outputStream().use { input.copyTo(it, 1 shl 16) } }
+                if (!tmp.renameTo(file)) throw IOException("Could not store $tile")
+            } finally {
+                tmp.delete() // left only when something failed: the tile already here stays as it was
+            }
+            if (built != null) file.setLastModified(built)
+            response.code
+        }
+    }
+
+    private fun httpDate(ms: Long): String =
+        java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME.format(java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneOffset.UTC))
 
     fun delete(tiles: Collection<String>) = tiles.forEach { File(segmentsDir, "$it.rd5").delete() }
 
@@ -70,13 +129,7 @@ class RoutingData(private val context: Context) {
         val client = OkHttpClient()
         todo.forEachIndexed { i, tile ->
             onProgress(i, todo.size)
-            client.newCall(Request.Builder().url("$SEGMENTS_URL$tile.rd5").build()).execute().use { response ->
-                if (response.code == 404) { absent += tile; return@use }
-                if (!response.isSuccessful) throw IOException("Download of $tile failed: HTTP ${response.code}")
-                val tmp = File(segmentsDir, "$tile.rd5.part")
-                response.body!!.byteStream().use { input -> tmp.outputStream().use { input.copyTo(it, 1 shl 16) } }
-                tmp.renameTo(File(segmentsDir, "$tile.rd5"))
-            }
+            if (get(client, tile, onlyIfNewer = false) == 404) absent += tile
         }
     }
 
@@ -88,6 +141,15 @@ class RoutingData(private val context: Context) {
 
     companion object {
         const val SEGMENTS_URL = "https://brouter.de/brouter/segments4/"
+
+        /** Routing tiles this old are fetched again when brouter.de has a newer build (as maps, see MapDownloads). */
+        const val STALE_DAYS = 30
+
+        /**
+         * Each tile written by one at a time, whoever asks (a country's download, planning online); a tile being
+         * fetched in the background never holds up another one a route waits for.
+         */
+        private val writing = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
 
         /** BRouter's 5x5 degree tiles covering a box (with [marginDeg] around it), e.g. "E5_N60". */
         fun tilesFor(south: Double, west: Double, north: Double, east: Double, marginDeg: Double = 0.3): List<String> {

@@ -116,7 +116,7 @@ class MapDownloads(
         }.isSuccess
     }
 
-    /** What downloading [area] would add: its map, plus the routing tiles not already on the tablet. */
+    /** What downloading [area] would add: its map, plus the routing tiles not already on the tablet or old enough to fetch again. */
     fun downloadBytes(area: CatalogArea, installedTiles: Set<String>) =
         area.mapBytes + area.routing.filterNot { it in installedTiles }.sumOf { catalog.routingBytes(it) } + (searchAvailable?.get(area.id) ?: 0L)
 
@@ -137,7 +137,7 @@ class MapDownloads(
     suspend fun download(area: CatalogArea, build: String, onProgress: (String, Float) -> Unit, isCancelled: () -> Boolean) =
         withContext(Dispatchers.IO) {
             // An old map stays usable until the new one is complete, so we need room for a full copy.
-            val needed = (downloadBytes(area, routing.installedNames()) * 1.1).toLong()
+            val needed = (downloadBytes(area, routing.freshNames()) * 1.1).toLong()
             check(reserve(needed)) { context.getString(R.string.map_no_space, needed / 1e9, freeBytes() / 1e9) }
             RegionExtractor(http).extract("https://build.protomaps.com/$build", area.tileMask(), MAX_ZOOM, file(area), onProgress = { p ->
                 val msg = when (p.stage) {

@@ -200,7 +200,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Download size per area, given the routing tiles on the tablet right now. */
     fun mapDownloadSizer(): (com.curveon.data.map.CatalogArea) -> Long {
-        val have = navigator.routingData.installedNames()
+        val have = navigator.routingData.freshNames()
         return { mapDownloads.downloadBytes(it, have) }
     }
 

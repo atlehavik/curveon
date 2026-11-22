@@ -36,7 +36,10 @@ phone, with an optional companion app on the phone when a tablet is used.
   to the roads only through one (the map is wrong, or the place is on a path): then the first/last leg
   uses as little path as there is no road way around, however long that is. Never in the middle.
   Online with no country downloaded, just the routing tiles a trip needs are fetched as it is planned
-  (and kept). The same goes for the country's search data (fuel, camping, places) when it is up to
+  (and kept). Routing tiles 30 days old or more are fetched again when brouter.de has a newer build
+  (it rebuilds them from OpenStreetMap about weekly; the file's date is the build's): with the
+  country when its map is downloaded or updated, and in the background when a trip is planned
+  online (that route uses the tile already there, the next one the new build). The same goes for the country's search data (fuel, camping, places) when it is up to
   120 MB: it is fetched in the background at the first GPS fix and when Where to? opens, on any
   connection, once per run (a failure shows a Try again card in Where to?). Bigger ones (Germany)
   come with the country's map.
@@ -192,7 +195,7 @@ or with `adb push`.
 | Folder | File(s) | Size | How to get it |
 |---|---|---|---|
 | `maps/` | `<country>.pmtiles` | Norway 1.7 GB | Settings → Download countries (when online), or `tools/map/build-norway-map.sh` / Settings → Import |
-| `routing/segments4/` | `E*_N*.rd5` | Norway 210 MB | Comes with each country, or from https://brouter.de/brouter/segments4/ |
+| `routing/segments4/` | `E*_N*.rd5` | Norway 210 MB | Comes with each country (fetched again once a month old and newer online), or from https://brouter.de/brouter/segments4/ |
 | `search/` | `<country>.sqlite` | Norway 150 MB | Comes with each country (see `tools/search/README.md`) |
 
 The country list (`app/src/main/assets/map/countries.json`: outlines as zoom-10 tiles, sizes,

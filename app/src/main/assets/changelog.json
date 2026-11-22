@@ -1,5 +1,41 @@
 [
   {
+    "version": "1.2.13",
+    "en": [
+      "The roads Curveon plans on now stay up to date. Until now, fixes to the map and new roads only reached your tablet or phone the first time an area was downloaded. Now the road data is fetched again once it is a month old and a newer version is out: together with the map when you update a country, and quietly in the background when you plan a trip online. The trip you are planning uses what is already there, and the next one gets the newer roads."
+    ],
+    "nb": [
+      "Veiene Curveon planlegger på holder seg nå oppdatert. Til nå kom rettelser i kartet og nye veier bare til nettbrettet eller telefonen første gang et område ble lastet ned. Nå hentes veidataene på nytt når de er en måned gamle og det finnes en nyere utgave: sammen med kartet når du oppdaterer et land, og stille i bakgrunnen når du planlegger en tur med nett. Turen du planlegger bruker det som alt ligger der, og neste tur får de nyere veiene."
+    ],
+    "sv": [
+      "Vägarna Curveon planerar på håller sig nu uppdaterade. Hittills kom rättelser i kartan och nya vägar bara till surfplattan eller telefonen första gången ett område laddades ner. Nu hämtas vägdata på nytt när de är en månad gamla och det finns en nyare version: tillsammans med kartan när du uppdaterar ett land, och tyst i bakgrunden när du planerar en tur med nät. Turen du planerar använder det som redan finns, och nästa tur får de nyare vägarna."
+    ],
+    "da": [
+      "Vejene Curveon planlægger på holder sig nu opdaterede. Indtil nu kom rettelser i kortet og nye veje kun til tabletten eller telefonen første gang et område blev hentet. Nu hentes vejdata igen, når de er en måned gamle, og der findes en nyere udgave: sammen med kortet, når du opdaterer et land, og stille i baggrunden, når du planlægger en tur med net. Turen du planlægger bruger det, der allerede ligger der, og næste tur får de nyere veje."
+    ],
+    "fi": [
+      "Tiet, joille Curveon suunnittelee reitit, pysyvät nyt ajan tasalla. Tähän asti kartan korjaukset ja uudet tiet tulivat tablettiin tai puhelimeen vain silloin, kun alue ladattiin ensimmäisen kerran. Nyt tietiedot haetaan uudelleen, kun ne ovat kuukauden vanhoja ja uudempi versio on saatavilla: kartan mukana, kun päivität maan, ja hiljaa taustalla, kun suunnittelet ajoa verkossa. Suunnitteilla oleva ajo käyttää jo laitteessa olevia tietoja, ja seuraava saa uudemmat tiet."
+    ],
+    "is": [
+      "Vegirnir sem Curveon skipuleggur eftir haldast nú uppfærðir. Hingað til komu lagfæringar á kortinu og nýir vegir aðeins í spjaldtölvuna eða símann í fyrsta sinn sem svæði var sótt. Nú eru vegagögnin sótt aftur þegar þau eru mánaðargömul og nýrri útgáfa er til: með kortinu þegar þú uppfærir land, og hljóðlega í bakgrunni þegar þú skipuleggur ferð á netinu. Ferðin sem þú skipuleggur notar það sem þegar er til staðar, og næsta ferð fær nýrri vegina."
+    ],
+    "de": [
+      "Die Straßen, auf denen Curveon plant, bleiben jetzt aktuell. Bisher kamen Korrekturen an der Karte und neue Straßen nur aufs Tablet oder Handy, wenn ein Gebiet zum ersten Mal geladen wurde. Jetzt werden die Straßendaten neu geholt, sobald sie einen Monat alt sind und es eine neuere Fassung gibt: zusammen mit der Karte, wenn du ein Land aktualisierst, und still im Hintergrund, wenn du eine Tour online planst. Die Tour, die du gerade planst, nutzt, was schon da ist, und die nächste bekommt die neueren Straßen."
+    ],
+    "es": [
+      "Las carreteras sobre las que planifica Curveon ahora se mantienen al día. Hasta ahora, las correcciones del mapa y las carreteras nuevas solo llegaban a tu tableta o teléfono la primera vez que se descargaba una zona. Ahora los datos de carreteras se vuelven a descargar cuando tienen un mes y hay una versión más nueva: junto con el mapa cuando actualizas un país, y en silencio en segundo plano cuando planificas una ruta con conexión. La ruta que estás planificando usa lo que ya hay, y la siguiente recibe las carreteras más nuevas."
+    ],
+    "fr": [
+      "Les routes sur lesquelles Curveon planifie restent désormais à jour. Jusqu'ici, les corrections de la carte et les nouvelles routes n'arrivaient sur votre tablette ou votre téléphone que la première fois qu'une zone était téléchargée. Maintenant, les données routières sont récupérées à nouveau dès qu'elles ont un mois et qu'une version plus récente existe : avec la carte quand vous mettez à jour un pays, et discrètement en arrière-plan quand vous planifiez un trajet en ligne. Le trajet en cours de planification utilise ce qui est déjà là, et le suivant profite des routes plus récentes."
+    ],
+    "nl": [
+      "De wegen waarop Curveon plant, blijven nu actueel. Tot nu toe kwamen verbeteringen aan de kaart en nieuwe wegen alleen op je tablet of telefoon de eerste keer dat een gebied werd gedownload. Nu worden de weggegevens opnieuw opgehaald zodra ze een maand oud zijn en er een nieuwere versie is: samen met de kaart wanneer je een land bijwerkt, en stil op de achtergrond wanneer je online een rit plant. De rit die je nu plant, gebruikt wat er al is, en de volgende krijgt de nieuwere wegen."
+    ],
+    "pl": [
+      "Drogi, po których Curveon planuje trasy, są teraz aktualne. Dotąd poprawki mapy i nowe drogi trafiały na tablet lub telefon tylko przy pierwszym pobraniu obszaru. Teraz dane drogowe są pobierane ponownie, gdy mają miesiąc i jest nowsza wersja: razem z mapą, gdy aktualizujesz kraj, oraz po cichu w tle, gdy planujesz trasę online. Trasa, którą właśnie planujesz, korzysta z tego, co już jest, a następna dostaje nowsze drogi."
+    ]
+  },
+  {
     "version": "1.2.12",
     "en": [
       "Riding without a route, your arrow now follows the road through every bend, just as it does when you navigate. No more sliding out of each curve and jumping back onto the road a moment later.",
