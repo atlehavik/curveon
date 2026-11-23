@@ -35,4 +35,17 @@ class MapStyleTest {
     assertTrue(online.isNotEmpty() && online.none { it.optJSONObject("layout")?.optString("visibility") == "none" })
     assertEquals("#123456", online.first { it.getString("id") == "online-roads_minor" }.getJSONObject("paint").getString("line-color"))
   }
+
+  @Test fun `night normal contrast softens minor roads and hides their bright casing, high contrast keeps it`() {
+    val normal = build("dark", listOf("pmtiles://a"), road = MapStyle.NIGHT_ROAD, path = MapStyle.NIGHT_PATH).getJSONArray("layers")
+    val normalById = (0 until normal.length()).map { normal.getJSONObject(it) }.associateBy { it.getString("id") }
+    assertEquals(MapStyle.NIGHT_ROAD, normalById.getValue("roads_minor").getJSONObject("paint").getString("line-color"))
+    assertEquals(MapStyle.NIGHT_PATH, normalById.getValue("roads_other").getJSONObject("paint").getString("line-color"))
+    assertEquals(0, normalById.getValue("roads_minor_casing").getJSONObject("paint").getInt("line-opacity"))
+    assertEquals(0, normalById.getValue("online-roads_minor_casing").getJSONObject("paint").getInt("line-opacity"))
+
+    val hc = build("dark", listOf("pmtiles://a"), road = MapStyle.NIGHT_ROAD_HC, path = MapStyle.NIGHT_PATH_HC).getJSONArray("layers")
+    val hcById = (0 until hc.length()).map { hc.getJSONObject(it) }.associateBy { it.getString("id") }
+    assertTrue(!hcById.getValue("roads_minor_casing").getJSONObject("paint").has("line-opacity"))
+  }
 }

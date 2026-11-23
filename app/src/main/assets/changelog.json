@@ -4,56 +4,67 @@
     "en": [
       "Routing data now stays up to date automatically. Previously, map fixes and new roads only reached your device the first time you downloaded a region. Now routing data is refreshed automatically once it's a month old and a newer build is available — both when you update a country map and quietly in the background when planning online. Your current trip uses existing data, and your next trip gets the updated roads.",
       "The route line now displays subtle directional arrows so you can see which way it runs at a glance. On out-and-back stretches where the route uses the same road twice, the arrows split into two lanes — one on each right-hand side — making it immediately clear which way you're riding first.",
+      "Night mode in normal contrast is now easier on the eyes: minor streets and paths are toned down so they no longer glare or compete with the main roads and place names. High contrast stays as bright as before if you prefer maximum visibility.",
       "Fixed an occasional crash that could happen when rebuilding the screen (for example after changing language) while the map was decluttering minor town streets."
     ],
     "nb": [
       "Rutedataene holder seg nå oppdatert av seg selv. Tidligere kom kartrettelser og nye veier bare inn første gang et område ble lastet ned. Nå oppdateres rutedataene automatisk når de er over en måned gamle og en nyere utgave er klar – både når du oppdaterer et land, og stille i bakgrunnen når du planlegger på nett. Turen du planlegger bruker dataene som ligger der, og neste tur får de oppdaterte veiene.",
       "Rutelinjen viser nå små, diskré retningspiler så du ser med et blikk hvilken vei turen går. På strekninger der ruten går tur-retur langs samme vei, deler pilene seg i to rader – hver retning på sin høyre side – så det er lett å se hvilken vei du kjører først.",
+      "Nattmodus med normal kontrast er nå mer behagelig for øyet: småveier og stier er dempet ned så de ikke lenger lyser så sterkt eller konkurrerer med hovedveiene og stedsnavnene. Høy kontrast er like tydelig som før hvis du vil ha maksimal synlighet.",
       "Rettet en sporadisk krasj som kunne oppstå når skjermen ble lastet inn på nytt (for eksempel etter språkbytte) mens kartet forenklet smågatene i byer."
     ],
     "sv": [
       "Ruttdata håller sig nu uppdaterade automatiskt. Tidigare nådde karträttelser och nya vägar bara din enhet första gången ett område laddades ner. Nu uppdateras ruttdata automatiskt när de är över en månad gamla och en nyare version finns – både när du uppdaterar ett land och tyst i bakgrunden när du planerar online. Den aktuella turen använder befintliga data, och nästa tur får de uppdaterade vägarna.",
       "Ruttlinjen visar nu små, diskreta riktningspilar så att du direkt ser åt vilket håll turen går. På sträckor där rutten kör samma väg tur och retur delar pilarna upp sig i två rader – varje riktning på sin högra sida – så det blir tydligt åt vilket håll du kör först.",
+      "Nattläget med normal kontrast är nu skonsammare för ögonen: småvägar och stigar har dämpats så att de inte längre bländar eller konkurrerar med huvudvägarna och ortsnamnen. Hög kontrast är lika tydlig som tidigare om du vill ha maximal synlighet.",
       "Åtgärdade en tillfällig krasch som kunde uppstå när skärmen byggdes om (till exempel efter språkbyte) medan kartan rensade bort smågator i städer."
     ],
     "da": [
       "Rutedata holder sig nu opdaterede automatisk. Tidligere nåede kortrettelser og nye veje kun din enhed første gang et område blev hentet. Nu opdateres rutedata automatisk, når de er over en måned gamle, og der findes en nyere version – både når du opdaterer et land, og stille i baggrunden når du planlægger online. Den aktuelle tur bruger de data, der allerede ligger på enheden, og næste tur får de opdaterede veje.",
       "Rutelinjen viser nu små, diskrete retningspile, så du med det samme kan se, hvilken vej turen går. På strækninger, hvor ruten kører samme vej frem og tilbage, deler pilene sig i to rækker – hver retning i sin højre side – så det er let at se, hvilken vej du kører først.",
+      "Nattilstand med normal kontrast er nu mere behagelig for øjnene: småveje og stier er dæmpet, så de ikke længere lyser så skarpt eller konkurrerer med hovedvejene og stednavnene. Høj kontrast er lige så tydelig som før, hvis du ønsker maksimal synlighed.",
       "Rettede et lejlighedsvist nedbrud, som kunne opstå, når skærmen blev genopbygget (for eksempel efter sprogskift), mens kortet skjulte smågader i byer."
     ],
     "fi": [
       "Reittitiedot pysyvät nyt automaattisesti ajan tasalla. Aiemmin karttakorjaukset ja uudet tiet tulivat laitteelle vain ensimmäisellä latauskerralla. Nyt reittitiedot päivitetään automaattisesti, kun ne ovat yli kuukauden vanhoja ja uudempi versio on saatavilla – sekä maata päivitettäessä että huomaamatta taustalla verkossa suunniteltaessa. Nykyinen reitti käyttää olemassa olevia tietoja, ja seuraava saa uudemmat tiet.",
       "Reittiviivassa näkyy nyt pieniä, huomaamattomia suuntanuolia, joista näet yhdellä vilkaisulla kulkusuunnan. Osuuksilla, joilla reitti kulkee samaa tietä edestakaisin, nuolet jakautuvat kahdelle kaistalle – kumpikin suunta oikealle puolelleen – jotta näet heti, kummin päin ajat ensin.",
+      "Yötila normaalilla kontrastilla on nyt silmille miellyttävämpi: pikkuteitä ja polkuja on hillitty, jotta ne eivät enää häikäise tai kilpaile pääteiden ja paikannimien kanssa. Korkea kontrasti pysyy yhtä kirkkaana kuin ennenkin, jos kaipaat maksimaalista näkyvyyttä.",
       "Korjattiin satunnainen kaatuminen, joka saattoi tapahtua näkymän latautuessa uudelleen (esimerkiksi kielen vaihdon jälkeen) samalla kun kartta siivosi kaupunkien pikkukatuja."
     ],
     "is": [
       "Leiðargögn haldast nú sjálfkrafa uppfærð. Áður bárust kortaleiðréttingar og nýir vegir aðeins í tækið í fyrsta sinn sem svæði var sótt. Nú uppfærast leiðargögn sjálfkrafa þegar þau eru orðin mánaðargömul og nýrri útgáfa er til – bæði þegar þú uppfærir land og hljóðlega í bakgrunni þegar þú skipuleggur á netinu. Ferðin sem þú ert að skipuleggja notar núverandi gögn og næsta ferð fær nýju vegina.",
       "Leiðarlínan sýnir nú litlar, hógværar stefnuörvar svo þú sérð í einu vetfangi í hvaða átt leiðin liggur. Á köflum þar sem farið er sama veg fram og til baka skiptast örvarnar í tvær akreinar – hvor átt á sinni hægri hlið – svo strax sé ljóst hvora leiðina þú ekur fyrst.",
+      "Næturstilling með venjulegri birtuskilgreiningu er nú þægilegri fyrir augun: smávegir og stígar hafa verið dempaðir svo þeir skíni ekki of sterkt né keppi við aðalvegi og örnefni. Mikil birtuskil haldast jafn skýr og áður ef þú vilt hámarks sýnileika.",
       "Lagað var tilfallandi hrun sem gat orðið þegar skjárinn var endurhlaðinn (til dæmis eftir tungumálaskipti) á meðan kortið einfaldaði smágötur í þéttbýli."
     ],
     "de": [
       "Die Routing-Daten bleiben jetzt automatisch aktuell. Bisher kamen Kartenkorrekturen und neue Straßen nur beim ersten Herunterladen einer Region aufs Gerät. Jetzt werden Routing-Daten automatisch aktualisiert, sobald sie über einen Monat alt sind und eine neuere Version vorliegt – sowohl beim Aktualisieren eines Landes als auch still im Hintergrund bei der Online-Planung. Die aktuelle Tour nutzt die vorhandenen Daten, die nächste bereits die neuen Straßen.",
       "Die Routenlinie zeigt jetzt dezente Richtungspfeile, damit du auf einen Blick siehst, in welche Richtung es geht. Auf Abschnitten, die hin und zurück über dieselbe Straße führen, teilen sich die Pfeile in zwei Spuren – jeweils rechts in Fahrtrichtung –, sodass sofort klar ist, wo es zuerst langgeht.",
+      "Der Nachtmodus mit normalem Kontrast ist jetzt angenehmer für die Augen: Nebenstraßen und Wege sind dezenter gehalten, sodass sie nicht mehr grell hervorstechen oder Hauptstraßen und Ortsnamen überlagern. Der hohe Kontrast bleibt so kräftig wie gewohnt, wenn du maximale Sichtbarkeit bevorzugst.",
       "Ein gelegentlicher Absturz beim Neuaufbau des Bildschirms (z. B. nach einem Sprachwechsel), während die Karte kleine Stadtstraßen ausblendete, wurde behoben."
     ],
     "es": [
       "Los datos de rutas ahora se mantienen actualizados automáticamente. Antes, las correcciones del mapa y las carreteras nuevas solo llegaban la primera vez que descargabas una zona. Ahora se actualizan en cuanto tienen más de un mes y hay una versión más reciente: tanto al actualizar un país como discretamente en segundo plano al planificar con conexión. La ruta actual usa los datos existentes y la siguiente ya incorpora las carreteras nuevas.",
       "La línea de la ruta muestra ahora discretas flechas de dirección para ver de un vistazo hacia dónde va. En tramos de ida y vuelta por la misma carretera, las flechas se dividen en dos carriles —cada sentido a su derecha— para que quede claro cuál recorres primero.",
+      "El modo nocturno con contraste normal es ahora más cómodo para la vista: las calles secundarias y los caminos se ven más suaves para que no deslumbren ni compitan con las carreteras principales y los nombres de lugar. El contraste alto sigue igual de intenso si prefieres la máxima visibilidad.",
       "Se corrigió un cierre ocasional al reconstruir la pantalla (por ejemplo, tras cambiar el idioma) mientras el mapa simplificaba las calles pequeñas en ciudad."
     ],
     "fr": [
       "Les données de routage restent désormais à jour automatiquement. Auparavant, les corrections de carte et nouvelles routes n'arrivaient qu'au premier téléchargement d'une région. Elles sont maintenant actualisées dès qu'elles ont plus d'un mois et qu'une version plus récente existe : lors de la mise à jour d'un pays et discrètement en arrière-plan lors d'une planification en ligne. Le trajet en cours utilise les données existantes et le suivant profite des routes mises à jour.",
       "Le tracé affiche désormais de petites flèches discrètes pour indiquer le sens du parcours d'un coup d'œil. Sur les portions en aller-retour sur une même route, les flèches se répartissent sur deux voies — chaque sens sur sa droite — pour voir immédiatement par où vous passez en premier.",
+      "Le mode nuit en contraste normal est désormais plus reposant pour les yeux : les petites rues et les chemins sont atténués afin de ne plus éblouir ni concurrencer les grands axes et les noms de lieux. Le contraste élevé reste aussi marqué qu'avant si vous préférez une visibilité maximale.",
       "Correction d'un plantage occasionnel lors du rechargement de l'écran (par exemple après un changement de langue) pendant que la carte allégeait l'affichage des petites rues en ville."
     ],
     "nl": [
       "Routegegevens blijven nu automatisch up-to-date. Eerder kwamen kaartverbeteringen en nieuwe wegen alleen mee bij de eerste download van een regio. Nu worden ze automatisch ververst zodra ze ouder dan een maand zijn en er een nieuwere versie is – zowel bij het bijwerken van een land als stil op de achtergrond wanneer je online plant. De huidige rit gebruikt de bestaande gegevens en de volgende krijgt de bijgewerkte wegen.",
       "De routelijn toont nu subtiele richtingspijlen zodat je in één oogopslag ziet welke kant de rit op gaat. Op stukken waar je dezelfde weg heen en terug rijdt, splitsen de pijlen in twee rijstroken – elke richting aan de rechterkant – zodat meteen duidelijk is welke kant je eerst rijdt.",
+      "De nachtmodus met normaal contrast is nu rustiger voor de ogen: kleine wegen en paden zijn gedempt zodat ze niet meer fel oplichten of concurreren met hoofdwegen en plaatsnamen. Hoog contrast blijft net zo helder als voorheen als je maximale zichtbaarheid wilt.",
       "Een incidentele crash verholpen die kon optreden bij het opnieuw opbouwen van het scherm (bijvoorbeeld na een taalwissel) terwijl de kaart kleine stadsstraten versimpelde."
     ],
     "pl": [
       "Dane tras aktualizują się teraz automatycznie. Wcześniej poprawki mapy i nowe drogi trafiały na urządzenie tylko przy pierwszym pobraniu regionu. Teraz dane tras odświeżają się automatycznie, gdy mają ponad miesiąc i dostępna jest nowsza wersja – zarówno przy aktualizacji kraju, jak i po cichu w tle podczas planowania online. Bieżąca trasa korzysta z dotychczasowych danych, a kolejna już z nowszych dróg.",
       "Linia trasy pokazuje teraz dyskretne strzałki kierunkowe, dzięki którym od razu widać kierunek jazdy. Na odcinkach prowadzących tą samą drogą w obie strony strzałki dzielą się na dwa pasy – każdy kierunek po swojej prawej stronie – więc od razu wiadomo, w którą stronę jedziesz najpierw.",
+      "Tryb nocny o normalnym kontraście jest teraz łagodniejszy dla oczu: boczne drogi i ścieżki zostały przyciemnione, dzięki czemu nie rażą i nie konkurują z głównymi trasami ani nazwami miejscowości. Wysoki kontrast pozostaje tak wyraźny jak dotąd, jeśli wolisz maksymalną widoczność.",
       "Naprawiono sporadyczne zamykanie aplikacji podczas odświeżania ekranu (np. po zmianie języka), gdy mapa upraszczała małe ulice w miastach."
     ]
   },

@@ -167,6 +167,9 @@ object MapStyle {
         val paint = layer.optJSONObject("paint") ?: return
         when (layer.getString("id").substringBefore('~')) {
             "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { atLeast(paint, HC_MIN_WIDTH); nightColour(paint, road) }
+            "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "online-roads_minor_casing" ->
+                if (road != NIGHT_ROAD_HC) paint.put("line-opacity", 0)
+            "roads_pier" -> nightColour(paint, road)
             "roads_other", "roads_bridges_other", "online-roads_other" -> { atLeast(paint, HC_MIN_WIDTH); nightColour(paint, path) }
         }
     }
@@ -198,11 +201,11 @@ object MapStyle {
     /** Normal contrast (the default): the day map's small roads and light paths a softer grey. */
     const val DAY_ROAD = "#9a9a9a"
     const val DAY_PATH = "#c4c4c4"
-    /** The night map's small roads and paths: white and light grey (high contrast, as the style draws them), or softer. */
+    /** The night map's small roads and paths: white and light grey (high contrast, as the style draws them), or a calmer mid-grey in normal contrast. */
     const val NIGHT_ROAD_HC = "#ffffff"
     const val NIGHT_PATH_HC = "#d4d4d4"
-    const val NIGHT_ROAD = "#d0d0d0"
-    const val NIGHT_PATH = "#a6a6a6"
+    const val NIGHT_ROAD = "#808080"
+    const val NIGHT_PATH = "#5e5e5e"
     private const val HC_EDGE = 1.5
     /** The main roads' edge: dark, but not black, so it isn't so harsh next to the grey roads. */
     private const val HC_EDGE_COLOR = "#404040"
