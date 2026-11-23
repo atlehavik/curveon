@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="qr_scan_title">Skanna QR-kóða</string>
-    <string name="qr_scan_hint">Haltu myndavélinni fyrir framan QR-kóða boðsins, eða kóðann fyrir hitt tækið þitt.</string>
-    <string name="qr_scan_denied">Myndavélin þarf til að skanna. Leyfðu hana í stillingum Android, eða opnaðu boðshlekkinn í staðinn.</string>
-    <string name="qr_scan_wrong">Þetta er ekki Curveon-boð.</string>
+    <string name="qr_scan_hint">Beindu myndavélinni að boðs-QR-kóða eða kóðanum á hinu tækinu þínu.</string>
+    <string name="qr_scan_denied">Myndavélarheimild þarf til að skanna. Kveiktu á henni í stillingum Android, eða opnaðu boðshlekkinn í staðinn.</string>
+    <string name="qr_scan_wrong">Ekki gilt Curveon-boð.</string>
     <string name="qr_scan_cancel">Hætta við</string>
-    <string name="selfie_take">Taka myndina</string>
+    <string name="selfie_take">Taka mynd</string>
     <string name="selfie_switch">Skipta um myndavél</string>
-    <string name="selfie_denied">Myndavélin þarf til að taka myndina. Leyfðu hana í stillingum Android eða veldu mynd úr myndasafninu.</string>
+    <string name="selfie_denied">Myndavélarheimild þarf til að taka mynd. Kveiktu á henni í stillingum Android, eða veldu mynd úr myndasafninu í staðinn.</string>
     <string name="selfie_failed">Ekki tókst að taka myndina. Reyndu aftur.</string>
 </resources>

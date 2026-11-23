@@ -1,14 +1,14 @@
 <resources>
     <string name="battery_test">Test de batterie</string>
-    <string name="battery_test_hint">Compare la batterie consommée par Google Maps et par Curveon sur ce téléphone. Débranche le téléphone, lance le test, roule de A à B en naviguant avec l’un et de B à A avec l’autre, puis arrête. Garde la même luminosité d’écran pour les deux.</string>
+    <string name="battery_test_hint">Compare la consommation de batterie de Google Maps et Curveon sur ce téléphone. Débranche le chargeur, lance le test, roule de A→B avec l’un et de B→A avec l’autre à luminosité égale, puis arrête.</string>
     <string name="battery_test_start">Lancer le test de batterie</string>
     <string name="battery_test_stop">Arrêter le test de batterie</string>
-    <string name="battery_test_running">En cours depuis %1$s · actuellement : %2$s</string>
+    <string name="battery_test_running">En cours depuis %1$s · active : %2$s</string>
     <string name="battery_test_last">Dernier test</string>
     <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/h · luminosité %4$d</string>
-    <string name="battery_test_short">%1$s · trop court pour conclure</string>
-    <string name="battery_test_charging">%1$s en charge, non compté</string>
-    <string name="battery_test_no_access">Nécessite l’accès aux notifications (Configuration) pour savoir quelle appli navigue.</string>
+    <string name="battery_test_short">%1$s · trop court pour mesurer</string>
+    <string name="battery_test_charging">%1$s en charge (non compté)</string>
+    <string name="battery_test_no_access">Nécessite l’accès aux notifications (dans Configuration) pour détecter l’appli de navigation active.</string>
     <string name="battery_test_file">Journal : %1$s</string>
     <string name="battery_nav_none">Pas de navigation</string>
     <string name="battery_nav_maps">Google Maps</string>
@@ -17,11 +17,11 @@
     <string name="group_status_none">Aucun groupe actif. Lances-en un dans l’appli Curveon.</string>
     <string name="group_scan">Scanner un QR code</string>
     <string name="friends_title">Amis</string>
-    <string name="friends_hint">Montre ton code à un ami, ou scanne le sien. Tout le reste sur les amis et les groupes se trouve dans l’appli Curveon.</string>
+    <string name="friends_hint">Montre ton QR code à un ami ou scanne le sien. Gère amis et groupes dans l’appli Curveon.</string>
     <string name="friends_my_code">Montrer mon code</string>
     <string name="friends_share_link">Partager le lien</string>
     <string name="friends_share_text">Deviens mon ami sur Curveon : %1$s</string>
-    <string name="friends_code_hint">Ton ami le scanne pour devenir ton ami. Il ne vaut que pour un ami : montre un nouveau code pour le suivant.</string>
+    <string name="friends_code_hint">Fais scanner ce code à ton ami pour vous relier. Chaque code vaut pour un seul ami.</string>
     <string name="friends_close">Fermer</string>
     <string name="group_error_no_relay">Mets à jour Curveon et Curveon Companion vers la dernière version.</string>
     <string name="group_unnamed">Groupe</string>
@@ -34,8 +34,8 @@
     <string name="group_error_expired_invite">Cette invitation a expiré. Demandes-en une nouvelle.</string>
     <string name="group_error_already_member">Tu fais déjà partie de ce groupe.</string>
     <string name="group_error_other">Un problème est survenu avec le groupe.</string>
-    <string name="group_error_not_linked">Ouvre d’abord Curveon sur ta tablette ou sur ce téléphone : tes amis et tes groupes y sont.</string>
-    <string name="intro">Partage la musique, les messages et les appels de ce téléphone avec la tablette Curveon en Bluetooth. Associe d’abord le téléphone et la tablette dans les réglages Bluetooth d’Android.</string>
+    <string name="group_error_not_linked">Ouvre d’abord Curveon sur ta tablette ou ton téléphone — tes amis et groupes s’y gèrent.</string>
+    <string name="intro">Partage la musique, les messages et les appels de ce téléphone avec ta tablette Curveon en Bluetooth. Appaire d’abord les deux appareils dans les réglages Bluetooth d’Android.</string>
     <string name="status_title">État</string>
     <string name="status_service">Service</string>
     <string name="status_running">Actif</string>

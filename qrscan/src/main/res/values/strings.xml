@@ -1,11 +1,11 @@
 <resources>
     <string name="qr_scan_title">Scan a QR code</string>
-    <string name="qr_scan_hint">Hold the camera in front of the invite\'s QR code, or the one for your other device.</string>
-    <string name="qr_scan_denied">The camera is needed to scan. Allow it in Android\'s settings, or open the invite link instead.</string>
-    <string name="qr_scan_wrong">That is not a Curveon invite.</string>
+    <string name="qr_scan_hint">Point the camera at an invite QR code, or the code from your other device.</string>
+    <string name="qr_scan_denied">Camera permission is needed to scan. Enable it in Android\'s settings, or open the invite link instead.</string>
+    <string name="qr_scan_wrong">Not a valid Curveon invite.</string>
     <string name="qr_scan_cancel">Cancel</string>
-    <string name="selfie_take">Take the picture</string>
+    <string name="selfie_take">Take photo</string>
     <string name="selfie_switch">Switch camera</string>
-    <string name="selfie_denied">The camera is needed to take a picture. Allow it in Android\'s settings, or choose a picture from your gallery instead.</string>
-    <string name="selfie_failed">The picture could not be taken. Try again.</string>
+    <string name="selfie_denied">Camera permission is needed to take a photo. Enable it in Android\'s settings, or choose one from your gallery instead.</string>
+    <string name="selfie_failed">Couldn\'t take the photo. Please try again.</string>
 </resources>

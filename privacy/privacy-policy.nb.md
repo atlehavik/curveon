@@ -44,11 +44,11 @@ Bare når du bruker disse funksjonene, og bare over kryptert forbindelse (HTTPS)
   og laster den ned derfra. GitHub ser IP-adressen din.
 
 - **Feilmeldinger og forslag** (Innstillinger → Hjelp, bare når du trykker Send). Det du skriver, bildene du velger,
-  appversjon, enhetsmodell og Android-versjon, og, hvis du lar det stå avkrysset, starten av siste krasjrapport, går
+  appversjon, enhetsmodell og Android-versjon – samt starten av siste krasjrapport hvis du lar det stå avkrysset – går
   via reléet vårt (relay.curveon.no) til en **offentlig** sak på GitHub (github.com/atlehavik/curveon), der alle kan
-  lese den. Reléet sender det videre og lagrer ingenting; bildene kodes om først, så et bildes posisjon forsvinner.
-  GitHub (Microsoft) behandler saken etter sine egne personvernvilkår. Appen husker saksnummer og lenke så du kan
-  følge saken, og spør GitHub hvordan den står når du åpner Hjelp. Vil du ha en sak fjernet, spør oss (kontakt under).
+  lese den. Reléet sender meldingen videre uten å lagre noe; bilder kodes om først, slik at eventuell stedsinformasjon
+  i bildet fjernes. GitHub (Microsoft) behandler saken etter sine egne personvernvilkår. Appen husker saksnummer og
+  lenke så du kan følge saken, og sjekker status på GitHub når du åpner Hjelp. Ta kontakt hvis du vil ha en sak fjernet.
 
 Med nedlastede kart kan du kjøre helt uten nett.
 

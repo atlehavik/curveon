@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="qr_scan_title">Skanna QR-kod</string>
-    <string name="qr_scan_hint">Håll kameran framför inbjudans QR-kod, eller den för din andra enhet.</string>
-    <string name="qr_scan_denied">Kameran behövs för att skanna. Tillåt den i Androids inställningar, eller öppna inbjudningslänken i stället.</string>
-    <string name="qr_scan_wrong">Det är inte en Curveon-inbjudan.</string>
+    <string name="qr_scan_hint">Rikta kameran mot en inbjudnings-QR-kod, eller koden från din andra enhet.</string>
+    <string name="qr_scan_denied">Kamerabehörighet krävs för att skanna. Slå på den i Androids inställningar, eller öppna inbjudningslänken i stället.</string>
+    <string name="qr_scan_wrong">Inte en giltig Curveon-inbjudan.</string>
     <string name="qr_scan_cancel">Avbryt</string>
-    <string name="selfie_take">Ta bilden</string>
+    <string name="selfie_take">Ta bild</string>
     <string name="selfie_switch">Byt kamera</string>
-    <string name="selfie_denied">Kameran behövs för att ta bilden. Tillåt den i Androids inställningar, eller välj en bild från galleriet i stället.</string>
-    <string name="selfie_failed">Bilden kunde inte tas. Försök igen.</string>
+    <string name="selfie_denied">Kamerabehörighet krävs för att ta en bild. Slå på den i Androids inställningar, eller välj en bild från galleriet i stället.</string>
+    <string name="selfie_failed">Kunde inte ta bilden. Försök igen.</string>
 </resources>

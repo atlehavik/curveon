@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="battery_test">Batteritest</string>
-    <string name="battery_test_hint">Sammenligner hvor mye batteri Google Maps og Curveon bruker på denne telefonen. Koble fra laderen, start testen, kjør A→B med den ene og B→A med den andre, og stopp. Bruk samme lysstyrke på skjermen begge veier.</string>
+    <string name="battery_test_hint">Sammenlign batteribruken til Google Maps og Curveon på denne telefonen. Koble fra laderen, start testen, kjør A→B med den ene og B→A med den andre med samme skjermlysstyrke, og stopp.</string>
     <string name="battery_test_start">Start batteritest</string>
     <string name="battery_test_stop">Stopp batteritest</string>
-    <string name="battery_test_running">Har gått i %1$s · nå: %2$s</string>
+    <string name="battery_test_running">Har kjørt i %1$s · aktiv: %2$s</string>
     <string name="battery_test_last">Siste test</string>
     <string name="battery_test_row">%1$s · %2$s mAh · %3$s mAh/t · lysstyrke %4$d</string>
-    <string name="battery_test_short">%1$s · for kort til å si noe ennå</string>
-    <string name="battery_test_charging">%1$s på lader, teller ikke</string>
-    <string name="battery_test_no_access">Trenger varseltilgang (Oppsett) for å se hvilken app som navigerer.</string>
+    <string name="battery_test_short">%1$s · for kort til å måle</string>
+    <string name="battery_test_charging">%1$s på lader (telles ikke)</string>
+    <string name="battery_test_no_access">Krever varseltilgang (under Oppsett) for å se hvilken navigasjonsapp som er aktiv.</string>
     <string name="battery_test_file">Logg: %1$s</string>
     <string name="battery_nav_none">Ingen navigasjon</string>
     <string name="battery_nav_maps">Google Maps</string>
@@ -18,11 +18,11 @@
     <string name="group_status_none">Ingen aktiv gruppe. Start en i Curveon-appen.</string>
     <string name="group_scan">Skann QR-kode</string>
     <string name="friends_title">Venner</string>
-    <string name="friends_hint">Vis koden din til en venn, eller skann vennens kode. Alt annet om venner og grupper gjør du i Curveon-appen.</string>
+    <string name="friends_hint">Vis QR-koden din til en venn eller skann deres. Administrer venner og grupper i Curveon-appen.</string>
     <string name="friends_my_code">Vis koden min</string>
     <string name="friends_share_link">Del lenke</string>
     <string name="friends_share_text">Bli vennen min i Curveon: %1$s</string>
-    <string name="friends_code_hint">Vennen din skanner denne for å bli venn med deg. Den gjelder én venn: vis en ny kode til neste.</string>
+    <string name="friends_code_hint">La vennen din skanne denne koden for å legge deg til. Koden gjelder én venn.</string>
     <string name="friends_close">Lukk</string>
     <string name="group_error_no_relay">Oppdater Curveon og Curveon Companion til nyeste versjon.</string>
     <string name="group_unnamed">Gruppe</string>
@@ -33,10 +33,10 @@
     <string name="group_removed">fjernet</string>
     <string name="group_error_invalid_invite">Den invitasjonen fungerer ikke.</string>
     <string name="group_error_expired_invite">Invitasjonen har gått ut. Be om en ny.</string>
-    <string name="group_error_already_member">Du er allerede med i den gruppa.</string>
-    <string name="group_error_other">Noe gikk galt med gruppa.</string>
-    <string name="group_error_not_linked">Åpne Curveon på nettbrettet eller denne telefonen først: vennene og gruppene dine ligger der.</string>
-    <string name="intro">Deler musikk, meldinger og anrop fra denne telefonen med Curveon-nettbrettet over Bluetooth. Koble sammen telefonen og nettbrettet i Androids Bluetooth-innstillinger først.</string>
+    <string name="group_error_already_member">Du er allerede med i denne gruppen.</string>
+    <string name="group_error_other">Noe gikk galt med gruppen.</string>
+    <string name="group_error_not_linked">Åpne Curveon på nettbrettet eller telefonen først – venner og grupper administreres der.</string>
+    <string name="intro">Deler musikk, meldinger og anrop fra denne telefonen med Curveon-nettbrettet over Bluetooth. Par enhetene i Androids Bluetooth-innstillinger først.</string>
     <string name="status_title">Status</string>
     <string name="status_service">Tjeneste</string>
     <string name="status_running">Kjører</string>

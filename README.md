@@ -108,13 +108,11 @@ there and along it.
 
 ### And a lot more
 
-- **Rides are logged by themselves:** distance, time, speeds and climb. Ride one again, or save it
-  as GPX.
-- **Stops along the way:** fuel along the route (with a warning before a long gap), or any place
+- **Automatic ride log:** distance, time, speeds and elevation gain. Ride any trip again, or export it as GPX.
+- **Stops along the way:** fuel stations along the route (with warnings before long stretches without fuel), or any place
   you pick on the map.
-- **Hold a finger on a road** to see its speed limit, number, kind and surface.
-- **Tunnels:** your position keeps moving along the route when GPS drops out, and without a route along the
-  road you ride until the first junction or roundabout.
+- **Press and hold any road** to see its speed limit, road number, type and surface.
+- **Tunnels:** your position keeps moving along the road when GPS drops out, both while navigating and in free ride (until the next junction or roundabout).
 - **Places on the map:** keep fuel, viewpoints, mountain passes, camping, cafés, ferries or
   motorcycle workshops visible all the time.
 - **Updates itself:** Curveon tells you when a new version is out and installs it for you.

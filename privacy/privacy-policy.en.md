@@ -42,12 +42,12 @@ Only when you use these functions, and only over an encrypted connection (HTTPS)
 - **New versions** (only the edition from GitHub): Curveon asks GitHub (api.github.com) whether a new version
   is out, and downloads it from there. GitHub sees your IP address.
 
-- **Bug reports and ideas** (Settings → Help, only when you tap Send). What you write, the pictures you pick, the app
-  version, the device model and Android version, and, if you leave it ticked, the start of the latest crash report go
-  through our relay (relay.curveon.no) to a **public** issue on GitHub (github.com/atlehavik/curveon), where anyone can
-  read it. The relay passes it on and keeps nothing; pictures are re-encoded first, which removes a photo's location.
-  GitHub (Microsoft) handles the issue under its own privacy terms. The app keeps the issue's number and link so you
-  can follow it, and asks GitHub how it stands when you open Help. To have an issue removed, ask us (contact below).
+- **Bug reports and ideas** (Settings → Help, only when you tap Send). Your text, selected images, app version,
+  device model and Android version — plus the start of the latest crash report if you leave it ticked — go through our
+  relay (relay.curveon.no) to a **public** GitHub issue (github.com/atlehavik/curveon), where anyone can read it. The
+  relay forwards the report without storing it; images are re-encoded first to strip location metadata. GitHub
+  (Microsoft) handles the issue under its own privacy terms. The app saves the issue number and link so you can follow
+  it, and checks its status on GitHub when you open Help. Contact us if you would like an issue removed.
 
 With downloaded maps you can ride fully offline.
 

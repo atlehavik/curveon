@@ -187,7 +187,7 @@ def scenario_crop(d):
     go_home(d, demo=False)  # with demo phone data the profile can't be set
     d.tap(["Friends", "Venner"])
     d.tap(["Me", "Meg"])
-    d.tap(["Choose from pictures", "Velg fra bilder"], wait=6)
+    d.tap(["Choose from gallery", "Velg fra galleri"], wait=6)
     photo = ["~^Photo taken", "~^Bilde tatt"]
     # Android's picker slides up: a tap while it moves misses, so tap again while the picture is still there.
     for _ in range(3):
@@ -228,7 +228,7 @@ def scenario_groupdetail(d):
     """One group opened from the list (demo phone data): the way back and the sharing switch, above the riders."""
     scenario_groups(d)
     d.tap(["Demo ride"])
-    return [["Your groups", "Gruppene dine"], ["Ride with this group", "Kjør med gruppa"]]
+    return [["Your groups", "Gruppene dine"], ["Ride with this group", "Kjør med gruppen"]]
 
 
 def scenario_friends(d):
@@ -250,7 +250,7 @@ def scenario_qrscan(d):
 def scenario_nudge(d):
     """"Get attention" on a friend (demo phone data): the demo friend sees it and tries to reach the rider back, whose alert must fit."""
     scenario_friends(d)
-    bell = ["Get attention", "Be om kontakt"]
+    bell = ["Get attention", "Gi et vink"]
     for _ in range(3):  # the friends are below the fold on a low screen (landscape, large text)
         if d.find(bell) is not None:
             break
@@ -272,7 +272,7 @@ def scenario_friendrequest(d):
         d.sh("input", "swipe", str(w * 2 // 3), str(h * 3 // 4), str(w * 2 // 3), str(h // 4), "400")
         time.sleep(1.5)
     d.tap(add, wait=2)
-    return [["~^(Request sent|Forespørsel sendt)"], ["Get attention", "Be om kontakt"]]
+    return [["~^(Request sent|Forespørsel sendt)"], ["Get attention", "Gi et vink"]]
 
 
 def scenario_selfie(d):
@@ -283,7 +283,7 @@ def scenario_selfie(d):
     d.tap(["Friends", "Venner"])
     d.tap(["Me", "Meg"])
     d.tap(["Take a picture", "Ta et bilde"], wait=4)
-    return [["Cancel", "Avbryt"], ["Switch camera", "Bytt kamera"], ["Take the picture", "Ta bildet"]]
+    return [["Cancel", "Avbryt"], ["Switch camera", "Bytt kamera"], ["Take photo", "Ta bilde"]]
 
 
 def start_demo_call(d):
@@ -362,8 +362,8 @@ def scenario_tour(d):
     if d.find(["Norsk"]) is not None:
         d.tap(["Norsk"], wait=5)  # the screen restarts in Norwegian
     d.tap(["Vis meg rundt", "Show me around"], wait=5)
-    drawn = [["Planlegg en tur", "Plan a trip"], ["Bygg den i kartet", "Build it on the map"],
-             ["Endre i kartet", "Edit on the map"], ["Endre bare en del", "Change just one part"],
+    drawn = [["Planlegg en tur", "Plan a trip"], ["Bygg ruten i kartet", "Build a route on the map"],
+             ["Endre i kartet", "Edit on the map"], ["Endre bare en delstrekning", "Edit just one section"],
              ["Lag en rundtur", "Make a roundtrip"], ["Eventyr", "Adventure"]]
     last = None
     for _ in range(24):
@@ -398,7 +398,7 @@ def scenario_triphelp(d):
     d.sh("input", "swipe", str(w // 2), str(h // 4), str(w // 2), str(h // 4), "1000")
     time.sleep(3)
     d.tap(["Go here", "Kjør hit"], wait=12)
-    steps = [["Symbolene øverst", "The symbols up here"], ["Hvor turen starter", "Where it starts"],
+    steps = [["Knappene øverst", "Top actions"], ["Hvor turen starter", "Where it starts"],
              ["Endre ruten", "Change the route"], ["Eventyr", "Adventure"], ["Velg veien", "Choose the road"]]
     must = None
     for i, step in enumerate(steps):
@@ -442,7 +442,7 @@ def scenario_ridebuttons(d):
     reveal(d, KM)
     d.tap(KM)
     reveal(d, ["Delete", "Slett"])
-    return [["Save…", "Lagre…"], ["Send to tablet", "Send til nettbrettet"], ["Share with the group", "Del med gruppa"],
+    return [["Save…", "Lagre…"], ["Send to tablet", "Send til nettbrettet"], ["Share with group", "Del med gruppen"],
             ["Delete", "Slett"]]
 
 
@@ -453,7 +453,7 @@ def scenario_gpxmenu(d):
     d.tap(["GPX"])
     reveal(d, ["More", "Mer"])
     d.tap(["More", "Mer"], wait=1.5)
-    return [["Share with the group", "Del med gruppa"], ["Add to Planned", "Legg i Planlagte"], ["Delete", "Slett"]]
+    return [["Share with group", "Del med gruppen"], ["Add to Planned", "Legg i Planlagte"], ["Delete", "Slett"]]
 
 
 def scenario_plannedmenu(d):
@@ -465,7 +465,7 @@ def scenario_plannedmenu(d):
     d.tap(KM)
     reveal(d, ["More", "Mer"])
     d.tap(["More", "Mer"], wait=1.5)
-    return [["Send to tablet", "Send til nettbrettet"], ["Share with the group", "Del med gruppa"]]
+    return [["Send to tablet", "Send til nettbrettet"], ["Share with group", "Del med gruppen"]]
 
 
 # The Where to? button, the dialog's Close and its microphone in Norwegian and in the languages with the longest
@@ -531,7 +531,7 @@ def scenario_whereto(d):
 
 REMOTE_ROWS = [["=Opp", "=Up"], ["=Ned", "=Down"], ["=Venstre", "=Left"], ["=Høyre", "=Right"], ["=OK"], ["=Tilbake", "=Back"],
                ["=Zoom inn", "=Zoom in"], ["=Zoom ut", "=Zoom out"], ["=Meny", "=Menu"], ["=Følg meg", "=Follow me"],
-               ["=Hvor skal du?", "=Where to?"], ["=Si hvor du vil", "=Say where to go"], ["=Kartretning", "=Map direction"],
+               ["=Hvor skal du?", "=Where to?"], ["=Talesøk", "=Voice search"], ["=Kartretning", "=Map direction"],
                ["=Kart eller dashbord", "=Map or dashboard"], ["=Neste sang", "=Next song"], ["=Forrige sang", "=Previous song"],
                ["=Spill av eller pause", "=Play or pause"], ["=Svar eller legg på", "=Answer or hang up"]]
 
