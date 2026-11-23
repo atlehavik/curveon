@@ -215,8 +215,25 @@ class RoundtripPlanner(
     private fun routeCircle(start: LatLon, radius: Double, directionDeg: Double, options: RouteOptions): Route {
         val center = Geo.destination(start, directionDeg, radius)
         val startAngle = directionDeg + 180.0
-        val vias = (1..VIA_POINTS).map { k -> Geo.destination(center, startAngle + k * 360.0 / (VIA_POINTS + 1), radius) }
+        val raw = (1..VIA_POINTS).map { k -> Geo.destination(center, startAngle + k * 360.0 / (VIA_POINTS + 1), radius) }
+        val vias = connectedVias(start, raw, options, VIA_CATCHING_RANGE_M)
         return routeLoop(start, vias, options, VIA_CATCHING_RANGE_M, withFerry = { ferryLoops += Loop(radius, directionDeg, it) })
+    }
+
+    /**
+     * Drops circle vias that landed out at sea (where the leg arriving at a via and the leg leaving it
+     * snap to different shores). Keeps at least 2 vias, otherwise the circle lies mostly over sea.
+     */
+    private fun connectedVias(start: LatLon, vias: List<LatLon>, options: RouteOptions, catchingRange: Double): List<LatLon> {
+        val pts = listOf(start) + vias + start
+        val routed = pts.zipWithNext { a, b -> runCatching { leg(a, b, options, catchingRange).get() }.getOrNull() }
+        val keep = vias.filterIndexed { i, _ ->
+            val a = routed[i]; val b = routed[i + 1]
+            a != null && b != null &&
+                Geo.distance(a.points.last().lat, a.points.last().lon, b.points.first().lat, b.points.first().lon) <= MAX_LEG_GAP_M
+        }
+        if (keep.size < 2) throw RoutingException("Too many vias over sea")
+        return keep
     }
 
     /**
@@ -361,6 +378,7 @@ class RoundtripPlanner(
                 engine.route(listOf(ends[i], ends[i + 1]), options, catching, PLANNING_FERRY_COST, noGo = noGo)
             }.getOrNull() ?: continue
             val tried = legs.toMutableList().also { it[i] = alt }
+            if (!legsMeet(tried)) continue
             val joined = Routes.joinLegs(tried)
             val o = overlapFraction(joined)
             // Never by riding into a dead end and back instead (that is road twice too, and the worst kind).
@@ -378,16 +396,27 @@ class RoundtripPlanner(
     private fun routeVias(start: LatLon, vias: List<LatLon>, options: RouteOptions, catchingRange: Double): Route {
         val t0 = System.nanoTime()
         val futures = (listOf(start) + vias + start).zipWithNext { a, b -> leg(a, b, options, catchingRange) }
-        val route = Routes.joinLegs(futures.map {
+        val legRoutes = futures.map {
             try {
                 it.get()
             } catch (e: ExecutionException) {
                 throw e.cause as? RoutingException ?: RoutingException(e.cause?.message ?: "Routing failed")
             }
-        })
+        }
+        // A via out at sea or between islands can snap to one shore on the leg in and another shore
+        // on the leg out; never glue disconnected legs together across open water.
+        if (!legsMeet(legRoutes)) throw RoutingException("Loop legs do not meet")
+        val route = Routes.joinLegs(legRoutes)
         log("    loop %d vias -> %.0f km ferries=%d (%.1f s)".format(vias.size, route.distanceMeters / 1000, route.ferryCount, (System.nanoTime() - t0) / 1e9))
         return route
     }
+
+    private fun legsMeet(legs: List<Route>): Boolean =
+        legs.zipWithNext().all { (a, b) ->
+            val end = a.points.last()
+            val start = b.points.first()
+            Geo.distance(end.lat, end.lon, start.lat, start.lon) <= MAX_LEG_GAP_M
+        }
 
     private fun leg(a: LatLon, b: LatLon, options: RouteOptions, catchingRange: Double): Future<Route> =
         legs.computeIfAbsent(Leg(a, b, catchingRange, options)) { leg ->
@@ -397,18 +426,23 @@ class RoundtripPlanner(
         }
 
     /**
-     * Drops vias that can't be reached sensibly: both legs touching one fail, or go far round
-     * (a road on an island, or one cut off from the rest, only reached by a long way and ferries).
-     * Keeps at least two.
+     * Drops vias that can't be reached sensibly: both legs touching one fail, don't meet at the
+     * same shore, or go far round (a road on an island, or one cut off from the rest, only reached
+     * by a long way and ferries). Keeps at least two.
      */
     private fun reachableVias(start: LatLon, vias: List<LatLon>, options: RouteOptions, catchingRange: Double): List<LatLon> {
         val pts = listOf(start) + vias + start
-        val bad = pts.zipWithNext { a, b ->
-            val r = runCatching { leg(a, b, options, catchingRange).get() }.getOrNull()
-            r == null || (r.distanceMeters > 30_000 && r.distanceMeters > Geo.distance(a, b) * 4) ||
+        val routed = pts.zipWithNext { a, b -> runCatching { leg(a, b, options, catchingRange).get() }.getOrNull() }
+        val bad = routed.mapIndexed { i, r ->
+            r == null || (r.distanceMeters > 30_000 && r.distanceMeters > Geo.distance(pts[i], pts[i + 1]) * 4) ||
                 (options.avoidFerries && r.ferryCount > 0)
         }
-        val keep = vias.filterIndexed { i, _ -> !(bad[i] && bad[i + 1]) }
+        val keep = vias.filterIndexed { i, _ ->
+            val a = routed[i]; val b = routed[i + 1]
+            val disconnected = a != null && b != null &&
+                Geo.distance(a.points.last().lat, a.points.last().lon, b.points.first().lat, b.points.first().lon) > MAX_LEG_GAP_M
+            !disconnected && !(bad[i] && bad[i + 1])
+        }
         if (keep.size < vias.size) log("    dropped ${vias.size - keep.size} unreachable vias")
         return if (keep.size >= 2) keep else vias
     }
@@ -521,6 +555,8 @@ class RoundtripPlanner(
         /** Smaller than this round (a tap or a scribble) is no area to ride in. */
         private const val MIN_AREA_PERIMETER_M = 8_000.0
         private const val VIA_CATCHING_RANGE_M = 5000.0
+        /** Consecutive loop legs must meet within this distance; wider means a sea via snapped to different shores. */
+        private const val MAX_LEG_GAP_M = 200.0
         /** Vias moved onto a junction are already on the road. */
         private const val FIXED_VIA_CATCHING_RANGE_M = 100.0
         private const val SPUR_FIX_PASSES = 3

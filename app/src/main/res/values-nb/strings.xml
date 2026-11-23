@@ -456,7 +456,7 @@
     <string name="loop_max_km">Maks %1$d km</string>
     <string name="loop_redraw">Tegn på nytt</string>
     <string name="roundtrip_draw_km">Ca. %1$d km rundtur</string>
-    <string name="roundtrip_draw_hint">Tegn området du vil kjøre i med én finger. Bruk to fingre for å flytte kartet.</string>
+    <string name="roundtrip_draw_hint">Tegn et område med én finger. Bruk to fingre for å flytte kartet.</string>
     <string name="roundtrip_search_subtitle">Tegn området du vil kjøre i på kartet</string>
     <string name="adventure_chip">Eventyr</string>
     <string name="adventure_draw_hint">Tegn området du vil kjøre gjennom på veien. Bruk to fingre for å flytte kartet.</string>

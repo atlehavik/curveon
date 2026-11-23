@@ -53,5 +53,7 @@ class OwnRoadTest {
             Geo.distance(home, LatLon(last.lat, last.lon)), r.points.takeLast(12).map { it.highway }.distinct()))
         assertTrue(Geo.distance(home, LatLon(last.lat, last.lon)) < 35)
         assertPathsOnlyAtEnds(r)
+        assertTrue("ferries preserved across OwnRoad.head", r.ferryCount >= 1)
+        assertTrue("ascent preserved across OwnRoad.head", r.ascentMeters > 100)
     }
 }

@@ -297,7 +297,7 @@ class WeatherController(
         val from = start ?: position() ?: return null
         val now = System.currentTimeMillis()
         val length = (km ?: DEFAULT_LOOP_KM).toDouble()
-        val loops = WeatherScore.DIRECTIONS.map { it to WeatherScore.loop(from, length, it, length / KMH, now) }
+        val loops = landDirections(from, length, now, landMask)
         val all = runCatching { service.hours(loops.flatMap { it.second }, now) }.getOrElse { if (it is kotlinx.coroutines.CancellationException) throw it; return null }
         var k = 0
         return loops.map { (dir, pts) -> DirectionWeather(dir, WeatherScore.trip(pts, all.subList(k, k + pts.size).also { k += pts.size })) }
@@ -348,6 +348,18 @@ class WeatherController(
                 symbol.endsWith("_night") -> MapWeather.Kind.MOON
                 else -> MapWeather.Kind.SUN
             }
+        }
+
+        /**
+         * Candidate directions for "Good weather – pick for me": leaves out directions whose loop lies mostly over
+         * open sea (otherwise mild sea air beats a chilly inland valley and sends the loop out into the ocean).
+         * Falls back to all directions if [land] is missing or none qualify (a tiny island).
+         */
+        internal fun landDirections(from: LatLon, km: Double, now: Long, land: LandMask?): List<Pair<Double, List<WeatherPoint>>> {
+            val all = WeatherScore.DIRECTIONS.map { it to WeatherScore.loop(from, km, it, km / KMH, now) }
+            if (land == null) return all
+            val onLand = all.filter { (_, pts) -> pts.count { land.isLand(it.point.lat, it.point.lon) } * 2 >= pts.size }
+            return onLand.ifEmpty { all }
         }
 
         internal data class MapGrid(val places: List<LatLon>, val apartM: Double, val middle: LatLon)

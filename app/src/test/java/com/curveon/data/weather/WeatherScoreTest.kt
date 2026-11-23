@@ -168,4 +168,13 @@ class WeatherMapGridTest {
         listOf(57.9 to 8.5, 58.5 to 3.0, 65.0 to 5.0, 57.0 to 19.0, 45.5 to -4.0, 58.9 to 13.3)
             .forEach { (lat, lon) -> assertFalse("$lat $lon", land.isLand(lat, lon)) }
     }
+
+    @Test fun weatherLoopSkipsOpenSeaDirectionsOnTheCoast() {
+        // From Bømlo facing the North Sea, W/SW/NW loops lie out at sea while inland directions stay on land.
+        val dirs = WeatherController.landDirections(LatLon(59.794218, 5.144344), 150.0, 0L, land).map { it.first }
+        assertTrue("expected inland directions, got $dirs", dirs.containsAll(listOf(45.0, 90.0, 135.0)))
+        assertFalse("west is open sea: $dirs", 270.0 in dirs)
+        assertFalse("northwest is open sea: $dirs", 315.0 in dirs)
+        assertFalse("southwest is open sea: $dirs", 225.0 in dirs)
+    }
 }

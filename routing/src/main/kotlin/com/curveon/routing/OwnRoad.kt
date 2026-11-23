@@ -24,24 +24,32 @@ internal class OwnRoad(private val route: (List<LatLon>, Boolean) -> Route) {
 
     private fun fromStart(p: LatLon, r: Route, firstVia: LatLon?): Route? {
         val start = r.points.first().at()
-        if (Geo.distance(p, start) < MIN_GAP_M) return null
+        val gap = Geo.distance(p, start)
+        if (gap < MIN_GAP_M || gap > MAX_GAP_M) return null
         // Join the route a little way on (before the first stop), so the leg can leave the place
         // whichever way it really can.
         val joinAt = listOfNotNull(JOIN_M, r.distanceMeters, firstVia?.let { RouteCorridor(r).alongDistance(it.lat, it.lon, 2_000.0) }).min()
         val leg = route(listOf(p, Routes.pointAt(r, joinAt).first), true)
-        // Only worth it if it really starts nearer the place.
-        if (Geo.distance(p, leg.points.first().at()) >= Geo.distance(p, start) - 1) return null
-        return Routes.joinLegs(if (joinAt < r.distanceMeters - 1) listOf(leg, Routes.slice(r, joinAt)) else listOf(leg))
+        // Only worth it if it really starts nearer the place and rejoins cleanly.
+        if (Geo.distance(p, leg.points.first().at()) >= gap - 1) return null
+        if (joinAt >= r.distanceMeters - 1) return leg
+        val tail = Routes.slice(r, joinAt)
+        if (Geo.distance(leg.points.last().at(), tail.points.first().at()) > JOIN_TOLERANCE_M) return null
+        return Routes.joinLegs(listOf(leg, tail))
     }
 
     private fun toEnd(p: LatLon, r: Route, lastVia: LatLon?): Route? {
         val finish = r.points.last().at()
-        if (Geo.distance(p, finish) < MIN_GAP_M) return null
+        val gap = Geo.distance(p, finish)
+        if (gap < MIN_GAP_M || gap > MAX_GAP_M) return null
         val viaAlong = lastVia?.let { RouteCorridor(r).alongDistance(it.lat, it.lon, 2_000.0) } ?: 0.0
         val leaveAt = maxOf(r.distanceMeters - JOIN_M, viaAlong, 0.0)
         val leg = route(listOf(if (leaveAt > 1) Routes.pointAt(r, leaveAt).first else r.points.first().at(), p), true)
-        if (Geo.distance(p, leg.points.last().at()) >= Geo.distance(p, finish) - 1) return null
-        return Routes.joinLegs(if (leaveAt > 1) listOf(head(r, r.points.indexOfLast { it.distanceFromStart <= leaveAt }), leg) else listOf(leg))
+        if (Geo.distance(p, leg.points.last().at()) >= gap - 1) return null
+        if (leaveAt <= 1) return leg
+        val prefix = head(r, r.points.indexOfLast { it.distanceFromStart <= leaveAt })
+        if (Geo.distance(prefix.points.last().at(), leg.points.first().at()) > JOIN_TOLERANCE_M) return null
+        return Routes.joinLegs(listOf(prefix, leg))
     }
 
     /** The first [last] + 1 points of [r] as a route of its own. */
@@ -49,15 +57,25 @@ internal class OwnRoad(private val route: (List<LatLon>, Boolean) -> Route) {
         val points = r.points.subList(0, last + 1)
         val end = points.last()
         val maneuvers = r.maneuvers.filter { it.pointIndex < last && it.type != ManeuverType.ARRIVE } + Maneuver(ManeuverType.ARRIVE, last, end.distanceFromStart)
+        var ascent = 0.0
+        var unpaved = 0.0
+        var ferries = 0
+        for (i in 1 until points.size) {
+            val a = points[i - 1]
+            val b = points[i]
+            if (b.elevation > a.elevation) ascent += b.elevation - a.elevation
+            if (b.unpaved) unpaved += b.distanceFromStart - a.distanceFromStart
+            if (b.ferry && !a.ferry) ferries++
+        }
         return Route(
             points = points,
             maneuvers = maneuvers,
             distanceMeters = end.distanceFromStart,
             durationSeconds = end.secondsFromStart,
-            ascentMeters = 0.0,
+            ascentMeters = ascent,
             curviness = Curviness.score(points, maneuvers),
-            unpavedMeters = points.zipWithNext().filter { it.second.unpaved }.sumOf { it.second.distanceFromStart - it.first.distanceFromStart },
-            ferryCount = 0
+            unpavedMeters = unpaved,
+            ferryCount = ferries
         )
     }
 
@@ -66,8 +84,10 @@ internal class OwnRoad(private val route: (List<LatLon>, Boolean) -> Route) {
     companion object {
         /** Ways that are never ridden, except to get away from or to a place the map cuts off. */
         val PATHS = setOf("cycleway", "footway", "path", "pedestrian", "bridleway", "steps")
-        /** The route starts this far from the asked place before we look again. */
+        /** The route starts this far from the asked place before we look again; further than [MAX_GAP_M] is sea or wilderness, not a cut-off road. */
         private const val MIN_GAP_M = 20.0
+        private const val MAX_GAP_M = 2_000.0
         private const val JOIN_M = 2_000.0
+        private const val JOIN_TOLERANCE_M = 100.0
     }
 }

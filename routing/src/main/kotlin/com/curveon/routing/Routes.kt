@@ -141,6 +141,7 @@ object Routes {
                 it.copy(pointIndex = it.pointIndex + shift, distanceFromStart = it.distanceFromStart + offsetD)
             }
         val total = offsetD + b.distanceMeters
+        val sameFerryJoin = a.points.last().ferry && b.points.getOrNull(1)?.ferry == true
         return Route(
             points = points,
             maneuvers = maneuvers,
@@ -149,7 +150,7 @@ object Routes {
             ascentMeters = a.ascentMeters + b.ascentMeters,
             curviness = if (total > 0) ((a.curviness * a.distanceMeters + b.curviness * b.distanceMeters) / total).toInt() else 0,
             unpavedMeters = a.unpavedMeters + b.unpavedMeters,
-            ferryCount = a.ferryCount + b.ferryCount
+            ferryCount = a.ferryCount + b.ferryCount - if (sameFerryJoin) 1 else 0
         )
     }
 
