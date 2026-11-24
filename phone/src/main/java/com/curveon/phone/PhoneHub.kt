@@ -73,16 +73,28 @@ object PhoneHub {
 
     /** Start sending to [sink], beginning with what is showing right now. */
     fun addTablet(sink: (Message) -> Unit, name: String) {
+        val wasEmpty = tablets.isEmpty()
         tablets += sink
         update { it.copy(tabletName = name, lastEvent = "Connected to $name") }
-        snapshot().forEach { runCatching { sink(it) } }
+        // While nobody listened the notification listener slept, so ask it for fresh state instead of sending stale cache.
+        if (wasEmpty && listener != null) listener?.syncNow()
+        else snapshot().forEach { runCatching { sink(it) } }
         GroupHub.sendSnapshot(sink)
         GroupHub.tabletsChanged()
     }
 
     fun removeTablet(sink: (Message) -> Unit) {
         tablets -= sink
-        if (tablets.isEmpty()) update { it.copy(tabletName = null, lastEvent = "Tablet disconnected") }
+        if (tablets.isEmpty()) {
+            update { it.copy(tabletName = null, lastEvent = "Tablet disconnected") }
+            if (listener != null) {
+                notifications.clear()
+                media = null
+                art = null
+                mediaSources = null
+                listener?.onIdle()
+            }
+        }
         GroupHub.tabletsChanged()
     }
 

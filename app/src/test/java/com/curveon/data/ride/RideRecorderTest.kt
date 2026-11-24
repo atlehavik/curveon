@@ -145,50 +145,60 @@ class RideRecorderTest {
     }
 
     @Test
-    fun `riding again after a finished ride offers to go on with it, and going on joins the two`() {
+    fun `riding again within the break window continues the last ride automatically`() {
         val lat = ride(120)
+        recorder.setId(7L)
         standStill(RideRecorder.END_AFTER_STOP_MS + 1000, lat)
-        val first = recorder.finish()!!.copy(id = 7)
-        assertNull(recorder.resumeOffer)
-        clock += 30 * 60_000L
-        ride(30, lat)
-        assertEquals(first.startMs, recorder.resumeOffer!!.startMs)
-        val merged = recorder.resume(first)!!
-        assertEquals(7L, merged.id)
-        assertEquals(first.startMs, merged.startMs)
-        assertTrue(merged.distanceMeters > first.distanceMeters)
-        assertNull(recorder.resumeOffer)
-        ride(10, lat)
-        assertEquals(7L, recorder.current!!.id)
+        val first = recorder.finish()!!
+        clock += 15 * 60_000L
+        var resumed = false
+        var curLat = lat
+        repeat(15) {
+            clock += 1000
+            curLat += 20.0 / 111_320
+            if (recorder.onFix(GpsFix(curLat, 10.0, 100.0, 20f, 0f, 5f, clock), 72f) == RideRecorder.Event.RESUMED) resumed = true
+        }
+        assertTrue(resumed)
+        val continued = recorder.current!!
+        assertEquals(7L, continued.id)
+        assertEquals(first.startMs, continued.startMs)
+        assertTrue(continued.distanceMeters > first.distanceMeters)
     }
 
     @Test
-    fun `a new ride, a hand stop and a long wait are not offered`() {
+    fun `a hand stop, a long break, and waking hours later start a new ride`() {
         var lat = ride(120)
-        standStill(RideRecorder.END_AFTER_STOP_MS + 1000, lat)
-        recorder.finish()
-        clock += 30 * 60_000L
-        lat = ride(90, lat)
-        recorder.declineResume()
-        assertNull(recorder.resumeOffer)
+        recorder.setId(7L)
         assertNotNull(recorder.stop())
         standStill(5_000, lat); standStill(5_000, lat)
-        lat = ride(60, lat)
-        assertNull(recorder.resumeOffer)
+        lat = ride(90, lat)
+        assertEquals(0L, recorder.current!!.id) // hand-stopped ride is not continued
+
+        // Leaving the app while riding and reopening hours later: finish() stamps the real stop time, not now().
+        recorder.setId(8L)
+        clock += 6 * 60 * 60_000L
+        assertTrue(recorder.over())
+        assertNotNull(recorder.finish())
+        lat = ride(90, lat)
+        assertEquals(0L, recorder.current!!.id) // must be a brand-new ride, not continuing the one from 6 h ago
+
+        // A break longer than RESUME_WINDOW_MS also starts a new ride.
+        recorder.setId(9L)
         standStill(RideRecorder.END_AFTER_STOP_MS + 1000, lat)
-        recorder.finish()
+        assertNotNull(recorder.finish())
         clock += RideRecorder.RESUME_WINDOW_MS + 1000
         ride(30, lat)
-        assertNull(recorder.resumeOffer)
+        assertEquals(0L, recorder.current!!.id)
     }
 
     @Test
-    fun `after a restart the ride stored last is offered to go on with, if it was a short while ago`() {
+    fun `after a restart the ride stored last is continued automatically if it was a short while ago`() {
         clock = 10 * 60 * 60_000L
         val stored = Ride(id = 42, title = "Before", startMs = clock - 3_600_000, endMs = clock - 10 * 60_000, distanceMeters = 30_000.0)
         recorder.remember(stored)
         ride(15)
-        assertEquals(42L, recorder.resumeOffer?.id)
+        assertEquals(42L, recorder.current?.id)
+        assertEquals(stored.startMs, recorder.current?.startMs)
     }
 
     @Test
@@ -197,6 +207,6 @@ class RideRecorderTest {
         recorder.remember(Ride(id = 42, startMs = 0, endMs = clock - RideRecorder.RESUME_WINDOW_MS - 60_000, distanceMeters = 30_000.0))
         ride(15)
         assertNotNull(recorder.current)
-        assertNull(recorder.resumeOffer)
+        assertEquals(0L, recorder.current?.id)
     }
 }

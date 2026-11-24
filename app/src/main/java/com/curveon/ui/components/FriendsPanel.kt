@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.curveon.R
 import com.curveon.data.groups.GroupManager
 import com.curveon.data.groups.GroupRider
@@ -82,8 +83,13 @@ fun FriendsDialog(manager: GroupManager, onDismiss: () -> Unit) {
 private fun MeTab(manager: GroupManager) {
     val profile by manager.profile.collectAsStateWithLifecycle()
     val settings by manager.settings.collectAsStateWithLifecycle()
-    // While Me is open, listen to the rider's other device: a name or picture changed there shows up here within seconds.
-    LaunchedEffect(Unit) { while (true) { manager.watchSelf(); kotlinx.coroutines.delay(60_000) } }
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    // While Me is open and on screen, listen to the rider's other device: a name or picture changed there shows up here within seconds.
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            while (true) { manager.watchSelf(); kotlinx.coroutines.delay(60_000) }
+        }
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         val p = profile
         if (p == null) Text(stringResource(R.string.friends_no_phone), color = TextSecondary, fontSize = 14.sp)

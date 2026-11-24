@@ -38,13 +38,33 @@ class CurveonNotificationListener : NotificationListenerService() {
 
     override fun onListenerConnected() {
         PhoneHub.listener = this
-        activeNotifications?.forEach(::onNotificationPosted)
+        if (PhoneHub.hasTablet) activeNotifications?.forEach(::onNotificationPosted)
         sessionManager = getSystemService(MediaSessionManager::class.java)?.also { msm ->
             val me = ComponentName(this, CurveonNotificationListener::class.java)
             msm.addOnActiveSessionsChangedListener(sessionsListener, me, main)
             onSessionsChanged(msm.getActiveSessions(me))
         }
         PhoneHub.update { it.copy(lastEvent = "Notification access active") }
+    }
+
+    /** A tablet (or Curveon's own screen) just started listening: push current notifications, media apps and now-playing. */
+    fun syncNow() = main.post {
+        if (!PhoneHub.hasTablet) return@post
+        synchronized(active) { active.clear() }
+        lastSources = null
+        lastArtId = null
+        runCatching { activeNotifications }.getOrNull()?.forEach(::onNotificationPosted)
+        pushSources()
+        pushMedia()
+    }
+
+    /** Nobody is listening: stop periodic media pushes and drop cached notifications until a screen or tablet comes back. */
+    fun onIdle() = main.post {
+        if (PhoneHub.hasTablet) return@post
+        main.removeCallbacks(periodicPush)
+        synchronized(active) { active.clear() }
+        lastSources = null
+        lastArtId = null
     }
 
     override fun onListenerDisconnected() {
@@ -62,6 +82,7 @@ class CurveonNotificationListener : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         NavWatch.onPosted(sbn)
         if (isEchoOfReply(sbn)) { dismiss(sbn.key); return }
+        if (!PhoneHub.hasTablet) return
         val message = runCatching { toMessage(sbn) }.onFailure { Log.w(TAG, "Skipping ${sbn.key}", it) }.getOrNull() ?: return
         synchronized(active) { active[sbn.key] = sbn }
         PhoneHub.postNotification(message)
@@ -69,6 +90,7 @@ class CurveonNotificationListener : NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         NavWatch.onRemoved(sbn)
+        if (!PhoneHub.hasTablet) return
         synchronized(active) { active.remove(sbn.key) }
         PhoneHub.removeNotification(sbn.key)
     }
@@ -240,7 +262,8 @@ class CurveonNotificationListener : NotificationListenerService() {
         override fun onPlaybackStateChanged(state: PlaybackState?) = pushMedia()
         override fun onSessionDestroyed() {
             controller = null
-            PhoneHub.setMedia(null, null)
+            main.removeCallbacks(periodicPush)
+            if (PhoneHub.hasTablet) PhoneHub.setMedia(null, null)
         }
     }
 
@@ -280,6 +303,7 @@ class CurveonNotificationListener : NotificationListenerService() {
     private var lastSources: List<Message.MediaSource>? = null
 
     private fun pushSources() {
+        if (!PhoneHub.hasTablet) return
         val list = sessions.distinctBy { it.packageName }.map { c ->
             Message.MediaSource(
                 c.packageName, appLabel(c.packageName), c.playbackState?.state == PlaybackState.STATE_PLAYING,
@@ -318,6 +342,7 @@ class CurveonNotificationListener : NotificationListenerService() {
 
     private fun pushMedia() {
         main.removeCallbacks(periodicPush)
+        if (!PhoneHub.hasTablet) return
         val c = controller ?: return PhoneHub.setMedia(null, null)
         val md = c.metadata
         val ps = c.playbackState

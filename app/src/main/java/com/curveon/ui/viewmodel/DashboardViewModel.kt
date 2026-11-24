@@ -1066,18 +1066,34 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Where the towns are counted: one thread of its own (set to low priority while counting). */
     private val townCounting = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "towns").apply { isDaemon = true } }.asCoroutineDispatcher()
+    private val awakeLock = Object()
 
     /** The towns (CityAreas squares), counted in the background once the map is up; null until then or when off. */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val townSquares: StateFlow<Set<Long>?> = combine(quietTowns, mapVersion) { on, v -> on to v }
         .flatMapLatest { (on, _) ->
             if (!on) flowOf(null) else channelFlow<Set<Long>?> {
+                untilAwake()
                 // After the start, so the first map and position come first; on a thread of low priority, so the map stays quick.
                 delay(TOWNS_AFTER_START_MS)
+                untilAwake()
                 val here = currentLocation.value.let { com.curveon.routing.LatLon(it.latitude, it.longitude) }
-                withContext(townCounting) {
-                    android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
-                    runCatching { navigator.townSquares(here) { trySend(it) } }.onFailure { android.util.Log.w("Curveon", "Towns not counted", it) }
+                val job = coroutineContext[Job]!!
+                val wakeup = job.invokeOnCompletion { synchronized(awakeLock) { awakeLock.notifyAll() } }
+                try {
+                    withContext(townCounting) {
+                        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+                        val pause = {
+                            synchronized(awakeLock) {
+                                while (!awake.value && job.isActive) awakeLock.wait(1000)
+                            }
+                            if (!job.isActive) throw kotlinx.coroutines.CancellationException()
+                        }
+                        runCatching { navigator.townSquares(here, pause) { trySend(it) } }
+                            .onFailure { if (it !is kotlinx.coroutines.CancellationException) android.util.Log.w("Curveon", "Towns not counted", it) }
+                    }
+                } finally {
+                    wakeup.dispose()
                 }
             }
         }
@@ -1136,7 +1152,30 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _currentRide = MutableStateFlow<Ride?>(null)
     val currentRide: StateFlow<Ride?> = _currentRide.asStateFlow()
 
+    /** Stops background ride GPS as soon as bike/charger power goes off while sleeping. */
+    private val powerReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
+            if (intent.action == android.content.Intent.ACTION_POWER_DISCONNECTED && !awake.value && gpsJob != null) {
+                NavTrace.event("power lost while asleep")
+                saveRide(finish = false)
+                com.curveon.data.ride.RideCheck.cancel(getApplication())
+                stopGps()
+            }
+        }
+    }
+
+    private fun isPluggedIn(): Boolean =
+        androidx.core.content.ContextCompat.registerReceiver(
+            getApplication(), null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        )?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0)?.let { it != 0 } ?: false
+
     init {
+        androidx.core.content.ContextCompat.registerReceiver(
+            application, powerReceiver,
+            android.content.IntentFilter(android.content.Intent.ACTION_POWER_DISCONNECTED),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        )
         // Create the data folders up front so they exist (and are owned by the app) when the
         // rider connects the tablet over USB to copy maps, routing data and the search index.
         offlineMaps.mapsDir; navigator.routingData.segmentsDir; placeSearch.indexDir
@@ -1299,6 +1338,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     override fun onCleared() {
+        runCatching { getApplication<Application>().unregisterReceiver(powerReceiver) }
+        com.curveon.data.ride.RideCheck.cancel(getApplication())
         obd.use(null)
         webPlanner.webPlanHidden()
         phoneCompanion.shutdown()
@@ -1320,7 +1361,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun watchRideEnd() = viewModelScope.launch {
         com.curveon.data.ride.RideCheck.ticks.collect {
             checkRideEnd()
-            if (rideRecorder.current != null) com.curveon.data.ride.RideCheck.next(getApplication())
+            if (!awake.value && rideRecorder.current != null && isPluggedIn()) {
+                com.curveon.data.ride.RideCheck.next(getApplication())
+            }
         }
     }
 
@@ -1333,11 +1376,19 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun sleep() {
         NavTrace.event("asleep")
         awake.value = false
+        navigator.pausePrefetch()
+        webPlanner.pause()
         phoneCompanion.pause()
         obd.use(null)
         saveRide(finish = false)
         NavTrace.flush()
-        if (rideRecorder.current == null) stopGps()
+        // On external power (bike-mounted tablet): keep logging an ongoing ride in the background; on battery, stop GPS at once.
+        if (rideRecorder.current != null && isPluggedIn()) {
+            com.curveon.data.ride.RideCheck.next(getApplication())
+        } else {
+            com.curveon.data.ride.RideCheck.cancel(getApplication())
+            stopGps()
+        }
     }
 
     private fun stopGps() {
@@ -1349,9 +1400,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun wake() {
         NavTrace.event("awake")
         awake.value = true
+        synchronized(awakeLock) { awakeLock.notifyAll() }
+        com.curveon.data.ride.RideCheck.cancel(getApplication())
         checkRideEnd()
         if (androidx.core.content.ContextCompat.checkSelfPermission(getApplication(), android.Manifest.permission.ACCESS_FINE_LOCATION) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED) startGps()
+        webPlanner.resume()
         phoneCompanion.restart()
         connectObd()
     }
@@ -1678,15 +1732,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (!_logRides.value && rideRecorder.current == null) return
         when (rideRecorder.onFix(fix, tripTracker.speedKmh)) {
             RideRecorder.Event.STARTED -> {
-                _resumeOffer.value = rideRecorder.resumeOffer
                 val started = rideRecorder.current!!
                 viewModelScope.launch {
                     val id = rideDao.insert(started)
-                    // Picked up an earlier ride meanwhile: this row is not needed (the earlier one carries on).
                     if (rideRecorder.current?.startMs == started.startMs && rideRecorder.current?.id == 0L) {
                         rideRecorder.setId(id)
                         placeName(fix.latitude, fix.longitude)?.let { rideRecorder.setTitle(it) }
                     } else rideDao.delete(id)
+                }
+            }
+            RideRecorder.Event.RESUMED -> {
+                val resumed = rideRecorder.current!!
+                viewModelScope.launch(Dispatchers.IO) {
+                    if (resumed.id > 0L) {
+                        rideDao.update(resumed)
+                        autoSavedGpx.remove(resumed.id)?.let { repository.deleteGpxTrack(it) }
+                    } else {
+                        val id = rideDao.insert(resumed)
+                        if (rideRecorder.current?.startMs == resumed.startMs && rideRecorder.current?.id == 0L) rideRecorder.setId(id)
+                    }
                 }
             }
             RideRecorder.Event.UPDATED -> saveRide(finish = false)
@@ -1697,13 +1761,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun rideChanged() {
-        val wasRecording = _currentRide.value != null
         _currentRide.value = rideRecorder.current
-        val recording = rideRecorder.current != null
-        if (recording && !wasRecording) com.curveon.data.ride.RideCheck.next(getApplication())
-        if (!recording) {
-            _resumeOffer.value = null
-            if (wasRecording) com.curveon.data.ride.RideCheck.cancel(getApplication())
+        if (rideRecorder.current == null) {
+            com.curveon.data.ride.RideCheck.cancel(getApplication())
             if (!awake.value) stopGps() // the ride was what kept the GPS on out of sight
         }
     }
@@ -1714,32 +1774,8 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         rideChanged()
     }
 
-    /** The ride that finished a short while ago, while a new one is under way: the rider is asked whether to go on with it. */
-    private val _resumeOffer = MutableStateFlow<Ride?>(null)
-    val resumeOffer: StateFlow<Ride?> = _resumeOffer.asStateFlow()
-
     /** The GPX copy made of a finished ride, by ride: replaced when the ride is picked up again and finishes later. */
     private val autoSavedGpx = java.util.concurrent.ConcurrentHashMap<Long, Long>()
-
-    /** Goes on logging the ride that finished a short while ago, with what has been ridden since added to it. */
-    fun resumeRide() {
-        val prev = _resumeOffer.value ?: return
-        _resumeOffer.value = null
-        val orphanId = rideRecorder.current?.id?.takeIf { it > 0L && it != prev.id }
-        val merged = rideRecorder.resume(prev) ?: return
-        _currentRide.value = merged
-        viewModelScope.launch(Dispatchers.IO) {
-            rideDao.update(merged)
-            if (orphanId != null) rideDao.delete(orphanId)
-            autoSavedGpx.remove(prev.id)?.let { repository.deleteGpxTrack(it) }
-        }
-    }
-
-    /** A new ride: the earlier one stays finished as it is. */
-    fun startNewRide() {
-        _resumeOffer.value = null
-        rideRecorder.declineResume()
-    }
 
     /** The rider ends the ride under way now, rather than waiting for the long stop. */
     fun stopRide() {

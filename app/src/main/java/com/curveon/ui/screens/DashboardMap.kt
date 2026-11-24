@@ -381,7 +381,6 @@ private fun rememberGroupRiders(viewModel: DashboardViewModel, groupTick: Int): 
 @Composable
 private fun BoxScope.MapBanners(viewModel: DashboardViewModel, state: DashboardScreenState) {
     val phone = viewModel.phoneCompanion
-    val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
     val navResumeOffer by viewModel.navResumeOffer.collectAsStateWithLifecycle()
     val preview by viewModel.preview.collectAsStateWithLifecycle()
     val isNavigating by viewModel.isNavigating.collectAsStateWithLifecycle()
@@ -393,17 +392,14 @@ private fun BoxScope.MapBanners(viewModel: DashboardViewModel, state: DashboardS
     val bannerKey = newestMessage?.let { bannerKey(it) }
     val bannerFresh = newestMessage != null && System.currentTimeMillis() - newestMessage.timestampMs < MESSAGE_BANNER_MS
     val reachedStop = state.reachedStop
-    resumeOffer?.let { RideResumeCard(it.title, onResume = viewModel::resumeRide, onNew = viewModel::startNewRide, autoSeconds = com.curveon.ui.components.RIDE_RESUME_AUTO_S,
-        modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp).remoteSheet(viewModel::startNewRide)) }
-    // Waits while the ride's question is up (it goes by itself once riding on), and is not asked over a trip.
-    navResumeOffer?.takeIf { resumeOffer == null && preview == null && !isNavigating }?.let {
+    navResumeOffer?.takeIf { preview == null && !isNavigating }?.let {
         RideResumeCard(it.title, onResume = viewModel::resumeNavigation, onNew = viewModel::declineNavigationResume,
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp).remoteSheet(viewModel::declineNavigationResume),
             heading = stringResource(R.string.nav_resume_title), resumeLabel = stringResource(R.string.nav_resume_yes), newLabel = stringResource(R.string.nav_resume_no), tag = "nav_resume")
     }
     reachedStop?.let { StopReachedBanner(it, onDismiss = { state.reachedStop = null }, modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp)) }
     androidx.compose.animation.AnimatedVisibility(
-        visible = isFullScreenMap && voiceReply == null && newestMessage != null && bannerFresh && bannerKey != state.bannerHidden && resumeOffer == null && reachedStop == null,
+        visible = isFullScreenMap && voiceReply == null && newestMessage != null && bannerFresh && bannerKey != state.bannerHidden && reachedStop == null,
         enter = androidx.compose.animation.slideInVertically { -it } + androidx.compose.animation.fadeIn(),
         exit = androidx.compose.animation.slideOutVertically { -it } + androidx.compose.animation.fadeOut(),
         modifier = Modifier.align(Alignment.TopCenter).padding(top = 90.dp, start = 12.dp, end = 12.dp)

@@ -326,7 +326,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      * The towns of every country on the device (where the map waits with its small roads until zoomed in close), as
      * CityAreas squares. Counted once per routing data file (seconds each), then kept. Blocking.
      */
-    fun townSquares(near: LatLon?, onEach: (Set<Long>) -> Unit = {}): Set<Long> {
+    fun townSquares(near: LatLon?, pause: () -> Unit = {}, onEach: (Set<Long>) -> Unit = {}): Set<Long> {
         val t0 = System.nanoTime()
         // The file where the rider is first, then outwards: each one's towns quiet the map as soon as it is counted
         // (all of Europe's files took the tablet many minutes the first time).
@@ -337,8 +337,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val all = HashSet<Long>()
         var told = 0L
         for ((i, t) in tiles.withIndex()) {
+            pause()
             val before = all.size
-            all += towns.squares(t)
+            all += towns.squares(t, pause)
             // Each new set lays the map's roads out anew: the nearest file at once, then at most every few seconds, and the last.
             val now = System.nanoTime()
             if (all.size != before && (told == 0L || now - told >= TOWNS_TELL_NS) || i == tiles.lastIndex) { onEach(HashSet(all)); told = now }
@@ -801,6 +802,12 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private fun remember(goal: NavigationGoal, from: LatLon, style: RoadStyle?, route: Route) {
         if (goal !is NavigationGoal.Destination || goal.fixedLine != null || style == null) return
         synchronized(routeCache) { routeCache[routeKey(goal, style)] = CachedRoute(from, kotlinx.coroutines.CompletableDeferred(route)) }
+    }
+
+    /** Stops working out the other surfaces in the background when Curveon sleeps. */
+    fun pausePrefetch() {
+        prefetchJob?.cancel()
+        prefetchJob = null
     }
 
     /**

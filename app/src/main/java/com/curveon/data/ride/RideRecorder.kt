@@ -9,19 +9,15 @@ import kotlin.math.abs
 /**
  * Records rides automatically, no buttons: starts once the bike has been moving for a little
  * while and finishes after a stop of [END_AFTER_STOP_MS] (a red light or a quick look at the map
- * stays part of the ride). Riding again within [RESUME_WINDOW_MS] of a finished ride sets
- * [resumeOffer]: the rider decides between going on with that ride ([resume]) and a new one.
+ * stays part of the ride). Riding again within [RESUME_WINDOW_MS] of when the last ride stopped
+ * continues that ride automatically (no dialog); a longer break starts a new ride.
  * Pure logic; the caller persists [current] when [onFix] says so.
  */
 class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
 
-    enum class Event { NONE, STARTED, UPDATED, FINISHED }
+    enum class Event { NONE, STARTED, RESUMED, UPDATED, FINISHED }
 
     var current: Ride? = null
-        private set
-
-    /** The ride that finished a short while ago, while a new one is under way: asks to be picked up again. */
-    var resumeOffer: Ride? = null
         private set
 
     private var lastFinished: Ride? = null
@@ -61,7 +57,12 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
             lastSavedAt = t
             append(fix, ride.startMs)
             lastCounted = fix
-            resumeOffer = lastFinished?.takeIf { t - finishedAt <= RESUME_WINDOW_MS }
+            val recent = lastFinished?.takeIf { t - finishedAt <= RESUME_WINDOW_MS }
+            if (recent != null) {
+                resume(recent)
+                return Event.RESUMED
+            }
+            lastFinished = null
             return Event.STARTED
         }
 
@@ -114,20 +115,22 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
     /** The ride as it should be stored when finishing, or null if it was too short to keep. */
     fun finish(): Ride? {
         val r = current?.copy(track = track.toString())
+        val stoppedAt = lastMovingAt
         current = null
         movingSince = 0L
+        lastMovingAt = 0L
         lastFixMoving = false
-        resumeOffer = null
         val kept = r?.takeIf { it.distanceMeters >= MIN_RIDE_M }
-        if (kept != null) { lastFinished = kept; finishedAt = now() }
+        // Stamp with when the rider actually stopped moving, not now(): opening the app hours later must not look like a short break.
+        if (kept != null) { lastFinished = kept; finishedAt = stoppedAt.takeIf { it > 0L } ?: kept.endMs }
         return kept
     }
 
-    /** [finish], for a ride the rider ended by hand: riding on does not start a new one straight away, nor is it offered again. */
+    /** [finish], for a ride the rider ended by hand: riding on does not start a new one straight away, nor is it continued automatically. */
     fun stop(): Ride? = finish().also { holdUntilStopped = true; lastFinished = null }
 
     /**
-     * Goes on with [prev] (the [resumeOffer]): what has been ridden since is added to it, and recording
+     * Goes on with [prev]: what has been ridden since is added to it, and recording
      * carries on in that one ride, which keeps [prev]'s id. Null when there is no ride under way.
      */
     fun resume(prev: Ride): Ride? {
@@ -136,7 +139,6 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         track.clear()
         track.append(merged.track)
         current = merged
-        resumeOffer = null
         lastFinished = null
         lastSavedAt = now()
         return merged
@@ -144,19 +146,13 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
 
     /**
      * [ride], the newest one stored, when Curveon starts again: Android may have ended it on the way, which forgot the ride
-     * that had just finished. Riding again soon offers to go on with it, as if Curveon had never stopped.
+     * that had just finished. Riding again within [RESUME_WINDOW_MS] continues it automatically, as if Curveon had never stopped.
      */
     fun remember(ride: Ride) {
         if (current != null || lastFinished != null || ride.distanceMeters < MIN_RIDE_M) return
         if (now() - ride.endMs > RESUME_WINDOW_MS) return
         lastFinished = ride
         finishedAt = ride.endMs
-    }
-
-    /** The rider wants a new ride: the earlier one stays as it is. */
-    fun declineResume() {
-        resumeOffer = null
-        lastFinished = null
     }
 
     fun setId(id: Long) {
@@ -182,7 +178,7 @@ class RideRecorder(private val now: () -> Long = System::currentTimeMillis) {
         const val START_AFTER_MS = 10_000L
         const val END_AFTER_STOP_MS = 5 * 60_000L
         const val NO_GPS_END_MS = 30 * 60_000L
-        const val RESUME_WINDOW_MS = 2 * 60 * 60_000L
+        const val RESUME_WINDOW_MS = 30 * 60_000L
         const val MIN_RIDE_M = 1_000.0
         const val POINT_SPACING_M = 20.0
         const val SAVE_EVERY_MS = 60_000L

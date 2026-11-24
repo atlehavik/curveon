@@ -127,9 +127,8 @@ phone, with an optional companion app on the phone when a tablet is used.
   gestures with a card for each; again any time from Settings → Help, which also lists every symbol. The symbols are not in the tour. The first time a trip to a place is planned, the same machinery walks over the trip card (`tripHelpSeen`, five steps, `TRIP_STEPS`); "Start the tour" in Help brings that back too.
 - **Demo ride** (Settings) drives the active route without GPS; **demo phone data** (Phone link)
   shows the dashboard without a phone.
-- **Out of sight** Curveon sleeps (`watchSleep`): no GPS, phone link, OBD or lookups. A trip being navigated keeps it awake.
-  A ride being recorded keeps GPS only, until it ends: `RideRecorder.over`, looked at on every fix and by an alarm each
-  minute (`RideCheck`), so it ends after 5 min stopped also with no fix (30 min if the last fix was in motion: a tunnel).
+- **Out of sight** Curveon sleeps (`watchSleep`): no GPS, phone link, OBD, web-planner socket, town counting, prefetch or lookups; `CurveonNotificationListener` also stays idle while no screen or tablet is listening (`PhoneHub.hasTablet`). A trip being navigated keeps it awake.
+  A ride being recorded keeps GPS in the background only while external power is connected (a bike-mounted tablet on 12 V power), stopping immediately if power is disconnected or once `RideRecorder.over` fires via `RideCheck`. On battery, GPS stops as soon as Curveon sleeps; resuming within 30 minutes of when the ride actually stopped continues it automatically (no dialog), and a longer break starts a new ride.
 
 Not done: the OBD2 link is untested with a real adapter.
 

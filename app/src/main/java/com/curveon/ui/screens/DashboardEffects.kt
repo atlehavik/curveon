@@ -3,6 +3,7 @@ package com.curveon.ui.screens
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.curveon.R
 import com.curveon.data.bluetooth.TabletRoutes
 import com.curveon.data.model.GeoPoint
@@ -38,9 +39,6 @@ private fun TimerEffects(viewModel: DashboardViewModel, state: DashboardScreenSt
     val bannerKey = newestMessage(notifications)?.let { bannerKey(it) }
     LaunchedEffect(bannerKey) { if (bannerKey != null) { delay(MESSAGE_BANNER_MS); state.bannerHidden = bannerKey } }
     LaunchedEffect(state.roadNameShown) { if (state.roadNameShown) { delay(6_000); state.roadNameShown = false } }
-    val resumeOffer by viewModel.resumeOffer.collectAsStateWithLifecycle()
-    // Nothing pressed: the ride goes on, and the question goes away.
-    LaunchedEffect(resumeOffer) { if (resumeOffer != null) { delay(com.curveon.ui.components.RIDE_RESUME_AUTO_S * 1000L); viewModel.resumeRide() } }
     LaunchedEffect(state.showSettings) { if (!state.showSettings) { state.settingsOnEngine = false; state.settingsOnHelp = false } }
     // The welcome tour: once on the first start (when the screen has settled), and from Settings → Help.
     // The very first one starts with the choice of language.
@@ -196,9 +194,14 @@ private fun RidingEffects(viewModel: DashboardViewModel, state: DashboardScreenS
     val groups = viewModel.phoneCompanion.groups
     val groupActive by groups.activeId.collectAsStateWithLifecycle()
     val friendPositions by groups.friendPositions.collectAsStateWithLifecycle()
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     // A rider not heard from for two minutes is dimmed, even if nothing else changes on screen.
-    LaunchedEffect(groupActive != null || friendPositions.isNotEmpty()) {
-        while (groupActive != null || friendPositions.isNotEmpty()) { delay(30_000); state.groupTick++ }
+    LaunchedEffect(lifecycleOwner, groupActive != null || friendPositions.isNotEmpty()) {
+        if (groupActive != null || friendPositions.isNotEmpty()) {
+            lifecycleOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                while (true) { state.groupTick++; delay(30_000) }
+            }
+        }
     }
     // A ride is being recorded while the bike stands still (a few seconds, so not at every red light):
     // a red dot on the GPX button and the Rides page, as a reminder that it goes on until the long stop.

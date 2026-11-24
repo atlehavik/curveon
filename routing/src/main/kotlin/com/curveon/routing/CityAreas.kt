@@ -28,14 +28,14 @@ class CityAreas(
     fun tiles(): List<String> = segmentDir.listFiles { f -> f.name.endsWith(".rd5") }.orEmpty().map { it.name.removeSuffix(".rd5") }.sorted()
 
     /** The town squares in one segment file, as [square] keys; slow the first time. */
-    fun squares(tile: String): List<Long> {
+    fun squares(tile: String, pause: () -> Unit = this.pause): List<Long> {
         synchronized(loaded) { loaded[tile] }?.let { return it }
-        val found = readCache(tile) ?: count(tile).also { writeCache(tile, it) }
+        val found = readCache(tile) ?: count(tile, pause).also { writeCache(tile, it) }
         synchronized(loaded) { loaded[tile] = found }
         return found
     }
 
-    private fun count(tile: String): List<Long> {
+    private fun count(tile: String, pause: () -> Unit = this.pause): List<Long> {
         val (lon0, lat0) = GravelHeat.origin(tile) ?: return emptyList()
         val km = HashMap<Long, Double>()
         val lonIdx0 = (lon0 + 180) * 32

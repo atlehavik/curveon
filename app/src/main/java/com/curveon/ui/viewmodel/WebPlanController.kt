@@ -35,6 +35,7 @@ class WebPlanController(
     private var webPlanFetched = 0L
     private var webPlanSession: com.curveon.data.webplan.WebPlanSession? = null
     private var webPlanWanted = 0
+    private var paused = false
 
     init {
         if (webPlans.links().isNotEmpty()) fetchWebPlans()
@@ -80,8 +81,22 @@ class WebPlanController(
         if (webPlanWanted == 0) { webPlanSession?.close(); webPlanSession = null; _webPlan.update { it.copy(live = false) } }
     }
 
+    /** Curveon sleeps out of sight: close the live link until [resume]. */
+    fun pause() {
+        paused = true
+        webPlanSession?.close()
+        webPlanSession = null
+        _webPlan.update { it.copy(live = false) }
+    }
+
+    /** Back on screen: reopen the live link if the planned trips are still open. */
+    fun resume() {
+        paused = false
+        if (webPlanWanted > 0) connectWebPlans()
+    }
+
     private fun connectWebPlans() {
-        if (webPlanSession != null || webPlanWanted == 0 || webPlans.links().isEmpty()) return
+        if (paused || webPlanSession != null || webPlanWanted == 0 || webPlans.links().isEmpty()) return
         var session: com.curveon.data.webplan.WebPlanSession? = null
         session = webPlans.live(
             onResult = { r ->
