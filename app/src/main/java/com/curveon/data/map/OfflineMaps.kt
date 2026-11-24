@@ -71,27 +71,35 @@ class OfflineMaps(private val context: Context) {
 
     suspend fun import(uri: Uri, onProgress: (Float) -> Unit = {}): File = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
-        val name = resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+        val rawName = resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
             ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
-            ?.takeIf { it.endsWith(".pmtiles") } ?: "imported.pmtiles"
+        val name = rawName?.let { File(it).name }
+            ?.takeIf { it.endsWith(".pmtiles") && it != ".pmtiles" && !it.contains("..") } ?: "imported.pmtiles"
         val total = resolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: -1L
         val target = File(mapsDir, name)
         val tmp = File(mapsDir, "$name.part")
-        resolver.openInputStream(uri)!!.use { input ->
-            tmp.outputStream().use { output ->
-                val buf = ByteArray(1 shl 20)
-                var copied = 0L
-                while (true) {
-                    val n = input.read(buf)
-                    if (n < 0) break
-                    output.write(buf, 0, n)
-                    copied += n
-                    if (total > 0) onProgress(copied.toFloat() / total)
+        try {
+            resolver.openInputStream(uri)!!.use { input ->
+                tmp.outputStream().use { output ->
+                    val buf = ByteArray(1 shl 20)
+                    var copied = 0L
+                    while (true) {
+                        val n = input.read(buf)
+                        if (n < 0) break
+                        output.write(buf, 0, n)
+                        copied += n
+                        if (total > 0) onProgress(copied.toFloat() / total)
+                    }
                 }
             }
+            if (!tmp.renameTo(target)) {
+                target.delete()
+                check(tmp.renameTo(target)) { "Could not move imported map into place" }
+            }
+        } catch (t: Throwable) {
+            tmp.delete()
+            throw t
         }
-        target.delete()
-        tmp.renameTo(target)
         target
     }
 

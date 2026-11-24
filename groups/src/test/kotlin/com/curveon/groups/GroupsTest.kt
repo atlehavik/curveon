@@ -155,6 +155,33 @@ class GroupsTest {
     assertFalse(g.accept(rider, 0, 1_000, "tablet"))
   }
 
+  @Test fun replayGuardCountsStreamsApartSoNewerHelloDoesNotDropOlderKeptFrames() {
+    val g = ReplayGuard()
+    val rider = GroupKeys.newRiderId()
+    assertTrue(g.accept(rider, 0, 5_000, "phone", "hello"))
+    // Older kept frames from earlier sessions are still accepted on their own stream.
+    assertTrue(g.accept(rider, 0, 1_000, "phone", "trip:t1"))
+    assertTrue(g.accept(rider, 0, 900, "phone", "trip:t2"))
+    assertTrue(g.accept(rider, 0, 800, "phone", "route"))
+    // Replaying the same stream with an older or equal seq is still dropped.
+    assertFalse(g.accept(rider, 0, 1_000, "phone", "trip:t1"))
+    assertFalse(g.accept(rider, 0, 999, "phone", "trip:t1"))
+    assertTrue(g.accept(rider, 0, 1_001, "phone", "trip:t1"))
+  }
+
+  @Test fun malformedNonceOrCiphertextReturnsNullInsteadOfThrowing() {
+    val keys = GroupKeys(GroupKeys.newGroupId(), GroupKeys.newGroupKey())
+    val rider = GroupKeys.newRiderId()
+    assertNull(FrameCrypto.open(keys, Frame(FrameType.POS, rider, 0, ByteArray(0), ByteArray(32))))
+    assertNull(FrameCrypto.open(keys, Frame(FrameType.POS, rider, 0, ByteArray(4), ByteArray(32))))
+    assertNull(FrameCrypto.open(keys, Frame(FrameType.POS, rider, 0, ByteArray(12), ByteArray(4))))
+  }
+
+  @Test fun truncatedPolylineDoesNotThrow() {
+    assertEquals(emptyList<Pair<Double, Double>>(), Polyline.decode("_p~iF"))
+    assertEquals(1, Polyline.decode("_p~iF~ps|U_p~").size)
+  }
+
   @Test fun rekeyReachesRemainingRidersOnly() {
     val groupId = GroupKeys.newGroupId()
     val ola = GroupKeys.newRiderId(); val olaKeys = Keys.newAgreementKeyPair()

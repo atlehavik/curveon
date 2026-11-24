@@ -34,11 +34,11 @@ data class GiveWayAlert(val distanceMeters: Double, val stop: Boolean, val lat: 
  */
 class RouteHazards(private val search: PlaceSearch, private val speedLimits: SpeedLimits) {
 
-    var fuel: List<AlongPoi> = emptyList()
+    @Volatile var fuel: List<AlongPoi> = emptyList()
         private set
-    var cameras: List<AlongPoi> = emptyList()
+    @Volatile var cameras: List<AlongPoi> = emptyList()
         private set
-    var giveWays: List<GiveWayOnRoute> = emptyList()
+    @Volatile var giveWays: List<GiveWayOnRoute> = emptyList()
         private set
 
     /** The limits along the route just loaded; null while they are read. */

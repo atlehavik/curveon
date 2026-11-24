@@ -189,7 +189,7 @@ class Planner(
   /** The whole trip's numbers from its legs; how curvy from the heading change over all of them, as the app scores it. */
   private fun totals(legs: List<Route>): JSONObject {
     val m = legs.sumOf { it.distanceMeters }
-    val dpk = if (m > 0) legs.sumOf { Curviness.degreesPerKm(line(it)) * it.distanceMeters } / m else 0.0
+    val dpk = if (m > 0) legs.sumOf { Curviness.degreesPerKm(line(it), Curviness.junctions(it.maneuvers)) * it.distanceMeters } / m else 0.0
     return JSONObject().put("m", Math.round(m)).put("s", Math.round(legs.sumOf { it.durationSeconds }))
       .put("up", Math.round(legs.sumOf { it.ascentMeters })).put("curvy", (dpk / 3.0).coerceIn(0.0, 100.0).toInt())
       .put("ferries", legs.sumOf { it.ferryCount }).put("unpaved", Math.round(legs.sumOf { it.unpavedMeters }))
@@ -204,7 +204,7 @@ class Planner(
     return JSONObject()
       .put("line", JSONArray(line.map(::pair))).put("ele", JSONArray(ele))
       .put("m", Math.round(r.distanceMeters)).put("s", Math.round(r.durationSeconds)).put("up", Math.round(r.ascentMeters))
-      .put("dpk", Math.round(Curviness.degreesPerKm(line(r)))).put("ferries", r.ferryCount).put("unpaved", Math.round(r.unpavedMeters))
+      .put("dpk", Math.round(Curviness.degreesPerKm(line(r), Curviness.junctions(r.maneuvers)))).put("ferries", r.ferryCount).put("unpaved", Math.round(r.unpavedMeters))
       .put("arrive", arrival(r)?.toInt() ?: JSONObject.NULL)
       .put("surf", JSONArray(surfaces(r).map { (from, to, kind) -> JSONArray().put(from).put(to).put(kind) }))
       .apply {
@@ -351,8 +351,10 @@ class Planner(
         if (b.ferry && !a.ferry) ferries++
       }
       val rebased = pts.map { it.copy(distanceFromStart = it.distanceFromStart - d0, secondsFromStart = it.secondsFromStart - s0) }
-      return Route(rebased, emptyList(), pts.last().distanceFromStart - d0, pts.last().secondsFromStart - s0, up,
-        Curviness.score(rebased.map { LatLon(it.lat, it.lon) }), unpaved, ferries)
+      val maneuvers = r.maneuvers.filter { it.pointIndex in from..to }
+        .map { it.copy(pointIndex = it.pointIndex - from, distanceFromStart = it.distanceFromStart - d0) }
+      return Route(rebased, maneuvers, pts.last().distanceFromStart - d0, pts.last().secondsFromStart - s0, up,
+        Curviness.score(rebased, maneuvers), unpaved, ferries)
     }
 
     /**

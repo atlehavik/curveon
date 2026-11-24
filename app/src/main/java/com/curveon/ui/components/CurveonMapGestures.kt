@@ -56,6 +56,7 @@ internal fun CurveonMapState.MapListeners(
     LaunchedEffect(mapView) {
         mapView.addOnDidFinishRenderingFrameListener { _, _, _ -> if (!canQuery) canQuery = true }
         mapView.getMapAsync { m ->
+            if (mapView.isDestroyed) return@getMapAsync
             m.uiSettings.apply {
                 isAttributionEnabled = true
                 // The map's licence notice has to stay readable: left edge, halfway up, where no card sits.
@@ -189,12 +190,12 @@ internal fun CurveonMapState.listenToFingers(m: MapLibreMap, cb: MapCallbacks, c
     var markedTo: Double? = null
     var longPress: Runnable? = null
     fun cancelLongPress(v: android.view.View) { longPress?.let { v.removeCallbacks(it) }; longPress = null }
-    fun clearDrag() = m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
+    fun clearDrag() = m.style?.takeIf { it.isFullyLoaded }?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
     // Drawing an area: the stroke so far, null when no finger is drawing.
     var stroke: MutableList<GeoPoint>? = null
     var lastX = 0f
     var lastY = 0f
-    fun showStroke(pts: List<GeoPoint>) = m.style?.getSourceAs<GeoJsonSource>(SKETCH)?.setGeoJson(lineFeatures(listOf(pts)))
+    fun showStroke(pts: List<GeoPoint>) = m.style?.takeIf { it.isFullyLoaded }?.getSourceAs<GeoJsonSource>(SKETCH)?.setGeoJson(lineFeatures(listOf(pts)))
     fun sketchTouch(v: android.view.View, e: android.view.MotionEvent, done: (List<GeoPoint>) -> Unit): Boolean {
         fun at(x: Float, y: Float) = m.projection.fromScreenLocation(android.graphics.PointF(x, y)).let { GeoPoint(it.latitude, it.longitude) }
         return when (e.actionMasked) {
@@ -270,7 +271,7 @@ internal fun CurveonMapState.listenToFingers(m: MapLibreMap, cb: MapCallbacks, c
                     if (markedTo != null || kotlin.math.hypot(e.x - downX, e.y - downY) > slop) {
                         val to = alongAt(grabLine, m, e.x, e.y) ?: return@setOnTouchListener true
                         markedTo = to
-                        m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(sectionFeatures(grabLine, g.at, to))
+                        m.style?.takeIf { it.isFullyLoaded }?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(sectionFeatures(grabLine, g.at, to))
                     }
                 } else if (dragAt != null || kotlin.math.hypot(e.x - downX, e.y - downY) > slop) {
                     cancelLongPress(v)
@@ -285,7 +286,7 @@ internal fun CurveonMapState.listenToFingers(m: MapLibreMap, cb: MapCallbacks, c
                     val ll = m.projection.fromScreenLocation(android.graphics.PointF(e.x, e.y))
                     val at = GeoPoint(ll.latitude, ll.longitude)
                     dragAt = at
-                    m.style?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(dragFeatures(g, at))
+                    m.style?.takeIf { it.isFullyLoaded }?.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(dragFeatures(g, at))
                 }
                 true
             }

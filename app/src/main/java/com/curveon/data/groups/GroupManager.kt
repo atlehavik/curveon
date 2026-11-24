@@ -199,8 +199,7 @@ class GroupManager(private val scope: CoroutineScope, private val send: (Message
                 _positions.value = _positions.value.filterKeys { it in _members.value }
             }
             is Message.GroupPositions -> if (m.groupId == Message.GroupPositions.FRIENDS) {
-                _friendPositions.value = if (m.positions.size == 1) _friendPositions.value + (m.positions[0].id to m.positions[0])
-                else m.positions.associateBy { it.id } // the whole list: one that stopped sharing is gone from it
+                _friendPositions.value = m.positions.associateBy { it.id } // always the full list: one that stopped sharing is gone from it
             } else if (m.groupId == _activeId.value && _sharing.value) _positions.value = _positions.value + m.positions.associateBy { it.id }
             is Message.GroupSos -> if ((m.groupId == _activeId.value && (_sharing.value || m.mine)) || !m.active) {
                 _sos.value = if (m.active) _sos.value + (m.from to m) else _sos.value - m.from

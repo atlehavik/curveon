@@ -79,7 +79,7 @@ const TEXTS = {
     loop_open: "Roundtrip: draw an area to ride in", loop_title: "Roundtrip",
     loop_draw: "Hold the mouse button down and draw around the area you want to ride in. The loop starts and ends at your starting point.",
     loop_draw_touch: "Draw around the area you want to ride in with your finger. The loop starts and ends at your starting point.",
-    loop_len: "Distance", loop_max_any: "Whole area", loop_max_km: (k) => `Max ${k} km`, roundtrip_draw_km: (k) => `Approx. ${k} km loop`, loop_len_explain: "Maximum loop distance, or Whole area to let the drawn area decide.",
+    loop_len: "Distance", loop_max_any: "Whole area", loop_max_km: (k) => `Max ${k} km`, roundtrip_draw_km: (k) => `Approx. ${k} km loop`, adv_draw_km: (k) => `Approx. ${k} km around`, loop_len_explain: "Maximum loop distance, or Whole area to let the drawn area decide.",
     loop_searching: "Finding a roundtrip… this can take up to a minute.",
     loop_found: "Roundtrip ready. Adjust it like any trip, or try another suggestion.",
     err_no_roundtrip: "Couldn't find a roundtrip in that area. Try drawing a larger area with more roads.",
@@ -196,7 +196,7 @@ const TEXTS = {
     loop_open: "Rundtur: tegn området du vil kjøre i", loop_title: "Rundtur",
     loop_draw: "Hold museknappen nede og tegn rundt området du vil kjøre i. Rundturen starter og slutter ved startpunktet.",
     loop_draw_touch: "Tegn rundt området du vil kjøre i med fingeren. Rundturen starter og slutter ved startpunktet.",
-    loop_len: "Lengde", loop_max_any: "Hele området", loop_max_km: (k) => `Maks ${k} km`, roundtrip_draw_km: (k) => `Ca. ${k} km rundtur`, loop_len_explain: "Maksimal lengde på rundturen, eller Hele området for å la området avgjøre.",
+    loop_len: "Lengde", loop_max_any: "Hele området", loop_max_km: (k) => `Maks ${k} km`, roundtrip_draw_km: (k) => `Ca. ${k} km rundtur`, adv_draw_km: (k) => `Ca. ${k} km rundt`, loop_len_explain: "Maksimal lengde på rundturen, eller Hele området for å la området avgjøre.",
     loop_searching: "Finner en rundtur… dette kan ta opptil et minutt.",
     loop_found: "Rundtur klar. Juster den som vanlig, eller prøv et nytt forslag.",
     err_no_roundtrip: "Fant ingen rundtur i det området. Prøv et større område med flere veier.",
@@ -388,7 +388,7 @@ function withRoute(style) {
     // Where the ferries go: dashed across the water, from the Norway map's roads and, beyond it, the online map's
     // (an "online-" layer, shown and hidden with the rest of that map).
     { id: "cv-ferry", type: "line", source: "protomaps", "source-layer": "roads", filter: ["==", ["get", "kind"], "ferry"], paint: ferry },
-    ...(style.sources.online ? [{ id: "online-ferry", type: "line", source: "online", "source-layer": "transportation", filter: ["==", ["get", "class"], "ferry"], paint: ferry }] : []),
+    ...(style.sources.online ? [{ id: "online-ferry", type: "line", source: "online", "source-layer": "transportation", filter: ["==", ["get", "class"], "ferry"], layout: { visibility: "none" }, paint: ferry }] : []),
     { id: "cv-gravel-road", type: "line", source: "cv-gravel", minzoom: 11, maxzoom: 12.2, filter: ["==", ["get", "k"], "road"],
       layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": roadColour, "line-width": ["interpolate", ["exponential", 1.6], ["zoom"], 11, 1, 14.5, 1.2] } },
@@ -399,7 +399,8 @@ function withRoute(style) {
   style.sources["cv-hover"] = { type: "geojson", data: emptyLine() };
   style.sources["cv-file"] = { type: "geojson", data: fileData(), promoteId: "i" };
   style.sources["cv-pois"] = { type: "geojson", data: poiData() };
-  const at = style.layers.findIndex((l) => l.id.startsWith("places_"));
+  // Place before both online and offline place labels so place names always stay above route and overlay lines.
+  const at = style.layers.findIndex((l) => l.id.startsWith("places_") || (l.id.startsWith("online-") && l.type === "symbol"));
   // The places' names in the map's own font.
   const font = style.layers.find((l) => l.id.startsWith("places_") && Array.isArray(l.layout?.["text-font"]))?.layout["text-font"] || ["Noto Sans Regular"];
   style.layers.splice(at < 0 ? style.layers.length : at, 0,
@@ -579,7 +580,7 @@ document.addEventListener("keydown", (e) => {
 
 /** A stop where the rider stays the night: the next day starts there. */
 const isNight = (i) => !!points[i]?.night && kindOf(i) === "stop" && i < points.length - 1;
-const dur = (s) => { const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h} ${t("h")} ${m} ${t("min")}` : `${m} ${t("min")}`; };
+const dur = (s) => { const total = Math.round(s / 60), h = Math.floor(total / 60), m = total % 60; return h ? `${h} ${t("h")} ${m} ${t("min")}` : `${m} ${t("min")}`; };
 const kmText = (m) => `${Math.round(m / 1000)} ${t("km")}`;
 
 /**
@@ -1135,6 +1136,7 @@ function startLineDrag(e) {
   };
   const up = () => {
     map.off("mousemove", move); map.off("touchmove", move);
+    window.removeEventListener("mouseup", up); window.removeEventListener("touchend", up);
     setGrabbing(false);
     if (!moved) {
       // A click on the line: a via point or a stop there? Asked here, not by the click that follows, which some
@@ -1152,7 +1154,7 @@ function startLineDrag(e) {
     setTimeout(() => { draggingLine = false; }, 50);
   };
   map.on("mousemove", move); map.on("touchmove", move);
-  map.once("mouseup", up); map.once("touchend", up);
+  window.addEventListener("mouseup", up); window.addEventListener("touchend", up);
 }
 
 /** Which leg (from points[i] to points[i + 1]) the line is at [ll]: where the nearest line point falls between the places. */
@@ -1198,7 +1200,11 @@ function keepLeg(a, b, o, heading, leg) {
   legCache.set(k, leg);
   legPairs.add(pairKey(a, b, o));
   // A few hundred legs: a long evening's planning, a few MB at most.
-  while (legCache.size > 400) legCache.delete(legCache.keys().next().value);
+  if (legCache.size > 400) {
+    while (legCache.size > 400) legCache.delete(legCache.keys().next().value);
+    legPairs.clear();
+    for (const key of legCache.keys()) legPairs.add(key.slice(0, key.lastIndexOf(";")));
+  }
 }
 
 /** The places or options changed: the road is worked out again (a trip opened from a device keeps its line until then). */
@@ -1495,7 +1501,7 @@ function strokeAt(e) {
   let m = 0;
   for (let k = 1; k < s.length; k++) m += Math.hypot(s[k][0] - s[k - 1][0], (s[k][1] - s[k - 1][1]) * Math.cos((s[k][0] * Math.PI) / 180)) * 111195;
   if (s.length > 2) m += Math.hypot(s[0][0] - s[s.length - 1][0], (s[0][1] - s[s.length - 1][1]) * Math.cos((s[0][0] * Math.PI) / 180)) * 111195;
-  $("draw-text").textContent = t("roundtrip_draw_km", Math.round(m / 1000));
+  $("draw-text").textContent = t(adv.loop ? "roundtrip_draw_km" : "adv_draw_km", Math.round(m / 1000));
 }
 let stroking = false;
 function strokeStart(e) {
@@ -1531,8 +1537,8 @@ map.on("mousedown", strokeStart);
 map.on("touchstart", strokeStart);
 map.on("mousemove", strokeMove);
 map.on("touchmove", strokeMove);
-map.on("mouseup", strokeEnd);
-map.on("touchend", strokeEnd);
+window.addEventListener("mouseup", strokeEnd);
+window.addEventListener("touchend", strokeEnd);
 
 async function findAdventure() {
   routeCtl?.abort();
@@ -1614,7 +1620,7 @@ function drawSummary() {
   $("compare").hidden = !result || viewOnly || points.length < 2 || compareOpen || !!adv;
   drawSaveBlock();
   if (!result) { s.hidden = true; return; }
-  const h = Math.floor(result.s / 3600), m = Math.round((result.s % 3600) / 60);
+  const totalMin = Math.round(result.s / 60), h = Math.floor(totalMin / 60), m = totalMin % 60;
   const part = (v, unit) => { const e = el("span", "", v); e.append(el("small", "", unit)); return e; };
   s.replaceChildren(
     part(Math.round(result.m / 1000), t("km")),
@@ -2240,10 +2246,14 @@ function openLink() {
   history.replaceState(null, "", url);
   let data;
   try { data = JSON.parse(new TextDecoder().decode(unb64(raw))); } catch { return; }
-  const ok = (v) => Number.isFinite(v) && Math.abs(v) <= 180;
-  if (data?.v !== 1 || !Array.isArray(data.p) || data.p.length > 27 || !data.p.every((q) => ok(q[0]) && ok(q[1]))) return;
-  points = data.p.map(([lat, lon, f = "", name = ""]) => ({ name: String(name).slice(0, 120), lat, lon, via: f.includes("v"),
-    ...(f.includes("s") ? { stop: true } : {}), ...(f.includes("n") ? { night: true } : {}) }));
+  const okLat = (v) => Number.isFinite(v) && Math.abs(v) <= 90;
+  const okLon = (v) => Number.isFinite(v) && Math.abs(v) <= 180;
+  if (data?.v !== 1 || !Array.isArray(data.p) || data.p.length > 27 || !data.p.every((q) => Array.isArray(q) && okLat(q[0]) && okLon(q[1]))) return;
+  points = data.p.map(([lat, lon, f = "", name = ""]) => {
+    const fl = typeof f === "string" ? f : "";
+    return { name: String(name ?? "").slice(0, 120), lat, lon, via: fl.includes("v"),
+      ...(fl.includes("s") ? { stop: true } : {}), ...(fl.includes("n") ? { night: true } : {}) };
+  });
   if (data.o && typeof data.o === "object") { options = Object.assign(options, { gravelReachKm: null }, data.o); showOptions(); }
   $("name").value = String(data.n || "").slice(0, 80);
   forgetUndo();
@@ -2571,7 +2581,7 @@ async function openGpx(file) {
   clearTimeout(routeTimer);
   closeMenu();
   closeAdventure();
-  if (f.tracks.length === 1) { closeFile(); showTrack(f.tracks[0]); return; }
+  if (f.tracks.length === 1) { closeFile(); forgetUndo(); showTrack(f.tracks[0]); markClean(); return; }
   // Several: all on the map, each on its own, to open one (in the list or on the map) or send them all.
   fileTipOff();
   gpxFile = { ...f, open: null, clean: null };
@@ -2843,7 +2853,7 @@ showOptions();
 drawList();
 drawDevices();
 drawPending();
-openLink();
+try { openLink(); } catch {}
 markClean();
 connect();
 if (map.loaded()) { drawPlaces(); showGravel(); } else map.once("load", () => { drawPlaces(); showGravel(); });

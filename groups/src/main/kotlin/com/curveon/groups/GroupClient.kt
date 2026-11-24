@@ -90,6 +90,7 @@ class GroupClient(
   private var retry: ScheduledFuture<*>? = null
   private var lastSeq = 0L
 
+  @Volatile
   var connected = false
     private set
   private var profile: Payload.Hello? = null
@@ -333,7 +334,7 @@ class GroupClient(
     val plain = FrameCrypto.open(state.keys, frame) ?: return
     val signed = PayloadCodec.decode(frame.type, plain) ?: return
     if (!authentic(frame, plain, signed.payload)) return
-    if (!guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device)) return
+    if (!guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device, streamOf(frame.type, signed.payload))) return
     val from = B64.encode(frame.riderId)
     when (val p = signed.payload) {
       is Payload.Hello -> {
@@ -391,13 +392,22 @@ class GroupClient(
       // Taken as no newer than now: a claim from the future would otherwise win for ever (or until it is three minutes old).
       is Payload.Claim -> otherClaimed(p.deviceId, minOf(signed.tsMs, clock()))
       // A change the rider made on their other device is a change like any other.
-      is Payload.Trip -> if (guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device)) {
+      is Payload.Trip -> if (guard.accept(frame.riderId, frame.epoch, signed.seq, signed.device, streamOf(frame.type, p))) {
         onEvent(GroupEvent.TripReceived(B64.encode(frame.riderId), p, signed.tsMs, mine = true))
       }
       // Seen on the rider's other device: it can go here too.
       is Payload.NudgeSeen -> onEvent(GroupEvent.NudgeSeen(B64.encode(frame.riderId), p, mine = true))
       else -> Unit
     }
+  }
+
+  /** Matches the relay's independent kept slots so a fresh `hello` or another trip never drops older kept frames. */
+  private fun streamOf(type: FrameType, payload: Payload): String = when (payload) {
+    is Payload.Trip -> "trip:${payload.tripId}"
+    is Payload.Nudge -> "nudge:${payload.to}"
+    is Payload.NudgeSeen -> "nudge_seen:${payload.to}"
+    is Payload.FriendRequest -> "friend_req:${payload.to}"
+    else -> type.wire
   }
 
   /**

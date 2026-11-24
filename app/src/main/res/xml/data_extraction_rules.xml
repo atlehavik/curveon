@@ -5,6 +5,11 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="groups.xml"/>
+        <exclude domain="external" path="maps"/>
+        <exclude domain="external" path="routing"/>
+        <exclude domain="external" path="search"/>
+        <exclude domain="external" path="speedlimits"/>
+        <exclude domain="external" path="navtrace"/>
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="groups.xml"/>

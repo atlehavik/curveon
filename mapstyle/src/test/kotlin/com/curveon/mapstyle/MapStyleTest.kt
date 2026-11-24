@@ -42,10 +42,13 @@ class MapStyleTest {
     assertEquals(MapStyle.NIGHT_ROAD, normalById.getValue("roads_minor").getJSONObject("paint").getString("line-color"))
     assertEquals(MapStyle.NIGHT_PATH, normalById.getValue("roads_other").getJSONObject("paint").getString("line-color"))
     assertEquals(0, normalById.getValue("roads_minor_casing").getJSONObject("paint").getInt("line-opacity"))
+    assertEquals(0, normalById.getValue("roads_bridges_other_casing").getJSONObject("paint").getInt("line-opacity"))
     assertEquals(0, normalById.getValue("online-roads_minor_casing").getJSONObject("paint").getInt("line-opacity"))
+    assertEquals("#ffffff", normalById.getValue("online-places_country").getJSONObject("paint").getString("text-color"))
 
     val hc = build("dark", listOf("pmtiles://a"), road = MapStyle.NIGHT_ROAD_HC, path = MapStyle.NIGHT_PATH_HC).getJSONArray("layers")
     val hcById = (0 until hc.length()).map { hc.getJSONObject(it) }.associateBy { it.getString("id") }
     assertTrue(!hcById.getValue("roads_minor_casing").getJSONObject("paint").has("line-opacity"))
+    assertTrue(!hcById.getValue("roads_bridges_other_casing").getJSONObject("paint").has("line-opacity"))
   }
 }

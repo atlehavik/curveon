@@ -50,4 +50,15 @@ class RouteArrowsTest {
         val both = bothWaysSegments(lat, lon)
         assertTrue(both[0] && both[2])
     }
+
+    @Test
+    fun `eastern longitudes do not distort north-south lanes`() {
+        // At lon=30°E (e.g. Kirkenes/Finland), absolute lon*cos(lat) sheared north-south roads by ~24°.
+        val mLon70 = 1 / (111_320.0 * kotlin.math.cos(Math.toRadians(70.0)))
+        val pts = listOf(0.0 to 0.0, 0.0 to 300.0, 5.0 to 305.0, 5.0 to 0.0)
+        val lat = DoubleArray(pts.size) { 70.0 + pts[it].second * mLat }
+        val lon = DoubleArray(pts.size) { 30.0 + pts[it].first * mLon70 }
+        val both = bothWaysSegments(lat, lon)
+        assertTrue(both[0] && both[2])
+    }
 }

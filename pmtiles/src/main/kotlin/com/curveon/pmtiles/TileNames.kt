@@ -180,19 +180,23 @@ class PmtilesFile(private val file: File) {
             walk(dir(h.rootOffset, h.rootLength))
             val order = (0 until offs.size).sortedBy { offs[it] }
             val inflater = Inflater(true)
-            var lastOff = -1L
-            var done = 0
-            for (i in order) {
-                if (isCancelled()) error("Cancelled")
-                if (offs[i] == lastOff) { done++; continue } // same content as the previous tile (open sea, forest)
-                lastOff = offs[i]
-                val raw = ByteArray(lens[i]); f.seek(h.dataOffset + offs[i]); f.readFully(raw)
-                val tile = if (h.tileCompression == Pmtiles.COMPRESSION_GZIP) gunzip(raw, inflater) else raw
-                val (x, y) = Pmtiles.tileXY(zoom, ids[i] - from)
-                block(x, y, tile)
-                if (++done % 5000 == 0) onProgress(done, offs.size)
+            try {
+                var lastOff = -1L
+                var done = 0
+                for (i in order) {
+                    if (isCancelled()) error("Cancelled")
+                    if (offs[i] == lastOff) { done++; continue } // same content as the previous tile (open sea, forest)
+                    lastOff = offs[i]
+                    val raw = ByteArray(lens[i]); f.seek(h.dataOffset + offs[i]); f.readFully(raw)
+                    val tile = if (h.tileCompression == Pmtiles.COMPRESSION_GZIP) gunzip(raw, inflater) else raw
+                    val (x, y) = Pmtiles.tileXY(zoom, ids[i] - from)
+                    block(x, y, tile)
+                    if (++done % 5000 == 0) onProgress(done, offs.size)
+                }
+                onProgress(offs.size, offs.size)
+            } finally {
+                inflater.end()
             }
-            onProgress(offs.size, offs.size)
         }
     }
 

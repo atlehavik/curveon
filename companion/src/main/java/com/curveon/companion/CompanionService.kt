@@ -67,6 +67,7 @@ class CompanionService : Service() {
         runCatching { serverSocket?.close() }
         runCatching { clientSocket?.close() }
         runCatching { unregisterReceiver(batteryReceiver) }
+        PhoneHub.voice?.cancel()
         PhoneHub.voice = null
         PhoneHub.phoneBook?.shutdown()
         PhoneHub.phoneBook = null

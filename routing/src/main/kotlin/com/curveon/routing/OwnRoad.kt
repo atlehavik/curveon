@@ -29,13 +29,13 @@ internal class OwnRoad(private val route: (List<LatLon>, Boolean) -> Route) {
         // Join the route a little way on (before the first stop), so the leg can leave the place
         // whichever way it really can.
         val joinAt = listOfNotNull(JOIN_M, r.distanceMeters, firstVia?.let { RouteCorridor(r).alongDistance(it.lat, it.lon, 2_000.0) }).min()
-        val leg = route(listOf(p, Routes.pointAt(r, joinAt).first), true)
-        // Only worth it if it really starts nearer the place and rejoins cleanly.
+        val joinTarget = Routes.pointAt(r, joinAt).first
+        val leg = route(listOf(p, joinTarget), true)
+        // Only worth it if it really starts nearer the place and reaches the join target cleanly.
         if (Geo.distance(p, leg.points.first().at()) >= gap - 1) return null
         if (joinAt >= r.distanceMeters - 1) return leg
-        val tail = Routes.slice(r, joinAt)
-        if (Geo.distance(leg.points.last().at(), tail.points.first().at()) > JOIN_TOLERANCE_M) return null
-        return Routes.joinLegs(listOf(leg, tail))
+        if (Geo.distance(leg.points.last().at(), joinTarget) > JOIN_TOLERANCE_M) return null
+        return Routes.joinLegs(listOf(leg, Routes.slice(r, joinAt)))
     }
 
     private fun toEnd(p: LatLon, r: Route, lastVia: LatLon?): Route? {
@@ -44,11 +44,12 @@ internal class OwnRoad(private val route: (List<LatLon>, Boolean) -> Route) {
         if (gap < MIN_GAP_M || gap > MAX_GAP_M) return null
         val viaAlong = lastVia?.let { RouteCorridor(r).alongDistance(it.lat, it.lon, 2_000.0) } ?: 0.0
         val leaveAt = maxOf(r.distanceMeters - JOIN_M, viaAlong, 0.0)
-        val leg = route(listOf(if (leaveAt > 1) Routes.pointAt(r, leaveAt).first else r.points.first().at(), p), true)
+        val leaveTarget = if (leaveAt > 1) Routes.pointAt(r, leaveAt).first else r.points.first().at()
+        val leg = route(listOf(leaveTarget, p), true)
         if (Geo.distance(p, leg.points.last().at()) >= gap - 1) return null
         if (leaveAt <= 1) return leg
+        if (Geo.distance(leaveTarget, leg.points.first().at()) > JOIN_TOLERANCE_M) return null
         val prefix = head(r, r.points.indexOfLast { it.distanceFromStart <= leaveAt })
-        if (Geo.distance(prefix.points.last().at(), leg.points.first().at()) > JOIN_TOLERANCE_M) return null
         return Routes.joinLegs(listOf(prefix, leg))
     }
 

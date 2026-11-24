@@ -161,6 +161,8 @@ internal fun CurveonMapState.MapLifecycle() {
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            style = null
+            map = null
             mapView.onPause()
             mapView.onStop()
             canQuery = false

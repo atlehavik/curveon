@@ -32,9 +32,18 @@ class GroupStore(context: Context) {
 
     fun loadGroups(): List<GroupState> {
         prefs.edit().remove(RELAY).apply() // the old "relay address" setting
+        // A transient KeyStore outage returns null for key(): keep stored groups rather than wiping them.
+        val secret = key() ?: return emptyList()
         return prefs.all.keys.filter { it.startsWith(GROUP) }.mapNotNull { key ->
-            decrypt(prefs.getString(key, null))?.let { GroupState.fromJson(it) }?.let { st -> onCurveonRelay(st).also { if (it !== st) save(it) } }
-                ?: run { prefs.edit().remove(key).apply(); null }
+            val stored = prefs.getString(key, null)
+            val plain = decrypt(stored, secret)
+            if (plain == null) {
+                prefs.edit().remove(key).apply()
+                null
+            } else {
+                GroupState.fromJson(plain)?.let { st -> onCurveonRelay(st).also { if (it !== st) save(it) } }
+                    ?: run { prefs.edit().remove(key).apply(); null }
+            }
         }
     }
 
@@ -128,9 +137,10 @@ class GroupStore(context: Context) {
         Base64.encodeToString(c.iv + c.doFinal(plain.toByteArray()), Base64.NO_WRAP)
     }.getOrNull()
 
-    private fun decrypt(stored: String?): String? = runCatching {
+    private fun decrypt(stored: String?, secret: SecretKey? = key()): String? = runCatching {
+        val k = secret ?: return null
         val raw = Base64.decode(stored, Base64.NO_WRAP)
-        val c = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, raw.copyOfRange(0, 12))) }
+        val c = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.DECRYPT_MODE, k, GCMParameterSpec(128, raw.copyOfRange(0, 12))) }
         String(c.doFinal(raw.copyOfRange(12, raw.size)))
     }.getOrNull()
 

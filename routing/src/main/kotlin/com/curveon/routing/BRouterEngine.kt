@@ -62,13 +62,23 @@ class BRouterEngine(
             // Gravel, but not too far off: the ordinary route first, then the gravel one with less and
             // less pull towards gravel until it stays within reach of it.
             fun plan(o: RouteOptions) = route(waypoints, o.copy(gravelReachKm = null), viaCatchingRangeMeters, avoidedFerryCost,
-                startHeadingDeg, noGo, tracksAsLastResort, visitEveryVia)
+                startHeadingDeg, noGo, tracksAsLastResort, visitEveryVia, maxMillis)
             // No gravel within reach: the ordinary route (with what gravel it has).
             val ordinary = plan(options.copy(surface = SurfacePreference.MIXED))
             for (pull in GRAVEL_PULLS) {
-                val r = runCatching { plan(options.copy(gravelPull = pull)) }.getOrNull() ?: continue
+                if (cancelled()) throw RoutingException(CANCELLED)
+                val r = try {
+                    plan(options.copy(gravelPull = pull))
+                } catch (e: RoutingException) {
+                    if (e.message == CANCELLED || cancelled()) throw RoutingException(CANCELLED)
+                    continue
+                } catch (_: Exception) {
+                    if (cancelled()) throw RoutingException(CANCELLED)
+                    continue
+                }
                 if (Routes.farthestFrom(r, ordinary) <= reach * 1000.0) return r
             }
+            if (cancelled()) throw RoutingException(CANCELLED)
             return ordinary
         }
         if (visitEveryVia && waypoints.size > 2) {
@@ -96,7 +106,15 @@ class BRouterEngine(
             val places = Reversals.places(r)
             if (places.isEmpty()) return r
             blocked = blocked + places.map { NoGo(it.at, it.radiusMeters) }
-            r = runCatching { route(blocked) }.getOrElse { return r }
+            r = try {
+                route(blocked)
+            } catch (e: RoutingException) {
+                if (e.message == CANCELLED || cancelled()) throw RoutingException(CANCELLED)
+                return r
+            } catch (_: Exception) {
+                if (cancelled()) throw RoutingException(CANCELLED)
+                return r
+            }
         }
         return r
     }
@@ -245,7 +263,7 @@ class BRouterEngine(
                 lat = p.lat, lon = p.lon, elevation = p.ele,
                 distanceFromStart = dist, secondsFromStart = secs,
                 highway = tags.highway, maxSpeedKmh = tags.maxSpeed,
-                unpaved = tags.unpaved, ferry = tags.ferry, surface = tags.surface, tracktype = tags.tracktype
+                unpaved = tags.unpaved, ferry = if (i == 0) false else tags.ferry, surface = tags.surface, tracktype = tags.tracktype
             )
         }
         val maneuvers = buildManeuvers(CurveonBridge.hints(track), points)
@@ -304,6 +322,11 @@ class BRouterEngine(
         internal fun running(engine: RoutingEngine, run: () -> Unit) {
             if (cancelled) throw RoutingException(CANCELLED)
             engines += engine
+            if (cancelled) {
+                engines -= engine
+                engine.terminate()
+                throw RoutingException(CANCELLED)
+            }
             try { run() } finally { engines -= engine }
         }
     }

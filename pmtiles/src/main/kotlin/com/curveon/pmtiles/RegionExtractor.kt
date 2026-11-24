@@ -217,15 +217,12 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
         val addressed = (0 until n).sumOf { fRun[it].toLong() }
 
         // 3. Unique tile contents in source order, and each one's offset in the new file.
-        //    Sorting packs (offset, index) into one long: offsets < 2^37, indexes < 2^26.
-        check(n < (1 shl 26)) { "Region too large" }
-        val byOffset = LongArray(n) { (fOff[it] shl 26) or it.toLong() }
-        byOffset.sort()
+        //    Sorted via primitive index merge-sort so offsets are never bit-limited (planet archives > 128 GiB).
+        val byOffset = sortIndicesBy(n) { fOff[it] }
         val newOff = LongArray(n)
         val uniqOff = LongList(); val uniqLen = IntList()
         var cursor = 0L
-        for (key in byOffset) {
-            val idx = (key and ((1L shl 26) - 1)).toInt()
+        for (idx in byOffset) {
             if (uniqOff.size == 0 || uniqOff[uniqOff.size - 1] != fOff[idx]) {
                 uniqOff.add(fOff[idx]); uniqLen.add(fLen[idx]); cursor += fLen[idx]
             }
@@ -234,18 +231,18 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
         val total = cursor
 
         // 4. New directory in tile-id order, merging runs that now point at the same tile.
-        //    Sorting packs (tileId, index): ids < 2^37 up to zoom 18, indexes < 2^26.
-        val byId = LongArray(n) { (fId[it] shl 26) or it.toLong() }
-        byId.sort()
+        val byId = sortIndicesBy(n) { fId[it] }
         val eId = LongList(); val eOff = LongList(); val eLen = IntList(); val eRun = IntList()
-        for (key in byId) {
-            val idx = (key and ((1L shl 26) - 1)).toInt()
+        for (idx in byId) {
             val last = eId.size - 1
             if (last >= 0 && eOff[last] == newOff[idx] && eId[last] + eRun[last] == fId[idx]) eRun[last] = eRun[last] + fRun[idx]
             else { eId.add(fId[idx]); eOff.add(newOff[idx]); eLen.add(fLen[idx]); eRun.add(fRun[idx]) }
         }
         val (root, leafBytes) = buildDirectories(eId.toArray(), eOff.toArray(), eLen.toArray(), eRun.toArray())
-        val metadata = if (h.metadataLength > 0) get(url, h.metadataOffset, h.metadataLength) else Pmtiles.gzip("{}".toByteArray())
+        val metadata = if (h.metadataLength > 0) {
+            val raw = get(url, h.metadataOffset, h.metadataLength)
+            if (h.internalCompression == Pmtiles.COMPRESSION_GZIP) raw else Pmtiles.gzip(Pmtiles.decompress(raw, h.internalCompression))
+        } else Pmtiles.gzip("{}".toByteArray())
 
         val rootOffset = Pmtiles.HEADER_SIZE.toLong()
         val metaOffset = rootOffset + root.size
@@ -269,39 +266,44 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
         // 5. Write header, directories and metadata, then stream the tiles in merged chunks.
         val tmpOut = File(out.parentFile, out.name + ".part")
         var written = 0L
-        tmpOut.outputStream().buffered(1 shl 20).use { o ->
-            o.write(Pmtiles.writeHeader(header)); o.write(root); o.write(metadata); o.write(leafBytes)
-            // Chunks of neighbouring tiles; they download a few at a time and are written in order.
-            val chunks = ArrayList<IntArray>()
-            var i = 0
-            while (i < uniqOff.size) {
-                var j = i
-                while (j + 1 < uniqOff.size) {
-                    val gap = uniqOff[j + 1] - (uniqOff[j] + uniqLen[j])
-                    val size = uniqOff[j + 1] + uniqLen[j + 1] - uniqOff[i]
-                    if (gap > DATA_GAP || size > CHUNK) break
-                    j++
+        try {
+            tmpOut.outputStream().buffered(1 shl 20).use { o ->
+                o.write(Pmtiles.writeHeader(header)); o.write(root); o.write(metadata); o.write(leafBytes)
+                // Chunks of neighbouring tiles; they download a few at a time and are written in order.
+                val chunks = ArrayList<IntArray>()
+                var i = 0
+                while (i < uniqOff.size) {
+                    var j = i
+                    while (j + 1 < uniqOff.size) {
+                        val gap = uniqOff[j + 1] - (uniqOff[j] + uniqLen[j])
+                        val size = uniqOff[j + 1] + uniqLen[j + 1] - uniqOff[i]
+                        if (gap > DATA_GAP || size > CHUNK) break
+                        j++
+                    }
+                    chunks.add(intArrayOf(i, j))
+                    i = j + 1
                 }
-                chunks.add(intArrayOf(i, j))
-                i = j + 1
-            }
-            fetchAhead(pool, chunks.size, isCancelled, { c ->
-                val (a, b) = chunks[c]
-                get(url, h.dataOffset + uniqOff[a], uniqOff[b] + uniqLen[b] - uniqOff[a])
-            }) { c, chunk ->
-                val (a, b) = chunks[c]
-                val start = uniqOff[a]
-                for (k in a..b) {
-                    o.write(chunk, (uniqOff[k] - start).toInt(), uniqLen[k])
-                    written += uniqLen[k]
+                fetchAhead(pool, chunks.size, isCancelled, { c ->
+                    val (a, b) = chunks[c]
+                    get(url, h.dataOffset + uniqOff[a], uniqOff[b] + uniqLen[b] - uniqOff[a])
+                }) { c, chunk ->
+                    val (a, b) = chunks[c]
+                    val start = uniqOff[a]
+                    for (k in a..b) {
+                        o.write(chunk, (uniqOff[k] - start).toInt(), uniqLen[k])
+                        written += uniqLen[k]
+                    }
+                    onProgress(ExtractProgress("Downloading map", written, total, ExtractProgress.Stage.DOWNLOADING))
                 }
-                onProgress(ExtractProgress("Downloading map", written, total, ExtractProgress.Stage.DOWNLOADING))
             }
-        }
-        check(written == total) { "Downloaded $written of $total bytes" }
-        if (!tmpOut.renameTo(out)) {
-            out.delete()
-            check(tmpOut.renameTo(out)) { "Could not move the new map into place" }
+            check(written == total) { "Downloaded $written of $total bytes" }
+            if (!tmpOut.renameTo(out)) {
+                out.delete()
+                check(tmpOut.renameTo(out)) { "Could not move the new map into place" }
+            }
+        } catch (t: Throwable) {
+            tmpOut.delete()
+            throw t
         }
         onProgress(ExtractProgress("Done", written, total))
     }
@@ -381,7 +383,9 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
                     if (r.code != 206 && r.code != 200) throw IOException("HTTP ${r.code}")
                     val b = r.body!!.bytes()
                     if (r.code == 200 && offset > 0) throw IOException("Server ignored the range request")
-                    if (b.size.toLong() < length && r.code == 206) throw IOException("Short read")
+                    val crTotal = r.header("Content-Range")?.substringAfter('/', "")?.toLongOrNull()
+                    val reachedEof = offset == 0L && crTotal != null && crTotal == b.size.toLong()
+                    if (b.size.toLong() < length && r.code == 206 && !reachedEof) throw IOException("Short read")
                     return if (b.size.toLong() > length) b.copyOf(length.toInt()) else b
                 }
             } catch (e: IOException) {
@@ -427,6 +431,7 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
         internal fun rowIntervals(region: Region, south: Double, north: Double): List<Pair<Double, Double>> {
             val spans = ArrayList<Pair<Double, Double>>()
             val mid = (south + north) / 2
+            val xs = ArrayList<Double>()
             for (ring in region.rings) {
                 // Edges passing through the band (clipped) are covered directly…
                 for (i in 0 until ring.size - 1) {
@@ -437,16 +442,41 @@ class RegionExtractor(private val http: OkHttpClient = OkHttpClient()) {
                     val a = clipLon(p, q, max(lo, south)); val b = clipLon(p, q, min(hi, north))
                     spans += min(a, b) to max(a, b)
                 }
-                // …and the interior at the band's middle latitude (even-odd fill).
-                val xs = ArrayList<Double>()
+                // …and the interior at the band's middle latitude (even-odd across all rings so holes cut out).
                 for (i in 0 until ring.size - 1) {
                     val p = ring[i]; val q = ring[i + 1]
                     if ((p[1] <= mid && q[1] > mid) || (q[1] <= mid && p[1] > mid)) xs += clipLon(p, q, mid)
                 }
-                xs.sort()
-                for (k in 0 until xs.size - 1 step 2) spans += xs[k] to xs[k + 1]
             }
+            xs.sort()
+            for (k in 0 until xs.size - 1 step 2) spans += xs[k] to xs[k + 1]
             return spans
+        }
+
+        /** Bottom-up primitive merge sort of `0 until n` by `key(idx)` — no boxing and no bit-width limit. */
+        internal inline fun sortIndicesBy(n: Int, key: (Int) -> Long): IntArray {
+            var src = IntArray(n) { it }
+            if (n < 2) return src
+            var dst = IntArray(n)
+            var width = 1
+            while (width < n) {
+                var left = 0
+                while (left < n) {
+                    val mid = min(left + width, n)
+                    val right = min(left + width * 2, n)
+                    var i = left; var j = mid; var k = left
+                    while (i < mid && j < right) {
+                        val ki = key(src[i]); val kj = key(src[j])
+                        dst[k++] = if (ki <= kj) src[i++] else src[j++]
+                    }
+                    while (i < mid) dst[k++] = src[i++]
+                    while (j < right) dst[k++] = src[j++]
+                    left += width * 2
+                }
+                val tmp = src; src = dst; dst = tmp
+                width *= 2
+            }
+            return src
         }
 
         private fun clipLon(p: DoubleArray, q: DoubleArray, lat: Double): Double =

@@ -42,4 +42,30 @@ class LoopContinuityTest {
             }
         }
     }
+
+    @Test
+    fun `Routes concat preserves ferry continuity and counts across mid-ferry joins and slices`() {
+        fun pt(d: Double, ferry: Boolean) = RoutePoint(60.0, 5.0 + d * 1e-5, 0.0, d, d / 10.0, null, null, false, ferry)
+        // Leg A ends mid-ferry (ferryCount = 1).
+        val legA = Route(listOf(pt(0.0, false), pt(100.0, true), pt(200.0, true)), emptyList(), 200.0, 20.0, 0.0, 0, 0.0, ferryCount = 1)
+        // Case A: BRouter leg B starts at the same mid-ferry point (points[0].ferry == false, points[1].ferry == true, ferryCount = 1).
+        val legB = Route(listOf(pt(0.0, false), pt(100.0, true), pt(200.0, false)), emptyList(), 200.0, 20.0, 0.0, 0, 0.0, ferryCount = 1)
+        val joinedAB = Routes.concat(legA, legB)
+        assertEquals(1, joinedAB.ferryCount)
+        assertEquals(1, joinedAB.points.zipWithNext().count { (a, b) -> b.ferry && !a.ferry })
+
+        // Case B: Sliced tail starting mid-ferry (points[0].ferry == true, ferryCount = 0).
+        val full = Route(listOf(pt(0.0, false), pt(100.0, true), pt(200.0, true), pt(300.0, false)), emptyList(), 300.0, 30.0, 0.0, 0, 0.0, ferryCount = 1)
+        val slicedTail = Routes.slice(full, 100.0)
+        assertEquals(0, slicedTail.ferryCount)
+        val joinedSlice = Routes.concat(legA, slicedTail)
+        assertEquals(1, joinedSlice.ferryCount)
+        assertEquals(1, joinedSlice.points.zipWithNext().count { (a, b) -> b.ferry && !a.ferry })
+
+        // Case C: Land approach joined to sliced tail starting mid-ferry -> 1 ferry total.
+        val landA = Route(listOf(pt(0.0, false), pt(100.0, false)), emptyList(), 100.0, 10.0, 0.0, 0, 0.0, ferryCount = 0)
+        val joinedLandSlice = Routes.concat(landA, slicedTail)
+        assertEquals(1, joinedLandSlice.ferryCount)
+        assertEquals(1, joinedLandSlice.points.zipWithNext().count { (a, b) -> b.ferry && !a.ferry })
+    }
 }

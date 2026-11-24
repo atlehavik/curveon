@@ -62,7 +62,7 @@ assign no_tracks    = and paved_only ( equal tracks_last_resort 0 )
 # cheaper) or above 1 (tarmac dearer) moves towards 1 as the pull weakens.
 assign pull = multiply gravel_pull 0.01
 
-assign pass2coefficient = if offroad then 0.55 else if gravel_lover then max 0.55 add 1.0 multiply -0.4 pull else 0.95
+assign pass2coefficient = if offroad then 0.45 else if gravel_lover then max 0.55 add 1.0 multiply -0.4 pull else 0.95
 
 ---context:way
 

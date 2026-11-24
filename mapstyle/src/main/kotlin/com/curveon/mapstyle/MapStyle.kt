@@ -68,7 +68,7 @@ object MapStyle {
     /** Place names get a wide halo (the map's land colour; white text on the night map), so a road under them doesn't show between the letters. */
     private fun placeHalo(layer: JSONObject, flavor: String) {
         val id = layer.getString("id").substringBefore('~')
-        if (!id.startsWith("places_") && id != "online-places") return
+        if (!id.startsWith("places_") && id != "online-places" && id != "online-places_country") return
         val paint = layer.optJSONObject("paint") ?: return
         paint.put("text-halo-width", PLACE_HALO)
         if (flavor == "light") paint.put("text-halo-color", LAND_LIGHT)
@@ -111,7 +111,7 @@ object MapStyle {
             }
             "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { paint.put("line-color", road); atLeast(paint, HC_MIN_WIDTH) }
             "roads_other", "roads_bridges_other", "online-roads_other" -> { paint.put("line-color", path); atLeast(paint, HC_MIN_WIDTH) }
-            "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "online-roads_minor_casing" ->
+            "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "roads_bridges_other_casing", "online-roads_minor_casing" ->
                 // Not hidden by visibility: the online layers' visibility is switched by the map view.
                 paint.put("line-opacity", 0)
             "roads_link_casing", "roads_major_casing_early", "roads_major_casing_late", "roads_highway_casing_early", "roads_highway_casing_late",
@@ -167,7 +167,7 @@ object MapStyle {
         val paint = layer.optJSONObject("paint") ?: return
         when (layer.getString("id").substringBefore('~')) {
             "roads_minor", "roads_minor_service", "roads_bridges_minor", "online-roads_minor" -> { atLeast(paint, HC_MIN_WIDTH); nightColour(paint, road) }
-            "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "online-roads_minor_casing" ->
+            "roads_minor_casing", "roads_minor_service_casing", "roads_bridges_minor_casing", "roads_bridges_other_casing", "online-roads_minor_casing" ->
                 if (road != NIGHT_ROAD_HC) paint.put("line-opacity", 0)
             "roads_pier" -> nightColour(paint, road)
             "roads_other", "roads_bridges_other", "online-roads_other" -> { atLeast(paint, HC_MIN_WIDTH); nightColour(paint, path) }

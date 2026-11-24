@@ -28,6 +28,7 @@ internal fun CurveonMapState.MapStyleLoader(dark: Boolean, mapVersion: Int, road
         val json = offlineMaps.styleJson(if (dark) "dark" else "light", roadShade.first, roadShade.second)
         style = null
         m.setStyle(Style.Builder().fromJson(json)) { s ->
+            if (mapView.isDestroyed || !s.isFullyLoaded) return@setStyle
             addOverlayLayers(s, dark)
             poiBadges.forEach { (name, bmp) -> s.addImage(name, bmp) }
             signImages.forEach { (name, bmp) -> s.addImage(name, bmp) }
@@ -131,7 +132,7 @@ internal fun CurveonMapState.SignsAndPois(
     val context = LocalContext.current
     // Give way signs: on the right of the road, a few metres before the junction, as they stand.
     LaunchedEffect(style, giveWaySigns) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(GIVE_WAY)?.setGeoJson(FeatureCollection.fromFeatures(giveWaySigns.map { g ->
             val back = com.curveon.routing.Geo.destination(com.curveon.routing.LatLon(g.lat, g.lon), g.bearingDeg + 180, 14.0)
             val at = com.curveon.routing.Geo.destination(back, g.bearingDeg + 90, 6.0)
@@ -142,7 +143,7 @@ internal fun CurveonMapState.SignsAndPois(
     }
     // Speed limit signs where the limit changes, on the right of the road as they stand.
     LaunchedEffect(style, speedSigns, useMph) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         val density = context.resources.displayMetrics.density
         // In mph as the speed card shows it (the signs said km/h beside a card in mph).
         fun shown(limit: Int) = if (useMph) com.curveon.data.model.TelemetryData.mphLimit(limit) else limit
@@ -153,7 +154,7 @@ internal fun CurveonMapState.SignsAndPois(
         }))
     }
     LaunchedEffect(style, gpxPois) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(GPX_POIS)?.setGeoJson(FeatureCollection.fromFeatures(gpxPois.mapIndexed { i, p ->
             Feature.fromGeometry(Point.fromLngLat(p.lon, p.lat)).also {
                 it.addNumberProperty("i", i)
@@ -165,7 +166,7 @@ internal fun CurveonMapState.SignsAndPois(
     }
     // Dashed line from the rider to the nearest visible track.
     LaunchedEffect(style, trackHint) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         val h = trackHint
         s.getSourceAs<GeoJsonSource>(HINT)?.setGeoJson(
             if (h == null || h.onTrack) FeatureCollection.fromFeatures(emptyList())
@@ -193,7 +194,7 @@ internal fun CurveonMapState.PlanMarks(
     dark: Boolean,
 ) {
     LaunchedEffect(style, markers) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(MARKERS)?.setGeoJson(
             FeatureCollection.fromFeatures(markers.map { m ->
                 Feature.fromGeometry(Point.fromLngLat(m.point.longitude, m.point.latitude)).also {
@@ -210,7 +211,7 @@ internal fun CurveonMapState.PlanMarks(
     val groupImages = remember(style) { HashMap<String, android.graphics.Bitmap>() }
     val groupDensity = androidx.compose.ui.platform.LocalDensity.current.density
     LaunchedEffect(style, groupRiders) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         groupRiders.forEach { r ->
             val a = r.avatar
             if (a != null && groupImages[r.id] !== a) {
@@ -232,19 +233,19 @@ internal fun CurveonMapState.PlanMarks(
     }
 
     LaunchedEffect(style, sketch) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(SKETCH)?.setGeoJson(lineFeatures(listOf(if (sketch.size >= 3) sketch + sketch.first() else emptyList())))
     }
 
     LaunchedEffect(style, pickedPoint) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(PICK)?.setGeoJson(
             FeatureCollection.fromFeatures(listOfNotNull(pickedPoint).map { p -> Feature.fromGeometry(Point.fromLngLat(p.longitude, p.latitude)) })
         )
     }
 
     LaunchedEffect(style, location, approachTo) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         val to = approachTo?.takeIf { haversine(location, it) > 20 }
         if (to == null && !approachShown) return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(APPROACH)?.setGeoJson(lineFeatures(listOfNotNull(to?.let { listOf(location, it) })))
@@ -254,11 +255,11 @@ internal fun CurveonMapState.PlanMarks(
 
     // Editing: the trip's places as handles. The dashed guess goes once the new route is in.
     LaunchedEffect(style, editor?.handles, dark) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.getSourceAs<GeoJsonSource>(EDIT_HANDLES)?.setGeoJson(handleFeatures(editor?.handles.orEmpty(), dark))
     }
     LaunchedEffect(style, editor?.busy, editor == null, previewRoutes) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         if (editor?.busy != true) s.getSourceAs<GeoJsonSource>(EDIT_DRAG)?.setGeoJson(FeatureCollection.fromFeatures(emptyList()))
     }
 }

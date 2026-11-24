@@ -148,9 +148,11 @@ object Polyline {
   fun decode(s: String): List<Pair<Double, Double>> {
     val out = ArrayList<Pair<Double, Double>>()
     var i = 0; var lat = 0L; var lon = 0L
-    fun next(): Long {
+    fun next(): Long? {
+      if (i >= s.length) return null
       var shift = 0; var result = 0L
       while (true) {
+        if (i >= s.length || shift >= 64) return null
         val b = s[i++].code - 63
         result = result or ((b and 0x1f).toLong() shl shift)
         shift += 5
@@ -159,7 +161,9 @@ object Polyline {
       return if (result and 1L != 0L) (result shr 1).inv() else result shr 1
     }
     while (i < s.length) {
-      lat += next(); lon += next()
+      val dLat = next() ?: break
+      val dLon = next() ?: break
+      lat += dLat; lon += dLon
       out.add(lat / 1e5 to lon / 1e5)
     }
     return out
@@ -262,7 +266,11 @@ class WebPlanInbox(private val transports: TransportFactory, private val scheme:
    * What is kept on [link]'s channel; null when the relay could not be reached. [answer] gets it before the connection
    * closes and returns frames to send back ([WebPlan.gotFrame], the device's own trips).
    */
-  fun fetch(link: WebPlanLink, quietMs: Long = 1500, maxMs: Long = 10_000, answer: (WebPlanInbound) -> List<String> = { emptyList() }): WebPlanInbound? {
+  fun fetch(
+    link: WebPlanLink, quietMs: Long = 1500, maxMs: Long = 10_000,
+    onSent: (Boolean) -> Unit = {},
+    answer: (WebPlanInbound) -> List<String> = { emptyList() },
+  ): WebPlanInbound? {
     val trips = LinkedHashMap<String, WebPlanTrip>()
     val deletes = LinkedHashSet<WebPlanRef>()
     val lock = Object()
@@ -285,7 +293,11 @@ class WebPlanInbox(private val transports: TransportFactory, private val scheme:
       if (synchronized(lock) { opened && System.currentTimeMillis() - last >= quietMs }) break
     }
     val got = synchronized(lock) { if (opened) WebPlanInbound(trips.values.toList(), deletes.toList()) else null }
-    if (got != null && closed.count > 0) answer(got).forEach { t.send(it) }
+    if (got != null && closed.count > 0) {
+      val frames = answer(got)
+      val allSent = frames.all { t.send(it) }
+      onSent(allSent)
+    }
     t.close()
     return got
   }
@@ -295,12 +307,16 @@ class WebPlanInbox(private val transports: TransportFactory, private val scheme:
    * relay replays (in one go, once it goes quiet for [quietMs]) and then each trip or delete as it comes, and returns
    * frames to send back. [onClosed] when the connection ends by itself (the caller may connect again later).
    */
-  fun live(link: WebPlanLink, quietMs: Long = 1500, onInbound: (WebPlanInbound) -> List<String>, onClosed: () -> Unit = {}): WebPlanLive {
+  fun live(
+    link: WebPlanLink, quietMs: Long = 1500, onInbound: (WebPlanInbound) -> List<String>,
+    onClosed: () -> Unit = {}, onSent: (Boolean) -> Unit = {}
+  ): WebPlanLive {
     val lock = Object()
     val trips = LinkedHashMap<String, WebPlanTrip>()
     val deletes = LinkedHashSet<WebPlanRef>()
     var replayed = false
     var closedByUs = false
+    var timerDead = false
     lateinit var transport: Transport
     val timer = java.util.Timer("webplan-live", true)
 
@@ -308,39 +324,51 @@ class WebPlanInbox(private val transports: TransportFactory, private val scheme:
     // sees this device and its trips at once, instead of a device that says it is connected and stays silent.
     fun flush(replay: Boolean = false) {
       val inbound = synchronized(lock) {
+        if (closedByUs) return
         if (!replay && trips.isEmpty() && deletes.isEmpty()) return
         WebPlanInbound(trips.values.toList(), deletes.toList()).also { trips.clear(); deletes.clear() }
       }
-      onInbound(inbound).forEach { transport.send(it) }
+      val frames = onInbound(inbound)
+      val allSent = frames.all { transport.send(it) }
+      onSent(allSent)
     }
 
     var quietTask: java.util.TimerTask? = null
+    fun armQuiet() {
+      if (timerDead || closedByUs) return
+      quietTask?.cancel()
+      quietTask = timer.schedule(quietMs) { synchronized(lock) { if (closedByUs) return@schedule; replayed = true }; flush(replay = true) }
+    }
     transport = transports.open(link.relayUrl(scheme), object : TransportListener {
       override fun onOpen() {
         // An empty channel replays nothing: the first batch is then simply empty.
-        synchronized(lock) { quietTask = timer.schedule(quietMs) { synchronized(lock) { replayed = true }; flush(replay = true) } }
+        synchronized(lock) { armQuiet() }
       }
       override fun onMessage(text: String) {
         val now = synchronized(lock) {
-          if (!WebPlan.collect(link, text, trips, deletes)) return
-          if (!replayed) {
-            quietTask?.cancel()
-            quietTask = timer.schedule(quietMs) { synchronized(lock) { replayed = true }; flush(replay = true) }
-          }
+          if (closedByUs || !WebPlan.collect(link, text, trips, deletes)) return
+          if (!replayed) armQuiet()
           replayed
         }
         if (now) flush()
       }
       override fun onClosed(code: Int) {
-        timer.cancel()
-        if (!synchronized(lock) { closedByUs }) onClosed()
+        val notify = synchronized(lock) {
+          timerDead = true
+          timer.cancel()
+          !closedByUs
+        }
+        if (notify) onClosed()
       }
     })
     return object : WebPlanLive {
       override fun send(text: String) = transport.send(text)
       override fun close() {
-        synchronized(lock) { closedByUs = true }
-        timer.cancel()
+        synchronized(lock) {
+          closedByUs = true
+          timerDead = true
+          timer.cancel()
+        }
         transport.close()
       }
     }

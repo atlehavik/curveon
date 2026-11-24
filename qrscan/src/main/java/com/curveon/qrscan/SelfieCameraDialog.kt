@@ -80,22 +80,25 @@ fun SelfieCameraDialog(file: File, onPicture: () -> Unit, onDismiss: () -> Unit)
     // (Re)start the camera when it is allowed and when the rider switches between the front and the back lens.
     DisposableEffect(granted, front) {
         var cancelled = false
+        var boundProvider: ProcessCameraProvider? = null
         if (granted) {
             val future = ProcessCameraProvider.getInstance(context)
             future.addListener({
                 if (cancelled) return@addListener
-                val provider = future.get()
-                var selector = if (front) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
-                // A device with one lens only: use that one.
-                if (!provider.hasCamera(selector)) selector = if (front) CameraSelector.DEFAULT_BACK_CAMERA else CameraSelector.DEFAULT_FRONT_CAMERA
-                val preview = Preview.Builder().build().also { it.surfaceProvider = previewView.surfaceProvider }
-                // A picture for a 192 px profile needs no more than this, and it is quick to take and to read.
-                val photo = ImageCapture.Builder()
-                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                    .setResolutionSelector(ResolutionSelector.Builder().setResolutionStrategy(
-                        ResolutionStrategy(Size(1600, 1200), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER)).build())
-                    .build()
                 runCatching {
+                    val provider = future.get()
+                    if (cancelled) return@runCatching
+                    boundProvider = provider
+                    var selector = if (front) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+                    // A device with one lens only: use that one.
+                    if (!provider.hasCamera(selector)) selector = if (front) CameraSelector.DEFAULT_BACK_CAMERA else CameraSelector.DEFAULT_FRONT_CAMERA
+                    val preview = Preview.Builder().build().also { it.surfaceProvider = previewView.surfaceProvider }
+                    // A picture for a 192 px profile needs no more than this, and it is quick to take and to read.
+                    val photo = ImageCapture.Builder()
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                        .setResolutionSelector(ResolutionSelector.Builder().setResolutionStrategy(
+                            ResolutionStrategy(Size(1600, 1200), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER)).build())
+                        .build()
                     provider.unbindAll()
                     val camera = provider.bindToLifecycle(lifecycleOwner, selector, preview, photo)
                     frontRunning = camera.cameraInfo.lensFacing == CameraSelector.LENS_FACING_FRONT
@@ -106,7 +109,8 @@ fun SelfieCameraDialog(file: File, onPicture: () -> Unit, onDismiss: () -> Unit)
         onDispose {
             cancelled = true
             capture = null
-            runCatching { ProcessCameraProvider.getInstance(context).get().unbindAll() }
+            runCatching { boundProvider?.unbindAll() }
+            boundProvider = null
         }
     }
 

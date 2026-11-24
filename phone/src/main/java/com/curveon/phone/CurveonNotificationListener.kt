@@ -49,8 +49,10 @@ class CurveonNotificationListener : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         if (PhoneHub.listener === this) PhoneHub.listener = null
+        main.removeCallbacks(periodicPush)
         sessionManager?.removeOnActiveSessionsChangedListener(sessionsListener)
         controller?.unregisterCallback(mediaCallback)
+        controller = null
         watchers.forEach { (c, cb) -> c.unregisterCallback(cb) }
         watchers.clear()
     }

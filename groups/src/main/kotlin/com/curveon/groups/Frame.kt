@@ -1,7 +1,7 @@
 package com.curveon.groups
 
+import java.security.GeneralSecurityException
 import java.security.SecureRandom
-import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -45,11 +45,13 @@ object FrameCrypto {
 
   /** Null when the frame was not made with this key, or was altered or moved to another group, rider or type. */
   fun open(keys: GroupKeys, frame: Frame): ByteArray? {
-    if (frame.epoch != keys.epoch) return null
+    if (frame.epoch != keys.epoch || frame.nonce.size != 12 || frame.ciphertext.size < 16) return null
     return try {
       cipher(Cipher.DECRYPT_MODE, keys.encryptionKey, frame.nonce, aad(keys.groupId, frame.riderId, frame.epoch, frame.type))
         .doFinal(frame.ciphertext)
-    } catch (_: AEADBadTagException) {
+    } catch (_: GeneralSecurityException) {
+      null
+    } catch (_: IllegalArgumentException) {
       null
     }
   }

@@ -59,7 +59,8 @@ object TabletRoutes {
 
     /** The trip as a planned trip on the tablet (not yet saved: id 0), or null if it can't be read. */
     fun decode(payload: String): RouteItem? = runCatching {
-        val text = GZIPInputStream(Base64.decode(payload, Base64.NO_WRAP).inputStream()).use { it.readBytes().decodeToString() }
+        if (payload.length > MAX_PAYLOAD) return null
+        val text = GZIPInputStream(Base64.decode(payload, Base64.NO_WRAP).inputStream()).use { gunzipLimited(it) }
         val j = JSONObject(text)
         RouteItem(
             title = j.getString("title"), subtitle = j.optString("subtitle"),
@@ -71,5 +72,20 @@ object TabletRoutes {
         )
     }.getOrNull()
 
+    private fun gunzipLimited(input: GZIPInputStream): String {
+        val out = ByteArrayOutputStream()
+        val buf = ByteArray(16 * 1024)
+        var total = 0
+        while (true) {
+            val n = input.read(buf)
+            if (n < 0) break
+            total += n
+            require(total <= MAX_DECOMPRESSED) { "Route payload too large" }
+            out.write(buf, 0, n)
+        }
+        return out.toString(Charsets.UTF_8.name())
+    }
+
     private const val MAX_PAYLOAD = 600_000
+    private const val MAX_DECOMPRESSED = 4 * 1024 * 1024
 }

@@ -1256,17 +1256,20 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
         // New route: load fuel, cameras and give way signs along it; forget road names of the old one.
         viewModelScope.launch {
-            navigator.state.map { it.route }.distinctUntilChanged().collect { route ->
+            navigator.state.map { it.route }.distinctUntilChanged().collectLatest { route ->
                 if (route != null) NavTrace.route(route.points.map { LatLon(it.lat, it.lon) }) else NavTrace.event("route cleared")
+                if (route == null) {
+                    stopDemoRide()
+                    _fuelHint.value = null; _cameraAlert.value = null; _giveWayAlert.value = null
+                    routeGiveWays.value = emptyList(); _mapSpeedSigns.value = emptyList()
+                }
                 hazards.load(route)
-                if (route == null) stopDemoRide()
-                else if (_demoMode.value) {
+                if (route != null && _demoMode.value) {
                     // A re-plan of the trip being ridden carries on from here; another trip begins at its start.
                     val title = navigator.state.value.goal?.title
                     startDemoRide(newTrip = !_isDemoRiding.value || title != demoTrip)
                     demoTrip = title
                 }
-                if (route == null) { _fuelHint.value = null; _cameraAlert.value = null; _giveWayAlert.value = null; routeGiveWays.value = emptyList(); _mapSpeedSigns.value = emptyList() }
             }
         }
         // While navigating: the sounds for turns, arriving and riding off the route.
@@ -1297,6 +1300,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     override fun onCleared() {
         obd.use(null)
+        webPlanner.webPlanHidden()
+        phoneCompanion.shutdown()
+        townCounting.close()
         NavTrace.flush()
         // Not in viewModelScope: Android has cancelled it by now, and the ride's last part, its name and its GPX copy were never written.
         saveRide(finish = true, scope = AFTER_CLOSING)
@@ -1719,10 +1725,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun resumeRide() {
         val prev = _resumeOffer.value ?: return
         _resumeOffer.value = null
+        val orphanId = rideRecorder.current?.id?.takeIf { it > 0L && it != prev.id }
         val merged = rideRecorder.resume(prev) ?: return
         _currentRide.value = merged
         viewModelScope.launch(Dispatchers.IO) {
             rideDao.update(merged)
+            if (orphanId != null) rideDao.delete(orphanId)
             autoSavedGpx.remove(prev.id)?.let { repository.deleteGpxTrack(it) }
         }
     }

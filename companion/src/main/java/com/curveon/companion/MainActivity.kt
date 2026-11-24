@@ -62,10 +62,13 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         // Opening the app is enough to (re)start sharing, e.g. after an update or a reboot.
-        if (!PhoneHub.status.value.serviceRunning && has(Manifest.permission.BLUETOOTH_CONNECT) && !stoppedByUser) {
+        if (!PhoneHub.status.value.serviceRunning && hasBluetooth() && !stoppedByUser) {
             CompanionService.start(this)
         }
     }
+
+    private fun hasBluetooth() =
+        android.os.Build.VERSION.SDK_INT < 31 || has(Manifest.permission.BLUETOOTH_CONNECT)
 
     /** Remembers an explicit "Stop sharing" so we don't restart behind the rider's back. */
     private var stoppedByUser: Boolean
@@ -153,13 +156,13 @@ class MainActivity : ComponentActivity() {
                     if (status.serviceRunning) { stoppedByUser = true; CompanionService.stop(this@MainActivity) }
                     else { stoppedByUser = false; CompanionService.start(this@MainActivity) }
                 },
-                enabled = status.serviceRunning || has(Manifest.permission.BLUETOOTH_CONNECT),
+                enabled = status.serviceRunning || hasBluetooth(),
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
                 Text(stringResource(if (status.serviceRunning) R.string.sharing_stop else R.string.sharing_start), fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
             // Greyed out: say why, so it doesn't look broken.
-            if (!status.serviceRunning && !has(Manifest.permission.BLUETOOTH_CONNECT))
+            if (!status.serviceRunning && !hasBluetooth())
                 Text("Needs the Bluetooth permission first: tap Grant under Setup.", color = Muted, fontSize = 13.sp)
         }
     }
@@ -170,17 +173,18 @@ class MainActivity : ComponentActivity() {
      */
     @Composable
     private fun FriendsCard() {
-        // The code is made by the tablet (the friends are there) and comes back over the link.
+        // The code/link is made by the tablet (the friends are there) and comes back over the link.
         val invite by GroupMirror.friendInvite.collectAsStateWithLifecycle()
+        val friendLink by GroupMirror.friendLink.collectAsStateWithLifecycle()
         var showing by remember { mutableStateOf(false) }
         var sharing by remember { mutableStateOf(false) }
         var scanning by remember { mutableStateOf(false) }
         val code = if (showing) invite else null
-        LaunchedEffect(invite, sharing) {
-            val link = invite ?: return@LaunchedEffect
+        LaunchedEffect(friendLink, sharing) {
+            val link = friendLink ?: return@LaunchedEffect
             if (!sharing) return@LaunchedEffect
             sharing = false
-            GroupMirror.forgetFriendInvite()
+            GroupMirror.forgetFriendLink()
             startActivity(Intent.createChooser(
                 Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, getString(R.string.friends_share_text, link)), null
             ))
@@ -193,7 +197,7 @@ class MainActivity : ComponentActivity() {
             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.friends_my_code)) }
             OutlinedButton(onClick = {
                 sharing = true
-                GroupMirror.requestFriendInvite()
+                GroupMirror.requestFriendLink()
             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.friends_share_link)) }
             if (com.curveon.qrscan.hasCamera()) OutlinedButton(onClick = { scanning = true }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.group_scan))
@@ -345,7 +349,7 @@ class MainActivity : ComponentActivity() {
         private val Green = Color(0xFF00E676)
 
         private val RUNTIME_PERMISSIONS = buildList {
-            add(Manifest.permission.BLUETOOTH_CONNECT)
+            if (android.os.Build.VERSION.SDK_INT >= 31) add(Manifest.permission.BLUETOOTH_CONNECT)
             add(Manifest.permission.RECORD_AUDIO)
             add(Manifest.permission.READ_CONTACTS)
             add(Manifest.permission.READ_CALL_LOG)

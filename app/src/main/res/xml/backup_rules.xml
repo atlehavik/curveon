@@ -5,4 +5,9 @@
 -->
 <full-backup-content>
     <exclude domain="sharedpref" path="groups.xml"/>
+    <exclude domain="external" path="maps"/>
+    <exclude domain="external" path="routing"/>
+    <exclude domain="external" path="search"/>
+    <exclude domain="external" path="speedlimits"/>
+    <exclude domain="external" path="navtrace"/>
 </full-backup-content>

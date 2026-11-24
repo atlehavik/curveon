@@ -49,6 +49,8 @@ class RoutingData(private val context: Context) {
     /** Tiles on the device that are not [stale]: what a country's download need not fetch again. */
     fun freshNames() = installedNames().let { have -> have - stale(have).toSet() }
 
+    private val client by lazy { OkHttpClient() }
+
     /**
      * Downloads those of [tiles] that are missing from brouter.de, and the [stale] ones brouter.de has a newer build
      * of. Needs a connection (e.g. the phone's hotspot).
@@ -56,11 +58,10 @@ class RoutingData(private val context: Context) {
     suspend fun download(tiles: List<String>, onProgress: (done: Int, total: Int, file: String) -> Unit, isCancelled: () -> Boolean = { false }) =
         withContext(Dispatchers.IO) {
             val todo = missing(tiles) + stale(tiles)
-            val client = OkHttpClient()
             todo.forEachIndexed { i, tile ->
                 check(!isCancelled()) { "Cancelled" }
                 onProgress(i, todo.size, tile)
-                val got = get(client, tile, onlyIfNewer = tile !in missing(listOf(tile)))
+                val got = get(tile, onlyIfNewer = tile !in missing(listOf(tile)), isCancelled = isCancelled)
                 if (got == 404) throw IOException("Download of $tile failed: HTTP 404")
             }
             onProgress(todo.size, todo.size, "")
@@ -73,8 +74,7 @@ class RoutingData(private val context: Context) {
     suspend fun refreshStale(tiles: List<String>) = withContext(Dispatchers.IO) {
         val todo = stale(tiles)
         if (todo.isEmpty() || !online()) return@withContext
-        val client = OkHttpClient()
-        for (tile in todo) runCatching { get(client, tile, onlyIfNewer = true) }
+        for (tile in todo) runCatching { get(tile, onlyIfNewer = true) }
     }
 
     /**
@@ -83,14 +83,16 @@ class RoutingData(private val context: Context) {
      * here (otherwise the file's date is moved on, so it is not asked about again for [STALE_DAYS]). The file gets
      * brouter.de's date of the build. Returns the HTTP code, 304 when nothing newer was there.
      */
-    private suspend fun get(client: OkHttpClient, tile: String, onlyIfNewer: Boolean): Int = writing.computeIfAbsent(tile) { Mutex() }.withLock {
+    private suspend fun get(tile: String, onlyIfNewer: Boolean, isCancelled: () -> Boolean = { false }): Int = writing.computeIfAbsent(tile) { Mutex() }.withLock {
+        check(!isCancelled()) { "Cancelled" }
         val file = File(segmentsDir, "$tile.rd5")
         // Done meanwhile by the other caller (a country's download and planning online can both get here).
         if (onlyIfNewer && file.exists() && !stale(listOf(tile)).contains(tile)) return@withLock 304
         if (!onlyIfNewer && file.exists()) return@withLock 200
         val request = Request.Builder().url("$SEGMENTS_URL$tile.rd5")
         if (onlyIfNewer && file.exists()) request.header("If-Modified-Since", httpDate(file.lastModified()))
-        client.newCall(request.build()).execute().use { response ->
+        val call = client.newCall(request.build())
+        call.execute().use { response ->
             if (response.code == 304) { file.setLastModified(System.currentTimeMillis()); return@withLock 304 }
             if (response.code == 404) return@withLock 404
             if (!response.isSuccessful) throw IOException("Download of $tile failed: HTTP ${response.code}")
@@ -99,7 +101,17 @@ class RoutingData(private val context: Context) {
             if (onlyIfNewer && built != null && built <= file.lastModified()) { file.setLastModified(System.currentTimeMillis()); return@withLock 304 }
             val tmp = File(segmentsDir, "$tile.rd5.part")
             try {
-                response.body!!.byteStream().use { input -> tmp.outputStream().use { input.copyTo(it, 1 shl 16) } }
+                response.body!!.byteStream().use { input ->
+                    tmp.outputStream().use { output ->
+                        val buf = ByteArray(1 shl 16)
+                        while (true) {
+                            if (isCancelled()) { call.cancel(); error("Cancelled") }
+                            val n = input.read(buf)
+                            if (n < 0) break
+                            output.write(buf, 0, n)
+                        }
+                    }
+                }
                 if (!tmp.renameTo(file)) throw IOException("Could not store $tile")
             } finally {
                 tmp.delete() // left only when something failed: the tile already here stays as it was
@@ -126,10 +138,9 @@ class RoutingData(private val context: Context) {
      */
     suspend fun fetch(tiles: List<String>, onProgress: (done: Int, total: Int) -> Unit) = withContext(Dispatchers.IO) {
         val todo = toFetch(tiles)
-        val client = OkHttpClient()
         todo.forEachIndexed { i, tile ->
             onProgress(i, todo.size)
-            if (get(client, tile, onlyIfNewer = false) == 404) absent += tile
+            if (get(tile, onlyIfNewer = false) == 404) absent += tile
         }
     }
 

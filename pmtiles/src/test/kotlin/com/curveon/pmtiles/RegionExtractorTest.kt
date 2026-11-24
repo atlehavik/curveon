@@ -1,5 +1,6 @@
 package com.curveon.pmtiles
 
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -77,5 +78,29 @@ class RegionExtractorTest {
             if (System.currentTimeMillis() - last > 5000) { last = System.currentTimeMillis(); println("  ${it.phase} ${it.doneBytes / 1_000_000}/${it.totalBytes / 1_000_000} MB") }
         })
         println("wrote ${out.length() / 1_000_000} MB in ${(System.currentTimeMillis() - t0) / 1000} s")
+    }
+
+    @Test
+    fun `sortIndicesBy handles offsets past 128 GiB without signed overflow`() {
+        val offsets = longArrayOf(200_000_000_000L, 100L, 140_000_000_000L, 137_438_953_472L, 0L)
+        val sorted = RegionExtractor.sortIndicesBy(offsets.size) { offsets[it] }
+        assertArrayEquals(intArrayOf(4, 1, 3, 2, 0), sorted)
+    }
+
+    @Test
+    fun `rowIntervals cuts out interior hole rings using even-odd fill`() {
+        val outer = listOf(
+            doubleArrayOf(0.0, 0.0), doubleArrayOf(10.0, 0.0),
+            doubleArrayOf(10.0, 10.0), doubleArrayOf(0.0, 10.0), doubleArrayOf(0.0, 0.0)
+        )
+        val hole = listOf(
+            doubleArrayOf(3.0, 3.0), doubleArrayOf(7.0, 3.0),
+            doubleArrayOf(7.0, 7.0), doubleArrayOf(3.0, 7.0), doubleArrayOf(3.0, 3.0)
+        )
+        val spans = RegionExtractor.rowIntervals(Region(listOf(outer, hole)), 4.5, 5.5)
+        // Band 4.5..5.5 passes through the hole: no interior span should cover x = 5.0.
+        assertTrue("expected hole at lon=5.0 to be excluded, got $spans", spans.none { (a, b) -> a < 5.0 && b > 5.0 })
+        assertTrue("expected left side [0,3] to be covered, got $spans", spans.any { (a, b) -> a <= 1.0 && b >= 2.0 })
+        assertTrue("expected right side [7,10] to be covered, got $spans", spans.any { (a, b) -> a <= 8.0 && b >= 9.0 })
     }
 }

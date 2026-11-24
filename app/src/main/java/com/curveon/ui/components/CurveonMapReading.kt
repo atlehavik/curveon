@@ -62,19 +62,19 @@ internal fun CurveonMapState.SurfaceLayers(
     townSquares: Set<Long>? = null,
 ) {
     LaunchedEffect(style, surfaceMode) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         val v = if (surfaceMode != SurfaceMode.OFF) Property.VISIBLE else Property.NONE
         s.layers.filter { it.id.startsWith(SURFACE) }.forEach { it.setProperties(visibility(v)) }
     }
     // Quieter towns: these small roads (sorted road by road, towns left out) go on up to TOWN_ROADS_ZOOM, where the map's
     // own come in (see TownRoads); otherwise only until the map's own small roads are in its tiles.
     LaunchedEffect(style, townSquares != null && surfaceMode != SurfaceMode.OFF) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.getLayer("$SURFACE-road")?.setMaxZoom(if (townSquares != null && surfaceMode != SurfaceMode.OFF) TOWN_ROADS_ZOOM else MAP_ROADS_ZOOM)
     }
     // The zoom the dashes start at. The gravel heat fades out as the dashes come in.
     LaunchedEffect(style, surfaceZoom) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.layers.filter { it.id.startsWith(SURFACE) }.forEach { it.setMinZoom(surfaceZoom) }
         s.getLayer("$HEAT-layer")?.setProperties(heatmapOpacity(E.interpolate(E.linear(), E.zoom(),
             E.stop(surfaceZoom, if (dark) 0.8f else 0.7f), E.stop(surfaceZoom + 1.5f, 0f))))
@@ -120,7 +120,7 @@ internal fun CurveonMapState.SurfaceLayers(
     }
     LaunchedEffect(style) { surfaceBounds = null }
     LaunchedEffect(style, surfaceMode, roadShade) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         val coloured = surfaceMode == SurfaceMode.COLOURED
         // Dashed: the road itself, as wide as the map draws it; coloured: a little wider than the thin dashes, so it reads at a glance.
         val gravelWidth = if (coloured) roadWidth(1.2f) else dashedRoadWidth()
@@ -149,7 +149,7 @@ internal fun CurveonMapState.GravelHeatLayer(gravelHeat: GravelHeatSource?, heat
     LaunchedEffect(heatButton) { onHeatButtonShownState.value(heatButton) }
     val heatScope = rememberCoroutineScope()
     LaunchedEffect(style, heatOn) {
-        style?.getLayer("$HEAT-layer")?.setProperties(visibility(if (heatOn) Property.VISIBLE else Property.NONE))
+        style?.takeIf { it.isFullyLoaded }?.getLayer("$HEAT-layer")?.setProperties(visibility(if (heatOn) Property.VISIBLE else Property.NONE))
     }
     LaunchedEffect(style, cameraIdleTick, heatOn) {
         val m = map ?: return@LaunchedEffect
@@ -200,6 +200,7 @@ internal fun CurveonMapState.WeatherSymbols(
         var onMap = emptyList<com.curveon.data.weather.MapWeather>()
         androidx.compose.runtime.snapshotFlow { if (weatherShownNow.value) weatherSpotsNow.value() else emptyList() }.collect { spots ->
             if (spots == onMap) return@collect
+            if (style !== s || !s.isFullyLoaded) return@collect
             if (!imagesAdded) {
                 imagesAdded = true
                 com.curveon.data.weather.MapWeather.Kind.entries.forEach { k ->
@@ -334,7 +335,7 @@ internal const val BUILDINGS_3D = "cv-buildings-3d"
 @Composable
 internal fun CurveonMapState.Buildings3d(on: Boolean, dark: Boolean) {
     LaunchedEffect(style, on, dark) {
-        val s = style ?: return@LaunchedEffect
+        val s = style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
         s.layers.filter { it.id.startsWith(BUILDINGS_3D) || it.id.startsWith("online-$BUILDINGS_3D") }.forEach { s.removeLayer(it) }
         if (!on) return@LaunchedEffect
         val firstLabel = (s.layers.firstOrNull { it is org.maplibre.android.style.layers.SymbolLayer && !it.id.startsWith("online-") && !it.id.startsWith("org.maplibre") }

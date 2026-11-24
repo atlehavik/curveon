@@ -32,7 +32,7 @@ class VoiceReplier(private val context: Context) {
         currentKey = key
         val r = SpeechRecognizer.createSpeechRecognizer(context)
         recognizer = r
-        r.setRecognitionListener(Listener(key))
+        r.setRecognitionListener(Listener(key, r))
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
@@ -54,21 +54,26 @@ class VoiceReplier(private val context: Context) {
         currentKey = null
     }
 
-    private inner class Listener(private val key: String) : RecognitionListener {
+    private inner class Listener(private val key: String, private val owner: SpeechRecognizer) : RecognitionListener {
+        private fun isActive() = recognizer === owner && currentKey == key
+
         override fun onPartialResults(partialResults: Bundle?) {
+            if (!isActive()) return
             best(partialResults)?.let { PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.PARTIAL, it)) }
         }
 
         override fun onResults(results: Bundle?) {
+            if (!isActive()) return
             val text = best(results)
             PhoneHub.broadcast(
                 if (text.isNullOrBlank()) Message.VoiceReplyState(key, VoiceState.ERROR, "Didn't catch that", PhoneErrorCode.NOT_CAUGHT)
                 else Message.VoiceReplyState(key, VoiceState.RESULT, text)
             )
-            main.post { cancelInternal() }
+            main.post { if (recognizer === owner) cancelInternal() }
         }
 
         override fun onError(error: Int) {
+            if (!isActive()) return
             val (reason, code) = when (error) {
                 SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Didn't catch that" to PhoneErrorCode.NOT_CAUGHT
                 SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission missing on the phone" to PhoneErrorCode.MIC_NOT_ALLOWED
@@ -76,7 +81,7 @@ class VoiceReplier(private val context: Context) {
                 else -> "Speech recognition error ($error)" to PhoneErrorCode.RECOGNIZER_ERROR
             }
             PhoneHub.broadcast(Message.VoiceReplyState(key, VoiceState.ERROR, reason, code))
-            main.post { cancelInternal() }
+            main.post { if (recognizer === owner) cancelInternal() }
         }
 
         private fun best(b: Bundle?) = b?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()

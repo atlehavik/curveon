@@ -25,7 +25,7 @@ import java.util.concurrent.Executors
  */
 object NavTrace {
     private val io = Executors.newSingleThreadExecutor { r -> Thread(r, "NavTrace").apply { isDaemon = true } }
-    private var writer: BufferedWriter? = null
+    @Volatile private var writer: BufferedWriter? = null
     private var lastFlush = 0L
 
     fun start(context: Context) {

@@ -33,20 +33,28 @@ object RouteForTablet {
     /** Curveon's ordered broadcast; the result code tells Curveon what to say to the rider. */
     class Receiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val payload = intent.getStringExtra(RouteHandoff.EXTRA_ROUTE) ?: return
-            val route = Message.RouteFromPhone(intent.getStringExtra(RouteHandoff.EXTRA_NAME).orEmpty(), payload)
+            if (intent.action != RouteHandoff.ACTION) return
+            val payload = intent.getStringExtra(RouteHandoff.EXTRA_ROUTE)?.takeIf { it.length <= MAX_PAYLOAD } ?: return
+            val route = Message.RouteFromPhone(intent.getStringExtra(RouteHandoff.EXTRA_NAME).orEmpty().take(200), payload)
             val pending = goAsync()
             thread(name = "route-for-tablet") {
-                // Kept first: should the link drop while it is written, it goes over on the next connect.
-                keep(context, route)
-                if (PhoneHub.hasTablet) PhoneHub.broadcast(route)
-                pending.resultCode = when {
-                    PhoneHub.hasTablet -> { file(context).delete(); RouteHandoff.RESULT_SENT }
-                    PhoneHub.status.value.serviceRunning -> RouteHandoff.RESULT_WAITING
-                    else -> RouteHandoff.RESULT_SHARING_OFF
+                try {
+                    // Kept first: should the link drop while it is written, it goes over on the next connect.
+                    keep(context, route)
+                    if (PhoneHub.hasTablet) PhoneHub.broadcast(route)
+                    pending.resultCode = when {
+                        PhoneHub.hasTablet -> { file(context).delete(); RouteHandoff.RESULT_SENT }
+                        PhoneHub.status.value.serviceRunning -> RouteHandoff.RESULT_WAITING
+                        else -> RouteHandoff.RESULT_SHARING_OFF
+                    }
+                } catch (_: Exception) {
+                    pending.resultCode = RouteHandoff.RESULT_SHARING_OFF
+                } finally {
+                    pending.finish()
                 }
-                pending.finish()
             }
         }
     }
+
+    private const val MAX_PAYLOAD = 600_000
 }

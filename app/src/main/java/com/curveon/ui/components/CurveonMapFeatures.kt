@@ -24,9 +24,12 @@ internal fun bothWaysSegments(lat: DoubleArray, lon: DoubleArray): BooleanArray 
     val n = lat.size
     val both = BooleanArray(maxOf(n - 1, 0))
     if (n < 3) return both
-    // Metres in a plane, east and north (each point with its own latitude's scale; neighbours share it).
-    val x = DoubleArray(n) { lon[it] * 111_320.0 * kotlin.math.cos(Math.toRadians(lat[it])) }
-    val y = DoubleArray(n) { lat[it] * 110_540.0 }
+    // Metres in a local tangent plane around the route's middle latitude (avoids longitude-dependent shear at high longitudes).
+    val lat0 = (lat.min() + lat.max()) / 2.0
+    val lon0 = lon[0]
+    val xScale = 111_320.0 * kotlin.math.cos(Math.toRadians(lat0))
+    val x = DoubleArray(n) { (lon[it] - lon0) * xScale }
+    val y = DoubleArray(n) { (lat[it] - lat0) * 110_540.0 }
     // Samples every STEP_M along the line: where, how far along, heading (unit vector), which segment.
     val sx = ArrayList<Double>(); val sy = ArrayList<Double>(); val sd = ArrayList<Double>()
     val hx = ArrayList<Double>(); val hy = ArrayList<Double>(); val seg = ArrayList<Int>()

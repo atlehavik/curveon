@@ -36,6 +36,7 @@ class SpeedLimits(private val context: Context) {
     private class Run(val value: Int, val lat: DoubleArray, val lon: DoubleArray)
 
     @Volatile private var dbs: List<SQLiteDatabase>? = null
+    private val generation = java.util.concurrent.atomic.AtomicInteger(0)
     /** Squares read so far, per table: speed limits, road numbers, priority roads. */
     private val caches = TABLES.associateWith { LruCache<Long, List<Run>>(256) }
 
@@ -46,6 +47,7 @@ class SpeedLimits(private val context: Context) {
     }
 
     private fun reopen() = synchronized(this) {
+        generation.incrementAndGet()
         dbs?.forEach { runCatching { it.close() } }
         dbs = null
         caches.values.forEach { it.evictAll() }
@@ -162,14 +164,23 @@ class SpeedLimits(private val context: Context) {
         val key = (latCell + 9000).toLong() * 100_000 + (lonCell + 18000)
         val cache = caches.getValue(table)
         cache.get(key)?.let { return it }
+        val gen = generation.get()
         val out = ArrayList<Run>()
+        var interrupted = false
         // A file without the table (built before it, or another country) just has nothing here.
-        for (db in open()) runCatching {
-            db.rawQuery("SELECT data FROM $table WHERE cell = ?", arrayOf(key.toString())).use { c ->
-                if (c.moveToFirst()) decode(c.getBlob(0), latCell, lonCell, out)
+        for (db in open()) {
+            try {
+                db.rawQuery("SELECT data FROM $table WHERE cell = ?", arrayOf(key.toString())).use { c ->
+                    if (c.moveToFirst()) decode(c.getBlob(0), latCell, lonCell, out)
+                }
+            } catch (e: IllegalStateException) {
+                // DB closed mid-query by reopen() during a download: do not cache a partial/empty result.
+                interrupted = true
+            } catch (_: Exception) {
+                // Missing table in an older file: ignore.
             }
         }
-        cache.put(key, out)
+        if (!interrupted && generation.get() == gen) cache.put(key, out)
         return out
     }
 

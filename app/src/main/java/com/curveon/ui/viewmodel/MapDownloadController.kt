@@ -123,6 +123,9 @@ class MapDownloadController(
                 searchIndexes.fetch(offer.areaId, { msg, f -> _searchOffer.value = offer.copy(progress = msg, fraction = f) }, isCancelled = { false })
                 _searchOffer.value = null
                 updateMapStatus()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                searchIndexes.cleanupPartial(offer.areaId)
+                throw e
             } catch (e: Throwable) {
                 searchIndexes.cleanupPartial(offer.areaId)
                 _searchOffer.value = offer.copy(progress = str(R.string.search_download_failed, e.message ?: ""), failed = true)
@@ -179,6 +182,10 @@ class MapDownloadController(
                 cancelMapFinish = false
                 mapFinisher = scope.launch { finishMap(area) }
                 _mapDownload.value = com.curveon.data.map.MapDownloadState.Idle
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                mapDownloads.cleanupPartial(id)
+                _mapDownload.value = com.curveon.data.map.MapDownloadState.Idle
+                throw e
             } catch (e: Throwable) {
                 mapDownloads.cleanupPartial(id)
                 if (cancelMapDownload) _mapDownload.value = com.curveon.data.map.MapDownloadState.Idle
@@ -201,6 +208,9 @@ class MapDownloadController(
         val progress = { msg: String, f: Float -> _mapFinishing.value = com.curveon.data.map.MapDownloadState.Running(id, msg, f) }
         try {
             mapDownloads.completeMissing(area, progress, isCancelled = { cancelMapFinish })
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            mapDownloads.cleanupPartial(id)
+            throw e
         } catch (e: Throwable) {
             mapDownloads.cleanupPartial(id)
             if (!cancelMapFinish) {
@@ -224,9 +234,16 @@ class MapDownloadController(
     }
 
     fun deleteMap(id: String) {
-        mapDownloads.delete(id)
-        updateMapStatus()
-        _mapVersion.value++
+        val waitDownload = (_mapDownload.value as? com.curveon.data.map.MapDownloadState.Running)?.areaId == id
+        val waitFinisher = _mapFinishing.value?.areaId == id
+        cancelMapDownload(id)
+        scope.launch {
+            if (waitDownload) mapWorker?.join()
+            if (waitFinisher) mapFinisher?.join()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { mapDownloads.delete(id) }
+            updateMapStatus()
+            _mapVersion.value++
+        }
     }
 
     // ---------------------------------------------------------------- offline map

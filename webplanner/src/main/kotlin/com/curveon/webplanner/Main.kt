@@ -152,11 +152,15 @@ private fun sendFile(ex: HttpExchange, file: File, root: File) {
   val range = ex.requestHeaders.getFirst("Range")?.let { Regex("bytes=(\\d+)-(\\d*)").find(it) }
   java.io.RandomAccessFile(f, "r").use { raf ->
     val len = raf.length()
-    val from = range?.groupValues?.get(1)?.toLong() ?: 0L
-    val to = range?.groupValues?.get(2)?.takeIf { it.isNotEmpty() }?.toLong()?.coerceAtMost(len - 1) ?: (len - 1)
+    val from = range?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+    val to = range?.groupValues?.get(2)?.takeIf { it.isNotEmpty() }?.toLongOrNull()?.coerceAtMost(len - 1) ?: (len - 1)
+    if (range != null && (len == 0L || from < 0 || from >= len || to < from)) {
+      ex.responseHeaders.set("Content-Range", "bytes */$len")
+      return ex.sendResponseHeaders(416, -1)
+    }
     if (range != null) ex.responseHeaders.set("Content-Range", "bytes $from-$to/$len")
-    val n = to - from + 1
-    ex.sendResponseHeaders(if (range != null) 206 else 200, n)
+    val n = if (len == 0L) 0L else to - from + 1
+    ex.sendResponseHeaders(if (range != null) 206 else 200, if (n == 0L) -1 else n)
     ex.responseBody.use { out ->
       raf.seek(from)
       val buf = ByteArray(64 * 1024)

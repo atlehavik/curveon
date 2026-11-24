@@ -123,6 +123,7 @@ private fun CameraScan(accept: (String) -> Boolean, onInvite: (String) -> Unit, 
     val done = remember { AtomicBoolean(false) }
     /** Closed before the camera was ready: it must not be switched on after all (it stayed on, the green dot too). */
     val disposed = remember { AtomicBoolean(false) }
+    val providerRef = remember { java.util.concurrent.atomic.AtomicReference<ProcessCameraProvider?>(null) }
     val main = remember { ContextCompat.getMainExecutor(context) }
     val latestInvite by rememberUpdatedState(onInvite)
     val latestOther by rememberUpdatedState(onOther)
@@ -130,7 +131,7 @@ private fun CameraScan(accept: (String) -> Boolean, onInvite: (String) -> Unit, 
     DisposableEffect(Unit) {
         onDispose {
             disposed.set(true)
-            runCatching { ProcessCameraProvider.getInstance(context).get().unbindAll() }
+            runCatching { providerRef.getAndSet(null)?.unbindAll() }
             analysisThread.shutdown()
         }
     }
@@ -150,10 +151,11 @@ private fun CameraScan(accept: (String) -> Boolean, onInvite: (String) -> Unit, 
                         .build()
                     analysis.setAnalyzer(analysisThread) { image -> look(image, done, main, accept, { latestInvite(it) }, { latestOther() }) }
                     runCatching {
-                        future.get().apply {
-                            unbindAll()
-                            bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
-                        }
+                        val provider = future.get()
+                        if (disposed.get()) return@runCatching
+                        providerRef.set(provider)
+                        provider.unbindAll()
+                        provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis)
                     }
                 }, main)
             }

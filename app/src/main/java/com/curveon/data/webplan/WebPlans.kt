@@ -77,7 +77,22 @@ class WebPlans(
         var total: Result? = null
         for (link in links) {
             var r = Result(0, 0)
-            val got = WebPlanInbox(transports).fetch(link) { inbound -> runBlocking { lock.withLock { handle(link, inbound).let { (res, frames) -> r = res; frames + publish(link) } } } }
+            var commitPublished: (() -> Unit)? = null
+            val got = WebPlanInbox(transports).fetch(
+                link,
+                answer = { inbound ->
+                    runBlocking {
+                        lock.withLock {
+                            val (res, frames) = handle(link, inbound)
+                            r = res
+                            val (pubFrames, commit) = publish(link)
+                            commitPublished = commit
+                            frames + pubFrames
+                        }
+                    }
+                },
+                onSent = { ok -> if (ok) commitPublished?.invoke() }
+            )
             if (got != null) total = (total ?: Result(0, 0)).plus(r)
         }
         total
@@ -95,13 +110,31 @@ class WebPlans(
      */
     fun live(onResult: (Result) -> Unit, onDropped: () -> Unit): WebPlanSession {
         val conns = links().map { link ->
+            var pendingCommit: (() -> Unit)? = null
             link to WebPlanInbox(transports).live(link, onInbound = { inbound ->
-                runBlocking { lock.withLock { handle(link, inbound).let { (res, frames) -> onResult(res); frames + publish(link) } } }
-            }, onClosed = onDropped)
+                runCatching {
+                    runBlocking {
+                        lock.withLock {
+                            val (res, frames) = handle(link, inbound)
+                            onResult(res)
+                            val (pubFrames, commit) = publish(link)
+                            pendingCommit = commit
+                            frames + pubFrames
+                        }
+                    }
+                }.getOrDefault(emptyList())
+            }, onClosed = onDropped, onSent = { ok ->
+                val commit = pendingCommit
+                pendingCommit = null
+                if (ok) commit?.invoke()
+            })
         }
         return object : WebPlanSession {
             override suspend fun publish() = withContext(Dispatchers.IO) {
-                conns.forEach { (link, live) -> lock.withLock { publish(link) }.forEach { live.send(it) } }
+                conns.forEach { (link, live) ->
+                    val (frames, commit) = lock.withLock { publish(link) }
+                    if (frames.isNotEmpty() && frames.all { live.send(it) }) commit()
+                }
             }
             override fun close() = conns.forEach { it.second.close() }
         }
@@ -199,18 +232,20 @@ class WebPlans(
         return repository.plannedNow().take(MAX_SHOWN).map { SavedRoutes.webHave(it, it.groupId?.let(groups::get)) }
     }
 
-    /** What changed since the page last saw this device's trips, as frames: each changed trip, gone ones, the list. */
-    private suspend fun publish(link: WebPlanLink): List<String> {
+    /** What changed since the page last saw this device's trips, as frames plus a commit callback to mark them sent. */
+    private suspend fun publish(link: WebPlanLink): Pair<List<String>, () -> Unit> {
         val now = System.currentTimeMillis()
         val trips = shown()
         val before = published(link)
         val after = trips.associate { it.id to it.rev }
-        if (before == after) return emptyList()
+        if (before == after) return emptyList<String>() to {}
         val frames = trips.filter { before[it.id] != it.rev }.map { WebPlan.haveFrame(link, riderId(), nextSeq(), it, now) } +
             (before.keys - after.keys).map { WebPlan.dropHaveFrame(link, riderId(), nextSeq(), it, now) } +
             WebPlan.indexFrame(link, riderId(), nextSeq(), deviceName(), trips.map { it.id }, now)
-        prefs.edit().putString(KEY_PUBLISHED + link.id, JSONObject(after.mapKeys { it.key.toString() }).toString()).apply()
-        return frames
+        val commit = {
+            prefs.edit().putString(KEY_PUBLISHED + link.id, JSONObject(after.mapKeys { it.key.toString() }).toString()).apply()
+        }
+        return frames to commit
     }
 
     private fun published(link: WebPlanLink): Map<Long, String> = runCatching {

@@ -56,8 +56,8 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
     val state: StateFlow<ObdState> = _state.asStateFlow()
 
     private var job: Job? = null
-    private var socket: BluetoothSocket? = null
-    private var address: String? = null
+    @Volatile private var socket: BluetoothSocket? = null
+    @Volatile private var address: String? = null
 
     /** The tank table and the signal that follows the fuel level; the fuel reading comes from it once set up. */
     @Volatile private var fuelCalibration = FuelCalibration()
@@ -71,7 +71,7 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         if (c.source == null || c.tankLiters == null) _state.update { it.copy(fuelLiters = null) }
     }
 
-    private var pendingCapture: CompletableDeferred<Map<String, Int>?>? = null
+    @Volatile private var pendingCapture: CompletableDeferred<Map<String, Int>?>? = null
 
     /**
      * Reads everything the bike tells at this moment, for registering a fuel level: the standard
@@ -136,13 +136,16 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
         for (cmd in listOf("ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0")) elm.send(cmd, if (cmd == "ATZ") 3_000 else 1_500)
         _state.update { it.copy(status = ObdState.Status.CONNECTED) }
         Log.i(TAG, "Connected to ${device.name}")
-        // Once per app start: it holds the readings back for half a minute.
-        if (surveyed == null) surveyed = runCatching { survey(elm, device.name ?: address) }.getOrElse { Log.w(TAG, "Survey failed", it); emptyList() }
+        // Once per adapter per app start: it holds the readings back for half a minute.
+        if (surveyedAddress != address || surveyed == null) {
+            surveyed = runCatching { survey(elm, device.name ?: address) }.getOrElse { Log.w(TAG, "Survey failed", it); emptyList() }
+            surveyedAddress = address
+        }
         val extra = surveyed.orEmpty()
         val unsupported = mutableSetOf<String>()
         var round = 0
         var rpmAt = android.os.SystemClock.elapsedRealtime()
-        while (scope.isActive && job?.isActive == true) {
+        while (kotlin.coroutines.coroutineContext.isActive) {
             val slow = round % SLOW_EVERY == 0
             var s2 = _state.value
             // RPM is asked first: "NO DATA" to anything else only means the bike lacks it when the engine answered that
@@ -330,7 +333,8 @@ class ObdLink(private val context: Context, private val scope: CoroutineScope) {
 
     companion object {
         const val DEMO = "demo"
-        private var surveyed: List<String>? = null
+        @Volatile private var surveyed: List<String>? = null
+        @Volatile private var surveyedAddress: String? = null
         private const val TAG = "CurveonObd"
         private const val RPM = "010C"
         /** No answer to RPM for this long: the engine is off. */

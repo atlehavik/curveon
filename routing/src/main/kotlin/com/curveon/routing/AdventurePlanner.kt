@@ -329,7 +329,7 @@ class AdventurePlanner(
      * would ride out to the middle of the sea and back. A road that starts or ends on a ferry is no road;
      * ones that cross by ferry between two places on land stay.
      */
-    private fun endsOnFerry(route: Route) = route.points.first().ferry || route.points.last().ferry
+    private fun endsOnFerry(route: Route) = route.points.first().ferry || route.points.getOrNull(1)?.ferry == true || route.points.last().ferry
 
     /** A longer road gets longer to be found, up to a limit. */
     private fun edgeTimeout(crowM: Double) = (EDGE_TIMEOUT_MS + crowM / 1000 * 150).toLong().coerceAtMost(EDGE_TIMEOUT_MAX_MS)

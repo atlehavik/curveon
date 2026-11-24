@@ -23,6 +23,10 @@ object GroupMirror {
     private val _friendInvite = MutableStateFlow<String?>(null)
     val friendInvite: StateFlow<String?> = _friendInvite.asStateFlow()
 
+    /** A one-off friend link made by the tablet to share in chat: null until it arrives. */
+    private val _friendLink = MutableStateFlow<String?>(null)
+    val friendLink: StateFlow<String?> = _friendLink.asStateFlow()
+
     private val _errors = MutableSharedFlow<Message.GroupErrorCode>(extraBufferCapacity = 4)
     val errors: SharedFlow<Message.GroupErrorCode> = _errors.asSharedFlow()
 
@@ -36,6 +40,7 @@ object GroupMirror {
             is Message.GroupList -> { list = m; update() }
             is Message.GroupConnection -> { connection = m; update() }
             is Message.FriendInvite -> _friendInvite.value = m.uri
+            is Message.FriendLink -> _friendLink.value = m.uri
             is Message.GroupError -> _errors.tryEmit(m.code)
             else -> return false
         }
@@ -49,6 +54,7 @@ object GroupMirror {
         connection = null
         _summary.value = null
         _friendInvite.value = null
+        _friendLink.value = null
     }
 
     /** Asks the tablet for a friend code ([friendInvite] gets it); says so if there is no tablet to ask. */
@@ -58,6 +64,14 @@ object GroupMirror {
     }
 
     fun forgetFriendInvite() { _friendInvite.value = null }
+
+    /** Asks the tablet for a fresh, persistent friend link to share in chat ([friendLink] gets it). */
+    fun requestFriendLink() {
+        _friendLink.value = null
+        tell(Message.RequestFriendLink)
+    }
+
+    fun forgetFriendLink() { _friendLink.value = null }
 
     /** Hands a scanned or opened invite to the tablet, which joins. */
     fun join(invite: String) = tell(Message.GroupJoin(invite))

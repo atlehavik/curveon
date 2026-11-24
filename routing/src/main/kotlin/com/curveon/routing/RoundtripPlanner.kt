@@ -226,7 +226,8 @@ class RoundtripPlanner(
      */
     private fun connectedVias(start: LatLon, vias: List<LatLon>, options: RouteOptions, catchingRange: Double): List<LatLon> {
         val pts = listOf(start) + vias + start
-        val routed = pts.zipWithNext { a, b -> runCatching { leg(a, b, options, catchingRange).get() }.getOrNull() }
+        val futures = pts.zipWithNext { a, b -> leg(a, b, options, catchingRange) }
+        val routed = futures.map { runCatching { it.get() }.getOrNull() }
         val keep = vias.filterIndexed { i, _ ->
             val a = routed[i]; val b = routed[i + 1]
             a != null && b != null &&
@@ -254,10 +255,13 @@ class RoundtripPlanner(
 
     /** The chosen loop, riding less road twice where it can. */
     private fun polish(start: LatLon, route: Route, options: RouteOptions): Route {
+        val (vias, catching) = loopVias[route] ?: return route
+        val ends = listOf(start) + vias + start
+        val futures = ends.zipWithNext { a, b -> leg(a, b, options, catching) }
+        val currentLegs = runCatching { futures.map { it.get() }.toMutableList() }.getOrNull() ?: return route
         var r = route
         repeat(TWICE_ROUNDS) {
-            val (vias, catching) = loopVias[r] ?: return r
-            val next = lessTwice(start, vias, catching, options, r)
+            val next = lessTwice(ends, currentLegs, catching, options, r)
             if (next === r) return r
             loopVias[next] = vias to catching
             r = next
@@ -355,11 +359,9 @@ class RoundtripPlanner(
      * road made expensive – not forbidden: sometimes it is the only way, from an island or a valley.
      * A leg is kept when the loop then rides less road twice and doesn't get much longer.
      */
-    private fun lessTwice(start: LatLon, vias: List<LatLon>, catching: Double, options: RouteOptions, route: Route): Route {
+    private fun lessTwice(ends: List<LatLon>, legs: MutableList<Route>, catching: Double, options: RouteOptions, route: Route): Route {
         val twice = repeats(route)
         if (twice.size * TWICE_SAMPLE_M < MIN_TWICE_M) return route
-        val ends = listOf(start) + vias + start
-        val legs = runCatching { ends.zipWithNext { a, b -> leg(a, b, options, catching).get() }.toMutableList() }.getOrNull() ?: return route
         val legStart = legs.runningFold(0.0) { acc, l -> acc + l.distanceMeters }
         fun legAt(along: Double) = (legStart.indexOfLast { it <= along }).coerceIn(0, legs.lastIndex)
         // The leg riding it the second time first, then the one riding it the first time.
@@ -367,6 +369,7 @@ class RoundtripPlanner(
         var best = route
         var bestTwice = overlapFraction(route)
         val t0 = System.nanoTime()
+        val legOptions = options.copy(gravelReachKm = null)
         for (i in tryLegs) {
             // Long legs take the router long with circles to weigh; they are the rarer case.
             if (legs[i].distanceMeters > TWICE_MAX_LEG_M) continue
@@ -375,7 +378,7 @@ class RoundtripPlanner(
                 .map { NoGo(it, TWICE_NOGO_RADIUS_M, TWICE_WEIGHT) }
             if (noGo.isEmpty()) continue
             val alt = runCatching {
-                engine.route(listOf(ends[i], ends[i + 1]), options, catching, PLANNING_FERRY_COST, noGo = noGo)
+                underCancel { engine.route(listOf(ends[i], ends[i + 1]), legOptions, catching, PLANNING_FERRY_COST, noGo = noGo) }
             }.getOrNull() ?: continue
             val tried = legs.toMutableList().also { it[i] = alt }
             if (!legsMeet(tried)) continue
@@ -432,7 +435,8 @@ class RoundtripPlanner(
      */
     private fun reachableVias(start: LatLon, vias: List<LatLon>, options: RouteOptions, catchingRange: Double): List<LatLon> {
         val pts = listOf(start) + vias + start
-        val routed = pts.zipWithNext { a, b -> runCatching { leg(a, b, options, catchingRange).get() }.getOrNull() }
+        val futures = pts.zipWithNext { a, b -> leg(a, b, options, catchingRange) }
+        val routed = futures.map { runCatching { it.get() }.getOrNull() }
         val bad = routed.mapIndexed { i, r ->
             r == null || (r.distanceMeters > 30_000 && r.distanceMeters > Geo.distance(pts[i], pts[i + 1]) * 4) ||
                 (options.avoidFerries && r.ferryCount > 0)

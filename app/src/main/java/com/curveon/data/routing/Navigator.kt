@@ -964,7 +964,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
     private fun canRoute(tiles: List<String>) = routingData.isReady() || (routingData.toFetch(tiles).isNotEmpty() && routingData.online())
 
     /** Newer builds of old routing tiles, fetched in the background while planning online (see [RoutingData.refreshStale]). */
-    private var refreshJob: Job? = null
+    @Volatile private var refreshJob: Job? = null
 
     /**
      * Fetches the missing routing tiles when online, showing it as the status meanwhile. Tiles here that are a month
@@ -976,7 +976,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         try {
             fetchMissing(tiles)
         } finally {
-            if (refreshJob?.isActive != true && routingData.stale(tiles).isNotEmpty()) {
+            if (kotlin.coroutines.coroutineContext.isActive && refreshJob?.isActive != true && routingData.stale(tiles).isNotEmpty()) {
                 refreshJob = scope.launch(Dispatchers.IO) { routingData.refreshStale(tiles) }
             }
         }

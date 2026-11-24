@@ -30,7 +30,7 @@ class TrackFollower(private val engine: BRouterEngine) {
         if (!fromStart) joinAlong(from, onTrack, options, headingDeg)?.let { return it }
         if (Geo.distance(from, vias.first()) < 50) return onTrack
         val approach = engine.route(listOf(from, vias.first()), options)
-        return Routes.concat(approach, onTrack)
+        return Routes.joinLegs(listOf(approach, onTrack))
     }
 
     /**

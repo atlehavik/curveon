@@ -599,7 +599,7 @@ object GroupHub {
                 val info = Message.GroupPositionInfo(id, p.lat, p.lon, p.heading, p.speed, e.tsMs, p.stopped, p.stoppedSince, p.battery)
                 if (id in store?.friendsSharingWithMe.orEmpty()) {
                     friendPositions[id] = info
-                    send(Message.GroupPositions(Message.GroupPositions.FRIENDS, listOf(info)))
+                    send(friendPositionsMessage())
                 } else earlyFriendPositions[id] = info
             }
             else -> Unit
@@ -767,7 +767,7 @@ object GroupHub {
         // Their position came first: shown now, if it is from this time round (not one left from before).
         if (on && early != null && System.currentTimeMillis() - early.timeMs < FRIEND_EARLY_MAX_MS) {
             friendPositions[id] = early
-            send(Message.GroupPositions(Message.GroupPositions.FRIENDS, listOf(early)))
+            send(friendPositionsMessage())
         }
         send(friendList())
         updateFriendSweep()

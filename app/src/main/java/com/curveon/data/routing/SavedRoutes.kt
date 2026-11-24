@@ -173,7 +173,13 @@ object SavedRoutes {
     }
 
     fun decode(s: String): List<LatLon> =
-        s.split(';').mapNotNull { part -> part.split(',').takeIf { it.size == 2 }?.let { LatLon(it[0].toDouble(), it[1].toDouble()) } }
+        s.split(';').mapNotNull { part ->
+            val p = part.split(',')
+            if (p.size != 2) return@mapNotNull null
+            val lat = p[0].toDoubleOrNull() ?: return@mapNotNull null
+            val lon = p[1].toDoubleOrNull() ?: return@mapNotNull null
+            if (lat !in -90.0..90.0 || lon !in -180.0..180.0) null else LatLon(lat, lon)
+        }
 }
 
 /** The last few destinations, shown when the search box is empty. */

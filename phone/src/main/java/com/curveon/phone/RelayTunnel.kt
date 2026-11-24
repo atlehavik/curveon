@@ -80,20 +80,30 @@ class RelayTunnelServer(private val transports: TransportFactory, private val si
     private fun open(m: Message.RelayOpen) {
         val allowed = (m.url.startsWith("wss://") || m.url.startsWith("ws://")) && sockets.size < MAX_SOCKETS
         if (!allowed) return sink(Message.RelayClosed(m.id, TransportListener.FAILED))
-        val opened = AtomicReference<Transport?>()
-        val failedEarly = AtomicBoolean(false)
-        val t = transports.open(m.url, object : TransportListener {
-            override fun onOpen() = sink(Message.RelayOpened(m.id))
-            override fun onMessage(text: String) = sink(Message.RelayText(m.id, text))
-            override fun onClosed(code: Int) {
-                // Only tell the tablet if it is still waiting: a socket it closed itself needs no answer.
-                val self = opened.get()
-                if (self == null) { failedEarly.set(true); sink(Message.RelayClosed(m.id, code)) }
-                else if (sockets.remove(m.id, self)) sink(Message.RelayClosed(m.id, code))
-            }
-        })
-        opened.set(t)
-        if (!failedEarly.get()) sockets[m.id] = t
+        val gate = Any()
+        var opened: Transport? = null
+        var failedEarly = false
+        val t = runCatching {
+            transports.open(m.url, object : TransportListener {
+                override fun onOpen() = sink(Message.RelayOpened(m.id))
+                override fun onMessage(text: String) = sink(Message.RelayText(m.id, text))
+                override fun onClosed(code: Int) {
+                    // Only tell the tablet if it is still waiting: a socket it closed itself needs no answer.
+                    val shouldNotify = synchronized(gate) {
+                        val self = opened
+                        if (self == null) { failedEarly = true; true }
+                        else sockets.remove(m.id, self)
+                    }
+                    if (shouldNotify) sink(Message.RelayClosed(m.id, code))
+                }
+            })
+        }.getOrElse {
+            return sink(Message.RelayClosed(m.id, TransportListener.FAILED))
+        }
+        synchronized(gate) {
+            opened = t
+            if (!failedEarly) sockets[m.id] = t
+        }
     }
 
     /** The tablet went away: nobody is listening to these sockets any more. */

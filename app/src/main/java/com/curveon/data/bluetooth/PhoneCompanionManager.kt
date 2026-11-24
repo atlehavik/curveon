@@ -118,9 +118,9 @@ class PhoneCompanionManager(
     /** The same for commands to this device's own phone side, when Curveon is its own companion. */
     private val localOut = java.util.concurrent.Executors.newSingleThreadExecutor { r -> Thread(r, "curveon-local-out").apply { isDaemon = true } }
 
-    /** The linked companion shows how the active group is doing and a friend code it asked for; in order, and off the group thread. */
+    /** The linked companion shows how the active group is doing and a friend code/link it asked for; in order, and off the group thread. */
     private val companionMirror: (Message) -> Unit = { m ->
-        if (m is Message.GroupList || m is Message.GroupConnection || m is Message.FriendInvite || m is Message.GroupError) {
+        if (m is Message.GroupList || m is Message.GroupConnection || m is Message.FriendInvite || m is Message.FriendLink || m is Message.GroupError) {
             linkOut.execute { writer?.let { w -> runCatching { w.write(m) } } }
         }
     }
@@ -181,7 +181,7 @@ class PhoneCompanionManager(
     val mediaApps: StateFlow<List<MediaApp>> = _mediaApps.asStateFlow()
 
     /** Media apps with a session on the phone right now. */
-    private var sessionApps: List<MediaApp> = emptyList()
+    @Volatile private var sessionApps: List<MediaApp> = emptyList()
 
     /** Every media app installed on the phone; kept (without icons) while the phone is away. */
     private val _installedApps = MutableStateFlow(loadInstalledApps())
@@ -243,10 +243,10 @@ class PhoneCompanionManager(
     @Volatile private var socket: BluetoothSocket? = null
     private var linkJob: Job? = null
     private var tickerJob: Job? = null
-    private val artCache = HashMap<String, Bitmap>()
+    private val artCache = java.util.concurrent.ConcurrentHashMap<String, Bitmap>()
 
     /** Last song and cover seen from each media app, so switching to it shows at once. */
-    private val lastByApp = HashMap<String, Pair<MusicTrack, Bitmap?>>()
+    private val lastByApp = java.util.concurrent.ConcurrentHashMap<String, Pair<MusicTrack, Bitmap?>>()
 
     /** App just switched to: until the phone catches up, ignore updates from the one we left. */
     @Volatile private var switchingTo: String? = null
@@ -257,7 +257,7 @@ class PhoneCompanionManager(
      * (like Android Auto); they stay unread on the phone. A new message in the same chat
      * changes the text and brings it back.
      */
-    private val hidden = HashMap<String, String>()
+    private val hidden = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     /** Cuts a reconnect wait short: the phone may have just come within reach. */
     private val wake = Channel<Unit>(Channel.CONFLATED)
@@ -570,7 +570,7 @@ class PhoneCompanionManager(
                     timestampMs = msg.timeMs, avatar = msg.avatarJpegBase64?.let(::decode),
                     canReply = msg.canReply, isIncomingCall = msg.isCall, isOngoingCall = msg.callOngoing, actions = msg.actions
                 )
-                _notifications.value = listOf(item) + _notifications.value.filterNot { it.id == msg.key }
+                _notifications.update { cur -> listOf(item) + cur.filterNot { it.id == msg.key } }
             }
             is Message.NotificationRemoved -> {
                 if (_notifications.value.any { it.id == msg.key && it.isIncomingCall }) Log.i(TAG, "Phone removed call ${msg.key}")
@@ -599,8 +599,8 @@ class PhoneCompanionManager(
             is Message.RouteFromPhone -> _routesFromPhone.tryEmit(msg)
             is Message.RelayOpened, is Message.RelayText, is Message.RelayClosed -> relayTunnel.onMessage(msg)
             is Message.WeatherData -> weatherTunnel.onMessage(msg)
-            // What the companion scanned, or a friend code it wants to show: the groups are here, so they are answered here.
-            is Message.GroupJoin, is Message.RequestFriendInvite -> if (fromPhone) GroupHub.handle(msg)
+            // What the companion scanned, or a friend code/link it wants: the groups are here, so they are answered here.
+            is Message.GroupJoin, is Message.RequestFriendInvite, is Message.RequestFriendLink -> if (fromPhone) GroupHub.handle(msg)
             // Curveon as its own companion speaks on this device too.
             is Message.SpeechVoice -> _speechVoice.value = VoiceStatus(msg.language, msg.availability, onThisDevice = isThisDevice)
             else -> if (!fromPhone) groups.onMessage(msg) // group rides; ignores anything else
@@ -654,7 +654,8 @@ class PhoneCompanionManager(
     }
 
     /** Sounds played on this device: Curveon on the phone, or no phone linked to the tablet. */
-    private val localCues by lazy { com.curveon.phone.CuePlayer(context) }
+    private val localCuesLazy = lazy { com.curveon.phone.CuePlayer(context) }
+    private val localCues get() = localCuesLazy.value
 
     /**
      * A navigation sound for the rider's headset: the linked phone plays it when there is one
@@ -664,7 +665,19 @@ class PhoneCompanionManager(
         if (viaPhone) send(Message.PlayCue(cue, side)) else localCues.play(cue, side)
     }
 
-    private val localSpeaker by lazy { com.curveon.phone.Speaker(context) { lang, a -> _speechVoice.value = VoiceStatus(lang, a, onThisDevice = true) } }
+    private val localSpeakerLazy = lazy { com.curveon.phone.Speaker(context) { lang, a -> _speechVoice.value = VoiceStatus(lang, a, onThisDevice = true) } }
+    private val localSpeaker get() = localSpeakerLazy.value
+
+    /** Releases receivers, executors, local TTS/cues and phone/group listeners when the ViewModel clears. */
+    fun shutdown() {
+        stopLink()
+        PhoneHub.removeGroupListener(companionMirror)
+        runCatching { context.unregisterReceiver(wakeReceiver) }
+        if (localCuesLazy.isInitialized()) runCatching { localCues.shutdown() }
+        if (localSpeakerLazy.isInitialized()) runCatching { localSpeaker.shutdown() }
+        linkOut.shutdownNow()
+        localOut.shutdownNow()
+    }
 
     /** How the voice was last found where speech plays, for Settings to suggest downloading it. */
     /**
