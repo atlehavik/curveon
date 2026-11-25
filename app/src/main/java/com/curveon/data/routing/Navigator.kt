@@ -41,7 +41,7 @@ import kotlin.math.roundToInt
 sealed interface RoutingStatus {
     data object Idle : RoutingStatus
     data class Calculating(val message: String) : RoutingStatus
-    data class Failed(val message: String) : RoutingStatus
+    data class Failed(val message: String, val waitingForGps: Boolean = false) : RoutingStatus
 }
 
 /** A place to ride through. [via] = a point the route was dragged through on the map, not a real stop. */
@@ -543,7 +543,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
      * riding it. Joins the track where the rider is.
      */
     fun followTrackNow(name: String, points: List<LatLon>, options: RouteOptions) {
-        val from = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
+        val from = lastPosition ?: return failWaitingForGps()
         val tiles = tilesAround(points + from)
         if (!canRoute(tiles)) return fail(routingData.describe())
         calcJob?.cancel()
@@ -732,7 +732,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         // A saved line is joined from where the rider is, like a track.
         val from = (if (planned?.fixedLine != null) lastPosition ?: planned.start?.point
             else planned?.start?.point ?: (goal as? NavigationGoal.Roundtrip)?.start?.point ?: (goal as? NavigationGoal.Adventure)?.start?.point ?: lastPosition)
-            ?: return fail(context.getString(R.string.nav_waiting_gps))
+            ?: return failWaitingForGps()
         val tiles = tilesAround(goalPoints(goal, from))
         if (!canRoute(tiles)) return fail(routingData.describe())
         previewJob?.cancel()
@@ -1077,9 +1077,11 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         if (_state.value.status is RoutingStatus.Failed) _state.update { it.copy(status = RoutingStatus.Idle) }
     }
 
-    private fun fail(message: String) {
-        _state.update { it.copy(status = RoutingStatus.Failed(message)) }
+    private fun fail(message: String, waitingForGps: Boolean = false) {
+        _state.update { it.copy(status = RoutingStatus.Failed(message, waitingForGps)) }
     }
+
+    private fun failWaitingForGps() = fail(context.getString(R.string.nav_waiting_gps), waitingForGps = true)
 
     /**
      * Changes the trip shown in the planner, if one that [shown] accepts is still there. Read and written in one step:
@@ -1119,6 +1121,9 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
 
     fun onLocation(position: LatLon, accuracyMeters: Double, headingDeg: Double? = null) {
         lastPosition = position
+        if ((_state.value.status as? RoutingStatus.Failed)?.waitingForGps == true) {
+            _state.update { if ((it.status as? RoutingStatus.Failed)?.waitingForGps == true) it.copy(status = RoutingStatus.Idle) else it }
+        }
         // Heading from the last ~20 m ridden; the GPS bearing only until we have that (some
         // receivers, and the emulator, report a bearing of 0 when they don't know).
         val anchor = headingAnchor
@@ -1192,7 +1197,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
         val goal = s.goal ?: return previewDestination(stop.name, stop.point, RouteOptions(preferredStyle)).also { trace("no goal, planning a trip instead") }
         val route = s.route ?: return trace("no route, nothing done")
-        val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps)).also { trace("no position yet, nothing done") }
+        val pos = lastPosition ?: return failWaitingForGps().also { trace("no position yet, nothing done") }
         trace("started, ${(goal as? NavigationGoal.Destination)?.stops?.size ?: -1} stops before, route ${route.points.size} points, calculating was ${calcJob?.isActive}")
         calcJob?.cancel()
         _state.update { it.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_adding_stop, stop.name))) }
@@ -1353,7 +1358,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         followUntil = if (carryOn) android.os.SystemClock.elapsedRealtime() + FOLLOW_MS else 0L
         val goal = s.goal ?: return
         val route = s.route ?: return
-        val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
+        val pos = lastPosition ?: return failWaitingForGps()
         calcJob?.cancel()
         _state.update { it.copy(wrongTurn = null, status = RoutingStatus.Calculating(context.getString(message))) }
         calcJob = scope.launch {
@@ -1426,7 +1431,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         }
         val g = s.goal as? NavigationGoal.Destination ?: return
         if (g.shared != change.shared) return
-        val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
+        val pos = lastPosition ?: return failWaitingForGps()
         val updated = g.copy(destination = change.destination, stops = change.stops, fixedLine = change.fixedLine,
             options = if (change.fixedLine != null) change.options else g.options)
         calcJob?.cancel()
@@ -1451,7 +1456,7 @@ class Navigator(private val context: Context, private val scope: CoroutineScope)
         val s = _state.value
         val g = s.goal as? NavigationGoal.Destination ?: return
         if (index !in g.stops.indices) return
-        val pos = lastPosition ?: return fail(context.getString(R.string.nav_waiting_gps))
+        val pos = lastPosition ?: return failWaitingForGps()
         val newGoal = g.copy(stops = g.stops.filterIndexed { i, _ -> i != index }, fixedLine = null)
         calcJob?.cancel()
         _state.update { it.copy(status = RoutingStatus.Calculating(context.getString(R.string.nav_recalculating))) }
